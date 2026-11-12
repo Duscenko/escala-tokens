@@ -146,9 +146,7 @@ function ColorCollage({
       </div>
 
       <ToastSpec t={tokens} v={{ Type: 'success' }} />
-      {/* Dropzone names its hover-equivalent 'Dragging' — hovering an uploader
-          IS what a drag looks like, and it's a shipped variant, not invented. */}
-      <Live c="Dropzone" t={tokens} hoverState="Dragging" />
+      <Live c="FileUploadDropzone" t={tokens} />
       <Live c="Select" t={tokens} />
       <InputGroupSpec t={tokens} v={{}} />
       <PasswordStrengthSpec t={tokens} v={{ Strength: '1' }} />

@@ -12940,16 +12940,20 @@
         }
       ]
     },
-    "Dropzone": {
-      "key": "Dropzone",
+    "FileUploadDropzone": {
+      "key": "FileUploadDropzone",
       "slots": [
         "root",
         "icon",
+        "text",
         "title",
-        "link",
-        "hint"
+        "description",
+        "separator",
+        "rule",
+        "or"
       ],
       "defaults": {
+        "Size": "default",
         "State": "Default"
       },
       "parts": [
@@ -12958,26 +12962,75 @@
           "values": {
             "": {
               "root": {
-                "strokeWidth": "stroke.control",
                 "radius": "radius.container",
-                "paddingX": "spacing.5",
-                "paddingY": "spacing.8",
+                "strokeWidth": "stroke.control"
+              },
+              "title": {},
+              "description": {
+                "font": "type.helper"
+              },
+              "separator": {
+                "gap": "spacing.gap-group"
+              },
+              "rule": {
+                "fill": "color.border.subtle",
+                "height": "stroke.divider"
+              },
+              "or": {
+                "text": "color.content.secondary",
+                "font": "type.label"
+              }
+            }
+          }
+        },
+        {
+          "axes": [
+            "Size"
+          ],
+          "values": {
+            "default": {
+              "root": {
+                "width": "spacing.32+spacing.32+spacing.32+spacing.24",
+                "paddingX": "spacing.inset-control+stroke.control",
+                "paddingY": "spacing.inset-control+stroke.control",
                 "gap": "spacing.gap-control"
               },
               "icon": {
-                "height": "size.control",
-                "width": "size.control",
-                "radius": "radius.pill"
+                "width": "icon.medium",
+                "height": "icon.medium"
               },
               "title": {
-                "text": "color.content.primary",
-                "font": "type.body-sm"
-              },
-              "link": {
                 "font": "type.label"
+              }
+            },
+            "sm": {
+              "root": {
+                "width": "spacing.32+spacing.32+spacing.32+spacing.4",
+                "paddingX": "spacing.gap-control+stroke.control",
+                "paddingY": "spacing.gap-control+stroke.control",
+                "gap": "spacing.gap-control"
               },
-              "hint": {
-                "font": "type.helper"
+              "icon": {
+                "width": "icon.small",
+                "height": "icon.small"
+              },
+              "title": {
+                "font": "type.body-sm"
+              }
+            },
+            "lg": {
+              "root": {
+                "width": "spacing.32+spacing.32+spacing.32+spacing.4",
+                "paddingX": "spacing.inset-surface+stroke.control",
+                "paddingY": "spacing.inset-surface+stroke.control",
+                "gap": "spacing.gap-group"
+              },
+              "icon": {
+                "width": "icon.large",
+                "height": "icon.large"
+              },
+              "title": {
+                "font": "type.label"
               }
             }
           }
@@ -12989,17 +13042,31 @@
           "values": {
             "Default": {
               "root": {
-                "fill": "none",
+                "fill": "color.surface.layer-1",
                 "stroke": "color.border.control"
               },
               "icon": {
-                "fill": "color.surface.selected",
-                "text": "color.content.accent"
+                "text": "color.content.secondary"
               },
-              "link": {
-                "text": "color.content.link.default"
+              "title": {
+                "text": "color.content.primary"
               },
-              "hint": {
+              "description": {
+                "text": "color.content.secondary"
+              }
+            },
+            "Hover": {
+              "root": {
+                "fill": "color.surface.layer-1",
+                "stroke": "color.border.control-hover"
+              },
+              "icon": {
+                "text": "color.content.secondary"
+              },
+              "title": {
+                "text": "color.content.primary"
+              },
+              "description": {
                 "text": "color.content.secondary"
               }
             },
@@ -13009,30 +13076,43 @@
                 "stroke": "color.border.accent"
               },
               "icon": {
-                "fill": "color.surface.selected",
                 "text": "color.content.accent"
               },
-              "link": {
-                "text": "color.content.link.default"
+              "title": {
+                "text": "color.content.accent"
               },
-              "hint": {
-                "text": "color.content.secondary"
+              "description": {
+                "text": "color.content.accent"
               }
             },
-            "Error": {
+            "Invalid": {
               "root": {
                 "fill": "color.status.critical.surface",
                 "stroke": "color.status.critical.border-strong"
               },
               "icon": {
-                "fill": "color.status.critical.surface",
                 "text": "color.status.critical.content"
               },
-              "link": {
-                "text": "color.content.link.default"
-              },
-              "hint": {
+              "title": {
                 "text": "color.status.critical.content"
+              },
+              "description": {
+                "text": "color.status.critical.content"
+              }
+            },
+            "Disabled": {
+              "root": {
+                "fill": "color.action.disabled.default",
+                "stroke": "color.border.control"
+              },
+              "icon": {
+                "text": "color.content.disabled"
+              },
+              "title": {
+                "text": "color.content.disabled"
+              },
+              "description": {
+                "text": "color.content.disabled"
               }
             }
           }

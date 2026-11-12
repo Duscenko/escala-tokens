@@ -24,7 +24,7 @@ import {
   FieldLabel as SkFieldLabel, FieldLegend as SkFieldLegend, FieldSet as SkFieldSet, type FieldSize, type FieldState,
 } from '../../../escala-ui/field'
 import { PasswordStrength as SkPasswordStrength, PasswordStrengthMeter as SkPasswordStrengthMeter, PasswordStrengthRule as SkPasswordStrengthRule, type PasswordStrengthSize, type Strength } from '../../../escala-ui/password-strength'
-import { Dropzone as SkDropzone, FileUpload as SkFileUpload, FileUploadFile as SkFileUploadFile } from '../../../escala-ui/file-upload'
+import { FileUploadDropzone as SkFileUploadDropzone, type FileUploadDropzoneSize, type FileUploadDropzoneState, FileUpload as SkFileUpload, FileUploadFile as SkFileUploadFile } from '../../../escala-ui/file-upload'
 import { Button as SkButton } from '../../../escala-ui/button'
 import { TextLink as SkTextLink } from '../../../escala-ui/text-link'
 import { RecipeScope } from './scope'
@@ -510,17 +510,13 @@ export function SkeletonFileUploadSpecimen({ t, w }: SpecimenProps) {
   )
 }
 
-export function SkeletonDropzoneSpecimen({ t, v }: SpecimenProps) {
-  const error = v.State === 'Error'
+export function SkeletonFileUploadDropzoneSpecimen({ t, v, w }: SpecimenProps) {
+  // Legacy links named the old Dropzone's Error state.
+  const state = (v.State === 'Error' ? 'Invalid' : v.State ?? 'Default') as FileUploadDropzoneState
+  const size = (v.Size ?? 'default') as FileUploadDropzoneSize
   return (
     <RecipeScope t={t}>
-      <SkDropzone
-        forceState={(v.State ?? 'Default') as 'Default'}
-        width={300}
-        icon={<PreviewIcon concept="upload" size={iconOf(17)} />}
-        title={<><span data-part="Dropzone.link">Click to upload</span> or drag and drop</>}
-        hint={error ? 'File exceeds the 10MB limit.' : 'SVG, PNG or PDF (max. 10MB)'}
-      />
+      <SkFileUploadDropzone size={size} forceState={state} style={w != null ? { width: w } : undefined} />
     </RecipeScope>
   )
 }

@@ -39,7 +39,7 @@ import {
   SkeletonInputTagSpecimen, SkeletonInputTagChipSpecimen, SkeletonInputTagOptionSpecimen, SkeletonSelectSpecimen, SkeletonComboboxSpecimen, SkeletonInputOTPSpecimen, SkeletonInputOTPSlotSpecimen,
   SkeletonCheckboxSpecimen, SkeletonRadioGroupSpecimen,
   SkeletonSwitchSpecimen, SkeletonSliderSpecimen, SkeletonFileUploadSpecimen,
-  SkeletonDropzoneSpecimen, SkeletonFieldSpecimen, SkeletonLabelSpecimen, SkeletonPasswordStrengthSpecimen, SkeletonPasswordStrengthMeterSpecimen, SkeletonPasswordStrengthRuleSpecimen,
+  SkeletonFileUploadDropzoneSpecimen, SkeletonFieldSpecimen, SkeletonLabelSpecimen, SkeletonPasswordStrengthSpecimen, SkeletonPasswordStrengthMeterSpecimen, SkeletonPasswordStrengthRuleSpecimen,
   SkeletonNativeSelectSpecimen,
 } from './skeleton/forms'
 import {
@@ -403,7 +403,7 @@ export const SPECIMENS: Record<string, (p: SpecimenProps) => ReactNode> = {
   Switch: SkeletonSwitchSpecimen,
   Slider: SkeletonSliderSpecimen,
   FileUpload: SkeletonFileUploadSpecimen,
-  Dropzone: SkeletonDropzoneSpecimen,
+  FileUploadDropzone: SkeletonFileUploadDropzoneSpecimen,
   Field: SkeletonFieldSpecimen,
   Label: SkeletonLabelSpecimen,
   PasswordStrength: SkeletonPasswordStrengthSpecimen,
@@ -519,8 +519,8 @@ export function Live({
    *  rises on hover implies a click target that isn't there. */
   lift?: boolean
   /** State a hover resolves to when the component names it something other than
-   *  'Hover'. Dropzone is the case this exists for: its shipped variants are
-   *  Default / Dragging / Error, and hovering an uploader previewing 'Dragging'
+   *  'Hover'. FileUploadDropzone used it once (Dragging); it now ships a Hover
+   *  of its own. Kept for components that name it otherwise, and hovering an uploader previewing 'Dragging'
    *  is exactly the state a real drag would put it in. Still has to name a state
    *  the catalogue offers — the `pick` below drops it otherwise. */
   hoverState?: string

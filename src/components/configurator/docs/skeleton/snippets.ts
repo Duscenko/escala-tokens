@@ -194,8 +194,8 @@ export const SKELETON_SNIPPETS: Record<string, Snippet> = {
     `import { Slider } from "@/components/ui/slider"\n\n<Slider label="Border radius" defaultValue={60} onValueChange={setRadius} />`,
   FileUpload: () =>
     `import { FileUpload, FileUploadFile } from "@/components/ui/file-upload"\n\n<FileUpload>\n  <Button variant="outline">Upload file</Button>\n  <FileUploadFile name="brand-guide.pdf" kind="PDF" progress={80} />\n</FileUpload>`,
-  Dropzone: (v) =>
-    `import { Dropzone } from "@/components/ui/file-upload"\n\n<Dropzone\n  title="Click to upload or drag and drop"\n  hint="${v.State === 'Error' ? 'File exceeds the 10MB limit.' : 'SVG, PNG or PDF (max. 10MB)'}"\n  onFiles={upload}${v.State && v.State !== 'Default' ? `\n  forceState="${v.State}"` : ''}\n/>`,
+  FileUploadDropzone: (v) =>
+    `import { FileUploadDropzone } from "@/components/ui/file-upload"\n\n<FileUploadDropzone${v.Size && v.Size !== 'default' ? ` size="${v.Size}"` : ''}${v.State === 'Invalid' ? ' invalid' : ''}${v.State === 'Disabled' ? ' disabled' : ''}\n  accept=".pdf,.zip,image/*"\n  onFiles={upload}\n/>`,
   Field: (v) => {
     const attrs = [
       v.Size && v.Size !== 'default' ? `\n  size="${v.Size}"` : '',

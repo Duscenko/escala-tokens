@@ -1057,7 +1057,7 @@ export const PASSWORD_STRENGTH_RULE: ComponentRecipe = {
   ],
 }
 
-// ── FileUpload · Dropzone ──────────────────────────────────────────────────
+// ── FileUpload ──────────────────────────────────────────────────
 
 export const FILE_UPLOAD: ComponentRecipe = {
   key: 'FileUpload',
@@ -1079,33 +1079,60 @@ export const FILE_UPLOAD: ComponentRecipe = {
   ],
 }
 
-export const DROPZONE: ComponentRecipe = {
-  key: 'Dropzone',
-  slots: ['root', 'icon', 'title', 'link', 'hint'],
-  defaults: { State: 'Default' },
+// ── FileUploadDropzone ─────────────────────────────────────────────────────
+// The Figma `FileUploadDropzone` set (design-plans/file-upload-dropzone-contract.md, 994:472,
+// 15 variants: Size default · sm · lg × State Default · Hover · Dragging · Invalid · Disabled).
+// A dashed Radius/container box whose strokes are LAID OUT (padding + the stroke): default and sm
+// are a row (icon · title/description · the system's secondary Button), lg a centred column with
+// an "OR" separator (the file's Separator instance, drawn here until Separator is rebuilt). Widths
+// 480 / 400 / 400 carry no variable: summed spacing steps. sm never shows its description.
+export const FILE_UPLOAD_DROPZONE_SIZES = ['default', 'sm', 'lg'] as const
+export const FILE_UPLOAD_DROPZONE_STATES = ['Default', 'Hover', 'Dragging', 'Invalid', 'Disabled'] as const
+const FUD_GEOMETRY: Record<string, { w: string; pad: string; gap: string; icon: string; title: string }> = {
+  default: { w: 'spacing.32+spacing.32+spacing.32+spacing.24', pad: 'spacing.inset-control+stroke.control', gap: 'spacing.gap-control', icon: 'icon.medium', title: 'type.label' },
+  sm: { w: 'spacing.32+spacing.32+spacing.32+spacing.4', pad: 'spacing.gap-control+stroke.control', gap: 'spacing.gap-control', icon: 'icon.small', title: 'type.body-sm' },
+  lg: { w: 'spacing.32+spacing.32+spacing.32+spacing.4', pad: 'spacing.inset-surface+stroke.control', gap: 'spacing.gap-group', icon: 'icon.large', title: 'type.label' },
+}
+function fileUploadDropzonePaint(state: string): SlotMap {
+  const ink = (role: string) => ({ text: c(role) })
+  if (state === 'Dragging') return {
+    root: { fill: c('surface.accent'), stroke: c('border.accent') },
+    icon: ink('content.accent'), title: ink('content.accent'), description: ink('content.accent'),
+  }
+  if (state === 'Invalid') return {
+    root: { fill: c('status.critical.surface'), stroke: c('status.critical.border-strong') },
+    icon: ink('status.critical.content'), title: ink('status.critical.content'), description: ink('status.critical.content'),
+  }
+  if (state === 'Disabled') return {
+    root: { fill: c('action.disabled.default'), stroke: c('border.control') },
+    icon: ink('content.disabled'), title: ink('content.disabled'), description: ink('content.disabled'),
+  }
+  return {
+    root: { fill: c('surface.layer-1'), stroke: c(state === 'Hover' ? 'border.control-hover' : 'border.control') },
+    icon: ink('content.secondary'), title: ink('content.primary'), description: ink('content.secondary'),
+  }
+}
+export const FILE_UPLOAD_DROPZONE: ComponentRecipe = {
+  key: 'FileUploadDropzone',
+  slots: ['root', 'icon', 'text', 'title', 'description', 'separator', 'rule', 'or'],
+  defaults: { Size: 'default', State: 'Default' },
   parts: [
     part({}, () => ({
-      root: {
-        strokeWidth: 'stroke.control', radius: 'radius.container',
-        paddingX: 'spacing.5', paddingY: 'spacing.8', gap: 'spacing.gap-control',
-      },
-      icon: { height: 'size.control', width: 'size.control', radius: 'radius.pill' },
-      title: { text: c('content.primary'), font: 'type.body-sm' },
-      link: { font: 'type.label' },
-      hint: { font: 'type.helper' },
+      root: { radius: 'radius.container', strokeWidth: 'stroke.control' },
+      title: {}, description: { font: 'type.helper' },
+      separator: { gap: 'spacing.gap-group' },
+      rule: { fill: c('border.subtle'), height: 'stroke.divider' },
+      or: { text: c('content.secondary'), font: 'type.label' },
     })),
-    part({ State: ['Default', 'Dragging', 'Error'] as const }, (state) => {
-      const error = state === 'Error'
+    part({ Size: FILE_UPLOAD_DROPZONE_SIZES }, (size) => {
+      const g = FUD_GEOMETRY[size]
       return {
-        root: {
-          fill: state === 'Dragging' ? c('surface.accent') : error ? c('status.critical.surface') : NONE,
-          stroke: c(error ? 'status.critical.border-strong' : state === 'Dragging' ? 'border.accent' : 'border.control'),
-        },
-        icon: { fill: c(error ? 'status.critical.surface' : 'surface.selected'), text: c(error ? 'status.critical.content' : 'content.accent') },
-        link: { text: c('content.link.default') },
-        hint: { text: c(error ? 'status.critical.content' : 'content.secondary') },
+        root: { width: g.w, paddingX: g.pad, paddingY: g.pad, gap: g.gap },
+        icon: { width: g.icon, height: g.icon },
+        title: { font: g.title },
       }
     }),
+    part({ State: FILE_UPLOAD_DROPZONE_STATES }, (state) => fileUploadDropzonePaint(state)),
   ],
 }
 

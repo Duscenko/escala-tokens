@@ -4759,20 +4759,29 @@ var init_componentCatalogue = __esm({
         accessibility: "Native file input behind the styled trigger. Progress announced via aria-live."
       },
       {
-        key: "Dropzone",
-        label: "Dropzone",
+        key: "FileUploadDropzone",
+        label: "File Upload Dropzone",
         category: "Form Controls",
-        description: "Drag-and-drop target area for files, with active-drag and error states.",
-        usage: "Pair with a click-to-browse fallback \u2014 drag alone is not discoverable on touch.",
-        axes: [{ name: "State", values: ["Default", "Dragging", "Error"] }],
-        figmaSets: ["Dropzone"],
-        props: [
-          { name: "title / hint", type: "ReactNode", description: "Instruction and constraint copy." },
-          { name: "icon", type: "ReactNode", description: "Glyph in the circle." },
-          { name: "onFiles", type: "(files: File[]) => void", description: "Fires with the dropped files." },
-          { name: "forceState", type: '"Default" | "Dragging" | "Error"', description: "Pin a state without a pointer." }
+        description: "Drop area that opens the file picker on click and accepts dragged files; the Choose file trigger is a Button.",
+        usage: "Use at the top of a FileUpload, or alone where files are the whole task. lg for an empty page, default in a form, sm in a dense row. Dragging tints it accent; Invalid needs a visible message (it replaces the title).",
+        // The Figma file's axes, value for value (design-plans/file-upload-dropzone-contract.md).
+        axes: [
+          { name: "Size", values: ["default", "sm", "lg"] },
+          { name: "State", values: ["Default", "Hover", "Dragging", "Invalid", "Disabled"] }
         ],
-        accessibility: "Focusable with keyboard; Enter opens the browse dialog. States announced."
+        figmaSets: ["FileUploadDropzone"],
+        props: [
+          { name: "size", type: '"default" | "sm" | "lg"', description: "Row with Button sm (default), compact row with Button xs and no description (sm), centred column with an OR separator and Button default (lg)." },
+          { name: "title", type: "ReactNode", description: 'Figma Title ("Drag and drop files"; "Upload failed" when invalid).' },
+          { name: "description", type: "ReactNode | null", description: "Figma Description; null hides it (DescriptionVisible)." },
+          { name: "icon", type: "ReactNode", description: "Figma Icon (CloudArrowUp)." },
+          { name: "separator", type: "boolean", description: "Figma SeparatorVisible: the OR rule above the Button (lg)." },
+          { name: "triggerLabel", type: "ReactNode", description: 'The Button label ("Choose file" / "Choose again").' },
+          { name: "onFiles / accept / multiple", type: "(files: File[]) => void / string / boolean", description: "Picked or dropped files, the accepted types, one or many." },
+          { name: "invalid / disabled", type: "boolean", description: "Invalid paints the critical tint; disabled mutes it and the Button." },
+          { name: "forceState", type: '"Default" | "Hover" | "Dragging" | "Invalid" | "Disabled"', description: "Pin a state without a pointer (docs)." }
+        ],
+        accessibility: "The Button is the keyboard path (Tab, Enter / Space opens the picker); the drop area itself takes no focus. aria-disabled when disabled, aria-invalid with a visible message when invalid."
       },
       {
         key: "Field",
@@ -5266,7 +5275,7 @@ var init_componentCatalogue = __esm({
         label: "Attachment",
         category: "Content & Surfaces",
         description: "shadcn/ui Attachment: a file on a message or a form \u2014 media, name, size, actions \u2014 with an upload state.",
-        usage: "Use to show files attached to a message, a comment or a form. For the drop target itself use Dropzone or File Upload.",
+        usage: "Use to show files attached to a message, a comment or a form. For the drop target itself use File Upload Dropzone or File Upload.",
         axes: [
           { name: "Size", values: ["default", "sm", "xs"] },
           { name: "Orientation", values: ["horizontal", "vertical"] },
@@ -9168,7 +9177,34 @@ function switchPaint(checked, state2) {
     thumb: { fill: c(on && !disabled ? "content.on-action" : "surface.input") }
   };
 }
-var FIELD_FIXED, FIELD_FOCUS, INPUT_STATES, INPUT_SIZES, INPUT_TYPES, INPUT_GEOMETRY, INPUT_GLYPH, INPUT_STROKE_IN_LAYOUT, INPUT, TEXTAREA_SIZES, TEXTAREA_STATES, TEXTAREA_HEIGHT, TEXTAREA_PAD, TEXTAREA_FONT, TEXTAREA_GLYPH, TEXTAREA, DATE_PICKER_TRIGGER_SIZES, DATE_PICKER_TRIGGER_STATES, DPT_GEOMETRY, DATE_PICKER_TRIGGER, DATE_PICKER_POPOVER, CALENDAR_DAY_SIZES, CALENDAR_DAY_STATES, CALENDAR_DAY_VARIANTS, CALENDAR_DAY_GEOMETRY, CALENDAR_DAY, CALENDAR_HEADER_SIZES, CALENDAR_HEADER_GEOMETRY, SEVEN, CALENDAR_HEADER, CALENDAR_MONTH, CALENDAR_PRESETS_SIZES, CALENDAR_PRESETS_VARIANTS, CALENDAR_PRESETS_GEOMETRY, CALENDAR_PRESETS, CALENDAR_FOOTER_SIZES, CALENDAR_FOOTER_GEOMETRY, CALENDAR_FOOTER, GROUP_LIVE, GROUP_CONTROL, INPUT_GROUP, NUMBER_INPUT_SIZES, NUMBER_INPUT_STATES, NUMBER_BOX, NUMBER_INPUT, INPUT_TAG_LAYOUTS, INPUT_TAG_SIZES, INPUT_TAG_STATES, TAG_BOX, INPUT_TAG, INPUT_TAG_CHIP_SIZES, INPUT_TAG_CHIP_STATES, INPUT_TAG_CHIP_VARIANTS, CHIP_GEOMETRY, INPUT_TAG_CHIP, INPUT_TAG_OPTION_STATES, INPUT_TAG_OPTION, SELECT_GEOMETRY, MENU_ITEM, MENU_CONTENT, SELECT, COMBOBOX, INPUT_OTP_SIZES, INPUT_OTP_VARIANTS, INPUT_OTP_STATES, INPUT_OTP_SLOT_STATES, INPUT_OTP, OTP_SLOT_BOX, OTP_SLOT_FONT, OTP_CARET, INPUT_OTP_SLOT, CHECKBOX, RADIO_GROUP, SWITCH_GEOMETRY, SWITCH, SLIDER, FIELD_STATES, FIELD, LABEL, PASSWORD_STRENGTH_SIZES, PASSWORD_STRENGTHS, STRENGTH_SEGMENT, STRENGTH_LEVEL, PASSWORD_STRENGTH, METER_HEIGHT, PASSWORD_STRENGTH_METER, RULE_ICON, RULE_MARKER, RULE_FONT, PASSWORD_STRENGTH_RULE, FILE_UPLOAD, DROPZONE, NATIVE_SELECT_STATES, NATIVE_SELECT, CALENDAR_SIZES, CALENDAR;
+function fileUploadDropzonePaint(state2) {
+  const ink = (role) => ({ text: c(role) });
+  if (state2 === "Dragging") return {
+    root: { fill: c("surface.accent"), stroke: c("border.accent") },
+    icon: ink("content.accent"),
+    title: ink("content.accent"),
+    description: ink("content.accent")
+  };
+  if (state2 === "Invalid") return {
+    root: { fill: c("status.critical.surface"), stroke: c("status.critical.border-strong") },
+    icon: ink("status.critical.content"),
+    title: ink("status.critical.content"),
+    description: ink("status.critical.content")
+  };
+  if (state2 === "Disabled") return {
+    root: { fill: c("action.disabled.default"), stroke: c("border.control") },
+    icon: ink("content.disabled"),
+    title: ink("content.disabled"),
+    description: ink("content.disabled")
+  };
+  return {
+    root: { fill: c("surface.layer-1"), stroke: c(state2 === "Hover" ? "border.control-hover" : "border.control") },
+    icon: ink("content.secondary"),
+    title: ink("content.primary"),
+    description: ink("content.secondary")
+  };
+}
+var FIELD_FIXED, FIELD_FOCUS, INPUT_STATES, INPUT_SIZES, INPUT_TYPES, INPUT_GEOMETRY, INPUT_GLYPH, INPUT_STROKE_IN_LAYOUT, INPUT, TEXTAREA_SIZES, TEXTAREA_STATES, TEXTAREA_HEIGHT, TEXTAREA_PAD, TEXTAREA_FONT, TEXTAREA_GLYPH, TEXTAREA, DATE_PICKER_TRIGGER_SIZES, DATE_PICKER_TRIGGER_STATES, DPT_GEOMETRY, DATE_PICKER_TRIGGER, DATE_PICKER_POPOVER, CALENDAR_DAY_SIZES, CALENDAR_DAY_STATES, CALENDAR_DAY_VARIANTS, CALENDAR_DAY_GEOMETRY, CALENDAR_DAY, CALENDAR_HEADER_SIZES, CALENDAR_HEADER_GEOMETRY, SEVEN, CALENDAR_HEADER, CALENDAR_MONTH, CALENDAR_PRESETS_SIZES, CALENDAR_PRESETS_VARIANTS, CALENDAR_PRESETS_GEOMETRY, CALENDAR_PRESETS, CALENDAR_FOOTER_SIZES, CALENDAR_FOOTER_GEOMETRY, CALENDAR_FOOTER, GROUP_LIVE, GROUP_CONTROL, INPUT_GROUP, NUMBER_INPUT_SIZES, NUMBER_INPUT_STATES, NUMBER_BOX, NUMBER_INPUT, INPUT_TAG_LAYOUTS, INPUT_TAG_SIZES, INPUT_TAG_STATES, TAG_BOX, INPUT_TAG, INPUT_TAG_CHIP_SIZES, INPUT_TAG_CHIP_STATES, INPUT_TAG_CHIP_VARIANTS, CHIP_GEOMETRY, INPUT_TAG_CHIP, INPUT_TAG_OPTION_STATES, INPUT_TAG_OPTION, SELECT_GEOMETRY, MENU_ITEM, MENU_CONTENT, SELECT, COMBOBOX, INPUT_OTP_SIZES, INPUT_OTP_VARIANTS, INPUT_OTP_STATES, INPUT_OTP_SLOT_STATES, INPUT_OTP, OTP_SLOT_BOX, OTP_SLOT_FONT, OTP_CARET, INPUT_OTP_SLOT, CHECKBOX, RADIO_GROUP, SWITCH_GEOMETRY, SWITCH, SLIDER, FIELD_STATES, FIELD, LABEL, PASSWORD_STRENGTH_SIZES, PASSWORD_STRENGTHS, STRENGTH_SEGMENT, STRENGTH_LEVEL, PASSWORD_STRENGTH, METER_HEIGHT, PASSWORD_STRENGTH_METER, RULE_ICON, RULE_MARKER, RULE_FONT, PASSWORD_STRENGTH_RULE, FILE_UPLOAD, FILE_UPLOAD_DROPZONE_SIZES, FILE_UPLOAD_DROPZONE_STATES, FUD_GEOMETRY, FILE_UPLOAD_DROPZONE, NATIVE_SELECT_STATES, NATIVE_SELECT, CALENDAR_SIZES, CALENDAR;
 var init_forms = __esm({
   "src/lib/recipes/forms.ts"() {
     init_helpers();
@@ -9867,36 +9903,35 @@ var init_forms = __esm({
         }))
       ]
     };
-    DROPZONE = {
-      key: "Dropzone",
-      slots: ["root", "icon", "title", "link", "hint"],
-      defaults: { State: "Default" },
+    FILE_UPLOAD_DROPZONE_SIZES = ["default", "sm", "lg"];
+    FILE_UPLOAD_DROPZONE_STATES = ["Default", "Hover", "Dragging", "Invalid", "Disabled"];
+    FUD_GEOMETRY = {
+      default: { w: "spacing.32+spacing.32+spacing.32+spacing.24", pad: "spacing.inset-control+stroke.control", gap: "spacing.gap-control", icon: "icon.medium", title: "type.label" },
+      sm: { w: "spacing.32+spacing.32+spacing.32+spacing.4", pad: "spacing.gap-control+stroke.control", gap: "spacing.gap-control", icon: "icon.small", title: "type.body-sm" },
+      lg: { w: "spacing.32+spacing.32+spacing.32+spacing.4", pad: "spacing.inset-surface+stroke.control", gap: "spacing.gap-group", icon: "icon.large", title: "type.label" }
+    };
+    FILE_UPLOAD_DROPZONE = {
+      key: "FileUploadDropzone",
+      slots: ["root", "icon", "text", "title", "description", "separator", "rule", "or"],
+      defaults: { Size: "default", State: "Default" },
       parts: [
         part({}, () => ({
-          root: {
-            strokeWidth: "stroke.control",
-            radius: "radius.container",
-            paddingX: "spacing.5",
-            paddingY: "spacing.8",
-            gap: "spacing.gap-control"
-          },
-          icon: { height: "size.control", width: "size.control", radius: "radius.pill" },
-          title: { text: c("content.primary"), font: "type.body-sm" },
-          link: { font: "type.label" },
-          hint: { font: "type.helper" }
+          root: { radius: "radius.container", strokeWidth: "stroke.control" },
+          title: {},
+          description: { font: "type.helper" },
+          separator: { gap: "spacing.gap-group" },
+          rule: { fill: c("border.subtle"), height: "stroke.divider" },
+          or: { text: c("content.secondary"), font: "type.label" }
         })),
-        part({ State: ["Default", "Dragging", "Error"] }, (state2) => {
-          const error = state2 === "Error";
+        part({ Size: FILE_UPLOAD_DROPZONE_SIZES }, (size) => {
+          const g = FUD_GEOMETRY[size];
           return {
-            root: {
-              fill: state2 === "Dragging" ? c("surface.accent") : error ? c("status.critical.surface") : NONE,
-              stroke: c(error ? "status.critical.border-strong" : state2 === "Dragging" ? "border.accent" : "border.control")
-            },
-            icon: { fill: c(error ? "status.critical.surface" : "surface.selected"), text: c(error ? "status.critical.content" : "content.accent") },
-            link: { text: c("content.link.default") },
-            hint: { text: c(error ? "status.critical.content" : "content.secondary") }
+            root: { width: g.w, paddingX: g.pad, paddingY: g.pad, gap: g.gap },
+            icon: { width: g.icon, height: g.icon },
+            title: { font: g.title }
           };
-        })
+        }),
+        part({ State: FILE_UPLOAD_DROPZONE_STATES }, (state2) => fileUploadDropzonePaint(state2))
       ]
     };
     NATIVE_SELECT_STATES = ["Default", "Hover", "Focused", "Disabled"];
@@ -11087,7 +11122,7 @@ var init_motion2 = __esm({
       Tabs: { transitions: { trigger: states("color", "background-color", "border-color", "box-shadow") } },
       Table: { transitions: { row: states("background-color") } },
       ScrollArea: { transitions: { scrollbar: states("background-color") } },
-      Dropzone: { transitions: { root: states("background-color", "border-color") } },
+      FileUploadDropzone: { transitions: { root: states("background-color", "border-color") } },
       Input: { transitions: { root: FIELD2 } },
       DatePickerTrigger: { transitions: { root: FIELD2 } },
       CalendarDay: { transitions: { cell: states("background-color", "border-color", "box-shadow", "color"), day: states("color") } },
@@ -11171,7 +11206,7 @@ var init_componentRecipes = __esm({
       Switch: SWITCH,
       Slider: SLIDER,
       FileUpload: FILE_UPLOAD,
-      Dropzone: DROPZONE,
+      FileUploadDropzone: FILE_UPLOAD_DROPZONE,
       Field: FIELD,
       Label: LABEL,
       PasswordStrength: PASSWORD_STRENGTH,
@@ -14041,7 +14076,7 @@ var init_useDesignStore = __esm({
         }),
         {
           name: "scalable-designs-store",
-          version: 124,
+          version: 125,
           migrate: (persisted, version) => {
             if (persisted) {
               delete persisted.styleDirection;
@@ -15556,6 +15591,20 @@ var init_useDesignStore = __esm({
               add2(persisted);
               if (Array.isArray(persisted.savedSystems)) {
                 for (const sys of persisted.savedSystems) add2(sys?.snapshot);
+              }
+            }
+            if (version < 125) {
+              const rename = (state2) => {
+                if (!Array.isArray(state2?.selectedComponents)) return;
+                const sel = state2.selectedComponents;
+                const i = sel.indexOf("Dropzone");
+                if (i < 0) return;
+                if (sel.includes("FileUploadDropzone")) sel.splice(i, 1);
+                else sel[i] = "FileUploadDropzone";
+              };
+              rename(persisted);
+              if (Array.isArray(persisted.savedSystems)) {
+                for (const sys of persisted.savedSystems) rename(sys?.snapshot);
               }
             }
             return persisted;

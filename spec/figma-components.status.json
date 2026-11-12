@@ -22,10 +22,6 @@
     "FileUpload": {
       "status": "rebuild"
     },
-    "FileUploadDropzone": {
-      "status": "rename",
-      "code": "Dropzone"
-    },
     "FileUploadItem": {
       "status": "part",
       "of": "FileUpload"

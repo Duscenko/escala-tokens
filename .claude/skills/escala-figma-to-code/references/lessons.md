@@ -219,3 +219,14 @@ Every row cost a round trip with the owner. Check each one before calling a comp
 | Replacing a recipe the frozen plugin builds (Calendar) | Parity: `{ Calendar: ['column'] }`; motion test: `Calendar.day` slot gone | New slots go in `WEB_ONLY_SLOTS`; drop the old slot's entry in `recipes/motion.ts`; goldens move ONLY in the recipe's own block (check the hunk headers are contiguous) |
 | A composite with sample data in its parts (CalendarMonth's November sample) | A real month showed the sample's selection, today and disabled days | The part shows its sample only when it gets no `month`; the composite passes month, today and the selection explicitly |
 | A board tile built on the old component (react-day-picker footer, `!w-full` stretch) | The new calendar is seven cells wide and cannot spread | The tile uses Size sm (250, the old width) centred; the event goes in as `children` under the month |
+
+# Lessons from the FileUploadDropzone (2026-11-12)
+
+| Trap | What it looked like | The fix (where it lives) |
+|---|---|---|
+| A variant overrides a TEXT layer without its property binding (Invalid: «Upload failed», sm Invalid shows only the limit message) | Copying the Title default everywhere | State-specific default copy when the prop is not passed; say it in the contract |
+| A layer hidden in one size and NOT bound to its BOOLEAN (sm description) | Tempting to honour `DescriptionVisible` in sm | Copy: sm never renders it |
+| The set nests a component that is not rebuilt yet (Separator «OR») | Reusing the shadcn Separator would draw a different thing | Draw it as slots of the new recipe with the file's roles; note the swap for when Separator is rebuilt |
+| A dashed stroke (dash 4·4) | No recipe prop for dashes | `borderStyle: dashed` inline; CSS cannot set the dash length — report it |
+| axe in Dark composites a translucent fill over the white `body`, not the `.dark` wrapper (elementsFromPoint shows `.dark` in the stack) | 1.81:1 «failures» on Status/critical/surface | Compute the real composite by hand over the `.dark` page (≈6.5:1 here); only Light flags are real |
+| A rename in the ledger (Dropzone → FileUploadDropzone) | Same list as NumberInput | catalogue, recipe key, `FILE_OF`, motion, specimens, snippets, overview, `PreviewPanel` `Live c=`, sitemap, store migration, `RENAMED_ON_WEB` + `WEB_ONLY` |

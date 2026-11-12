@@ -46,7 +46,7 @@ export const RECIPE_MOTION: Record<string, RecipeMotion> = {
   Tabs: { transitions: { trigger: states('color', 'background-color', 'border-color', 'box-shadow') } },
   Table: { transitions: { row: states('background-color') } },
   ScrollArea: { transitions: { scrollbar: states('background-color') } },
-  Dropzone: { transitions: { root: states('background-color', 'border-color') } },
+  FileUploadDropzone: { transitions: { root: states('background-color', 'border-color') } },
   Input: { transitions: { root: FIELD } },
   DatePickerTrigger: { transitions: { root: FIELD } },
   CalendarDay: { transitions: { cell: states('background-color', 'border-color', 'box-shadow', 'color'), day: states('color') } },
