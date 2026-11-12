@@ -18,7 +18,7 @@ import { COMPONENTS, type ComponentDef } from '../../../lib/componentCatalogue'
 import { PHOSPHOR_CORE, PHOSPHOR_CORE_COMPONENT, type IconConcept } from '../../../lib/iconLibraries'
 import { PHOSPHOR_CORE_BODIES, loadPhosphorWeight, peekPhosphorWeight, phosphorCoreBody, phosphorIconMaskUrl, type PhosphorWeight } from '../../../lib/phosphorIcons'
 import {
-  SkeletonButtonSpecimen, SkeletonIconButtonSpecimen, SkeletonButtonGroupSpecimen,
+  SkeletonButtonSpecimen, SkeletonIconButtonSpecimen, SkeletonCloseButtonSpecimen, SkeletonButtonGroupSpecimen,
   SkeletonSocialLoginButtonSpecimen, SkeletonAppStoreBadgeSpecimen, SkeletonToggleGroupSpecimen, SkeletonToggleSpecimen,
 } from './skeleton/actions'
 import {
@@ -358,6 +358,7 @@ export const SPECIMENS: Record<string, (p: SpecimenProps) => ReactNode> = {
   // Button & Actions
   Button: SkeletonButtonSpecimen,
   IconButton: SkeletonIconButtonSpecimen,
+  CloseButton: SkeletonCloseButtonSpecimen,
   ButtonGroup: SkeletonButtonGroupSpecimen,
   ToggleGroup: SkeletonToggleGroupSpecimen,
   Toggle: SkeletonToggleSpecimen,

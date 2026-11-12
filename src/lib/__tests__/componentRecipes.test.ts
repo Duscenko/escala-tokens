@@ -281,3 +281,60 @@ describe('target size', () => {
     expect(css).toContain('position: relative')
   })
 })
+
+// The Figma `CloseButton` set (design-plans/close-button-contract.md). Values are read
+// from the file, variant by variant; these hold the odd parts: Hover / Pressed are the
+// same translucent fill STACKED over the rest fill, soft and solid focus with a halo and
+// no edge, outline and ghost with a 2px edge inside plus the halo, and nothing paints a
+// highlight.
+describe('CloseButton (Figma)', () => {
+  const root = (over: Record<string, string>) =>
+    resolveRecipe(COMPONENT_RECIPES.CloseButton, { Appearance: 'soft', Shape: 'pill', Size: 'default', State: 'Default', Variant: 'default', ...over }).root
+
+  it('stacks the muted fill once on hover and twice on pressed (solid · default)', () => {
+    expect(root({ Appearance: 'solid', State: 'Default' })).toMatchObject({ fill: 'color.surface.inverse' })
+    expect(root({ Appearance: 'solid', State: 'Hover' })).toMatchObject({ fill: 'color.surface.inverse', overlay: 'color.surface.inverse-muted' })
+    expect(root({ Appearance: 'solid', State: 'Pressed' })).toMatchObject({ overlay: 'color.surface.inverse-muted', overlay2: 'color.surface.inverse-muted' })
+  })
+  it('stacks three layers on soft · inverse · pressed', () => {
+    const r = root({ Variant: 'inverse', State: 'Pressed' })
+    expect(r).toMatchObject({ fill: 'color.surface.inverse-muted', overlay: 'color.surface.inverse-muted', overlay2: 'color.surface.inverse-muted' })
+  })
+  it.each([['solid', 'default', 'color.border.subtle'], ['soft', 'default', 'color.border.subtle'], ['solid', 'inverse', 'color.surface.inverse-muted'], ['soft', 'inverse', 'color.surface.inverse-muted']])(
+    '%s · %s focuses with a halo alone, no edge',
+    (appearance, variant, halo) => {
+      const r = root({ Appearance: appearance, Variant: variant, State: 'Focused' })
+      expect(r.halo).toBe(halo)
+      expect(r.focus).toBeUndefined()
+      expect(r.ring).toBeUndefined()
+    },
+  )
+  it.each([['outline', 'default', 'color.border.strong'], ['ghost', 'default', 'color.border.strong'], ['outline', 'inverse', 'color.border.inverse'], ['ghost', 'inverse', 'color.border.inverse']])(
+    '%s · %s focuses with a 2px edge inside plus the halo',
+    (appearance, variant, edge) => {
+      const r = root({ Appearance: appearance, Variant: variant, State: 'Focused' })
+      expect(r.focus).toBe(edge)
+      expect(r.ring).toBeDefined()
+      expect(r.halo).toBeUndefined()
+    },
+  )
+  it('only outline has a stroke, and nothing carries the solid highlight', () => {
+    for (const appearance of ['solid', 'outline', 'soft', 'ghost']) {
+      const r = root({ Appearance: appearance })
+      expect(r.strokeWidth).toBe(appearance === 'outline' ? 'stroke.control' : 'stroke.none')
+      expect(r.highlight).toBeUndefined()
+    }
+  })
+  it('sizes and shapes follow the Figma roles', () => {
+    expect(root({ Size: 'xl' })).toMatchObject({ height: 'size.fab', width: 'size.fab' })
+    expect(resolveRecipe(COMPONENT_RECIPES.CloseButton, { Size: 'xl' }).icon).toMatchObject({ width: 'icon.large' })
+    expect(root({ Shape: 'square' }).radius).toBe('radius.none')
+    expect(root({ Shape: 'rounded' }).radius).toBe('radius.action')
+    expect(root({ Shape: 'pill' }).radius).toBe('radius.pill')
+  })
+  it('paints the stack as gradient layers over the base fill, and the halo outside', () => {
+    const css = recipeCss(COMPONENT_RECIPES.CloseButton)
+    expect(css).toContain('background: linear-gradient(var(--color-surface-inverse-muted), var(--color-surface-inverse-muted)), linear-gradient(var(--color-surface-inverse-muted), var(--color-surface-inverse-muted)), var(--color-surface-inverse)')
+    expect(css).toContain('box-shadow: 0 0 0 var(--stroke-focus, 2px) var(--color-border-subtle)')
+  })
+})

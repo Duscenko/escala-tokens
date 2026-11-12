@@ -73,6 +73,11 @@ export const OVERVIEWS: Record<string, Overview> = {
     ],
     each('Size', ['xs', 'sm', 'default', 'lg'], { Variant: 'secondary', Appearance: 'outline' }),
   ],
+  CloseButton: [
+    each('Appearance', ['soft', 'solid', 'outline', 'ghost']),
+    each('Shape', ['pill', 'rounded', 'square']),
+    each('Size', ['xs', 'sm', 'default', 'lg', 'xl']),
+  ],
   ButtonGroup: [each('Orientation', ['horizontal', 'vertical'])],
   ToggleGroup: [
     each('Variant', ['default', 'outline']),

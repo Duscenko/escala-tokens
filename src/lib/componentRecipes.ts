@@ -32,7 +32,7 @@
  *   none                         → nothing painted
  */
 
-import { BUTTON, ICON_BUTTON, BUTTON_GROUP, SOCIAL_LOGIN_BUTTON, APP_STORE_BADGE, TOGGLE_GROUP, TOGGLE } from './recipes/actions.js'
+import { BUTTON, ICON_BUTTON, CLOSE_BUTTON, BUTTON_GROUP, SOCIAL_LOGIN_BUTTON, APP_STORE_BADGE, TOGGLE_GROUP, TOGGLE } from './recipes/actions.js'
 import {
   INPUT, TEXTAREA, INPUT_GROUP, INPUT_STEPPER, INPUT_TAG, SELECT, COMBOBOX, INPUT_OTP,
   CHECKBOX, RADIO_GROUP, SWITCH, SLIDER, FIELD, LABEL, PASSWORD_STRENGTH, FILE_UPLOAD, DROPZONE, NATIVE_SELECT, CALENDAR,
@@ -56,6 +56,7 @@ import { NONE, type ComponentRecipe, type AxisValues, type SlotMap, type TokenRe
 export const COMPONENT_RECIPES: Record<string, ComponentRecipe> = {
   Button: BUTTON,
   IconButton: ICON_BUTTON,
+  CloseButton: CLOSE_BUTTON,
   ButtonGroup: BUTTON_GROUP,
   SocialLoginButton: SOCIAL_LOGIN_BUTTON,
   AppStoreBadge: APP_STORE_BADGE,

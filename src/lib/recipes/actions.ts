@@ -138,6 +138,130 @@ export const ICON_BUTTON: ComponentRecipe = {
   ],
 }
 
+// ── CloseButton ────────────────────────────────────────────────────────────
+// The Figma `CloseButton` set (design-plans/close-button-contract.md): a dismiss
+// control, one fixed glyph, Appearance × Shape × Size × State × Variant. Its own
+// grammar, not Button's: `soft` is the default, `Shape` rounds the corner, `Variant`
+// is `default` or `inverse` (for a dark chip), there is no Loading, and no solid
+// highlight. Hover and Pressed are the same translucent fill STACKED over the
+// rest fill (`overlay`, `overlay2`), as the file draws them — not a role of their
+// own. Colour is the same at every Shape and Size (measured on all 600 variants).
+
+/** The options in the order the Figma file lists them. */
+export const CLOSE_BUTTON_APPEARANCES = ['solid', 'outline', 'soft', 'ghost'] as const
+export const CLOSE_BUTTON_SHAPES = ['rounded', 'pill', 'square'] as const
+export const CLOSE_BUTTON_SIZES = ['sm', 'lg', 'xl', 'xs', 'default'] as const
+export const CLOSE_BUTTON_VARIANTS = ['default', 'inverse'] as const
+const CLOSE_STATES = ['Default', 'Hover', 'Pressed', 'Focused', 'Disabled'] as const
+
+/** What one Variant · Appearance paints, state by state: [rest, hover, pressed]. */
+interface ClosePaint {
+  ink: [string, string, string]
+  /** The fill under everything, per state (`none` = transparent). */
+  fill: [string, string, string]
+  /** Translucent fills laid over `fill`, per state (at most two). */
+  over: [string[], string[], string[]]
+  /** An outline's resting edge (1px). */
+  edge?: string
+  /** The 2px edge Focused draws INSIDE the control (outline and ghost only). */
+  focusEdge?: string
+  /** The 2px halo Focused draws OUTSIDE. */
+  halo: string
+}
+const same3 = <T,>(v: T): [T, T, T] => [v, v, v]
+const NO_OVER: [string[], string[], string[]] = [[], [], []]
+const MUTED = 'color.surface.inverse-muted'
+
+const CLOSE: Record<string, Record<string, ClosePaint>> = {
+  default: {
+    soft: {
+      ink: same3(c('content.on-secondary')), fill: [c('action.secondary.default'), c('action.secondary.hover'), c('action.secondary.pressed')],
+      over: NO_OVER, halo: c('border.subtle'),
+    },
+    solid: {
+      ink: same3(c('content.inverse')), fill: same3(c('surface.inverse')),
+      over: [[], [MUTED], [MUTED, MUTED]], halo: c('border.subtle'),
+    },
+    outline: {
+      ink: same3(c('content.primary')), fill: [NONE, c('action.ghost.hover'), c('action.ghost.pressed')],
+      over: NO_OVER, edge: c('border.control'), focusEdge: c('border.strong'), halo: c('border.subtle'),
+    },
+    ghost: {
+      ink: [c('content.secondary'), c('content.primary'), c('content.primary')], fill: [NONE, c('action.ghost.hover'), c('action.ghost.pressed')],
+      over: NO_OVER, focusEdge: c('border.strong'), halo: c('border.subtle'),
+    },
+  },
+  inverse: {
+    soft: {
+      ink: same3(c('content.inverse')), fill: same3(MUTED),
+      over: [[], [MUTED], [MUTED, MUTED]], halo: MUTED,
+    },
+    solid: {
+      ink: same3(c('content.primary')), fill: same3(c('surface.page')),
+      over: [[], [c('action.ghost.hover')], [c('action.ghost.pressed')]], halo: MUTED,
+    },
+    outline: {
+      ink: same3(c('content.inverse')), fill: [NONE, MUTED, MUTED],
+      over: [[], [], [MUTED]], edge: c('border.inverse'), focusEdge: c('border.inverse'), halo: MUTED,
+    },
+    ghost: {
+      ink: [c('content.inverse-secondary'), c('content.inverse'), c('content.inverse')], fill: [NONE, MUTED, MUTED],
+      over: [[], [], [MUTED]], focusEdge: c('border.inverse'), halo: MUTED,
+    },
+  },
+}
+
+function closePaint(variant: string, appearance: string, state: string): SlotMap {
+  const k = CLOSE[variant][appearance]
+  const strokeWidth = appearance === 'outline' ? 'stroke.control' : 'stroke.none'
+  if (state === 'Disabled') {
+    return {
+      root: {
+        fill: appearance === 'solid' || appearance === 'soft' ? c('action.disabled.default') : NONE,
+        stroke: appearance === 'outline' ? c('border.control') : NONE,
+        text: c('content.disabled'),
+        strokeWidth,
+      },
+    }
+  }
+  const step = state === 'Pressed' ? 2 : state === 'Hover' ? 1 : 0
+  const focused = state === 'Focused'
+  const rest = focused ? 0 : step
+  const root: SlotProps = { fill: k.fill[rest], text: k.ink[rest], strokeWidth }
+  const over = k.over[rest]
+  if (over[0]) root.overlay = over[0]
+  if (over[1]) root.overlay2 = over[1]
+  if (appearance === 'outline') root.stroke = k.edge!
+  if (focused) {
+    // outline · ghost: a 2px edge inside + the halo; soft · solid: the halo alone.
+    if (k.focusEdge) { root.focus = k.focusEdge; root.ring = k.halo } else root.halo = k.halo
+  }
+  return { root }
+}
+
+const CLOSE_SIZE: Record<string, { box: string; icon: string }> = {
+  xs: { box: 'size.hit', icon: 'icon.small' },
+  sm: { box: 'size.compact', icon: 'icon.small' },
+  default: { box: 'size.control', icon: 'icon.medium' },
+  lg: { box: 'size.touch', icon: 'icon.large' },
+  xl: { box: 'size.fab', icon: 'icon.large' },
+}
+const CLOSE_RADIUS: Record<string, string> = { rounded: 'radius.action', pill: 'radius.pill', square: 'radius.none' }
+
+export const CLOSE_BUTTON: ComponentRecipe = {
+  key: 'CloseButton',
+  slots: ['root', 'icon'],
+  defaults: { Appearance: 'soft', Shape: 'pill', Size: 'default', State: 'Default', Variant: 'default' },
+  parts: [
+    part({ Shape: CLOSE_BUTTON_SHAPES }, (shape) => ({ root: { radius: CLOSE_RADIUS[shape] } })),
+    part({ Size: CLOSE_BUTTON_SIZES }, (size) => ({
+      root: { height: CLOSE_SIZE[size].box, width: CLOSE_SIZE[size].box, paddingX: 'spacing.0' },
+      icon: { width: CLOSE_SIZE[size].icon, height: CLOSE_SIZE[size].icon },
+    })),
+    part({ Variant: CLOSE_BUTTON_VARIANTS, Appearance: CLOSE_BUTTON_APPEARANCES, State: CLOSE_STATES }, (v, a, s) => closePaint(v, a, s)),
+  ],
+}
+
 // ── ButtonGroup ────────────────────────────────────────────────────────────
 // shadcn's group: Buttons attached edge to edge. The buttons paint themselves
 // (Button recipe); the group owns the separator and the text segment.

@@ -5,6 +5,7 @@ import { iconForControlStep } from '../../../../lib/previewTokens'
 import { useI18n } from '../../../../lib/i18n'
 import { Button as SkButton, buttonAxes, type ButtonAppearance, type ButtonSize, type ButtonVariant } from '../../../escala-ui/button'
 import { IconButton as SkIconButton } from '../../../escala-ui/icon-button'
+import { CloseButton as SkCloseButton, type CloseButtonAppearance, type CloseButtonShape, type CloseButtonSize, type CloseButtonState, type CloseButtonVariant } from '../../../escala-ui/close-button'
 import { ButtonGroup as SkButtonGroup, ButtonGroupSeparator as SkButtonGroupSeparator, type ButtonGroupOrientation } from '../../../escala-ui/button-group'
 import { SocialLoginButton as SkSocialLoginButton, type SocialProvider, PROVIDER_NAME } from '../../../escala-ui/social-login-button'
 import { AppStoreBadge as SkAppStoreBadge, type Store } from '../../../escala-ui/app-store-badge'
@@ -64,6 +65,20 @@ export function SkeletonIconButtonSpecimen({ t, v, icons, children }: SpecimenPr
         forceState={(v.State ?? 'Default') as 'Default'}
         aria-label={typeof children === 'string' ? children : 'Home'}
         icon={loading ? <SpinnerGlyph px={iconPx} /> : <PreviewIcon prefix={icons?.prefix} concept={icons?.leadingConcept ?? ICON_SLOTS.Button.leading} size={iconPx} />}
+      />
+    </RecipeScope>
+  )
+}
+
+export function SkeletonCloseButtonSpecimen({ t, v }: SpecimenProps) {
+  return (
+    <RecipeScope t={t}>
+      <SkCloseButton
+        appearance={(v.Appearance ?? 'soft') as CloseButtonAppearance}
+        shape={(v.Shape ?? 'pill') as CloseButtonShape}
+        size={(v.Size ?? 'default') as CloseButtonSize}
+        variant={(v.Variant ?? 'default') as CloseButtonVariant}
+        forceState={(v.State ?? 'Default') as CloseButtonState}
       />
     </RecipeScope>
   )

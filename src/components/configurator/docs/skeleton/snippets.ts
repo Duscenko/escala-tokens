@@ -182,6 +182,14 @@ export const SKELETON_SNIPPETS: Record<string, Snippet> = {
     const flags = `${v.State === 'Disabled' ? ' disabled' : ''}${v.State === 'Loading' ? ' loading' : ''}`
     return `import { IconButton } from "@/components/ui/icon-button"\n\n<IconButton${variant}${appearance}${size}${flags} aria-label="Home" icon={<${ICON_COMPONENT[icons?.leadingConcept ?? ICON_SLOTS.Button.leading]} />} />`
   },
+  CloseButton: (v) => {
+    const appearance = v.Appearance && v.Appearance !== 'soft' ? ` appearance="${v.Appearance}"` : ''
+    const shape = v.Shape && v.Shape !== 'pill' ? ` shape="${v.Shape}"` : ''
+    const size = v.Size && v.Size !== 'default' ? ` size="${v.Size}"` : ''
+    const variant = v.Variant && v.Variant !== 'default' ? ` variant="${v.Variant}"` : ''
+    const flags = v.State === 'Disabled' ? ' disabled' : ''
+    return `import { CloseButton } from "@/components/ui/close-button"\n\n<CloseButton${appearance}${shape}${size}${variant}${flags} aria-label="Close" />`
+  },
   Input: (v, icons) => {
     const flags = `${v.State === 'Error' ? ' aria-invalid' : ''}${v.State === 'Disabled' ? ' disabled' : ''}`
     if (icons?.leading || icons?.trailing) {

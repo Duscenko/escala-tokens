@@ -14,6 +14,13 @@ export const RECIPE_PROPS = [
   // The top highlight of a solid control (Figma: an inner shadow 0 · 2 · 0
   // painted `Elevation/highlight`). Its value is a colour role.
   'highlight',
+  // Fills stacked OVER `fill` (Figma draws a CloseButton's hover / pressed as
+  // the same translucent fill laid on top once or twice). Each is a colour
+  // role; `overlay` sits on `fill`, `overlay2` on `overlay`.
+  'overlay', 'overlay2',
+  // A focus ring fully OUTSIDE the control, `stroke.focus` wide, with no edge
+  // of its own (Figma's CloseButton · soft / solid · Focused). A colour role.
+  'halo',
 ] as const
 export type RecipeProp = (typeof RECIPE_PROPS)[number]
 export type SlotProps = Partial<Record<RecipeProp, TokenRef>>

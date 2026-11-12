@@ -172,9 +172,14 @@ describe.skipIf(!existsSync(pluginFile))('plugin ↔ web recipe parity', () => {
     const plugin = await import(/* @vite-ignore */ pluginFile)
     const code = readFileSync(pluginCode, 'utf8')
     const table = serializeRecipes()
-    expect(Object.keys(plugin.RECIPE_BUILDERS).sort()).toEqual(Object.keys(COMPONENT_RECIPES).sort())
+    // The plugin is frozen for components (owner, 2026-11-12): a component built
+    // from the Figma file after that day is web + Storybook only and has no
+    // builder here. Each entry is a decision, not a gap to close.
+    const WEB_ONLY = new Set(['CloseButton'])
+    const webAndPlugin = Object.keys(COMPONENT_RECIPES).filter((key) => !WEB_ONLY.has(key))
+    expect(Object.keys(plugin.RECIPE_BUILDERS).sort()).toEqual(webAndPlugin.sort())
     const gaps: Record<string, string[]> = {}
-    for (const key of Object.keys(COMPONENT_RECIPES)) {
+    for (const key of webAndPlugin) {
       const g = plugin.anatomyGaps(code, table, key)
       if (g.length) gaps[key] = g
     }

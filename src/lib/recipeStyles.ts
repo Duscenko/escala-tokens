@@ -74,7 +74,26 @@ function declarations(props: SlotProps): string[] {
   for (const [prop, ref] of Object.entries(props) as [RecipeProp, string][]) {
     if (!ref) continue
     switch (prop) {
-      case 'fill': out.push(`background: ${color(ref)}`); break
+      case 'fill': {
+        // Stacked fills (`overlay`, `overlay2`) are gradient layers of one colour
+        // over the base: Figma's fills array, top layer first in CSS.
+        const layers = [props.overlay2, props.overlay].filter((r): r is string => Boolean(r) && r !== 'none')
+        const stack = layers.map((l) => `linear-gradient(${color(l)}, ${color(l)})`)
+        out.push(`background: ${[...stack, color(ref)].join(', ')}`)
+        break
+      }
+      case 'overlay':
+      case 'overlay2':
+        break // painted by `fill`
+      // A halo fully outside the control (no edge): Figma's `focus-ring` frame,
+      // `stroke.focus` wide, stroked OUTSIDE. The transparent outline is what
+      // forced-colors mode paints instead.
+      case 'halo': {
+        if (ref === 'none') break
+        const lit = surfaceShadows(props, v).map((sh) => `, ${sh}`).join('')
+        out.push(`box-shadow: 0 0 0 ${HALO} ${v(ref)}${lit}`, `outline: ${HALO} solid transparent`)
+        break
+      }
       case 'stroke': out.push(`border-color: ${color(ref)}`); break
       case 'text': out.push(`color: ${color(ref)}`); break
       // A second colour a part's artwork reads (a file icon's page fill).
@@ -117,6 +136,7 @@ function declarations(props: SlotProps): string[] {
       // shadow above; otherwise it is the box-shadow (`none` clears it).
       case 'highlight': {
         if (props.focus && props.focus !== 'none') break
+        if (props.halo && props.halo !== 'none') break
         const shadows = surfaceShadows(props, v)
         out.push(`box-shadow: ${shadows.length ? shadows.join(', ') : 'none'}`)
         break

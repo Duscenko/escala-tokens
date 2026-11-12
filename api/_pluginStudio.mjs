@@ -3998,6 +3998,34 @@ var init_componentCatalogue = __esm({
         accessibility: "Native <button> with a required aria-label (there is no visible text). Disabled sets aria-disabled; loading sets aria-busy."
       },
       {
+        key: "CloseButton",
+        label: "Close Button",
+        category: "Button & Actions",
+        description: "The dismiss control for alerts, toasts, dialogs and tags: one X in a square. Soft by default, with solid, outline and ghost; rounded, pill or square corners; five sizes; and an inverse variant for a dark chip.",
+        usage: 'Use in the corner of anything the person can put away. Always give it an aria-label (it defaults to "Close"); use the inverse variant on an inverse surface such as a tooltip or snackbar. A dismiss that needs words is a Button.',
+        // The Figma file's axes, value for value, in the file's own option order
+        // (spec/figma-components.json). State is a Figma axis only: in code it is
+        // pseudo-classes (forceState pins it in docs). The set has no Loading.
+        axes: [
+          { name: "Appearance", values: ["solid", "outline", "soft", "ghost"] },
+          { name: "Shape", values: ["rounded", "pill", "square"] },
+          { name: "Size", values: ["sm", "lg", "xl", "xs", "default"] },
+          { name: "State", values: ["Default", "Hover", "Pressed", "Focused", "Disabled"] },
+          { name: "Variant", values: ["default", "inverse"] }
+        ],
+        figmaSets: ["CloseButton"],
+        props: [
+          { name: "appearance", type: '"solid" | "outline" | "soft" | "ghost"', description: "Style: an inverse fill, an edge, a soft fill (default), or nothing until hover." },
+          { name: "shape", type: '"rounded" | "pill" | "square"', description: "Corner: the action radius, fully round (default), or none." },
+          { name: "size", type: '"sm" | "lg" | "xl" | "xs" | "default"', description: "Square side from the Size roles (24 \xB7 32 \xB7 40 \xB7 48 \xB7 56)." },
+          { name: "variant", type: '"default" | "inverse"', description: "Inverse is for a control sitting on an inverse surface." },
+          { name: "icon", type: "ReactNode", description: "Another glyph for a system on a different icon library. Defaults to Phosphor's X." },
+          { name: "aria-label", type: "string", description: 'The accessible name; defaults to "Close".' },
+          { name: "disabled", type: "boolean", description: "Prevents interaction and applies the disabled roles." }
+        ],
+        accessibility: 'Native <button> with an aria-label (there is no visible text), "Close" by default. Disabled sets aria-disabled. The glyph is decorative (aria-hidden).'
+      },
+      {
         key: "ButtonGroup",
         label: "Button Group",
         category: "Button & Actions",
@@ -8037,7 +8065,36 @@ function buttonPaint(variant, appearance, state2, iconOnly = false) {
     }
   };
 }
-var BUTTON_VARIANTS, BUTTON_APPEARANCES, BUTTON_SIZES, BUTTON_STATES, SOLID, QUIET, LINK, strokeOf, BUTTON_HEIGHT, BUTTON_GAP, BUTTON, ICON_BUTTON, BUTTON_GROUP, SOCIAL_GEOMETRY, SOCIAL_LOGIN_BUTTON, APP_STORE_BADGE, TOGGLE_GROUP_VARIANTS, TOGGLE_GROUP_SIZES, TOGGLE_HEIGHT, TOGGLE_GROUP, TOGGLE;
+function closePaint(variant, appearance, state2) {
+  const k = CLOSE[variant][appearance];
+  const strokeWidth = appearance === "outline" ? "stroke.control" : "stroke.none";
+  if (state2 === "Disabled") {
+    return {
+      root: {
+        fill: appearance === "solid" || appearance === "soft" ? c("action.disabled.default") : NONE,
+        stroke: appearance === "outline" ? c("border.control") : NONE,
+        text: c("content.disabled"),
+        strokeWidth
+      }
+    };
+  }
+  const step = state2 === "Pressed" ? 2 : state2 === "Hover" ? 1 : 0;
+  const focused = state2 === "Focused";
+  const rest = focused ? 0 : step;
+  const root = { fill: k.fill[rest], text: k.ink[rest], strokeWidth };
+  const over = k.over[rest];
+  if (over[0]) root.overlay = over[0];
+  if (over[1]) root.overlay2 = over[1];
+  if (appearance === "outline") root.stroke = k.edge;
+  if (focused) {
+    if (k.focusEdge) {
+      root.focus = k.focusEdge;
+      root.ring = k.halo;
+    } else root.halo = k.halo;
+  }
+  return { root };
+}
+var BUTTON_VARIANTS, BUTTON_APPEARANCES, BUTTON_SIZES, BUTTON_STATES, SOLID, QUIET, LINK, strokeOf, BUTTON_HEIGHT, BUTTON_GAP, BUTTON, ICON_BUTTON, CLOSE_BUTTON_APPEARANCES, CLOSE_BUTTON_SHAPES, CLOSE_BUTTON_SIZES, CLOSE_BUTTON_VARIANTS, CLOSE_STATES, same3, NO_OVER, MUTED, CLOSE, CLOSE_SIZE, CLOSE_RADIUS, CLOSE_BUTTON, BUTTON_GROUP, SOCIAL_GEOMETRY, SOCIAL_LOGIN_BUTTON, APP_STORE_BADGE, TOGGLE_GROUP_VARIANTS, TOGGLE_GROUP_SIZES, TOGGLE_HEIGHT, TOGGLE_GROUP, TOGGLE;
 var init_actions = __esm({
   "src/lib/recipes/actions.ts"() {
     init_helpers();
@@ -8089,6 +8146,95 @@ var init_actions = __esm({
           root: { height: BUTTON_HEIGHT[size], width: BUTTON_HEIGHT[size], paddingX: "spacing.0" }
         })),
         part({ Variant: BUTTON_VARIANTS, Appearance: BUTTON_APPEARANCES, State: BUTTON_STATES }, (v, a2, s) => buttonPaint(v, a2, s, true))
+      ]
+    };
+    CLOSE_BUTTON_APPEARANCES = ["solid", "outline", "soft", "ghost"];
+    CLOSE_BUTTON_SHAPES = ["rounded", "pill", "square"];
+    CLOSE_BUTTON_SIZES = ["sm", "lg", "xl", "xs", "default"];
+    CLOSE_BUTTON_VARIANTS = ["default", "inverse"];
+    CLOSE_STATES = ["Default", "Hover", "Pressed", "Focused", "Disabled"];
+    same3 = (v) => [v, v, v];
+    NO_OVER = [[], [], []];
+    MUTED = "color.surface.inverse-muted";
+    CLOSE = {
+      default: {
+        soft: {
+          ink: same3(c("content.on-secondary")),
+          fill: [c("action.secondary.default"), c("action.secondary.hover"), c("action.secondary.pressed")],
+          over: NO_OVER,
+          halo: c("border.subtle")
+        },
+        solid: {
+          ink: same3(c("content.inverse")),
+          fill: same3(c("surface.inverse")),
+          over: [[], [MUTED], [MUTED, MUTED]],
+          halo: c("border.subtle")
+        },
+        outline: {
+          ink: same3(c("content.primary")),
+          fill: [NONE, c("action.ghost.hover"), c("action.ghost.pressed")],
+          over: NO_OVER,
+          edge: c("border.control"),
+          focusEdge: c("border.strong"),
+          halo: c("border.subtle")
+        },
+        ghost: {
+          ink: [c("content.secondary"), c("content.primary"), c("content.primary")],
+          fill: [NONE, c("action.ghost.hover"), c("action.ghost.pressed")],
+          over: NO_OVER,
+          focusEdge: c("border.strong"),
+          halo: c("border.subtle")
+        }
+      },
+      inverse: {
+        soft: {
+          ink: same3(c("content.inverse")),
+          fill: same3(MUTED),
+          over: [[], [MUTED], [MUTED, MUTED]],
+          halo: MUTED
+        },
+        solid: {
+          ink: same3(c("content.primary")),
+          fill: same3(c("surface.page")),
+          over: [[], [c("action.ghost.hover")], [c("action.ghost.pressed")]],
+          halo: MUTED
+        },
+        outline: {
+          ink: same3(c("content.inverse")),
+          fill: [NONE, MUTED, MUTED],
+          over: [[], [], [MUTED]],
+          edge: c("border.inverse"),
+          focusEdge: c("border.inverse"),
+          halo: MUTED
+        },
+        ghost: {
+          ink: [c("content.inverse-secondary"), c("content.inverse"), c("content.inverse")],
+          fill: [NONE, MUTED, MUTED],
+          over: [[], [], [MUTED]],
+          focusEdge: c("border.inverse"),
+          halo: MUTED
+        }
+      }
+    };
+    CLOSE_SIZE = {
+      xs: { box: "size.hit", icon: "icon.small" },
+      sm: { box: "size.compact", icon: "icon.small" },
+      default: { box: "size.control", icon: "icon.medium" },
+      lg: { box: "size.touch", icon: "icon.large" },
+      xl: { box: "size.fab", icon: "icon.large" }
+    };
+    CLOSE_RADIUS = { rounded: "radius.action", pill: "radius.pill", square: "radius.none" };
+    CLOSE_BUTTON = {
+      key: "CloseButton",
+      slots: ["root", "icon"],
+      defaults: { Appearance: "soft", Shape: "pill", Size: "default", State: "Default", Variant: "default" },
+      parts: [
+        part({ Shape: CLOSE_BUTTON_SHAPES }, (shape) => ({ root: { radius: CLOSE_RADIUS[shape] } })),
+        part({ Size: CLOSE_BUTTON_SIZES }, (size) => ({
+          root: { height: CLOSE_SIZE[size].box, width: CLOSE_SIZE[size].box, paddingX: "spacing.0" },
+          icon: { width: CLOSE_SIZE[size].icon, height: CLOSE_SIZE[size].icon }
+        })),
+        part({ Variant: CLOSE_BUTTON_VARIANTS, Appearance: CLOSE_BUTTON_APPEARANCES, State: CLOSE_STATES }, (v, a2, s) => closePaint(v, a2, s))
       ]
     };
     BUTTON_GROUP = {
@@ -9899,6 +10045,7 @@ var init_componentRecipes = __esm({
     COMPONENT_RECIPES = {
       Button: BUTTON,
       IconButton: ICON_BUTTON,
+      CloseButton: CLOSE_BUTTON,
       ButtonGroup: BUTTON_GROUP,
       SocialLoginButton: SOCIAL_LOGIN_BUTTON,
       AppStoreBadge: APP_STORE_BADGE,
@@ -12783,7 +12930,7 @@ var init_useDesignStore = __esm({
         }),
         {
           name: "scalable-designs-store",
-          version: 107,
+          version: 108,
           migrate: (persisted, version) => {
             if (persisted) {
               delete persisted.styleDirection;
@@ -14089,6 +14236,19 @@ var init_useDesignStore = __esm({
               split(persisted);
               if (Array.isArray(persisted.savedSystems)) {
                 for (const sys of persisted.savedSystems) split(sys?.snapshot);
+              }
+            }
+            if (version < 108) {
+              const add2 = (state2) => {
+                if (!Array.isArray(state2?.selectedComponents)) return;
+                if (state2.selectedComponents.includes("IconButton") && !state2.selectedComponents.includes("CloseButton")) {
+                  const at = state2.selectedComponents.indexOf("IconButton") + 1;
+                  state2.selectedComponents.splice(at, 0, "CloseButton");
+                }
+              };
+              add2(persisted);
+              if (Array.isArray(persisted.savedSystems)) {
+                for (const sys of persisted.savedSystems) add2(sys?.snapshot);
               }
             }
             return persisted;

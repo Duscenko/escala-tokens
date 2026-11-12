@@ -10,9 +10,6 @@
     "FABGroup": {
       "status": "new"
     },
-    "CloseButton": {
-      "status": "new"
-    },
     "ButtonGroup": {
       "status": "rebuild"
     },

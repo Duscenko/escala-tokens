@@ -97,6 +97,35 @@ export const COMPONENTS: ComponentDef[] = [
     accessibility: 'Native <button> with a required aria-label (there is no visible text). Disabled sets aria-disabled; loading sets aria-busy.',
   },
   {
+    key: 'CloseButton',
+    label: 'Close Button',
+    category: 'Button & Actions',
+    description:
+      'The dismiss control for alerts, toasts, dialogs and tags: one X in a square. Soft by default, with solid, outline and ghost; rounded, pill or square corners; five sizes; and an inverse variant for a dark chip.',
+    usage: 'Use in the corner of anything the person can put away. Always give it an aria-label (it defaults to "Close"); use the inverse variant on an inverse surface such as a tooltip or snackbar. A dismiss that needs words is a Button.',
+    // The Figma file's axes, value for value, in the file's own option order
+    // (spec/figma-components.json). State is a Figma axis only: in code it is
+    // pseudo-classes (forceState pins it in docs). The set has no Loading.
+    axes: [
+      { name: 'Appearance', values: ['solid', 'outline', 'soft', 'ghost'] },
+      { name: 'Shape', values: ['rounded', 'pill', 'square'] },
+      { name: 'Size', values: ['sm', 'lg', 'xl', 'xs', 'default'] },
+      { name: 'State', values: ['Default', 'Hover', 'Pressed', 'Focused', 'Disabled'] },
+      { name: 'Variant', values: ['default', 'inverse'] },
+    ],
+    figmaSets: ['CloseButton'],
+    props: [
+      { name: 'appearance', type: '"solid" | "outline" | "soft" | "ghost"', description: 'Style: an inverse fill, an edge, a soft fill (default), or nothing until hover.' },
+      { name: 'shape', type: '"rounded" | "pill" | "square"', description: 'Corner: the action radius, fully round (default), or none.' },
+      { name: 'size', type: '"sm" | "lg" | "xl" | "xs" | "default"', description: 'Square side from the Size roles (24 · 32 · 40 · 48 · 56).' },
+      { name: 'variant', type: '"default" | "inverse"', description: 'Inverse is for a control sitting on an inverse surface.' },
+      { name: 'icon', type: 'ReactNode', description: 'Another glyph for a system on a different icon library. Defaults to Phosphor\'s X.' },
+      { name: 'aria-label', type: 'string', description: 'The accessible name; defaults to "Close".' },
+      { name: 'disabled', type: 'boolean', description: 'Prevents interaction and applies the disabled roles.' },
+    ],
+    accessibility: 'Native <button> with an aria-label (there is no visible text), "Close" by default. Disabled sets aria-disabled. The glyph is decorative (aria-hidden).',
+  },
+  {
     key: 'ButtonGroup',
     label: 'Button Group',
     category: 'Button & Actions',
