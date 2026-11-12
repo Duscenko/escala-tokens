@@ -192,8 +192,8 @@ export const SKELETON_SNIPPETS: Record<string, Snippet> = {
     `import { Switch } from "@/components/ui/switch"\nimport { Field, FieldLabel } from "@/components/ui/field"\n\n<Field orientation="horizontal">\n  <Switch id="notifications"${v.Size === 'sm' ? ' size="sm"' : ''} defaultChecked />\n  <FieldLabel htmlFor="notifications">Notifications</FieldLabel>\n</Field>`,
   Slider: () =>
     `import { Slider } from "@/components/ui/slider"\n\n<Slider label="Border radius" defaultValue={60} onValueChange={setRadius} />`,
-  FileUpload: () =>
-    `import { FileUpload, FileUploadFile } from "@/components/ui/file-upload"\n\n<FileUpload>\n  <Button variant="outline">Upload file</Button>\n  <FileUploadFile name="brand-guide.pdf" kind="PDF" progress={80} />\n</FileUpload>`,
+  FileUpload: (v) =>
+    `import { FileUpload, FileUploadItem } from "@/components/ui/file-upload"\n\n<FileUpload${v.Size && v.Size !== 'default' ? ` size="${v.Size}"` : ''}${v.Layout === 'trigger' ? ' layout="trigger"' : ''} onFiles={upload} announcement={status}>\n  <FileUploadItem status="completed" name="brand-guidelines.pdf" onRemove={remove} />\n  <FileUploadItem status="uploading" name="Q3-financial-report.pdf" progress={48} />\n</FileUpload>`,
   FileUploadItem: (v) =>
     `import { FileUploadItem } from "@/components/ui/file-upload"\n\n<FileUploadItem${v.Size && v.Size !== 'default' ? ` size="${v.Size}"` : ''}\n  status="${v.Status ?? 'queued'}"\n  name="Q3-financial-report.pdf"${v.Status === 'uploading' ? '\n  progress={48}' : ''}\n  onRemove={remove}\n/>`,
   FileUploadDropzone: (v) =>

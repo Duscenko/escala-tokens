@@ -1,41 +1,10 @@
-// Escala components on the shadcn Button / Input / Progress skeleton:
-// FileUpload (a trigger and its files) and FileUploadDropzone (the Figma file's drop target).
-// Appearance: their recipes (FileUpload, FileUploadDropzone).
+// Escala components from the Figma file's FileUpload page: FileUpload (a FileUploadDropzone or a
+// trigger Button above a list of FileUploadItem rows), FileUploadDropzone and FileUploadItem.
+// Appearance: their recipes (FileUpload, FileUploadDropzone, FileUploadItem).
 import * as React from 'react'
 import { cn } from '../../lib/utils'
 import { Button } from './button'
 import { IconButton } from './icon-button'
-
-export interface FileUploadFileProps extends React.ComponentProps<'div'> {
-  name: string
-  /** Extension badge ("PDF"). */
-  kind?: string
-  /** 0–100; omit for a finished upload. */
-  progress?: number
-}
-
-function FileUploadFile({ name, kind, progress, className, ...props }: FileUploadFileProps) {
-  return (
-    <div data-slot="file-upload-file" data-part="FileUpload.file" className={cn('flex items-center', className)} {...props}>
-      {kind && <span data-part="FileUpload.badge">{kind}</span>}
-      <div className="flex min-w-0 flex-1 flex-col" style={{ gap: 'var(--spacing-1_5)' }}>
-        <div className="flex justify-between">
-          <span data-part="FileUpload.name" className="truncate">{name}</span>
-          {progress != null && <span data-part="FileUpload.meta">{progress}%</span>}
-        </div>
-        {progress != null && (
-          <div data-part="FileUpload.track" role="progressbar" aria-valuenow={progress} aria-valuemin={0} aria-valuemax={100}>
-            <div data-part="FileUpload.progress" className="h-full" style={{ width: `${progress}%` }} />
-          </div>
-        )}
-      </div>
-    </div>
-  )
-}
-
-function FileUpload({ className, ...props }: React.ComponentProps<'div'>) {
-  return <div data-slot="file-upload" data-escala="FileUpload" className={cn('flex flex-col', className)} {...props} />
-}
 
 // FileUploadDropzone — the Figma `FileUploadDropzone` set (design-plans/file-upload-dropzone-contract.md):
 // a dashed drop area (Size default · sm · lg × State Default · Hover · Dragging · Invalid · Disabled).
@@ -193,10 +162,14 @@ export interface FileUploadItemProps extends Omit<React.ComponentProps<'div'>, '
   onDownload?: () => void
 }
 
+/** FileUpload's Size, cascading to every row it holds (Figma: «Size … cascades to every item»). */
+const FileUploadSizeContext = React.createContext<FileUploadItemSize | null>(null)
+
 function FileUploadItem({
-  size = 'default', status = 'queued', name = 'Q3-financial-report.pdf', icon, completedActions = false,
+  size: sizeProp, status = 'queued', name = 'Q3-financial-report.pdf', icon, completedActions = false,
   progress, statusText, meta, onPause, onResume, onRemove, onRetry, onChange, onDownload, className, ...props
 }: FileUploadItemProps) {
+  const size = sizeProp ?? React.useContext(FileUploadSizeContext) ?? 'default'
   const copy = ITEM_COPY[status]
   const sm = size === 'sm'
   const btn = sm ? 'xs' : 'sm'
@@ -253,4 +226,77 @@ function FileUploadItem({
   )
 }
 
-export { FileUploadDropzone, FileUploadItem, FileUpload, FileUploadFile }
+const UPLOAD_SIMPLE = 'M224,144v64a8,8,0,0,1-8,8H40a8,8,0,0,1-8-8V144a8,8,0,0,1,16,0v56H208V144a8,8,0,0,1,16,0ZM93.66,77.66,120,51.31V144a8,8,0,0,0,16,0V51.31l26.34,26.35a8,8,0,0,0,11.32-11.32l-40-40a8,8,0,0,0-11.32,0l-40,40A8,8,0,0,0,93.66,77.66Z'
+const FILE = 'M213.66,82.34l-56-56A8,8,0,0,0,152,24H56A16,16,0,0,0,40,40V216a16,16,0,0,0,16,16H200a16,16,0,0,0,16-16V88A8,8,0,0,0,213.66,82.34ZM160,51.31,188.69,80H160ZM200,216H56V40h88V88a8,8,0,0,0,8,8h48V216Z'
+
+// FileUpload — the Figma `FileUpload` set (design-plans/file-upload-contract.md): Size default · sm ×
+// Layout dropzone · trigger. A FileUploadDropzone (lg at default, default at sm) or the system's
+// secondary Button «Upload files» above the Content slot: the FileUploadItem rows, which take this
+// Size unless they set their own. Keep `announcement` filled for the aria-live region (completed,
+// removed and failed files), as the set's description asks.
+export const FILE_UPLOAD_SIZES = ['default', 'sm'] as const
+export type FileUploadSize = (typeof FILE_UPLOAD_SIZES)[number]
+export const FILE_UPLOAD_LAYOUTS = ['dropzone', 'trigger'] as const
+export type FileUploadLayout = (typeof FILE_UPLOAD_LAYOUTS)[number]
+
+export interface FileUploadProps extends Omit<React.ComponentProps<'div'>, 'title'> {
+  /** Figma Size: row density, cascades to the rows. */
+  size?: FileUploadSize
+  /** Figma Layout: a FileUploadDropzone, or a single trigger Button. */
+  layout?: FileUploadLayout
+  /** Props for the dropzone (title, description, invalid…). */
+  dropzone?: Omit<FileUploadDropzoneProps, 'size' | 'onFiles' | 'accept' | 'multiple'>
+  /** The trigger Button's label (Layout trigger). */
+  triggerLabel?: React.ReactNode
+  accept?: string
+  multiple?: boolean
+  onFiles?: (files: File[]) => void
+  /** Text for the polite live region («brand-guidelines.pdf uploaded»). */
+  announcement?: React.ReactNode
+  /** Figma Content slot: the FileUploadItem rows. Omitted → the file's three sample rows. */
+  children?: React.ReactNode
+}
+
+function FileUpload({
+  size = 'default', layout = 'dropzone', dropzone, triggerLabel = 'Upload files', accept, multiple = true,
+  onFiles, announcement, children, className, ...props
+}: FileUploadProps) {
+  const input = React.useRef<HTMLInputElement>(null)
+  const take = (list: FileList | null) => { if (list && list.length) onFiles?.(Array.from(list)) }
+  const rows = children ?? (
+    <>
+      <FileUploadItem status="completed" name="brand-guidelines.pdf" />
+      <FileUploadItem status="uploading" name="Q3-financial-report.pdf" />
+      <FileUploadItem status="error" name="product-video.mp4" icon={<PhosphorGlyph d={FILE} />} />
+    </>
+  )
+  return (
+    <FileUploadSizeContext.Provider value={size}>
+      <div data-slot="file-upload" data-escala="FileUpload" data-size={size} data-layout={layout} className={cn('flex max-w-full flex-col', className)} {...props}>
+        {layout === 'dropzone' ? (
+          // The file's dropzone FILLS the column (its own 480 / 400 is the set's specimen width).
+          <FileUploadDropzone {...dropzone} size={size === 'sm' ? 'default' : 'lg'} accept={accept} multiple={multiple} onFiles={onFiles} className={cn('w-full!', dropzone?.className)} />
+        ) : (
+          <>
+            <input
+              ref={input} type="file" className="sr-only" tabIndex={-1} aria-hidden accept={accept} multiple={multiple}
+              onChange={(e) => { take(e.target.files); e.target.value = '' }}
+            />
+            <Button
+              type="button" variant="secondary" appearance="solid" size={size === 'sm' ? 'sm' : 'default'} className="self-start"
+              leading={<span data-part="FileUpload.triggerIcon" aria-hidden className="inline-flex shrink-0 [&>svg]:size-full"><PhosphorGlyph d={UPLOAD_SIMPLE} /></span>}
+              onClick={() => input.current?.click()}
+            >
+              {triggerLabel}
+            </Button>
+          </>
+        )}
+        {/* Rows FILL the column (the item's own 480 is its specimen width). */}
+        <div data-part="FileUpload.content" className="flex flex-col [&>[data-escala=FileUploadItem]]:w-full!">{rows}</div>
+        <div aria-live="polite" className="sr-only">{announcement}</div>
+      </div>
+    </FileUploadSizeContext.Provider>
+  )
+}
+
+export { FileUploadDropzone, FileUploadItem, FileUpload }

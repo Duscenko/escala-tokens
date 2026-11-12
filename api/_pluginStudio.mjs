@@ -4748,15 +4748,23 @@ var init_componentCatalogue = __esm({
         key: "FileUpload",
         label: "File Upload",
         category: "Form Controls",
-        description: "Upload trigger with per-file rows showing name, size, progress and remove.",
-        usage: "List accepted formats and the size limit up front. Allow removing queued files.",
-        axes: [],
-        figmaSets: ["File Upload"],
-        props: [
-          { name: "FileUpload", type: "component", description: "Container for the trigger and its files." },
-          { name: "FileUploadFile name / kind / progress", type: "string / string / number", description: "A file row: name, extension badge, 0\u2013100 progress." }
+        description: "Managed file upload: a FileUploadDropzone (or a single trigger Button) above a list of FileUploadItem rows; Size sets row density and cascades to every item.",
+        usage: "Use where people attach several files and need to follow each one. Layout dropzone when files are the task, trigger in a dense form. Keep the live region announcing completed, removed and failed files, and move focus to a neighbouring row when one is removed.",
+        // The Figma file's axes, value for value (design-plans/file-upload-contract.md).
+        axes: [
+          { name: "Size", values: ["default", "sm"] },
+          { name: "Layout", values: ["dropzone", "trigger"] }
         ],
-        accessibility: "Native file input behind the styled trigger. Progress announced via aria-live."
+        figmaSets: ["FileUpload"],
+        props: [
+          { name: "size", type: '"default" | "sm"', description: "Row density: dropzone lg / default, Button default / sm, rows default / sm." },
+          { name: "layout", type: '"dropzone" | "trigger"', description: 'A FileUploadDropzone, or the secondary Button "Upload files".' },
+          { name: "children", type: "ReactNode", description: "Figma Content slot: the FileUploadItem rows (the file's three sample rows when omitted)." },
+          { name: "dropzone", type: "FileUploadDropzoneProps", description: "Title, description, invalid\u2026 for the dropzone." },
+          { name: "onFiles / accept / multiple", type: "(files: File[]) => void / string / boolean", description: "Picked or dropped files." },
+          { name: "announcement", type: "ReactNode", description: "Text for the polite live region." }
+        ],
+        accessibility: "The dropzone's Button or the trigger opens the native picker. A polite live region announces completed, removed and failed files; move focus to a neighbouring row when one is removed."
       },
       {
         key: "FileUploadItem",
@@ -9228,7 +9236,7 @@ function fileUploadDropzonePaint(state2) {
     description: ink("content.secondary")
   };
 }
-var FIELD_FIXED, FIELD_FOCUS, INPUT_STATES, INPUT_SIZES, INPUT_TYPES, INPUT_GEOMETRY, INPUT_GLYPH, INPUT_STROKE_IN_LAYOUT, INPUT, TEXTAREA_SIZES, TEXTAREA_STATES, TEXTAREA_HEIGHT, TEXTAREA_PAD, TEXTAREA_FONT, TEXTAREA_GLYPH, TEXTAREA, DATE_PICKER_TRIGGER_SIZES, DATE_PICKER_TRIGGER_STATES, DPT_GEOMETRY, DATE_PICKER_TRIGGER, DATE_PICKER_POPOVER, CALENDAR_DAY_SIZES, CALENDAR_DAY_STATES, CALENDAR_DAY_VARIANTS, CALENDAR_DAY_GEOMETRY, CALENDAR_DAY, CALENDAR_HEADER_SIZES, CALENDAR_HEADER_GEOMETRY, SEVEN, CALENDAR_HEADER, CALENDAR_MONTH, CALENDAR_PRESETS_SIZES, CALENDAR_PRESETS_VARIANTS, CALENDAR_PRESETS_GEOMETRY, CALENDAR_PRESETS, CALENDAR_FOOTER_SIZES, CALENDAR_FOOTER_GEOMETRY, CALENDAR_FOOTER, GROUP_LIVE, GROUP_CONTROL, INPUT_GROUP, NUMBER_INPUT_SIZES, NUMBER_INPUT_STATES, NUMBER_BOX, NUMBER_INPUT, INPUT_TAG_LAYOUTS, INPUT_TAG_SIZES, INPUT_TAG_STATES, TAG_BOX, INPUT_TAG, INPUT_TAG_CHIP_SIZES, INPUT_TAG_CHIP_STATES, INPUT_TAG_CHIP_VARIANTS, CHIP_GEOMETRY, INPUT_TAG_CHIP, INPUT_TAG_OPTION_STATES, INPUT_TAG_OPTION, SELECT_GEOMETRY, MENU_ITEM, MENU_CONTENT, SELECT, COMBOBOX, INPUT_OTP_SIZES, INPUT_OTP_VARIANTS, INPUT_OTP_STATES, INPUT_OTP_SLOT_STATES, INPUT_OTP, OTP_SLOT_BOX, OTP_SLOT_FONT, OTP_CARET, INPUT_OTP_SLOT, CHECKBOX, RADIO_GROUP, SWITCH_GEOMETRY, SWITCH, SLIDER, FIELD_STATES, FIELD, LABEL, PASSWORD_STRENGTH_SIZES, PASSWORD_STRENGTHS, STRENGTH_SEGMENT, STRENGTH_LEVEL, PASSWORD_STRENGTH, METER_HEIGHT, PASSWORD_STRENGTH_METER, RULE_ICON, RULE_MARKER, RULE_FONT, PASSWORD_STRENGTH_RULE, FILE_UPLOAD, FILE_UPLOAD_DROPZONE_SIZES, FILE_UPLOAD_DROPZONE_STATES, FUD_GEOMETRY, FILE_UPLOAD_DROPZONE, FILE_UPLOAD_ITEM_SIZES, FILE_UPLOAD_ITEM_STATUSES, FILE_UPLOAD_ITEM, NATIVE_SELECT_STATES, NATIVE_SELECT, CALENDAR_SIZES, CALENDAR;
+var FIELD_FIXED, FIELD_FOCUS, INPUT_STATES, INPUT_SIZES, INPUT_TYPES, INPUT_GEOMETRY, INPUT_GLYPH, INPUT_STROKE_IN_LAYOUT, INPUT, TEXTAREA_SIZES, TEXTAREA_STATES, TEXTAREA_HEIGHT, TEXTAREA_PAD, TEXTAREA_FONT, TEXTAREA_GLYPH, TEXTAREA, DATE_PICKER_TRIGGER_SIZES, DATE_PICKER_TRIGGER_STATES, DPT_GEOMETRY, DATE_PICKER_TRIGGER, DATE_PICKER_POPOVER, CALENDAR_DAY_SIZES, CALENDAR_DAY_STATES, CALENDAR_DAY_VARIANTS, CALENDAR_DAY_GEOMETRY, CALENDAR_DAY, CALENDAR_HEADER_SIZES, CALENDAR_HEADER_GEOMETRY, SEVEN, CALENDAR_HEADER, CALENDAR_MONTH, CALENDAR_PRESETS_SIZES, CALENDAR_PRESETS_VARIANTS, CALENDAR_PRESETS_GEOMETRY, CALENDAR_PRESETS, CALENDAR_FOOTER_SIZES, CALENDAR_FOOTER_GEOMETRY, CALENDAR_FOOTER, GROUP_LIVE, GROUP_CONTROL, INPUT_GROUP, NUMBER_INPUT_SIZES, NUMBER_INPUT_STATES, NUMBER_BOX, NUMBER_INPUT, INPUT_TAG_LAYOUTS, INPUT_TAG_SIZES, INPUT_TAG_STATES, TAG_BOX, INPUT_TAG, INPUT_TAG_CHIP_SIZES, INPUT_TAG_CHIP_STATES, INPUT_TAG_CHIP_VARIANTS, CHIP_GEOMETRY, INPUT_TAG_CHIP, INPUT_TAG_OPTION_STATES, INPUT_TAG_OPTION, SELECT_GEOMETRY, MENU_ITEM, MENU_CONTENT, SELECT, COMBOBOX, INPUT_OTP_SIZES, INPUT_OTP_VARIANTS, INPUT_OTP_STATES, INPUT_OTP_SLOT_STATES, INPUT_OTP, OTP_SLOT_BOX, OTP_SLOT_FONT, OTP_CARET, INPUT_OTP_SLOT, CHECKBOX, RADIO_GROUP, SWITCH_GEOMETRY, SWITCH, SLIDER, FIELD_STATES, FIELD, LABEL, PASSWORD_STRENGTH_SIZES, PASSWORD_STRENGTHS, STRENGTH_SEGMENT, STRENGTH_LEVEL, PASSWORD_STRENGTH, METER_HEIGHT, PASSWORD_STRENGTH_METER, RULE_ICON, RULE_MARKER, RULE_FONT, PASSWORD_STRENGTH_RULE, FILE_UPLOAD_SIZES, FILE_UPLOAD, FILE_UPLOAD_DROPZONE_SIZES, FILE_UPLOAD_DROPZONE_STATES, FUD_GEOMETRY, FILE_UPLOAD_DROPZONE, FILE_UPLOAD_ITEM_SIZES, FILE_UPLOAD_ITEM_STATUSES, FILE_UPLOAD_ITEM, NATIVE_SELECT_STATES, NATIVE_SELECT, CALENDAR_SIZES, CALENDAR;
 var init_forms = __esm({
   "src/lib/recipes/forms.ts"() {
     init_helpers();
@@ -9903,27 +9911,18 @@ var init_forms = __esm({
         part({ Met: ["true", "false"] }, (met) => ({ label: { text: c(met === "true" ? "content.primary" : "content.secondary") } }))
       ]
     };
+    FILE_UPLOAD_SIZES = ["default", "sm"];
     FILE_UPLOAD = {
       key: "FileUpload",
-      slots: ["root", "file", "badge", "name", "meta", "track", "progress"],
-      defaults: {},
+      slots: ["root", "content", "triggerIcon"],
+      defaults: { Size: "default", Layout: "dropzone" },
       parts: [
         part({}, () => ({
-          root: { gap: "spacing.2_5" },
-          file: {
-            fill: c("surface.layer-1"),
-            stroke: c("border.subtle"),
-            strokeWidth: "stroke.control",
-            radius: "radius.action",
-            paddingX: "spacing.inset-control",
-            paddingY: "spacing.2_5",
-            gap: "spacing.2_5"
-          },
-          badge: { fill: c("surface.selected"), text: c("content.accent"), font: "type.caption", radius: "radius.control", paddingX: "spacing.1_5" },
-          name: { text: c("content.primary"), font: "type.caption" },
-          meta: { text: c("content.secondary"), font: "type.caption" },
-          track: { fill: c("surface.muted"), height: "spacing.1_5", radius: "radius.pill" },
-          progress: { fill: c("action.primary.default"), radius: "radius.pill" }
+          root: { width: "spacing.32+spacing.32+spacing.32+spacing.24", gap: "spacing.gap-group" },
+          content: { gap: "spacing.gap-control" }
+        })),
+        part({ Size: FILE_UPLOAD_SIZES }, (size) => ({
+          triggerIcon: { width: size === "sm" ? "icon.small" : "icon.medium", height: size === "sm" ? "icon.small" : "icon.medium" }
         }))
       ]
     };

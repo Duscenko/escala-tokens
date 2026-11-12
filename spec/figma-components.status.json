@@ -19,9 +19,6 @@
       "status": "part",
       "of": "Combobox"
     },
-    "FileUpload": {
-      "status": "rebuild"
-    },
     "Checkbox": {
       "status": "rebuild"
     },

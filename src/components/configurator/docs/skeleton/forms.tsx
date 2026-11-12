@@ -24,7 +24,7 @@ import {
   FieldLabel as SkFieldLabel, FieldLegend as SkFieldLegend, FieldSet as SkFieldSet, type FieldSize, type FieldState,
 } from '../../../escala-ui/field'
 import { PasswordStrength as SkPasswordStrength, PasswordStrengthMeter as SkPasswordStrengthMeter, PasswordStrengthRule as SkPasswordStrengthRule, type PasswordStrengthSize, type Strength } from '../../../escala-ui/password-strength'
-import { FileUploadItem as SkFileUploadItem, type FileUploadItemSize, type FileUploadItemStatus, FileUploadDropzone as SkFileUploadDropzone, type FileUploadDropzoneSize, type FileUploadDropzoneState, FileUpload as SkFileUpload, FileUploadFile as SkFileUploadFile } from '../../../escala-ui/file-upload'
+import { FileUploadItem as SkFileUploadItem, type FileUploadItemSize, type FileUploadItemStatus, FileUploadDropzone as SkFileUploadDropzone, type FileUploadDropzoneSize, type FileUploadDropzoneState, FileUpload as SkFileUpload, type FileUploadSize, type FileUploadLayout } from '../../../escala-ui/file-upload'
 import { Button as SkButton } from '../../../escala-ui/button'
 import { TextLink as SkTextLink } from '../../../escala-ui/text-link'
 import { RecipeScope } from './scope'
@@ -493,19 +493,24 @@ export function SkeletonPasswordStrengthRuleSpecimen({ t, v }: SpecimenProps) {
   )
 }
 
-export function SkeletonFileUploadSpecimen({ t, w }: SpecimenProps) {
-  // The board uploads: fills in steps, rests at 100 %, starts over.
+export function SkeletonFileUploadSpecimen({ t, v, w }: SpecimenProps) {
+  // The board (no axes) uploads one file: the trigger layout, sm, the bar filling in steps.
+  const board = v.Layout == null && v.Size == null
   const step = useAutoplayStep(UPLOAD_PLAY.values.length, UPLOAD_PLAY.ms)
   const progress = step == null ? 80 : UPLOAD_PLAY.values[step]
   return (
     <RecipeScope t={t}>
-      <SkFileUpload style={{ width: w ?? 300 }}>
-        <SkButton variant="outline" size="sm" style={{ alignSelf: 'flex-start' }}>
-          <PreviewIcon concept="upload" size={iconOf(14)} />
-          Upload file
-        </SkButton>
-        <SkFileUploadFile name="brand-guide.pdf" kind="PDF" progress={progress} />
-      </SkFileUpload>
+      {board ? (
+        <SkFileUpload size="sm" layout="trigger" style={{ width: w ?? 300 }}>
+          <SkFileUploadItem status="uploading" name="brand-guide.pdf" progress={progress} statusText={`Uploading · ${progress}%`} />
+        </SkFileUpload>
+      ) : (
+        <SkFileUpload
+          size={(v.Size ?? 'default') as FileUploadSize}
+          layout={(v.Layout ?? 'dropzone') as FileUploadLayout}
+          style={w != null ? { width: w } : undefined}
+        />
+      )}
     </RecipeScope>
   )
 }

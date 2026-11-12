@@ -1059,22 +1059,24 @@ export const PASSWORD_STRENGTH_RULE: ComponentRecipe = {
 
 // ── FileUpload ──────────────────────────────────────────────────
 
+// The Figma `FileUpload` set (design-plans/file-upload-contract.md, 994:1399, 4 variants: Size
+// default · sm × Layout dropzone · trigger): a 480 column (no variable: summed steps), gap-group
+// between the FileUploadDropzone (lg / default) or the secondary Button «Upload files» (default /
+// sm, UploadSimple leading) and the Content slot, whose FileUploadItem rows stack at gap-control.
+// It paints nothing of its own; the rows and the dropzone carry their recipes.
+export const FILE_UPLOAD_SIZES = ['default', 'sm'] as const
+export const FILE_UPLOAD_LAYOUTS = ['dropzone', 'trigger'] as const
 export const FILE_UPLOAD: ComponentRecipe = {
   key: 'FileUpload',
-  slots: ['root', 'file', 'badge', 'name', 'meta', 'track', 'progress'],
-  defaults: {},
+  slots: ['root', 'content', 'triggerIcon'],
+  defaults: { Size: 'default', Layout: 'dropzone' },
   parts: [
     part({}, () => ({
-      root: { gap: 'spacing.2_5' },
-      file: {
-        fill: c('surface.layer-1'), stroke: c('border.subtle'), strokeWidth: 'stroke.control',
-        radius: 'radius.action', paddingX: 'spacing.inset-control', paddingY: 'spacing.2_5', gap: 'spacing.2_5',
-      },
-      badge: { fill: c('surface.selected'), text: c('content.accent'), font: 'type.caption', radius: 'radius.control', paddingX: 'spacing.1_5' },
-      name: { text: c('content.primary'), font: 'type.caption' },
-      meta: { text: c('content.secondary'), font: 'type.caption' },
-      track: { fill: c('surface.muted'), height: 'spacing.1_5', radius: 'radius.pill' },
-      progress: { fill: c('action.primary.default'), radius: 'radius.pill' },
+      root: { width: 'spacing.32+spacing.32+spacing.32+spacing.24', gap: 'spacing.gap-group' },
+      content: { gap: 'spacing.gap-control' },
+    })),
+    part({ Size: FILE_UPLOAD_SIZES }, (size) => ({
+      triggerIcon: { width: size === 'sm' ? 'icon.small' : 'icon.medium', height: size === 'sm' ? 'icon.small' : 'icon.medium' },
     })),
   ],
 }

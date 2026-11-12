@@ -852,15 +852,23 @@ export const COMPONENTS: ComponentDef[] = [
     key: 'FileUpload',
     label: 'File Upload',
     category: 'Form Controls',
-    description: 'Upload trigger with per-file rows showing name, size, progress and remove.',
-    usage: 'List accepted formats and the size limit up front. Allow removing queued files.',
-    axes: [],
-    figmaSets: ['File Upload'],
-    props: [
-      { name: 'FileUpload', type: 'component', description: 'Container for the trigger and its files.' },
-      { name: 'FileUploadFile name / kind / progress', type: 'string / string / number', description: 'A file row: name, extension badge, 0–100 progress.' },
+    description: 'Managed file upload: a FileUploadDropzone (or a single trigger Button) above a list of FileUploadItem rows; Size sets row density and cascades to every item.',
+    usage: 'Use where people attach several files and need to follow each one. Layout dropzone when files are the task, trigger in a dense form. Keep the live region announcing completed, removed and failed files, and move focus to a neighbouring row when one is removed.',
+    // The Figma file's axes, value for value (design-plans/file-upload-contract.md).
+    axes: [
+      { name: 'Size', values: ['default', 'sm'] },
+      { name: 'Layout', values: ['dropzone', 'trigger'] },
     ],
-    accessibility: 'Native file input behind the styled trigger. Progress announced via aria-live.',
+    figmaSets: ['FileUpload'],
+    props: [
+      { name: 'size', type: '"default" | "sm"', description: 'Row density: dropzone lg / default, Button default / sm, rows default / sm.' },
+      { name: 'layout', type: '"dropzone" | "trigger"', description: 'A FileUploadDropzone, or the secondary Button "Upload files".' },
+      { name: 'children', type: 'ReactNode', description: 'Figma Content slot: the FileUploadItem rows (the file\'s three sample rows when omitted).' },
+      { name: 'dropzone', type: 'FileUploadDropzoneProps', description: 'Title, description, invalid… for the dropzone.' },
+      { name: 'onFiles / accept / multiple', type: '(files: File[]) => void / string / boolean', description: 'Picked or dropped files.' },
+      { name: 'announcement', type: 'ReactNode', description: 'Text for the polite live region.' },
+    ],
+    accessibility: 'The dropzone\'s Button or the trigger opens the native picker. A polite live region announces completed, removed and failed files; move focus to a neighbouring row when one is removed.',
   },
   {
     key: 'FileUploadItem',

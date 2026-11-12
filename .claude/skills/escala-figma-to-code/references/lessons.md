@@ -238,3 +238,13 @@ Every row cost a round trip with the owner. Check each one before calling a comp
 | A nested ProgressLine instance resized wider than its main component | Its bar stays 120 px (Value=50 of ITS 240) inside a 422 track; the label says 48 % | Draw the bar as the progress % of the track; report the file's artefact |
 | Hidden instances (`change`, `download` behind a BOOLEAN) have no children | `findOne(INSTANCE)` returned null | Read their `INSTANCE_SWAP` componentProperties (`Icon → icon/Swap`) instead |
 | Glyphs the shared component icon set lacks (FilePdf, CloudArrowUp, Swap…) | No `PreviewIcon` concept for them | Inline the Phosphor regular path (`@phosphor-icons/core/assets/regular/*.svg`) in the component, as calendar.tsx does |
+
+# Lessons from the FileUpload (2026-11-12)
+
+| Trap | What it looked like | The fix (where it lives) |
+|---|---|---|
+| A SLOT property (`Content`) whose default content is sample rows | — | `children`; the sample rows render only when no children arrive |
+| «Size cascades to every item» | Passing `size` to each row by hand | A context in the parent; the row's own `size` prop still wins |
+| Nested sets FILL the parent but carry a fixed specimen width in their recipe | Dropzone 400 / rows 480 inside a 480 column | `w-full!` on the nested root from the parent (important beats the recipe rule) |
+| A new story file 404s in a running Storybook («importers[path] is not a function») | The index had not picked it up yet | Reload the iframe once |
+| Rebuilt recipe drops the plugin's old slots | Parity `anatomyGaps` | New slots in `WEB_ONLY_SLOTS` (old ones were not demanded here) |

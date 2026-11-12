@@ -12886,54 +12886,43 @@
       "key": "FileUpload",
       "slots": [
         "root",
-        "file",
-        "badge",
-        "name",
-        "meta",
-        "track",
-        "progress"
+        "content",
+        "triggerIcon"
       ],
-      "defaults": {},
+      "defaults": {
+        "Size": "default",
+        "Layout": "dropzone"
+      },
       "parts": [
         {
           "axes": [],
           "values": {
             "": {
               "root": {
-                "gap": "spacing.2_5"
+                "width": "spacing.32+spacing.32+spacing.32+spacing.24",
+                "gap": "spacing.gap-group"
               },
-              "file": {
-                "fill": "color.surface.layer-1",
-                "stroke": "color.border.subtle",
-                "strokeWidth": "stroke.control",
-                "radius": "radius.action",
-                "paddingX": "spacing.inset-control",
-                "paddingY": "spacing.2_5",
-                "gap": "spacing.2_5"
-              },
-              "badge": {
-                "fill": "color.surface.selected",
-                "text": "color.content.accent",
-                "font": "type.caption",
-                "radius": "radius.control",
-                "paddingX": "spacing.1_5"
-              },
-              "name": {
-                "text": "color.content.primary",
-                "font": "type.caption"
-              },
-              "meta": {
-                "text": "color.content.secondary",
-                "font": "type.caption"
-              },
-              "track": {
-                "fill": "color.surface.muted",
-                "height": "spacing.1_5",
-                "radius": "radius.pill"
-              },
-              "progress": {
-                "fill": "color.action.primary.default",
-                "radius": "radius.pill"
+              "content": {
+                "gap": "spacing.gap-control"
+              }
+            }
+          }
+        },
+        {
+          "axes": [
+            "Size"
+          ],
+          "values": {
+            "default": {
+              "triggerIcon": {
+                "width": "icon.medium",
+                "height": "icon.medium"
+              }
+            },
+            "sm": {
+              "triggerIcon": {
+                "width": "icon.small",
+                "height": "icon.small"
               }
             }
           }
