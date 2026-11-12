@@ -4701,6 +4701,31 @@ var init_componentCatalogue = __esm({
         accessibility: 'Radix checkbox (role="checkbox", aria-checked mixed for indeterminate, Space toggles). Give it a label: CheckboxItem, or a Label with htmlFor.'
       },
       {
+        key: "CheckboxItem",
+        label: "Checkbox Item",
+        category: "Form Controls",
+        description: "Checkbox with a visible label and optional description; the whole row toggles the checkbox.",
+        usage: "Use standalone (terms, opt-ins) or as a row of a CheckboxGroup. Placement right for settings lists where the label leads. The description explains the consequence; keep the label short.",
+        // The Figma file's axes, value for value (design-plans/checkbox-item-contract.md).
+        axes: [
+          { name: "Size", values: ["xs", "sm", "default"] },
+          { name: "Checked", values: ["false", "true", "indeterminate"] },
+          { name: "State", values: ["Default", "Disabled", "Invalid"] },
+          { name: "Placement", values: ["left", "right"] },
+          { name: "Variant", values: ["default", "secondary", "critical", "success", "info", "inverse"] }
+        ],
+        figmaSets: ["CheckboxItem"],
+        props: [
+          { name: "label", type: "ReactNode", description: "Figma Label: the accessible name of the box." },
+          { name: "description", type: "ReactNode", description: "Figma Description (DescriptionVisible when given), wired with aria-describedby." },
+          { name: "size / variant", type: "Checkbox size / variant", description: "Passed to the Checkbox; Size also sets the label type (body-sm \xB7 body-md \xB7 body-lg)." },
+          { name: "placement", type: '"left" | "right"', description: "The box before or after the text." },
+          { name: "checked / defaultChecked / onCheckedChange", type: 'boolean | "indeterminate"', description: "As Checkbox." },
+          { name: "disabled / invalid", type: "boolean", description: "Disabled mutes the row; invalid turns the box edge critical." }
+        ],
+        accessibility: "The row is a <label> for the box, so a click anywhere toggles it and the label is its name; the description is aria-describedby."
+      },
+      {
         key: "RadioGroup",
         label: "Radio Group",
         category: "Form Controls",
@@ -9249,7 +9274,7 @@ function fileUploadDropzonePaint(state2) {
     description: ink("content.secondary")
   };
 }
-var FIELD_FIXED, FIELD_FOCUS, INPUT_STATES, INPUT_SIZES, INPUT_TYPES, INPUT_GEOMETRY, INPUT_GLYPH, INPUT_STROKE_IN_LAYOUT, INPUT, TEXTAREA_SIZES, TEXTAREA_STATES, TEXTAREA_HEIGHT, TEXTAREA_PAD, TEXTAREA_FONT, TEXTAREA_GLYPH, TEXTAREA, DATE_PICKER_TRIGGER_SIZES, DATE_PICKER_TRIGGER_STATES, DPT_GEOMETRY, DATE_PICKER_TRIGGER, DATE_PICKER_POPOVER, CALENDAR_DAY_SIZES, CALENDAR_DAY_STATES, CALENDAR_DAY_VARIANTS, CALENDAR_DAY_GEOMETRY, CALENDAR_DAY, CALENDAR_HEADER_SIZES, CALENDAR_HEADER_GEOMETRY, SEVEN, CALENDAR_HEADER, CALENDAR_MONTH, CALENDAR_PRESETS_SIZES, CALENDAR_PRESETS_VARIANTS, CALENDAR_PRESETS_GEOMETRY, CALENDAR_PRESETS, CALENDAR_FOOTER_SIZES, CALENDAR_FOOTER_GEOMETRY, CALENDAR_FOOTER, GROUP_LIVE, GROUP_CONTROL, INPUT_GROUP, NUMBER_INPUT_SIZES, NUMBER_INPUT_STATES, NUMBER_BOX, NUMBER_INPUT, INPUT_TAG_LAYOUTS, INPUT_TAG_SIZES, INPUT_TAG_STATES, TAG_BOX, INPUT_TAG, INPUT_TAG_CHIP_SIZES, INPUT_TAG_CHIP_STATES, INPUT_TAG_CHIP_VARIANTS, CHIP_GEOMETRY, INPUT_TAG_CHIP, INPUT_TAG_OPTION_STATES, INPUT_TAG_OPTION, SELECT_GEOMETRY, MENU_ITEM, MENU_CONTENT, SELECT, COMBOBOX, INPUT_OTP_SIZES, INPUT_OTP_VARIANTS, INPUT_OTP_STATES, INPUT_OTP_SLOT_STATES, INPUT_OTP, OTP_SLOT_BOX, OTP_SLOT_FONT, OTP_CARET, INPUT_OTP_SLOT, CHECKBOX_SIZES, CHECKBOX_CHECKED, CHECKBOX_STATES, CHECKBOX_VARIANTS, CHECKBOX_ON, CHECKBOX, RADIO_GROUP, SWITCH_GEOMETRY, SWITCH, SLIDER, FIELD_STATES, FIELD, LABEL, PASSWORD_STRENGTH_SIZES, PASSWORD_STRENGTHS, STRENGTH_SEGMENT, STRENGTH_LEVEL, PASSWORD_STRENGTH, METER_HEIGHT, PASSWORD_STRENGTH_METER, RULE_ICON, RULE_MARKER, RULE_FONT, PASSWORD_STRENGTH_RULE, FILE_UPLOAD_SIZES, FILE_UPLOAD, FILE_UPLOAD_DROPZONE_SIZES, FILE_UPLOAD_DROPZONE_STATES, FUD_GEOMETRY, FILE_UPLOAD_DROPZONE, FILE_UPLOAD_ITEM_SIZES, FILE_UPLOAD_ITEM_STATUSES, FILE_UPLOAD_ITEM, NATIVE_SELECT_STATES, NATIVE_SELECT, CALENDAR_SIZES, CALENDAR;
+var FIELD_FIXED, FIELD_FOCUS, INPUT_STATES, INPUT_SIZES, INPUT_TYPES, INPUT_GEOMETRY, INPUT_GLYPH, INPUT_STROKE_IN_LAYOUT, INPUT, TEXTAREA_SIZES, TEXTAREA_STATES, TEXTAREA_HEIGHT, TEXTAREA_PAD, TEXTAREA_FONT, TEXTAREA_GLYPH, TEXTAREA, DATE_PICKER_TRIGGER_SIZES, DATE_PICKER_TRIGGER_STATES, DPT_GEOMETRY, DATE_PICKER_TRIGGER, DATE_PICKER_POPOVER, CALENDAR_DAY_SIZES, CALENDAR_DAY_STATES, CALENDAR_DAY_VARIANTS, CALENDAR_DAY_GEOMETRY, CALENDAR_DAY, CALENDAR_HEADER_SIZES, CALENDAR_HEADER_GEOMETRY, SEVEN, CALENDAR_HEADER, CALENDAR_MONTH, CALENDAR_PRESETS_SIZES, CALENDAR_PRESETS_VARIANTS, CALENDAR_PRESETS_GEOMETRY, CALENDAR_PRESETS, CALENDAR_FOOTER_SIZES, CALENDAR_FOOTER_GEOMETRY, CALENDAR_FOOTER, GROUP_LIVE, GROUP_CONTROL, INPUT_GROUP, NUMBER_INPUT_SIZES, NUMBER_INPUT_STATES, NUMBER_BOX, NUMBER_INPUT, INPUT_TAG_LAYOUTS, INPUT_TAG_SIZES, INPUT_TAG_STATES, TAG_BOX, INPUT_TAG, INPUT_TAG_CHIP_SIZES, INPUT_TAG_CHIP_STATES, INPUT_TAG_CHIP_VARIANTS, CHIP_GEOMETRY, INPUT_TAG_CHIP, INPUT_TAG_OPTION_STATES, INPUT_TAG_OPTION, SELECT_GEOMETRY, MENU_ITEM, MENU_CONTENT, SELECT, COMBOBOX, INPUT_OTP_SIZES, INPUT_OTP_VARIANTS, INPUT_OTP_STATES, INPUT_OTP_SLOT_STATES, INPUT_OTP, OTP_SLOT_BOX, OTP_SLOT_FONT, OTP_CARET, INPUT_OTP_SLOT, CHECKBOX_SIZES, CHECKBOX_CHECKED, CHECKBOX_STATES, CHECKBOX_VARIANTS, CHECKBOX_ON, CHECKBOX, CHECKBOX_ITEM_SIZES, CHECKBOX_ITEM_STATES, CHECKBOX_ITEM_TYPE, CHECKBOX_ITEM, RADIO_GROUP, SWITCH_GEOMETRY, SWITCH, SLIDER, FIELD_STATES, FIELD, LABEL, PASSWORD_STRENGTH_SIZES, PASSWORD_STRENGTHS, STRENGTH_SEGMENT, STRENGTH_LEVEL, PASSWORD_STRENGTH, METER_HEIGHT, PASSWORD_STRENGTH_METER, RULE_ICON, RULE_MARKER, RULE_FONT, PASSWORD_STRENGTH_RULE, FILE_UPLOAD_SIZES, FILE_UPLOAD, FILE_UPLOAD_DROPZONE_SIZES, FILE_UPLOAD_DROPZONE_STATES, FUD_GEOMETRY, FILE_UPLOAD_DROPZONE, FILE_UPLOAD_ITEM_SIZES, FILE_UPLOAD_ITEM_STATUSES, FILE_UPLOAD_ITEM, NATIVE_SELECT_STATES, NATIVE_SELECT, CALENDAR_SIZES, CALENDAR;
 var init_forms = __esm({
   "src/lib/recipes/forms.ts"() {
     init_helpers();
@@ -9775,6 +9800,33 @@ var init_forms = __esm({
           indicator: { width: size === "default" ? "icon.small" : "spacing.3", height: size === "default" ? "icon.small" : "spacing.3" }
         })),
         part({ Checked: CHECKBOX_CHECKED, State: CHECKBOX_STATES, Variant: CHECKBOX_VARIANTS }, checkPaint)
+      ]
+    };
+    CHECKBOX_ITEM_SIZES = ["xs", "sm", "default"];
+    CHECKBOX_ITEM_STATES = ["Default", "Disabled", "Invalid"];
+    CHECKBOX_ITEM_TYPE = {
+      xs: { label: "type.body-sm", description: "type.caption" },
+      sm: { label: "type.body-md", description: "type.caption" },
+      default: { label: "type.body-lg", description: "type.body-sm" }
+    };
+    CHECKBOX_ITEM = {
+      key: "CheckboxItem",
+      slots: ["root", "control", "content", "label", "description"],
+      defaults: { Size: "default", State: "Default" },
+      parts: [
+        part({}, () => ({
+          root: { width: "spacing.32+spacing.32+spacing.6", gap: "spacing.gap-control" },
+          content: { gap: "spacing.gap-tight" }
+        })),
+        part({ Size: CHECKBOX_ITEM_SIZES }, (size) => ({
+          control: { font: CHECKBOX_ITEM_TYPE[size].label },
+          label: { font: CHECKBOX_ITEM_TYPE[size].label },
+          description: { font: CHECKBOX_ITEM_TYPE[size].description }
+        })),
+        part({ State: CHECKBOX_ITEM_STATES }, (state2) => ({
+          label: { text: c(state2 === "Disabled" ? "content.disabled" : "content.primary") },
+          description: { text: c(state2 === "Disabled" ? "content.disabled" : "content.secondary") }
+        }))
       ]
     };
     RADIO_GROUP = {
@@ -11292,6 +11344,7 @@ var init_componentRecipes = __esm({
       InputOTP: INPUT_OTP,
       InputOTPSlot: INPUT_OTP_SLOT,
       Checkbox: CHECKBOX,
+      CheckboxItem: CHECKBOX_ITEM,
       RadioGroup: RADIO_GROUP,
       Switch: SWITCH,
       Slider: SLIDER,
@@ -14167,7 +14220,7 @@ var init_useDesignStore = __esm({
         }),
         {
           name: "scalable-designs-store",
-          version: 126,
+          version: 127,
           migrate: (persisted, version) => {
             if (persisted) {
               delete persisted.styleDirection;
@@ -15705,6 +15758,19 @@ var init_useDesignStore = __esm({
                 const at = sel.indexOf("FileUpload");
                 if (at < 0 || sel.includes("FileUploadItem")) return;
                 sel.splice(at, 0, "FileUploadItem");
+              };
+              add2(persisted);
+              if (Array.isArray(persisted.savedSystems)) {
+                for (const sys of persisted.savedSystems) add2(sys?.snapshot);
+              }
+            }
+            if (version < 127) {
+              const add2 = (state2) => {
+                if (!Array.isArray(state2?.selectedComponents)) return;
+                const sel = state2.selectedComponents;
+                const at = sel.indexOf("Checkbox");
+                if (at < 0 || sel.includes("CheckboxItem")) return;
+                sel.splice(at + 1, 0, "CheckboxItem");
               };
               add2(persisted);
               if (Array.isArray(persisted.savedSystems)) {

@@ -23,10 +23,6 @@
       "status": "part",
       "of": "Checkbox"
     },
-    "CheckboxItem": {
-      "status": "part",
-      "of": "Checkbox"
-    },
     "Radio": {
       "status": "part",
       "of": "RadioGroup"

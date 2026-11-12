@@ -13542,6 +13542,107 @@
         }
       }
     },
+    "CheckboxItem": {
+      "key": "CheckboxItem",
+      "slots": [
+        "root",
+        "control",
+        "content",
+        "label",
+        "description"
+      ],
+      "defaults": {
+        "Size": "default",
+        "State": "Default"
+      },
+      "parts": [
+        {
+          "axes": [],
+          "values": {
+            "": {
+              "root": {
+                "width": "spacing.32+spacing.32+spacing.6",
+                "gap": "spacing.gap-control"
+              },
+              "content": {
+                "gap": "spacing.gap-tight"
+              }
+            }
+          }
+        },
+        {
+          "axes": [
+            "Size"
+          ],
+          "values": {
+            "xs": {
+              "control": {
+                "font": "type.body-sm"
+              },
+              "label": {
+                "font": "type.body-sm"
+              },
+              "description": {
+                "font": "type.caption"
+              }
+            },
+            "sm": {
+              "control": {
+                "font": "type.body-md"
+              },
+              "label": {
+                "font": "type.body-md"
+              },
+              "description": {
+                "font": "type.caption"
+              }
+            },
+            "default": {
+              "control": {
+                "font": "type.body-lg"
+              },
+              "label": {
+                "font": "type.body-lg"
+              },
+              "description": {
+                "font": "type.body-sm"
+              }
+            }
+          }
+        },
+        {
+          "axes": [
+            "State"
+          ],
+          "values": {
+            "Default": {
+              "label": {
+                "text": "color.content.primary"
+              },
+              "description": {
+                "text": "color.content.secondary"
+              }
+            },
+            "Disabled": {
+              "label": {
+                "text": "color.content.disabled"
+              },
+              "description": {
+                "text": "color.content.disabled"
+              }
+            },
+            "Invalid": {
+              "label": {
+                "text": "color.content.primary"
+              },
+              "description": {
+                "text": "color.content.secondary"
+              }
+            }
+          }
+        }
+      ]
+    },
     "RadioGroup": {
       "key": "RadioGroup",
       "slots": [

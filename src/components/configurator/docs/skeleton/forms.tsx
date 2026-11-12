@@ -14,7 +14,7 @@ import { InputTag as SkInputTag, InputTagChip as SkInputTagChip, InputTagOption 
 import { Select as SkSelect, SelectContent as SkSelectContent, SelectItem as SkSelectItem, SelectTrigger as SkSelectTrigger, SelectValue as SkSelectValue } from '../../../escala-ui/select'
 import { Combobox as SkCombobox } from '../../../escala-ui/combobox'
 import { InputOTP as SkInputOTP, InputOTPSlot as SkInputOTPSlot, type InputOTPLength, type InputOTPSize, type InputOTPSlotState, type InputOTPState, type InputOTPVariant } from '../../../escala-ui/input-otp'
-import { Checkbox as SkCheckbox, type CheckboxChecked, type CheckboxSize, type CheckboxState, type CheckboxVariant } from '../../../escala-ui/checkbox'
+import { CheckboxItem as SkCheckboxItem, type CheckboxItemState, type CheckboxItemPlacement, Checkbox as SkCheckbox, type CheckboxChecked, type CheckboxSize, type CheckboxState, type CheckboxVariant } from '../../../escala-ui/checkbox'
 import { RadioGroup as SkRadioGroup, RadioGroupItem as SkRadioGroupItem } from '../../../escala-ui/radio-group'
 import { Switch as SkSwitch, type SwitchSize } from '../../../escala-ui/switch'
 import { Slider as SkSlider } from '../../../escala-ui/slider'
@@ -352,6 +352,23 @@ export function SkeletonCheckboxSpecimen({ t, v }: SpecimenProps) {
         />
         <SkFieldLabel htmlFor={id}>{translate('Remember me')}</SkFieldLabel>
       </SkField>
+    </RecipeScope>
+  )
+}
+
+export function SkeletonCheckboxItemSpecimen({ t, v, w }: SpecimenProps) {
+  const raw = v.Checked ?? 'false'
+  return (
+    <RecipeScope t={t}>
+      <SkCheckboxItem
+        key={raw}
+        defaultChecked={raw === 'indeterminate' ? 'indeterminate' : raw === 'true'}
+        size={(v.Size ?? 'default') as CheckboxSize}
+        variant={(v.Variant ?? 'default') as CheckboxVariant}
+        placement={(v.Placement ?? 'left') as CheckboxItemPlacement}
+        forceState={(v.State ?? 'Default') as CheckboxItemState}
+        rowStyle={w != null ? { width: w } : undefined}
+      />
     </RecipeScope>
   )
 }

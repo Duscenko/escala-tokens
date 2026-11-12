@@ -258,3 +258,11 @@ Every row cost a round trip with the owner. Check each one before calling a comp
 | Per-Variant focus pairs (secondary `Border/strong` + `Border/subtle`, inverse…) | Two tests demanded `border.focus` / "never border.strong" on every Checkbox | Narrow the tests to what the file says (default Variant's focus; the RESTING edge is border.control) with a dated comment |
 | Fills bound to TEXT roles (secondary `Content/primary`, inverse `Content/inverse`) | Looks like a binding mistake | Copy; say it in the contract |
 | `exportAudit` I10 budget again | 95 762 > 95 000 | 105 000 with a dated note |
+
+# Lessons from the CheckboxItem (2026-11-12)
+
+| Trap | What it looked like | The fix (where it lives) |
+|---|---|---|
+| A control frame as tall as the label's FIRST line, centring the box (y 3 in a 25 line) | A fixed offset per size | `h-[1lh]` on the control span with the label's type on it (recipe `control.font`): follows the line height of every Size |
+| «The whole row toggles» | A click handler on a div | The row is a `<label htmlFor>` around Radix's button (a labelable element): click anywhere toggles, the label is the name, no aria-label |
+| A composite whose nested axes always equal its own (324 variants checked) | — | Pass Size · Checked · State · Variant straight through; check it once with a script over every variant |

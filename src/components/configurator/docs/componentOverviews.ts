@@ -224,6 +224,12 @@ export const OVERVIEWS: Record<string, Overview> = {
     each('State', ['Default', 'Hover', 'Focused', 'Disabled', 'Invalid'], { Checked: 'true' }),
     each('Size', ['xs', 'sm', 'default'], { Checked: 'true' }),
   ],
+  CheckboxItem: [
+    each('Checked', ['false', 'true', 'indeterminate']),
+    each('State', ['Default', 'Disabled', 'Invalid'], { Checked: 'true' }),
+    each('Placement', ['left', 'right'], { Checked: 'true' }),
+    each('Size', ['xs', 'sm', 'default'], { Checked: 'true' }),
+  ],
   Switch: [
     [{ v: { Checked: 'True' } }, { v: { Checked: 'False' } }],
     [{ v: { Checked: 'True', State: 'Disabled' } }, { v: { Checked: 'False', State: 'Disabled' } }],

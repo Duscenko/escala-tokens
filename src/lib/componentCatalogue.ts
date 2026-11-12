@@ -805,6 +805,31 @@ export const COMPONENTS: ComponentDef[] = [
     accessibility: 'Radix checkbox (role="checkbox", aria-checked mixed for indeterminate, Space toggles). Give it a label: CheckboxItem, or a Label with htmlFor.',
   },
   {
+    key: 'CheckboxItem',
+    label: 'Checkbox Item',
+    category: 'Form Controls',
+    description: 'Checkbox with a visible label and optional description; the whole row toggles the checkbox.',
+    usage: 'Use standalone (terms, opt-ins) or as a row of a CheckboxGroup. Placement right for settings lists where the label leads. The description explains the consequence; keep the label short.',
+    // The Figma file's axes, value for value (design-plans/checkbox-item-contract.md).
+    axes: [
+      { name: 'Size', values: ['xs', 'sm', 'default'] },
+      { name: 'Checked', values: ['false', 'true', 'indeterminate'] },
+      { name: 'State', values: ['Default', 'Disabled', 'Invalid'] },
+      { name: 'Placement', values: ['left', 'right'] },
+      { name: 'Variant', values: ['default', 'secondary', 'critical', 'success', 'info', 'inverse'] },
+    ],
+    figmaSets: ['CheckboxItem'],
+    props: [
+      { name: 'label', type: 'ReactNode', description: 'Figma Label: the accessible name of the box.' },
+      { name: 'description', type: 'ReactNode', description: 'Figma Description (DescriptionVisible when given), wired with aria-describedby.' },
+      { name: 'size / variant', type: 'Checkbox size / variant', description: 'Passed to the Checkbox; Size also sets the label type (body-sm · body-md · body-lg).' },
+      { name: 'placement', type: '"left" | "right"', description: 'The box before or after the text.' },
+      { name: 'checked / defaultChecked / onCheckedChange', type: 'boolean | "indeterminate"', description: 'As Checkbox.' },
+      { name: 'disabled / invalid', type: 'boolean', description: 'Disabled mutes the row; invalid turns the box edge critical.' },
+    ],
+    accessibility: 'The row is a <label> for the box, so a click anywhere toggles it and the label is its name; the description is aria-describedby.',
+  },
+  {
     key: 'RadioGroup',
     label: 'Radio Group',
     category: 'Form Controls',

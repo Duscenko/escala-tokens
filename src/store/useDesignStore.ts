@@ -2058,7 +2058,7 @@ export const useDesignStore = create<DesignStore>()(
     }),
     {
       name: 'scalable-designs-store',
-      version: 126,
+      version: 127,
       migrate: (persisted: any, version: number) => {
         if (persisted) {
           // v1→v2: remove styleDirection, rename selectedAtoms → selectedComponents
@@ -4098,6 +4098,20 @@ export const useDesignStore = create<DesignStore>()(
             const at = sel.indexOf('FileUpload')
             if (at < 0 || sel.includes('FileUploadItem')) return
             sel.splice(at, 0, 'FileUploadItem')
+          }
+          add(persisted)
+          if (Array.isArray(persisted.savedSystems)) {
+            for (const sys of persisted.savedSystems) add(sys?.snapshot)
+          }
+        }
+        if (version < 127) {
+          // v126→v127: CheckboxItem is a component of the Figma file; a selection with Checkbox gets it.
+          const add = (state: any) => {
+            if (!Array.isArray(state?.selectedComponents)) return
+            const sel: string[] = state.selectedComponents
+            const at = sel.indexOf('Checkbox')
+            if (at < 0 || sel.includes('CheckboxItem')) return
+            sel.splice(at + 1, 0, 'CheckboxItem')
           }
           add(persisted)
           if (Array.isArray(persisted.savedSystems)) {

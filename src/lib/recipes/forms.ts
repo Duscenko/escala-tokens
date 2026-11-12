@@ -875,6 +875,40 @@ export const CHECKBOX: ComponentRecipe = {
   ],
 }
 
+// ── CheckboxItem ───────────────────────────────────────────────────────────
+// The Figma `CheckboxItem` set (design-plans/checkbox-item-contract.md, 1015:7515, 324 variants): the
+// file's Checkbox (same Size · Checked · State · Variant) beside a label and an optional description.
+// A 280 row (sample width: summed steps), gap-control; the control is one label line tall and centres
+// the box; the text column stacks at gap-tight. Label body-sm · body-md · body-lg, description caption ·
+// caption · body-sm. Disabled turns both texts Content/disabled; Invalid and Variant leave them alone.
+export const CHECKBOX_ITEM_SIZES = ['xs', 'sm', 'default'] as const
+export const CHECKBOX_ITEM_STATES = ['Default', 'Disabled', 'Invalid'] as const
+const CHECKBOX_ITEM_TYPE: Record<string, { label: string; description: string }> = {
+  xs: { label: 'type.body-sm', description: 'type.caption' },
+  sm: { label: 'type.body-md', description: 'type.caption' },
+  default: { label: 'type.body-lg', description: 'type.body-sm' },
+}
+export const CHECKBOX_ITEM: ComponentRecipe = {
+  key: 'CheckboxItem',
+  slots: ['root', 'control', 'content', 'label', 'description'],
+  defaults: { Size: 'default', State: 'Default' },
+  parts: [
+    part({}, () => ({
+      root: { width: 'spacing.32+spacing.32+spacing.6', gap: 'spacing.gap-control' },
+      content: { gap: 'spacing.gap-tight' },
+    })),
+    part({ Size: CHECKBOX_ITEM_SIZES }, (size) => ({
+      control: { font: CHECKBOX_ITEM_TYPE[size].label },
+      label: { font: CHECKBOX_ITEM_TYPE[size].label },
+      description: { font: CHECKBOX_ITEM_TYPE[size].description },
+    })),
+    part({ State: CHECKBOX_ITEM_STATES }, (state) => ({
+      label: { text: c(state === 'Disabled' ? 'content.disabled' : 'content.primary') },
+      description: { text: c(state === 'Disabled' ? 'content.disabled' : 'content.secondary') },
+    })),
+  ],
+}
+
 // ── RadioGroup ─────────────────────────────────────────────────────────────
 // shadcn's RadioGroup: a grid of items; a checked item is bg-primary with a
 // primary-foreground dot (Radix's `data-state="checked"`).
