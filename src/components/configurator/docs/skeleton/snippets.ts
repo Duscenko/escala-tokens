@@ -132,6 +132,10 @@ export const SKELETON_SNIPPETS: Record<string, Snippet> = {
     const state = v.State === 'Invalid' ? '\n  aria-invalid' : v.State === 'Loading' ? '\n  loading' : v.State === 'Disabled' ? '\n  disabled' : ''
     return `import { Textarea } from "@/components/ui/textarea"\n\n<Textarea${size}\n  placeholder="Write a message…"${state}\n/>`
   },
+  DatePickerTrigger: (v) => {
+    const attrs = [v.Size && v.Size !== 'default' ? ` size="${v.Size}"` : '', v.State === 'Invalid' ? ' aria-invalid' : '', v.State === 'Disabled' ? ' disabled' : '', v.State === 'Loading' ? ' loading' : ''].join('')
+    return `import { DatePickerTrigger } from "@/components/ui/date-picker"\n\n<DatePickerTrigger${attrs}${v.Value === 'filled' ? ' valueText={date}' : ''} onClick={openPicker} />`
+  },
   InputGroup: () =>
     `import {\n  InputGroup, InputGroupAddon, InputGroupInput, InputGroupButton, InputGroupSeparator,\n} from "@/components/ui/input-group"\n\n<InputGroup>\n  <InputGroupAddon>https://</InputGroupAddon>\n  <InputGroupSeparator />\n  <InputGroupInput defaultValue="escala.design" />\n  <InputGroupSeparator />\n  <InputGroupButton>Copy</InputGroupButton>\n</InputGroup>`,
   InputOTP: (v) => {

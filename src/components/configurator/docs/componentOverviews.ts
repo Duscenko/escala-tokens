@@ -148,6 +148,12 @@ export const OVERVIEWS: Record<string, Overview> = {
     each('Size', ['sm', 'default', 'lg'], {}, 240),
     each('Value', ['placeholder', 'filled'], {}, 240),
   ],
+  DatePickerTrigger: [
+    each('State', ['Default', 'Hover', 'Focused'], { Value: 'filled' }, 280),
+    each('State', ['Invalid', 'Disabled', 'Loading'], { Value: 'filled' }, 280),
+    each('Size', ['sm', 'default', 'lg'], { Value: 'filled' }, 280),
+    each('Value', ['placeholder', 'filled'], {}, 280),
+  ],
   InputOTP: [
     ...stack('State', ['Empty', 'Typing', 'Filled', 'Invalid', 'Disabled'], { Length: '6' }),
     ...stack('Variant', ['outline', 'filled', 'underline'], { Length: '6', State: 'Filled' }),

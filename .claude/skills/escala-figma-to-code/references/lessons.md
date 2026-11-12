@@ -142,3 +142,13 @@ Every row cost a round trip with the owner. Check each one before calling a comp
 | A stroke that exists only in some states and is laid out | Chip default has no stroke, Focused / critical have 1px inside the layout (width +2) | One part over Size × Variant × State that sets `strokeWidth` (`stroke.none` or `stroke.control`) AND adds `+stroke.control` to the padding only when the stroke exists |
 | One box painted by State, but the box differs per Layout | inline: the root; outside: the `field` child | The paint function takes the layout and writes to `root` or `field`; root state selectors (`:hover`, `:has(:focus-visible)`, `[data-force-state]`) still reach the child |
 | `exportAudit` I10 budget | Agent context 86 440 > 85 000 | Raise `contextAllTokens` with a dated note (a catalogue grows by three components) |
+
+# Lessons from the DatePickerTrigger (2026-11-12)
+
+| Trap | What it looked like | The fix (where it lives) |
+|---|---|---|
+| Another chat edits the same checkout while you work (a half-done Combobox: catalogue, store, `forms.ts`, goldens, parity test) | Your edits and goldens mix with theirs; `git status` cannot tell whose hunk is whose; their `gen:registry-sources` / `vitest -u` would pick up your files | `git worktree add ../escala-tokens-wt-<x> HEAD` (+ `ln -s` the main `node_modules`, the plugin repo stays a sibling), build and verify there, commit there; land it on the main branch only when the shared files are clean. Never leave untracked component files in the shared tree |
+| A story / specimen `aria-label` on a control whose visible text IS the name | axe `label-content-name-mismatch` ×36 (`aria-label="Date"` vs "Select date") | The usage board says «the visible text is the accessible name»: no `aria-label` on the trigger in stories, specimens or snippets |
+| The set's own description and usage board disagree with its numbers | «xs 32 / sm 36 / default 40» against measured sm 32 · default 40 · lg 48 | Trust the measured geometry; say it in the report |
+| Focused stroke 2px laid out + a `focus-ring` rectangle OUTSIDE | The field `ring` path draws the halo straddling a 1px edge | Focused: `strokeWidth: stroke.focus`, `halo` (outside), padding `inset-control+stroke.focus`. Invalid has NO halo in this set |
+| `:focus-visible` read right after `Tab` | Border 2px but the colour still the resting one | The recipe transitions `border-color` / `box-shadow`: wait ~600 ms before measuring |

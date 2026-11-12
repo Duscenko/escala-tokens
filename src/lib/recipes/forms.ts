@@ -161,6 +161,66 @@ export const TEXTAREA: ComponentRecipe = {
   ],
 }
 
+// ── DatePickerTrigger ──────────────────────────────────────────────────────
+// The Figma `DatePickerTrigger` set (design-plans/date-picker-trigger-contract.md, 425:199,
+// 36 variants): an input-styled button that opens the DatePickerPopover. `Size` × `State` ×
+// `Value`. The ROOT is the box: Surface/input, a Border/control edge the file lays out
+// (content starts at padding + stroke), Radius/action, 32 · 40 · 48 tall, 12px insets, 8px
+// gap. In it, in order: the calendar glyph (16 · 20 · 16 — the file's numbers; Loading swaps
+// it for the Spinner) and the text, which fills the rest (Type/body-sm · body-md · body-md).
+// Hover: Border/control-hover. Focused: a 2px Border/focus edge laid out (content moves 1px)
+// + a 2px Border/ring/default halo OUTSIDE. Invalid: Status/critical/border-strong and NO halo
+// (unlike the inputs). Disabled: Surface/muted fill, the ordinary Border/control edge, every
+// ink Content/disabled. The placeholder is Content/subtle, the date Content/primary.
+export const DATE_PICKER_TRIGGER_SIZES = ['default', 'sm', 'lg'] as const
+export const DATE_PICKER_TRIGGER_STATES = ['Default', 'Hover', 'Focused', 'Invalid', 'Disabled', 'Loading'] as const
+export const DATE_PICKER_TRIGGER_VALUES = ['placeholder', 'filled'] as const
+const DPT_GEOMETRY: Record<string, { h: string; font: string; icon: string }> = {
+  sm: { h: 'size.compact', font: 'type.body-sm', icon: 'icon.small' },
+  default: { h: 'size.control', font: 'type.body-md', icon: 'icon.medium' },
+  lg: { h: 'size.touch', font: 'type.body-md', icon: 'icon.small' },
+}
+
+function datePickerTriggerPaint(state: string): SlotMap {
+  const disabled = state === 'Disabled'
+  const out: SlotMap = {
+    icon: { text: c(disabled ? 'content.disabled' : 'content.secondary') },
+    spinner: { text: c('content.secondary') },
+    text: { text: c(disabled ? 'content.disabled' : 'content.primary') },
+    placeholder: { text: c(disabled ? 'content.disabled' : 'content.subtle') },
+  }
+  if (disabled) out.root = { fill: c('surface.muted'), stroke: c('border.control'), halo: NONE }
+  else if (state === 'Invalid') out.root = { fill: c('surface.input'), stroke: c('status.critical.border-strong'), halo: NONE }
+  else if (state === 'Focused') {
+    // The 2px edge is laid out: the padding takes it instead of the 1px control edge.
+    out.root = { fill: c('surface.input'), stroke: c('border.focus'), strokeWidth: 'stroke.focus', halo: c('border.ring.default'), paddingX: 'spacing.inset-control+stroke.focus' }
+  } else if (state === 'Hover') out.root = { fill: c('surface.input'), stroke: c('border.control-hover'), halo: NONE }
+  else out.root = { fill: c('surface.input'), stroke: c('border.control'), halo: NONE }
+  return out
+}
+
+export const DATE_PICKER_TRIGGER: ComponentRecipe = {
+  key: 'DatePickerTrigger',
+  slots: ['root', 'icon', 'spinner', 'text', 'placeholder'],
+  defaults: { Size: 'default', State: 'Default', Value: 'placeholder' },
+  parts: [
+    part({}, () => ({
+      root: { radius: 'radius.action', strokeWidth: 'stroke.control', paddingX: 'spacing.inset-control+stroke.control', gap: 'spacing.gap-control' },
+    })),
+    part({ Size: DATE_PICKER_TRIGGER_SIZES }, (size) => {
+      const g = DPT_GEOMETRY[size]
+      return {
+        root: { height: g.h },
+        text: { font: g.font },
+        placeholder: { font: g.font },
+        icon: { width: g.icon, height: g.icon },
+        spinner: { width: g.icon, height: g.icon },
+      }
+    }),
+    part({ State: DATE_PICKER_TRIGGER_STATES }, (state) => datePickerTriggerPaint(state)),
+  ],
+}
+
 // ── InputGroup ─────────────────────────────────────────────────────────────
 
 // The group IS the field box, so it paints what the bare Input paints in each

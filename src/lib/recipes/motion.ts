@@ -49,6 +49,7 @@ export const RECIPE_MOTION: Record<string, RecipeMotion> = {
   ScrollArea: { transitions: { scrollbar: states('background-color') } },
   Dropzone: { transitions: { root: states('background-color', 'border-color') } },
   Input: { transitions: { root: FIELD } },
+  DatePickerTrigger: { transitions: { root: FIELD } },
   InputGroup: { transitions: { root: FIELD } },
   InputTag: { transitions: { root: FIELD, field: FIELD } },
   InputTagChip: { transitions: { root: FIELD } },

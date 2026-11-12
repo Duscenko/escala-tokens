@@ -588,6 +588,28 @@ export const COMPONENTS: ComponentDef[] = [
     accessibility: 'A native <select>: keyboard, screen readers and the platform picker come for free. Pair it with a Label (Field).',
   },
   {
+    key: 'DatePickerTrigger',
+    label: 'Date Picker Trigger',
+    category: 'Form Controls',
+    description: 'An input-styled button that opens the date picker popover: the calendar glyph and the placeholder or the formatted date.',
+    usage: 'Use to pick one date without leaving the form. Pair it with a Label (Field), open DatePickerPopover from it and put the chosen date back as its value.',
+    // The Figma file\'s axes, value for value (design-plans/date-picker-trigger-contract.md).
+    axes: [
+      { name: 'Size', values: ['sm', 'default', 'lg'] },
+      { name: 'State', values: ['Default', 'Hover', 'Focused', 'Invalid', 'Disabled', 'Loading'] },
+      { name: 'Value', values: ['placeholder', 'filled'] },
+    ],
+    figmaSets: ['DatePickerTrigger'],
+    props: [
+      { name: 'size', type: '"sm" | "default" | "lg"', description: 'Box 32 · 40 · 48; the glyph is 16 · 20 · 16.' },
+      { name: 'valueText', type: 'Date | ReactNode', description: 'Figma ValueText (Value filled); a Date is formatted as "Nov 12, 2026". Omit it for Value placeholder.' },
+      { name: 'placeholderText', type: 'ReactNode', description: 'Figma PlaceholderText (default "Select date").' },
+      { name: 'aria-invalid / disabled / loading', type: 'boolean', description: 'State Invalid / Disabled / Loading (the Spinner replaces the glyph). Hover and Focused come from the pointer and keyboard.' },
+      { name: 'aria-expanded / aria-controls', type: 'boolean / string', description: 'Set by the popover that opens from it.' },
+    ],
+    accessibility: 'A real button with aria-haspopup="dialog"; its text is the chosen date, so no separate label is read. Expose the error through aria-describedby.',
+  },
+  {
     key: 'Calendar',
     label: 'Calendar',
     category: 'Form Controls',

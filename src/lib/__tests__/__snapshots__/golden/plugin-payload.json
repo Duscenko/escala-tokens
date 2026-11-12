@@ -9440,6 +9440,231 @@
         }
       ]
     },
+    "DatePickerTrigger": {
+      "key": "DatePickerTrigger",
+      "slots": [
+        "root",
+        "icon",
+        "spinner",
+        "text",
+        "placeholder"
+      ],
+      "defaults": {
+        "Size": "default",
+        "State": "Default",
+        "Value": "placeholder"
+      },
+      "parts": [
+        {
+          "axes": [],
+          "values": {
+            "": {
+              "root": {
+                "radius": "radius.action",
+                "strokeWidth": "stroke.control",
+                "paddingX": "spacing.inset-control+stroke.control",
+                "gap": "spacing.gap-control"
+              }
+            }
+          }
+        },
+        {
+          "axes": [
+            "Size"
+          ],
+          "values": {
+            "default": {
+              "root": {
+                "height": "size.control"
+              },
+              "text": {
+                "font": "type.body-md"
+              },
+              "placeholder": {
+                "font": "type.body-md"
+              },
+              "icon": {
+                "width": "icon.medium",
+                "height": "icon.medium"
+              },
+              "spinner": {
+                "width": "icon.medium",
+                "height": "icon.medium"
+              }
+            },
+            "sm": {
+              "root": {
+                "height": "size.compact"
+              },
+              "text": {
+                "font": "type.body-sm"
+              },
+              "placeholder": {
+                "font": "type.body-sm"
+              },
+              "icon": {
+                "width": "icon.small",
+                "height": "icon.small"
+              },
+              "spinner": {
+                "width": "icon.small",
+                "height": "icon.small"
+              }
+            },
+            "lg": {
+              "root": {
+                "height": "size.touch"
+              },
+              "text": {
+                "font": "type.body-md"
+              },
+              "placeholder": {
+                "font": "type.body-md"
+              },
+              "icon": {
+                "width": "icon.small",
+                "height": "icon.small"
+              },
+              "spinner": {
+                "width": "icon.small",
+                "height": "icon.small"
+              }
+            }
+          }
+        },
+        {
+          "axes": [
+            "State"
+          ],
+          "values": {
+            "Default": {
+              "icon": {
+                "text": "color.content.secondary"
+              },
+              "spinner": {
+                "text": "color.content.secondary"
+              },
+              "text": {
+                "text": "color.content.primary"
+              },
+              "placeholder": {
+                "text": "color.content.subtle"
+              },
+              "root": {
+                "fill": "color.surface.input",
+                "stroke": "color.border.control",
+                "halo": "none"
+              }
+            },
+            "Hover": {
+              "icon": {
+                "text": "color.content.secondary"
+              },
+              "spinner": {
+                "text": "color.content.secondary"
+              },
+              "text": {
+                "text": "color.content.primary"
+              },
+              "placeholder": {
+                "text": "color.content.subtle"
+              },
+              "root": {
+                "fill": "color.surface.input",
+                "stroke": "color.border.control-hover",
+                "halo": "none"
+              }
+            },
+            "Focused": {
+              "icon": {
+                "text": "color.content.secondary"
+              },
+              "spinner": {
+                "text": "color.content.secondary"
+              },
+              "text": {
+                "text": "color.content.primary"
+              },
+              "placeholder": {
+                "text": "color.content.subtle"
+              },
+              "root": {
+                "fill": "color.surface.input",
+                "stroke": "color.border.focus",
+                "strokeWidth": "stroke.focus",
+                "halo": "color.border.ring.default",
+                "paddingX": "spacing.inset-control+stroke.focus"
+              }
+            },
+            "Invalid": {
+              "icon": {
+                "text": "color.content.secondary"
+              },
+              "spinner": {
+                "text": "color.content.secondary"
+              },
+              "text": {
+                "text": "color.content.primary"
+              },
+              "placeholder": {
+                "text": "color.content.subtle"
+              },
+              "root": {
+                "fill": "color.surface.input",
+                "stroke": "color.status.critical.border-strong",
+                "halo": "none"
+              }
+            },
+            "Disabled": {
+              "icon": {
+                "text": "color.content.disabled"
+              },
+              "spinner": {
+                "text": "color.content.secondary"
+              },
+              "text": {
+                "text": "color.content.disabled"
+              },
+              "placeholder": {
+                "text": "color.content.disabled"
+              },
+              "root": {
+                "fill": "color.surface.muted",
+                "stroke": "color.border.control",
+                "halo": "none"
+              }
+            },
+            "Loading": {
+              "icon": {
+                "text": "color.content.secondary"
+              },
+              "spinner": {
+                "text": "color.content.secondary"
+              },
+              "text": {
+                "text": "color.content.primary"
+              },
+              "placeholder": {
+                "text": "color.content.subtle"
+              },
+              "root": {
+                "fill": "color.surface.input",
+                "stroke": "color.border.control",
+                "halo": "none"
+              }
+            }
+          }
+        }
+      ],
+      "motion": {
+        "transitions": {
+          "root": {
+            "border-color": "use-hover",
+            "box-shadow": "use-focus"
+          }
+        }
+      }
+    },
     "InputGroup": {
       "key": "InputGroup",
       "slots": [

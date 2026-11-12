@@ -4484,6 +4484,28 @@ var init_componentCatalogue = __esm({
         accessibility: "A native <select>: keyboard, screen readers and the platform picker come for free. Pair it with a Label (Field)."
       },
       {
+        key: "DatePickerTrigger",
+        label: "Date Picker Trigger",
+        category: "Form Controls",
+        description: "An input-styled button that opens the date picker popover: the calendar glyph and the placeholder or the formatted date.",
+        usage: "Use to pick one date without leaving the form. Pair it with a Label (Field), open DatePickerPopover from it and put the chosen date back as its value.",
+        // The Figma file\'s axes, value for value (design-plans/date-picker-trigger-contract.md).
+        axes: [
+          { name: "Size", values: ["sm", "default", "lg"] },
+          { name: "State", values: ["Default", "Hover", "Focused", "Invalid", "Disabled", "Loading"] },
+          { name: "Value", values: ["placeholder", "filled"] }
+        ],
+        figmaSets: ["DatePickerTrigger"],
+        props: [
+          { name: "size", type: '"sm" | "default" | "lg"', description: "Box 32 \xB7 40 \xB7 48; the glyph is 16 \xB7 20 \xB7 16." },
+          { name: "valueText", type: "Date | ReactNode", description: 'Figma ValueText (Value filled); a Date is formatted as "Nov 12, 2026". Omit it for Value placeholder.' },
+          { name: "placeholderText", type: "ReactNode", description: 'Figma PlaceholderText (default "Select date").' },
+          { name: "aria-invalid / disabled / loading", type: "boolean", description: "State Invalid / Disabled / Loading (the Spinner replaces the glyph). Hover and Focused come from the pointer and keyboard." },
+          { name: "aria-expanded / aria-controls", type: "boolean / string", description: "Set by the popover that opens from it." }
+        ],
+        accessibility: 'A real button with aria-haspopup="dialog"; its text is the chosen date, so no separate label is read. Expose the error through aria-describedby.'
+      },
+      {
         key: "Calendar",
         label: "Calendar",
         category: "Form Controls",
@@ -8850,6 +8872,22 @@ function textareaPaint(state2) {
   if (state2 === "Invalid" || state2 === "Loading") out.root.paddingRight = "spacing.8+spacing.1";
   return out;
 }
+function datePickerTriggerPaint(state2) {
+  const disabled = state2 === "Disabled";
+  const out = {
+    icon: { text: c(disabled ? "content.disabled" : "content.secondary") },
+    spinner: { text: c("content.secondary") },
+    text: { text: c(disabled ? "content.disabled" : "content.primary") },
+    placeholder: { text: c(disabled ? "content.disabled" : "content.subtle") }
+  };
+  if (disabled) out.root = { fill: c("surface.muted"), stroke: c("border.control"), halo: NONE };
+  else if (state2 === "Invalid") out.root = { fill: c("surface.input"), stroke: c("status.critical.border-strong"), halo: NONE };
+  else if (state2 === "Focused") {
+    out.root = { fill: c("surface.input"), stroke: c("border.focus"), strokeWidth: "stroke.focus", halo: c("border.ring.default"), paddingX: "spacing.inset-control+stroke.focus" };
+  } else if (state2 === "Hover") out.root = { fill: c("surface.input"), stroke: c("border.control-hover"), halo: NONE };
+  else out.root = { fill: c("surface.input"), stroke: c("border.control"), halo: NONE };
+  return out;
+}
 function numberInputPaint(state2) {
   if (state2 === "Disabled") return { root: { fill: c("action.disabled.default"), stroke: c("border.control"), halo: NONE }, value: { text: c("content.disabled") } };
   if (state2 === "Invalid") return { root: { fill: c("surface.input"), stroke: c("status.critical.border-strong"), halo: c("status.critical.border") } };
@@ -8954,7 +8992,7 @@ function switchPaint(checked, state2) {
     thumb: { fill: c(on && !disabled ? "content.on-action" : "surface.input") }
   };
 }
-var FIELD_FIXED, FIELD_FOCUS, INPUT_STATES, INPUT_SIZES, INPUT_TYPES, INPUT_GEOMETRY, INPUT_GLYPH, INPUT_STROKE_IN_LAYOUT, INPUT, TEXTAREA_SIZES, TEXTAREA_STATES, TEXTAREA_HEIGHT, TEXTAREA_PAD, TEXTAREA_FONT, TEXTAREA_GLYPH, TEXTAREA, GROUP_LIVE, GROUP_CONTROL, INPUT_GROUP, NUMBER_INPUT_SIZES, NUMBER_INPUT_STATES, NUMBER_BOX, NUMBER_INPUT, INPUT_TAG_LAYOUTS, INPUT_TAG_SIZES, INPUT_TAG_STATES, TAG_BOX, INPUT_TAG, INPUT_TAG_CHIP_SIZES, INPUT_TAG_CHIP_STATES, INPUT_TAG_CHIP_VARIANTS, CHIP_GEOMETRY, INPUT_TAG_CHIP, INPUT_TAG_OPTION_STATES, INPUT_TAG_OPTION, SELECT_GEOMETRY, MENU_ITEM, MENU_CONTENT, SELECT, COMBOBOX, INPUT_OTP_SIZES, INPUT_OTP_VARIANTS, INPUT_OTP_STATES, INPUT_OTP_SLOT_STATES, INPUT_OTP, OTP_SLOT_BOX, OTP_SLOT_FONT, OTP_CARET, INPUT_OTP_SLOT, CHECKBOX, RADIO_GROUP, SWITCH_GEOMETRY, SWITCH, SLIDER, FIELD_STATES, FIELD, LABEL, PASSWORD_STRENGTH_SIZES, PASSWORD_STRENGTHS, STRENGTH_SEGMENT, STRENGTH_LEVEL, PASSWORD_STRENGTH, METER_HEIGHT, PASSWORD_STRENGTH_METER, RULE_ICON, RULE_MARKER, RULE_FONT, PASSWORD_STRENGTH_RULE, FILE_UPLOAD, DROPZONE, NATIVE_SELECT_STATES, NATIVE_SELECT, CALENDAR;
+var FIELD_FIXED, FIELD_FOCUS, INPUT_STATES, INPUT_SIZES, INPUT_TYPES, INPUT_GEOMETRY, INPUT_GLYPH, INPUT_STROKE_IN_LAYOUT, INPUT, TEXTAREA_SIZES, TEXTAREA_STATES, TEXTAREA_HEIGHT, TEXTAREA_PAD, TEXTAREA_FONT, TEXTAREA_GLYPH, TEXTAREA, DATE_PICKER_TRIGGER_SIZES, DATE_PICKER_TRIGGER_STATES, DPT_GEOMETRY, DATE_PICKER_TRIGGER, GROUP_LIVE, GROUP_CONTROL, INPUT_GROUP, NUMBER_INPUT_SIZES, NUMBER_INPUT_STATES, NUMBER_BOX, NUMBER_INPUT, INPUT_TAG_LAYOUTS, INPUT_TAG_SIZES, INPUT_TAG_STATES, TAG_BOX, INPUT_TAG, INPUT_TAG_CHIP_SIZES, INPUT_TAG_CHIP_STATES, INPUT_TAG_CHIP_VARIANTS, CHIP_GEOMETRY, INPUT_TAG_CHIP, INPUT_TAG_OPTION_STATES, INPUT_TAG_OPTION, SELECT_GEOMETRY, MENU_ITEM, MENU_CONTENT, SELECT, COMBOBOX, INPUT_OTP_SIZES, INPUT_OTP_VARIANTS, INPUT_OTP_STATES, INPUT_OTP_SLOT_STATES, INPUT_OTP, OTP_SLOT_BOX, OTP_SLOT_FONT, OTP_CARET, INPUT_OTP_SLOT, CHECKBOX, RADIO_GROUP, SWITCH_GEOMETRY, SWITCH, SLIDER, FIELD_STATES, FIELD, LABEL, PASSWORD_STRENGTH_SIZES, PASSWORD_STRENGTHS, STRENGTH_SEGMENT, STRENGTH_LEVEL, PASSWORD_STRENGTH, METER_HEIGHT, PASSWORD_STRENGTH_METER, RULE_ICON, RULE_MARKER, RULE_FONT, PASSWORD_STRENGTH_RULE, FILE_UPLOAD, DROPZONE, NATIVE_SELECT_STATES, NATIVE_SELECT, CALENDAR;
 var init_forms = __esm({
   "src/lib/recipes/forms.ts"() {
     init_helpers();
@@ -9061,6 +9099,34 @@ var init_forms = __esm({
           };
         }),
         part({ State: TEXTAREA_STATES }, (state2) => textareaPaint(state2))
+      ]
+    };
+    DATE_PICKER_TRIGGER_SIZES = ["default", "sm", "lg"];
+    DATE_PICKER_TRIGGER_STATES = ["Default", "Hover", "Focused", "Invalid", "Disabled", "Loading"];
+    DPT_GEOMETRY = {
+      sm: { h: "size.compact", font: "type.body-sm", icon: "icon.small" },
+      default: { h: "size.control", font: "type.body-md", icon: "icon.medium" },
+      lg: { h: "size.touch", font: "type.body-md", icon: "icon.small" }
+    };
+    DATE_PICKER_TRIGGER = {
+      key: "DatePickerTrigger",
+      slots: ["root", "icon", "spinner", "text", "placeholder"],
+      defaults: { Size: "default", State: "Default", Value: "placeholder" },
+      parts: [
+        part({}, () => ({
+          root: { radius: "radius.action", strokeWidth: "stroke.control", paddingX: "spacing.inset-control+stroke.control", gap: "spacing.gap-control" }
+        })),
+        part({ Size: DATE_PICKER_TRIGGER_SIZES }, (size) => {
+          const g = DPT_GEOMETRY[size];
+          return {
+            root: { height: g.h },
+            text: { font: g.font },
+            placeholder: { font: g.font },
+            icon: { width: g.icon, height: g.icon },
+            spinner: { width: g.icon, height: g.icon }
+          };
+        }),
+        part({ State: DATE_PICKER_TRIGGER_STATES }, (state2) => datePickerTriggerPaint(state2))
       ]
     };
     GROUP_LIVE = ':not([data-force-state]):not([aria-disabled="true"]):not(:has(:disabled))';
@@ -10729,6 +10795,7 @@ var init_motion2 = __esm({
       ScrollArea: { transitions: { scrollbar: states("background-color") } },
       Dropzone: { transitions: { root: states("background-color", "border-color") } },
       Input: { transitions: { root: FIELD2 } },
+      DatePickerTrigger: { transitions: { root: FIELD2 } },
       InputGroup: { transitions: { root: FIELD2 } },
       InputTag: { transitions: { root: FIELD2, field: FIELD2 } },
       InputTagChip: { transitions: { root: FIELD2 } },
@@ -10787,6 +10854,7 @@ var init_componentRecipes = __esm({
       AppStoreBadge: APP_STORE_BADGE,
       Input: INPUT,
       Textarea: TEXTAREA,
+      DatePickerTrigger: DATE_PICKER_TRIGGER,
       InputGroup: INPUT_GROUP,
       NumberInput: NUMBER_INPUT,
       InputTag: INPUT_TAG,
@@ -13671,7 +13739,7 @@ var init_useDesignStore = __esm({
         }),
         {
           name: "scalable-designs-store",
-          version: 116,
+          version: 118,
           migrate: (persisted, version) => {
             if (persisted) {
               delete persisted.styleDirection;
@@ -15091,6 +15159,19 @@ var init_useDesignStore = __esm({
                 let at = sel.indexOf("InputTag");
                 if (at < 0) return;
                 for (const key2 of ["InputTagChip", "InputTagOption"]) if (!sel.includes(key2)) sel.splice(++at, 0, key2);
+              };
+              add2(persisted);
+              if (Array.isArray(persisted.savedSystems)) {
+                for (const sys of persisted.savedSystems) add2(sys?.snapshot);
+              }
+            }
+            if (version < 118) {
+              const add2 = (state2) => {
+                if (!Array.isArray(state2?.selectedComponents)) return;
+                const sel = state2.selectedComponents;
+                const at = sel.indexOf("Calendar");
+                if (at < 0 || sel.includes("DatePickerTrigger")) return;
+                sel.splice(at, 0, "DatePickerTrigger");
               };
               add2(persisted);
               if (Array.isArray(persisted.savedSystems)) {

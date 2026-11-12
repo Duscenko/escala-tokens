@@ -23,9 +23,6 @@
       "status": "part",
       "of": "DatePickerTrigger"
     },
-    "DatePickerTrigger": {
-      "status": "new"
-    },
     "Calendar": {
       "status": "rebuild"
     },

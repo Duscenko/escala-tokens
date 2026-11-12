@@ -34,6 +34,7 @@ import {
 } from './skeleton/navigation'
 import { SKELETON_SNIPPETS } from './skeleton/snippets'
 import {
+  SkeletonDatePickerTriggerSpecimen,
   SkeletonInputSpecimen, SkeletonTextareaSpecimen, SkeletonInputGroupSpecimen, SkeletonNumberInputSpecimen,
   SkeletonInputTagSpecimen, SkeletonInputTagChipSpecimen, SkeletonInputTagOptionSpecimen, SkeletonSelectSpecimen, SkeletonComboboxSpecimen, SkeletonInputOTPSpecimen, SkeletonInputOTPSlotSpecimen,
   SkeletonCheckboxSpecimen, SkeletonRadioGroupSpecimen,
@@ -383,6 +384,7 @@ export const SPECIMENS: Record<string, (p: SpecimenProps) => ReactNode> = {
   InputOTP: SkeletonInputOTPSpecimen,
   InputOTPSlot: SkeletonInputOTPSlotSpecimen,
   NumberInput: SkeletonNumberInputSpecimen,
+  DatePickerTrigger: SkeletonDatePickerTriggerSpecimen,
   InputTag: SkeletonInputTagSpecimen,
   InputTagChip: SkeletonInputTagChipSpecimen,
   InputTagOption: SkeletonInputTagOptionSpecimen,
