@@ -5595,7 +5595,7 @@
                 "fill": "color.action.secondary.default",
                 "stroke": "none",
                 "text": "color.content.on-secondary",
-                "focus": "color.border.strong",
+                "focus": "color.border.focus",
                 "ring": "color.border.ring.default",
                 "highlight": "color.elevation.highlight"
               }
@@ -5835,7 +5835,7 @@
                 "fill": "color.status.critical.surface-solid",
                 "stroke": "none",
                 "text": "color.status.critical.on-solid",
-                "focus": "color.status.critical.border-strong",
+                "focus": "color.border.focus",
                 "ring": "color.border.ring.default",
                 "highlight": "color.elevation.highlight"
               }
@@ -5895,7 +5895,7 @@
                 "fill": "none",
                 "stroke": "color.status.critical.border-strong",
                 "text": "color.status.critical.content",
-                "focus": "color.status.critical.border-strong",
+                "focus": "color.border.focus",
                 "ring": "color.border.ring.default",
                 "highlight": "none"
               }
@@ -6397,7 +6397,7 @@
                 "stroke": "none",
                 "text": "color.content.on-secondary",
                 "focus": "color.border.strong",
-                "ring": "color.border.ring.default",
+                "ring": "color.border.subtle",
                 "highlight": "color.elevation.highlight"
               }
             },
@@ -6637,7 +6637,7 @@
                 "stroke": "none",
                 "text": "color.status.critical.on-solid",
                 "focus": "color.status.critical.border-strong",
-                "ring": "color.border.ring.default",
+                "ring": "color.status.critical.border",
                 "highlight": "color.elevation.highlight"
               }
             },

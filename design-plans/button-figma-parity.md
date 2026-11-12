@@ -115,13 +115,14 @@ también construía las 288 del Button (`FULL_SPEC_OVERRIDES` pisaba el corte en
 modos). Un archivo que ya tiene más variantes las conserva: un set reutilizado nunca se
 poda. Red: `componentNestedVariants.test.ts`.
 
-### Pendiente en Figma (no bloquea la F1)
-- **Usage Guideline** de la página Button: el menú de variantes y la anatomía de
-  propiedades siguen mostrando los 7 valores antiguos; hay que rehacerlos con dos menús.
-- **Anillo de foco no unificado**: las combinaciones nuevas usan `Border/focus`; las
-  antiguas `critical · solid/outline` usan `Status/critical/border-strong` y `secondary ·
-  solid` usa `Border/strong`. CLAUDE.md pide un solo anillo (el foco gana al error).
-- **IconButton critical · link**: hover y pressed no cambian de color (no hay texto que
-  subrayar). Necesita un rol de hover o aceptar la excepción.
-- **Orden del panel en IconButton**: Appearance aparece outline · ghost · link · solid.
+### Regla del dueño (2026-11-12): Figma no se toca
+El archivo de Figma está curado y revisado; es la ÚNICA regla para los componentes. El
+código monta cada componente tal cual está en el archivo, por encima de cualquier regla
+del plugin, de la web o de CLAUDE.md, y **nunca se edita Figma para "corregirlo"** ni
+para hacerlo coherente. La lista de "pendientes en Figma" que había aquí (unificar el
+foco, rehacer la Usage Guideline, el hover de IconButton critical · link, el orden del
+panel) se retira. El Button se da por terminado tal como está en el archivo: sus 12
+combinaciones enfocan con `Border/focus` + `Border/ring/default`; IconButton conserva
+`Border/strong` + `Border/subtle` (secondary · solid) y `Status/critical/border-strong` +
+`Status/critical/border` (critical · solid). La receta copia ambos (`focusPair`).
 

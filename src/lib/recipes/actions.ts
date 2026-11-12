@@ -14,9 +14,7 @@ import { c, NONE, part, type ComponentRecipe, type SlotMap, type SlotProps, FOCU
 // (action.disabled / content.disabled), never an opacity.
 //
 // Focus: `focus` is the edge the Figma variant strokes in its Focused state, `ring`
-// the `border.ring.default` halo outside it. The edge is NOT one colour yet — Figma
-// strokes secondary · solid with border.strong and critical solid / outline (Button)
-// with the critical border; the contract copies it until the file unifies it.
+// the halo outside it — exactly as each set has them (`focusPair`).
 
 export const BUTTON_VARIANTS = ['default', 'secondary', 'critical'] as const
 export const BUTTON_APPEARANCES = ['solid', 'outline', 'ghost', 'link'] as const
@@ -24,10 +22,21 @@ export const BUTTON_SIZES = ['default', 'xs', 'sm', 'lg'] as const
 const BUTTON_STATES = ['Default', 'Hover', 'Pressed', 'Focused', 'Loading', 'Disabled'] as const
 
 /** The solid fill ladder per intent: rest · hover · pressed, and its ink. */
-const SOLID: Record<string, { fill: [string, string, string]; ink: string; focus: string }> = {
-  default: { fill: ['action.primary.default', 'action.primary.hover', 'action.primary.pressed'], ink: 'content.on-action', focus: 'border.focus' },
-  secondary: { fill: ['action.secondary.default', 'action.secondary.hover', 'action.secondary.pressed'], ink: 'content.on-secondary', focus: 'border.strong' },
-  critical: { fill: ['status.critical.surface-solid', 'status.critical.surface-solid-hover', 'status.critical.surface-solid-pressed'], ink: 'status.critical.on-solid', focus: 'status.critical.border-strong' },
+const SOLID: Record<string, { fill: [string, string, string]; ink: string }> = {
+  default: { fill: ['action.primary.default', 'action.primary.hover', 'action.primary.pressed'], ink: 'content.on-action' },
+  secondary: { fill: ['action.secondary.default', 'action.secondary.hover', 'action.secondary.pressed'], ink: 'content.on-secondary' },
+  critical: { fill: ['status.critical.surface-solid', 'status.critical.surface-solid-hover', 'status.critical.surface-solid-pressed'], ink: 'status.critical.on-solid' },
+}
+
+/** The focus edge and ring, read per set from the Figma file (2026-11-12):
+ *  Button focuses every combination on Border/focus + Border/ring/default;
+ *  IconButton keeps its own on two solid fills. Figma is the rule here. */
+function focusPair(variant: string, appearance: string, iconOnly: boolean): [string, string] {
+  if (iconOnly && appearance === 'solid') {
+    if (variant === 'secondary') return ['border.strong', 'border.subtle']
+    if (variant === 'critical') return ['status.critical.border-strong', 'status.critical.border']
+  }
+  return ['border.focus', 'border.ring.default']
 }
 /** Outline / ghost: the intent's ink and the outline's edge. */
 const QUIET: Record<string, { ink: string; edge: string }> = {
@@ -43,7 +52,8 @@ const LINK: Record<string, [string, string]> = {
 }
 
 function buttonPaint(variant: string, appearance: string, state: string, iconOnly = false): SlotMap {
-  const ring = state === 'Focused' ? c('border.ring.default') : NONE
+  const [focusEdge, focusRing] = focusPair(variant, appearance, iconOnly)
+  const ring = state === 'Focused' ? c(focusRing) : NONE
   if (state === 'Disabled') {
     return {
       root: {
@@ -61,23 +71,20 @@ function buttonPaint(variant: string, appearance: string, state: string, iconOnl
   if (appearance === 'solid') {
     const k = SOLID[variant]
     // Every solid state but Disabled carries the top highlight (Figma).
-    return { root: { fill: c(k.fill[step]), stroke: NONE, text: c(k.ink), focus: focused ? c(k.focus) : NONE, ring, highlight: c('elevation.highlight') } }
+    return { root: { fill: c(k.fill[step]), stroke: NONE, text: c(k.ink), focus: focused ? c(focusEdge) : NONE, ring, highlight: c('elevation.highlight') } }
   }
   if (appearance === 'link') {
     const [rest, over] = LINK[variant]
-    return { root: { fill: NONE, stroke: NONE, text: c(step ? over : rest), focus: focused ? c('border.focus') : NONE, ring, highlight: NONE } }
+    return { root: { fill: NONE, stroke: NONE, text: c(step ? over : rest), focus: focused ? c(focusEdge) : NONE, ring, highlight: NONE } }
   }
   const k = QUIET[variant]
   const wash = step === 2 ? c('action.ghost.pressed') : step === 1 ? c('action.ghost.hover') : NONE
-  // Button's critical · outline focuses on its own critical edge (Figma);
-  // IconButton's and every other quiet button on border.focus.
-  const edge = variant === 'critical' && appearance === 'outline' && !iconOnly ? 'status.critical.border-strong' : 'border.focus'
   return {
     root: {
       fill: wash,
       stroke: appearance === 'outline' ? c(k.edge) : NONE,
       text: c(k.ink),
-      focus: focused ? c(edge) : NONE,
+      focus: focused ? c(focusEdge) : NONE,
       ring,
       highlight: NONE,
     },

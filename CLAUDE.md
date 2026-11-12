@@ -953,6 +953,14 @@ explicitly out of scope. Individual components still adapt between `md` and `xl`
 > inventory: `design-plans/button-figma-parity.md`, `design-plans/figma-components-inventory.md`.
 > Safety net: `spec/figma-components.json` (generated snapshot, never by hand) +
 > `spec/figma-components.status.json` (debt ledger) + `figmaComponentsParity.test.ts`.
+> **The file is the ONLY rule and it is never edited (owner, later the same day).** It is
+> curated and production-ready: build each component exactly as the file has it — above the
+> plugin, the web and any convention in this file (e.g. "one focus ring": IconButton keeps
+> per-intent rings on its solid fills while Button uses `Border/focus` everywhere, and the code
+> copies both). Never mutate the Figma file to make it consistent or to finish its docs; if it
+> looks wrong, say so in one line and build from it as is. Process per component: the owner
+> sends the Figma Dev link → read it (read-only) → contract → recipe + `escala-ui` component →
+> Storybook (controls 1:1 with Figma's playground) → out of the pending ledger. No plugin step.
 
 > **UPDATE (2026-11-12, owner's call): the Figma file's PALETTE wins over the generator.**
 > `Escala Design System (Real)` is curated and tested; for its accent (`#874fff`) the generator

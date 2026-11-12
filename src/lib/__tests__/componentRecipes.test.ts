@@ -192,12 +192,12 @@ describe('focus', () => {
     ['default', 'outline', 'color.border.focus'],
     ['default', 'ghost', 'color.border.focus'],
     ['default', 'link', 'color.border.focus'],
-    ['secondary', 'solid', 'color.border.strong'],
+    ['secondary', 'solid', 'color.border.focus'],
     ['secondary', 'outline', 'color.border.focus'],
     ['secondary', 'ghost', 'color.border.focus'],
     ['secondary', 'link', 'color.border.focus'],
-    ['critical', 'solid', 'color.status.critical.border-strong'],
-    ['critical', 'outline', 'color.status.critical.border-strong'],
+    ['critical', 'solid', 'color.border.focus'],
+    ['critical', 'outline', 'color.border.focus'],
     ['critical', 'ghost', 'color.border.focus'],
     ['critical', 'link', 'color.border.focus'],
   ])('Button %s · %s focuses with edge %s and the ring halo', (variant, appearance, edge) => {
@@ -206,7 +206,17 @@ describe('focus', () => {
     expect(root.ring).toBe('color.border.ring.default')
   })
 
-  it('IconButton critical · outline focuses on border.focus (Figma), unlike Button', () => {
+  // IconButton keeps its own edge + ring on two solid fills (Figma file, 2026-11-12).
+  it.each([
+    ['secondary', 'color.border.strong', 'color.border.subtle'],
+    ['critical', 'color.status.critical.border-strong', 'color.status.critical.border'],
+  ])('IconButton %s · solid focuses with edge %s and ring %s, as the Figma file does', (variant, edge, ring) => {
+    const root = resolveRecipe(COMPONENT_RECIPES.IconButton, { Variant: variant, Appearance: 'solid', Size: 'default', State: 'Focused' }).root
+    expect(root.focus).toBe(edge)
+    expect(root.ring).toBe(ring)
+  })
+
+  it('IconButton critical · outline focuses on border.focus (Figma)', () => {
     const root = resolveRecipe(COMPONENT_RECIPES.IconButton, { Variant: 'critical', Appearance: 'outline', Size: 'default', State: 'Focused' }).root
     expect(root.focus).toBe('color.border.focus')
   })

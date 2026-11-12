@@ -52,21 +52,20 @@ en las sólidas, borde `border.control` en las outline, ink `content.disabled`.
 | default · outline | stroke `border.accent` · ink `content.accent` | + fill `action.ghost.hover` | + `action.ghost.pressed` | `border.focus` |
 | default · ghost | ink `content.accent` | fill `action.ghost.hover` | `action.ghost.pressed` | `border.focus` |
 | default · link | ink `content.link.default` | ink `content.link.hover` | ink `content.link.hover` | `border.focus` |
-| secondary · solid | fill `action.secondary.default` · ink `content.on-secondary` | `.hover` | `.pressed` | **`border.strong`** |
+| secondary · solid | fill `action.secondary.default` · ink `content.on-secondary` | `.hover` | `.pressed` | Button `border.focus` · IconButton **`border.strong`** + halo `border.subtle` |
 | secondary · outline | stroke `border.control` · ink `content.primary` | + fill `action.ghost.hover` | + `action.ghost.pressed` | `border.focus` |
 | secondary · ghost | ink `content.primary` | fill `action.ghost.hover` | `action.ghost.pressed` | `border.focus` |
 | secondary · link | ink `content.secondary` | ink `content.primary` | ink `content.primary` | `border.focus` |
-| critical · solid | fill `status.critical.surface-solid` · ink `status.critical.on-solid` | `-hover` | `-pressed` | **`status.critical.border-strong`** |
-| critical · outline | stroke `status.critical.border-strong` · ink `status.critical.content` | + fill `action.ghost.hover` | + `action.ghost.pressed` | **Button: `status.critical.border-strong`** · IconButton: `border.focus` |
+| critical · solid | fill `status.critical.surface-solid` · ink `status.critical.on-solid` | `-hover` | `-pressed` | Button `border.focus` · IconButton **`status.critical.border-strong`** + halo `status.critical.border` |
+| critical · outline | stroke `status.critical.border-strong` · ink `status.critical.content` | + fill `action.ghost.hover` | + `action.ghost.pressed` | `border.focus` |
 | critical · ghost | ink `status.critical.content` | fill `action.ghost.hover` | `action.ghost.pressed` | `border.focus` |
 | critical · link | ink `status.critical.content` | + subrayado | + subrayado | `border.focus` |
 
-Todas las variantes en foco añaden el halo `border.ring.default` fuera del borde.
+Todas las variantes en foco añaden el halo `border.ring.default` fuera del borde, salvo las
+dos de IconButton marcadas arriba. Así está en el archivo (2026-11-12) y así lo copia el código.
 Loading = Default con spinner en lugar del icono inicial.
 
-**Lo que el código copia tal cual aunque sea incoherente** (decisión pendiente del dueño,
-`button-figma-parity.md`): el foco de `secondary · solid`, `critical · solid` y
-`critical · outline` (Button). Cuando Figma lo unifique, el código cambia una línea.
+**Regla:** el código copia el archivo tal cual; Figma no se edita para hacerlo coherente.
 
 ## No cubierto por el contrato (registrado, no bloquea)
 

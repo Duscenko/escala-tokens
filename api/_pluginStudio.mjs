@@ -7990,8 +7990,16 @@ var init_helpers = __esm({
 });
 
 // src/lib/recipes/actions.ts
+function focusPair(variant, appearance, iconOnly) {
+  if (iconOnly && appearance === "solid") {
+    if (variant === "secondary") return ["border.strong", "border.subtle"];
+    if (variant === "critical") return ["status.critical.border-strong", "status.critical.border"];
+  }
+  return ["border.focus", "border.ring.default"];
+}
 function buttonPaint(variant, appearance, state2, iconOnly = false) {
-  const ring = state2 === "Focused" ? c("border.ring.default") : NONE;
+  const [focusEdge, focusRing] = focusPair(variant, appearance, iconOnly);
+  const ring = state2 === "Focused" ? c(focusRing) : NONE;
   if (state2 === "Disabled") {
     return {
       root: {
@@ -8008,21 +8016,20 @@ function buttonPaint(variant, appearance, state2, iconOnly = false) {
   const focused = state2 === "Focused";
   if (appearance === "solid") {
     const k2 = SOLID[variant];
-    return { root: { fill: c(k2.fill[step]), stroke: NONE, text: c(k2.ink), focus: focused ? c(k2.focus) : NONE, ring, highlight: c("elevation.highlight") } };
+    return { root: { fill: c(k2.fill[step]), stroke: NONE, text: c(k2.ink), focus: focused ? c(focusEdge) : NONE, ring, highlight: c("elevation.highlight") } };
   }
   if (appearance === "link") {
     const [rest, over] = LINK[variant];
-    return { root: { fill: NONE, stroke: NONE, text: c(step ? over : rest), focus: focused ? c("border.focus") : NONE, ring, highlight: NONE } };
+    return { root: { fill: NONE, stroke: NONE, text: c(step ? over : rest), focus: focused ? c(focusEdge) : NONE, ring, highlight: NONE } };
   }
   const k = QUIET[variant];
   const wash = step === 2 ? c("action.ghost.pressed") : step === 1 ? c("action.ghost.hover") : NONE;
-  const edge = variant === "critical" && appearance === "outline" && !iconOnly ? "status.critical.border-strong" : "border.focus";
   return {
     root: {
       fill: wash,
       stroke: appearance === "outline" ? c(k.edge) : NONE,
       text: c(k.ink),
-      focus: focused ? c(edge) : NONE,
+      focus: focused ? c(focusEdge) : NONE,
       ring,
       highlight: NONE
     }
@@ -8037,9 +8044,9 @@ var init_actions = __esm({
     BUTTON_SIZES = ["default", "xs", "sm", "lg"];
     BUTTON_STATES = ["Default", "Hover", "Pressed", "Focused", "Loading", "Disabled"];
     SOLID = {
-      default: { fill: ["action.primary.default", "action.primary.hover", "action.primary.pressed"], ink: "content.on-action", focus: "border.focus" },
-      secondary: { fill: ["action.secondary.default", "action.secondary.hover", "action.secondary.pressed"], ink: "content.on-secondary", focus: "border.strong" },
-      critical: { fill: ["status.critical.surface-solid", "status.critical.surface-solid-hover", "status.critical.surface-solid-pressed"], ink: "status.critical.on-solid", focus: "status.critical.border-strong" }
+      default: { fill: ["action.primary.default", "action.primary.hover", "action.primary.pressed"], ink: "content.on-action" },
+      secondary: { fill: ["action.secondary.default", "action.secondary.hover", "action.secondary.pressed"], ink: "content.on-secondary" },
+      critical: { fill: ["status.critical.surface-solid", "status.critical.surface-solid-hover", "status.critical.surface-solid-pressed"], ink: "status.critical.on-solid" }
     };
     QUIET = {
       default: { ink: "content.accent", edge: "border.accent" },
