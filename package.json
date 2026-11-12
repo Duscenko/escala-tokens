@@ -28,7 +28,8 @@
     "gen:chrome-theme": "tsx scripts/gen-chrome-theme.ts",
     "gen:registry-sources": "tsx scripts/gen-registry-sources.ts",
     "audit:exports": "AUDIT_REPORT=1 vitest run src/lib/__tests__/exportAudit.test.ts",
-    "gen:escala-skill": "tsx scripts/gen-escala-skill.ts"
+    "gen:escala-skill": "tsx scripts/gen-escala-skill.ts",
+    "figma:inventory:check": "node scripts/figma/save-inventory.mjs --check"
   },
   "dependencies": {
     "@radix-ui/react-icons": "^1.3.2",

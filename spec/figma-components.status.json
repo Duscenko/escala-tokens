@@ -1,0 +1,619 @@
+{
+  "$comment": "Hand-maintained ledger: how far the code catalogue is from the Figma file (spec/figma-components.json). A component leaves `pending` when its catalogue axes equal Figma's — the test then demands the entry be removed. `codeOnly` are catalogue components Figma does not document: frozen, no new work. See design-plans/figma-components-inventory.md.",
+  "pending": {
+    "Button": {
+      "status": "rebuild"
+    },
+    "IconButton": {
+      "status": "new"
+    },
+    "SocialLoginButton": {
+      "status": "rebuild"
+    },
+    "FABButton": {
+      "status": "new"
+    },
+    "FABGroup": {
+      "status": "new"
+    },
+    "CloseButton": {
+      "status": "new"
+    },
+    "ButtonGroup": {
+      "status": "rebuild"
+    },
+    "ButtonGroupDivider": {
+      "status": "part",
+      "of": "ButtonGroup"
+    },
+    "ButtonGroupItem": {
+      "status": "part",
+      "of": "ButtonGroup"
+    },
+    "TextLink": {
+      "status": "new"
+    },
+    "Field": {
+      "status": "rebuild"
+    },
+    "Input": {
+      "status": "rebuild"
+    },
+    "NumberInput": {
+      "status": "rename",
+      "code": "InputStepper"
+    },
+    "Textarea": {
+      "status": "rebuild"
+    },
+    "InputOTP": {
+      "status": "rebuild"
+    },
+    "InputOTPSlot": {
+      "status": "part",
+      "of": "InputOTP"
+    },
+    "PasswordStrength": {
+      "status": "rebuild"
+    },
+    "PasswordStrengthMeter": {
+      "status": "part",
+      "of": "PasswordStrength"
+    },
+    "PasswordStrengthRule": {
+      "status": "part",
+      "of": "PasswordStrength"
+    },
+    "InputTag": {
+      "status": "rebuild"
+    },
+    "InputTagChip": {
+      "status": "part",
+      "of": "InputTag"
+    },
+    "InputTagOption": {
+      "status": "part",
+      "of": "InputTag"
+    },
+    "Combobox": {
+      "status": "rebuild"
+    },
+    "ComboboxGroupLabel": {
+      "status": "part",
+      "of": "Combobox"
+    },
+    "ComboboxItem": {
+      "status": "part",
+      "of": "Combobox"
+    },
+    "ComboboxPopover": {
+      "status": "part",
+      "of": "Combobox"
+    },
+    "DatePickerPopover": {
+      "status": "part",
+      "of": "DatePickerTrigger"
+    },
+    "DatePickerTrigger": {
+      "status": "new"
+    },
+    "Calendar": {
+      "status": "rebuild"
+    },
+    "CalendarDay": {
+      "status": "part",
+      "of": "Calendar"
+    },
+    "CalendarFooter": {
+      "status": "part",
+      "of": "Calendar"
+    },
+    "CalendarHeader": {
+      "status": "part",
+      "of": "Calendar"
+    },
+    "CalendarMonth": {
+      "status": "part",
+      "of": "Calendar"
+    },
+    "CalendarPresets": {
+      "status": "part",
+      "of": "Calendar"
+    },
+    "FileUpload": {
+      "status": "rebuild"
+    },
+    "FileUploadDropzone": {
+      "status": "rename",
+      "code": "Dropzone"
+    },
+    "FileUploadItem": {
+      "status": "part",
+      "of": "FileUpload"
+    },
+    "Checkbox": {
+      "status": "rebuild"
+    },
+    "CheckboxGroup": {
+      "status": "part",
+      "of": "Checkbox"
+    },
+    "CheckboxItem": {
+      "status": "part",
+      "of": "Checkbox"
+    },
+    "Radio": {
+      "status": "part",
+      "of": "RadioGroup"
+    },
+    "RadioCard": {
+      "status": "part",
+      "of": "RadioGroup"
+    },
+    "RadioGroup": {
+      "status": "rebuild"
+    },
+    "RadioItem": {
+      "status": "part",
+      "of": "RadioGroup"
+    },
+    "Switch": {
+      "status": "rebuild"
+    },
+    "SwitchGroup": {
+      "status": "part",
+      "of": "Switch"
+    },
+    "SegmentedControl": {
+      "status": "rebuild"
+    },
+    "SegmentedControlItem": {
+      "status": "part",
+      "of": "SegmentedControl"
+    },
+    "Slider": {
+      "status": "rebuild"
+    },
+    "SliderThumb": {
+      "status": "part",
+      "of": "Slider"
+    },
+    "RatingGroup": {
+      "status": "rename",
+      "code": "Rating"
+    },
+    "RatingGroupItem": {
+      "status": "part",
+      "of": "RatingGroup"
+    },
+    "Avatar": {
+      "status": "rebuild"
+    },
+    "AvatarGroup": {
+      "status": "part",
+      "of": "Avatar"
+    },
+    "AvatarStatus": {
+      "status": "part",
+      "of": "Avatar"
+    },
+    "FeaturedIcon": {
+      "status": "new"
+    },
+    "Image": {
+      "status": "rename",
+      "code": "AspectRatio"
+    },
+    "Badge": {
+      "status": "rebuild"
+    },
+    "Chip": {
+      "status": "rebuild"
+    },
+    "Kbd": {
+      "status": "rebuild"
+    },
+    "Accordion": {
+      "status": "rebuild"
+    },
+    "AccordionItem": {
+      "status": "part",
+      "of": "Accordion"
+    },
+    "Table": {
+      "status": "rebuild"
+    },
+    "TableCaption": {
+      "status": "part",
+      "of": "Table"
+    },
+    "TableCell": {
+      "status": "part",
+      "of": "Table"
+    },
+    "TableDropIndicator": {
+      "status": "part",
+      "of": "Table"
+    },
+    "TableEmpty": {
+      "status": "part",
+      "of": "Table"
+    },
+    "TableFooter": {
+      "status": "part",
+      "of": "Table"
+    },
+    "TableHead": {
+      "status": "part",
+      "of": "Table"
+    },
+    "TableHeader": {
+      "status": "part",
+      "of": "Table"
+    },
+    "TableLoadMore": {
+      "status": "part",
+      "of": "Table"
+    },
+    "TableLoading": {
+      "status": "part",
+      "of": "Table"
+    },
+    "TableMediaCell": {
+      "status": "part",
+      "of": "Table"
+    },
+    "TableResizer": {
+      "status": "part",
+      "of": "Table"
+    },
+    "TableRow": {
+      "status": "part",
+      "of": "Table"
+    },
+    "TableTrendCell": {
+      "status": "part",
+      "of": "Table"
+    },
+    "Alert": {
+      "status": "rebuild"
+    },
+    "Toast": {
+      "status": "rename",
+      "code": "Sonner"
+    },
+    "ProgressCircle": {
+      "status": "new"
+    },
+    "ProgressLine": {
+      "status": "rename",
+      "code": "Progress"
+    },
+    "Modal": {
+      "status": "rename",
+      "code": "Dialog"
+    },
+    "ModalFooter": {
+      "status": "part",
+      "of": "Modal"
+    },
+    "ModalHeader": {
+      "status": "part",
+      "of": "Modal"
+    },
+    "Popover": {
+      "status": "rebuild"
+    },
+    "PopoverFooter": {
+      "status": "part",
+      "of": "Popover"
+    },
+    "DropdownMenu": {
+      "status": "rebuild"
+    },
+    "DropdownMenuFooter": {
+      "status": "part",
+      "of": "DropdownMenu"
+    },
+    "DropdownMenuItem": {
+      "status": "part",
+      "of": "DropdownMenu"
+    },
+    "DropdownMenuLabel": {
+      "status": "part",
+      "of": "DropdownMenu"
+    },
+    "TooltipContent": {
+      "status": "rename",
+      "code": "Tooltip"
+    },
+    "TooltipInfoTrigger": {
+      "status": "part",
+      "of": "TooltipContent"
+    },
+    "Breadcrumb": {
+      "status": "rebuild"
+    },
+    "BreadcrumbEllipsis": {
+      "status": "part",
+      "of": "Breadcrumb"
+    },
+    "BreadcrumbItem": {
+      "status": "part",
+      "of": "Breadcrumb"
+    },
+    "BreadcrumbSeparator": {
+      "status": "part",
+      "of": "Breadcrumb"
+    },
+    "TabMenu": {
+      "status": "rebuild"
+    },
+    "TabMenuItem": {
+      "status": "part",
+      "of": "TabMenu"
+    },
+    "TabMenuLineItem": {
+      "status": "part",
+      "of": "TabMenu"
+    },
+    "NavItem": {
+      "status": "new"
+    },
+    "Brand": {
+      "status": "new"
+    },
+    "AccountMenuTrigger": {
+      "status": "new"
+    },
+    "Sidebar": {
+      "status": "rebuild"
+    },
+    "SidebarBrand": {
+      "status": "part",
+      "of": "Sidebar"
+    },
+    "SidebarGroup": {
+      "status": "part",
+      "of": "Sidebar"
+    },
+    "SidebarGroupLabel": {
+      "status": "part",
+      "of": "Sidebar"
+    },
+    "SidebarMenuButton": {
+      "status": "part",
+      "of": "Sidebar"
+    },
+    "Pagination": {
+      "status": "rebuild"
+    },
+    "PaginationEllipsis": {
+      "status": "part",
+      "of": "Pagination"
+    },
+    "PaginationLink": {
+      "status": "part",
+      "of": "Pagination"
+    },
+    "Stepper": {
+      "status": "rebuild"
+    },
+    "StepperIcon": {
+      "status": "part",
+      "of": "Stepper"
+    },
+    "StepperIndicator": {
+      "status": "part",
+      "of": "Stepper"
+    },
+    "StepperItem": {
+      "status": "part",
+      "of": "Stepper"
+    },
+    "Separator": {
+      "status": "rebuild"
+    },
+    "ScrollArea": {
+      "status": "rebuild"
+    },
+    "ScrollBar": {
+      "status": "part",
+      "of": "ScrollArea"
+    },
+    "AuthAccountLocked": {
+      "status": "block",
+      "page": "Auth"
+    },
+    "AuthCheckEmail": {
+      "status": "block",
+      "page": "Auth"
+    },
+    "AuthError": {
+      "status": "block",
+      "page": "Auth"
+    },
+    "AuthForgotPassword": {
+      "status": "block",
+      "page": "Auth"
+    },
+    "AuthMagicLinkSent": {
+      "status": "block",
+      "page": "Auth"
+    },
+    "AuthNewPassword": {
+      "status": "block",
+      "page": "Auth"
+    },
+    "AuthOTPVerification": {
+      "status": "block",
+      "page": "Auth"
+    },
+    "AuthSignIn": {
+      "status": "block",
+      "page": "Auth"
+    },
+    "AuthSignInPhone": {
+      "status": "block",
+      "page": "Auth"
+    },
+    "AuthSignUp": {
+      "status": "block",
+      "page": "Auth"
+    },
+    "AuthSocialSignIn": {
+      "status": "block",
+      "page": "Auth"
+    },
+    "AuthTwoFactor": {
+      "status": "block",
+      "page": "Auth"
+    },
+    "CartDrawer": {
+      "status": "block",
+      "page": "Overlay"
+    },
+    "ConfirmDialog": {
+      "status": "block",
+      "page": "Overlay"
+    },
+    "CookieConsent": {
+      "status": "block",
+      "page": "Overlay"
+    },
+    "DestructiveConfirm": {
+      "status": "block",
+      "page": "Overlay"
+    },
+    "ErrorModal": {
+      "status": "block",
+      "page": "Overlay"
+    },
+    "FeedbackRating": {
+      "status": "block",
+      "page": "Overlay"
+    },
+    "FilterDrawer": {
+      "status": "block",
+      "page": "Overlay"
+    },
+    "FilterModal": {
+      "status": "block",
+      "page": "Overlay"
+    },
+    "FormModal": {
+      "status": "block",
+      "page": "Overlay"
+    },
+    "QuickEditDialog": {
+      "status": "block",
+      "page": "Overlay"
+    },
+    "ReleaseModal": {
+      "status": "block",
+      "page": "Overlay"
+    },
+    "SessionTimeoutWarning": {
+      "status": "block",
+      "page": "Overlay"
+    },
+    "ShareModal": {
+      "status": "block",
+      "page": "Overlay"
+    },
+    "SuccessModal": {
+      "status": "block",
+      "page": "Overlay"
+    },
+    "WarningDialog": {
+      "status": "block",
+      "page": "Overlay"
+    },
+    "AnnouncementBar": {
+      "status": "block",
+      "page": "HeaderNavigation"
+    },
+    "AppHeader": {
+      "status": "block",
+      "page": "HeaderNavigation"
+    },
+    "AppHeaderExtended": {
+      "status": "block",
+      "page": "HeaderNavigation"
+    },
+    "FloatingHeader": {
+      "status": "block",
+      "page": "HeaderNavigation"
+    },
+    "UtilityBar": {
+      "status": "block",
+      "page": "HeaderNavigation"
+    },
+    "DualSidebar": {
+      "status": "block",
+      "page": "SidebarNavigation"
+    },
+    "SidebarStatCard": {
+      "status": "block",
+      "page": "SidebarNavigation"
+    },
+    "ContactSection": {
+      "status": "block",
+      "page": "Marketing"
+    },
+    "FAQSection": {
+      "status": "block",
+      "page": "Marketing"
+    },
+    "Footer": {
+      "status": "block",
+      "page": "Marketing"
+    },
+    "HeroHeader": {
+      "status": "block",
+      "page": "Marketing"
+    },
+    "PricingCard": {
+      "status": "block",
+      "page": "Marketing"
+    },
+    "PricingSection": {
+      "status": "block",
+      "page": "Marketing"
+    }
+  },
+  "codeOnly": [
+    "AlertDialog",
+    "AppStoreBadge",
+    "Attachment",
+    "Bubble",
+    "Card",
+    "Carousel",
+    "Chart",
+    "Collapsible",
+    "Command",
+    "ContextMenu",
+    "Drawer",
+    "Empty",
+    "FileFormat",
+    "HoverCard",
+    "Icon",
+    "InputGroup",
+    "Item",
+    "Label",
+    "Menubar",
+    "Message",
+    "NativeSelect",
+    "Navbar",
+    "NavigationMenu",
+    "Resizable",
+    "Select",
+    "Sheet",
+    "Skeleton",
+    "Spinner",
+    "StatusBadge",
+    "Tabs",
+    "Toggle",
+    "ToggleGroup"
+  ]
+}

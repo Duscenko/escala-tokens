@@ -1,0 +1,1719 @@
+{
+  "$comment": "GENERATED from the Figma file by scripts/figma/components-inventory.figma.js + save-inventory.mjs. Never edit by hand.",
+  "file": {
+    "key": "7j5zukN5HpihGVJMmyjA20",
+    "name": "Escala Design System (Real)"
+  },
+  "exportedAt": "2026-11-12",
+  "checksum": "9cc4dd2f",
+  "pages": [
+    {
+      "page": "Button",
+      "stable": true,
+      "id": "4:2185",
+      "sets": [
+        {
+          "name": "Button",
+          "variants": 288,
+          "axes": {
+            "Appearance": "solid|outline|ghost|link",
+            "Size": "default|xs|sm|lg",
+            "State": "Default|Hover|Pressed|Focused|Loading|Disabled",
+            "Variant": "default|secondary|critical"
+          },
+          "props": "IconLeadingIcon:INSTANCE_SWAP,IconLeadingVisible:BOOLEAN,IconTrailingIcon:INSTANCE_SWAP,IconTrailingVisible:BOOLEAN,Label:TEXT"
+        }
+      ]
+    },
+    {
+      "page": "IconButton",
+      "stable": true,
+      "id": "627:785",
+      "sets": [
+        {
+          "name": "IconButton",
+          "variants": 288,
+          "axes": {
+            "Appearance": "outline|ghost|link|solid",
+            "Size": "default|xs|sm|lg",
+            "State": "Default|Hover|Pressed|Focused|Loading|Disabled",
+            "Variant": "default|secondary|critical"
+          },
+          "props": "BadgeVisible:BOOLEAN,Icon:INSTANCE_SWAP"
+        }
+      ]
+    },
+    {
+      "page": "SocialLoginButton",
+      "stable": true,
+      "id": "364:20",
+      "sets": [
+        {
+          "name": "SocialLoginButton",
+          "variants": 360,
+          "axes": {
+            "Appearance": "white|brand",
+            "Brand": "Google|Apple|Discord|Dribbble|Facebook|GitHub|LinkedIn|Slack|X",
+            "IconOnly": "false|true",
+            "Size": "lg|default",
+            "State": "Default|Hover|Pressed|Focused|Disabled"
+          }
+        }
+      ]
+    },
+    {
+      "page": "FABButton & FABGroup",
+      "stable": true,
+      "id": "643:411",
+      "sets": [
+        {
+          "name": "FABButton",
+          "variants": 100,
+          "axes": {
+            "Appearance": "solid|soft",
+            "Shape": "rounded|pill",
+            "Size": "default|lg",
+            "State": "Default|Hover|Pressed|Focused|Disabled",
+            "Variant": "inverse|default|secondary"
+          },
+          "props": "IconLeadingIcon:INSTANCE_SWAP,Label:TEXT,LabelVisible:BOOLEAN"
+        },
+        {
+          "name": "FABGroup",
+          "variants": 8,
+          "axes": {
+            "Layout": "stack|fan-center|fan-left|fan-right",
+            "Open": "false|true"
+          }
+        }
+      ]
+    },
+    {
+      "page": "CloseButton",
+      "stable": true,
+      "id": "335:2",
+      "sets": [
+        {
+          "name": "CloseButton",
+          "variants": 600,
+          "axes": {
+            "Appearance": "solid|outline|soft|ghost",
+            "Shape": "rounded|pill|square",
+            "Size": "sm|lg|xl|xs|default",
+            "State": "Default|Hover|Pressed|Focused|Disabled",
+            "Variant": "default|inverse"
+          }
+        }
+      ]
+    },
+    {
+      "page": "ButtonGroup",
+      "stable": true,
+      "id": "350:2",
+      "sets": [
+        {
+          "name": "ButtonGroup",
+          "variants": 120,
+          "axes": {
+            "Orientation": "horizontal|vertical",
+            "Shape": "rounded|pill|square",
+            "Size": "xs|sm|lg|xl|default",
+            "Variant": "outline|default|inverse|secondary"
+          },
+          "props": "Item1Visible:BOOLEAN,Item2Visible:BOOLEAN,Item3Visible:BOOLEAN,Item4Visible:BOOLEAN,Item5Visible:BOOLEAN"
+        },
+        {
+          "name": "ButtonGroupDivider",
+          "variants": 8,
+          "axes": {
+            "Orientation": "horizontal|vertical",
+            "Variant": "outline|default|inverse|secondary"
+          }
+        },
+        {
+          "name": "ButtonGroupItem",
+          "variants": 400,
+          "axes": {
+            "Active": "false|true",
+            "IconOnly": "false|true",
+            "Size": "xs|sm|default|lg|xl",
+            "State": "Default|Hover|Pressed|Focused|Disabled",
+            "Variant": "outline|default|inverse|secondary"
+          },
+          "props": "IconLeadingIcon:INSTANCE_SWAP,IconLeadingVisible:BOOLEAN,IconTrailingIcon:INSTANCE_SWAP,IconTrailingVisible:BOOLEAN,Label:TEXT,LoadingVisible:BOOLEAN"
+        }
+      ]
+    },
+    {
+      "page": "TextLink",
+      "stable": true,
+      "id": "342:14798",
+      "sets": [
+        {
+          "name": "TextLink",
+          "variants": 144,
+          "axes": {
+            "Size": "xs|sm|default|lg",
+            "State": "Default|Hover|Pressed|Visited|Focused|Disabled",
+            "Variant": "inverse|success|info|default|secondary|critical"
+          },
+          "props": "IconLeadingIcon:INSTANCE_SWAP,IconLeadingVisible:BOOLEAN,IconTrailingIcon:INSTANCE_SWAP,IconTrailingVisible:BOOLEAN,Label:TEXT,UnderlineVisible:BOOLEAN"
+        }
+      ]
+    },
+    {
+      "page": "Field",
+      "stable": false,
+      "id": "1003:2",
+      "sets": [
+        {
+          "name": "Field",
+          "variants": 6,
+          "axes": {
+            "Size": "default|sm|lg",
+            "State": "Default|Invalid"
+          },
+          "props": "Description:TEXT,DescriptionVisible:BOOLEAN,Error:TEXT,Label:TEXT,RequiredVisible:BOOLEAN,TrailingVisible:BOOLEAN"
+        }
+      ]
+    },
+    {
+      "page": "Input",
+      "stable": true,
+      "id": "4:10609",
+      "sets": [
+        {
+          "name": "Input",
+          "variants": 114,
+          "axes": {
+            "Size": "default|sm|lg",
+            "State": "Default|Hover|Focused|Invalid|Disabled",
+            "Type": "default|phone|currency|currency-select|password|url|upload|tag|copy-link|credit-card|search",
+            "Value": "placeholder|filled"
+          },
+          "props": "IconLeadingIcon:INSTANCE_SWAP,IconLeadingVisible:BOOLEAN,IconTrailingIcon:INSTANCE_SWAP,IconTrailingVisible:BOOLEAN,Placeholder:TEXT,Shortcut:SLOT,ShortcutVisible:BOOLEAN"
+        }
+      ]
+    },
+    {
+      "page": "NumberInput",
+      "stable": true,
+      "id": "1107:2",
+      "sets": [
+        {
+          "name": "NumberInput",
+          "variants": 15,
+          "axes": {
+            "Size": "default|sm|lg",
+            "State": "Default|Hover|Focused|Invalid|Disabled"
+          },
+          "props": "Value:TEXT"
+        }
+      ]
+    },
+    {
+      "page": "Textarea",
+      "stable": true,
+      "id": "89:9",
+      "sets": [
+        {
+          "name": "Textarea",
+          "variants": 36,
+          "axes": {
+            "Size": "sm|default|lg",
+            "State": "Default|Hover|Focused|Invalid|Loading|Disabled",
+            "Value": "placeholder|filled"
+          },
+          "props": "Placeholder:TEXT,ResizeGlyphVisible:BOOLEAN,Text:TEXT"
+        }
+      ]
+    },
+    {
+      "page": "InputOTP",
+      "stable": true,
+      "id": "89:6",
+      "sets": [
+        {
+          "name": "InputOTP",
+          "variants": 135,
+          "axes": {
+            "Length": "4|6|8",
+            "Size": "sm|default|lg",
+            "State": "Empty|Typing|Filled|Invalid|Disabled",
+            "Variant": "outline|filled|underline"
+          }
+        },
+        {
+          "name": "InputOTPSlot",
+          "variants": 54,
+          "axes": {
+            "Size": "sm|default|lg",
+            "State": "Default|Filled|Typing|Focused|Invalid|Disabled",
+            "Variant": "outline|filled|underline"
+          },
+          "props": "Digit:TEXT"
+        }
+      ]
+    },
+    {
+      "page": "PasswordStrength",
+      "stable": true,
+      "id": "89:14",
+      "sets": [
+        {
+          "name": "PasswordStrength",
+          "variants": 18,
+          "axes": {
+            "Size": "xs|sm|default",
+            "Strength": "0|1|2|3|4|5"
+          },
+          "props": "RulesVisible:BOOLEAN"
+        },
+        {
+          "name": "PasswordStrengthMeter",
+          "variants": 18,
+          "axes": {
+            "Size": "xs|sm|default",
+            "Strength": "0|1|2|3|4|5"
+          }
+        },
+        {
+          "name": "PasswordStrengthRule",
+          "variants": 6,
+          "axes": {
+            "Met": "true|false",
+            "Size": "xs|sm|default"
+          },
+          "props": "Label:TEXT"
+        }
+      ]
+    },
+    {
+      "page": "InputTag",
+      "stable": true,
+      "id": "89:8",
+      "sets": [
+        {
+          "name": "InputTag",
+          "variants": 72,
+          "axes": {
+            "Layout": "inline|outside",
+            "Size": "sm|default|lg",
+            "State": "Default|Hover|Focused|Invalid|Disabled|Loading",
+            "Value": "placeholder|filled"
+          },
+          "props": "Placeholder:TEXT"
+        },
+        {
+          "name": "InputTagChip",
+          "variants": 40,
+          "axes": {
+            "Size": "xs|sm|default|lg|xl",
+            "State": "Default|Hover|Focused|Disabled",
+            "Variant": "default|critical"
+          },
+          "props": "Label:TEXT,RemoveVisible:BOOLEAN"
+        },
+        {
+          "name": "InputTagOption",
+          "variants": 8,
+          "axes": {
+            "State": "Default|Hover|Focused|Disabled",
+            "Type": "option|create"
+          },
+          "props": "BadgeVisible:BOOLEAN,Label:TEXT,Meta:TEXT,MetaVisible:BOOLEAN"
+        }
+      ]
+    },
+    {
+      "page": "Combobox",
+      "stable": true,
+      "id": "89:3",
+      "sets": [
+        {
+          "name": "Combobox",
+          "variants": 168,
+          "axes": {
+            "Shape": "rounded|pill",
+            "Size": "sm|default|lg",
+            "State": "Default|Hover|Focused|Open|Invalid|Disabled|Loading",
+            "Value": "placeholder|filled",
+            "Variant": "default|compact"
+          },
+          "props": "ChevronVisible:BOOLEAN,ClearVisible:BOOLEAN,IconLeadingIcon:INSTANCE_SWAP,IconLeadingVisible:BOOLEAN,Placeholder:TEXT,SelectedText:TEXT"
+        },
+        {
+          "name": "ComboboxGroupLabel",
+          "variants": 3,
+          "axes": {
+            "Size": "sm|default|lg"
+          },
+          "props": "Label:TEXT"
+        },
+        {
+          "name": "ComboboxItem",
+          "variants": 12,
+          "axes": {
+            "Size": "sm|default|lg",
+            "State": "Default|Focused|Selected|Disabled"
+          },
+          "props": "Description:TEXT,DescriptionVisible:BOOLEAN,IconLeadingIcon:INSTANCE_SWAP,IconLeadingVisible:BOOLEAN,IndicatorVisible:BOOLEAN,Label:TEXT,Trailing:TEXT,TrailingVisible:BOOLEAN"
+        },
+        {
+          "name": "ComboboxPopover",
+          "variants": 9,
+          "axes": {
+            "Content": "list|grouped|empty",
+            "Size": "sm|default|lg"
+          },
+          "props": "EmptyText:TEXT,FooterText:TEXT,FooterVisible:BOOLEAN"
+        }
+      ]
+    },
+    {
+      "page": "DatePicker",
+      "stable": true,
+      "id": "425:2",
+      "sets": [
+        {
+          "name": "DatePickerPopover",
+          "variants": 4,
+          "axes": {
+            "Mode": "single|range",
+            "Size": "default|sm"
+          }
+        },
+        {
+          "name": "DatePickerTrigger",
+          "variants": 36,
+          "axes": {
+            "Size": "lg|sm|default",
+            "State": "Default|Hover|Focused|Invalid|Disabled|Loading",
+            "Value": "placeholder|filled"
+          },
+          "props": "PlaceholderText:TEXT,ValueText:TEXT"
+        }
+      ]
+    },
+    {
+      "page": "Calendar",
+      "stable": true,
+      "id": "89:13",
+      "sets": [
+        {
+          "name": "Calendar",
+          "variants": 18,
+          "axes": {
+            "Header": "single|multiple|plain",
+            "Mode": "single|multiple|range",
+            "Size": "default|sm"
+          },
+          "props": "FooterVisible:BOOLEAN,PresetsVisible:BOOLEAN"
+        },
+        {
+          "name": "CalendarDay",
+          "variants": 44,
+          "axes": {
+            "Size": "default|sm",
+            "State": "Default|Hover|Today|Selected|RangeMiddle|RangeStart|RangeEnd|Outside|Disabled|Unavailable|Focused",
+            "Variant": "default|secondary"
+          },
+          "props": "Day:TEXT,IndicatorVisible:BOOLEAN"
+        },
+        {
+          "name": "CalendarFooter",
+          "variants": 2,
+          "axes": {
+            "Size": "default|sm"
+          }
+        },
+        {
+          "name": "CalendarHeader",
+          "variants": 6,
+          "axes": {
+            "Header": "single|multiple|plain",
+            "Size": "default|sm"
+          },
+          "props": "Label:TEXT,Month:TEXT,Year:TEXT"
+        },
+        {
+          "name": "CalendarMonth",
+          "variants": 12,
+          "axes": {
+            "Mode": "single|multiple|range",
+            "Size": "default|sm",
+            "Variant": "default|secondary"
+          }
+        },
+        {
+          "name": "CalendarPresets",
+          "variants": 4,
+          "axes": {
+            "Size": "default|sm",
+            "Variant": "default|secondary"
+          }
+        }
+      ]
+    },
+    {
+      "page": "FileUpload",
+      "stable": true,
+      "id": "931:88585",
+      "sets": [
+        {
+          "name": "FileUpload",
+          "variants": 4,
+          "axes": {
+            "Layout": "dropzone|trigger",
+            "Size": "default|sm"
+          },
+          "props": "Content:SLOT"
+        },
+        {
+          "name": "FileUploadDropzone",
+          "variants": 15,
+          "axes": {
+            "Size": "default|sm|lg",
+            "State": "Default|Hover|Dragging|Invalid|Disabled"
+          },
+          "props": "Description:TEXT,DescriptionVisible:BOOLEAN,Icon:INSTANCE_SWAP,SeparatorVisible:BOOLEAN,Title:TEXT"
+        },
+        {
+          "name": "FileUploadItem",
+          "variants": 10,
+          "axes": {
+            "Size": "default|sm",
+            "Status": "queued|uploading|paused|completed|error"
+          },
+          "props": "CompletedActionsVisible:BOOLEAN,Icon:INSTANCE_SWAP,Name:TEXT"
+        }
+      ]
+    },
+    {
+      "page": "Checkbox",
+      "stable": true,
+      "id": "1012:113047",
+      "sets": [
+        {
+          "name": "Checkbox",
+          "variants": 270,
+          "axes": {
+            "Checked": "false|true|indeterminate",
+            "Size": "xs|sm|default",
+            "State": "Default|Hover|Focused|Disabled|Invalid",
+            "Variant": "default|secondary|critical|success|info|inverse"
+          }
+        },
+        {
+          "name": "CheckboxGroup",
+          "variants": 108,
+          "axes": {
+            "Placement": "left|right",
+            "Size": "xs|sm|default",
+            "State": "Default|Invalid|Disabled",
+            "Variant": "default|secondary|critical|success|info|inverse"
+          },
+          "props": "FooterText:TEXT,FooterVisible:BOOLEAN,GroupLabel:TEXT"
+        },
+        {
+          "name": "CheckboxItem",
+          "variants": 324,
+          "axes": {
+            "Checked": "false|true|indeterminate",
+            "Placement": "left|right",
+            "Size": "xs|sm|default",
+            "State": "Default|Disabled|Invalid",
+            "Variant": "default|secondary|critical|success|info|inverse"
+          },
+          "props": "Description:TEXT,DescriptionVisible:BOOLEAN,Label:TEXT"
+        }
+      ]
+    },
+    {
+      "page": "RadioGroup",
+      "stable": true,
+      "id": "89:15",
+      "sets": [
+        {
+          "name": "Radio",
+          "variants": 150,
+          "axes": {
+            "Checked": "false|true",
+            "Size": "xs|sm|default",
+            "State": "Default|Hover|Focused|Disabled|Invalid",
+            "Variant": "default|secondary|critical|success|inverse"
+          }
+        },
+        {
+          "name": "RadioCard",
+          "variants": 120,
+          "axes": {
+            "Checked": "false|true",
+            "Placement": "left|right",
+            "Size": "default|sm|xs",
+            "State": "Default|Hover|Focused|Disabled|Invalid",
+            "Variant": "default|secondary"
+          },
+          "props": "Description:TEXT,DescriptionVisible:BOOLEAN,Label:TEXT"
+        },
+        {
+          "name": "RadioGroup",
+          "variants": 90,
+          "axes": {
+            "Placement": "left|right",
+            "Size": "xs|sm|default",
+            "State": "Default|Invalid|Disabled",
+            "Variant": "default|secondary|critical|success|inverse"
+          },
+          "props": "FooterText:TEXT,FooterVisible:BOOLEAN,GroupLabel:TEXT"
+        },
+        {
+          "name": "RadioItem",
+          "variants": 180,
+          "axes": {
+            "Checked": "false|true",
+            "Placement": "left|right",
+            "Size": "xs|sm|default",
+            "State": "Default|Disabled|Invalid",
+            "Variant": "default|secondary|critical|success|inverse"
+          },
+          "props": "Description:TEXT,DescriptionVisible:BOOLEAN,Label:TEXT"
+        }
+      ]
+    },
+    {
+      "page": "Switch & SwitchGroup",
+      "stable": true,
+      "id": "89:19",
+      "sets": [
+        {
+          "name": "Switch",
+          "variants": 48,
+          "axes": {
+            "Checked": "true|false",
+            "Size": "xs|sm|default",
+            "State": "Default|Hover|Focused|Disabled",
+            "Thumb": "short|long"
+          },
+          "props": "IoVisible:BOOLEAN,ThumbIconVisible:BOOLEAN"
+        },
+        {
+          "name": "SwitchGroup",
+          "variants": 24,
+          "axes": {
+            "Placement": "left|right",
+            "Size": "xs|sm|default",
+            "State": "Default|Disabled|Invalid|Loading"
+          },
+          "props": "Description:TEXT,DescriptionVisible:BOOLEAN,Footer:TEXT,FooterVisible:BOOLEAN,Label:TEXT"
+        }
+      ]
+    },
+    {
+      "page": "SegmentedControl",
+      "stable": true,
+      "id": "1102:4960",
+      "sets": [
+        {
+          "name": "SegmentedControl",
+          "variants": 3,
+          "axes": {
+            "Size": "default|sm|lg"
+          },
+          "props": "Content:SLOT"
+        },
+        {
+          "name": "SegmentedControlItem",
+          "variants": 30,
+          "axes": {
+            "Checked": "false|true",
+            "Size": "default|sm|lg",
+            "State": "Default|Hover|Pressed|Focused|Disabled"
+          },
+          "props": "IconLeadingIcon:INSTANCE_SWAP,IconLeadingVisible:BOOLEAN,Label:TEXT,LabelVisible:BOOLEAN"
+        }
+      ]
+    },
+    {
+      "page": "Slider",
+      "stable": true,
+      "id": "89:18",
+      "sets": [
+        {
+          "name": "Slider",
+          "variants": 36,
+          "axes": {
+            "Range": "single|range",
+            "Size": "xs|sm|default",
+            "State": "Default|Dragging|Disabled",
+            "Variant": "default|secondary"
+          },
+          "props": "MarksVisible:BOOLEAN,TooltipEndText:TEXT,TooltipText:TEXT,TooltipVisible:BOOLEAN"
+        },
+        {
+          "name": "SliderThumb",
+          "variants": 30,
+          "axes": {
+            "Size": "xs|sm|default",
+            "State": "Default|Hover|Focused|Dragging|Disabled",
+            "Variant": "default|secondary"
+          }
+        }
+      ]
+    },
+    {
+      "page": "RatingGroup",
+      "stable": true,
+      "id": "1122:2",
+      "sets": [
+        {
+          "name": "RatingGroup",
+          "variants": 6,
+          "axes": {
+            "Size": "default|sm|lg",
+            "Type": "star|emoji"
+          },
+          "props": "Content:SLOT"
+        },
+        {
+          "name": "RatingGroupItem",
+          "variants": 60,
+          "axes": {
+            "Checked": "false|true",
+            "Size": "default|sm|lg",
+            "State": "Default|Hover|Pressed|Focused|Disabled",
+            "Type": "star|emoji"
+          },
+          "props": "Icon:INSTANCE_SWAP"
+        }
+      ]
+    },
+    {
+      "page": "Avatar",
+      "stable": true,
+      "id": "89:21",
+      "sets": [
+        {
+          "name": "Avatar",
+          "variants": 350,
+          "axes": {
+            "Appearance": "soft|solid",
+            "Shape": "circle|rounded",
+            "Size": "2xs|xs|sm|default|lg|xl|2xl",
+            "Type": "image|initials|icon",
+            "Variant": "secondary|default|info|success|warning|critical"
+          },
+          "props": "Icon:INSTANCE_SWAP,Photo:INSTANCE_SWAP,RingVisible:BOOLEAN,StatusVisible:BOOLEAN"
+        },
+        {
+          "name": "AvatarGroup",
+          "variants": 14,
+          "axes": {
+            "Shape": "circle|rounded",
+            "Size": "2xs|xs|sm|default|lg|xl|2xl"
+          }
+        },
+        {
+          "name": "AvatarStatus",
+          "variants": 20,
+          "axes": {
+            "Size": "xs|sm|default|lg",
+            "Status": "online|busy|away|offline|do-not-disturb"
+          }
+        }
+      ]
+    },
+    {
+      "page": "FeaturedIcon",
+      "stable": true,
+      "id": "1119:10568",
+      "sets": [
+        {
+          "name": "FeaturedIcon",
+          "variants": 96,
+          "axes": {
+            "Appearance": "soft|solid",
+            "Shape": "circle|rounded",
+            "Size": "default|sm|lg|xl",
+            "Variant": "default|secondary|critical|success|warning|info"
+          },
+          "props": "Icon:INSTANCE_SWAP"
+        }
+      ]
+    },
+    {
+      "page": "Image",
+      "stable": true,
+      "id": "1126:2",
+      "sets": [
+        {
+          "name": "Image",
+          "variants": 12,
+          "axes": {
+            "Ratio": "auto|16:9|4:3|3:2|1:1|3:4",
+            "Shape": "square|rounded"
+          },
+          "props": "Media:INSTANCE_SWAP"
+        }
+      ]
+    },
+    {
+      "page": "Badge",
+      "stable": true,
+      "id": "90:3",
+      "sets": [
+        {
+          "name": "Badge",
+          "variants": 525,
+          "axes": {
+            "Appearance": "soft|solid|outline|ghost",
+            "Shape": "rounded|pill",
+            "Size": "xs|sm|default",
+            "Type": "default|icon|number|dot",
+            "Variant": "success|warning|info|inverse|default|secondary|critical"
+          },
+          "props": "Count:TEXT,Icon:INSTANCE_SWAP,IconLeadingIcon:INSTANCE_SWAP,IconLeadingVisible:BOOLEAN,IconTrailingIcon:INSTANCE_SWAP,IconTrailingVisible:BOOLEAN,Label:TEXT"
+        }
+      ]
+    },
+    {
+      "page": "Chip",
+      "stable": true,
+      "id": "90:4",
+      "sets": [
+        {
+          "name": "Chip",
+          "variants": 480,
+          "axes": {
+            "Appearance": "outline|soft",
+            "Shape": "rounded|pill",
+            "Size": "xs|sm|default|lg|xl",
+            "State": "Default|Hover|Focused|Selected|Disabled|Dragging",
+            "Variant": "info|success|default|critical"
+          },
+          "props": "CloseVisible:BOOLEAN,IconLeadingIcon:INSTANCE_SWAP,IconLeadingVisible:BOOLEAN,Label:TEXT"
+        }
+      ]
+    },
+    {
+      "page": "Kbd",
+      "stable": true,
+      "id": "949:965",
+      "sets": [
+        {
+          "name": "Kbd",
+          "variants": 3,
+          "axes": {
+            "Size": "xs|sm|default"
+          },
+          "props": "Label:TEXT"
+        }
+      ]
+    },
+    {
+      "page": "Accordion",
+      "stable": true,
+      "id": "89:25",
+      "sets": [
+        {
+          "name": "Accordion",
+          "variants": 6,
+          "axes": {
+            "Variant": "ghost-default|ghost-underline|ghost-rounded|outline-rounded|outline-sharp|filled-rounded"
+          }
+        },
+        {
+          "name": "AccordionItem",
+          "variants": 18,
+          "axes": {
+            "State": "Closed|Open|Disabled",
+            "Variant": "ghost-default|ghost-underline|ghost-rounded|outline-rounded|outline-sharp|filled-rounded"
+          },
+          "props": "Content:TEXT,Icon:INSTANCE_SWAP,IconVisible:BOOLEAN,Label:TEXT"
+        }
+      ]
+    },
+    {
+      "page": "Table",
+      "stable": true,
+      "id": "1023:120189",
+      "sets": [
+        {
+          "name": "Table",
+          "variants": 16,
+          "axes": {
+            "Appearance": "filled|ghost",
+            "Dividers": "grid|rows",
+            "Size": "default|xs|sm|lg"
+          },
+          "props": "Content:SLOT"
+        },
+        {
+          "name": "TableCaption",
+          "variants": 1,
+          "props": "Description:TEXT,DescriptionVisible:BOOLEAN,Title:TEXT"
+        },
+        {
+          "name": "TableCell",
+          "variants": 48,
+          "axes": {
+            "Align": "start|end",
+            "Pinned": "start|end|none",
+            "Size": "default|xs|sm|lg",
+            "State": "Default|Disabled"
+          },
+          "props": "Description:TEXT,DescriptionVisible:BOOLEAN,Label:TEXT,LabelVisible:BOOLEAN,Leading:SLOT,LeadingVisible:BOOLEAN,Trailing:SLOT,TrailingVisible:BOOLEAN"
+        },
+        {
+          "name": "TableDropIndicator",
+          "variants": 1
+        },
+        {
+          "name": "TableEmpty",
+          "variants": 1,
+          "props": "Action:SLOT,ActionVisible:BOOLEAN,Description:TEXT,DescriptionVisible:BOOLEAN,Icon:INSTANCE_SWAP,Title:TEXT"
+        },
+        {
+          "name": "TableFooter",
+          "variants": 8,
+          "axes": {
+            "Dividers": "rows|grid",
+            "Size": "default|xs|sm|lg"
+          },
+          "props": "Content:SLOT"
+        },
+        {
+          "name": "TableHead",
+          "variants": 144,
+          "axes": {
+            "Align": "start|end",
+            "Pinned": "start|end|none",
+            "Size": "default|xs|sm|lg",
+            "Sort": "none|ascending|descending",
+            "State": "Default|Hover"
+          },
+          "props": "Label:TEXT,LabelVisible:BOOLEAN,Leading:SLOT,LeadingVisible:BOOLEAN,ResizerVisible:BOOLEAN"
+        },
+        {
+          "name": "TableHeader",
+          "variants": 16,
+          "axes": {
+            "Dividers": "grid|rows",
+            "Scrolled": "true|false",
+            "Size": "default|xs|sm|lg"
+          },
+          "props": "Content:SLOT"
+        },
+        {
+          "name": "TableLoadMore",
+          "variants": 2,
+          "axes": {
+            "State": "Default|Loading"
+          }
+        },
+        {
+          "name": "TableLoading",
+          "variants": 1,
+          "props": "Label:TEXT"
+        },
+        {
+          "name": "TableMediaCell",
+          "variants": 16,
+          "axes": {
+            "Ratio": "square|wide",
+            "Size": "default|xs|sm|lg",
+            "State": "Default|Disabled"
+          },
+          "props": "Description:TEXT,DescriptionVisible:BOOLEAN,Image:INSTANCE_SWAP,Label:TEXT,LabelVisible:BOOLEAN"
+        },
+        {
+          "name": "TableResizer",
+          "variants": 3,
+          "axes": {
+            "State": "Default|Hover|Resizing"
+          }
+        },
+        {
+          "name": "TableRow",
+          "variants": 48,
+          "axes": {
+            "Dividers": "grid|rows",
+            "Size": "default|xs|sm|lg",
+            "State": "Default|Hover|Selected|Focused|Disabled|Dragging"
+          },
+          "props": "Content:SLOT"
+        },
+        {
+          "name": "TableTrendCell",
+          "variants": 24,
+          "axes": {
+            "Size": "default|xs|sm|lg",
+            "State": "Default|Disabled",
+            "Trend": "up|down|neutral"
+          },
+          "props": "Delta:TEXT,DeltaVisible:BOOLEAN,Value:TEXT"
+        }
+      ]
+    },
+    {
+      "page": "Alert",
+      "stable": true,
+      "id": "89:42",
+      "sets": [
+        {
+          "name": "Alert",
+          "variants": 96,
+          "axes": {
+            "Appearance": "outline|solid|soft|inverse",
+            "Layout": "horizontal|vertical",
+            "Size": "sm|default",
+            "Variant": "success|info|warning|default|critical|secondary"
+          },
+          "props": "ActionsVisible:BOOLEAN,CloseVisible:BOOLEAN,Description:TEXT,Icon:INSTANCE_SWAP,IconVisible:BOOLEAN"
+        }
+      ]
+    },
+    {
+      "page": "Toast",
+      "stable": true,
+      "id": "1117:2",
+      "sets": [
+        {
+          "name": "Toast",
+          "variants": 24,
+          "axes": {
+            "Appearance": "solid|soft|filled|outline",
+            "Variant": "default|secondary|success|info|warning|critical"
+          },
+          "props": "ActionsVisible:BOOLEAN,CloseVisible:BOOLEAN,Description:TEXT,DescriptionVisible:BOOLEAN,IconVisible:BOOLEAN,ProgressVisible:BOOLEAN,Title:TEXT"
+        }
+      ]
+    },
+    {
+      "page": "ProgressLine & ProgressCircle",
+      "stable": true,
+      "id": "90:6",
+      "sets": [
+        {
+          "name": "ProgressCircle",
+          "variants": 80,
+          "axes": {
+            "Appearance": "solid|gradient",
+            "Cap": "round|butt",
+            "Size": "xs|sm|default|lg",
+            "Value": "0|25|50|75|100"
+          }
+        },
+        {
+          "name": "ProgressLine",
+          "variants": 40,
+          "axes": {
+            "Appearance": "solid|gradient",
+            "Size": "xs|sm|default|lg",
+            "Value": "0|25|50|75|100"
+          }
+        }
+      ]
+    },
+    {
+      "page": "Modal",
+      "stable": true,
+      "id": "931:87046",
+      "sets": [
+        {
+          "name": "Modal",
+          "variants": 2,
+          "axes": {
+            "Size": "default|lg"
+          },
+          "props": "CloseVisible:BOOLEAN,Content:SLOT,ContentVisible:BOOLEAN,FooterVisible:BOOLEAN"
+        },
+        {
+          "name": "ModalFooter",
+          "variants": 4,
+          "axes": {
+            "Layout": "inline|stacked",
+            "Size": "default|lg"
+          },
+          "props": "Actions:SLOT,ActionsVisible:BOOLEAN,Leading:SLOT,LeadingVisible:BOOLEAN"
+        },
+        {
+          "name": "ModalHeader",
+          "variants": 6,
+          "axes": {
+            "Align": "horizontal|vertical-left|vertical-center",
+            "Size": "default|lg"
+          },
+          "props": "CloseClearanceVisible:BOOLEAN,Description:TEXT,DescriptionVisible:BOOLEAN,IconVisible:BOOLEAN,Title:TEXT,Trailing:SLOT,TrailingVisible:BOOLEAN"
+        }
+      ]
+    },
+    {
+      "page": "Popover",
+      "stable": true,
+      "id": "931:87047",
+      "sets": [
+        {
+          "name": "Popover",
+          "variants": 12,
+          "axes": {
+            "Side": "bottom|top|left|right",
+            "Size": "default|sm|lg"
+          },
+          "props": "ArrowVisible:BOOLEAN,CloseVisible:BOOLEAN,Content:SLOT,ContentVisible:BOOLEAN,Description:TEXT,DescriptionVisible:BOOLEAN,FooterVisible:BOOLEAN,Media:SLOT,MediaVisible:BOOLEAN,Title:TEXT"
+        },
+        {
+          "name": "PopoverFooter",
+          "variants": 6,
+          "axes": {
+            "Layout": "inline|stacked",
+            "Size": "default|sm|lg"
+          },
+          "props": "Actions:SLOT,ActionsVisible:BOOLEAN,Leading:SLOT,LeadingVisible:BOOLEAN"
+        }
+      ]
+    },
+    {
+      "page": "DropdownMenu",
+      "stable": true,
+      "id": "912:77794",
+      "sets": [
+        {
+          "name": "DropdownMenu",
+          "variants": 3,
+          "axes": {
+            "Size": "sm|default|lg"
+          },
+          "props": "Content:SLOT,FooterVisible:BOOLEAN,Header:SLOT,HeaderVisible:BOOLEAN"
+        },
+        {
+          "name": "DropdownMenuFooter",
+          "variants": 6,
+          "axes": {
+            "Layout": "inline|stacked",
+            "Size": "default|sm|lg"
+          },
+          "props": "Actions:SLOT,ActionsVisible:BOOLEAN,Leading:SLOT,LeadingVisible:BOOLEAN"
+        },
+        {
+          "name": "DropdownMenuItem",
+          "variants": 21,
+          "axes": {
+            "Size": "sm|default|lg",
+            "State": "Default|Focused|Selected|Disabled",
+            "Variant": "default|destructive"
+          },
+          "props": "Control:SLOT,ControlVisible:BOOLEAN,Description:TEXT,DescriptionVisible:BOOLEAN,IconLeadingIcon:INSTANCE_SWAP,IconLeadingVisible:BOOLEAN,IconTrailingIcon:INSTANCE_SWAP,IconTrailingVisible:BOOLEAN,IndicatorVisible:BOOLEAN,Label:TEXT,Media:SLOT,MediaVisible:BOOLEAN,Trailing:TEXT,TrailingVisible:BOOLEAN"
+        },
+        {
+          "name": "DropdownMenuLabel",
+          "variants": 3,
+          "axes": {
+            "Size": "sm|default|lg"
+          },
+          "props": "Label:TEXT"
+        }
+      ]
+    },
+    {
+      "page": "Tooltip",
+      "stable": true,
+      "id": "89:41",
+      "sets": [
+        {
+          "name": "TooltipContent",
+          "variants": 180,
+          "axes": {
+            "Align": "start|center|end",
+            "Side": "top|bottom|left|right",
+            "Size": "sm|default|lg",
+            "Variant": "default|secondary|inverse|critical|info"
+          },
+          "props": "ArrowVisible:BOOLEAN,Text:TEXT,Title:TEXT,TitleVisible:BOOLEAN"
+        },
+        {
+          "name": "TooltipInfoTrigger",
+          "variants": 60,
+          "axes": {
+            "Size": "sm|default|lg",
+            "State": "Default|Hover|Open|Focused",
+            "Variant": "default|secondary|inverse|critical|info"
+          }
+        }
+      ]
+    },
+    {
+      "page": "Breadcrumb",
+      "stable": true,
+      "id": "89:46",
+      "sets": [
+        {
+          "name": "Breadcrumb",
+          "variants": 27,
+          "axes": {
+            "Appearance": "ghost|outline|solid",
+            "Separator": "chevron|slash|dot",
+            "Size": "xs|sm|default"
+          },
+          "props": "EllipsisVisible:BOOLEAN,Item2Visible:BOOLEAN,Item3Visible:BOOLEAN"
+        },
+        {
+          "name": "BreadcrumbEllipsis",
+          "variants": 72,
+          "axes": {
+            "Appearance": "ghost|outline|solid",
+            "Size": "xs|sm|default",
+            "State": "Default|Hover|Focused|Disabled",
+            "Variant": "default|secondary"
+          }
+        },
+        {
+          "name": "BreadcrumbItem",
+          "variants": 90,
+          "axes": {
+            "Appearance": "ghost|outline|solid",
+            "Size": "xs|sm|default",
+            "State": "Default|Hover|Focused|Current|Disabled",
+            "Variant": "default|secondary"
+          },
+          "props": "IconLeadingIcon:INSTANCE_SWAP,IconLeadingVisible:BOOLEAN,IconTrailingIcon:INSTANCE_SWAP,IconTrailingVisible:BOOLEAN,Label:TEXT"
+        },
+        {
+          "name": "BreadcrumbSeparator",
+          "variants": 9,
+          "axes": {
+            "Size": "xs|sm|default",
+            "Variant": "chevron|slash|dot"
+          }
+        }
+      ]
+    },
+    {
+      "page": "TabMenu",
+      "stable": true,
+      "id": "931:87049",
+      "sets": [
+        {
+          "name": "TabMenu",
+          "variants": 12,
+          "axes": {
+            "Size": "default|sm|lg",
+            "Variant": "horizontal-line|horizontal-button|vertical-line|vertical-button"
+          },
+          "props": "Content:SLOT"
+        },
+        {
+          "name": "TabMenuItem",
+          "variants": 15,
+          "axes": {
+            "Size": "default|sm|lg",
+            "State": "Default|Hover|Selected|Focused|Disabled"
+          },
+          "props": "IconLeadingIcon:INSTANCE_SWAP,IconLeadingVisible:BOOLEAN,IconTrailingIcon:INSTANCE_SWAP,IconTrailingVisible:BOOLEAN,Label:TEXT,TrailingVisible:BOOLEAN"
+        },
+        {
+          "name": "TabMenuLineItem",
+          "variants": 30,
+          "axes": {
+            "Indicator": "bottom|left",
+            "Size": "default|sm|lg",
+            "State": "Default|Hover|Selected|Focused|Disabled"
+          },
+          "props": "IconLeadingIcon:INSTANCE_SWAP,IconLeadingVisible:BOOLEAN,IconTrailingIcon:INSTANCE_SWAP,IconTrailingVisible:BOOLEAN,Label:TEXT,TrailingVisible:BOOLEAN"
+        }
+      ]
+    },
+    {
+      "page": "NavItem",
+      "stable": true,
+      "id": "1095:19642",
+      "sets": [
+        {
+          "name": "NavItem",
+          "variants": 15,
+          "axes": {
+            "Size": "default|sm|lg",
+            "State": "Default|Hover|Current|Focused|Disabled"
+          },
+          "props": "IconLeadingIcon:INSTANCE_SWAP,IconLeadingVisible:BOOLEAN,IconTrailingIcon:INSTANCE_SWAP,IconTrailingVisible:BOOLEAN,Label:TEXT,TrailingVisible:BOOLEAN"
+        }
+      ]
+    },
+    {
+      "page": "Brand",
+      "stable": true,
+      "id": "1098:2",
+      "sets": [
+        {
+          "name": "Brand",
+          "variants": 2,
+          "axes": {
+            "Size": "default|sm"
+          },
+          "props": "Logo:SLOT,Name:TEXT,VersionVisible:BOOLEAN"
+        }
+      ]
+    },
+    {
+      "page": "AccountMenuTrigger",
+      "stable": true,
+      "id": "1098:43",
+      "sets": [
+        {
+          "name": "AccountMenuTrigger",
+          "variants": 8,
+          "axes": {
+            "Size": "default|sm",
+            "State": "Default|Hover|Pressed|Focused"
+          },
+          "props": "Name:TEXT,NameVisible:BOOLEAN"
+        }
+      ]
+    },
+    {
+      "page": "Sidebar",
+      "stable": true,
+      "id": "931:87050",
+      "sets": [
+        {
+          "name": "Sidebar",
+          "variants": 2,
+          "axes": {
+            "Collapsed": "false|true"
+          },
+          "props": "Content:SLOT,Footer:SLOT,FooterVisible:BOOLEAN"
+        },
+        {
+          "name": "SidebarBrand",
+          "variants": 2,
+          "axes": {
+            "Collapsed": "false|true"
+          },
+          "props": "Logo:SLOT,Subtitle:TEXT,SubtitleVisible:BOOLEAN,Title:TEXT"
+        },
+        {
+          "name": "SidebarGroup",
+          "variants": 6,
+          "axes": {
+            "Collapsed": "false|true",
+            "Size": "default|sm|lg"
+          },
+          "props": "Content:SLOT,LabelVisible:BOOLEAN"
+        },
+        {
+          "name": "SidebarGroupLabel",
+          "variants": 3,
+          "axes": {
+            "Size": "default|sm|lg"
+          },
+          "props": "Label:TEXT"
+        },
+        {
+          "name": "SidebarMenuButton",
+          "variants": 30,
+          "axes": {
+            "Collapsed": "false|true",
+            "Size": "default|sm|lg",
+            "State": "Default|Hover|Focused|Selected|Disabled"
+          },
+          "props": "IconLeadingIcon:INSTANCE_SWAP,IconLeadingVisible:BOOLEAN,IconTrailingIcon:INSTANCE_SWAP,IconTrailingVisible:BOOLEAN,Label:TEXT,Trailing:TEXT,TrailingVisible:BOOLEAN,TrendVisible:BOOLEAN"
+        }
+      ]
+    },
+    {
+      "page": "Pagination",
+      "stable": true,
+      "id": "931:87052",
+      "sets": [
+        {
+          "name": "Pagination",
+          "variants": 8,
+          "axes": {
+            "Size": "default|xs|sm|lg",
+            "Variant": "compact|compact-grouped"
+          },
+          "props": "Content:SLOT,JumpButtonsVisible:BOOLEAN"
+        },
+        {
+          "name": "PaginationEllipsis",
+          "variants": 4,
+          "axes": {
+            "Size": "default|xs|sm|lg"
+          }
+        },
+        {
+          "name": "PaginationLink",
+          "variants": 40,
+          "axes": {
+            "Active": "false|true",
+            "Size": "default|xs|sm|lg",
+            "State": "Default|Hover|Pressed|Focused|Disabled"
+          },
+          "props": "Label:TEXT"
+        }
+      ]
+    },
+    {
+      "page": "Stepper",
+      "stable": true,
+      "id": "931:87054",
+      "sets": [
+        {
+          "name": "Stepper",
+          "variants": 8,
+          "axes": {
+            "Orientation": "vertical|horizontal",
+            "Size": "default|xs|sm|lg"
+          },
+          "props": "Content:SLOT"
+        },
+        {
+          "name": "StepperIcon",
+          "variants": 28,
+          "axes": {
+            "Size": "default|xs|sm|lg",
+            "State": "Default|Disabled",
+            "Status": "active|completed|error|locked"
+          },
+          "props": "Icon:INSTANCE_SWAP,IconVisible:BOOLEAN,Label:TEXT,LabelVisible:BOOLEAN"
+        },
+        {
+          "name": "StepperIndicator",
+          "variants": 56,
+          "axes": {
+            "Orientation": "vertical|horizontal",
+            "Size": "default|xs|sm|lg",
+            "State": "Default|Disabled",
+            "Status": "active|completed|error|locked"
+          },
+          "props": "LineVisible:BOOLEAN"
+        },
+        {
+          "name": "StepperItem",
+          "variants": 56,
+          "axes": {
+            "Orientation": "vertical|horizontal",
+            "Size": "default|xs|sm|lg",
+            "State": "Default|Disabled",
+            "Status": "active|completed|error|locked"
+          },
+          "props": "Description:TEXT,DescriptionVisible:BOOLEAN,Title:TEXT"
+        }
+      ]
+    },
+    {
+      "page": "Separator",
+      "stable": true,
+      "id": "89:24",
+      "sets": [
+        {
+          "name": "Separator",
+          "variants": 48,
+          "axes": {
+            "Align": "none|start|center|end",
+            "Orientation": "horizontal|vertical",
+            "Tone": "default|subtle|strong",
+            "Variant": "dashed|default"
+          },
+          "props": "Label:TEXT"
+        }
+      ]
+    },
+    {
+      "page": "ScrollArea",
+      "stable": true,
+      "id": "931:87048",
+      "sets": [
+        {
+          "name": "ScrollArea",
+          "variants": 18,
+          "axes": {
+            "Appearance": "filled|ghost",
+            "Orientation": "vertical|horizontal|both",
+            "Size": "default|sm|lg"
+          },
+          "props": "Content:SLOT,FadeVisible:BOOLEAN"
+        },
+        {
+          "name": "ScrollBar",
+          "variants": 12,
+          "axes": {
+            "Appearance": "filled|ghost",
+            "Orientation": "vertical|horizontal",
+            "Size": "default|sm|lg"
+          }
+        }
+      ]
+    },
+    {
+      "page": "Auth",
+      "stable": true,
+      "id": "999:108478",
+      "sets": [
+        {
+          "name": "AuthAccountLocked",
+          "variants": 2,
+          "axes": {
+            "Container": "card|plain"
+          }
+        },
+        {
+          "name": "AuthCheckEmail",
+          "variants": 2,
+          "axes": {
+            "Container": "card|plain"
+          }
+        },
+        {
+          "name": "AuthError",
+          "variants": 2,
+          "axes": {
+            "Container": "card|plain"
+          }
+        },
+        {
+          "name": "AuthForgotPassword",
+          "variants": 4,
+          "axes": {
+            "Container": "card|plain",
+            "Method": "email|sms"
+          }
+        },
+        {
+          "name": "AuthMagicLinkSent",
+          "variants": 2,
+          "axes": {
+            "Container": "card|plain"
+          }
+        },
+        {
+          "name": "AuthNewPassword",
+          "variants": 2,
+          "axes": {
+            "Container": "card|plain"
+          }
+        },
+        {
+          "name": "AuthOTPVerification",
+          "variants": 2,
+          "axes": {
+            "Container": "card|plain"
+          }
+        },
+        {
+          "name": "AuthSignIn",
+          "variants": 2,
+          "axes": {
+            "Container": "card|plain"
+          }
+        },
+        {
+          "name": "AuthSignInPhone",
+          "variants": 2,
+          "axes": {
+            "Container": "card|plain"
+          }
+        },
+        {
+          "name": "AuthSignUp",
+          "variants": 2,
+          "axes": {
+            "Container": "card|plain"
+          }
+        },
+        {
+          "name": "AuthSocialSignIn",
+          "variants": 2,
+          "axes": {
+            "Container": "card|plain"
+          }
+        },
+        {
+          "name": "AuthTwoFactor",
+          "variants": 2,
+          "axes": {
+            "Container": "card|plain"
+          }
+        }
+      ]
+    },
+    {
+      "page": "Overlay",
+      "stable": true,
+      "id": "1027:146815",
+      "sets": [
+        {
+          "name": "CartDrawer",
+          "variants": 1
+        },
+        {
+          "name": "ConfirmDialog",
+          "variants": 1
+        },
+        {
+          "name": "CookieConsent",
+          "variants": 1
+        },
+        {
+          "name": "DestructiveConfirm",
+          "variants": 1
+        },
+        {
+          "name": "ErrorModal",
+          "variants": 1
+        },
+        {
+          "name": "FeedbackRating",
+          "variants": 1
+        },
+        {
+          "name": "FilterDrawer",
+          "variants": 1
+        },
+        {
+          "name": "FilterModal",
+          "variants": 1
+        },
+        {
+          "name": "FormModal",
+          "variants": 1
+        },
+        {
+          "name": "QuickEditDialog",
+          "variants": 1
+        },
+        {
+          "name": "ReleaseModal",
+          "variants": 1
+        },
+        {
+          "name": "SessionTimeoutWarning",
+          "variants": 1
+        },
+        {
+          "name": "ShareModal",
+          "variants": 1
+        },
+        {
+          "name": "SuccessModal",
+          "variants": 1
+        },
+        {
+          "name": "WarningDialog",
+          "variants": 1
+        }
+      ]
+    },
+    {
+      "page": "HeaderNavigation",
+      "stable": true,
+      "id": "1059:2",
+      "sets": [
+        {
+          "name": "AnnouncementBar",
+          "variants": 1,
+          "props": "BadgeVisible:BOOLEAN,CloseVisible:BOOLEAN,IconVisible:BOOLEAN,Message:TEXT"
+        },
+        {
+          "name": "AppHeader",
+          "variants": 2,
+          "axes": {
+            "Layout": "desktop|mobile"
+          },
+          "props": "MessagesVisible:BOOLEAN,Nav:SLOT,NotificationsVisible:BOOLEAN,SearchButtonVisible:BOOLEAN,SearchVisible:BOOLEAN,ThemeToggleVisible:BOOLEAN"
+        },
+        {
+          "name": "AppHeaderExtended",
+          "variants": 2,
+          "axes": {
+            "Layout": "desktop|mobile"
+          },
+          "props": "AnnouncementVisible:BOOLEAN,BreadcrumbVisible:BOOLEAN,UtilityVisible:BOOLEAN"
+        },
+        {
+          "name": "FloatingHeader",
+          "variants": 2,
+          "axes": {
+            "Layout": "desktop|mobile"
+          },
+          "props": "Nav:SLOT,NotificationsVisible:BOOLEAN,SearchButtonVisible:BOOLEAN"
+        },
+        {
+          "name": "UtilityBar",
+          "variants": 1,
+          "props": "LanguageVisible:BOOLEAN,SocialVisible:BOOLEAN"
+        }
+      ]
+    },
+    {
+      "page": "SidebarNavigation",
+      "stable": true,
+      "id": "1064:2",
+      "sets": [
+        {
+          "name": "DualSidebar",
+          "variants": 1,
+          "props": "PanelVisible:BOOLEAN,RailVisible:BOOLEAN"
+        },
+        {
+          "name": "SidebarStatCard",
+          "variants": 1,
+          "props": "ActionVisible:BOOLEAN,Caption:TEXT,CloseVisible:BOOLEAN,DeltaVisible:BOOLEAN,Label:TEXT,Value:TEXT"
+        }
+      ]
+    },
+    {
+      "page": "Marketing",
+      "stable": true,
+      "id": "1066:2",
+      "sets": [
+        {
+          "name": "ContactSection",
+          "variants": 2,
+          "axes": {
+            "Layout": "desktop|mobile"
+          },
+          "props": "Heading:TEXT,Media:SLOT"
+        },
+        {
+          "name": "FAQSection",
+          "variants": 4,
+          "axes": {
+            "Layout": "desktop|mobile",
+            "Style": "split|centered"
+          },
+          "props": "BadgeVisible:BOOLEAN,Body:TEXT,Heading:TEXT"
+        },
+        {
+          "name": "Footer",
+          "variants": 2,
+          "axes": {
+            "Layout": "desktop|mobile"
+          },
+          "props": "Links:SLOT,NewsletterVisible:BOOLEAN"
+        },
+        {
+          "name": "HeroHeader",
+          "variants": 2,
+          "axes": {
+            "Layout": "desktop|mobile"
+          },
+          "props": "BadgeVisible:BOOLEAN,Body:TEXT,FormVisible:BOOLEAN,Headline:TEXT,Media:SLOT"
+        },
+        {
+          "name": "PricingCard",
+          "variants": 1,
+          "props": "Billing:TEXT,PlanName:TEXT,Price:TEXT"
+        },
+        {
+          "name": "PricingSection",
+          "variants": 2,
+          "axes": {
+            "Layout": "desktop|mobile"
+          },
+          "props": "Body:TEXT,Eyebrow:TEXT,Heading:TEXT"
+        }
+      ]
+    }
+  ]
+}

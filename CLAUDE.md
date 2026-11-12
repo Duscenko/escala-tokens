@@ -940,6 +940,20 @@ explicitly out of scope. Individual components still adapt between `md` and `xl`
 >   steps + a focused ⌘V zone, `data-element-paste`), which reports Building… → "✓ Button
 >   added to this page", and says so when the paste is a whole system instead.
 
+> **UPDATE (2026-11-12, owner's call): the Figma file is the ground truth for COMPONENTS too —
+> shadcn's structure is being REPLACED, not adapted to.** File `Escala Design System (Real)`
+> (`7j5zukN5HpihGVJMmyjA20`). A component in code must be the Figma component's twin: same name
+> (IconButton, CloseButton, FABButton, TextLink, Modal, Toast, TabMenu, NumberInput… as separate
+> components where Figma has them), same variant axes and values (Button and IconButton: `Variant` default·secondary·critical ×
+> `Appearance` solid·outline·ghost·link, all 12 combinations),
+> same props. Never drop a Figma variant or component because shadcn lacks it. Supersedes
+> "variants are shadcn's EXACTLY" (2026-10-18) and every "X was folded into shadcn's Y" note,
+> component by component as each is rebuilt. What stays: Radix for behaviour, and the RECIPES as
+> the one styling source for web and plugin (no cva), renamed to the Figma vocabulary. Plan +
+> inventory: `design-plans/button-figma-parity.md`, `design-plans/figma-components-inventory.md`.
+> Safety net: `spec/figma-components.json` (generated snapshot, never by hand) +
+> `spec/figma-components.status.json` (debt ledger) + `figmaComponentsParity.test.ts`.
+
 > **UPDATE (2026-11-11): the `Escala design system` FIGMA FILE is the ground truth for every
 > name, default and alias (web `8d20af8`, plugin 0.34.0).** Inventory:
 > `escala-figma-plugin/spec/figma-variables.txt`; differences and the owner's decisions:
