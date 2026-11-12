@@ -177,9 +177,12 @@ describe.skipIf(!existsSync(pluginFile))('plugin ↔ web recipe parity', () => {
     // builder here. Each entry is a decision, not a gap to close.
     // ButtonGroupItem / ButtonGroupDivider (2026-11-12): the file's own sets for the
     // group's segments and lines, rebuilt from it.
-    const WEB_ONLY = new Set(['CloseButton', 'TextLink', 'FABButton', 'FABGroup', 'ButtonGroupItem', 'ButtonGroupDivider'])
+    const WEB_ONLY = new Set(['CloseButton', 'TextLink', 'FABButton', 'FABGroup', 'ButtonGroupItem', 'ButtonGroupDivider', 'NumberInput'])
     const webAndPlugin = Object.keys(COMPONENT_RECIPES).filter((key) => !WEB_ONLY.has(key))
-    expect(Object.keys(plugin.RECIPE_BUILDERS).sort()).toEqual(webAndPlugin.sort())
+    // Plugin builders whose web recipe was RENAMED from the Figma file after the
+    // freeze (2026-11-12): InputStepper is the file's NumberInput (WEB_ONLY above).
+    const RENAMED_ON_WEB = new Set(['InputStepper'])
+    expect(Object.keys(plugin.RECIPE_BUILDERS).filter((k) => !RENAMED_ON_WEB.has(k)).sort()).toEqual(webAndPlugin.sort())
     // Parts a recipe gained from the Figma file after the freeze: the plugin's
     // builder predates them, so they are web + Storybook only (a decision).
     const WEB_ONLY_SLOTS: Record<string, string[]> = { Input: ['addon', 'divider', 'kbd'], ButtonGroup: ['item', 'border'], Field: ['labelRow', 'required'] }
@@ -194,6 +197,7 @@ describe.skipIf(!existsSync(pluginFile))('plugin ↔ web recipe parity', () => {
     // after the freeze (ButtonGroup lost shadcn's `text` / `separator`, 2026-11-12).
     const STALE_ANATOMY: Record<string, string[]> = { ButtonGroup: ['text', 'separator'] }
     for (const [key, a] of Object.entries(plugin.RECIPE_FIGMA_ANATOMY as Record<string, { root?: string; omit?: string[] }>)) {
+      if (!COMPONENT_RECIPES[key]) continue // a plugin key renamed on the web (RENAMED_ON_WEB)
       for (const slot of [...(a.omit ?? []), ...(a.root ? [a.root] : [])]) {
         if ((STALE_ANATOMY[key] ?? []).includes(slot)) continue
         expect(COMPONENT_RECIPES[key].slots, `${key}.${slot}`).toContain(slot)

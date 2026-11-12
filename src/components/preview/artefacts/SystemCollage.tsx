@@ -75,7 +75,7 @@ const Pagination = inspectable('Pagination')
 const Separator = inspectable('Separator')
 const Chart = inspectable('Chart')
 const Calendar = inspectable('Calendar')
-const InputStepper = inspectable('InputStepper')
+const InputStepper = inspectable('NumberInput')
 
 /** `Live` already carries the catalogue key as `c`, so the marker reads it
  *  straight off the prop rather than being restated. */

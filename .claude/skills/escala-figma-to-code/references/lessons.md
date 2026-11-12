@@ -98,3 +98,12 @@ Every row cost a round trip with the owner. Check each one before calling a comp
 | `components-inventory.figma.js` returns ~29 KB of JSON; as an escaped string inside the result it nears the 48 KB cap | — | Return the pages as OBJECTS in two halves (`pages.slice`) with the checksum; `JSON.stringify` of the joined halves reproduces the checksum |
 | A component whose old shadcn parts are still used by components not rebuilt yet (FieldSet, FieldLabel… lay out checkbox / switch rows) | Deleting them breaks Checkbox, Switch, RadioGroup specimens | The Figma API on the component (`label`, `state`…); the legacy parts kept as MIGRATION ONLY, out of the catalogue axes; the legacy path selected by the absence of the Figma prop (`label === undefined`) |
 | A Storybook grid wider than the canvas in Dark | axe: 12 contrast failures — dark text measured on the WHITE body, because the `.dark` wrapper is only as wide as the canvas | Stories wrap (`flexWrap`), never a fixed multi-column grid wider than the pane |
+
+# Lessons from the NumberInput (2026-11-12)
+
+| Trap | What it looked like | The fix (where it lives) |
+|---|---|---|
+| A `rename` in the ledger (InputStepper → NumberInput) while the frozen plugin still has a builder under the OLD key | Parity test: `RECIPE_BUILDERS` keys ≠ recipe keys, and `RECIPE_FIGMA_ANATOMY.InputStepper` crashed on a recipe that no longer exists | `RENAMED_ON_WEB` (old plugin keys left out of the comparison) + the new key in `WEB_ONLY`; the anatomy loop skips plugin keys with no web recipe. Rename everywhere the key is a string: catalogue, `componentRecipes`, specimens map, snippets, overviews, `SystemCollage`'s `inspectable(...)`, sitemap, and a store migration that renames it in `selectedComponents` |
+| A focus ring stroked OUTSIDE (not straddling) on a field-like box | Input's `ring` (outline straddling the 1px edge) would draw it 1px too far in | `stroke` = the edge, `halo` = the outside ring. Read each set's `focus-ring` `strokeAlign` |
+| A fixed width with no variable (3 × control height) | — | A summed ref (`size.control+size.control+size.control`): `dim()` turns it into `calc(...)`, still tokens |
+| `:focus-visible` checks from script | `el.focus()` from `javascript_tool` gave no ring: the document had no focus | Click into the element in the pane first (`document.hasFocus()` true), then measure |

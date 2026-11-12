@@ -163,6 +163,10 @@ export const OVERVIEWS: Record<string, Overview> = {
     [{ v: { Checked: 'True', State: 'Disabled' } }, { v: { Checked: 'False', State: 'Disabled' } }],
   ],
   Dropzone: [each('State', ['Default', 'Dragging', 'Error'])],
+  NumberInput: [
+    each('State', ['Default', 'Hover', 'Focused', 'Invalid', 'Disabled']),
+    each('Size', ['sm', 'default', 'lg']),
+  ],
   Field: [
     each('State', ['Default', 'Invalid', 'Disabled']),
     each('Size', ['sm', 'default', 'lg']),

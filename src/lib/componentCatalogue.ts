@@ -431,19 +431,26 @@ export const COMPONENTS: ComponentDef[] = [
     accessibility: 'One real input with autocomplete="one-time-code"; the slots are presentational. Give it an aria-label.',
   },
   {
-    key: 'InputStepper',
-    label: 'Input Stepper',
+    key: 'NumberInput',
+    label: 'Number Input',
     category: 'Form Controls',
-    description: 'Numeric input flanked by decrement / increment buttons, clamped to min–max.',
-    usage: 'Use for small integer ranges (quantities, counts). For wide ranges, prefer Slider or Input.',
-    axes: [],
-    figmaSets: ['Input Stepper'],
-    props: [
-      { name: 'value / defaultValue', type: 'number', description: 'Current value.' },
-      { name: 'min / max / step', type: 'number', description: 'Bounds and increment; the buttons disable at the bounds.' },
-      { name: 'onValueChange', type: '(value: number) => void', description: 'Fires on every step.' },
+    description: 'A number field with decrement and increment buttons, also a quantity stepper. The value is a spinbutton; the buttons are ghost IconButtons that disable at the min and max.',
+    usage: 'Use for small numeric ranges (quantities, counts, seats). For wide ranges prefer Slider or a plain Input. Labels and hints come from Field.',
+    // The Figma file's axes, value for value (design-plans/number-input-contract.md).
+    axes: [
+      { name: 'Size', values: ['default', 'sm', 'lg'] },
+      { name: 'State', values: ['Default', 'Hover', 'Focused', 'Invalid', 'Disabled'] },
     ],
-    accessibility: 'Native number input with aria-valuemin/max. Buttons labelled Increase/Decrease.',
+    figmaSets: ['NumberInput'],
+    props: [
+      { name: 'value / defaultValue', type: 'number', description: 'The value (Figma Value).' },
+      { name: 'min / max / step', type: 'number', description: 'Bounds and increment; the matching button turns Disabled at a bound.' },
+      { name: 'onValueChange', type: '(value: number) => void', description: 'Fires on every step or committed edit.' },
+      { name: 'size', type: '"default" | "sm" | "lg"', description: 'Size/control-md 40 · sm 32 · lg 48; the buttons are one IconButton size below.' },
+      { name: 'disabled / aria-invalid', type: 'boolean', description: 'State Disabled / Invalid. Hover and Focused come from the pointer and keyboard.' },
+      { name: 'decrementIcon / incrementIcon', type: 'ReactNode', description: 'The glyphs (Figma: Minus, Plus).' },
+    ],
+    accessibility: 'The value is role="spinbutton" with aria-valuenow, aria-valuemin and aria-valuemax; Arrow Up and Down step it. The buttons are labelled Decrease and Increase and are not tab stops. Give the field a label (Field, or aria-label).',
   },
   {
     key: 'InputTag',

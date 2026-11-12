@@ -4327,19 +4327,26 @@ var init_componentCatalogue = __esm({
         accessibility: 'One real input with autocomplete="one-time-code"; the slots are presentational. Give it an aria-label.'
       },
       {
-        key: "InputStepper",
-        label: "Input Stepper",
+        key: "NumberInput",
+        label: "Number Input",
         category: "Form Controls",
-        description: "Numeric input flanked by decrement / increment buttons, clamped to min\u2013max.",
-        usage: "Use for small integer ranges (quantities, counts). For wide ranges, prefer Slider or Input.",
-        axes: [],
-        figmaSets: ["Input Stepper"],
-        props: [
-          { name: "value / defaultValue", type: "number", description: "Current value." },
-          { name: "min / max / step", type: "number", description: "Bounds and increment; the buttons disable at the bounds." },
-          { name: "onValueChange", type: "(value: number) => void", description: "Fires on every step." }
+        description: "A number field with decrement and increment buttons, also a quantity stepper. The value is a spinbutton; the buttons are ghost IconButtons that disable at the min and max.",
+        usage: "Use for small numeric ranges (quantities, counts, seats). For wide ranges prefer Slider or a plain Input. Labels and hints come from Field.",
+        // The Figma file's axes, value for value (design-plans/number-input-contract.md).
+        axes: [
+          { name: "Size", values: ["default", "sm", "lg"] },
+          { name: "State", values: ["Default", "Hover", "Focused", "Invalid", "Disabled"] }
         ],
-        accessibility: "Native number input with aria-valuemin/max. Buttons labelled Increase/Decrease."
+        figmaSets: ["NumberInput"],
+        props: [
+          { name: "value / defaultValue", type: "number", description: "The value (Figma Value)." },
+          { name: "min / max / step", type: "number", description: "Bounds and increment; the matching button turns Disabled at a bound." },
+          { name: "onValueChange", type: "(value: number) => void", description: "Fires on every step or committed edit." },
+          { name: "size", type: '"default" | "sm" | "lg"', description: "Size/control-md 40 \xB7 sm 32 \xB7 lg 48; the buttons are one IconButton size below." },
+          { name: "disabled / aria-invalid", type: "boolean", description: "State Disabled / Invalid. Hover and Focused come from the pointer and keyboard." },
+          { name: "decrementIcon / incrementIcon", type: "ReactNode", description: "The glyphs (Figma: Minus, Plus)." }
+        ],
+        accessibility: 'The value is role="spinbutton" with aria-valuenow, aria-valuemin and aria-valuemax; Arrow Up and Down step it. The buttons are labelled Decrease and Increase and are not tab stops. Give the field a label (Field, or aria-label).'
       },
       {
         key: "InputTag",
@@ -8701,6 +8708,13 @@ function fieldBox(state2) {
   if (state2 === "Hover") return { fill: c("surface.input"), stroke: c("border.control-hover"), ring: NONE };
   return { fill: c("surface.input"), stroke: c("border.control"), ring: NONE };
 }
+function numberInputPaint(state2) {
+  if (state2 === "Disabled") return { root: { fill: c("action.disabled.default"), stroke: c("border.control"), halo: NONE }, value: { text: c("content.disabled") } };
+  if (state2 === "Invalid") return { root: { fill: c("surface.input"), stroke: c("status.critical.border-strong"), halo: c("status.critical.border") } };
+  if (state2 === "Focused") return { root: { fill: c("surface.input"), stroke: c("border.focus"), halo: c("border.ring.default") } };
+  if (state2 === "Hover") return { root: { fill: c("surface.input"), stroke: c("border.control-hover") } };
+  return { root: { fill: c("surface.input"), stroke: c("border.control") } };
+}
 function checkPaint(checked, state2) {
   const on = checked === "True";
   const disabled = state2 === "Disabled";
@@ -8727,7 +8741,7 @@ function switchPaint(checked, state2) {
     thumb: { fill: c(on && !disabled ? "content.on-action" : "surface.input") }
   };
 }
-var FIELD_FIXED, FIELD_FOCUS, INPUT_STATES, INPUT_SIZES, INPUT_TYPES, INPUT_GEOMETRY, INPUT_GLYPH, INPUT_STROKE_IN_LAYOUT, INPUT, TEXTAREA, GROUP_LIVE, GROUP_CONTROL, INPUT_GROUP, INPUT_STEPPER, INPUT_TAG, SELECT_GEOMETRY, MENU_ITEM, MENU_CONTENT, SELECT, COMBOBOX, INPUT_OTP, CHECKBOX, RADIO_GROUP, SWITCH_GEOMETRY, SWITCH, SLIDER, FIELD_STATES, FIELD, LABEL, STRENGTH_FILL, PASSWORD_STRENGTH, FILE_UPLOAD, DROPZONE, NATIVE_SELECT_STATES, NATIVE_SELECT, CALENDAR;
+var FIELD_FIXED, FIELD_FOCUS, INPUT_STATES, INPUT_SIZES, INPUT_TYPES, INPUT_GEOMETRY, INPUT_GLYPH, INPUT_STROKE_IN_LAYOUT, INPUT, TEXTAREA, GROUP_LIVE, GROUP_CONTROL, INPUT_GROUP, NUMBER_INPUT_SIZES, NUMBER_INPUT_STATES, NUMBER_BOX, NUMBER_INPUT, INPUT_TAG, SELECT_GEOMETRY, MENU_ITEM, MENU_CONTENT, SELECT, COMBOBOX, INPUT_OTP, CHECKBOX, RADIO_GROUP, SWITCH_GEOMETRY, SWITCH, SLIDER, FIELD_STATES, FIELD, LABEL, STRENGTH_FILL, PASSWORD_STRENGTH, FILE_UPLOAD, DROPZONE, NATIVE_SELECT_STATES, NATIVE_SELECT, CALENDAR;
 var init_forms = __esm({
   "src/lib/recipes/forms.ts"() {
     init_helpers();
@@ -8860,27 +8874,23 @@ var init_forms = __esm({
         }))
       ]
     };
-    INPUT_STEPPER = {
-      key: "InputStepper",
-      slots: ["root", "button", "value", "separator"],
-      defaults: {},
+    NUMBER_INPUT_SIZES = ["default", "sm", "lg"];
+    NUMBER_INPUT_STATES = ["Default", "Hover", "Focused", "Invalid", "Disabled"];
+    NUMBER_BOX = { sm: "size.compact", default: "size.control", lg: "size.touch" };
+    NUMBER_INPUT = {
+      key: "NumberInput",
+      slots: ["root", "value"],
+      defaults: { Size: "default", State: "Default" },
       parts: [
         part({}, () => ({
-          root: {
-            fill: c("surface.input"),
-            stroke: c("border.control"),
-            strokeWidth: "stroke.control",
-            radius: "radius.action",
-            height: "size.control"
-          },
-          "root:focus-within": FIELD_FOCUS,
-          button: { text: c("content.secondary"), font: "type.heading-xs", width: "size.control" },
-          "button:hover": { fill: c("action.ghost.hover") },
-          "button:active": { fill: c("action.ghost.pressed") },
-          "button:disabled": { text: c("content.disabled") },
-          value: { text: c("content.primary"), font: "type.body-md", width: "size.2xl" },
-          separator: { fill: c("border.control"), width: "stroke.control" }
-        }))
+          root: { radius: "radius.action", strokeWidth: "stroke.control", gap: "spacing.none", paddingX: "spacing.gap-tight+stroke.control" },
+          value: { text: c("content.primary"), font: "type.placeholder" }
+        })),
+        part({ Size: NUMBER_INPUT_SIZES }, (size) => {
+          const box = NUMBER_BOX[size];
+          return { root: { height: box, width: `${box}+${box}+${box}` } };
+        }),
+        part({ State: NUMBER_INPUT_STATES }, (state2) => numberInputPaint(state2))
       ]
     };
     INPUT_TAG = {
@@ -10447,7 +10457,7 @@ var init_componentRecipes = __esm({
       Input: INPUT,
       Textarea: TEXTAREA,
       InputGroup: INPUT_GROUP,
-      InputStepper: INPUT_STEPPER,
+      NumberInput: NUMBER_INPUT,
       InputTag: INPUT_TAG,
       Select: SELECT,
       Combobox: COMBOBOX,
@@ -13325,7 +13335,7 @@ var init_useDesignStore = __esm({
         }),
         {
           name: "scalable-designs-store",
-          version: 112,
+          version: 113,
           migrate: (persisted, version) => {
             if (persisted) {
               delete persisted.styleDirection;
@@ -14697,6 +14707,20 @@ var init_useDesignStore = __esm({
               add2(persisted);
               if (Array.isArray(persisted.savedSystems)) {
                 for (const sys of persisted.savedSystems) add2(sys?.snapshot);
+              }
+            }
+            if (version < 113) {
+              const rename = (state2) => {
+                if (!Array.isArray(state2?.selectedComponents)) return;
+                const sel = state2.selectedComponents;
+                const i = sel.indexOf("InputStepper");
+                if (i < 0) return;
+                if (sel.includes("NumberInput")) sel.splice(i, 1);
+                else sel[i] = "NumberInput";
+              };
+              rename(persisted);
+              if (Array.isArray(persisted.savedSystems)) {
+                for (const sys of persisted.savedSystems) rename(sys?.snapshot);
               }
             }
             return persisted;

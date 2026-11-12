@@ -8,7 +8,7 @@ import { EDITORS_PLAY, EMAIL_PLAY, TAGS_PLAY, UPLOAD_PLAY } from '../../../previ
 import { Input as SkInput, INPUT_TYPES, type InputSize, type InputState, type InputType } from '../../../escala-ui/input'
 import { TextareaField as SkTextareaField } from '../../../escala-ui/textarea'
 import { InputGroup as SkInputGroup, InputGroupAddon as SkAddon, InputGroupInput as SkGroupInput, InputGroupText as SkGroupText, InputGroupButton as SkGroupButton, InputGroupSeparator as SkGroupSeparator } from '../../../escala-ui/input-group'
-import { InputStepper as SkInputStepper } from '../../../escala-ui/input-stepper'
+import { NumberInput as SkNumberInput, type NumberInputSize, type NumberInputState } from '../../../escala-ui/number-input'
 import { InputTag as SkInputTag } from '../../../escala-ui/input-tag'
 import { Select as SkSelect, SelectContent as SkSelectContent, SelectItem as SkSelectItem, SelectTrigger as SkSelectTrigger, SelectValue as SkSelectValue } from '../../../escala-ui/select'
 import { Combobox as SkCombobox } from '../../../escala-ui/combobox'
@@ -166,12 +166,21 @@ export function SkeletonInputGroupSpecimen({ t, w }: SpecimenProps) {
   )
 }
 
-export function SkeletonInputStepperSpecimen({ t }: SpecimenProps) {
+export function SkeletonNumberInputSpecimen({ t, v }: SpecimenProps) {
   // The board steps the count up and back (the Editors tile's total follows).
   const step = useAutoplayStep(EDITORS_PLAY.values.length, EDITORS_PLAY.ms)
+  const state = (v.State ?? 'Default') as NumberInputState
   return (
     <RecipeScope t={t}>
-      <SkInputStepper defaultValue={12} value={step == null ? undefined : EDITORS_PLAY.values[step]} min={0} max={99} />
+      <SkNumberInput
+        aria-label="Quantity"
+        size={(v.Size ?? 'default') as NumberInputSize}
+        forceState={state === 'Default' ? undefined : state}
+        defaultValue={12}
+        value={step == null ? undefined : EDITORS_PLAY.values[step]}
+        min={0}
+        max={99}
+      />
     </RecipeScope>
   )
 }

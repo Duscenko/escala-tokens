@@ -164,26 +164,40 @@ export const INPUT_GROUP: ComponentRecipe = {
   ],
 }
 
-// ── InputStepper ───────────────────────────────────────────────────────────
+// ── NumberInput ────────────────────────────────────────────────────────────
+// The Figma `NumberInput` set (design-plans/number-input-contract.md, 1107:243,
+// 15 variants): Size × State. A field box (Surface/input, Border/control, Radius/action)
+// holding a ghost secondary IconButton either side (the IconButton recipe paints them)
+// and the value, centred, in Type/placeholder. The box is three control heights wide
+// (96 · 120 · 144) and lays its stroke out: content starts at gap-tight + the stroke.
+// Focused and Invalid draw a 2px halo fully OUTSIDE the 1px edge (the file's
+// focus-ring is stroked OUTSIDE), Invalid always.
+export const NUMBER_INPUT_SIZES = ['default', 'sm', 'lg'] as const
+export const NUMBER_INPUT_STATES = ['Default', 'Hover', 'Focused', 'Invalid', 'Disabled'] as const
+const NUMBER_BOX: Record<string, string> = { sm: 'size.compact', default: 'size.control', lg: 'size.touch' }
 
-export const INPUT_STEPPER: ComponentRecipe = {
-  key: 'InputStepper',
-  slots: ['root', 'button', 'value', 'separator'],
-  defaults: {},
+function numberInputPaint(state: string): SlotMap {
+  if (state === 'Disabled') return { root: { fill: c('action.disabled.default'), stroke: c('border.control'), halo: NONE }, value: { text: c('content.disabled') } }
+  if (state === 'Invalid') return { root: { fill: c('surface.input'), stroke: c('status.critical.border-strong'), halo: c('status.critical.border') } }
+  if (state === 'Focused') return { root: { fill: c('surface.input'), stroke: c('border.focus'), halo: c('border.ring.default') } }
+  if (state === 'Hover') return { root: { fill: c('surface.input'), stroke: c('border.control-hover') } }
+  return { root: { fill: c('surface.input'), stroke: c('border.control') } }
+}
+
+export const NUMBER_INPUT: ComponentRecipe = {
+  key: 'NumberInput',
+  slots: ['root', 'value'],
+  defaults: { Size: 'default', State: 'Default' },
   parts: [
     part({}, () => ({
-      root: {
-        fill: c('surface.input'), stroke: c('border.control'), strokeWidth: 'stroke.control',
-        radius: 'radius.action', height: 'size.control',
-      },
-      'root:focus-within': FIELD_FOCUS,
-      button: { text: c('content.secondary'), font: 'type.heading-xs', width: 'size.control' },
-      'button:hover': { fill: c('action.ghost.hover') },
-      'button:active': { fill: c('action.ghost.pressed') },
-      'button:disabled': { text: c('content.disabled') },
-      value: { text: c('content.primary'), font: 'type.body-md', width: 'size.2xl' },
-      separator: { fill: c('border.control'), width: 'stroke.control' },
+      root: { radius: 'radius.action', strokeWidth: 'stroke.control', gap: 'spacing.none', paddingX: 'spacing.gap-tight+stroke.control' },
+      value: { text: c('content.primary'), font: 'type.placeholder' },
     })),
+    part({ Size: NUMBER_INPUT_SIZES }, (size) => {
+      const box = NUMBER_BOX[size]
+      return { root: { height: box, width: `${box}+${box}+${box}` } }
+    }),
+    part({ State: NUMBER_INPUT_STATES }, (state) => numberInputPaint(state)),
   ],
 }
 

@@ -2058,7 +2058,7 @@ export const useDesignStore = create<DesignStore>()(
     }),
     {
       name: 'scalable-designs-store',
-      version: 112,
+      version: 113,
       migrate: (persisted: any, version: number) => {
         if (persisted) {
           // v1→v2: remove styleDirection, rename selectedAtoms → selectedComponents
@@ -3916,6 +3916,21 @@ export const useDesignStore = create<DesignStore>()(
           add(persisted)
           if (Array.isArray(persisted.savedSystems)) {
             for (const sys of persisted.savedSystems) add(sys?.snapshot)
+          }
+        }
+        if (version < 113) {
+          // v112→v113: InputStepper is the Figma file's NumberInput (renamed).
+          const rename = (state: any) => {
+            if (!Array.isArray(state?.selectedComponents)) return
+            const sel: string[] = state.selectedComponents
+            const i = sel.indexOf('InputStepper')
+            if (i < 0) return
+            if (sel.includes('NumberInput')) sel.splice(i, 1)
+            else sel[i] = 'NumberInput'
+          }
+          rename(persisted)
+          if (Array.isArray(persisted.savedSystems)) {
+            for (const sys of persisted.savedSystems) rename(sys?.snapshot)
           }
         }
         return persisted

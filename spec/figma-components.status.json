@@ -4,10 +4,6 @@
     "SocialLoginButton": {
       "status": "rebuild"
     },
-    "NumberInput": {
-      "status": "rename",
-      "code": "InputStepper"
-    },
     "Textarea": {
       "status": "rebuild"
     },
