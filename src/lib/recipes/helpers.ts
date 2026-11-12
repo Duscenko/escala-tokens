@@ -14,6 +14,9 @@ export const RECIPE_PROPS = [
   // The top highlight of a solid control (Figma: an inner shadow 0 · 2 · 0
   // painted `Elevation/highlight`). Its value is a colour role.
   'highlight',
+  // Its outer edge (Figma: a drop shadow 0 · 0 · 0 · spread 1 in the state's
+  // own fill). Its value is a colour role.
+  'outerEdge',
 ] as const
 export type RecipeProp = (typeof RECIPE_PROPS)[number]
 export type SlotProps = Partial<Record<RecipeProp, TokenRef>>

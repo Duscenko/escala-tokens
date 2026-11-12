@@ -56,6 +56,16 @@ const HALO = 'var(--stroke-focus, 2px)'
 /** The top highlight of a solid control: Figma's inner shadow 0 · 2 · 0 · 0
  *  (the same 2px the focus edge is drawn at). */
 const highlightShadow = (color: string) => `inset 0 var(--stroke-focus, 2px) 0 0 ${color}`
+/** A solid control's outer edge: Figma's drop shadow 0 · 0 · 0 · spread 1 in
+ *  the state's own fill (one hairline, `stroke.control`). */
+const outerEdgeShadow = (color: string) => `0 0 0 var(--stroke-control, 1px) ${color}`
+/** The surface effects a slot carries, in Figma's order. */
+function surfaceShadows(props: SlotProps, v: (ref: string) => string): string[] {
+  const out: string[] = []
+  if (props.outerEdge && props.outerEdge !== 'none') out.push(outerEdgeShadow(v(props.outerEdge)))
+  if (props.highlight && props.highlight !== 'none') out.push(highlightShadow(v(props.highlight)))
+  return out
+}
 
 /** The element's own border width, for its padding to give back. Registered
  *  non-inherited, so a child never subtracts its parent's border. */
@@ -101,7 +111,7 @@ function declarations(props: SlotProps): string[] {
       case 'focus': {
         if (ref === 'none') { out.push('box-shadow: none', 'outline: none'); break }
         const halo = props.ring && props.ring !== 'none' ? `, 0 0 0 ${HALO} ${v(props.ring)}` : ''
-        const lit = props.highlight && props.highlight !== 'none' ? `, ${highlightShadow(v(props.highlight))}` : ''
+        const lit = surfaceShadows(props, v).map((sh) => `, ${sh}`).join('')
         out.push(
           `border-color: ${v(ref)}`,
           `box-shadow: inset 0 0 0 max(0px, calc(var(--stroke-focus, 2px) - var(${STROKE_WIDTH_VAR}, 0px))) ${v(ref)}${halo}${lit}`,
@@ -109,12 +119,18 @@ function declarations(props: SlotProps): string[] {
         )
         break
       }
-      // A focused control composes it into the focus shadow above; otherwise
-      // it is the box-shadow (`none` clears it, after `focus: none`).
+      // A solid's own effects (top highlight, 1px edge in its fill). A focused
+      // control composes them into the focus shadow above; otherwise the first
+      // of the two props present writes the box-shadow (`none` clears it).
       case 'highlight':
+      case 'outerEdge': {
         if (props.focus && props.focus !== 'none') break
-        out.push(ref === 'none' ? 'box-shadow: none' : `box-shadow: ${highlightShadow(v(ref))}`)
+        const first = (['highlight', 'outerEdge'] as const).find((k) => props[k])
+        if (prop !== first) break
+        const shadows = surfaceShadows(props, v)
+        out.push(`box-shadow: ${shadows.length ? shadows.join(', ') : 'none'}`)
         break
+      }
       case 'height': out.push(`height: ${dim(ref)}`); break
       case 'minHeight': out.push(`min-height: ${dim(ref)}`); break
       case 'width': out.push(`width: ${dim(ref)}`); break

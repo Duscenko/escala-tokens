@@ -5327,7 +5327,8 @@
                 "text": "color.content.on-action",
                 "focus": "none",
                 "ring": "none",
-                "highlight": "color.elevation.highlight"
+                "highlight": "color.elevation.highlight",
+                "outerEdge": "color.action.primary.default"
               }
             },
             "default|solid|Hover": {
@@ -5337,7 +5338,8 @@
                 "text": "color.content.on-action",
                 "focus": "none",
                 "ring": "none",
-                "highlight": "color.elevation.highlight"
+                "highlight": "color.elevation.highlight",
+                "outerEdge": "color.action.primary.hover"
               }
             },
             "default|solid|Pressed": {
@@ -5347,7 +5349,8 @@
                 "text": "color.content.on-action",
                 "focus": "none",
                 "ring": "none",
-                "highlight": "color.elevation.highlight"
+                "highlight": "color.elevation.highlight",
+                "outerEdge": "color.action.primary.pressed"
               }
             },
             "default|solid|Focused": {
@@ -5357,7 +5360,8 @@
                 "text": "color.content.on-action",
                 "focus": "color.border.focus",
                 "ring": "color.border.ring.default",
-                "highlight": "color.elevation.highlight"
+                "highlight": "color.elevation.highlight",
+                "outerEdge": "color.action.primary.default"
               }
             },
             "default|solid|Loading": {
@@ -5367,7 +5371,8 @@
                 "text": "color.content.on-action",
                 "focus": "none",
                 "ring": "none",
-                "highlight": "color.elevation.highlight"
+                "highlight": "color.elevation.highlight",
+                "outerEdge": "color.action.primary.default"
               }
             },
             "default|solid|Disabled": {
@@ -5377,7 +5382,8 @@
                 "text": "color.content.disabled",
                 "focus": "none",
                 "ring": "none",
-                "highlight": "none"
+                "highlight": "none",
+                "outerEdge": "none"
               }
             },
             "default|outline|Default": {
@@ -5387,7 +5393,8 @@
                 "text": "color.content.accent",
                 "focus": "none",
                 "ring": "none",
-                "highlight": "none"
+                "highlight": "none",
+                "outerEdge": "none"
               }
             },
             "default|outline|Hover": {
@@ -5397,7 +5404,8 @@
                 "text": "color.content.accent",
                 "focus": "none",
                 "ring": "none",
-                "highlight": "none"
+                "highlight": "none",
+                "outerEdge": "none"
               }
             },
             "default|outline|Pressed": {
@@ -5407,7 +5415,8 @@
                 "text": "color.content.accent",
                 "focus": "none",
                 "ring": "none",
-                "highlight": "none"
+                "highlight": "none",
+                "outerEdge": "none"
               }
             },
             "default|outline|Focused": {
@@ -5417,7 +5426,8 @@
                 "text": "color.content.accent",
                 "focus": "color.border.focus",
                 "ring": "color.border.ring.default",
-                "highlight": "none"
+                "highlight": "none",
+                "outerEdge": "none"
               }
             },
             "default|outline|Loading": {
@@ -5427,7 +5437,8 @@
                 "text": "color.content.accent",
                 "focus": "none",
                 "ring": "none",
-                "highlight": "none"
+                "highlight": "none",
+                "outerEdge": "none"
               }
             },
             "default|outline|Disabled": {
@@ -5437,7 +5448,8 @@
                 "text": "color.content.disabled",
                 "focus": "none",
                 "ring": "none",
-                "highlight": "none"
+                "highlight": "none",
+                "outerEdge": "none"
               }
             },
             "default|ghost|Default": {
@@ -5447,7 +5459,8 @@
                 "text": "color.content.accent",
                 "focus": "none",
                 "ring": "none",
-                "highlight": "none"
+                "highlight": "none",
+                "outerEdge": "none"
               }
             },
             "default|ghost|Hover": {
@@ -5457,7 +5470,8 @@
                 "text": "color.content.accent",
                 "focus": "none",
                 "ring": "none",
-                "highlight": "none"
+                "highlight": "none",
+                "outerEdge": "none"
               }
             },
             "default|ghost|Pressed": {
@@ -5467,7 +5481,8 @@
                 "text": "color.content.accent",
                 "focus": "none",
                 "ring": "none",
-                "highlight": "none"
+                "highlight": "none",
+                "outerEdge": "none"
               }
             },
             "default|ghost|Focused": {
@@ -5477,7 +5492,8 @@
                 "text": "color.content.accent",
                 "focus": "color.border.focus",
                 "ring": "color.border.ring.default",
-                "highlight": "none"
+                "highlight": "none",
+                "outerEdge": "none"
               }
             },
             "default|ghost|Loading": {
@@ -5487,7 +5503,8 @@
                 "text": "color.content.accent",
                 "focus": "none",
                 "ring": "none",
-                "highlight": "none"
+                "highlight": "none",
+                "outerEdge": "none"
               }
             },
             "default|ghost|Disabled": {
@@ -5497,7 +5514,8 @@
                 "text": "color.content.disabled",
                 "focus": "none",
                 "ring": "none",
-                "highlight": "none"
+                "highlight": "none",
+                "outerEdge": "none"
               }
             },
             "default|link|Default": {
@@ -5507,7 +5525,8 @@
                 "text": "color.content.link.default",
                 "focus": "none",
                 "ring": "none",
-                "highlight": "none"
+                "highlight": "none",
+                "outerEdge": "none"
               }
             },
             "default|link|Hover": {
@@ -5517,7 +5536,8 @@
                 "text": "color.content.link.hover",
                 "focus": "none",
                 "ring": "none",
-                "highlight": "none"
+                "highlight": "none",
+                "outerEdge": "none"
               }
             },
             "default|link|Pressed": {
@@ -5527,7 +5547,8 @@
                 "text": "color.content.link.hover",
                 "focus": "none",
                 "ring": "none",
-                "highlight": "none"
+                "highlight": "none",
+                "outerEdge": "none"
               }
             },
             "default|link|Focused": {
@@ -5537,7 +5558,8 @@
                 "text": "color.content.link.default",
                 "focus": "color.border.focus",
                 "ring": "color.border.ring.default",
-                "highlight": "none"
+                "highlight": "none",
+                "outerEdge": "none"
               }
             },
             "default|link|Loading": {
@@ -5547,7 +5569,8 @@
                 "text": "color.content.link.default",
                 "focus": "none",
                 "ring": "none",
-                "highlight": "none"
+                "highlight": "none",
+                "outerEdge": "none"
               }
             },
             "default|link|Disabled": {
@@ -5557,7 +5580,8 @@
                 "text": "color.content.disabled",
                 "focus": "none",
                 "ring": "none",
-                "highlight": "none"
+                "highlight": "none",
+                "outerEdge": "none"
               }
             },
             "secondary|solid|Default": {
@@ -5567,7 +5591,8 @@
                 "text": "color.content.on-secondary",
                 "focus": "none",
                 "ring": "none",
-                "highlight": "color.elevation.highlight"
+                "highlight": "color.elevation.highlight",
+                "outerEdge": "color.action.secondary.default"
               }
             },
             "secondary|solid|Hover": {
@@ -5577,7 +5602,8 @@
                 "text": "color.content.on-secondary",
                 "focus": "none",
                 "ring": "none",
-                "highlight": "color.elevation.highlight"
+                "highlight": "color.elevation.highlight",
+                "outerEdge": "color.action.secondary.hover"
               }
             },
             "secondary|solid|Pressed": {
@@ -5587,7 +5613,8 @@
                 "text": "color.content.on-secondary",
                 "focus": "none",
                 "ring": "none",
-                "highlight": "color.elevation.highlight"
+                "highlight": "color.elevation.highlight",
+                "outerEdge": "color.action.secondary.pressed"
               }
             },
             "secondary|solid|Focused": {
@@ -5597,7 +5624,8 @@
                 "text": "color.content.on-secondary",
                 "focus": "color.border.focus",
                 "ring": "color.border.ring.default",
-                "highlight": "color.elevation.highlight"
+                "highlight": "color.elevation.highlight",
+                "outerEdge": "color.action.secondary.default"
               }
             },
             "secondary|solid|Loading": {
@@ -5607,7 +5635,8 @@
                 "text": "color.content.on-secondary",
                 "focus": "none",
                 "ring": "none",
-                "highlight": "color.elevation.highlight"
+                "highlight": "color.elevation.highlight",
+                "outerEdge": "color.action.secondary.default"
               }
             },
             "secondary|solid|Disabled": {
@@ -5617,7 +5646,8 @@
                 "text": "color.content.disabled",
                 "focus": "none",
                 "ring": "none",
-                "highlight": "none"
+                "highlight": "none",
+                "outerEdge": "none"
               }
             },
             "secondary|outline|Default": {
@@ -5627,7 +5657,8 @@
                 "text": "color.content.primary",
                 "focus": "none",
                 "ring": "none",
-                "highlight": "none"
+                "highlight": "none",
+                "outerEdge": "none"
               }
             },
             "secondary|outline|Hover": {
@@ -5637,7 +5668,8 @@
                 "text": "color.content.primary",
                 "focus": "none",
                 "ring": "none",
-                "highlight": "none"
+                "highlight": "none",
+                "outerEdge": "none"
               }
             },
             "secondary|outline|Pressed": {
@@ -5647,7 +5679,8 @@
                 "text": "color.content.primary",
                 "focus": "none",
                 "ring": "none",
-                "highlight": "none"
+                "highlight": "none",
+                "outerEdge": "none"
               }
             },
             "secondary|outline|Focused": {
@@ -5657,7 +5690,8 @@
                 "text": "color.content.primary",
                 "focus": "color.border.focus",
                 "ring": "color.border.ring.default",
-                "highlight": "none"
+                "highlight": "none",
+                "outerEdge": "none"
               }
             },
             "secondary|outline|Loading": {
@@ -5667,7 +5701,8 @@
                 "text": "color.content.primary",
                 "focus": "none",
                 "ring": "none",
-                "highlight": "none"
+                "highlight": "none",
+                "outerEdge": "none"
               }
             },
             "secondary|outline|Disabled": {
@@ -5677,7 +5712,8 @@
                 "text": "color.content.disabled",
                 "focus": "none",
                 "ring": "none",
-                "highlight": "none"
+                "highlight": "none",
+                "outerEdge": "none"
               }
             },
             "secondary|ghost|Default": {
@@ -5687,7 +5723,8 @@
                 "text": "color.content.primary",
                 "focus": "none",
                 "ring": "none",
-                "highlight": "none"
+                "highlight": "none",
+                "outerEdge": "none"
               }
             },
             "secondary|ghost|Hover": {
@@ -5697,7 +5734,8 @@
                 "text": "color.content.primary",
                 "focus": "none",
                 "ring": "none",
-                "highlight": "none"
+                "highlight": "none",
+                "outerEdge": "none"
               }
             },
             "secondary|ghost|Pressed": {
@@ -5707,7 +5745,8 @@
                 "text": "color.content.primary",
                 "focus": "none",
                 "ring": "none",
-                "highlight": "none"
+                "highlight": "none",
+                "outerEdge": "none"
               }
             },
             "secondary|ghost|Focused": {
@@ -5717,7 +5756,8 @@
                 "text": "color.content.primary",
                 "focus": "color.border.focus",
                 "ring": "color.border.ring.default",
-                "highlight": "none"
+                "highlight": "none",
+                "outerEdge": "none"
               }
             },
             "secondary|ghost|Loading": {
@@ -5727,7 +5767,8 @@
                 "text": "color.content.primary",
                 "focus": "none",
                 "ring": "none",
-                "highlight": "none"
+                "highlight": "none",
+                "outerEdge": "none"
               }
             },
             "secondary|ghost|Disabled": {
@@ -5737,7 +5778,8 @@
                 "text": "color.content.disabled",
                 "focus": "none",
                 "ring": "none",
-                "highlight": "none"
+                "highlight": "none",
+                "outerEdge": "none"
               }
             },
             "secondary|link|Default": {
@@ -5747,7 +5789,8 @@
                 "text": "color.content.secondary",
                 "focus": "none",
                 "ring": "none",
-                "highlight": "none"
+                "highlight": "none",
+                "outerEdge": "none"
               }
             },
             "secondary|link|Hover": {
@@ -5757,7 +5800,8 @@
                 "text": "color.content.primary",
                 "focus": "none",
                 "ring": "none",
-                "highlight": "none"
+                "highlight": "none",
+                "outerEdge": "none"
               }
             },
             "secondary|link|Pressed": {
@@ -5767,7 +5811,8 @@
                 "text": "color.content.primary",
                 "focus": "none",
                 "ring": "none",
-                "highlight": "none"
+                "highlight": "none",
+                "outerEdge": "none"
               }
             },
             "secondary|link|Focused": {
@@ -5777,7 +5822,8 @@
                 "text": "color.content.secondary",
                 "focus": "color.border.focus",
                 "ring": "color.border.ring.default",
-                "highlight": "none"
+                "highlight": "none",
+                "outerEdge": "none"
               }
             },
             "secondary|link|Loading": {
@@ -5787,7 +5833,8 @@
                 "text": "color.content.secondary",
                 "focus": "none",
                 "ring": "none",
-                "highlight": "none"
+                "highlight": "none",
+                "outerEdge": "none"
               }
             },
             "secondary|link|Disabled": {
@@ -5797,7 +5844,8 @@
                 "text": "color.content.disabled",
                 "focus": "none",
                 "ring": "none",
-                "highlight": "none"
+                "highlight": "none",
+                "outerEdge": "none"
               }
             },
             "critical|solid|Default": {
@@ -5807,7 +5855,8 @@
                 "text": "color.status.critical.on-solid",
                 "focus": "none",
                 "ring": "none",
-                "highlight": "color.elevation.highlight"
+                "highlight": "color.elevation.highlight",
+                "outerEdge": "color.status.critical.surface-solid"
               }
             },
             "critical|solid|Hover": {
@@ -5817,7 +5866,8 @@
                 "text": "color.status.critical.on-solid",
                 "focus": "none",
                 "ring": "none",
-                "highlight": "color.elevation.highlight"
+                "highlight": "color.elevation.highlight",
+                "outerEdge": "color.status.critical.surface-solid-hover"
               }
             },
             "critical|solid|Pressed": {
@@ -5827,7 +5877,8 @@
                 "text": "color.status.critical.on-solid",
                 "focus": "none",
                 "ring": "none",
-                "highlight": "color.elevation.highlight"
+                "highlight": "color.elevation.highlight",
+                "outerEdge": "color.status.critical.surface-solid-pressed"
               }
             },
             "critical|solid|Focused": {
@@ -5837,7 +5888,8 @@
                 "text": "color.status.critical.on-solid",
                 "focus": "color.border.focus",
                 "ring": "color.border.ring.default",
-                "highlight": "color.elevation.highlight"
+                "highlight": "color.elevation.highlight",
+                "outerEdge": "color.status.critical.surface-solid"
               }
             },
             "critical|solid|Loading": {
@@ -5847,7 +5899,8 @@
                 "text": "color.status.critical.on-solid",
                 "focus": "none",
                 "ring": "none",
-                "highlight": "color.elevation.highlight"
+                "highlight": "color.elevation.highlight",
+                "outerEdge": "color.status.critical.surface-solid"
               }
             },
             "critical|solid|Disabled": {
@@ -5857,7 +5910,8 @@
                 "text": "color.content.disabled",
                 "focus": "none",
                 "ring": "none",
-                "highlight": "none"
+                "highlight": "none",
+                "outerEdge": "none"
               }
             },
             "critical|outline|Default": {
@@ -5867,7 +5921,8 @@
                 "text": "color.status.critical.content",
                 "focus": "none",
                 "ring": "none",
-                "highlight": "none"
+                "highlight": "none",
+                "outerEdge": "none"
               }
             },
             "critical|outline|Hover": {
@@ -5877,7 +5932,8 @@
                 "text": "color.status.critical.content",
                 "focus": "none",
                 "ring": "none",
-                "highlight": "none"
+                "highlight": "none",
+                "outerEdge": "none"
               }
             },
             "critical|outline|Pressed": {
@@ -5887,7 +5943,8 @@
                 "text": "color.status.critical.content",
                 "focus": "none",
                 "ring": "none",
-                "highlight": "none"
+                "highlight": "none",
+                "outerEdge": "none"
               }
             },
             "critical|outline|Focused": {
@@ -5897,7 +5954,8 @@
                 "text": "color.status.critical.content",
                 "focus": "color.border.focus",
                 "ring": "color.border.ring.default",
-                "highlight": "none"
+                "highlight": "none",
+                "outerEdge": "none"
               }
             },
             "critical|outline|Loading": {
@@ -5907,7 +5965,8 @@
                 "text": "color.status.critical.content",
                 "focus": "none",
                 "ring": "none",
-                "highlight": "none"
+                "highlight": "none",
+                "outerEdge": "none"
               }
             },
             "critical|outline|Disabled": {
@@ -5917,7 +5976,8 @@
                 "text": "color.content.disabled",
                 "focus": "none",
                 "ring": "none",
-                "highlight": "none"
+                "highlight": "none",
+                "outerEdge": "none"
               }
             },
             "critical|ghost|Default": {
@@ -5927,7 +5987,8 @@
                 "text": "color.status.critical.content",
                 "focus": "none",
                 "ring": "none",
-                "highlight": "none"
+                "highlight": "none",
+                "outerEdge": "none"
               }
             },
             "critical|ghost|Hover": {
@@ -5937,7 +5998,8 @@
                 "text": "color.status.critical.content",
                 "focus": "none",
                 "ring": "none",
-                "highlight": "none"
+                "highlight": "none",
+                "outerEdge": "none"
               }
             },
             "critical|ghost|Pressed": {
@@ -5947,7 +6009,8 @@
                 "text": "color.status.critical.content",
                 "focus": "none",
                 "ring": "none",
-                "highlight": "none"
+                "highlight": "none",
+                "outerEdge": "none"
               }
             },
             "critical|ghost|Focused": {
@@ -5957,7 +6020,8 @@
                 "text": "color.status.critical.content",
                 "focus": "color.border.focus",
                 "ring": "color.border.ring.default",
-                "highlight": "none"
+                "highlight": "none",
+                "outerEdge": "none"
               }
             },
             "critical|ghost|Loading": {
@@ -5967,7 +6031,8 @@
                 "text": "color.status.critical.content",
                 "focus": "none",
                 "ring": "none",
-                "highlight": "none"
+                "highlight": "none",
+                "outerEdge": "none"
               }
             },
             "critical|ghost|Disabled": {
@@ -5977,7 +6042,8 @@
                 "text": "color.content.disabled",
                 "focus": "none",
                 "ring": "none",
-                "highlight": "none"
+                "highlight": "none",
+                "outerEdge": "none"
               }
             },
             "critical|link|Default": {
@@ -5987,7 +6053,8 @@
                 "text": "color.status.critical.content",
                 "focus": "none",
                 "ring": "none",
-                "highlight": "none"
+                "highlight": "none",
+                "outerEdge": "none"
               }
             },
             "critical|link|Hover": {
@@ -5997,7 +6064,8 @@
                 "text": "color.status.critical.content",
                 "focus": "none",
                 "ring": "none",
-                "highlight": "none"
+                "highlight": "none",
+                "outerEdge": "none"
               }
             },
             "critical|link|Pressed": {
@@ -6007,7 +6075,8 @@
                 "text": "color.status.critical.content",
                 "focus": "none",
                 "ring": "none",
-                "highlight": "none"
+                "highlight": "none",
+                "outerEdge": "none"
               }
             },
             "critical|link|Focused": {
@@ -6017,7 +6086,8 @@
                 "text": "color.status.critical.content",
                 "focus": "color.border.focus",
                 "ring": "color.border.ring.default",
-                "highlight": "none"
+                "highlight": "none",
+                "outerEdge": "none"
               }
             },
             "critical|link|Loading": {
@@ -6027,7 +6097,8 @@
                 "text": "color.status.critical.content",
                 "focus": "none",
                 "ring": "none",
-                "highlight": "none"
+                "highlight": "none",
+                "outerEdge": "none"
               }
             },
             "critical|link|Disabled": {
@@ -6037,7 +6108,8 @@
                 "text": "color.content.disabled",
                 "focus": "none",
                 "ring": "none",
-                "highlight": "none"
+                "highlight": "none",
+                "outerEdge": "none"
               }
             }
           }
@@ -6128,7 +6200,8 @@
                 "text": "color.content.on-action",
                 "focus": "none",
                 "ring": "none",
-                "highlight": "color.elevation.highlight"
+                "highlight": "color.elevation.highlight",
+                "outerEdge": "color.action.primary.default"
               }
             },
             "default|solid|Hover": {
@@ -6138,7 +6211,8 @@
                 "text": "color.content.on-action",
                 "focus": "none",
                 "ring": "none",
-                "highlight": "color.elevation.highlight"
+                "highlight": "color.elevation.highlight",
+                "outerEdge": "color.action.primary.hover"
               }
             },
             "default|solid|Pressed": {
@@ -6148,7 +6222,8 @@
                 "text": "color.content.on-action",
                 "focus": "none",
                 "ring": "none",
-                "highlight": "color.elevation.highlight"
+                "highlight": "color.elevation.highlight",
+                "outerEdge": "color.action.primary.pressed"
               }
             },
             "default|solid|Focused": {
@@ -6158,7 +6233,8 @@
                 "text": "color.content.on-action",
                 "focus": "color.border.focus",
                 "ring": "color.border.ring.default",
-                "highlight": "color.elevation.highlight"
+                "highlight": "color.elevation.highlight",
+                "outerEdge": "color.action.primary.default"
               }
             },
             "default|solid|Loading": {
@@ -6168,7 +6244,8 @@
                 "text": "color.content.on-action",
                 "focus": "none",
                 "ring": "none",
-                "highlight": "color.elevation.highlight"
+                "highlight": "color.elevation.highlight",
+                "outerEdge": "color.action.primary.default"
               }
             },
             "default|solid|Disabled": {
@@ -6178,7 +6255,8 @@
                 "text": "color.content.disabled",
                 "focus": "none",
                 "ring": "none",
-                "highlight": "none"
+                "highlight": "none",
+                "outerEdge": "none"
               }
             },
             "default|outline|Default": {
@@ -6188,7 +6266,8 @@
                 "text": "color.content.accent",
                 "focus": "none",
                 "ring": "none",
-                "highlight": "none"
+                "highlight": "none",
+                "outerEdge": "none"
               }
             },
             "default|outline|Hover": {
@@ -6198,7 +6277,8 @@
                 "text": "color.content.accent",
                 "focus": "none",
                 "ring": "none",
-                "highlight": "none"
+                "highlight": "none",
+                "outerEdge": "none"
               }
             },
             "default|outline|Pressed": {
@@ -6208,7 +6288,8 @@
                 "text": "color.content.accent",
                 "focus": "none",
                 "ring": "none",
-                "highlight": "none"
+                "highlight": "none",
+                "outerEdge": "none"
               }
             },
             "default|outline|Focused": {
@@ -6218,7 +6299,8 @@
                 "text": "color.content.accent",
                 "focus": "color.border.focus",
                 "ring": "color.border.ring.default",
-                "highlight": "none"
+                "highlight": "none",
+                "outerEdge": "none"
               }
             },
             "default|outline|Loading": {
@@ -6228,7 +6310,8 @@
                 "text": "color.content.accent",
                 "focus": "none",
                 "ring": "none",
-                "highlight": "none"
+                "highlight": "none",
+                "outerEdge": "none"
               }
             },
             "default|outline|Disabled": {
@@ -6238,7 +6321,8 @@
                 "text": "color.content.disabled",
                 "focus": "none",
                 "ring": "none",
-                "highlight": "none"
+                "highlight": "none",
+                "outerEdge": "none"
               }
             },
             "default|ghost|Default": {
@@ -6248,7 +6332,8 @@
                 "text": "color.content.accent",
                 "focus": "none",
                 "ring": "none",
-                "highlight": "none"
+                "highlight": "none",
+                "outerEdge": "none"
               }
             },
             "default|ghost|Hover": {
@@ -6258,7 +6343,8 @@
                 "text": "color.content.accent",
                 "focus": "none",
                 "ring": "none",
-                "highlight": "none"
+                "highlight": "none",
+                "outerEdge": "none"
               }
             },
             "default|ghost|Pressed": {
@@ -6268,7 +6354,8 @@
                 "text": "color.content.accent",
                 "focus": "none",
                 "ring": "none",
-                "highlight": "none"
+                "highlight": "none",
+                "outerEdge": "none"
               }
             },
             "default|ghost|Focused": {
@@ -6278,7 +6365,8 @@
                 "text": "color.content.accent",
                 "focus": "color.border.focus",
                 "ring": "color.border.ring.default",
-                "highlight": "none"
+                "highlight": "none",
+                "outerEdge": "none"
               }
             },
             "default|ghost|Loading": {
@@ -6288,7 +6376,8 @@
                 "text": "color.content.accent",
                 "focus": "none",
                 "ring": "none",
-                "highlight": "none"
+                "highlight": "none",
+                "outerEdge": "none"
               }
             },
             "default|ghost|Disabled": {
@@ -6298,7 +6387,8 @@
                 "text": "color.content.disabled",
                 "focus": "none",
                 "ring": "none",
-                "highlight": "none"
+                "highlight": "none",
+                "outerEdge": "none"
               }
             },
             "default|link|Default": {
@@ -6308,7 +6398,8 @@
                 "text": "color.content.link.default",
                 "focus": "none",
                 "ring": "none",
-                "highlight": "none"
+                "highlight": "none",
+                "outerEdge": "none"
               }
             },
             "default|link|Hover": {
@@ -6318,7 +6409,8 @@
                 "text": "color.content.link.hover",
                 "focus": "none",
                 "ring": "none",
-                "highlight": "none"
+                "highlight": "none",
+                "outerEdge": "none"
               }
             },
             "default|link|Pressed": {
@@ -6328,7 +6420,8 @@
                 "text": "color.content.link.hover",
                 "focus": "none",
                 "ring": "none",
-                "highlight": "none"
+                "highlight": "none",
+                "outerEdge": "none"
               }
             },
             "default|link|Focused": {
@@ -6338,7 +6431,8 @@
                 "text": "color.content.link.default",
                 "focus": "color.border.focus",
                 "ring": "color.border.ring.default",
-                "highlight": "none"
+                "highlight": "none",
+                "outerEdge": "none"
               }
             },
             "default|link|Loading": {
@@ -6348,7 +6442,8 @@
                 "text": "color.content.link.default",
                 "focus": "none",
                 "ring": "none",
-                "highlight": "none"
+                "highlight": "none",
+                "outerEdge": "none"
               }
             },
             "default|link|Disabled": {
@@ -6358,7 +6453,8 @@
                 "text": "color.content.disabled",
                 "focus": "none",
                 "ring": "none",
-                "highlight": "none"
+                "highlight": "none",
+                "outerEdge": "none"
               }
             },
             "secondary|solid|Default": {
@@ -6368,7 +6464,8 @@
                 "text": "color.content.on-secondary",
                 "focus": "none",
                 "ring": "none",
-                "highlight": "color.elevation.highlight"
+                "highlight": "color.elevation.highlight",
+                "outerEdge": "color.action.secondary.default"
               }
             },
             "secondary|solid|Hover": {
@@ -6378,7 +6475,8 @@
                 "text": "color.content.on-secondary",
                 "focus": "none",
                 "ring": "none",
-                "highlight": "color.elevation.highlight"
+                "highlight": "color.elevation.highlight",
+                "outerEdge": "color.action.secondary.hover"
               }
             },
             "secondary|solid|Pressed": {
@@ -6388,7 +6486,8 @@
                 "text": "color.content.on-secondary",
                 "focus": "none",
                 "ring": "none",
-                "highlight": "color.elevation.highlight"
+                "highlight": "color.elevation.highlight",
+                "outerEdge": "color.action.secondary.pressed"
               }
             },
             "secondary|solid|Focused": {
@@ -6398,7 +6497,8 @@
                 "text": "color.content.on-secondary",
                 "focus": "color.border.strong",
                 "ring": "color.border.subtle",
-                "highlight": "color.elevation.highlight"
+                "highlight": "color.elevation.highlight",
+                "outerEdge": "color.action.secondary.default"
               }
             },
             "secondary|solid|Loading": {
@@ -6408,7 +6508,8 @@
                 "text": "color.content.on-secondary",
                 "focus": "none",
                 "ring": "none",
-                "highlight": "color.elevation.highlight"
+                "highlight": "color.elevation.highlight",
+                "outerEdge": "color.action.secondary.default"
               }
             },
             "secondary|solid|Disabled": {
@@ -6418,7 +6519,8 @@
                 "text": "color.content.disabled",
                 "focus": "none",
                 "ring": "none",
-                "highlight": "none"
+                "highlight": "none",
+                "outerEdge": "none"
               }
             },
             "secondary|outline|Default": {
@@ -6428,7 +6530,8 @@
                 "text": "color.content.primary",
                 "focus": "none",
                 "ring": "none",
-                "highlight": "none"
+                "highlight": "none",
+                "outerEdge": "none"
               }
             },
             "secondary|outline|Hover": {
@@ -6438,7 +6541,8 @@
                 "text": "color.content.primary",
                 "focus": "none",
                 "ring": "none",
-                "highlight": "none"
+                "highlight": "none",
+                "outerEdge": "none"
               }
             },
             "secondary|outline|Pressed": {
@@ -6448,7 +6552,8 @@
                 "text": "color.content.primary",
                 "focus": "none",
                 "ring": "none",
-                "highlight": "none"
+                "highlight": "none",
+                "outerEdge": "none"
               }
             },
             "secondary|outline|Focused": {
@@ -6458,7 +6563,8 @@
                 "text": "color.content.primary",
                 "focus": "color.border.focus",
                 "ring": "color.border.ring.default",
-                "highlight": "none"
+                "highlight": "none",
+                "outerEdge": "none"
               }
             },
             "secondary|outline|Loading": {
@@ -6468,7 +6574,8 @@
                 "text": "color.content.primary",
                 "focus": "none",
                 "ring": "none",
-                "highlight": "none"
+                "highlight": "none",
+                "outerEdge": "none"
               }
             },
             "secondary|outline|Disabled": {
@@ -6478,7 +6585,8 @@
                 "text": "color.content.disabled",
                 "focus": "none",
                 "ring": "none",
-                "highlight": "none"
+                "highlight": "none",
+                "outerEdge": "none"
               }
             },
             "secondary|ghost|Default": {
@@ -6488,7 +6596,8 @@
                 "text": "color.content.primary",
                 "focus": "none",
                 "ring": "none",
-                "highlight": "none"
+                "highlight": "none",
+                "outerEdge": "none"
               }
             },
             "secondary|ghost|Hover": {
@@ -6498,7 +6607,8 @@
                 "text": "color.content.primary",
                 "focus": "none",
                 "ring": "none",
-                "highlight": "none"
+                "highlight": "none",
+                "outerEdge": "none"
               }
             },
             "secondary|ghost|Pressed": {
@@ -6508,7 +6618,8 @@
                 "text": "color.content.primary",
                 "focus": "none",
                 "ring": "none",
-                "highlight": "none"
+                "highlight": "none",
+                "outerEdge": "none"
               }
             },
             "secondary|ghost|Focused": {
@@ -6518,7 +6629,8 @@
                 "text": "color.content.primary",
                 "focus": "color.border.focus",
                 "ring": "color.border.ring.default",
-                "highlight": "none"
+                "highlight": "none",
+                "outerEdge": "none"
               }
             },
             "secondary|ghost|Loading": {
@@ -6528,7 +6640,8 @@
                 "text": "color.content.primary",
                 "focus": "none",
                 "ring": "none",
-                "highlight": "none"
+                "highlight": "none",
+                "outerEdge": "none"
               }
             },
             "secondary|ghost|Disabled": {
@@ -6538,7 +6651,8 @@
                 "text": "color.content.disabled",
                 "focus": "none",
                 "ring": "none",
-                "highlight": "none"
+                "highlight": "none",
+                "outerEdge": "none"
               }
             },
             "secondary|link|Default": {
@@ -6548,7 +6662,8 @@
                 "text": "color.content.secondary",
                 "focus": "none",
                 "ring": "none",
-                "highlight": "none"
+                "highlight": "none",
+                "outerEdge": "none"
               }
             },
             "secondary|link|Hover": {
@@ -6558,7 +6673,8 @@
                 "text": "color.content.primary",
                 "focus": "none",
                 "ring": "none",
-                "highlight": "none"
+                "highlight": "none",
+                "outerEdge": "none"
               }
             },
             "secondary|link|Pressed": {
@@ -6568,7 +6684,8 @@
                 "text": "color.content.primary",
                 "focus": "none",
                 "ring": "none",
-                "highlight": "none"
+                "highlight": "none",
+                "outerEdge": "none"
               }
             },
             "secondary|link|Focused": {
@@ -6578,7 +6695,8 @@
                 "text": "color.content.secondary",
                 "focus": "color.border.focus",
                 "ring": "color.border.ring.default",
-                "highlight": "none"
+                "highlight": "none",
+                "outerEdge": "none"
               }
             },
             "secondary|link|Loading": {
@@ -6588,7 +6706,8 @@
                 "text": "color.content.secondary",
                 "focus": "none",
                 "ring": "none",
-                "highlight": "none"
+                "highlight": "none",
+                "outerEdge": "none"
               }
             },
             "secondary|link|Disabled": {
@@ -6598,7 +6717,8 @@
                 "text": "color.content.disabled",
                 "focus": "none",
                 "ring": "none",
-                "highlight": "none"
+                "highlight": "none",
+                "outerEdge": "none"
               }
             },
             "critical|solid|Default": {
@@ -6608,7 +6728,8 @@
                 "text": "color.status.critical.on-solid",
                 "focus": "none",
                 "ring": "none",
-                "highlight": "color.elevation.highlight"
+                "highlight": "color.elevation.highlight",
+                "outerEdge": "color.status.critical.surface-solid"
               }
             },
             "critical|solid|Hover": {
@@ -6618,7 +6739,8 @@
                 "text": "color.status.critical.on-solid",
                 "focus": "none",
                 "ring": "none",
-                "highlight": "color.elevation.highlight"
+                "highlight": "color.elevation.highlight",
+                "outerEdge": "color.status.critical.surface-solid-hover"
               }
             },
             "critical|solid|Pressed": {
@@ -6628,7 +6750,8 @@
                 "text": "color.status.critical.on-solid",
                 "focus": "none",
                 "ring": "none",
-                "highlight": "color.elevation.highlight"
+                "highlight": "color.elevation.highlight",
+                "outerEdge": "color.status.critical.surface-solid-pressed"
               }
             },
             "critical|solid|Focused": {
@@ -6638,7 +6761,8 @@
                 "text": "color.status.critical.on-solid",
                 "focus": "color.status.critical.border-strong",
                 "ring": "color.status.critical.border",
-                "highlight": "color.elevation.highlight"
+                "highlight": "color.elevation.highlight",
+                "outerEdge": "color.status.critical.surface-solid"
               }
             },
             "critical|solid|Loading": {
@@ -6648,7 +6772,8 @@
                 "text": "color.status.critical.on-solid",
                 "focus": "none",
                 "ring": "none",
-                "highlight": "color.elevation.highlight"
+                "highlight": "color.elevation.highlight",
+                "outerEdge": "color.status.critical.surface-solid"
               }
             },
             "critical|solid|Disabled": {
@@ -6658,7 +6783,8 @@
                 "text": "color.content.disabled",
                 "focus": "none",
                 "ring": "none",
-                "highlight": "none"
+                "highlight": "none",
+                "outerEdge": "none"
               }
             },
             "critical|outline|Default": {
@@ -6668,7 +6794,8 @@
                 "text": "color.status.critical.content",
                 "focus": "none",
                 "ring": "none",
-                "highlight": "none"
+                "highlight": "none",
+                "outerEdge": "none"
               }
             },
             "critical|outline|Hover": {
@@ -6678,7 +6805,8 @@
                 "text": "color.status.critical.content",
                 "focus": "none",
                 "ring": "none",
-                "highlight": "none"
+                "highlight": "none",
+                "outerEdge": "none"
               }
             },
             "critical|outline|Pressed": {
@@ -6688,7 +6816,8 @@
                 "text": "color.status.critical.content",
                 "focus": "none",
                 "ring": "none",
-                "highlight": "none"
+                "highlight": "none",
+                "outerEdge": "none"
               }
             },
             "critical|outline|Focused": {
@@ -6698,7 +6827,8 @@
                 "text": "color.status.critical.content",
                 "focus": "color.border.focus",
                 "ring": "color.border.ring.default",
-                "highlight": "none"
+                "highlight": "none",
+                "outerEdge": "none"
               }
             },
             "critical|outline|Loading": {
@@ -6708,7 +6838,8 @@
                 "text": "color.status.critical.content",
                 "focus": "none",
                 "ring": "none",
-                "highlight": "none"
+                "highlight": "none",
+                "outerEdge": "none"
               }
             },
             "critical|outline|Disabled": {
@@ -6718,7 +6849,8 @@
                 "text": "color.content.disabled",
                 "focus": "none",
                 "ring": "none",
-                "highlight": "none"
+                "highlight": "none",
+                "outerEdge": "none"
               }
             },
             "critical|ghost|Default": {
@@ -6728,7 +6860,8 @@
                 "text": "color.status.critical.content",
                 "focus": "none",
                 "ring": "none",
-                "highlight": "none"
+                "highlight": "none",
+                "outerEdge": "none"
               }
             },
             "critical|ghost|Hover": {
@@ -6738,7 +6871,8 @@
                 "text": "color.status.critical.content",
                 "focus": "none",
                 "ring": "none",
-                "highlight": "none"
+                "highlight": "none",
+                "outerEdge": "none"
               }
             },
             "critical|ghost|Pressed": {
@@ -6748,7 +6882,8 @@
                 "text": "color.status.critical.content",
                 "focus": "none",
                 "ring": "none",
-                "highlight": "none"
+                "highlight": "none",
+                "outerEdge": "none"
               }
             },
             "critical|ghost|Focused": {
@@ -6758,7 +6893,8 @@
                 "text": "color.status.critical.content",
                 "focus": "color.border.focus",
                 "ring": "color.border.ring.default",
-                "highlight": "none"
+                "highlight": "none",
+                "outerEdge": "none"
               }
             },
             "critical|ghost|Loading": {
@@ -6768,7 +6904,8 @@
                 "text": "color.status.critical.content",
                 "focus": "none",
                 "ring": "none",
-                "highlight": "none"
+                "highlight": "none",
+                "outerEdge": "none"
               }
             },
             "critical|ghost|Disabled": {
@@ -6778,7 +6915,8 @@
                 "text": "color.content.disabled",
                 "focus": "none",
                 "ring": "none",
-                "highlight": "none"
+                "highlight": "none",
+                "outerEdge": "none"
               }
             },
             "critical|link|Default": {
@@ -6788,7 +6926,8 @@
                 "text": "color.status.critical.content",
                 "focus": "none",
                 "ring": "none",
-                "highlight": "none"
+                "highlight": "none",
+                "outerEdge": "none"
               }
             },
             "critical|link|Hover": {
@@ -6798,7 +6937,8 @@
                 "text": "color.status.critical.content",
                 "focus": "none",
                 "ring": "none",
-                "highlight": "none"
+                "highlight": "none",
+                "outerEdge": "none"
               }
             },
             "critical|link|Pressed": {
@@ -6808,7 +6948,8 @@
                 "text": "color.status.critical.content",
                 "focus": "none",
                 "ring": "none",
-                "highlight": "none"
+                "highlight": "none",
+                "outerEdge": "none"
               }
             },
             "critical|link|Focused": {
@@ -6818,7 +6959,8 @@
                 "text": "color.status.critical.content",
                 "focus": "color.border.focus",
                 "ring": "color.border.ring.default",
-                "highlight": "none"
+                "highlight": "none",
+                "outerEdge": "none"
               }
             },
             "critical|link|Loading": {
@@ -6828,7 +6970,8 @@
                 "text": "color.status.critical.content",
                 "focus": "none",
                 "ring": "none",
-                "highlight": "none"
+                "highlight": "none",
+                "outerEdge": "none"
               }
             },
             "critical|link|Disabled": {
@@ -6838,7 +6981,8 @@
                 "text": "color.content.disabled",
                 "focus": "none",
                 "ring": "none",
-                "highlight": "none"
+                "highlight": "none",
+                "outerEdge": "none"
               }
             }
           }

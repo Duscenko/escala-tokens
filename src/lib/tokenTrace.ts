@@ -95,11 +95,12 @@ const PROP_LABEL: Record<RecipeProp, string> = {
   shadow: 'Shadow',
   hit: 'Target size',
   highlight: 'Top highlight',
+  outerEdge: 'Outer edge',
 }
 
 /** Display order inside a slot: paint first, then box, then type. */
 const PROP_ORDER: RecipeProp[] = [
-  'fill', 'text', 'stroke', 'strokeTop', 'focus', 'ring', 'highlight', 'paint',
+  'fill', 'text', 'stroke', 'strokeTop', 'focus', 'ring', 'highlight', 'outerEdge', 'paint',
   'radius', 'paddingX', 'paddingY', 'paddingBottom', 'gap', 'rowGap', 'height', 'minHeight', 'width', 'travel',
   'strokeWidth', 'strokeTopWidth', 'strokeBottomWidth', 'shadow', 'font', 'hit',
 ]

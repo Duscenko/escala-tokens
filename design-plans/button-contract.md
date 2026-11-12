@@ -72,7 +72,8 @@ Loading = Default con spinner en lugar del icono inicial.
 - ~~Las sólidas llevan en Figma … `Elevation/highlight` interior~~ **Hecho (2026-11-12):**
   propiedad de receta `highlight` (`color.elevation.highlight`, `inset 0 2px 0 0`) en todo
   estado sólido salvo Disabled, compuesta con el foco. La "sombra del color del relleno"
-  de Figma es `0 0 0` (sin desplazamiento ni desenfoque): no pinta nada y no se copia.
+  de Figma es `DROP_SHADOW 0 0 0` con **spread 1**: un borde de 1 px por fuera en el relleno de
+  cada estado. Se copia como propiedad de receta `outerEdge` (`0 0 0 var(--stroke-control)`).
 - **Trazo por dentro (2026-11-12):** Figma dibuja el trazo dentro del marco; CSS lo pone
   fuera del padding. El padding de la receta descuenta el borde (`--escala-stroke-width`,
   `recipeStyles.ts`), así que el Button por defecto mide 119 × 40 como en Figma.

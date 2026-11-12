@@ -216,6 +216,20 @@ describe('focus', () => {
     expect(root.ring).toBe(ring)
   })
 
+  // Figma: every solid state but Disabled carries DROP_SHADOW 0 0 0 spread 1
+  // in its own fill + INNER_SHADOW 0 2 0 0 Elevation/highlight.
+  it.each([['Default', 'color.action.primary.default'], ['Hover', 'color.action.primary.hover'], ['Pressed', 'color.action.primary.pressed']])(
+    'a solid %s carries the 1px edge in its own fill and the top highlight', (state, fill) => {
+      const root = resolveRecipe(COMPONENT_RECIPES.Button, { Variant: 'default', Appearance: 'solid', Size: 'default', State: state }).root
+      expect(root.outerEdge).toBe(fill)
+      expect(root.highlight).toBe('color.elevation.highlight')
+    })
+  it('a disabled solid carries neither effect', () => {
+    const root = resolveRecipe(COMPONENT_RECIPES.Button, { Variant: 'default', Appearance: 'solid', Size: 'default', State: 'Disabled' }).root
+    expect(root.outerEdge).toBe('none')
+    expect(root.highlight).toBe('none')
+  })
+
   it('IconButton critical · outline focuses on border.focus (Figma)', () => {
     const root = resolveRecipe(COMPONENT_RECIPES.IconButton, { Variant: 'critical', Appearance: 'outline', Size: 'default', State: 'Focused' }).root
     expect(root.focus).toBe('color.border.focus')
