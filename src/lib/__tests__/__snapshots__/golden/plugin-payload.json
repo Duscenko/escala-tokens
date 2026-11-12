@@ -9439,7 +9439,8 @@
       "key": "NumberInput",
       "slots": [
         "root",
-        "value"
+        "value",
+        "caret"
       ],
       "defaults": {
         "Size": "default",
@@ -9458,6 +9459,11 @@
               },
               "value": {
                 "text": "color.content.primary",
+                "font": "type.placeholder"
+              },
+              "caret": {
+                "fill": "color.content.primary",
+                "width": "stroke.control",
                 "font": "type.placeholder"
               }
             }

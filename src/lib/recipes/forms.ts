@@ -186,12 +186,14 @@ function numberInputPaint(state: string): SlotMap {
 
 export const NUMBER_INPUT: ComponentRecipe = {
   key: 'NumberInput',
-  slots: ['root', 'value'],
+  slots: ['root', 'value', 'caret'],
   defaults: { Size: 'default', State: 'Default' },
   parts: [
     part({}, () => ({
       root: { radius: 'radius.action', strokeWidth: 'stroke.control', gap: 'spacing.none', paddingX: 'spacing.gap-tight+stroke.control' },
       value: { text: c('content.primary'), font: 'type.placeholder' },
+      // The file's Focused caret: 1px (Stroke/control) × the placeholder line, Content/primary.
+      caret: { fill: c('content.primary'), width: 'stroke.control', font: 'type.placeholder' },
     })),
     part({ Size: NUMBER_INPUT_SIZES }, (size) => {
       const box = NUMBER_BOX[size]

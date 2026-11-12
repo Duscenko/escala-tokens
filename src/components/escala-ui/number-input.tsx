@@ -74,6 +74,13 @@ function NumberInput({
     setInner(next)
     onValueChange?.(next)
   }
+  const text = draft ?? String(current)
+  const innerRef = React.useRef<HTMLInputElement | null>(null)
+  const setRefs = (el: HTMLInputElement | null) => {
+    innerRef.current = el
+    if (typeof ref === 'function') ref(el)
+    else if (ref) (ref as React.MutableRefObject<HTMLInputElement | null>).current = el
+  }
   const buttonSize = BUTTON_SIZE[size]
   const atMin = current <= min
   const atMax = current >= max
@@ -92,28 +99,38 @@ function NumberInput({
         icon={decrementIcon ?? <MinusGlyph />}
         onClick={() => set(current - step)}
       />
-      <input
-        ref={ref}
-        role="spinbutton"
-        type="text"
-        inputMode="decimal"
-        data-part="NumberInput.value"
-        aria-valuenow={current}
-        aria-valuemin={Number.isFinite(min) ? min : undefined}
-        aria-valuemax={Number.isFinite(max) ? max : undefined}
-        aria-invalid={invalid || undefined}
-        disabled={isDisabled}
-        value={draft ?? String(current)}
-        onChange={(e) => setDraft(e.target.value)}
-        onBlur={() => { if (draft != null) set(Number(draft)); setDraft(null) }}
-        onKeyDown={(e) => {
-          if (e.key === 'ArrowUp') { e.preventDefault(); set(current + step) }
-          else if (e.key === 'ArrowDown') { e.preventDefault(); set(current - step) }
-          else if (e.key === 'Enter' && draft != null) { set(Number(draft)); setDraft(null) }
-        }}
-        className="h-full min-w-0 flex-1 border-0 bg-transparent p-0 text-center tabular-nums outline-none disabled:cursor-not-allowed"
-        {...props}
-      />
+      {/* The value frame (FILL, centred): the input sized to its text, and — when Focused
+          is pinned for docs — the file's 1px caret right after it. A live focus shows the
+          browser's own caret instead. */}
+      <span
+        className="flex h-full min-w-0 flex-1 cursor-text items-center justify-center overflow-hidden"
+        onMouseDown={(e) => { if (e.target === e.currentTarget) { e.preventDefault(); innerRef.current?.focus() } }}
+      >
+        <input
+          ref={setRefs}
+          role="spinbutton"
+          type="text"
+          inputMode="decimal"
+          data-part="NumberInput.value"
+          aria-valuenow={current}
+          aria-valuemin={Number.isFinite(min) ? min : undefined}
+          aria-valuemax={Number.isFinite(max) ? max : undefined}
+          aria-invalid={invalid || undefined}
+          disabled={isDisabled}
+          value={text}
+          onChange={(e) => setDraft(e.target.value)}
+          onBlur={() => { if (draft != null) set(Number(draft)); setDraft(null) }}
+          onKeyDown={(e) => {
+            if (e.key === 'ArrowUp') { e.preventDefault(); set(current + step) }
+            else if (e.key === 'ArrowDown') { e.preventDefault(); set(current - step) }
+            else if (e.key === 'Enter' && draft != null) { set(Number(draft)); setDraft(null) }
+          }}
+          style={{ width: `${Math.max(1, text.length)}ch` }}
+          className="h-full max-w-full min-w-0 border-0 bg-transparent p-0 text-center tabular-nums outline-none disabled:cursor-not-allowed"
+          {...props}
+        />
+        {forceState === 'Focused' ? <span data-part="NumberInput.caret" aria-hidden className="h-[1lh] shrink-0" /> : null}
+      </span>
       <IconButton
         variant="secondary" appearance="ghost" size={buttonSize} tabIndex={-1} aria-label="Increase"
         disabled={isDisabled || atMax} forceState={isDisabled || atMax ? 'Disabled' : undefined}

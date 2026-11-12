@@ -57,3 +57,32 @@ export const Bounds: Story = {
     </div>
   ),
 }
+
+const caption = { font: '12px sans-serif', color: 'var(--color-content-secondary)', margin: '0 0 12px' }
+
+/** The file's own prototype page. RESTING: sm · default · lg at 2 · 1 · 4 — the default
+ *  one sits at its min, so its − is Disabled. FOCUSED: 12 with the caret and the focus
+ *  ring; 0 Invalid (red edge + halo) at its min, − Disabled; 10 at its max, + Disabled. */
+export const RestingFocused: Story = {
+  name: 'Resting · Focused',
+  render: () => (
+    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 48 }}>
+      <div>
+        <p style={caption}>RESTING · hover the field or press a stepper to try</p>
+        <div style={{ display: 'flex', gap: 16, alignItems: 'center' }}>
+          <NumberInput aria-label="Quantity, small" size="sm" defaultValue={2} min={0} max={99} />
+          <NumberInput aria-label="Quantity" defaultValue={1} min={1} max={99} />
+          <NumberInput aria-label="Quantity, large" size="lg" defaultValue={4} min={0} max={99} />
+        </div>
+      </div>
+      <div>
+        <p style={caption}>FOCUSED · ring on the field; Error and the limits disable a stepper</p>
+        <div style={{ display: 'flex', gap: 16, alignItems: 'center' }}>
+          <NumberInput aria-label="Seats" forceState="Focused" defaultValue={12} min={0} max={99} />
+          <NumberInput aria-label="Guests" aria-invalid defaultValue={0} min={0} max={99} />
+          <NumberInput aria-label="Rooms" defaultValue={10} min={0} max={10} />
+        </div>
+      </div>
+    </div>
+  ),
+}
