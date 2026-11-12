@@ -4,13 +4,6 @@
     "SocialLoginButton": {
       "status": "rebuild"
     },
-    "InputOTP": {
-      "status": "rebuild"
-    },
-    "InputOTPSlot": {
-      "status": "part",
-      "of": "InputOTP"
-    },
     "PasswordStrength": {
       "status": "rebuild"
     },

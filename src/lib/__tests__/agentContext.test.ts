@@ -32,12 +32,11 @@ const TOKENS: AgentFoundationTokens = {
 describe('agentContextMarkdown', () => {
   it('Input OTP is described by its recipe, not a second hand-written spec', () => {
     const md = agentContextMarkdown(otp, '<InputOTP maxLength={6} />', TOKENS)
-    expect(md).toContain('figma_sets: Input OTP')
+    expect(md).toContain('figma_sets: InputOTP')
     expect(md).toContain('### Tokens by part (the component recipe)')
-    // The recipe's Error state, said as a state — not a Size axis the catalogue does not have.
-    expect(md).toMatch(/\| slot \| stroke \| State: Error \| `color\.status\.critical\.border-strong` \|/)
+    // The recipe's Disabled state, said as a state of the Figma set's axis.
+    expect(md).toMatch(/\| separator \| fill \| State: Disabled \| `color\.content\.disabled` \|/)
     expect(md).not.toContain('Reconstruct the set')
-    expect(md).not.toContain('`Size`')
     expect(md).toContain('from "@/components/ui/input-otp"')
   })
 

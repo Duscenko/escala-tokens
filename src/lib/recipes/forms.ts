@@ -330,27 +330,78 @@ export const COMBOBOX: ComponentRecipe = {
   ],
 }
 
-// ── InputOTP ───────────────────────────────────────────────────────────────
-// shadcn's InputOTP (`input-otp`): a group of slots, the active one ringed.
-// No sizes. State is Figma's axis; Error is `aria-invalid` on the wrapper.
+// ── InputOTP · InputOTPSlot ───────────────────────────────────────────────
+// The Figma `InputOTP` page (design-plans/input-otp-contract.md): InputOTP (416:994,
+// Size × Length × State × Variant, 135 variants) is a row of InputOTPSlot instances
+// (416:108, Size × State × Variant, 54 variants) gap-control apart, with an 8×2
+// separator (Content/subtle; Content/disabled when Disabled) between the halves of a
+// 6- or 8-digit code. A slot is a fixed box (control-sm × control-md · md × lg · lg ×
+// xl) holding the digit (Type/body-md · lg · xl) or, Typing, a 1px caret. outline:
+// Surface/input + Border/control; filled: Surface/muted + Border/subtle; underline:
+// Surface/page, a bottom edge only, square. Typing / Focused: a 2px Border/focus edge
+// (bottom only on underline) + a 2px Border/ring/default halo OUTSIDE. Invalid:
+// Status/critical/border-strong, no halo. Disabled: Content/disabled digit;
+// outline and underline turn Surface/muted.
+export const INPUT_OTP_SIZES = ['sm', 'default', 'lg'] as const
+export const INPUT_OTP_VARIANTS = ['outline', 'filled', 'underline'] as const
+export const INPUT_OTP_STATES = ['Empty', 'Typing', 'Filled', 'Invalid', 'Disabled'] as const
+export const INPUT_OTP_SLOT_STATES = ['Default', 'Filled', 'Typing', 'Focused', 'Invalid', 'Disabled'] as const
 
 export const INPUT_OTP: ComponentRecipe = {
   key: 'InputOTP',
-  slots: ['root', 'group', 'slot'],
-  defaults: { State: 'Default' },
+  slots: ['root', 'group', 'separator'],
+  defaults: { Size: 'default', Length: '4', State: 'Empty', Variant: 'outline' },
   parts: [
     part({}, () => ({
+      root: { gap: 'spacing.gap-control' },
       group: { gap: 'spacing.gap-control' },
-      slot: {
-        fill: c('surface.input'), stroke: c('border.control'), strokeWidth: 'stroke.control',
-        radius: 'radius.action', text: c('content.primary'), font: 'type.button',
-        height: 'size.control', width: 'size.control',
-      },
-      'slot[data-active="true"]': FIELD_FOCUS,
+      separator: { fill: c('content.subtle'), width: 'spacing.2', height: 'spacing.0_5' },
     })),
-    part({ State: ['Default', 'Filled', 'Error'] as const }, (state) => ({
-      slot: state === 'Error' ? { stroke: c('status.critical.border-strong') } : {},
-      'slot[data-active="true"]': state === 'Error' ? { stroke: c('status.critical.border-strong'), ring: NONE } : FIELD_FOCUS,
+    part({ State: INPUT_OTP_STATES }, (state): SlotMap => (state === 'Disabled' ? { separator: { fill: c('content.disabled') } } : {})),
+  ],
+}
+
+const OTP_SLOT_BOX: Record<string, [string, string]> = {
+  sm: ['size.compact', 'size.control'], default: ['size.control', 'size.touch'], lg: ['size.touch', 'size.fab'],
+}
+const OTP_SLOT_FONT: Record<string, string> = { sm: 'type.body-md', default: 'type.body-lg', lg: 'type.text-xl' }
+/** The Typing caret: 1px (Stroke/control) × 18 · 20 · 22 (unbound in the file). */
+const OTP_CARET: Record<string, string> = { sm: 'spacing.4+spacing.0_5', default: 'spacing.5', lg: 'spacing.5+spacing.0_5' }
+
+function otpSlotRoot(variant: string, state: string): SlotProps {
+  const underline = variant === 'underline'
+  const rest = variant === 'filled'
+    ? { fill: c('surface.muted'), stroke: c('border.subtle') }
+    : { fill: c(underline ? 'surface.page' : 'surface.input'), stroke: c('border.control') }
+  if (state === 'Disabled') return { ...rest, ...(variant === 'filled' ? {} : { fill: c('surface.muted') }), halo: NONE }
+  if (state === 'Invalid') return { ...rest, stroke: c('status.critical.border-strong'), halo: NONE }
+  if (state === 'Typing' || state === 'Focused') {
+    return underline
+      ? { ...rest, stroke: c('border.focus'), strokeBottomWidth: 'stroke.focus', halo: c('border.ring.default') }
+      : { ...rest, stroke: c('border.focus'), strokeWidth: 'stroke.focus', halo: c('border.ring.default') }
+  }
+  return { ...rest, halo: NONE }
+}
+
+export const INPUT_OTP_SLOT: ComponentRecipe = {
+  key: 'InputOTPSlot',
+  slots: ['root', 'digit', 'caret'],
+  defaults: { Size: 'default', State: 'Default', Variant: 'outline' },
+  parts: [
+    part({}, () => ({
+      digit: { text: c('content.primary') },
+      caret: { fill: c('content.primary'), width: 'stroke.control' },
+    })),
+    part({ Size: INPUT_OTP_SIZES }, (size) => {
+      const [w, h] = OTP_SLOT_BOX[size]
+      return { root: { width: w, height: h }, digit: { font: OTP_SLOT_FONT[size] }, caret: { height: OTP_CARET[size] } }
+    }),
+    part({ Variant: INPUT_OTP_VARIANTS }, (variant) => (variant === 'underline'
+      ? { root: { radius: 'radius.none', strokeWidth: 'stroke.none', strokeBottomWidth: 'stroke.control' } }
+      : { root: { radius: 'radius.action', strokeWidth: 'stroke.control' } })),
+    part({ Variant: INPUT_OTP_VARIANTS, State: INPUT_OTP_SLOT_STATES }, (variant, state): SlotMap => ({
+      root: otpSlotRoot(variant, state),
+      ...(state === 'Disabled' ? { digit: { text: c('content.disabled') } } : {}),
     })),
   ],
 }

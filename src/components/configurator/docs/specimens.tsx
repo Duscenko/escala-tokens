@@ -35,7 +35,7 @@ import {
 import { SKELETON_SNIPPETS } from './skeleton/snippets'
 import {
   SkeletonInputSpecimen, SkeletonTextareaSpecimen, SkeletonInputGroupSpecimen, SkeletonNumberInputSpecimen,
-  SkeletonInputTagSpecimen, SkeletonSelectSpecimen, SkeletonComboboxSpecimen, SkeletonInputOTPSpecimen,
+  SkeletonInputTagSpecimen, SkeletonSelectSpecimen, SkeletonComboboxSpecimen, SkeletonInputOTPSpecimen, SkeletonInputOTPSlotSpecimen,
   SkeletonCheckboxSpecimen, SkeletonRadioGroupSpecimen,
   SkeletonSwitchSpecimen, SkeletonSliderSpecimen, SkeletonFileUploadSpecimen,
   SkeletonDropzoneSpecimen, SkeletonFieldSpecimen, SkeletonLabelSpecimen, SkeletonPasswordStrengthSpecimen,
@@ -381,6 +381,7 @@ export const SPECIMENS: Record<string, (p: SpecimenProps) => ReactNode> = {
   InputGroup: SkeletonInputGroupSpecimen,
   Textarea: SkeletonTextareaSpecimen,
   InputOTP: SkeletonInputOTPSpecimen,
+  InputOTPSlot: SkeletonInputOTPSlotSpecimen,
   NumberInput: SkeletonNumberInputSpecimen,
   InputTag: SkeletonInputTagSpecimen,
   Select: SkeletonSelectSpecimen,

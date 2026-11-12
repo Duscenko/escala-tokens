@@ -134,8 +134,12 @@ export const SKELETON_SNIPPETS: Record<string, Snippet> = {
   },
   InputGroup: () =>
     `import {\n  InputGroup, InputGroupAddon, InputGroupInput, InputGroupButton, InputGroupSeparator,\n} from "@/components/ui/input-group"\n\n<InputGroup>\n  <InputGroupAddon>https://</InputGroupAddon>\n  <InputGroupSeparator />\n  <InputGroupInput defaultValue="escala.design" />\n  <InputGroupSeparator />\n  <InputGroupButton>Copy</InputGroupButton>\n</InputGroup>`,
-  InputOTP: () =>
-    `import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp"\n\n<InputOTP maxLength={6} value={code} onChange={setCode}>\n  <InputOTPGroup>\n    <InputOTPSlot index={0} />\n    <InputOTPSlot index={1} />\n    <InputOTPSlot index={2} />\n    <InputOTPSlot index={3} />\n    <InputOTPSlot index={4} />\n    <InputOTPSlot index={5} />\n  </InputOTPGroup>\n</InputOTP>`,
+  InputOTP: (v) => {
+    const attrs = [v.Size && v.Size !== 'default' ? ` size="${v.Size}"` : '', v.Variant && v.Variant !== 'outline' ? ` variant="${v.Variant}"` : '', v.State === 'Invalid' ? ' aria-invalid' : '', v.State === 'Disabled' ? ' disabled' : ''].join('')
+    return `import { InputOTP } from "@/components/ui/input-otp"\n\n<InputOTP length={${v.Length ?? 6}}${attrs} value={code} onChange={setCode} aria-label="Verification code" />`
+  },
+  InputOTPSlot: (v) =>
+    `import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp"\n\n<InputOTP length={4}${v.Variant && v.Variant !== 'outline' ? ` variant="${v.Variant}"` : ''} value={code} onChange={setCode}>\n  <InputOTPGroup>\n    <InputOTPSlot index={0} />\n    <InputOTPSlot index={1} />\n    <InputOTPSlot index={2} />\n    <InputOTPSlot index={3} />\n  </InputOTPGroup>\n</InputOTP>`,
   NumberInput: (v) =>
     `import { NumberInput } from "@/components/ui/number-input"\n\n<NumberInput aria-label="Quantity"${v.Size && v.Size !== 'default' ? ` size="${v.Size}"` : ''} defaultValue={12} min={0} max={99}${v.State === 'Disabled' ? ' disabled' : v.State === 'Invalid' ? ' aria-invalid' : ''} />`,
   InputTag: () =>

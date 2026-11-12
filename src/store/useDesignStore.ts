@@ -2058,7 +2058,7 @@ export const useDesignStore = create<DesignStore>()(
     }),
     {
       name: 'scalable-designs-store',
-      version: 113,
+      version: 114,
       migrate: (persisted: any, version: number) => {
         if (persisted) {
           // v1→v2: remove styleDirection, rename selectedAtoms → selectedComponents
@@ -3931,6 +3931,19 @@ export const useDesignStore = create<DesignStore>()(
           rename(persisted)
           if (Array.isArray(persisted.savedSystems)) {
             for (const sys of persisted.savedSystems) rename(sys?.snapshot)
+          }
+        }
+        if (version < 114) {
+          // v113→v114: InputOTPSlot is a component of its own (the Figma file's set).
+          // A selection with InputOTP gets it.
+          const add = (state: any) => {
+            if (!Array.isArray(state?.selectedComponents)) return
+            const sel: string[] = state.selectedComponents
+            if (sel.includes('InputOTP') && !sel.includes('InputOTPSlot')) sel.splice(sel.indexOf('InputOTP') + 1, 0, 'InputOTPSlot')
+          }
+          add(persisted)
+          if (Array.isArray(persisted.savedSystems)) {
+            for (const sys of persisted.savedSystems) add(sys?.snapshot)
           }
         }
         return persisted

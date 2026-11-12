@@ -51,7 +51,7 @@ export const RECIPE_MOTION: Record<string, RecipeMotion> = {
   Input: { transitions: { root: FIELD } },
   InputGroup: { transitions: { root: FIELD } },
   InputTag: { transitions: { root: FIELD } },
-  InputOTP: { transitions: { slot: FIELD } },
+  InputOTPSlot: { transitions: { root: FIELD } },
   Select: { transitions: { root: FIELD }, ...popover('--radix-select-content-transform-origin', 'content') },
   NativeSelect: { transitions: { select: FIELD } },
   Checkbox: { transitions: { root: states('background-color', 'border-color', 'box-shadow') } },

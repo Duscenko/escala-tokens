@@ -117,3 +117,11 @@ Every row cost a round trip with the owner. Check each one before calling a comp
 | A nested component whose inner frame is anchored MIN | Spinner instance resized to 14 · 18, its 16px glyph stays top-left (overflows / off-centre) | Copied: the spinner slot is the frame size, the glyph a fixed 16px at its top-left. Read the nested vector's box and constraints, not only the instance's size |
 | A rebuilt recipe drops slots the frozen plugin documents (`RECIPE_FIGMA_ANATOMY` root `field`, omit label · hint · count) | Parity: `Textarea.label: expected … to include 'label'` | `STALE_ANATOMY` + the new slots in `WEB_ONLY_SLOTS`, dated |
 | The file has a prototype board (`DocBoardPrototype`) | — | Read its Textarea instances (props) and captions, and add a "Resting · Focused" story with the same copy |
+
+# Lessons from the InputOTP (2026-11-12)
+
+| Trap | What it looked like | The fix (where it lives) |
+|---|---|---|
+| A text layer NOT bound to its TEXT property in some variants | InputOTPSlot `filled` / `underline`: the digit has no `componentPropertyReferences`, so every instance shows "7" | Read `componentPropertyReferences` per variant. A functional value (the typed digit) is not copied as a constant: say it in the contract and the report |
+| A composite's State is a PATTERN over its parts | InputOTP Typing = first half Filled, next slot Typing, rest Default | Read every instance's main-component state per variant (one line per variant), then encode the pattern (`pinnedSlotState`) |
+| A recipe slot moved to a new catalogue key | `recipeMotion` named `InputOTP.slot`; agent-context and audit tests named InputOTP as the field | Move the motion entry (`lib/recipes/motion.ts`) and the field-like lists to the new key (`InputOTPSlot`) |

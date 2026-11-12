@@ -4320,16 +4320,44 @@ var init_componentCatalogue = __esm({
         key: "InputOTP",
         label: "Input OTP",
         category: "Form Controls",
-        description: "shadcn/ui Input OTP (the input-otp package): one hidden control, a group of slots, the active slot ringed.",
-        usage: "Use for one-time codes. Paste fills every slot; set maxLength to the code length.",
-        axes: [{ name: "State", values: ["Default", "Filled", "Error"] }],
-        figmaSets: ["Input OTP"],
-        props: [
-          { name: "maxLength", type: "number", description: "Code length (the number of slots)." },
-          { name: "value / onChange", type: "string / (value) => void", description: "Controlled value." },
-          { name: "InputOTPGroup \xB7 InputOTPSlot index \xB7 InputOTPSeparator", type: "component", description: "The slots, laid out as you need them." }
+        description: "A one-time code field: a row of InputOTPSlots over one hidden input, with a separator between the halves of a 6- or 8-digit code. Paste fills every slot.",
+        usage: "Use for one-time codes (sign-in, verification). Set length to the code length; labels and the error text come from Field.",
+        // The Figma file's axes, value for value (design-plans/input-otp-contract.md).
+        axes: [
+          { name: "Size", values: ["sm", "default", "lg"] },
+          { name: "Length", values: ["4", "6", "8"] },
+          { name: "State", values: ["Empty", "Typing", "Filled", "Invalid", "Disabled"] },
+          { name: "Variant", values: ["outline", "filled", "underline"] }
         ],
-        accessibility: 'One real input with autocomplete="one-time-code"; the slots are presentational. Give it an aria-label.'
+        figmaSets: ["InputOTP"],
+        props: [
+          { name: "size", type: '"sm" | "default" | "lg"', description: "Slots 32\xD740 \xB7 40\xD748 \xB7 48\xD756; Type/body-md \xB7 lg \xB7 xl." },
+          { name: "length", type: "4 | 6 | 8", description: "Figma Length: the number of slots (= maxLength)." },
+          { name: "variant", type: '"outline" | "filled" | "underline"', description: "The slot style." },
+          { name: "value / onChange", type: "string / (value) => void", description: "The code. Typing and Filled follow it; the active empty slot shows the caret." },
+          { name: "aria-invalid / disabled", type: "boolean", description: "State Invalid / Disabled." },
+          { name: "children", type: "InputOTPGroup \xB7 InputOTPSlot \xB7 InputOTPSeparator", description: "Optional composition; omit to draw the file's layout." }
+        ],
+        accessibility: 'One real input with autocomplete="one-time-code"; the slots are presentational. Give it a label (Field, or aria-label); on Invalid expose the error through aria-describedby.'
+      },
+      {
+        key: "InputOTPSlot",
+        label: "Input OTP Slot",
+        category: "Form Controls",
+        description: "One box of an InputOTP: a digit, or the caret while it is the active empty slot. InputOTP draws it; it reads the code from it.",
+        usage: "Used by InputOTP. Compose it yourself (index) only when you need a custom layout.",
+        axes: [
+          { name: "Size", values: ["sm", "default", "lg"] },
+          { name: "State", values: ["Default", "Filled", "Typing", "Focused", "Invalid", "Disabled"] },
+          { name: "Variant", values: ["outline", "filled", "underline"] }
+        ],
+        figmaSets: ["InputOTPSlot"],
+        props: [
+          { name: "index", type: "number", description: "Its position inside InputOTP." },
+          { name: "digit", type: "string", description: "Figma Digit, outside InputOTP." },
+          { name: "forceState", type: "string", description: "Pins a state (docs)." }
+        ],
+        accessibility: "Presentational: the hidden input inside InputOTP carries the value and the label."
       },
       {
         key: "NumberInput",
@@ -8738,6 +8766,16 @@ function numberInputPaint(state2) {
   if (state2 === "Hover") return { root: { fill: c("surface.input"), stroke: c("border.control-hover") } };
   return { root: { fill: c("surface.input"), stroke: c("border.control") } };
 }
+function otpSlotRoot(variant, state2) {
+  const underline = variant === "underline";
+  const rest = variant === "filled" ? { fill: c("surface.muted"), stroke: c("border.subtle") } : { fill: c(underline ? "surface.page" : "surface.input"), stroke: c("border.control") };
+  if (state2 === "Disabled") return { ...rest, ...variant === "filled" ? {} : { fill: c("surface.muted") }, halo: NONE };
+  if (state2 === "Invalid") return { ...rest, stroke: c("status.critical.border-strong"), halo: NONE };
+  if (state2 === "Typing" || state2 === "Focused") {
+    return underline ? { ...rest, stroke: c("border.focus"), strokeBottomWidth: "stroke.focus", halo: c("border.ring.default") } : { ...rest, stroke: c("border.focus"), strokeWidth: "stroke.focus", halo: c("border.ring.default") };
+  }
+  return { ...rest, halo: NONE };
+}
 function checkPaint(checked, state2) {
   const on = checked === "True";
   const disabled = state2 === "Disabled";
@@ -8764,7 +8802,7 @@ function switchPaint(checked, state2) {
     thumb: { fill: c(on && !disabled ? "content.on-action" : "surface.input") }
   };
 }
-var FIELD_FIXED, FIELD_FOCUS, INPUT_STATES, INPUT_SIZES, INPUT_TYPES, INPUT_GEOMETRY, INPUT_GLYPH, INPUT_STROKE_IN_LAYOUT, INPUT, TEXTAREA_SIZES, TEXTAREA_STATES, TEXTAREA_HEIGHT, TEXTAREA_PAD, TEXTAREA_FONT, TEXTAREA_GLYPH, TEXTAREA, GROUP_LIVE, GROUP_CONTROL, INPUT_GROUP, NUMBER_INPUT_SIZES, NUMBER_INPUT_STATES, NUMBER_BOX, NUMBER_INPUT, INPUT_TAG, SELECT_GEOMETRY, MENU_ITEM, MENU_CONTENT, SELECT, COMBOBOX, INPUT_OTP, CHECKBOX, RADIO_GROUP, SWITCH_GEOMETRY, SWITCH, SLIDER, FIELD_STATES, FIELD, LABEL, STRENGTH_FILL, PASSWORD_STRENGTH, FILE_UPLOAD, DROPZONE, NATIVE_SELECT_STATES, NATIVE_SELECT, CALENDAR;
+var FIELD_FIXED, FIELD_FOCUS, INPUT_STATES, INPUT_SIZES, INPUT_TYPES, INPUT_GEOMETRY, INPUT_GLYPH, INPUT_STROKE_IN_LAYOUT, INPUT, TEXTAREA_SIZES, TEXTAREA_STATES, TEXTAREA_HEIGHT, TEXTAREA_PAD, TEXTAREA_FONT, TEXTAREA_GLYPH, TEXTAREA, GROUP_LIVE, GROUP_CONTROL, INPUT_GROUP, NUMBER_INPUT_SIZES, NUMBER_INPUT_STATES, NUMBER_BOX, NUMBER_INPUT, INPUT_TAG, SELECT_GEOMETRY, MENU_ITEM, MENU_CONTENT, SELECT, COMBOBOX, INPUT_OTP_SIZES, INPUT_OTP_VARIANTS, INPUT_OTP_STATES, INPUT_OTP_SLOT_STATES, INPUT_OTP, OTP_SLOT_BOX, OTP_SLOT_FONT, OTP_CARET, INPUT_OTP_SLOT, CHECKBOX, RADIO_GROUP, SWITCH_GEOMETRY, SWITCH, SLIDER, FIELD_STATES, FIELD, LABEL, STRENGTH_FILL, PASSWORD_STRENGTH, FILE_UPLOAD, DROPZONE, NATIVE_SELECT_STATES, NATIVE_SELECT, CALENDAR;
 var init_forms = __esm({
   "src/lib/recipes/forms.ts"() {
     init_helpers();
@@ -9016,28 +9054,47 @@ var init_forms = __esm({
         part({ State: ["Default", "Focused", "Open"] }, (state2) => ({ root: fieldBox(state2) }))
       ]
     };
+    INPUT_OTP_SIZES = ["sm", "default", "lg"];
+    INPUT_OTP_VARIANTS = ["outline", "filled", "underline"];
+    INPUT_OTP_STATES = ["Empty", "Typing", "Filled", "Invalid", "Disabled"];
+    INPUT_OTP_SLOT_STATES = ["Default", "Filled", "Typing", "Focused", "Invalid", "Disabled"];
     INPUT_OTP = {
       key: "InputOTP",
-      slots: ["root", "group", "slot"],
-      defaults: { State: "Default" },
+      slots: ["root", "group", "separator"],
+      defaults: { Size: "default", Length: "4", State: "Empty", Variant: "outline" },
       parts: [
         part({}, () => ({
+          root: { gap: "spacing.gap-control" },
           group: { gap: "spacing.gap-control" },
-          slot: {
-            fill: c("surface.input"),
-            stroke: c("border.control"),
-            strokeWidth: "stroke.control",
-            radius: "radius.action",
-            text: c("content.primary"),
-            font: "type.button",
-            height: "size.control",
-            width: "size.control"
-          },
-          'slot[data-active="true"]': FIELD_FOCUS
+          separator: { fill: c("content.subtle"), width: "spacing.2", height: "spacing.0_5" }
         })),
-        part({ State: ["Default", "Filled", "Error"] }, (state2) => ({
-          slot: state2 === "Error" ? { stroke: c("status.critical.border-strong") } : {},
-          'slot[data-active="true"]': state2 === "Error" ? { stroke: c("status.critical.border-strong"), ring: NONE } : FIELD_FOCUS
+        part({ State: INPUT_OTP_STATES }, (state2) => state2 === "Disabled" ? { separator: { fill: c("content.disabled") } } : {})
+      ]
+    };
+    OTP_SLOT_BOX = {
+      sm: ["size.compact", "size.control"],
+      default: ["size.control", "size.touch"],
+      lg: ["size.touch", "size.fab"]
+    };
+    OTP_SLOT_FONT = { sm: "type.body-md", default: "type.body-lg", lg: "type.text-xl" };
+    OTP_CARET = { sm: "spacing.4+spacing.0_5", default: "spacing.5", lg: "spacing.5+spacing.0_5" };
+    INPUT_OTP_SLOT = {
+      key: "InputOTPSlot",
+      slots: ["root", "digit", "caret"],
+      defaults: { Size: "default", State: "Default", Variant: "outline" },
+      parts: [
+        part({}, () => ({
+          digit: { text: c("content.primary") },
+          caret: { fill: c("content.primary"), width: "stroke.control" }
+        })),
+        part({ Size: INPUT_OTP_SIZES }, (size) => {
+          const [w, h] = OTP_SLOT_BOX[size];
+          return { root: { width: w, height: h }, digit: { font: OTP_SLOT_FONT[size] }, caret: { height: OTP_CARET[size] } };
+        }),
+        part({ Variant: INPUT_OTP_VARIANTS }, (variant) => variant === "underline" ? { root: { radius: "radius.none", strokeWidth: "stroke.none", strokeBottomWidth: "stroke.control" } } : { root: { radius: "radius.action", strokeWidth: "stroke.control" } }),
+        part({ Variant: INPUT_OTP_VARIANTS, State: INPUT_OTP_SLOT_STATES }, (variant, state2) => ({
+          root: otpSlotRoot(variant, state2),
+          ...state2 === "Disabled" ? { digit: { text: c("content.disabled") } } : {}
         }))
       ]
     };
@@ -10433,7 +10490,7 @@ var init_motion2 = __esm({
       Input: { transitions: { root: FIELD2 } },
       InputGroup: { transitions: { root: FIELD2 } },
       InputTag: { transitions: { root: FIELD2 } },
-      InputOTP: { transitions: { slot: FIELD2 } },
+      InputOTPSlot: { transitions: { root: FIELD2 } },
       Select: { transitions: { root: FIELD2 }, ...popover("--radix-select-content-transform-origin", "content") },
       NativeSelect: { transitions: { select: FIELD2 } },
       Checkbox: { transitions: { root: states("background-color", "border-color", "box-shadow") } },
@@ -10493,6 +10550,7 @@ var init_componentRecipes = __esm({
       Select: SELECT,
       Combobox: COMBOBOX,
       InputOTP: INPUT_OTP,
+      InputOTPSlot: INPUT_OTP_SLOT,
       Checkbox: CHECKBOX,
       RadioGroup: RADIO_GROUP,
       Switch: SWITCH,
@@ -13366,7 +13424,7 @@ var init_useDesignStore = __esm({
         }),
         {
           name: "scalable-designs-store",
-          version: 113,
+          version: 114,
           migrate: (persisted, version) => {
             if (persisted) {
               delete persisted.styleDirection;
@@ -14752,6 +14810,17 @@ var init_useDesignStore = __esm({
               rename(persisted);
               if (Array.isArray(persisted.savedSystems)) {
                 for (const sys of persisted.savedSystems) rename(sys?.snapshot);
+              }
+            }
+            if (version < 114) {
+              const add2 = (state2) => {
+                if (!Array.isArray(state2?.selectedComponents)) return;
+                const sel = state2.selectedComponents;
+                if (sel.includes("InputOTP") && !sel.includes("InputOTPSlot")) sel.splice(sel.indexOf("InputOTP") + 1, 0, "InputOTPSlot");
+              };
+              add2(persisted);
+              if (Array.isArray(persisted.savedSystems)) {
+                for (const sys of persisted.savedSystems) add2(sys?.snapshot);
               }
             }
             return persisted;

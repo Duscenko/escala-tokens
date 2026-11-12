@@ -277,7 +277,7 @@ describe('field outline is border.control', () => {
 
   it('every field-like recipe paints its resting edge with border.control, never border.strong', async () => {
     const { COMPONENT_RECIPES, recipeColorRoles } = await import('../componentRecipes')
-    for (const key of ['Input', 'Textarea', 'Select', 'Checkbox', 'RadioGroup', 'InputOTP', 'Chip']) {
+    for (const key of ['Input', 'Textarea', 'Select', 'Checkbox', 'RadioGroup', 'InputOTPSlot', 'Chip']) {
       const roles = recipeColorRoles(COMPONENT_RECIPES[key])
       expect(roles, key).toContain('border.control')
       expect(roles, key).not.toContain('border.strong')

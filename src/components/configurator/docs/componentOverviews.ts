@@ -148,7 +148,15 @@ export const OVERVIEWS: Record<string, Overview> = {
     each('Size', ['sm', 'default', 'lg'], {}, 240),
     each('Value', ['placeholder', 'filled'], {}, 240),
   ],
-  InputOTP: stack('State', ['Default', 'Filled', 'Error']),
+  InputOTP: [
+    ...stack('State', ['Empty', 'Typing', 'Filled', 'Invalid', 'Disabled'], { Length: '6' }),
+    ...stack('Variant', ['outline', 'filled', 'underline'], { Length: '6', State: 'Filled' }),
+  ],
+  InputOTPSlot: [
+    each('State', ['Default', 'Filled', 'Typing', 'Focused', 'Invalid', 'Disabled']),
+    each('Variant', ['outline', 'filled', 'underline'], { State: 'Filled' }),
+    each('Size', ['sm', 'default', 'lg'], { State: 'Filled' }),
+  ],
   Select: [
     each('State', ['Default', 'Focused'], {}, 220),
     each('State', ['Error', 'Disabled'], {}, 220),

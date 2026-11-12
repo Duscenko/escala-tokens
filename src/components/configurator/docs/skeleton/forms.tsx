@@ -12,7 +12,7 @@ import { NumberInput as SkNumberInput, type NumberInputSize, type NumberInputSta
 import { InputTag as SkInputTag } from '../../../escala-ui/input-tag'
 import { Select as SkSelect, SelectContent as SkSelectContent, SelectItem as SkSelectItem, SelectTrigger as SkSelectTrigger, SelectValue as SkSelectValue } from '../../../escala-ui/select'
 import { Combobox as SkCombobox } from '../../../escala-ui/combobox'
-import { InputOTP as SkInputOTP, InputOTPGroup as SkInputOTPGroup, InputOTPSlot as SkInputOTPSlot } from '../../../escala-ui/input-otp'
+import { InputOTP as SkInputOTP, InputOTPSlot as SkInputOTPSlot, type InputOTPLength, type InputOTPSize, type InputOTPSlotState, type InputOTPState, type InputOTPVariant } from '../../../escala-ui/input-otp'
 import { Checkbox as SkCheckbox } from '../../../escala-ui/checkbox'
 import { RadioGroup as SkRadioGroup, RadioGroupItem as SkRadioGroupItem } from '../../../escala-ui/radio-group'
 import { Switch as SkSwitch, type SwitchSize } from '../../../escala-ui/switch'
@@ -250,19 +250,35 @@ export function SkeletonComboboxSpecimen({ t, v }: SpecimenProps) {
 
 const OTP_CODE = '824913'
 
+/** The Figma InputOTP: Size × Length × State × Variant. Live on the board (the code
+ *  types itself a digit at a time); a pinned State draws the file's variant. */
 export function SkeletonInputOTPSpecimen({ t, v }: SpecimenProps) {
-  const filled = v.State === 'Filled' || v.State === 'Error'
-  const [value, setValue] = useState(filled ? '824913' : '')
+  const length = Number(v.Length ?? 6) as InputOTPLength
+  const state = (v.State ?? 'Empty') as InputOTPState
+  const size = (v.Size ?? 'default') as InputOTPSize
+  const variant = (v.Variant ?? 'outline') as InputOTPVariant
+  const [value, setValue] = useState('')
   // The board types the code a digit at a time, holds it, and clears.
   const typed = useAutoplayStep(10, 420)
-  const shown = typed == null || !filled ? value : OTP_CODE.slice(0, Math.min(6, typed))
+  const live = state === 'Filled' && typed != null
   return (
     <RecipeScope t={t}>
-      <SkInputOTP key={v.State} maxLength={6} value={shown} onChange={setValue} aria-invalid={v.State === 'Error' || undefined} aria-label="Verification code">
-        <SkInputOTPGroup>
-          {[0, 1, 2, 3, 4, 5].map((i) => <SkInputOTPSlot key={i} index={i} />)}
-        </SkInputOTPGroup>
-      </SkInputOTP>
+      {live ? (
+        <SkInputOTP aria-label="Verification code" size={size} variant={variant} length={length} value={OTP_CODE.slice(0, Math.min(length, typed))} onChange={setValue} />
+      ) : state === 'Empty' && v.State === undefined ? (
+        <SkInputOTP aria-label="Verification code" size={size} variant={variant} length={length} value={value} onChange={setValue} />
+      ) : (
+        <SkInputOTP aria-label="Verification code" size={size} variant={variant} length={length} forceState={state} />
+      )}
+    </RecipeScope>
+  )
+}
+
+export function SkeletonInputOTPSlotSpecimen({ t, v }: SpecimenProps) {
+  const state = (v.State ?? 'Default') as InputOTPSlotState
+  return (
+    <RecipeScope t={t}>
+      <SkInputOTPSlot size={(v.Size ?? 'default') as InputOTPSize} variant={(v.Variant ?? 'outline') as InputOTPVariant} forceState={state} digit="7" />
     </RecipeScope>
   )
 }
