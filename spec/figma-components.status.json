@@ -4,10 +4,6 @@
     "SocialLoginButton": {
       "status": "rebuild"
     },
-    "Field": {
-      "status": "rebuild",
-      "note": "Built from the live file on 2026-11-12 (State Default|Invalid|Disabled, 9 variants). This snapshot still has the older 6-variant set (no Disabled): Field leaves the ledger when spec/figma-components.json is refreshed."
-    },
     "NumberInput": {
       "status": "rename",
       "code": "InputStepper"

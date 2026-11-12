@@ -5,11 +5,11 @@
     "name": "Escala Design System (Real)"
   },
   "exportedAt": "2026-11-12",
-  "checksum": "9cc4dd2f",
+  "checksum": "32cf9e13",
   "pages": [
     {
-      "page": "Button",
-      "stable": true,
+      "page": "Button (✓)  (D)",
+      "stable": false,
       "id": "4:2185",
       "sets": [
         {
@@ -26,8 +26,8 @@
       ]
     },
     {
-      "page": "IconButton",
-      "stable": true,
+      "page": "IconButton (✓) (D)",
+      "stable": false,
       "id": "627:785",
       "sets": [
         {
@@ -40,6 +40,41 @@
             "Variant": "default|secondary|critical"
           },
           "props": "BadgeVisible:BOOLEAN,Icon:INSTANCE_SWAP"
+        }
+      ]
+    },
+    {
+      "page": "CloseButton (✓) (D)",
+      "stable": false,
+      "id": "335:2",
+      "sets": [
+        {
+          "name": "CloseButton",
+          "variants": 600,
+          "axes": {
+            "Appearance": "solid|outline|soft|ghost",
+            "Shape": "rounded|pill|square",
+            "Size": "sm|lg|xl|xs|default",
+            "State": "Default|Hover|Pressed|Focused|Disabled",
+            "Variant": "default|inverse"
+          }
+        }
+      ]
+    },
+    {
+      "page": "TextLink (✓) (D)",
+      "stable": false,
+      "id": "342:14798",
+      "sets": [
+        {
+          "name": "TextLink",
+          "variants": 144,
+          "axes": {
+            "Size": "xs|sm|default|lg",
+            "State": "Default|Hover|Pressed|Visited|Focused|Disabled",
+            "Variant": "inverse|success|info|default|secondary|critical"
+          },
+          "props": "IconLeadingIcon:INSTANCE_SWAP,IconLeadingVisible:BOOLEAN,IconTrailingIcon:INSTANCE_SWAP,IconTrailingVisible:BOOLEAN,Label:TEXT,UnderlineVisible:BOOLEAN"
         }
       ]
     },
@@ -62,8 +97,8 @@
       ]
     },
     {
-      "page": "FABButton & FABGroup",
-      "stable": true,
+      "page": "FABButton & FABGroup (✓) (D)",
+      "stable": false,
       "id": "643:411",
       "sets": [
         {
@@ -89,31 +124,13 @@
       ]
     },
     {
-      "page": "CloseButton",
-      "stable": true,
-      "id": "335:2",
-      "sets": [
-        {
-          "name": "CloseButton",
-          "variants": 600,
-          "axes": {
-            "Appearance": "solid|outline|soft|ghost",
-            "Shape": "rounded|pill|square",
-            "Size": "sm|lg|xl|xs|default",
-            "State": "Default|Hover|Pressed|Focused|Disabled",
-            "Variant": "default|inverse"
-          }
-        }
-      ]
-    },
-    {
-      "page": "ButtonGroup",
-      "stable": true,
+      "page": "ButtonGroup (✓) (D) ",
+      "stable": false,
       "id": "350:2",
       "sets": [
         {
           "name": "ButtonGroup",
-          "variants": 120,
+          "variants": 100,
           "axes": {
             "Orientation": "horizontal|vertical",
             "Shape": "rounded|pill|square",
@@ -145,41 +162,24 @@
       ]
     },
     {
-      "page": "TextLink",
-      "stable": true,
-      "id": "342:14798",
-      "sets": [
-        {
-          "name": "TextLink",
-          "variants": 144,
-          "axes": {
-            "Size": "xs|sm|default|lg",
-            "State": "Default|Hover|Pressed|Visited|Focused|Disabled",
-            "Variant": "inverse|success|info|default|secondary|critical"
-          },
-          "props": "IconLeadingIcon:INSTANCE_SWAP,IconLeadingVisible:BOOLEAN,IconTrailingIcon:INSTANCE_SWAP,IconTrailingVisible:BOOLEAN,Label:TEXT,UnderlineVisible:BOOLEAN"
-        }
-      ]
-    },
-    {
-      "page": "Field",
+      "page": "Field (✓) (D) ",
       "stable": false,
       "id": "1003:2",
       "sets": [
         {
           "name": "Field",
-          "variants": 6,
+          "variants": 9,
           "axes": {
             "Size": "default|sm|lg",
-            "State": "Default|Invalid"
+            "State": "Default|Invalid|Disabled"
           },
           "props": "Description:TEXT,DescriptionVisible:BOOLEAN,Error:TEXT,Label:TEXT,RequiredVisible:BOOLEAN,TrailingVisible:BOOLEAN"
         }
       ]
     },
     {
-      "page": "Input",
-      "stable": true,
+      "page": "Input (✓) (D) ",
+      "stable": false,
       "id": "4:10609",
       "sets": [
         {
