@@ -18,7 +18,7 @@ import { COMPONENTS, type ComponentDef } from '../../../lib/componentCatalogue'
 import { PHOSPHOR_CORE, PHOSPHOR_CORE_COMPONENT, type IconConcept } from '../../../lib/iconLibraries'
 import { PHOSPHOR_CORE_BODIES, loadPhosphorWeight, peekPhosphorWeight, phosphorCoreBody, phosphorIconMaskUrl, type PhosphorWeight } from '../../../lib/phosphorIcons'
 import {
-  SkeletonButtonSpecimen, SkeletonButtonGroupSpecimen,
+  SkeletonButtonSpecimen, SkeletonIconButtonSpecimen, SkeletonButtonGroupSpecimen,
   SkeletonSocialLoginButtonSpecimen, SkeletonAppStoreBadgeSpecimen, SkeletonToggleGroupSpecimen, SkeletonToggleSpecimen,
 } from './skeleton/actions'
 import {
@@ -108,6 +108,7 @@ export const ICON_COMPONENT: Record<IconConcept, string> = PHOSPHOR_CORE_COMPONE
 /** Which components expose leading/trailing icon slots, and their default glyphs. */
 export const ICON_SLOTS: Record<string, { leading: IconConcept; trailing: IconConcept }> = {
   Button: { leading: 'star', trailing: 'arrow' },
+  IconButton: { leading: 'star', trailing: 'arrow' },
   Input: { leading: 'search', trailing: 'eye' },
 }
 
@@ -115,7 +116,7 @@ export const ICON_SLOTS: Record<string, { leading: IconConcept; trailing: IconCo
  *  is advertising decoration as status — Danger is the error circle, Success
  *  the plain check (`check-circle` collapses to a star-shaped blob at SM). */
 export function buttonLeadingConcept(variant?: string): IconConcept {
-  if (variant === 'destructive') return 'error'
+  if (variant === 'destructive' || variant === 'critical') return 'error'
   return ICON_SLOTS.Button.leading
 }
 
@@ -356,6 +357,7 @@ function lazySpecimen(name: 'SkeletonCalendarSpecimen' | 'SkeletonChartSpecimen'
 export const SPECIMENS: Record<string, (p: SpecimenProps) => ReactNode> = {
   // Button & Actions
   Button: SkeletonButtonSpecimen,
+  IconButton: SkeletonIconButtonSpecimen,
   ButtonGroup: SkeletonButtonGroupSpecimen,
   ToggleGroup: SkeletonToggleGroupSpecimen,
   Toggle: SkeletonToggleSpecimen,

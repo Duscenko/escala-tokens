@@ -87,9 +87,9 @@ describe('component recipes', () => {
 
   it('give every filled button variant distinct hover states (no opacity dim)', () => {
     const fill = (v: Record<string, string>) => resolveRecipe(COMPONENT_RECIPES.Button, v).root.fill!.slice(6)
-    for (const color of ['default', 'secondary', 'destructive']) {
+    for (const color of ['default', 'secondary', 'critical']) {
       for (const mode of ['light', 'dark']) {
-        const hex = ['Default', 'Hover', 'Pressed'].map((State) => roleHex[fill({ Variant: color, State })][mode])
+        const hex = ['Default', 'Hover', 'Pressed'].map((State) => roleHex[fill({ Variant: color, Appearance: 'solid', State })][mode])
         expect(new Set(hex).size, `${color} ${mode}: ${hex.join(' ')}`).toBeGreaterThanOrEqual(2)
         expect(hex[1], `${color} ${mode} hover`).not.toBe(hex[0])
       }
@@ -127,16 +127,17 @@ describe('the generated stylesheet', () => {
     }
   })
 
-  it('paints each state with its own role (shadcn variants)', () => {
+  it('paints each state with its own role (Figma Variant × Appearance)', () => {
     const css = recipeCss(COMPONENT_RECIPES.Button)
     const rule = (sel: string) => css.split('}').find((r) => r.includes(sel) && r.includes('background'))
-    expect(rule('[data-variant="default"] {')).toContain('var(--color-action-primary-default)')
-    expect(rule('[data-variant="default"]:hover')).toContain('var(--color-action-primary-hover)')
-    expect(rule('[data-variant="default"][data-force-state="Pressed"]')).toContain('var(--color-action-primary-pressed)')
-    // Destructive is the critical SOLID with its own ink (a Delete reads as an action).
-    expect(rule('[data-variant="destructive"] {')).toContain('var(--color-status-critical-surface-solid)')
-    expect(rule('[data-variant="destructive"] {')).toContain('var(--color-status-critical-on-solid)')
-    expect(rule('[data-variant="destructive"]:hover')).toContain('var(--color-status-critical-surface-solid-hover)')
+    const solid = (v: string) => `[data-variant="${v}"][data-appearance="solid"]`
+    expect(rule(`${solid('default')} {`)).toContain('var(--color-action-primary-default)')
+    expect(rule(`${solid('default')}:hover`)).toContain('var(--color-action-primary-hover)')
+    expect(rule(`${solid('default')}[data-force-state="Pressed"]`)).toContain('var(--color-action-primary-pressed)')
+    // critical · solid is the critical SOLID with its own ink (a Delete reads as an action).
+    expect(rule(`${solid('critical')} {`)).toContain('var(--color-status-critical-surface-solid)')
+    expect(rule(`${solid('critical')} {`)).toContain('var(--color-status-critical-on-solid)')
+    expect(rule(`${solid('critical')}:hover`)).toContain('var(--color-status-critical-surface-solid-hover)')
   })
 
   it('reads only names variables.css ships', async () => {
@@ -180,20 +181,32 @@ describe('focus', () => {
     }
   })
 
-  // The focus takes the variant's colour; a solid fill is set off from its
-  // halo by a page-coloured inside edge (border.focus there was the fill's own
-  // accent tone and vanished).
+  // The focus edge is the one each Figma variant strokes in its Focused state
+  // (design-plans/button-contract.md); every variant adds the border.ring.default
+  // halo. The edge is not one colour yet: the file strokes secondary · solid with
+  // border.strong and Button critical solid / outline with the critical border.
   it.each([
-    ['default', 'color.surface.page', 'color.border.ring.default'],
-    ['secondary', 'color.surface.page', 'color.border.control'],
-    ['destructive', 'color.surface.page', 'color.status.critical.border'],
-    ['outline', 'none', 'color.border.control'],
-    ['ghost', 'none', 'color.border.control'],
-    ['link', 'none', 'color.border.ring.default'],
-  ])('Button %s focuses with edge %s and halo %s', (variant, edge, halo) => {
-    const root = resolveRecipe(COMPONENT_RECIPES.Button, { Variant: variant, Size: 'default', State: 'Focused' }).root
+    ['default', 'solid', 'color.border.focus'],
+    ['default', 'outline', 'color.border.focus'],
+    ['default', 'ghost', 'color.border.focus'],
+    ['default', 'link', 'color.border.focus'],
+    ['secondary', 'solid', 'color.border.strong'],
+    ['secondary', 'outline', 'color.border.focus'],
+    ['secondary', 'ghost', 'color.border.focus'],
+    ['secondary', 'link', 'color.border.focus'],
+    ['critical', 'solid', 'color.status.critical.border-strong'],
+    ['critical', 'outline', 'color.status.critical.border-strong'],
+    ['critical', 'ghost', 'color.border.focus'],
+    ['critical', 'link', 'color.border.focus'],
+  ])('Button %s · %s focuses with edge %s and the ring halo', (variant, appearance, edge) => {
+    const root = resolveRecipe(COMPONENT_RECIPES.Button, { Variant: variant, Appearance: appearance, Size: 'default', State: 'Focused' }).root
     expect(root.focus).toBe(edge)
-    expect(root.ring).toBe(halo)
+    expect(root.ring).toBe('color.border.ring.default')
+  })
+
+  it('IconButton critical · outline focuses on border.focus (Figma), unlike Button', () => {
+    const root = resolveRecipe(COMPONENT_RECIPES.IconButton, { Variant: 'critical', Appearance: 'outline', Size: 'default', State: 'Focused' }).root
+    expect(root.focus).toBe('color.border.focus')
   })
 
   it('the ring clears WCAG 1.4.11 against the page it is set off onto, in both themes', () => {

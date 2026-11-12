@@ -6,94 +6,116 @@
  */
 import { c, NONE, part, type ComponentRecipe, type SlotMap, type SlotProps, FOCUS } from './helpers.js'
 
-// ── Button ─────────────────────────────────────────────────────────────────
-// shadcn's variants and sizes, verbatim (`bases/radix/ui/button.tsx`). What
-// each one PAINTS is shadcn's `cn-button-variant-*` read through Escala's roles:
-//   default     bg-primary → action.primary.*         · ink on it
-//   secondary   bg-secondary → action.secondary.*     · content.on-secondary
-//   outline     border, NO fill at rest, hover muted  · page ink
-//               (Escala's call: shadcn's bg-background is the PAGE colour, so
-//               on a raised surface — a Dialog's Cancel, a Card's footer — it
-//               cut a page-coloured patch out of that surface; transparent
-//               shows whatever it sits on and only the outline reads)
-//   ghost       transparent, hover muted              · page ink
-//   destructive the critical SOLID → status.critical.surface-solid* · on-solid
-//               (Escala's call: a Delete reads as a solid action, the soft
-//               tint stays for Badge, Bubble and Alert)
-//   link        text-primary → content.link.*
-// shadcn dims a disabled button with opacity; a recipe never does, so disabled
-// is a role (action.disabled / content.disabled).
+// ── Button · IconButton ────────────────────────────────────────────────────
+// The Figma file is the source (design-plans/button-contract.md): `Variant` is the
+// intent (default = brand, secondary = neutral, critical = destructive), `Appearance`
+// the style (solid · outline · ghost · link), all 12 combinations. Each paint below
+// is the variable the Figma variant binds, state by state. Disabled is a role
+// (action.disabled / content.disabled), never an opacity.
+//
+// Focus: `focus` is the edge the Figma variant strokes in its Focused state, `ring`
+// the `border.ring.default` halo outside it. The edge is NOT one colour yet — Figma
+// strokes secondary · solid with border.strong and critical solid / outline (Button)
+// with the critical border; the contract copies it until the file unifies it.
 
-export const BUTTON_VARIANTS = ['default', 'outline', 'secondary', 'ghost', 'destructive', 'link'] as const
-export const BUTTON_SIZES = ['default', 'xs', 'sm', 'lg', 'icon', 'icon-xs', 'icon-sm', 'icon-lg'] as const
+export const BUTTON_VARIANTS = ['default', 'secondary', 'critical'] as const
+export const BUTTON_APPEARANCES = ['solid', 'outline', 'ghost', 'link'] as const
+export const BUTTON_SIZES = ['default', 'xs', 'sm', 'lg'] as const
 const BUTTON_STATES = ['Default', 'Hover', 'Pressed', 'Focused', 'Loading', 'Disabled'] as const
 
-function buttonPaint(variant: string, state: string): SlotMap {
+/** The solid fill ladder per intent: rest · hover · pressed, and its ink. */
+const SOLID: Record<string, { fill: [string, string, string]; ink: string; focus: string }> = {
+  default: { fill: ['action.primary.default', 'action.primary.hover', 'action.primary.pressed'], ink: 'content.on-action', focus: 'border.focus' },
+  secondary: { fill: ['action.secondary.default', 'action.secondary.hover', 'action.secondary.pressed'], ink: 'content.on-secondary', focus: 'border.strong' },
+  critical: { fill: ['status.critical.surface-solid', 'status.critical.surface-solid-hover', 'status.critical.surface-solid-pressed'], ink: 'status.critical.on-solid', focus: 'status.critical.border-strong' },
+}
+/** Outline / ghost: the intent's ink and the outline's edge. */
+const QUIET: Record<string, { ink: string; edge: string }> = {
+  default: { ink: 'content.accent', edge: 'border.accent' },
+  secondary: { ink: 'content.primary', edge: 'border.control' },
+  critical: { ink: 'status.critical.content', edge: 'status.critical.border-strong' },
+}
+/** Link: rest ink, hover / pressed ink. */
+const LINK: Record<string, [string, string]> = {
+  default: ['content.link.default', 'content.link.hover'],
+  secondary: ['content.secondary', 'content.primary'],
+  critical: ['status.critical.content', 'status.critical.content'],
+}
+
+function buttonPaint(variant: string, appearance: string, state: string, iconOnly = false): SlotMap {
+  const ring = state === 'Focused' ? c('border.ring.default') : NONE
   if (state === 'Disabled') {
-    const filled = variant === 'default' || variant === 'secondary' || variant === 'destructive'
     return {
       root: {
-        fill: filled ? c('action.disabled.default') : NONE,
-        stroke: variant === 'outline' ? c('action.disabled.default') : NONE,
+        fill: appearance === 'solid' ? c('action.disabled.default') : NONE,
+        stroke: appearance === 'outline' ? c('border.control') : NONE,
         text: c('content.disabled'),
         focus: NONE,
         ring: NONE,
       },
     }
   }
-  const hover = state === 'Hover'
-  const pressed = state === 'Pressed'
-  const focus = state === 'Focused'
-  // Focus takes the variant's own colour: the halo is the accent's for an
-  // accent button, the critical one for a destructive, the neutral one for a
-  // page-ink button. A solid fill also gets a `surface.page` inside edge — the
-  // gap that sets the fill off from its halo. With `border.focus` there the
-  // edge vanished on the primary fill, which is the same accent tone.
-  // Fill-less variants keep their own edge and add only the halo.
-  const gap = focus ? c('surface.page') : NONE
-  const halo = (role: string) => (focus ? c(role) : NONE)
-  switch (variant) {
-    case 'default':
-      return { root: { fill: c(pressed ? 'action.primary.pressed' : hover ? 'action.primary.hover' : 'action.primary.default'), stroke: NONE, text: c('content.on-action'), focus: gap, ring: halo('border.ring.default') } }
-    case 'secondary':
-      return { root: { fill: c(pressed ? 'action.secondary.pressed' : hover ? 'action.secondary.hover' : 'action.secondary.default'), stroke: NONE, text: c('content.on-secondary'), focus: gap, ring: halo('border.control') } }
-    case 'outline':
-      return { root: { fill: pressed ? c('action.ghost.pressed') : hover ? c('action.ghost.hover') : NONE, stroke: c('border.control'), text: c('content.primary'), focus: NONE, ring: halo('border.control') } }
-    case 'ghost':
-      return { root: { fill: pressed ? c('action.ghost.pressed') : hover ? c('action.ghost.hover') : NONE, stroke: NONE, text: c('content.primary'), focus: NONE, ring: halo('border.control') } }
-    case 'destructive':
-      return { root: { fill: c(pressed ? 'status.critical.surface-solid-pressed' : hover ? 'status.critical.surface-solid-hover' : 'status.critical.surface-solid'), stroke: NONE, text: c('status.critical.on-solid'), focus: gap, ring: halo('status.critical.border') } }
-    default: // link
-      return { root: { fill: NONE, stroke: NONE, text: c(hover || pressed ? 'content.link.hover' : 'content.link.default'), focus: NONE, ring: halo('border.ring.default') } }
+  const step = state === 'Pressed' ? 2 : state === 'Hover' ? 1 : 0
+  const focused = state === 'Focused'
+  if (appearance === 'solid') {
+    const k = SOLID[variant]
+    return { root: { fill: c(k.fill[step]), stroke: NONE, text: c(k.ink), focus: focused ? c(k.focus) : NONE, ring } }
+  }
+  if (appearance === 'link') {
+    const [rest, over] = LINK[variant]
+    return { root: { fill: NONE, stroke: NONE, text: c(step ? over : rest), focus: focused ? c('border.focus') : NONE, ring } }
+  }
+  const k = QUIET[variant]
+  const wash = step === 2 ? c('action.ghost.pressed') : step === 1 ? c('action.ghost.hover') : NONE
+  // Button's critical · outline focuses on its own critical edge (Figma);
+  // IconButton's and every other quiet button on border.focus.
+  const edge = variant === 'critical' && appearance === 'outline' && !iconOnly ? 'status.critical.border-strong' : 'border.focus'
+  return {
+    root: {
+      fill: wash,
+      stroke: appearance === 'outline' ? c(k.edge) : NONE,
+      text: c(k.ink),
+      focus: focused ? c(edge) : NONE,
+      ring,
+    },
   }
 }
 
-/** shadcn's heights (24 · 32 · 36 · 40) read through the Size roles Escala
- *  ships (hit 24 · compact 32 · control 40 · touch 48): the names are shadcn's,
- *  the lengths are the system's. `icon*` are square at the same heights. */
-const BUTTON_GEOMETRY: Record<string, SlotProps> = {
-  xs: { height: 'size.hit', paddingX: 'spacing.2', gap: 'spacing.1' },
-  sm: { height: 'size.compact', paddingX: 'spacing.3', gap: 'spacing.1_5' },
-  default: { height: 'size.control', paddingX: 'spacing.4', gap: 'spacing.gap-control' },
-  lg: { height: 'size.touch', paddingX: 'spacing.5', gap: 'spacing.gap-control' },
-  'icon-xs': { height: 'size.hit', width: 'size.hit', paddingX: 'spacing.0' },
-  'icon-sm': { height: 'size.compact', width: 'size.compact', paddingX: 'spacing.0' },
-  icon: { height: 'size.control', width: 'size.control', paddingX: 'spacing.0' },
-  'icon-lg': { height: 'size.touch', width: 'size.touch', paddingX: 'spacing.0' },
-}
+/** Figma's geometry: one inset at every size, the height from the Size roles
+ *  (hit 24 · compact 32 · control 40 · touch 48), the gap tight at xs. */
+const BUTTON_HEIGHT: Record<string, string> = { xs: 'size.hit', sm: 'size.compact', default: 'size.control', lg: 'size.touch' }
+const BUTTON_GAP: Record<string, string> = { xs: 'spacing.gap-tight', sm: 'spacing.gap-control', default: 'spacing.gap-control', lg: 'spacing.gap-control' }
 
 // `text` sits on the ROOT: label and icons share it (`currentColor`), which is
 // also what the plugin does — one ink fills the label and the icon slots.
 export const BUTTON: ComponentRecipe = {
   key: 'Button',
   slots: ['root', 'label', 'icon'],
-  defaults: { Variant: 'default', Size: 'default', State: 'Default' },
+  defaults: { Variant: 'default', Appearance: 'solid', Size: 'default', State: 'Default' },
   parts: [
     part({}, () => ({
       root: { radius: 'radius.action', strokeWidth: 'stroke.control', font: 'type.button' },
     })),
-    part({ Size: BUTTON_SIZES }, (size) => ({ root: BUTTON_GEOMETRY[size] })),
-    part({ Variant: BUTTON_VARIANTS, State: BUTTON_STATES }, buttonPaint),
+    part({ Size: BUTTON_SIZES }, (size) => ({
+      root: { height: BUTTON_HEIGHT[size], paddingX: 'spacing.inset-control', gap: BUTTON_GAP[size] },
+    })),
+    part({ Variant: BUTTON_VARIANTS, Appearance: BUTTON_APPEARANCES, State: BUTTON_STATES }, (v, a, s) => buttonPaint(v, a, s)),
+  ],
+}
+
+/** The icon-only button: a square at the Button heights, no inset, one icon slot. */
+export const ICON_BUTTON: ComponentRecipe = {
+  key: 'IconButton',
+  slots: ['root', 'icon', 'badge'],
+  defaults: { Variant: 'default', Appearance: 'solid', Size: 'default', State: 'Default' },
+  parts: [
+    part({}, () => ({
+      root: { radius: 'radius.action', strokeWidth: 'stroke.control' },
+    })),
+    part({ Size: BUTTON_SIZES }, (size) => ({
+      root: { height: BUTTON_HEIGHT[size], width: BUTTON_HEIGHT[size], paddingX: 'spacing.0' },
+    })),
+    part({ Variant: BUTTON_VARIANTS, Appearance: BUTTON_APPEARANCES, State: BUTTON_STATES }, (v, a, s) => buttonPaint(v, a, s, true)),
   ],
 }
 

@@ -87,7 +87,7 @@ describe('registry item (shadcn CLI format)', () => {
     expect(item.files).toHaveLength(1)
     expect(item.files![0]).toMatchObject({ path: 'registry/escala/button.tsx', type: 'registry:ui' })
     expect(item.files![0].content).toContain("from '@/lib/utils'")
-    expect(item.files![0].content).toContain('data-escala={recipe}')
+    expect(item.files![0].content).toContain('data-escala={recipeKey}')
     expect(item.dependencies).toEqual(['radix-ui'])
     expect(item.registryDependencies).toEqual(['utils'])
     // Values ride in `css`, never `cssVars` (the CLI would mirror them into @theme).

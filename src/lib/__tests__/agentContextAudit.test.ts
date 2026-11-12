@@ -277,11 +277,21 @@ describe('field outline is border.control', () => {
 
   it('every field-like recipe paints its resting edge with border.control, never border.strong', async () => {
     const { COMPONENT_RECIPES, recipeColorRoles } = await import('../componentRecipes')
-    for (const key of ['Input', 'Textarea', 'Select', 'Checkbox', 'RadioGroup', 'InputOTP', 'Chip', 'Button']) {
+    for (const key of ['Input', 'Textarea', 'Select', 'Checkbox', 'RadioGroup', 'InputOTP', 'Chip']) {
       const roles = recipeColorRoles(COMPONENT_RECIPES[key])
       expect(roles, key).toContain('border.control')
       expect(roles, key).not.toContain('border.strong')
     }
+    // Button: the RESTING edge (stroke) of an outline is border.control. Its
+    // border.strong is secondary · solid's FOCUS edge (the Figma file), not a rest edge.
+    const { resolveRecipe } = await import('../componentRecipes')
+    const strokes = new Set<string>()
+    for (const Variant of ['default', 'secondary', 'critical']) for (const Appearance of ['solid', 'outline', 'ghost', 'link']) {
+      const stroke = resolveRecipe(COMPONENT_RECIPES.Button, { Variant, Appearance, State: 'Default' }).root?.stroke
+      if (stroke && stroke !== 'none') strokes.add(stroke.replace(/^color\./, ''))
+    }
+    expect([...strokes]).toContain('border.control')
+    expect([...strokes]).not.toContain('border.strong')
   })
 })
 

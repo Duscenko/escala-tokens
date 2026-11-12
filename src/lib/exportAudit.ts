@@ -60,7 +60,9 @@ export const RUNTIME_VARS = new Set(['--switch-from', '--switch-to', '--escala-d
  *  duplicated block (×2), not to police normal growth. */
 export const BUDGETS = {
   cssBytes: 160_000,
-  contextAllTokens: 70_000,
+  // 70k → 75k (2026-11-12): Button became Variant × Appearance (12 combinations)
+  // and IconButton a component of its own — real content, not bloat.
+  contextAllTokens: 75_000,
   contextFoundationTokens: 12_000,
 }
 

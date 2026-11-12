@@ -2044,7 +2044,7 @@ export const useDesignStore = create<DesignStore>()(
     }),
     {
       name: 'scalable-designs-store',
-      version: 106,
+      version: 107,
       migrate: (persisted: any, version: number) => {
         if (persisted) {
           // v1→v2: remove styleDirection, rename selectedAtoms → selectedComponents
@@ -3810,6 +3810,22 @@ export const useDesignStore = create<DesignStore>()(
           seed(persisted)
           if (Array.isArray(persisted.savedSystems)) {
             for (const sys of persisted.savedSystems) seed(sys?.snapshot)
+          }
+        }
+        if (version < 107) {
+          // v106→v107: the Figma file is the source for components. Button is
+          // Variant × Appearance and its square sizes became IconButton, a
+          // component of its own — a selection that had Button had icon buttons.
+          const split = (state: any) => {
+            if (!Array.isArray(state?.selectedComponents)) return
+            if (state.selectedComponents.includes('Button') && !state.selectedComponents.includes('IconButton')) {
+              const at = state.selectedComponents.indexOf('Button') + 1
+              state.selectedComponents.splice(at, 0, 'IconButton')
+            }
+          }
+          split(persisted)
+          if (Array.isArray(persisted.savedSystems)) {
+            for (const sys of persisted.savedSystems) split(sys?.snapshot)
           }
         }
         return persisted

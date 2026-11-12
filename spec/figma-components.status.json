@@ -1,12 +1,6 @@
 {
   "$comment": "Hand-maintained ledger: how far the code catalogue is from the Figma file (spec/figma-components.json). A component leaves `pending` when its catalogue axes equal Figma's — the test then demands the entry be removed. `codeOnly` are catalogue components Figma does not document: frozen, no new work. See design-plans/figma-components-inventory.md.",
   "pending": {
-    "Button": {
-      "status": "rebuild"
-    },
-    "IconButton": {
-      "status": "new"
-    },
     "SocialLoginButton": {
       "status": "rebuild"
     },

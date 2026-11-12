@@ -161,22 +161,26 @@ export const SKELETON_SNIPPETS: Record<string, Snippet> = {
     `import { PasswordStrength } from "@/components/ui/password-strength"\n\n<PasswordStrength${v.Strength ? ` strength="${v.Strength}"` : ''} value={password}>\n  <Input type="password" value={password} onChange={onChange} />\n</PasswordStrength>`,
 
   ButtonGroup: (v) =>
-    `import { Button } from "@/components/ui/button"\nimport { ButtonGroup } from "@/components/ui/button-group"\n\n<ButtonGroup${v.Orientation === 'vertical' ? ' orientation="vertical"' : ''} aria-label="Range">\n  <Button variant="outline">Day</Button>\n  <Button variant="outline">Week</Button>\n  <Button variant="outline">Month</Button>\n</ButtonGroup>`,
+    `import { Button } from "@/components/ui/button"\nimport { ButtonGroup } from "@/components/ui/button-group"\n\n<ButtonGroup${v.Orientation === 'vertical' ? ' orientation="vertical"' : ''} aria-label="Range">\n  <Button variant="secondary" appearance="outline">Day</Button>\n  <Button variant="secondary" appearance="outline">Week</Button>\n  <Button variant="secondary" appearance="outline">Month</Button>\n</ButtonGroup>`,
   SocialLoginButton: (v) =>
     `import { SocialLoginButton } from "@/components/ui/social-login-button"\n\n<SocialLoginButton provider="${v.Provider ?? 'google'}"${v.Size === 'lg' ? ' size="lg"' : ''} />`,
   AppStoreBadge: (v) =>
     `import { AppStoreBadge } from "@/components/ui/app-store-badge"\n\n<AppStoreBadge store="${v.Store ?? 'app-store'}" href={storeUrl} />`,
   Button: (v, icons) => {
     const variant = v.Variant && v.Variant !== 'default' ? ` variant="${v.Variant}"` : ''
+    const appearance = v.Appearance && v.Appearance !== 'solid' ? ` appearance="${v.Appearance}"` : ''
     const size = v.Size && v.Size !== 'default' ? ` size="${v.Size}"` : ''
-    const iconOnly = (v.Size ?? '').startsWith('icon')
     const flags = `${v.State === 'Disabled' ? ' disabled' : ''}${v.State === 'Loading' ? ' loading' : ''}`
-    if (iconOnly) {
-      return `import { Button } from "@/components/ui/button"\n\n<Button${variant}${size}${flags} aria-label="Add">\n  <${ICON_COMPONENT[icons?.leadingConcept ?? ICON_SLOTS.Button.leading]} />\n</Button>`
-    }
-    const lead = icons?.leading ? `  <${ICON_COMPONENT[icons.leadingConcept ?? buttonLeadingConcept(v.Variant)]} />\n` : ''
-    const trail = icons?.trailing ? `\n  <${ICON_COMPONENT[ICON_SLOTS.Button.trailing]} />` : ''
-    return `import { Button } from "@/components/ui/button"\n\n<Button${variant}${size}${flags}>\n${lead}  Button${trail}\n</Button>`
+    const lead = icons?.leading ? ` leading={<${ICON_COMPONENT[icons.leadingConcept ?? buttonLeadingConcept(v.Variant)]} />}` : ''
+    const trail = icons?.trailing ? ` trailing={<${ICON_COMPONENT[ICON_SLOTS.Button.trailing]} />}` : ''
+    return `import { Button } from "@/components/ui/button"\n\n<Button${variant}${appearance}${size}${flags}${lead}${trail}>\n  Button\n</Button>`
+  },
+  IconButton: (v, icons) => {
+    const variant = v.Variant && v.Variant !== 'default' ? ` variant="${v.Variant}"` : ''
+    const appearance = v.Appearance && v.Appearance !== 'solid' ? ` appearance="${v.Appearance}"` : ''
+    const size = v.Size && v.Size !== 'default' ? ` size="${v.Size}"` : ''
+    const flags = `${v.State === 'Disabled' ? ' disabled' : ''}${v.State === 'Loading' ? ' loading' : ''}`
+    return `import { IconButton } from "@/components/ui/icon-button"\n\n<IconButton${variant}${appearance}${size}${flags} aria-label="Home" icon={<${ICON_COMPONENT[icons?.leadingConcept ?? ICON_SLOTS.Button.leading]} />} />`
   },
   Input: (v, icons) => {
     const flags = `${v.State === 'Error' ? ' aria-invalid' : ''}${v.State === 'Disabled' ? ' disabled' : ''}`

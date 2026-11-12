@@ -64,9 +64,9 @@ describe('agentContextMarkdown', () => {
     const button = COMPONENTS.find((c) => c.key === 'Button')!
     const md = agentContextMarkdown(button, '<Button />', { ...TOKENS, archTokens: { 'action.primary.default': '#7f56d9' } })
     expect(md).toContain('### Tokens by part (the component recipe)')
-    expect(md).toContain('| root | fill | Variant: default · State: Default, Focused, Loading | `color.action.primary.default` | `--color-action-primary-default` | `Action/primary/default` | `#7f56d9` |')
+    expect(md).toContain('| root | fill | Variant: default · Appearance: solid · State: Default, Focused, Loading | `color.action.primary.default` | `--color-action-primary-default` | `Action/primary/default` | `#7f56d9` |')
     // A size row says which size it is, with its live value.
-    expect(md).toContain('| root | height | Size: xs, icon-xs | `size.hit` | `--size-control-xs` | `Size/control-xs` | `24px` |')
+    expect(md).toContain('| root | height | Size: xs | `size.hit` | `--size-control-xs` | `Size/control-xs` | `24px` |')
     expect(md).toContain('| root | radius | always | `radius.action` |')
     expect(md).toContain('`color.content.on-action`')
     expect(md).toContain('`--size-control-md`')

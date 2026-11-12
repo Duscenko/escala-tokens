@@ -3,7 +3,8 @@ import type { SpecimenProps } from '../specimens'
 import { ICON_SLOTS, PreviewIcon, buttonLeadingConcept } from '../specimens'
 import { iconForControlStep } from '../../../../lib/previewTokens'
 import { useI18n } from '../../../../lib/i18n'
-import { Button as SkButton, type ButtonSize, type ButtonVariant } from '../../../escala-ui/button'
+import { Button as SkButton, buttonAxes, type ButtonAppearance, type ButtonSize, type ButtonVariant } from '../../../escala-ui/button'
+import { IconButton as SkIconButton } from '../../../escala-ui/icon-button'
 import { ButtonGroup as SkButtonGroup, ButtonGroupSeparator as SkButtonGroupSeparator, type ButtonGroupOrientation } from '../../../escala-ui/button-group'
 import { SocialLoginButton as SkSocialLoginButton, type SocialProvider, PROVIDER_NAME } from '../../../escala-ui/social-login-button'
 import { AppStoreBadge as SkAppStoreBadge, type Store } from '../../../escala-ui/app-store-badge'
@@ -11,46 +12,59 @@ import { RecipeScope } from './scope'
 import { Toggle as SkToggle, type ToggleSize, type ToggleVariant } from '../../../escala-ui/toggle'
 import { ToggleGroup as SkToggleGroup, ToggleGroupItem as SkToggleGroupItem, type ToggleGroupSize, type ToggleGroupVariant } from '../../../escala-ui/toggle-group'
 
-/** shadcn size → the control step its icon is sized from (xs · sm · md · lg). */
-const ICON_STEP: Record<ButtonSize, string> = {
-  xs: 'xs', 'icon-xs': 'xs', sm: 'sm', 'icon-sm': 'sm', default: 'md', icon: 'md', lg: 'lg', 'icon-lg': 'lg',
-}
+/** Button size → the control step its icon is sized from (xs · sm · md · lg). */
+const ICON_STEP: Record<string, string> = { xs: 'xs', sm: 'sm', default: 'md', lg: 'lg' }
 
-export function SkeletonButtonSpecimen({ t, v, icons, w, children }: SpecimenProps) {
-  const variant = (v.Variant ?? 'default') as ButtonVariant
-  const size = (v.Size ?? 'default') as ButtonSize
-  const iconPx = iconForControlStep(ICON_STEP[size] ?? 'md', t)
-  const loading = v.State === 'Loading'
-  const iconOnly = size.startsWith('icon')
-  const slots = ICON_SLOTS.Button
-  const leadConcept = icons?.leadingConcept ?? buttonLeadingConcept(variant)
-  const spinner = (
+function SpinnerGlyph({ px }: { px: number }) {
+  return (
     <span
       className="inline-block animate-spin rounded-full"
-      style={{ width: iconPx - 2, height: iconPx - 2, border: '2px solid currentColor', borderTopColor: 'transparent' }}
+      style={{ width: px - 2, height: px - 2, border: '2px solid currentColor', borderTopColor: 'transparent' }}
       aria-hidden
     />
   )
+}
+
+export function SkeletonButtonSpecimen({ t, v, icons, w, children }: SpecimenProps) {
+  // Legacy one-axis values (`outline`, `icon-sm`…) still resolve, so an old
+  // stored selection keeps rendering while it migrates.
+  const axes = buttonAxes((v.Variant ?? 'default') as ButtonVariant, v.Appearance as ButtonAppearance | undefined, (v.Size ?? 'default') as ButtonSize)
+  if (axes.iconOnly) return <SkeletonIconButtonSpecimen t={t} v={{ ...v, Variant: axes.variant, Appearance: axes.appearance, Size: axes.size }} icons={icons} />
+  const iconPx = iconForControlStep(ICON_STEP[axes.size] ?? 'md', t)
+  const loading = v.State === 'Loading'
+  const slots = ICON_SLOTS.Button
+  const leadConcept = icons?.leadingConcept ?? buttonLeadingConcept(axes.variant)
   return (
     <RecipeScope t={t}>
       <SkButton
-        variant={variant}
+        variant={axes.variant}
+        appearance={axes.appearance}
+        size={axes.size}
+        forceState={(v.State ?? 'Default') as 'Default'}
+        style={{ width: w, minWidth: w != null ? 0 : undefined, maxWidth: w != null ? '100%' : undefined }}
+        leading={loading ? <SpinnerGlyph px={iconPx} /> : icons?.leading ? <PreviewIcon prefix={icons.prefix} concept={leadConcept} size={iconPx} /> : undefined}
+        trailing={icons?.trailing ? <PreviewIcon prefix={icons.prefix} concept={icons.trailingConcept ?? slots.trailing} size={iconPx} /> : undefined}
+      >
+        <span data-part="Button.label" className="truncate">{children ?? 'Button'}</span>
+      </SkButton>
+    </RecipeScope>
+  )
+}
+
+export function SkeletonIconButtonSpecimen({ t, v, icons, children }: SpecimenProps) {
+  const size = (v.Size ?? 'default') as 'default'
+  const iconPx = iconForControlStep(ICON_STEP[size] ?? 'md', t)
+  const loading = v.State === 'Loading'
+  return (
+    <RecipeScope t={t}>
+      <SkIconButton
+        variant={(v.Variant ?? 'default') as 'default'}
+        appearance={(v.Appearance ?? 'solid') as 'solid'}
         size={size}
         forceState={(v.State ?? 'Default') as 'Default'}
-        aria-label={iconOnly ? (typeof children === 'string' ? children : 'Add') : undefined}
-        style={{ width: w, minWidth: w != null ? 0 : undefined, maxWidth: w != null ? '100%' : undefined }}
-      >
-        {iconOnly ? (
-          loading ? spinner : <PreviewIcon prefix={icons?.prefix} concept={icons?.leadingConcept ?? slots.leading} size={iconPx} />
-        ) : (
-          <>
-            {loading && spinner}
-            {!loading && icons?.leading && <PreviewIcon prefix={icons.prefix} concept={leadConcept} size={iconPx} />}
-            <span data-part="Button.label" className="truncate">{children ?? 'Button'}</span>
-            {icons?.trailing && <PreviewIcon prefix={icons.prefix} concept={icons.trailingConcept ?? slots.trailing} size={iconPx} />}
-          </>
-        )}
-      </SkButton>
+        aria-label={typeof children === 'string' ? children : 'Home'}
+        icon={loading ? <SpinnerGlyph px={iconPx} /> : <PreviewIcon prefix={icons?.prefix} concept={icons?.leadingConcept ?? ICON_SLOTS.Button.leading} size={iconPx} />}
+      />
     </RecipeScope>
   )
 }
@@ -60,21 +74,20 @@ export function SkeletonButtonGroupSpecimen({ t, v }: SpecimenProps) {
   return (
     <RecipeScope t={t}>
       <SkButtonGroup orientation={orientation} aria-label="Range">
-        <SkButton variant="outline">Day</SkButton>
-        <SkButton variant="outline">Week</SkButton>
-        <SkButton variant="outline">Month</SkButton>
+        <SkButton variant="secondary" appearance="outline">Day</SkButton>
+        <SkButton variant="secondary" appearance="outline">Week</SkButton>
+        <SkButton variant="secondary" appearance="outline">Month</SkButton>
       </SkButtonGroup>
     </RecipeScope>
   )
 }
 
-/** A dismiss control is shadcn's `Button variant="ghost" size="icon-sm"`. */
+/** A dismiss control: a secondary · ghost IconButton with the close glyph. */
 export function SkeletonDismissSpecimen({ t, size = 'icon-sm' }: { t: SpecimenProps['t']; size?: ButtonSize }) {
+  const step = buttonAxes('default', undefined, size).size
   return (
     <RecipeScope t={t}>
-      <SkButton variant="ghost" size={size} aria-label="Close">
-        <PreviewIcon concept="close" size={iconForControlStep(ICON_STEP[size] ?? 'sm', t)} />
-      </SkButton>
+      <SkIconButton variant="secondary" appearance="ghost" size={step} aria-label="Close" icon={<PreviewIcon concept="close" size={iconForControlStep(ICON_STEP[step] ?? 'sm', t)} />} />
     </RecipeScope>
   )
 }

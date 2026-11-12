@@ -23,12 +23,12 @@ describe('resolveVariantRoles', () => {
   }
   const t = { archTokens: arch } as never
 
-  it('a destructive button names the critical solid and its ink (from the recipe)', () => {
+  it('a critical · solid button names the critical solid and its ink (from the recipe)', () => {
     const paints = [
       { css: '#b94136', where: 'fill' as const },
       { css: '#ffffff', where: 'ink' as const },
     ]
-    const roles = resolveVariantRoles(t, 'Button', { Variant: 'destructive' }, paints)
+    const roles = resolveVariantRoles(t, 'Button', { Variant: 'critical', Appearance: 'solid' }, paints)
     expect(roles?.map((r) => r.id)).toEqual(['status.critical.surface-solid', 'status.critical.on-solid'])
     expect(roles?.[1]?.css).toBe('#ffffff')
   })

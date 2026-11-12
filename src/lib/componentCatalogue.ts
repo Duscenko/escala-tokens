@@ -46,25 +46,55 @@ export const COMPONENTS: ComponentDef[] = [
     label: 'Button',
     category: 'Button & Actions',
     description:
-      'shadcn/ui Button: six variants (default, secondary, outline, ghost, destructive, link) and eight sizes, four of them square icon buttons. An icon-only ghost button is the dismiss control; a link button is an inline link.',
-    usage: 'Use default for the single most important action on a surface (1–2 per section); secondary/outline/ghost for the rest; destructive for an action that removes data. An icon-only button needs an aria-label.',
-    // Variant and Size are shadcn's own, value for value. State is a Figma
-    // axis only: in code it is pseudo-classes (forceState pins it in docs).
+      'Triggers an action or navigation. Variant is the intent — default (brand), secondary (neutral), critical (destructive) — and Appearance the style — solid, outline, ghost, link — in all 12 combinations, four sizes and six states.',
+    usage: 'Use default · solid for the single most important action on a surface (one per view); secondary for the rest; critical · solid for an irreversible action and critical · outline for a risky one next to a safe one. Icon-only actions are IconButton.',
+    // The Figma file's axes, value for value (spec/figma-components.json). State is
+    // a Figma axis only: in code it is pseudo-classes (forceState pins it in docs).
     axes: [
-      { name: 'Variant', values: ['default', 'secondary', 'outline', 'ghost', 'destructive', 'link'] },
-      { name: 'Size', values: ['default', 'xs', 'sm', 'lg', 'icon', 'icon-xs', 'icon-sm', 'icon-lg'] },
+      { name: 'Variant', values: ['default', 'secondary', 'critical'] },
+      { name: 'Appearance', values: ['solid', 'outline', 'ghost', 'link'] },
+      { name: 'Size', values: ['default', 'xs', 'sm', 'lg'] },
       { name: 'State', values: ['Default', 'Hover', 'Pressed', 'Focused', 'Loading', 'Disabled'] },
     ],
     figmaSets: ['Button'],
     props: [
-      { name: 'variant', type: '"default" | "secondary" | "outline" | "ghost" | "destructive" | "link"', description: 'Visual emphasis — shadcn\'s variants.' },
-      { name: 'size', type: '"default" | "xs" | "sm" | "lg" | "icon" | "icon-xs" | "icon-sm" | "icon-lg"', description: 'Control height from the Sizes foundation (hit · compact · control · touch). icon* are square.' },
+      { name: 'variant', type: '"default" | "secondary" | "critical"', description: 'Intent: brand, neutral or destructive.' },
+      { name: 'appearance', type: '"solid" | "outline" | "ghost" | "link"', description: 'Style: a fill, an edge, nothing until hover, or an inline link.' },
+      { name: 'size', type: '"default" | "xs" | "sm" | "lg"', description: 'Control height from the Size roles (control-xs · sm · md · lg).' },
+      { name: 'leading', type: 'ReactNode', description: 'Icon before the label (Figma IconLeadingVisible + IconLeadingIcon).' },
+      { name: 'trailing', type: 'ReactNode', description: 'Icon after the label (Figma IconTrailingVisible + IconTrailingIcon).' },
+      { name: 'loading', type: 'boolean', description: 'Replaces the leading icon with a spinner and sets aria-busy.' },
+      { name: 'disabled', type: 'boolean', description: 'Prevents interaction and applies the disabled roles.' },
       { name: 'asChild', type: 'boolean', description: 'Render the child element (a link, a router link) with the Button styles — Radix Slot.' },
-      { name: 'loading', type: 'boolean', description: 'Escala: replaces the leading icon with a spinner and sets aria-busy.' },
-      { name: 'disabled', type: 'boolean', description: 'Prevents interaction and applies the disabled tokens.' },
-      { name: 'children', type: 'ReactNode', description: 'Label, with optional icons before / after it as plain children.' },
+      { name: 'children', type: 'ReactNode', description: 'The label (Figma Label). Always visible: it is the accessible name.' },
     ],
-    accessibility: 'Native <button> (or the child with asChild). Disabled sets aria-disabled; loading sets aria-busy. Icon-only buttons (size icon*) need an aria-label.',
+    accessibility: 'Native <button> (or the child with asChild). Disabled sets aria-disabled; loading sets aria-busy. The label is the accessible name; an icon-only action is IconButton.',
+  },
+  {
+    key: 'IconButton',
+    label: 'Icon Button',
+    category: 'Button & Actions',
+    description:
+      'An action with a single icon and no visible label: a square at the Button heights. Same Variant × Appearance grammar as Button, four sizes and six states, with an optional badge for a count or a dot.',
+    usage: 'Use in toolbars, table rows and dialog headers where the icon is unambiguous. Always give it an aria-label; an action that needs words is a Button.',
+    axes: [
+      { name: 'Variant', values: ['default', 'secondary', 'critical'] },
+      { name: 'Appearance', values: ['solid', 'outline', 'ghost', 'link'] },
+      { name: 'Size', values: ['default', 'xs', 'sm', 'lg'] },
+      { name: 'State', values: ['Default', 'Hover', 'Pressed', 'Focused', 'Loading', 'Disabled'] },
+    ],
+    figmaSets: ['IconButton'],
+    props: [
+      { name: 'icon', type: 'ReactNode', description: 'The glyph (Figma Icon).' },
+      { name: 'aria-label', type: 'string', description: 'Required: the accessible name, including a count when the badge shows one.' },
+      { name: 'variant', type: '"default" | "secondary" | "critical"', description: 'Intent: brand, neutral or destructive.' },
+      { name: 'appearance', type: '"solid" | "outline" | "ghost" | "link"', description: 'Style, as Button.' },
+      { name: 'size', type: '"default" | "xs" | "sm" | "lg"', description: 'Square side from the Size roles.' },
+      { name: 'badge', type: 'ReactNode', description: 'A count or dot on the top-right corner (Figma BadgeVisible).' },
+      { name: 'loading', type: 'boolean', description: 'Replaces the icon with a spinner and sets aria-busy.' },
+      { name: 'disabled', type: 'boolean', description: 'Prevents interaction and applies the disabled roles.' },
+    ],
+    accessibility: 'Native <button> with a required aria-label (there is no visible text). Disabled sets aria-disabled; loading sets aria-busy.',
   },
   {
     key: 'ButtonGroup',
@@ -1284,7 +1314,7 @@ export const COMPONENT_KEYS = COMPONENTS.map((c) => c.key)
 // to this list only when it's genuinely a "day one" need for most systems;
 // everything else belongs in the full catalogue, selected on purpose.
 export const ESSENTIAL_COMPONENT_KEYS = [
-  'Button',
+  'Button', 'IconButton',
   'Input', 'Select', 'Checkbox', 'Switch',
   'Badge',
   'Card', 'Avatar', 'Dialog', 'Tooltip', 'Separator',

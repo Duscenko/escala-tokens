@@ -37,22 +37,41 @@ export const OVERVIEWS: Record<string, Overview> = {
   // ── Button & Actions ───────────────────────────────────────────────────────
   Button: [
     [
-      { v: { Variant: 'default' }, label: 'Download all', leading: 'download' },
-      { v: { Variant: 'destructive' }, label: 'Delete', leading: 'trash' },
-      { v: { Variant: 'outline' }, label: 'Options', leading: 'filter' },
-      { v: { Variant: 'secondary' }, label: 'Share', leading: 'share' },
-      { v: { Variant: 'ghost' }, label: 'Add new', leading: 'plus' },
-      { v: { Variant: 'link' }, label: 'Open', trailing: 'external-link' },
+      { v: { Variant: 'default', Appearance: 'solid' }, label: 'Download all', leading: 'download' },
+      { v: { Variant: 'default', Appearance: 'outline' }, label: 'Preview', leading: 'eye' },
+      { v: { Variant: 'default', Appearance: 'ghost' }, label: 'Add new', leading: 'plus' },
+      { v: { Variant: 'default', Appearance: 'link' }, label: 'Open', trailing: 'external-link' },
     ],
     [
+      { v: { Variant: 'secondary', Appearance: 'solid' }, label: 'Share', leading: 'share' },
+      { v: { Variant: 'secondary', Appearance: 'outline' }, label: 'Options', leading: 'filter' },
+      { v: { Variant: 'secondary', Appearance: 'ghost' }, label: 'Cancel' },
+      { v: { Variant: 'secondary', Appearance: 'link' }, label: 'Learn more' },
+    ],
+    [
+      { v: { Variant: 'critical', Appearance: 'solid' }, label: 'Delete', leading: 'trash' },
+      { v: { Variant: 'critical', Appearance: 'outline' }, label: 'Remove', leading: 'trash' },
+      { v: { Variant: 'critical', Appearance: 'ghost' }, label: 'Discard' },
+      { v: { Variant: 'critical', Appearance: 'link' }, label: 'Revoke' },
+    ],
+    [
+      { v: { Variant: 'default', Size: 'xs' }, label: 'Extra small' },
       { v: { Variant: 'default', Size: 'sm' }, label: 'Continue', trailing: 'arrow-right' },
       { v: { Variant: 'default', Size: 'lg' }, label: 'Get started', trailing: 'arrow-right' },
       { v: { Variant: 'default', State: 'Disabled' }, label: 'Locked', leading: 'lock' },
       { v: { Variant: 'default', State: 'Loading' }, label: 'Saving' },
-      { v: { Variant: 'default', Size: 'icon' }, label: 'Add', leading: 'plus' },
-      { v: { Variant: 'outline', Size: 'icon' }, label: 'Settings', leading: 'settings' },
-      { v: { Variant: 'ghost', Size: 'icon' }, label: 'More', leading: 'more' },
     ],
+  ],
+  IconButton: [
+    [
+      { v: { Variant: 'default', Appearance: 'solid' }, label: 'Add', leading: 'plus' },
+      { v: { Variant: 'default', Appearance: 'outline' }, label: 'Favourite', leading: 'star' },
+      { v: { Variant: 'secondary', Appearance: 'outline' }, label: 'Settings', leading: 'settings' },
+      { v: { Variant: 'secondary', Appearance: 'ghost' }, label: 'More', leading: 'more' },
+      { v: { Variant: 'critical', Appearance: 'solid' }, label: 'Delete', leading: 'trash' },
+      { v: { Variant: 'critical', Appearance: 'ghost' }, label: 'Remove', leading: 'trash' },
+    ],
+    each('Size', ['xs', 'sm', 'default', 'lg'], { Variant: 'secondary', Appearance: 'outline' }),
   ],
   ButtonGroup: [each('Orientation', ['horizontal', 'vertical'])],
   ToggleGroup: [
