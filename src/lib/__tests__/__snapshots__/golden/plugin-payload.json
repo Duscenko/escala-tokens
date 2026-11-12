@@ -8125,6 +8125,39 @@
         }
       ]
     },
+    "FABGroup": {
+      "key": "FABGroup",
+      "slots": [
+        "root"
+      ],
+      "defaults": {
+        "Layout": "stack",
+        "Open": "false"
+      },
+      "parts": [
+        {
+          "axes": [
+            "Layout"
+          ],
+          "values": {
+            "stack": {
+              "root": {
+                "gap": "spacing.inset-control"
+              }
+            },
+            "fan-center": {
+              "root": {}
+            },
+            "fan-left": {
+              "root": {}
+            },
+            "fan-right": {
+              "root": {}
+            }
+          }
+        }
+      ]
+    },
     "ButtonGroup": {
       "key": "ButtonGroup",
       "slots": [

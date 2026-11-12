@@ -6,6 +6,7 @@ import { useI18n } from '../../../../lib/i18n'
 import { Button as SkButton, buttonAxes, type ButtonAppearance, type ButtonSize, type ButtonVariant } from '../../../escala-ui/button'
 import { IconButton as SkIconButton } from '../../../escala-ui/icon-button'
 import { FABButton as SkFABButton, type FABButtonAppearance, type FABButtonShape, type FABButtonSize, type FABButtonState, type FABButtonVariant } from '../../../escala-ui/fab-button'
+import { FABGroup as SkFABGroup, type FABGroupLayout } from '../../../escala-ui/fab-group'
 import { TextLink as SkTextLink, type TextLinkSize, type TextLinkState, type TextLinkVariant } from '../../../escala-ui/text-link'
 import { CloseButton as SkCloseButton, type CloseButtonAppearance, type CloseButtonShape, type CloseButtonSize, type CloseButtonState, type CloseButtonVariant } from '../../../escala-ui/close-button'
 import { ButtonGroup as SkButtonGroup, ButtonGroupSeparator as SkButtonGroupSeparator, type ButtonGroupOrientation } from '../../../escala-ui/button-group'
@@ -122,6 +123,26 @@ export function SkeletonFABButtonSpecimen({ t, v, icons, children }: SpecimenPro
       >
         {children ?? 'Create'}
       </SkFABButton>
+    </RecipeScope>
+  )
+}
+
+/** The three demo actions the Figma file itself ships (`stack`'s Edit · Photo · Share). */
+export function SkeletonFABGroupSpecimen({ t, v, icons }: SpecimenProps) {
+  const iconPx = iconForControlStep('md', t)
+  const items = [
+    { icon: <PreviewIcon prefix={icons?.prefix} concept="edit" size={iconPx} />, label: 'Edit' },
+    { icon: <PreviewIcon prefix={icons?.prefix} concept="image" size={iconPx} />, label: 'Photo' },
+    { icon: <PreviewIcon prefix={icons?.prefix} concept="share" size={iconPx} />, label: 'Share' },
+  ]
+  return (
+    <RecipeScope t={t}>
+      <SkFABGroup
+        layout={(v.Layout ?? 'stack') as FABGroupLayout}
+        open={(v.Open ?? 'false') === 'true'}
+        items={items}
+        triggerLabel="Create"
+      />
     </RecipeScope>
   )
 }

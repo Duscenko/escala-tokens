@@ -182,6 +182,34 @@ export const COMPONENTS: ComponentDef[] = [
     accessibility: 'Native <button>. With a label that is the accessible name; an icon-only FAB needs an aria-label. Disabled sets aria-disabled. Focus draws a 2px halo outside the button; the elevation stays.',
   },
   {
+    key: 'FABGroup',
+    label: 'FAB Group',
+    category: 'Button & Actions',
+    description:
+      'A speed-dial: one trigger FABButton that opens up to five action items. Stack lists them vertically with labels; the three fan layouts open them on an arc of icon-only FABs, centered, left or right of the trigger.',
+    usage: 'Use where several floating actions share one entry point (create → photo, edit, share…). The trigger\'s icon swaps plus → close when open. Give every icon-only item an accessible name.',
+    // The Figma file's axes, value for value, in the file's own option order
+    // (spec/figma-components.json). The trigger and every item are fixed FABButton
+    // instances (Appearance/Shape/Size/Variant) — there is no State axis of its own.
+    axes: [
+      { name: 'Layout', values: ['stack', 'fan-center', 'fan-left', 'fan-right'] },
+      { name: 'Open', values: ['false', 'true'] },
+    ],
+    figmaSets: ['FABGroup'],
+    props: [
+      { name: 'layout', type: '"stack" | "fan-center" | "fan-left" | "fan-right"', description: 'Vertical and labelled, or an icon-only arc centered, left or right of the trigger.' },
+      { name: 'items', type: '{ icon: ReactNode; label: string; onSelect?: () => void }[]', description: 'Up to five actions; label is shown in stack, else it is the aria-label.' },
+      { name: 'open', type: 'boolean', description: 'Controlled open state.' },
+      { name: 'defaultOpen', type: 'boolean', description: 'Uncontrolled initial state.' },
+      { name: 'onOpenChange', type: '(open: boolean) => void', description: 'Called when the trigger toggles the menu.' },
+      { name: 'triggerIcon', type: 'ReactNode', description: 'The closed trigger icon (Figma IconLeadingIcon). Defaults to Phosphor\'s plus.' },
+      { name: 'triggerOpenIcon', type: 'ReactNode', description: 'The open trigger icon. Defaults to Phosphor\'s x.' },
+      { name: 'triggerLabel', type: 'string', description: 'The trigger\'s accessible name (Figma Label, "Create") — it is icon-only.' },
+      { name: 'disabled', type: 'boolean', description: 'Disables the trigger and every item.' },
+    ],
+    accessibility: 'role="group" with an aria-label. The trigger is a native <button> with aria-expanded; every item needs an accessible name (its label prop) since fan items are icon-only.',
+  },
+  {
     key: 'ButtonGroup',
     label: 'Button Group',
     category: 'Button & Actions',

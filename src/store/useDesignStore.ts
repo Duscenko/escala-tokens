@@ -2058,7 +2058,7 @@ export const useDesignStore = create<DesignStore>()(
     }),
     {
       name: 'scalable-designs-store',
-      version: 110,
+      version: 111,
       migrate: (persisted: any, version: number) => {
         if (persisted) {
           // v1→v2: remove styleDirection, rename selectedAtoms → selectedComponents
@@ -3881,6 +3881,21 @@ export const useDesignStore = create<DesignStore>()(
             if (sel.includes('FABButton')) return
             const after = sel.includes('TextLink') ? 'TextLink' : sel.includes('CloseButton') ? 'CloseButton' : sel.includes('IconButton') ? 'IconButton' : null
             if (after) sel.splice(sel.indexOf(after) + 1, 0, 'FABButton')
+          }
+          add(persisted)
+          if (Array.isArray(persisted.savedSystems)) {
+            for (const sys of persisted.savedSystems) add(sys?.snapshot)
+          }
+        }
+        if (version < 111) {
+          // v110→v111: FABGroup is a component of its own (the Figma set). A
+          // selection that has the other Button & Actions controls gets it.
+          const add = (state: any) => {
+            if (!Array.isArray(state?.selectedComponents)) return
+            const sel: string[] = state.selectedComponents
+            if (sel.includes('FABGroup')) return
+            const after = sel.includes('FABButton') ? 'FABButton' : sel.includes('TextLink') ? 'TextLink' : sel.includes('CloseButton') ? 'CloseButton' : sel.includes('IconButton') ? 'IconButton' : null
+            if (after) sel.splice(sel.indexOf(after) + 1, 0, 'FABGroup')
           }
           add(persisted)
           if (Array.isArray(persisted.savedSystems)) {

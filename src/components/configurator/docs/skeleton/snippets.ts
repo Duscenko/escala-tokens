@@ -190,6 +190,11 @@ export const SKELETON_SNIPPETS: Record<string, Snippet> = {
     const flags = v.State === 'Disabled' ? ' disabled' : ''
     return `import { FABButton } from "@/components/ui/fab-button"\n\n<FABButton${appearance}${shape}${size}${variant}${flags}>\n  Create\n</FABButton>`
   },
+  FABGroup: (v) => {
+    const layout = v.Layout && v.Layout !== 'stack' ? ` layout="${v.Layout}"` : ''
+    const open = v.Open === 'true' ? ' defaultOpen' : ''
+    return `import { FABGroup } from "@/components/ui/fab-group"\n\n<FABGroup${layout}${open}\n  items={[\n    { icon: <Edit />, label: "Edit" },\n    { icon: <Image />, label: "Photo" },\n    { icon: <Share />, label: "Share" },\n  ]}\n/>`
+  },
   TextLink: (v) => {
     const variant = v.Variant && v.Variant !== 'default' ? ` variant="${v.Variant}"` : ''
     const size = v.Size && v.Size !== 'default' ? ` size="${v.Size}"` : ''

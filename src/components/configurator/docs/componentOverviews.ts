@@ -87,6 +87,9 @@ export const OVERVIEWS: Record<string, Overview> = {
       { v: { State: 'Disabled' }, label: 'Create' },
     ],
   ],
+  FABGroup: [
+    each('Layout', ['stack', 'fan-center', 'fan-left', 'fan-right'], { Open: 'true' }),
+  ],
   TextLink: [
     each('Variant', ['default', 'secondary', 'success', 'info', 'critical']),
     each('Size', ['xs', 'sm', 'default', 'lg']),

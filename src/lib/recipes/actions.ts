@@ -411,6 +411,28 @@ export const FAB_BUTTON: ComponentRecipe = {
   ],
 }
 
+// ── FABGroup ───────────────────────────────────────────────────────────────
+// The Figma `FABGroup` set (design-plans/fab-group-contract.md): a speed-dial —
+// one trigger FABButton, up to five item FABButtons. The trigger and every item
+// paint themselves (the FABButton recipe above); FABGroup owns nothing but the
+// `stack` layout's vertical gap — measured 12px, exactly `Spacing/inset-control`.
+// The three fan layouts position items on a 100px-radius arc that matches no
+// Dimension role (a composition literal, kept out of the recipe — see the
+// contract's "Lo que el archivo hace y parece raro"), so they get no `root` entry here.
+
+export const FAB_GROUP_LAYOUTS = ['stack', 'fan-center', 'fan-left', 'fan-right'] as const
+
+export const FAB_GROUP: ComponentRecipe = {
+  key: 'FABGroup',
+  slots: ['root'],
+  defaults: { Layout: 'stack', Open: 'false' },
+  parts: [
+    part({ Layout: FAB_GROUP_LAYOUTS }, (layout) => ({
+      root: layout === 'stack' ? { gap: 'spacing.inset-control' } : {},
+    })),
+  ],
+}
+
 // ── ButtonGroup ────────────────────────────────────────────────────────────
 // shadcn's group: Buttons attached edge to edge. The buttons paint themselves
 // (Button recipe); the group owns the separator and the text segment.

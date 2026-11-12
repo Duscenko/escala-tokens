@@ -18,7 +18,7 @@ import { COMPONENTS, type ComponentDef } from '../../../lib/componentCatalogue'
 import { PHOSPHOR_CORE, PHOSPHOR_CORE_COMPONENT, type IconConcept } from '../../../lib/iconLibraries'
 import { PHOSPHOR_CORE_BODIES, loadPhosphorWeight, peekPhosphorWeight, phosphorCoreBody, phosphorIconMaskUrl, type PhosphorWeight } from '../../../lib/phosphorIcons'
 import {
-  SkeletonButtonSpecimen, SkeletonIconButtonSpecimen, SkeletonCloseButtonSpecimen, SkeletonTextLinkSpecimen, SkeletonFABButtonSpecimen, SkeletonButtonGroupSpecimen,
+  SkeletonButtonSpecimen, SkeletonIconButtonSpecimen, SkeletonCloseButtonSpecimen, SkeletonTextLinkSpecimen, SkeletonFABButtonSpecimen, SkeletonFABGroupSpecimen, SkeletonButtonGroupSpecimen,
   SkeletonSocialLoginButtonSpecimen, SkeletonAppStoreBadgeSpecimen, SkeletonToggleGroupSpecimen, SkeletonToggleSpecimen,
 } from './skeleton/actions'
 import {
@@ -347,8 +347,15 @@ export function inputSeed(type: string | undefined, state: string | undefined): 
 
 // Calendar, Chart and Carousel pull react-day-picker, Recharts and Embla: their
 // module loads only when one of them renders.
+let heavyModule: Promise<typeof import('./skeleton/heavy')> | null = null
+/** Starts (once) the load those three wait on. The Board calls it on mount so
+ *  its Chart tile has its library before the tile is revealed. */
+export function preloadHeavySpecimens() {
+  heavyModule ??= import('./skeleton/heavy')
+  return heavyModule
+}
 function lazySpecimen(name: 'SkeletonCalendarSpecimen' | 'SkeletonChartSpecimen' | 'SkeletonCarouselSpecimen') {
-  const L = lazy(() => import('./skeleton/heavy').then((m) => ({ default: m[name] as ComponentType<SpecimenProps> })))
+  const L = lazy(() => preloadHeavySpecimens().then((m) => ({ default: m[name] as ComponentType<SpecimenProps> })))
   return function LazySpecimen(p: SpecimenProps) {
     return <Suspense fallback={null}><L {...p} /></Suspense>
   }
@@ -361,6 +368,7 @@ export const SPECIMENS: Record<string, (p: SpecimenProps) => ReactNode> = {
   CloseButton: SkeletonCloseButtonSpecimen,
   TextLink: SkeletonTextLinkSpecimen,
   FABButton: SkeletonFABButtonSpecimen,
+  FABGroup: SkeletonFABGroupSpecimen,
   ButtonGroup: SkeletonButtonGroupSpecimen,
   ToggleGroup: SkeletonToggleGroupSpecimen,
   Toggle: SkeletonToggleSpecimen,

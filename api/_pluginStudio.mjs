@@ -4080,6 +4080,33 @@ var init_componentCatalogue = __esm({
         accessibility: "Native <button>. With a label that is the accessible name; an icon-only FAB needs an aria-label. Disabled sets aria-disabled. Focus draws a 2px halo outside the button; the elevation stays."
       },
       {
+        key: "FABGroup",
+        label: "FAB Group",
+        category: "Button & Actions",
+        description: "A speed-dial: one trigger FABButton that opens up to five action items. Stack lists them vertically with labels; the three fan layouts open them on an arc of icon-only FABs, centered, left or right of the trigger.",
+        usage: "Use where several floating actions share one entry point (create \u2192 photo, edit, share\u2026). The trigger's icon swaps plus \u2192 close when open. Give every icon-only item an accessible name.",
+        // The Figma file's axes, value for value, in the file's own option order
+        // (spec/figma-components.json). The trigger and every item are fixed FABButton
+        // instances (Appearance/Shape/Size/Variant) — there is no State axis of its own.
+        axes: [
+          { name: "Layout", values: ["stack", "fan-center", "fan-left", "fan-right"] },
+          { name: "Open", values: ["false", "true"] }
+        ],
+        figmaSets: ["FABGroup"],
+        props: [
+          { name: "layout", type: '"stack" | "fan-center" | "fan-left" | "fan-right"', description: "Vertical and labelled, or an icon-only arc centered, left or right of the trigger." },
+          { name: "items", type: "{ icon: ReactNode; label: string; onSelect?: () => void }[]", description: "Up to five actions; label is shown in stack, else it is the aria-label." },
+          { name: "open", type: "boolean", description: "Controlled open state." },
+          { name: "defaultOpen", type: "boolean", description: "Uncontrolled initial state." },
+          { name: "onOpenChange", type: "(open: boolean) => void", description: "Called when the trigger toggles the menu." },
+          { name: "triggerIcon", type: "ReactNode", description: "The closed trigger icon (Figma IconLeadingIcon). Defaults to Phosphor's plus." },
+          { name: "triggerOpenIcon", type: "ReactNode", description: "The open trigger icon. Defaults to Phosphor's x." },
+          { name: "triggerLabel", type: "string", description: `The trigger's accessible name (Figma Label, "Create") \u2014 it is icon-only.` },
+          { name: "disabled", type: "boolean", description: "Disables the trigger and every item." }
+        ],
+        accessibility: 'role="group" with an aria-label. The trigger is a native <button> with aria-expanded; every item needs an accessible name (its label prop) since fan items are icon-only.'
+      },
+      {
         key: "ButtonGroup",
         label: "Button Group",
         category: "Button & Actions",
@@ -8172,7 +8199,7 @@ function fabPaint(variant, appearance, state2) {
   if (state2 === "Focused") root.halo = k.halo;
   return { root };
 }
-var BUTTON_VARIANTS, BUTTON_APPEARANCES, BUTTON_SIZES, BUTTON_STATES, SOLID, QUIET, LINK, strokeOf, BUTTON_HEIGHT, BUTTON_GAP, BUTTON, ICON_BUTTON, CLOSE_BUTTON_APPEARANCES, CLOSE_BUTTON_SHAPES, CLOSE_BUTTON_SIZES, CLOSE_BUTTON_VARIANTS, CLOSE_STATES, same3, NO_OVER, MUTED, CLOSE, CLOSE_SIZE, CLOSE_RADIUS, CLOSE_BUTTON, TEXT_LINK_VARIANTS, TEXT_LINK_SIZES, TEXT_LINK_STATES, LINK_INK, LINK_FOCUS, LINK_FONT, LINK_ICON, LINK_GAP, TEXT_LINK, FAB_APPEARANCES, FAB_SHAPES, FAB_SIZES, FAB_VARIANTS, FAB_STATES, FAB_MUTED, FAB, FAB_SIZE, FAB_BUTTON, BUTTON_GROUP, SOCIAL_GEOMETRY, SOCIAL_LOGIN_BUTTON, APP_STORE_BADGE, TOGGLE_GROUP_VARIANTS, TOGGLE_GROUP_SIZES, TOGGLE_HEIGHT, TOGGLE_GROUP, TOGGLE;
+var BUTTON_VARIANTS, BUTTON_APPEARANCES, BUTTON_SIZES, BUTTON_STATES, SOLID, QUIET, LINK, strokeOf, BUTTON_HEIGHT, BUTTON_GAP, BUTTON, ICON_BUTTON, CLOSE_BUTTON_APPEARANCES, CLOSE_BUTTON_SHAPES, CLOSE_BUTTON_SIZES, CLOSE_BUTTON_VARIANTS, CLOSE_STATES, same3, NO_OVER, MUTED, CLOSE, CLOSE_SIZE, CLOSE_RADIUS, CLOSE_BUTTON, TEXT_LINK_VARIANTS, TEXT_LINK_SIZES, TEXT_LINK_STATES, LINK_INK, LINK_FOCUS, LINK_FONT, LINK_ICON, LINK_GAP, TEXT_LINK, FAB_APPEARANCES, FAB_SHAPES, FAB_SIZES, FAB_VARIANTS, FAB_STATES, FAB_MUTED, FAB, FAB_SIZE, FAB_BUTTON, FAB_GROUP_LAYOUTS, FAB_GROUP, BUTTON_GROUP, SOCIAL_GEOMETRY, SOCIAL_LOGIN_BUTTON, APP_STORE_BADGE, TOGGLE_GROUP_VARIANTS, TOGGLE_GROUP_SIZES, TOGGLE_HEIGHT, TOGGLE_GROUP, TOGGLE;
 var init_actions = __esm({
   "src/lib/recipes/actions.ts"() {
     init_helpers();
@@ -8397,6 +8424,17 @@ var init_actions = __esm({
           icon: { width: FAB_SIZE[size].icon, height: FAB_SIZE[size].icon }
         })),
         part({ Variant: FAB_VARIANTS, Appearance: FAB_APPEARANCES, State: FAB_STATES }, (v, a2, s) => fabPaint(v, a2, s))
+      ]
+    };
+    FAB_GROUP_LAYOUTS = ["stack", "fan-center", "fan-left", "fan-right"];
+    FAB_GROUP = {
+      key: "FABGroup",
+      slots: ["root"],
+      defaults: { Layout: "stack", Open: "false" },
+      parts: [
+        part({ Layout: FAB_GROUP_LAYOUTS }, (layout) => ({
+          root: layout === "stack" ? { gap: "spacing.inset-control" } : {}
+        }))
       ]
     };
     BUTTON_GROUP = {
@@ -10210,6 +10248,7 @@ var init_componentRecipes = __esm({
       CloseButton: CLOSE_BUTTON,
       TextLink: TEXT_LINK,
       FABButton: FAB_BUTTON,
+      FABGroup: FAB_GROUP,
       ButtonGroup: BUTTON_GROUP,
       SocialLoginButton: SOCIAL_LOGIN_BUTTON,
       AppStoreBadge: APP_STORE_BADGE,
@@ -13094,7 +13133,7 @@ var init_useDesignStore = __esm({
         }),
         {
           name: "scalable-designs-store",
-          version: 110,
+          version: 111,
           migrate: (persisted, version) => {
             if (persisted) {
               delete persisted.styleDirection;
@@ -14435,6 +14474,19 @@ var init_useDesignStore = __esm({
                 if (sel.includes("FABButton")) return;
                 const after = sel.includes("TextLink") ? "TextLink" : sel.includes("CloseButton") ? "CloseButton" : sel.includes("IconButton") ? "IconButton" : null;
                 if (after) sel.splice(sel.indexOf(after) + 1, 0, "FABButton");
+              };
+              add2(persisted);
+              if (Array.isArray(persisted.savedSystems)) {
+                for (const sys of persisted.savedSystems) add2(sys?.snapshot);
+              }
+            }
+            if (version < 111) {
+              const add2 = (state2) => {
+                if (!Array.isArray(state2?.selectedComponents)) return;
+                const sel = state2.selectedComponents;
+                if (sel.includes("FABGroup")) return;
+                const after = sel.includes("FABButton") ? "FABButton" : sel.includes("TextLink") ? "TextLink" : sel.includes("CloseButton") ? "CloseButton" : sel.includes("IconButton") ? "IconButton" : null;
+                if (after) sel.splice(sel.indexOf(after) + 1, 0, "FABGroup");
               };
               add2(persisted);
               if (Array.isArray(persisted.savedSystems)) {

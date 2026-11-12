@@ -448,3 +448,18 @@ describe('FABButton (Figma)', () => {
     expect(refs).not.toContain('rest')
   })
 })
+
+// The Figma `FABGroup` set (design-plans/fab-group-contract.md). The trigger and every
+// item paint themselves (the FABButton recipe above) — FABGroup only owns `stack`'s
+// vertical gap (measured 12px = `Spacing/inset-control`). The fan layouts' 100px radius
+// matches no Dimension role, so they carry no `root` paint at all.
+describe('FABGroup (Figma)', () => {
+  const at = (layout: string) => resolveRecipe(COMPONENT_RECIPES.FABGroup, { Layout: layout, Open: 'true' })
+
+  it('stack gets the measured inset-control gap; every fan layout paints nothing', () => {
+    expect(at('stack').root.gap).toBe('spacing.inset-control')
+    expect(at('fan-center').root.gap).toBeUndefined()
+    expect(at('fan-left').root.gap).toBeUndefined()
+    expect(at('fan-right').root.gap).toBeUndefined()
+  })
+})
