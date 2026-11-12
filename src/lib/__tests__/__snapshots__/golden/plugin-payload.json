@@ -8407,7 +8407,7 @@
                 "text": "color.content.subtle"
               }
             },
-            "Error": {
+            "Invalid": {
               "root": {
                 "fill": "color.surface.input",
                 "stroke": "color.status.critical.border-strong",
@@ -8421,7 +8421,7 @@
             "Disabled": {
               "root": {
                 "fill": "color.action.disabled.default",
-                "stroke": "color.action.disabled.default",
+                "stroke": "color.border.control",
                 "ring": "none",
                 "text": "color.content.disabled"
               },
@@ -8552,7 +8552,7 @@
               },
               "field": {
                 "fill": "color.action.disabled.default",
-                "stroke": "color.action.disabled.default",
+                "stroke": "color.border.control",
                 "ring": "none",
                 "text": "color.content.disabled"
               },
@@ -8622,12 +8622,12 @@
               },
               "root:has(:disabled)": {
                 "fill": "color.action.disabled.default",
-                "stroke": "color.action.disabled.default",
+                "stroke": "color.border.control",
                 "ring": "none"
               },
               "root[aria-disabled=\"true\"]": {
                 "fill": "color.action.disabled.default",
-                "stroke": "color.action.disabled.default",
+                "stroke": "color.border.control",
                 "ring": "none"
               },
               "addon": {
@@ -8920,7 +8920,7 @@
             "Disabled": {
               "root": {
                 "fill": "color.action.disabled.default",
-                "stroke": "color.action.disabled.default",
+                "stroke": "color.border.control",
                 "ring": "none",
                 "text": "color.content.disabled"
               },
@@ -8990,7 +8990,7 @@
               },
               "root:has(:disabled)": {
                 "fill": "color.action.disabled.default",
-                "stroke": "color.action.disabled.default",
+                "stroke": "color.border.control",
                 "ring": "none"
               },
               "input": {
@@ -10732,7 +10732,7 @@
             "Disabled": {
               "select": {
                 "fill": "color.action.disabled.default",
-                "stroke": "color.action.disabled.default",
+                "stroke": "color.border.control",
                 "ring": "none",
                 "text": "color.content.disabled"
               },

@@ -4198,19 +4198,23 @@ var init_componentCatalogue = __esm({
         key: "Input",
         label: "Input",
         category: "Form Controls",
-        description: "shadcn/ui Input: the bare text control \u2014 the box is the <input>. Three sizes on the Size roles (sm 32 \xB7 default 40 \xB7 lg 48); a label and a hint come from Field, icons and add-ons from Input Group.",
+        description: "The Figma Input set: the bare text control \u2014 the box is the <input>. Three sizes on the Size roles (sm 32 \xB7 default 40 \xB7 lg 48); a label and a hint come from Field, icons and add-ons from Input Group.",
         usage: "Wrap it in a Field with a FieldLabel. For a prefix, an icon or a button inside the box, use Input Group. Set the type (email, password, search) on the element.",
-        // Size is Escala's (shadcn ships one height). State is a Figma axis only
-        // (pseudo-classes in code); Value (Placeholder · Filled) is Figma-only too.
+        // The Figma file's axes, value for value (spec/figma-components.json): State's
+        // option is `Invalid`, not `Error`. Size is Escala's (shadcn ships one height);
+        // State is a Figma axis only (pseudo-classes in code); Value (Placeholder ·
+        // Filled) is Figma-only too — the real <input> already tells the two apart.
+        // The file's Type axis (phone, currency, password, url…) is InputGroup
+        // composed around the same bare Input, not a prop of Input itself.
         axes: [
           { name: "Size", values: ["default", "sm", "lg"] },
-          { name: "State", values: ["Default", "Hover", "Focused", "Error", "Disabled"] }
+          { name: "State", values: ["Default", "Hover", "Focused", "Invalid", "Disabled"] }
         ],
         figmaSets: ["Input"],
         props: [
           { name: "size", type: "'sm' | 'default' | 'lg'", description: "Height on the Size roles: compact 32 \xB7 control 40 \xB7 touch 48." },
           { name: "type", type: "string", description: "The HTML input type (text, email, password, search\u2026)." },
-          { name: "aria-invalid", type: "boolean", description: "Paints the error state." },
+          { name: "aria-invalid", type: "boolean", description: "Paints the Invalid state." },
           { name: "disabled", type: "boolean", description: "Prevents interaction and applies the disabled tokens." }
         ],
         accessibility: "Native <input>. Pair it with a FieldLabel (htmlFor) or an aria-label; describe errors with FieldError and aria-invalid."
@@ -8550,8 +8554,8 @@ var init_actions = __esm({
 
 // src/lib/recipes/forms.ts
 function fieldBox(state2) {
-  if (state2 === "Disabled") return { fill: c("action.disabled.default"), stroke: c("action.disabled.default"), ring: NONE };
-  if (state2 === "Error") return { fill: c("surface.input"), stroke: c("status.critical.border-strong"), ring: c("status.critical.border") };
+  if (state2 === "Disabled") return { fill: c("action.disabled.default"), stroke: c("border.control"), ring: NONE };
+  if (state2 === "Error" || state2 === "Invalid") return { fill: c("surface.input"), stroke: c("status.critical.border-strong"), ring: c("status.critical.border") };
   if (state2 === "Focused" || state2 === "Open") return { fill: c("surface.input"), stroke: c("border.focus"), ring: c("border.ring.default") };
   if (state2 === "Hover") return { fill: c("surface.input"), stroke: c("border.control-hover"), ring: NONE };
   return { fill: c("surface.input"), stroke: c("border.control"), ring: NONE };
@@ -8593,7 +8597,7 @@ var init_forms = __esm({
       gap: "spacing.gap-control"
     };
     FIELD_FOCUS = { stroke: c("border.focus"), ring: c("border.ring.default") };
-    INPUT_STATES = ["Default", "Hover", "Focused", "Error", "Disabled"];
+    INPUT_STATES = ["Default", "Hover", "Focused", "Invalid", "Disabled"];
     INPUT_GEOMETRY = { sm: "size.compact", default: "size.control", lg: "size.touch" };
     INPUT = {
       key: "Input",

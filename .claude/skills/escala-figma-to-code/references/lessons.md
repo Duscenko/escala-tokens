@@ -43,6 +43,17 @@ Every row cost a round trip with the owner. Check each one before calling a comp
 | Adding a component grows the agent context | `exportAudit` I10-budget 75 631 > 75 000 | Budget 80 000 with a dated note (the Button change set the precedent). Not a runaway loop |
 | A skill-doc test with a closed set of Figma collections | `Typography` collection not handled in `agentContextAudit` | Add the branch; the audit still checks every cited name exists in the payload |
 
+# Lessons from the Input (2026-11-12)
+
+| Trap | What it looked like | The fix (where it lives) |
+|---|---|---|
+| A Figma set's variant axes outnumber what the code's architecture splits across components | `Input` has FOUR variant axes (Size · State · Type · Value, 114 variants) but the repo already — deliberately — keeps `Type`/`Value` out of `Input` (icons/add-ons are `InputGroup`'s, per CLAUDE.md's shadcn split, predating this audit) | Don't widen the component's API to chase 1:1 axis parity on your own: build the axes that belong to THIS component (`Size`, `State`), document the rest in the contract's own "lo que queda fuera" section, and leave the ledger honest (`status.json` keeps it `pending` — the parity test compares ALL of a set's axes, so partial coverage can never silently read as "done") |
+| A pre-existing recipe LOOKED already built to spec | `fieldBox()` (shared by Input/Textarea/InputGroup/Select/InputTag) already had the right shape for Default/Hover/Focused/Error | Still measure it against the real file rather than trusting it on sight — it had a real, measurable bug (next row) |
+| Disabled was assumed to repaint the WHOLE box including the stroke | `fieldBox('Disabled')` returned `stroke: action.disabled.default`; the Figma file's Disabled variant keeps `stroke Border/control` — the ordinary neutral edge, only the FILL mutes | Fixed at the shared helper (`forms.ts`), so Textarea/InputGroup/Select/InputTag get the same correction for free — confirmed via their own golden snapshot diffs showing only that one line move |
+| Figma's own `State` option wording differs from the code's | The file says `Invalid`; the component, recipe and catalogue all said `Error` | Renamed `Input`'s own `State` literal to `Invalid` (component type, recipe `INPUT_STATES`, catalogue axis, docs specimen, overview); `fieldBox()` itself now accepts EITHER literal, since Textarea/Select/InputOTP haven't had their own ground-truth pass yet and may still legitimately say `Error` |
+| A `Value` (placeholder · filled) variant axis existing in Figma can still need NO prop in code | Tempting to add a `value`/`filled` prop to mirror the axis | The browser already renders `::placeholder` differently from typed text — the axis is fully covered by `pseudoSlots: { placeholder: { of: 'root', pseudo: '::placeholder' } }` already splitting `root.text` (typed) from `placeholder.text` (empty) |
+| The halo mechanism (`ring`'s `outline-offset: calc(stroke-width - halo)`) was already correct, built for a PRIOR read of Input (a stale node id, `4:10640`, in an existing test) | Looked like new work was needed | Verified by reading computed styles in Storybook (`outline-offset: -1px` at `stroke-width:1px, halo:2px` — exactly the formula) instead of re-deriving it; the existing `recipeStyles.ts` case needed no change, only confirmation against the 2026-11-12 file |
+
 # Lessons from the FABGroup (2026-11-12)
 
 | Trap | What it looked like | The fix (where it lives) |

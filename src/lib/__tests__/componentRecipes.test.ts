@@ -266,6 +266,38 @@ describe('focus', () => {
   })
 })
 
+// The Figma `Input` set (design-plans/input-contract.md, 4:12380): the bare box, Size ×
+// State. `State`'s Figma option is `Invalid`, not `Error`. Disabled keeps the NEUTRAL
+// `border.control` stroke — only the fill mutes (a real bug in the shared `fieldBox`,
+// fixed here: it used to repaint the stroke in the disabled fill colour too).
+describe('Input (Figma)', () => {
+  const at = (over: Record<string, string>) => resolveRecipe(COMPONENT_RECIPES.Input, { Size: 'default', State: 'Default', ...over })
+
+  it('sizes on the Size roles: compact 32 · control 40 · touch 48', () => {
+    expect(at({ Size: 'sm' }).root.height).toBe('size.compact')
+    expect(at({ Size: 'default' }).root.height).toBe('size.control')
+    expect(at({ Size: 'lg' }).root.height).toBe('size.touch')
+  })
+
+  it('Default · Hover · Focused · Invalid colours, measured against the file', () => {
+    expect(at({ State: 'Default' }).root).toMatchObject({ fill: 'color.surface.input', stroke: 'color.border.control' })
+    expect(at({ State: 'Hover' }).root.stroke).toBe('color.border.control-hover')
+    expect(at({ State: 'Focused' }).root).toMatchObject({ stroke: 'color.border.focus', ring: 'color.border.ring.default' })
+    expect(at({ State: 'Invalid' }).root).toMatchObject({ stroke: 'color.status.critical.border-strong', ring: 'color.status.critical.border' })
+  })
+
+  it('Disabled keeps the Default stroke colour — only the fill and the ink mute', () => {
+    const r = at({ State: 'Disabled' })
+    expect(r.root).toMatchObject({ fill: 'color.action.disabled.default', stroke: 'color.border.control', text: 'color.content.disabled' })
+    expect(r.placeholder.text).toBe('color.content.disabled')
+  })
+
+  it('the placeholder reads content.subtle, a typed value reads content.primary', () => {
+    expect(at({}).root.text).toBe('color.content.primary')
+    expect(at({}).placeholder.text).toBe('color.content.subtle')
+  })
+})
+
 // WCAG 2.5.8: a selector glyph (18px) and a Chip's × (~10px) sit under the 24px
 // minimum target. The glyph keeps its size; a transparent `::before` of at
 // least `size.hit` is the pointer target (Figma audit, Phase 4).

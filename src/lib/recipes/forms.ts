@@ -9,13 +9,17 @@ import { c, NONE, part, PANEL_RADIUS, PANEL_ROW_RADIUS, TALL_FIELD_RADIUS, type 
 
 // ── Shared field chrome ────────────────────────────────────────────────────
 
-/** The box every text-like control draws: fill, edge and focus halo by state. */
+/** The box every text-like control draws: fill, edge and focus halo by state.
+ *  Measured against the Figma `Input` set (design-plans/input-contract.md): Disabled
+ *  keeps the NEUTRAL `border.control` stroke (only the fill mutes) — it does not
+ *  switch to the disabled fill colour, as this used to assume. */
 export function fieldBox(state: string): SlotProps {
-  if (state === 'Disabled') return { fill: c('action.disabled.default'), stroke: c('action.disabled.default'), ring: NONE }
+  if (state === 'Disabled') return { fill: c('action.disabled.default'), stroke: c('border.control'), ring: NONE }
   // shadcn: `border-destructive` + a soft destructive ring (`ring-destructive/20`).
   // The stroke is the contrast-bearing boundary (pale in dark — see its role),
   // the halo is `status.critical.border`, the alpha red that carries the hue.
-  if (state === 'Error') return { fill: c('surface.input'), stroke: c('status.critical.border-strong'), ring: c('status.critical.border') }
+  // Figma's Input calls this state `Invalid`; other sets still say `Error` — both work.
+  if (state === 'Error' || state === 'Invalid') return { fill: c('surface.input'), stroke: c('status.critical.border-strong'), ring: c('status.critical.border') }
   if (state === 'Focused' || state === 'Open') return { fill: c('surface.input'), stroke: c('border.focus'), ring: c('border.ring.default') }
   if (state === 'Hover') return { fill: c('surface.input'), stroke: c('border.control-hover'), ring: NONE }
   return { fill: c('surface.input'), stroke: c('border.control'), ring: NONE }
@@ -29,11 +33,14 @@ const FIELD_FIXED: SlotProps = {
 const FIELD_FOCUS: SlotProps = { stroke: c('border.focus'), ring: c('border.ring.default') }
 
 // ── Input ──────────────────────────────────────────────────────────────────
-// shadcn's Input: the box IS the <input>. A label and a hint are Field's,
-// icons and add-ons are InputGroup's. State is Figma's axis; Size uses the
-// same Size roles as Button (compact 32 · control 40 · touch 48).
+// The Figma `Input` set (design-plans/input-contract.md, 114 variants): the box IS
+// the <input> — a label and a hint are Field's, icons and add-ons are InputGroup's
+// (the file draws them inline on the same component; the code keeps shadcn's split).
+// `State` is Figma's axis (`Invalid`, not `Error`); `Size` is the same Size roles as
+// Button (compact 32 · control 40 · touch 48); `Value` (placeholder · filled) needs no
+// prop — the real `<input>` already tells a typed value from its own placeholder.
 
-const INPUT_STATES = ['Default', 'Hover', 'Focused', 'Error', 'Disabled'] as const
+const INPUT_STATES = ['Default', 'Hover', 'Focused', 'Invalid', 'Disabled'] as const
 const INPUT_GEOMETRY: Record<string, string> = { sm: 'size.compact', default: 'size.control', lg: 'size.touch' }
 
 export const INPUT: ComponentRecipe = {

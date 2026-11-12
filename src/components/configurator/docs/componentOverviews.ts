@@ -123,7 +123,7 @@ export const OVERVIEWS: Record<string, Overview> = {
   // ── Form Controls ──────────────────────────────────────────────────────────
   Input: [
     each('State', ['Default', 'Focused'], {}, 240),
-    each('State', ['Error', 'Disabled'], {}, 240),
+    each('State', ['Invalid', 'Disabled'], {}, 240),
   ],
   Textarea: [each('State', ['Default', 'Focused', 'Error'], {}, 240)],
   InputOTP: stack('State', ['Default', 'Filled', 'Error']),
