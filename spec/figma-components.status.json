@@ -34,9 +34,6 @@
       "status": "part",
       "of": "RadioGroup"
     },
-    "Badge": {
-      "status": "rebuild"
-    },
     "Chip": {
       "status": "rebuild"
     },

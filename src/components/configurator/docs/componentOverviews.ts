@@ -286,14 +286,11 @@ export const OVERVIEWS: Record<string, Overview> = {
 
   // ── Indicators ─────────────────────────────────────────────────────────────
   Badge: [
-    [
-      { v: { Variant: 'default' }, label: 'New' },
-      { v: { Variant: 'secondary' }, label: 'Draft' },
-      { v: { Variant: 'destructive' }, label: 'Failed' },
-      { v: { Variant: 'outline' }, label: 'v2.4' },
-      { v: { Variant: 'ghost' }, label: 'Beta' },
-      { v: { Variant: 'link' }, label: 'Docs' },
-    ],
+    each('Variant', ['success', 'warning', 'info', 'inverse', 'default', 'secondary', 'critical'], { Appearance: 'solid' }),
+    each('Appearance', ['soft', 'solid', 'outline', 'ghost'], { Variant: 'info' }),
+    each('Size', ['xs', 'sm', 'default']),
+    each('Type', ['default', 'icon', 'number', 'dot'], { Variant: 'success', Appearance: 'solid', Shape: 'pill' }),
+    each('Shape', ['rounded', 'pill']),
   ],
   StatusBadge: [each('Status', ['online', 'away', 'busy', 'offline'])],
   Chip: [

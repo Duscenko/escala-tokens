@@ -348,3 +348,14 @@ Every row cost a round trip with the owner. Check each one before calling a comp
 | A small component measured 16 wide in a story when its content needs 19 | The story's wrapper was 0 wide (a flex child of Storybook's root), so the `w-fit` key cap SHRANK to its `min-width` | `shrink-0` on the component (a key cap never shrinks). When a box is narrower than its content, test `flex-shrink: 0` and the parent's width before touching the recipe |
 | Figma text box 12 wide, browser 11 / 11.9 | xs 20 vs 19.0, default 28 vs 27.9 | Figma rounds the glyph's box up; same layout (padding + text) — as the SegmentedControl note |
 | An empty recipe `axes` becoming one axis | Kbd had no axes; the file has Size | Recipe `defaults: { Size: 'default' }` + a Size part; the catalogue axis; the overview row; no store migration (the key did not change) |
+
+# Lessons from the Badge (2026-11-12)
+
+| Trap | What it looked like | The fix (where it lives) |
+|---|---|---|
+| A 525-variant set whose colours are invariant of Size × Shape (and mostly of Type) | One line per variant is far over 48 KB | Group by Type · Variant · Appearance and count the distinct `fill · stroke · ink` lines (91 groups of 6, one colour line each); then read geometry for only one Variant × Appearance (success · solid) over Type × Size |
+| Some Type values exist for only one Appearance / Shape (`dot` = solid + pill only) | A catalogue axis value with no variant behind it | The builder draws a dot solid whatever Appearance arrives; the story / overview pin Appearance solid + Shape pill for it |
+| A stroke that lays out only in `outline` | Outline 63 wide vs 61 for the others | Padding `…+stroke.control` for that Appearance only; every other Appearance has `stroke.none` |
+| Old shadcn values on a changed axis (`default · secondary · destructive · outline · ghost · link` → severities × Appearance) | Callers painted the wrong tone silently | Move every caller: old `default` → `Variant default, Appearance solid`; `destructive` → `critical`; `outline` → `Variant secondary, Appearance outline` (Border/control + Content/primary is exactly the old outline); `secondary` stays (soft secondary = the old neutral fill) |
+| An `inverse` variant on the default page | axe 1.01:1 in Dark (light ink on the dark page) | Draw it on a `Surface/inverse` slot in the story, as Checkbox / CloseButton do |
+| `exportAudit` I10 budget again | 105 000 → 4 findings | 120 000 with a dated note (Avatar, FeaturedIcon, Badge) |

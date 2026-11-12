@@ -139,10 +139,10 @@ function ColorCollage({
       </div>
 
       <div className="flex flex-wrap items-center gap-2.5">
-        <BadgeSpec t={tokens} v={{ Variant: 'default' }} />
+        <BadgeSpec t={tokens} v={{ Variant: 'default', Appearance: 'solid' }} />
         <BadgeSpec t={tokens} v={{ Variant: 'secondary' }} />
-        <BadgeSpec t={tokens} v={{ Variant: 'destructive' }} />
-        <BadgeSpec t={tokens} v={{ Variant: 'outline' }} />
+        <BadgeSpec t={tokens} v={{ Variant: 'critical' }} />
+        <BadgeSpec t={tokens} v={{ Variant: 'secondary', Appearance: 'outline' }} />
       </div>
 
       <ToastSpec t={tokens} v={{ Type: 'success' }} />
@@ -458,9 +458,9 @@ export default function PreviewPanel({
 
             <Group title="Badge">
               <Tile tokens={tokens}>
-                <BadgeSpec t={tokens} v={{ Variant: 'default' }} />
+                <BadgeSpec t={tokens} v={{ Variant: 'default', Appearance: 'solid' }} />
                 <BadgeSpec t={tokens} v={{ Variant: 'secondary' }} />
-                <BadgeSpec t={tokens} v={{ Variant: 'outline' }} />
+                <BadgeSpec t={tokens} v={{ Variant: 'secondary', Appearance: 'outline' }} />
               </Tile>
             </Group>
 

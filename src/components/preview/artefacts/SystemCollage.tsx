@@ -953,10 +953,10 @@ export function SystemCollage({
             className="grid w-full min-w-0 grid-cols-2 justify-items-center"
             style={{ gap: gap(tile(4), 'gap-control', '8px') }}
           >
-            <Badge t={tile(4)} v={{ Variant: 'default' }}>{translate('Published')}</Badge>
+            <Badge t={tile(4)} v={{ Variant: 'default', Appearance: 'solid' }}>{translate('Published')}</Badge>
             <Badge t={tile(4)} v={{ Variant: 'secondary' }}>{translate('Draft')}</Badge>
-            <Badge t={tile(4)} v={{ Variant: 'destructive' }}>{translate('Critical')}</Badge>
-            <Badge t={tile(4)} v={{ Variant: 'outline' }}>{translate('Info')}</Badge>
+            <Badge t={tile(4)} v={{ Variant: 'critical' }}>{translate('Critical')}</Badge>
+            <Badge t={tile(4)} v={{ Variant: 'secondary', Appearance: 'outline' }}>{translate('Info')}</Badge>
           </div>
           <Separator t={tile(4)} v={{}} w="100%" />
           <div className="flex flex-wrap items-center" style={{ gap: gap(tile(4), 'gap-control', '8px') }}>

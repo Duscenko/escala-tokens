@@ -72,7 +72,9 @@ export const BUDGETS = {
   // its own design-skill file.
   // 95k → 105k (2026-11-12): FileUpload became three Figma components (dropzone, item,
   // upload) and Checkbox carries 270 variants (Size × Checked × State × Variant).
-  contextAllTokens: 105_000,
+  // 105k → 120k (2026-11-12): Avatar (350 variants + status and group parts), FeaturedIcon and Badge
+  // (525 variants) each carry a design-skill file with their full variant tables.
+  contextAllTokens: 120_000,
   contextFoundationTokens: 12_000,
 }
 

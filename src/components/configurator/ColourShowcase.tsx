@@ -38,7 +38,7 @@ export const COLOUR_SHOWCASE: Partial<Record<ColorRoleId, Entry[]>> = {
     { key: 'Alert', v: { Variant: 'destructive' }, w: 300 },
     { key: 'Sonner', v: { Type: 'error' }, w: 300 },
     { key: 'Button', v: { Variant: 'destructive', Size: 'default', State: 'Default' } },
-    { key: 'Badge', v: { Variant: 'destructive' } },
+    { key: 'Badge', v: { Variant: 'critical' } },
     { key: 'StatusBadge', v: { Status: 'busy' } },
     { key: 'FileFormat', v: { Format: 'pdf' } },
     { key: 'PasswordStrength', v: { Strength: '1' } },

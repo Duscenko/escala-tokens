@@ -112,8 +112,14 @@ export const SKELETON_SNIPPETS: Record<string, Snippet> = {
   ScrollArea: () =>
     `import { ScrollArea, ScrollAreaRow } from "@/components/ui/scroll-area"\n\n<ScrollArea style={{ height: 150 }}>\n  {tokens.map((t) => <ScrollAreaRow key={t}>{t}</ScrollAreaRow>)}\n</ScrollArea>`,
 
-  Badge: (v) =>
-    `import { Badge } from "@/components/ui/badge"\n\n<Badge${v.Variant && v.Variant !== 'default' ? ` variant="${v.Variant}"` : ''}>Badge</Badge>`,
+  Badge: (v) => {
+    const type = v.Type && v.Type !== 'default' ? ` type="${v.Type}"` : ''
+    const props = `${v.Appearance && v.Appearance !== 'soft' ? ` appearance="${v.Appearance}"` : ''}${v.Shape === 'pill' ? ' shape="pill"' : ''}${v.Size && v.Size !== 'default' ? ` size="${v.Size}"` : ''}${type}${v.Variant && v.Variant !== 'default' ? ` variant="${v.Variant}"` : ''}`
+    if (v.Type === 'icon') return `import { Badge } from "@/components/ui/badge"\n\n<Badge${props} aria-label="Verified" />`
+    if (v.Type === 'dot') return `import { Badge } from "@/components/ui/badge"\n\n<Badge${props} aria-hidden />`
+    if (v.Type === 'number') return `import { Badge } from "@/components/ui/badge"\n\n<Badge${props} count={8} />`
+    return `import { Badge } from "@/components/ui/badge"\n\n<Badge${props}>Badge</Badge>`
+  },
   StatusBadge: (v) =>
     `import { StatusBadge } from "@/components/ui/badge"\n\n<StatusBadge status="${v.Status ?? 'online'}" />`,
   Chip: (v) =>

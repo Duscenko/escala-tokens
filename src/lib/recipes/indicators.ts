@@ -5,36 +5,87 @@
 import { c, NONE, part, type ComponentRecipe, type SlotMap, type SlotProps, FOCUS } from './helpers.js'
 
 // ── Badge ──────────────────────────────────────────────────────────────────
-// shadcn's variants (`bases/radix/ui/badge.tsx`), painted through Escala roles
-// the way the Button reads them: default = primary, secondary = the neutral
-// fill, destructive = shadcn v4's soft critical, outline = the hairline,
-// ghost / link = no fill. Height h-5 → padding on the spacing scale.
+// The Figma set (design-plans/badge-contract.md, 383:176, 525 variants): Appearance soft · solid · outline · ghost
+// × Shape rounded (Radius/control) · pill × Size xs · sm · default × Type default · icon · number · dot × Variant
+// success · warning · info · inverse · default · secondary · critical. Tones are invariant of Size, Shape and
+// Type. A dot exists only solid + pill; an icon / number badge is as tall as it is wide at least.
 
-export const BADGE_VARIANTS = ['default', 'secondary', 'destructive', 'outline', 'ghost', 'link'] as const
+export const BADGE_APPEARANCES = ['soft', 'solid', 'outline', 'ghost'] as const
+export const BADGE_SHAPES = ['rounded', 'pill'] as const
+export const BADGE_SIZES = ['xs', 'sm', 'default'] as const
+export const BADGE_TYPES = ['default', 'icon', 'number', 'dot'] as const
+export const BADGE_VARIANTS = ['success', 'warning', 'info', 'inverse', 'default', 'secondary', 'critical'] as const
 
-function badgePaint(variant: string): SlotMap {
+// height (xs 16 and sm 20 are literals; default is Size/control-xs 24) · side padding · label type · glyph px.
+const BADGE_GEOMETRY: Record<string, { h: string; pad: string; font: string; icon: string; dot: string }> = {
+  xs: { h: 'spacing.4', pad: 'spacing.gap-tight', font: 'type.caption', icon: 'spacing.2_5', dot: 'spacing.1_5' },
+  sm: { h: 'spacing.5', pad: 'spacing.gap-control', font: 'type.label', icon: 'spacing.3', dot: 'spacing.2' },
+  default: { h: 'size.xs', pad: 'spacing.inset-control', font: 'type.label', icon: 'spacing.3+spacing.0_5', dot: 'spacing.2_5' },
+}
+
+type Tone = { fill?: string; edge?: string; ink: string }
+function badgeTone(variant: string, appearance: string): Tone {
+  const status = ['success', 'warning', 'info', 'critical'].includes(variant)
+  if (status) {
+    if (appearance === 'soft') return { fill: `status.${variant}.surface`, ink: `status.${variant}.content` }
+    if (appearance === 'solid') return { fill: `status.${variant}.surface-solid`, ink: `status.${variant}.on-solid` }
+    if (appearance === 'outline') return { edge: `status.${variant}.border`, ink: `status.${variant}.content` }
+    return { ink: `status.${variant}.content` }
+  }
   switch (variant) {
-    case 'default': return { root: { fill: c('action.primary.default'), stroke: NONE, text: c('content.on-action') } }
-    case 'secondary': return { root: { fill: c('action.secondary.default'), stroke: NONE, text: c('content.on-secondary') } }
-    case 'destructive': return { root: { fill: c('status.critical.surface'), stroke: NONE, text: c('status.critical.content') } }
-    case 'outline': return { root: { fill: NONE, stroke: c('border.default'), text: c('content.primary') } }
-    case 'ghost': return { root: { fill: NONE, stroke: NONE, text: c('content.primary') } }
-    default: return { root: { fill: NONE, stroke: NONE, text: c('content.link.default') } }
+    case 'secondary':
+      return appearance === 'soft' ? { fill: 'action.secondary.default', ink: 'content.on-secondary' }
+        : appearance === 'solid' ? { fill: 'surface.inverse', ink: 'content.inverse' }
+        : appearance === 'outline' ? { edge: 'border.control', ink: 'content.primary' }
+        : { ink: 'content.secondary' }
+    case 'inverse':
+      return appearance === 'soft' ? { fill: 'surface.inverse-muted', ink: 'content.inverse' }
+        : appearance === 'solid' ? { fill: 'surface.page', ink: 'content.primary' }
+        : appearance === 'outline' ? { edge: 'border.inverse', ink: 'content.inverse' }
+        : { ink: 'content.inverse-secondary' }
+    default:
+      return appearance === 'soft' ? { fill: 'surface.accent', ink: 'content.accent' }
+        : appearance === 'solid' ? { fill: 'action.primary.default', ink: 'content.on-action' }
+        : appearance === 'outline' ? { edge: 'border.accent', ink: 'content.accent' }
+        : { ink: 'content.accent' }
+  }
+}
+
+function badgeLayout(size: string, type: string, shape: string, appearance: string): SlotMap {
+  const g = BADGE_GEOMETRY[size]
+  // A stroke the file lays out (outline widens the badge by two hairlines).
+  const lay = appearance === 'outline' ? '+stroke.control' : ''
+  const radius = shape === 'pill' ? 'radius.pill' : 'radius.control'
+  if (type === 'dot') return { root: { width: g.dot, height: g.dot, radius: 'radius.pill', paddingX: 'spacing.none', paddingY: 'spacing.none' } }
+  const root: SlotProps = { height: g.h, radius, paddingY: 'spacing.none', font: g.font }
+  if (type === 'icon') return { root: { ...root, width: g.h, paddingX: 'spacing.none' }, icon: { width: g.icon, height: g.icon } }
+  if (type === 'number') return { root: { ...root, minWidth: g.h, paddingX: `spacing.gap-tight${lay}` }, count: { font: g.font } }
+  return {
+    root: { ...root, paddingX: `${g.pad}${lay}`, gap: 'spacing.gap-tight' },
+    iconLeading: { width: g.icon, height: g.icon },
+    iconTrailing: { width: g.icon, height: g.icon },
+    label: { font: g.font },
   }
 }
 
 export const BADGE: ComponentRecipe = {
   key: 'Badge',
-  slots: ['root'],
-  defaults: { Variant: 'default' },
+  slots: ['root', 'iconLeading', 'label', 'iconTrailing', 'icon', 'count'],
+  defaults: { Appearance: 'soft', Shape: 'rounded', Size: 'default', Type: 'default', Variant: 'default' },
   parts: [
-    part({}, () => ({
-      root: {
-        radius: 'radius.pill', strokeWidth: 'stroke.control', font: 'type.caption',
-        paddingX: 'spacing.2', paddingY: 'spacing.0_5', gap: 'spacing.1',
-      },
-    })),
-    part({ Variant: BADGE_VARIANTS }, badgePaint),
+    part({ Size: BADGE_SIZES, Type: BADGE_TYPES, Shape: BADGE_SHAPES, Appearance: BADGE_APPEARANCES }, badgeLayout),
+    part({ Variant: BADGE_VARIANTS, Appearance: BADGE_APPEARANCES, Type: BADGE_TYPES }, (variant, appearance, type) => {
+      const tone = badgeTone(variant, type === 'dot' ? 'solid' : appearance)
+      const outline = appearance === 'outline' && type !== 'dot'
+      return {
+        root: {
+          fill: tone.fill ? c(tone.fill) : NONE,
+          stroke: outline && tone.edge ? c(tone.edge) : NONE,
+          strokeWidth: outline && type !== 'dot' ? 'stroke.control' : 'stroke.none',
+          text: c(tone.ink),
+        },
+      }
+    }),
   ],
 }
 

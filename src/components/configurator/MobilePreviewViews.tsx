@@ -202,10 +202,10 @@ function BadgesTile({ t }: { t: T }) {
   return (
     <Tile label={t('Badges')}>
       <Row layout="stack">
-        <Badge>{t('Published')}</Badge>
+        <Badge appearance="solid">{t('Published')}</Badge>
         <Badge variant="secondary">{t('Draft')}</Badge>
-        <Badge variant="destructive">{t('Critical')}</Badge>
-        <Badge variant="outline">{t('Info')}</Badge>
+        <Badge variant="critical">{t('Critical')}</Badge>
+        <Badge variant="secondary" appearance="outline">{t('Info')}</Badge>
       </Row>
     </Tile>
   )

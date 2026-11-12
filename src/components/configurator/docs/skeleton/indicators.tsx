@@ -3,7 +3,7 @@ import type { SpecimenProps } from '../specimens'
 import { PhosphorWeightProvider, PreviewIcon, avatarFillOf, avatarHueGradient } from '../specimens'
 import { iconOf, iconRoleOf } from '../../../../lib/previewTokens'
 import type { IconRole } from '../../../../lib/iconSizing'
-import { Badge as SkBadge, StatusBadge as SkStatusBadge, type BadgeVariant, type Presence } from '../../../escala-ui/badge'
+import { Badge as SkBadge, StatusBadge as SkStatusBadge, type BadgeAppearance, type BadgeShape, type BadgeSize, type BadgeType, type BadgeVariant, type Presence } from '../../../escala-ui/badge'
 import { Chip as SkChip } from '../../../escala-ui/chip'
 import { useAutoplayStep } from '../../../preview/artefacts/boardAutoplay'
 import { Progress as SkProgress } from '../../../escala-ui/progress'
@@ -19,10 +19,22 @@ import { FeaturedIcon as SkFeaturedIcon, type FeaturedIconSize, type FeaturedIco
 import { RecipeScope } from './scope'
 import { Kbd as SkKbd, KbdGroup as SkKbdGroup, type KbdSize } from '../../../escala-ui/kbd'
 
+/** The Figma Badge. `IconLeadingVisible` / `IconTrailingVisible` are Figma booleans (`'True'`); a dot only
+ *  exists solid + pill, so the specimen draws it that way whatever the other axes say. */
 export function SkeletonBadgeSpecimen({ t, v, children }: SpecimenProps) {
+  const type = (v.Type ?? 'default') as BadgeType
   return (
     <RecipeScope t={t}>
-      <SkBadge variant={(v.Variant ?? 'default') as BadgeVariant}>
+      <SkBadge
+        appearance={(v.Appearance ?? 'soft') as BadgeAppearance}
+        shape={(v.Shape ?? 'rounded') as BadgeShape}
+        size={(v.Size ?? 'default') as BadgeSize}
+        type={type}
+        variant={(v.Variant ?? 'default') as BadgeVariant}
+        iconLeading={v.IconLeadingVisible === 'True' ? true : undefined}
+        iconTrailing={v.IconTrailingVisible === 'True' ? true : undefined}
+        aria-label={type === 'icon' ? 'Verified' : type === 'dot' ? 'Online' : undefined}
+      >
         {children ?? 'Badge'}
       </SkBadge>
     </RecipeScope>
