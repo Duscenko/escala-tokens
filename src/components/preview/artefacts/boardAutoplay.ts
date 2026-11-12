@@ -18,27 +18,86 @@
  * the pointer is over (the person is using it). Stopping puts every toggle and
  * selection back where it was, so the inspector opens on the default board.
  */
-import { createContext, useContext, useEffect, useState, type RefObject } from 'react'
+import { createContext, useContext, useEffect, useRef, useState, useSyncExternalStore, type RefObject } from 'react'
 
 /** True while the board plays itself. `SystemCollage` provides it. */
 export const BoardAutoplayContext = createContext(false)
 
+// The person's pause (WCAG 2.2.2 — moving content that runs on its own needs a
+// way to stop it). Kept per browser; storage that cannot be read means "plays".
+const PAUSE_KEY = 'sd-board-paused'
+const pauseListeners = new Set<() => void>()
+let paused = (() => {
+  try { return localStorage.getItem(PAUSE_KEY) === '1' } catch { return false }
+})()
+
+function subscribePause(fn: () => void): () => void {
+  pauseListeners.add(fn)
+  return () => { pauseListeners.delete(fn) }
+}
+
+export function useBoardPaused(): boolean {
+  return useSyncExternalStore(subscribePause, () => paused, () => false)
+}
+
+export function setBoardPaused(next: boolean): void {
+  paused = next
+  try {
+    if (next) localStorage.setItem(PAUSE_KEY, '1')
+    else localStorage.removeItem(PAUSE_KEY)
+  } catch { /* the pause still holds for this session */ }
+  for (const l of pauseListeners) l()
+}
+
 export function useBoardAutoplay(): boolean {
   return useContext(BoardAutoplayContext)
+}
+
+/** Whether a tile's scripts may move: on screen and not under the pointer (a
+ *  person using a tile keeps what they are looking at). `ScaledModule`
+ *  provides it; outside a tile it is always true. */
+export const TileLiveContext = createContext(true)
+
+// ONE clock for every script on the board: a single timer, and a step read
+// from the time since the board started playing — so two parts running the
+// same script (a calendar's day and the event line under it) can never drift
+// apart, and a tile that was paused rejoins the board where the board is.
+const CLOCK_MS = 100
+const listeners = new Set<() => void>()
+let clock = 0
+let epoch = 0
+
+function subscribeClock(fn: () => void): () => void {
+  if (!listeners.size) {
+    epoch = performance.now()
+    clock = window.setInterval(() => {
+      if (!document.hidden) for (const l of listeners) l()
+    }, CLOCK_MS)
+  }
+  listeners.add(fn)
+  return () => {
+    listeners.delete(fn)
+    if (!listeners.size) { window.clearInterval(clock); clock = 0 }
+  }
 }
 
 /** Counts 0 … `count - 1` and wraps, one step every `ms`, while the board
  *  plays. `null` when it does not: the specimen shows its own default. */
 export function useAutoplayStep(count: number, ms: number): number | null {
   const playing = useBoardAutoplay()
+  const live = useContext(TileLiveContext)
+  const liveRef = useRef(live)
+  liveRef.current = live
   const [step, setStep] = useState(0)
   useEffect(() => {
     if (!playing) return
-    const id = window.setInterval(() => {
-      if (!document.hidden) setStep((s) => (s + 1) % count)
-    }, ms)
+    const read = () => {
+      if (liveRef.current) setStep(Math.floor((performance.now() - epoch) / ms) % count)
+    }
+    const stop = subscribeClock(read)
+    read()
     // Each run starts from the top.
-    return () => { window.clearInterval(id); setStep(0) }
+    return () => { stop(); setStep(0) }
   }, [playing, count, ms])
   return playing ? step : null
 }

@@ -43,7 +43,7 @@ import { themeHasEdits } from '../../lib/adoptPreset'
 import { useI18n } from '../../lib/i18n'
 import { useAccess } from '../../lib/access'
 import { BoardMotionPreset } from './BoardMotionPreset'
-import { BOARD_TOOLBAR_DOCK, BOARD_TOOLBAR_LIFT, BoardHistoryControls, type ShipActions } from './ThemeSaveBar'
+import { BOARD_PLAY_DOCK, BOARD_TOOLBAR_DOCK, BOARD_TOOLBAR_LIFT, BoardHistoryControls, BoardPlayToggle, type ShipActions } from './ThemeSaveBar'
 import { ThemeHubHeaderActionsProvider } from './themeHubHeaderActions'
 import { InspectGlyph } from '../ui/icons'
 import { HintTip } from '../ui/HintTip'
@@ -1116,6 +1116,21 @@ export default function ThemePreviewHub({
                         /></span>}
                       </BoardHistoryControls>
                     </div>
+                  </motion.div>
+                )}
+                </AnimatePresence>
+                {/* The autoplay's pause: only where the board plays (theme
+                    board on screen, inspector off, motion allowed). */}
+                <AnimatePresence initial={false}>
+                {!needsMyTheme && !contrastOpen && !docsOpen && !stylePreview && boardView === 'theme' && (!mapOpen || mapView === 'board') && !inspecting && !reduceMotion && (
+                  <motion.div
+                    key="board-play"
+                    initial={{ opacity: 0, y: 12 }}
+                    animate={{ opacity: 1, y: 0, transition: { ...VIEW_IN, delay: 0.12 } }}
+                    exit={{ opacity: 0, y: 12, transition: VIEW_OUT }}
+                    className={BOARD_PLAY_DOCK}
+                  >
+                    <BoardPlayToggle />
                   </motion.div>
                 )}
                 </AnimatePresence>

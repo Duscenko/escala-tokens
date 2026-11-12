@@ -883,6 +883,30 @@ explicitly out of scope. Individual components still adapt between `md` and `xl`
 > `<theme>::<appearance>` always wins. Runtime vars a component sets
 > (`--switch-from`…) are listed in `RUNTIME_VARS` — a new one is a decision.
 
+> **UPDATE (2026-11-12): the BOARD arrives as a wave and then plays scripts — plan + measured
+> state: `design-plans/board-load-and-live-tiles.md`.** Entrance (`artefacts/boardReveal.ts`):
+> every tile is a skeleton of the catalogue's `Skeleton` from the first frame; the wave starts
+> when the WHOLE board holds still (on-demand library in via `preloadHeavySpecimens`, no tile
+> resized for 140 ms, cap 1.5 s) — never tile by tile, which revealed all 22 in one frame — and
+> runs on diagonals timed by the BRAND's motion (`use-stagger-in`, `stagger`/2 per band,
+> `enter` px); a return in the same session is a short fade; autoplay waits for the wave.
+> Play: ONE clock (`useAutoplayStep` reads time since the board started playing, so two parts on
+> one script never drift), scripts as data in `artefacts/boardScripts.ts` (no heavy imports —
+> the lazy Calendar reads it), `TileLiveContext` freezes a tile off screen or under the pointer,
+> `RollingNumber` for figures. A tile that plays must keep its height (measured: 0 changes).
+> **Pause (WCAG 2.2.2):** `BoardPlayToggle` (`ThemeSaveBar.tsx`) — ONE round icon, the bar's dark
+> finish, docked apart from the bar at the board's bottom-right on the bar's line
+> (`BOARD_PLAY_DOCK`), on the Board and the create studio. `setBoardPaused` / `useBoardPaused`
+> (`boardAutoplay.ts`, `sd-board-paused` per browser) stop the autoplay only — the entrance still
+> plays; pausing resets tiles to their defaults, as the inspector does. Hidden while inspecting
+> or under reduced motion (the board is still anyway). Don't move it back into the bar.
+> Tiles (19): Spinner, Indie Hackers, Credits, the lone switch and Unsaved changes are gone;
+> Calendar (the tile IS its card), Notifications (switch rows) and Editors are new — Editors is
+> the most visual tile: Input Stepper, the count rolling against "/ 20 seats", a grid of 20 seats
+> (taken = `action.primary`, free = `action.secondary` — `neutralFill` is the card's own layer
+> and would vanish) and the monthly total, all on one script. The tile width
+> (`collageFrame`) reads the OTP from its recipe (6 × `size.control` + 5 × `gap-control`).
+
 > **UPDATE (2026-11-05): the INSPECTOR moves ONE way — `lib/inspectorMotion.ts`.** Reported as
 > many bugs in the right panel. Measured: three layers over the panel slot moved three ways (pinned
 > trace 0.16s `easeOut` with no exit, Token Details 0.18s under a second fade, the ship panel not at

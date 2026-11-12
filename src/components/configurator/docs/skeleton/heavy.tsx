@@ -15,11 +15,18 @@ import { ChartContainer as SkChartContainer, ChartLegend as SkChartLegend, Chart
 import { Carousel as SkCarousel, CarouselContent as SkCarouselContent, CarouselItem as SkCarouselItem, CarouselNext as SkCarouselNext, CarouselPrevious as SkCarouselPrevious } from '../../../escala-ui/carousel'
 import { Card as SkCard, CardContent as SkCardContent } from '../../../escala-ui/card'
 import { RecipeScope } from './scope'
+import { useAutoplayStep } from '../../../preview/artefacts/boardAutoplay'
+import { CALENDAR_PLAY } from '../../../preview/artefacts/boardScripts'
 
 const MONTH = new Date(2026, 9, 1)
 
-export function SkeletonCalendarSpecimen({ t, v }: SpecimenProps) {
-  const [day, setDay] = useState<Date | undefined>(new Date(2026, 9, 14))
+/** `children` lands under the month grid (react-day-picker's `footer`), e.g.
+ *  the selected day's event on the Board. Without it, the bare calendar. */
+export function SkeletonCalendarSpecimen({ t, v, children }: SpecimenProps) {
+  const [picked, setDay] = useState<Date | undefined>(new Date(2026, 9, 14))
+  // On the playing board the selection hops through the script's days.
+  const step = useAutoplayStep(CALENDAR_PLAY.days.length, CALENDAR_PLAY.ms)
+  const day = step == null ? picked : new Date(2026, 9, CALENDAR_PLAY.days[step].day)
   const [range, setRange] = useState<DateRange | undefined>({ from: new Date(2026, 9, 12), to: new Date(2026, 9, 17) })
   const icons = {
     prevIcon: <PreviewIcon concept="chevron-left" size={iconOf(13)} />,
@@ -28,8 +35,8 @@ export function SkeletonCalendarSpecimen({ t, v }: SpecimenProps) {
   return (
     <RecipeScope t={t}>
       {v.Mode === 'range'
-        ? <SkCalendar mode="range" defaultMonth={MONTH} selected={range} onSelect={setRange} {...icons} />
-        : <SkCalendar mode="single" defaultMonth={MONTH} selected={day} onSelect={setDay} {...icons} />}
+        ? <SkCalendar mode="range" defaultMonth={MONTH} selected={range} onSelect={setRange} footer={children} {...icons} />
+        : <SkCalendar mode="single" defaultMonth={MONTH} selected={day} onSelect={setDay} footer={children} {...icons} />}
     </RecipeScope>
   )
 }

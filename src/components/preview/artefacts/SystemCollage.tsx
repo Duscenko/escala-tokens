@@ -1,8 +1,12 @@
 import { fontStack } from '../../../lib/fonts'
-import { cloneElement, createContext, useContext, useLayoutEffect, useRef, useState, type CSSProperties, type ReactElement, type ReactNode } from 'react'
-import { AVATAR_STACK_HUES, Live, PhosphorWeightProvider, SPECIMENS, TokenIcon, type IconOpts, type SpecimenProps } from '../../configurator/docs/specimens'
+import { cloneElement, createContext, useContext, useEffect, useLayoutEffect, useMemo, useRef, useState, type CSSProperties, type ReactElement, type ReactNode } from 'react'
+import { AVATAR_STACK_HUES, Live, PhosphorWeightProvider, SPECIMENS, TokenIcon, preloadHeavySpecimens, type IconOpts, type SpecimenProps } from '../../configurator/docs/specimens'
 import { TokenInspector, INSPECT_EXEMPT_ATTR, inspectGroupAttrs, useInspectorActive } from './TokenInspector'
-import { BoardAutoplayContext, useAutoplayStep, useBoardConductor } from './boardAutoplay'
+import { BoardAutoplayContext, TileLiveContext, useAutoplayStep, useBoardConductor, useBoardPaused } from './boardAutoplay'
+import { CALENDAR_PLAY, EDITORS_PLAY, EDITOR_PRICE, FOLLOWERS_PLAY, READINESS_PLAY } from './boardScripts'
+import { RollingNumber } from './RollingNumber'
+import { BoardRevealContext, REVEAL_CAP_MS, SETTLE_MS, boardEnteredOnce, boardRevealTiming, markBoardEntered } from './boardReveal'
+import { Skeleton as UiSkeleton } from '../../escala-ui/skeleton'
 import { useReducedMotion } from 'framer-motion'
 import { SkeletonInlineLinkSpecimen } from '../../configurator/docs/skeleton/actions'
 import { SkeletonSettingsList } from '../../configurator/docs/skeleton/forms'
@@ -16,14 +20,14 @@ import {
   sizeRoleOf,
   spacingRoleOf,
   strokeRoleOf,
-  typeStyleOf, spaceOf } from '../../../lib/previewTokens'
+  typeStyleOf, spaceOf, iconOf } from '../../../lib/previewTokens'
 import type { PreviewTokens } from '../ButtonPreview'
 import type { ThemeAppearance } from '../../../lib/themeModes'
 import { useI18n } from '../../../lib/i18n'
 import { extractBreakpoints, resolveGridFrame, type GridViewport } from '../../../lib/layoutTokens'
 import { artefactSourceWidth, ScaledDeviceFrame } from './DeviceFrame'
 import { readableInk } from '../../../lib/colorUtils'
-import { choreographyVar } from '../../../lib/motion'
+import { MOTION_EASINGS, resolveMotionRole } from '../../../lib/motion'
 
 export { COLLAGE_TILE_COUNT } from '../../../lib/randomTheme'
 
@@ -68,9 +72,10 @@ const InputTag = inspectable('InputTag')
 const FileUpload = inspectable('FileUpload')
 const Stepper = inspectable('Stepper')
 const Pagination = inspectable('Pagination')
-const Spinner = inspectable('Spinner')
 const Separator = inspectable('Separator')
 const Chart = inspectable('Chart')
+const Calendar = inspectable('Calendar')
+const InputStepper = inspectable('InputStepper')
 
 /** `Live` already carries the catalogue key as `c`, so the marker reads it
  *  straight off the prop rather than being restated. */
@@ -111,15 +116,14 @@ function labelPx(font: number, text: string): number {
 /**
  * One masonry column, wide enough for the compositions that must stay on
  * one line: the social label, a pair of icon buttons, the OTP cells, the
- * segmented track, and the profile stats. Display keeps the floor scale.
+ * segmented track, the profile stats and the calendar's week. Display keeps
+ * the floor scale.
  */
 function collageFrame(t: PreviewTokens, copy: {
   social: string
   pair: string
   followers: string
   following: string
-  credits: string
-  upgrade: string
 }): { source: number; display: number } {
   const pad = px(spacingRoleOf(t, 'inset-surface', '20px'))
   const border = px(strokeRoleOf(t, 'control', '1px'))
@@ -128,18 +132,19 @@ function collageFrame(t: PreviewTokens, copy: {
   const helper = fontPx(t, 'helper', 12)
   const body = fontPx(t, 'body-sm', 14)
   const gapC = px(spacingRoleOf(t, 'gap-control', '8px')) || 8
-  const gapT = px(spacingRoleOf(t, 'gap-tight', '4px')) || 4
-  const smPx = sizeOf(t, 'sm', 32)
   // SM button: pad 14, icon 14, gap 6 — the specimen's own chrome, not a token.
   const pairCell = 14 * 2 + 14 + 6 + labelPx(button, copy.pair)
   const inner = Math.max(
     MODULE_SOURCE - pad * 2 - border * 2,
     labelPx(button, copy.social) + 16 + 10,
     pairCell * 2 + gapC,
-    smPx * 6 + gapT * 5,
+    // The OTP group: six `size.control` slots, `gap-control` apart (its recipe).
+    px(sizeRoleOf(t, 'control', '40px')) * 6 + gapC * 5,
     labelPx(button, 'List') + labelPx(button, 'Board') + labelPx(button, 'Timeline') + 20 * 3 + 10,
     labelPx(heading, '12.4K') + 6 + labelPx(helper, copy.followers) + gapC + labelPx(heading, '4') + 6 + labelPx(helper, copy.following),
-    labelPx(body, copy.credits) + gapC + 14 * 2 + labelPx(button, copy.upgrade),
+    // The Calendar IS its tile (its root is a card): seven `size.compact` days
+    // and its own `spacing.3` inset on each side must fit the tile's width.
+    px(sizeRoleOf(t, 'compact', '32px')) * 7 + px(spaceOf(t, 12)) * 2 - pad * 2,
   )
   const source = Math.ceil(inner + pad * 2 + border * 2)
   const display = Math.max(MODULE_DISPLAY, Math.round(source * (MODULE_DISPLAY / MODULE_SOURCE)))
@@ -339,21 +344,6 @@ function px(value: string): number {
  * Card component doesn't. Only layout is set here — the tile's own gap and
  * direction — plus a translucent panel, which the recipe has no word for.
  */
-/** One pass of a tile that plays as a dialog: open and held, then closed for
- *  the last two steps (the exit, then a beat of absence before it reopens). */
-const DIALOG_PLAY_STEPS = 9
-
-/**
- * A tile that reads as a dialog (Unsaved changes) opens and closes on the
- * brand's `dialog-enter` / `dialog-exit` choreographies while the board plays.
- * Opacity and transform only: the frame keeps its box, so the column holds.
- */
-function DialogSurface(props: { t: PreviewTokens; children: ReactNode; style?: CSSProperties }) {
-  const beat = useAutoplayStep(DIALOG_PLAY_STEPS, 760)
-  const animation = beat == null ? undefined
-    : `var(${choreographyVar(beat >= DIALOG_PLAY_STEPS - 2 ? 'dialog-exit' : 'dialog-enter', 'content')})`
-  return <ModuleSurface {...props} style={{ ...props.style, animation }} />
-}
 
 /**
  * A primary action as the board plays it: rest, Loading, done, rest. Still
@@ -386,6 +376,109 @@ function PlayedButton({ t, v, icons, done, period, children }: {
 
 const BUTTON_PLAY = ['rest', 'rest', 'rest', 'rest', 'loading', 'loading', 'done', 'done'] as const
 
+/** A step of one of `boardScripts`' value lists, or `still` when the board is
+ *  still (the value the tile has always shown). */
+function useScripted<T>(script: { ms: number; values: readonly T[] }, still: T): T {
+  const step = useAutoplayStep(script.values.length, script.ms)
+  return step == null ? still : script.values[step]
+}
+
+/** Plays an element in on the brand's `use-stagger-in` (one child of a
+ *  staggered reveal) whenever `key` changes while the board plays. */
+function useEnterOnChange(ref: { current: HTMLElement | null }, t: PreviewTokens, key: unknown, playing: boolean) {
+  useEffect(() => {
+    const el = ref.current
+    if (!playing || !el || !t.motion) return
+    const role = resolveMotionRole('use-stagger-in', t.motion)
+    el.animate(
+      [{ opacity: 0, transform: `translateY(${t.motion.transforms.enter}px)` }, { opacity: 1, transform: 'none' }],
+      { duration: role.ms, easing: MOTION_EASINGS[role.easing] },
+    )
+  }, [key]) // eslint-disable-line react-hooks/exhaustive-deps
+}
+
+/** The Chart tile's figure and its trend badge, climbing together. */
+function ReadinessFigure({ t, muted }: { t: PreviewTokens; muted: string }) {
+  const value = useScripted(READINESS_PLAY, 98)
+  return (
+    <>
+      <div className="flex min-w-0 flex-col">
+        <span style={{ ...typeStyleOf(t, 'heading-lg'), color: t.neutralText }}>
+          <RollingNumber value={String(value)} />
+          <span style={{ ...typeStyleOf(t, 'body-sm'), color: muted }}>%</span>
+        </span>
+        <ReadinessLabel t={t} muted={muted} />
+      </div>
+      <Badge t={t} v={{ Variant: 'secondary' }}><RollingNumber value={`+${value - 92}%`} /></Badge>
+    </>
+  )
+}
+
+function ReadinessLabel({ t, muted }: { t: PreviewTokens; muted: string }) {
+  const { t: translate } = useI18n()
+  return <span style={{ ...typeStyleOf(t, 'body-sm'), color: muted }}>{translate('Workspace readiness')}</span>
+}
+
+function FollowersCount({ t }: { t: PreviewTokens }) {
+  return <span style={{ ...typeStyleOf(t, 'heading-sm'), color: t.neutralText }}><RollingNumber value={useScripted(FOLLOWERS_PLAY, '12.4K')} /></span>
+}
+
+/** The Editors tile's total: the stepper's count × the seat price. */
+function EditorsTotal() {
+  return <RollingNumber value={`$${useScripted(EDITORS_PLAY, 12) * EDITOR_PRICE}`} />
+}
+
+const SEATS = 20
+
+/** The stepper's count as a figure, against the seats the plan holds. */
+function SeatCount({ t, muted }: { t: PreviewTokens; muted: string }) {
+  const { t: translate } = useI18n()
+  return (
+    <span style={{ ...typeStyleOf(t, 'heading-lg'), color: t.neutralText }}>
+      <RollingNumber value={String(useScripted(EDITORS_PLAY, 12))} />
+      <span style={{ ...typeStyleOf(t, 'body-sm'), color: muted }}> / {SEATS} {translate('seats')}</span>
+    </span>
+  )
+}
+
+/** One cell per seat: taken ones in the brand's action fill, free ones in the
+ *  secondary fill — a step off the card, where `neutralFill` (the card's own
+ *  layer) would vanish. Cells change on the brand's `use-color`. */
+function SeatGrid({ t }: { t: PreviewTokens }) {
+  const count = useScripted(EDITORS_PLAY, 12)
+  const free = t.archTokens?.['action.secondary.default'] ?? t.neutralFill
+  return (
+    <div className="grid w-full" style={{ gridTemplateColumns: `repeat(${SEATS / 2}, minmax(0, 1fr))`, gap: gap(t, 'gap-tight', '4px') }}>
+      {Array.from({ length: SEATS }, (_, i) => (
+        <span
+          key={i}
+          style={{
+            aspectRatio: '1',
+            borderRadius: radiusRoleOf(t, 'control', '4px'),
+            background: i < count ? t.brandSolid : free,
+            transition: 'background-color var(--motion-use-color, 200ms ease)',
+          }}
+        />
+      ))}
+    </div>
+  )
+}
+
+/** The event under the calendar, following the day the calendar selects. */
+function CalendarEvent({ t, muted }: { t: PreviewTokens; muted: string }) {
+  const { t: translate } = useI18n()
+  const step = useAutoplayStep(CALENDAR_PLAY.days.length, CALENDAR_PLAY.ms)
+  const day = CALENDAR_PLAY.days[step ?? 0]
+  const ref = useRef<HTMLSpanElement>(null)
+  useEnterOnChange(ref, t, day.day, step != null)
+  return (
+    <span className="flex items-center" style={{ gap: gap(t, 'gap-tight', '4px'), marginTop: spaceOf(t, 12), ...typeStyleOf(t, 'helper'), color: muted }}>
+      <TokenIcon t={t} concept="calendar" size={iconOf(12)} color={t.brandText} />
+      <span ref={ref}>{translate(day.event)} · {day.time}</span>
+    </span>
+  )
+}
+
 function ModuleSurface({ t, children, style }: { t: PreviewTokens; children: ReactNode; style?: CSSProperties }) {
   return (
     <RecipeScope t={t}>
@@ -416,10 +509,10 @@ function ModuleSurface({ t, children, style }: { t: PreviewTokens; children: Rea
  * inner — `overflow: hidden` + `scale()` made Strong look like None.
  */
 function ScaledModule({
-  t, appearance = 'light', children, chrome = true, clip = true, elev, style, sourceWidth = MODULE_SOURCE, frameWidth = MODULE_DISPLAY, fill = false, inspect = true, dialog = false,
+  t, appearance = 'light', children, chrome = true, clip = true, elev, style, sourceWidth = MODULE_SOURCE, frameWidth = MODULE_DISPLAY, fill = false, inspect = true, band = 0,
 }: {
-  /** Plays as a dialog while the board plays (see `DialogSurface`). */
-  dialog?: boolean
+  /** Diagonal position in the board's entrance wave (see `boardReveal`). */
+  band?: number
   t: PreviewTokens
   appearance?: ThemeAppearance
   children: ReactNode
@@ -532,11 +625,50 @@ function ScaledModule({
     return () => ro.disconnect()
   }, [stretches, resolvedSource, resolvedFrame, scale])
 
+  // Entrance: a skeleton until the height holds still and this band's turn in
+  // the wave comes up, then the content crosses over it (see `boardReveal`).
+  const reveal = useContext(BoardRevealContext)
+  const [shown, setShown] = useState(() => !reveal)
+  const [skeleton, setSkeleton] = useState(() => Boolean(reveal))
+  useEffect(() => {
+    if (shown || !reveal || reveal.held || naturalHeight == null) return
+    const id = window.setTimeout(() => setShown(true), Math.max(0, reveal.start + band * reveal.step - performance.now()))
+    return () => window.clearTimeout(id)
+  }, [shown, reveal, naturalHeight, band])
+  useEffect(() => {
+    if (!shown || !skeleton) return
+    const id = window.setTimeout(() => setSkeleton(false), (reveal?.ms ?? 0) + 60)
+    return () => window.clearTimeout(id)
+  }, [shown, skeleton, reveal])
+  const crossing = reveal && skeleton ? `${reveal.ms}ms ${reveal.easing}` : null
+  const contentStyle: CSSProperties | undefined = crossing && reveal ? {
+    opacity: shown ? 1 : 0,
+    transform: shown || !reveal.enter ? undefined : `translateY(${reveal.enter}px)`,
+    transition: `opacity ${crossing}, transform ${crossing}`,
+  } : undefined
+  const skeletonHeight = stretches && stretchHeight ? stretchHeight / scale : naturalHeight
+
+  // A tile's scripts hold while it is off screen (no work nobody sees) and
+  // while the pointer is on it (the person is using it).
+  const [onScreen, setOnScreen] = useState(true)
+  const [pointerIn, setPointerIn] = useState(false)
+  useEffect(() => {
+    const el = outerRef.current
+    if (!el) return
+    const io = new IntersectionObserver(([entry]) => setOnScreen(entry?.isIntersecting ?? true))
+    io.observe(el)
+    return () => io.disconnect()
+  }, [])
+  const live = onScreen && !pointerIn
+
   const surfaceStyle: CSSProperties | undefined = stretches
     ? { ...style, justifyContent: 'center', minHeight: stretchHeight ? stretchHeight / scale : undefined }
     : style
-  const Surface = dialog ? DialogSurface : ModuleSurface
-  const body = chrome ? <Surface t={t} style={surfaceStyle}>{children}</Surface> : children
+  const body = (
+    <TileLiveContext.Provider value={live}>
+      {chrome ? <ModuleSurface t={t} style={surfaceStyle}>{children}</ModuleSurface> : children}
+    </TileLiveContext.Provider>
+  )
   const appearanceClass = appearance === 'dark' ? 'dark' : 'light'
 
   return (
@@ -544,6 +676,8 @@ function ScaledModule({
       ref={outerRef}
       className={`relative overflow-visible ${appearanceClass}`}
       data-collage-appearance={appearance}
+      onPointerEnter={() => setPointerIn(true)}
+      onPointerLeave={() => setPointerIn(false)}
       {...(inspect ? inspectGroupAttrs(inspecting) : { [INSPECT_EXEMPT_ATTR]: '' })}
       style={{
         width: resolvedFrame,
@@ -562,19 +696,61 @@ function ScaledModule({
         zIndex: !clip || frameShadow ? 1 : undefined,
       }}
     >
-      <div
-        ref={innerRef}
-        className={clip ? 'absolute left-0 top-0 overflow-hidden' : 'absolute left-0 top-0'}
-        style={{
-          width: resolvedSource,
-          transform: `scale(${scale})`,
-          transformOrigin: 'top left',
-          borderRadius: chrome && clip ? radiusRoleOf(t, 'container', '16px') : undefined,
-        }}
-      >
-        {body}
+      {skeleton && crossing && skeletonHeight != null && (
+        <div
+          aria-hidden
+          className="pointer-events-none absolute left-0 top-0"
+          style={{
+            width: resolvedSource,
+            height: skeletonHeight,
+            transform: `scale(${scale})`,
+            transformOrigin: 'top left',
+            opacity: shown ? 0 : 1,
+            transition: `opacity ${crossing}`,
+          }}
+        >
+          <TileSkeleton t={t} height={skeletonHeight} />
+        </div>
+      )}
+      {/* Always this wrapper, entering or not: swapping the tree would remount
+          the specimens and lose their state. */}
+      <div className="absolute inset-0" style={contentStyle}>
+        <div
+          ref={innerRef}
+          className={clip ? 'absolute left-0 top-0 overflow-hidden' : 'absolute left-0 top-0'}
+          style={{
+            width: resolvedSource,
+            transform: `scale(${scale})`,
+            transformOrigin: 'top left',
+            borderRadius: chrome && clip ? radiusRoleOf(t, 'container', '16px') : undefined,
+          }}
+        >
+          {body}
+        </div>
       </div>
     </div>
+  )
+}
+
+const SKELETON_WIDTHS = ['42%', '88%', '70%', '94%', '58%', '80%']
+
+/** A tile before its content: the tile's own Card with bars of the catalogue's
+ *  Skeleton, as many as its height holds. */
+function TileSkeleton({ t, height }: { t: PreviewTokens; height: number }) {
+  const inset = px(spacingRoleOf(t, 'inset-surface', '20px')) || 20
+  const line = 14
+  const gapPx = 12
+  const lines = Math.max(1, Math.min(SKELETON_WIDTHS.length, Math.floor((height - inset * 2 + gapPx) / (line + gapPx))))
+  return (
+    <ModuleSurface t={t} style={{ height: '100%', gap: gapPx }}>
+      {SKELETON_WIDTHS.slice(0, lines).map((width, i) => (
+        <UiSkeleton
+          key={i}
+          className="flex-shrink-0 motion-reduce:animate-none"
+          style={{ width, height: i === 0 ? line + 4 : line }}
+        />
+      ))}
+    </ModuleSurface>
   )
 }
 
@@ -643,7 +819,20 @@ export function SystemCollage({
   // itself, so the brand's motion is seen (see `boardAutoplay`).
   const inspecting = useInspectorActive()
   const reduceMotion = useReducedMotion() ?? false
-  const playing = !inspecting && !reduceMotion
+  // The entrance (see `boardReveal`): one wave per page load, a short fade on
+  // a return. Autoplay waits for it, or tiles would change under their skeletons.
+  const [mountedAt] = useState(() => performance.now())
+  const [quickEntry] = useState(boardEnteredOnce)
+  const [heavyReady, setHeavyReady] = useState(false)
+  useEffect(() => {
+    let live = true
+    const done = () => { if (live) setHeavyReady(true) }
+    preloadHeavySpecimens().then(done, done)
+    return () => { live = false }
+  }, [])
+  const [waveDone, setWaveDone] = useState(false)
+  const paused = useBoardPaused()
+  const playing = !inspecting && !reduceMotion && waveDone && !paused
   const stageRef = useRef<HTMLDivElement>(null)
   useBoardConductor(stageRef, playing)
   const tile = (index: number) => tokensByAppearance[tileAppearances[index] === 'dark' ? 'dark' : 'light']
@@ -657,8 +846,6 @@ export function SystemCollage({
     pair: [translate('Critical'), translate('Success')].sort((a, b) => b.length - a.length)[0] ?? 'Critical',
     followers: translate('Followers'),
     following: translate('Following'),
-    credits: translate('You have 2 credits left'),
-    upgrade: translate('Upgrade'),
   })
   const phones = layout === 'phones'
   const board = frameTokens ?? tokensByAppearance.light
@@ -825,11 +1012,6 @@ export function SystemCollage({
           </div>
         </ScaledModule>
     ),
-    segmented: (
-        <ScaledModule key="segmented" t={tile(6)} appearance={appearanceAt(6)}>
-          <Segmented t={tile(6)} v={{ Size: 'sm' }} />
-        </ScaledModule>
-    ),
     profile: (
         <ScaledModule key="profile" t={tile(8)} appearance={appearanceAt(8)}>
           <div className="flex items-start" style={{ gap: gap(tile(8), 'gap-control', '8px') }}>
@@ -851,38 +1033,49 @@ export function SystemCollage({
               <span style={{ marginLeft: spaceOf(tile(8), 6), ...typeStyleOf(tile(8), 'helper'), color: muted(8) }}>{translate('Following')}</span>
             </div>
             <div>
-              <span style={{ ...typeStyleOf(tile(8), 'heading-sm'), color: tile(8).neutralText }}>12.4K</span>
+              <FollowersCount t={tile(8)} />
               <span style={{ marginLeft: spaceOf(tile(8), 6), ...typeStyleOf(tile(8), 'helper'), color: muted(8) }}>{translate('Followers')}</span>
             </div>
           </div>
         </ScaledModule>
     ),
-    credits: (
-        <ScaledModule key="credits" t={tile(12)} appearance={appearanceAt(12)} style={{ flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between', gap: gap(tile(12), 'gap-control', '8px') }}>
-          <span style={{ ...typeStyleOf(tile(12), 'body-sm'), color: tile(12).neutralText, flex: '1 1 8em', minWidth: 0 }}>{translate('You have 2 credits left')}</span>
-          <InspectableLive c="Button" t={tile(12)} v={{ Variant: 'secondary', Size: 'sm' }}>{translate('Upgrade')}</InspectableLive>
+    // Settings as a person meets them: switches in rows, each with its label.
+    // A lone switch read as a widget, not a screen.
+    notifications: (
+        <ScaledModule key="notifications" t={tile(13)} appearance={appearanceAt(13)}>
+          <TokenInspector component="Switch" variant={{ Checked: 'True' }}>
+            <SkeletonSettingsList
+              t={tile(13)}
+              control="switch"
+              legend={translate('Notifications')}
+              rows={[
+                { label: translate('Push notifications'), on: true },
+                { label: translate('Weekly digest'), on: false },
+                { label: translate('Mentions only'), on: true },
+              ]}
+            />
+          </TokenInspector>
         </ScaledModule>
     ),
-    toggle: (
-        <ScaledModule key="toggle" t={tile(13)} appearance={appearanceAt(13)} style={{ flexDirection: 'row', alignItems: 'center' }}>
-          <InspectableLive c="Switch" t={tile(13)} v={{ Checked: 'True', Size: 'sm' }} toggle="Checked" />
-        </ScaledModule>
-    ),
-    unsaved: (
-        <ScaledModule key="unsaved" t={tile(14)} appearance={appearanceAt(14)} dialog>
-          <div className="flex items-start justify-between" style={{ gap: gap(tile(14), 'gap-control', '8px') }}>
-            <Well t={tile(14)} size={wellSm} icon="box" />
-            <InspectableLive c="Button" t={tile(14)} v={{ Variant: 'ghost', Size: 'icon-sm' }} icons={catalogueIcons(tile(14), 'close')}>{translate('Close')}</InspectableLive>
+    // A count the person sets, seen as well as read: the stepper, the figure,
+    // the seats it fills, and what it costs.
+    seats: (
+        <ScaledModule key="seats" t={tile(12)} appearance={appearanceAt(12)} style={{ gap: gap(tile(12), 'gap-group', '16px') }}>
+          <div className="flex items-start justify-between" style={{ gap: gap(tile(12), 'gap-control', '8px') }}>
+            <div className="flex min-w-0 flex-col">
+              <span style={{ ...typeStyleOf(tile(12), 'label'), color: tile(12).neutralText }}>{translate('Editors')}</span>
+              <span style={{ ...typeStyleOf(tile(12), 'helper'), color: muted(12) }}>{translate('Who can publish tokens')}</span>
+            </div>
+            <InputStepper t={tile(12)} v={{}} />
           </div>
-          <div>
-            <p style={{ margin: 0, ...typeStyleOf(tile(14), 'heading-sm'), color: tile(14).neutralText }}>{translate('Unsaved changes')}</p>
-            <p style={{ margin: 0, ...typeStyleOf(tile(14), 'body-sm', { leading: true }), color: muted(14) }}>
-              {translate('Do you want to save or discard changes?')}
-            </p>
-          </div>
-          <div className="flex flex-col" style={{ gap: gap(tile(14), 'gap-control', '8px') }}>
-            <InspectableLive c="Button" t={tile(14)} v={{ Variant: 'outline', Size: 'sm' }} w="100%">{translate('Discard')}</InspectableLive>
-            <PlayedButton t={tile(14)} v={{ Variant: 'default', Size: 'sm' }} done={translate('Saved')} period={620}>{translate('Save changes')}</PlayedButton>
+          <SeatCount t={tile(12)} muted={muted(12)} />
+          <SeatGrid t={tile(12)} />
+          <Separator t={tile(12)} v={{}} w="100%" />
+          <div className="flex items-baseline justify-between" style={{ gap: gap(tile(12), 'gap-control', '8px') }}>
+            <span style={{ ...typeStyleOf(tile(12), 'body-sm'), color: muted(12) }}>{translate('Total')}</span>
+            <span style={{ ...typeStyleOf(tile(12), 'heading-sm'), color: tile(12).neutralText, fontVariantNumeric: 'tabular-nums' }}>
+              <EditorsTotal /><span style={{ ...typeStyleOf(tile(12), 'helper'), color: muted(12) }}> / {translate('per month')}</span>
+            </span>
           </div>
         </ScaledModule>
     ),
@@ -902,8 +1095,21 @@ export function SystemCollage({
           appearance={appearanceAt(16)}
           style={{ gap: gap(tile(16), 'gap-group', '16px') }}
         >
+          <Segmented t={tile(16)} v={{ Size: 'sm' }} />
           <TabMenu t={tile(16)} v={{}} w="100%" />
           <Progress t={tile(16)} v={{}} w="100%" />
+        </ScaledModule>
+    ),
+    // The Calendar's root is a card, so it IS the tile (no Card around it);
+    // the selected day's event sits under the month (react-day-picker footer).
+    calendar: (
+        <ScaledModule key="calendar" t={tile(9)} appearance={appearanceAt(9)} chrome={false} elev="sm">
+          {/* The root is `w-fit`; as the tile it spans the column, days spread. */}
+          <div className="w-full [&_[data-slot=calendar]]:!w-full">
+          <Calendar t={tile(9)} v={{ Mode: 'single' }}>
+            <CalendarEvent t={tile(9)} muted={muted(9)} />
+          </Calendar>
+          </div>
         </ScaledModule>
     ),
     sidebar: (
@@ -957,11 +1163,6 @@ export function SystemCollage({
           </div>
         </ScaledModule>
     ),
-    spinner: (
-        <ScaledModule key="spinner" t={tile(23)} appearance={appearanceAt(23)} style={{ alignItems: 'center', justifyContent: 'center', minHeight: 72 }}>
-          <Spinner t={tile(23)} v={{}} />
-        </ScaledModule>
-    ),
   }
   // The avatar card: four avatars stacked by the `overlap-md` role. The px is
   // the role's LIVE value (negative), so Variables edits land here too.
@@ -973,9 +1174,7 @@ export function SystemCollage({
     <ScaledModule key="team" t={tile(11)} appearance={appearanceAt(11)}>
       <div className="flex items-baseline justify-between" style={{ gap: gap(tile(11), 'gap-control', '8px') }}>
         <span style={{ ...typeStyleOf(tile(11), 'label'), color: tile(11).neutralText }}>{translate('Team')}</span>
-        <span style={{ ...typeStyleOf(tile(11), 'helper'), color: muted(11), fontFamily: 'ui-monospace, SFMono-Regular, Menlo, monospace' }}>
-          {`overlap-md · ${overlapPx}px`}
-        </span>
+        <span style={{ ...typeStyleOf(tile(11), 'helper'), color: muted(11) }}>{translate('4 members')}</span>
       </div>
       <div className="flex items-center">
         {AVATAR_STACK_HUES.slice(0, 4).map((hue, i) => (
@@ -997,37 +1196,13 @@ export function SystemCollage({
     </ScaledModule>
   )
 
-  const community = (community: { title: string; count: string; by: string; icon: 'users' | 'zap'; index: number }) => (
-        <ScaledModule key={community.title} t={tile(community.index)} appearance={appearanceAt(community.index)} chrome={false} elev="sm">
-          <Card t={tile(community.index)} v={{}} w="100%" elev={false}>
-            <div className="flex flex-col" style={{ gap: gap(tile(community.index), 'gap-control', '8px') }}>
-              <Well t={tile(community.index)} size={wellSm} icon={community.icon} />
-              <div>
-                <p style={{ margin: 0, ...typeStyleOf(tile(community.index), 'label'), color: tile(community.index).neutralText }}>{community.title}</p>
-                <p style={{ margin: 0, ...typeStyleOf(tile(community.index), 'helper'), color: muted(community.index) }}>{community.count}</p>
-              </div>
-              <div className="flex items-center" style={{ gap: gap(tile(community.index), 'gap-tight', '4px') }}>
-                <Avatar t={tile(community.index)} v={{ Size: 'sm' }} />
-                <span style={{ ...typeStyleOf(tile(community.index), 'helper'), color: muted(community.index) }}>{translate('By')} {community.by}</span>
-              </div>
-            </div>
-          </Card>
-        </ScaledModule>
-  )
-  const indie = community({ title: translate('Indie Hackers'), count: '148', by: 'John', icon: 'users', index: 9 })
   // CHART — how a data widget reads in this system: a metric, a trend badge and
   // the catalogue's Chart (shadcn `chart` over Recharts), all on tokens.
   const chart = tile(10)
   const chartCard = (
     <ScaledModule key="chart" t={chart} appearance={appearanceAt(10)}>
       <div className="flex items-start justify-between" style={{ gap: gap(chart, 'gap-control', '8px') }}>
-        <div className="flex min-w-0 flex-col">
-          <span style={{ ...typeStyleOf(chart, 'heading-lg'), color: chart.neutralText }}>
-            98<span style={{ ...typeStyleOf(chart, 'body-sm'), color: muted(10) }}>%</span>
-          </span>
-          <span style={{ ...typeStyleOf(chart, 'body-sm'), color: muted(10) }}>{translate('Workspace readiness')}</span>
-        </div>
-        <Badge t={chart} v={{ Variant: 'secondary' }}>+6%</Badge>
+        <ReadinessFigure t={chart} muted={muted(10)} />
       </div>
       <Chart t={chart} v={{ Type: 'area' }} w="100%" />
     </ScaledModule>
@@ -1046,29 +1221,75 @@ export function SystemCollage({
     column.map((el, i) => (i === column.length - 1 ? cloneElement(el as ReactElement<{ fill?: boolean }>, { fill: true }) : el))
   // Four columns, hand-balanced by typical height; the last tile of each
   // stretches (`fill`), so whatever the theme's type and spacing do to the
-  // heights, every column ends on one line. Spinner closes the shortest
-  // column because a centred spinner reads fine at any height.
+  // heights, every column ends on one line. Each column closes on a tile whose
+  // content reads fine centred in extra height.
   const boardColumns: ReactElement[][] = [
-    [mod.createAccount, mod.profile, mod.credits, mod.segmented],
-    [mod.buttons, indie, mod.tabsProgress, mod.inputTag, mod.checkbox],
-    [mod.verify, mod.sidebar, mod.unsaved, mod.toggle, mod.stepper],
-    [mod.badges, chartCard, teamCard, mod.toasts, mod.fileUpload, mod.spinner],
+    [mod.createAccount, mod.profile, mod.checkbox],
+    [mod.buttons, mod.calendar, mod.tabsProgress, mod.notifications],
+    [mod.verify, mod.sidebar, mod.seats, mod.stepper],
+    [mod.badges, chartCard, teamCard, mod.toasts, mod.fileUpload, mod.inputTag],
   ]
+  const phonePacks: ReactElement[][] = [
+    [colorStyle(false), typeStyle(false)],
+    [mod.verify, mod.buttons, mod.badges],
+    [mod.createAccount],
+    [mod.calendar, mod.profile, chartCard, teamCard],
+    [mod.notifications, mod.seats, mod.toasts, mod.tabsProgress],
+    [mod.sidebar, mod.inputTag, mod.checkbox, mod.fileUpload, mod.stepper],
+  ]
+  // The wave runs on diagonals: the two style tiles first, then each column's
+  // tiles one band later than the column to their left and the tile above.
+  const place = (el: ReactElement, band: number) => cloneElement(el as ReactElement<{ band?: number }>, { band })
+  const bands = phones
+    ? phonePacks.reduce((n, pack, p) => Math.max(n, p + pack.length - 1), 0)
+    : boardColumns.reduce((n, column, c) => Math.max(n, 1 + c + column.length - 1), 1)
+  // The wave starts once the BOARD holds still: the on-demand library is in and
+  // no tile has changed size for `SETTLE_MS`. Settling tile by tile was not
+  // enough — when the Chart grows, every column's last tile re-stretches and
+  // the tiles below it move, so a tile already shown would be shoved.
+  const [waveStart, setWaveStart] = useState<number | null>(null)
+  useEffect(() => {
+    if (waveStart != null) return
+    const go = () => setWaveStart(performance.now())
+    const cap = window.setTimeout(go, Math.max(0, mountedAt + REVEAL_CAP_MS - performance.now()))
+    const root = stageRef.current
+    if (!heavyReady || !root) return () => window.clearTimeout(cap)
+    let settle = 0
+    const arm = () => { window.clearTimeout(settle); settle = window.setTimeout(go, SETTLE_MS) }
+    const ro = new ResizeObserver(arm)
+    root.querySelectorAll('[data-collage-appearance]').forEach((el) => ro.observe(el))
+    arm()
+    return () => { window.clearTimeout(cap); window.clearTimeout(settle); ro.disconnect() }
+  }, [heavyReady, waveStart, mountedAt])
+  const timing = boardRevealTiming(board.motion, { start: waveStart ?? mountedAt, bands, quick: quickEntry, reduced: reduceMotion, held: waveStart == null })
+  // Memoised on its numbers: the tokens object is rebuilt on any store change,
+  // and a new context value would re-run every tile's reveal timer.
+  const reveal = useMemo(
+    () => timing,
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [timing.start, timing.step, timing.ms, timing.easing, timing.enter, timing.span, timing.held],
+  )
+  useEffect(() => {
+    if (waveStart == null) return
+    const id = window.setTimeout(() => {
+      setWaveDone(true)
+      markBoardEntered()
+    }, Math.max(0, waveStart + reveal.span + 250 - performance.now()))
+    return () => window.clearTimeout(id)
+  }, [waveStart, reveal.span])
 
   return (
     <PhosphorWeightProvider weight={tokensByAppearance.light.iconWeight}>
     <CollageFrameContext.Provider value={{ source: frame.source, display }}>
+    <BoardRevealContext.Provider value={reveal}>
     <BoardAutoplayContext.Provider value={playing}>
     <div ref={stageRef} className="contents">
     {phones ? (
     <div className="flex min-w-0 flex-col gap-2">
       <div className="flex min-w-0 items-start gap-3 overflow-x-auto snap-x snap-mandatory pb-1" aria-label={platformCaption}>
-        <CollagePack {...pack}>{colorStyle(false)}{typeStyle(false)}</CollagePack>
-        <CollagePack {...pack}>{mod.verify}{mod.buttons}{mod.badges}</CollagePack>
-        <CollagePack {...pack}>{mod.createAccount}</CollagePack>
-        <CollagePack {...pack}>{mod.segmented}{mod.profile}{chartCard}{teamCard}{indie}</CollagePack>
-        <CollagePack {...pack}>{mod.credits}{mod.toggle}{mod.unsaved}{mod.toasts}{mod.tabsProgress}</CollagePack>
-        <CollagePack {...pack}>{mod.sidebar}{mod.inputTag}{mod.checkbox}{mod.fileUpload}{mod.stepper}{mod.spinner}</CollagePack>
+        {phonePacks.map((packed, p) => (
+          <CollagePack key={p} {...pack}>{packed.map((el, i) => place(el, p + i))}</CollagePack>
+        ))}
       </div>
       <p className="text-mini text-fg-faint text-center tabular-nums">
         {platformCaption} · {liveGrid.columns} col · page margin {liveGrid.margin} from Grid
@@ -1085,13 +1306,13 @@ export function SystemCollage({
     <div ref={boardRef} style={{ width: 'calc(100% + 20px)', padding: 10, margin: -10 }}>
       <div className="mx-auto flex flex-col" style={{ width: BOARD_COLUMNS * display + (BOARD_COLUMNS - 1) * gutterPx, gap: gutter }}>
         <div className="flex items-stretch" style={{ gap: gutter }}>
-          {colorStyle(true, true)}
-          {typeStyle(true, true)}
+          {place(colorStyle(true, true), 0)}
+          {place(typeStyle(true, true), 1)}
         </div>
         <div className="flex items-stretch" style={{ gap: gutter }}>
           {boardColumns.map((column, i) => (
             <div key={i} className="flex flex-col" style={{ width: display, gap: gutter }}>
-              {fillLast(column)}
+              {fillLast(column).map((el, r) => place(el, 1 + i + r))}
             </div>
           ))}
         </div>
@@ -1100,6 +1321,7 @@ export function SystemCollage({
     )}
     </div>
     </BoardAutoplayContext.Provider>
+    </BoardRevealContext.Provider>
     </CollageFrameContext.Provider>
     </PhosphorWeightProvider>
   )
