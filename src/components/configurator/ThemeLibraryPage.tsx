@@ -34,9 +34,9 @@ import { BoardThemeSwitch } from './BrandThemesPicker'
 import ThemeQuickSettingsRail from './ThemeQuickSettingsRail'
 import { AccountCloudStatus } from './AccountCloudStatus'
 import { BoardMotionPreset } from './BoardMotionPreset'
-import { BOARD_TOOLBAR_DOCK, BOARD_TOOLBAR_LIFT, BoardHistoryControls, CreateStudioFooter, type ShipActions } from './ThemeSaveBar'
+import { BOARD_PLAY_DOCK, BOARD_TOOLBAR_DOCK, BOARD_TOOLBAR_LIFT, BoardHistoryControls, BoardPlayToggle, CreateStudioFooter, type ShipActions } from './ThemeSaveBar'
 import { useTheme } from '../../lib/theme'
-import { AnimatePresence, motion } from 'framer-motion'
+import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
 import {
   DeleteMyThemesConfirmation,
   LibraryOptionsIcon,
@@ -254,6 +254,7 @@ function CreateBoard({
   // component names the tokens that paint it while the brand is being made.
   // There is no Token Details here, so the list is read-only (no `onPick`).
   const [inspecting, setInspecting] = useState(false)
+  const reduceMotion = useReducedMotion() ?? false
   const canvasRef = useRef<HTMLDivElement | null>(null)
   const panelId = `create-board-${useId().replace(/:/g, '')}`
   const tokensByAppearance = useMemo(() => ({
@@ -305,6 +306,9 @@ function CreateBoard({
           </BoardHistoryControls>
         </div>
       </div>
+      {view === 'theme' && !inspecting && !reduceMotion && (
+        <div className={BOARD_PLAY_DOCK}><BoardPlayToggle /></div>
+      )}
       <InspectorOverlay
         active={inspecting}
         rootRef={canvasRef}

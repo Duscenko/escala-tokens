@@ -21,6 +21,7 @@ import { flushAccountCloud } from '../../lib/accountCloudSync'
 import { AccountCloudStatus } from './AccountCloudStatus'
 import { FigmaGlyph, GitHubGlyph } from '../ui/icons'
 import { HintTip } from '../ui/HintTip'
+import { setBoardPaused, useBoardPaused } from '../preview/artefacts/boardAutoplay'
 import { useCloseOnAnchorScroll } from '../ui/useCloseOnAnchorScroll'
 
 /**
@@ -124,6 +125,33 @@ const HISTORY_SEGMENT = 'flex h-8 w-8 flex-shrink-0 items-center justify-center 
 export const BOARD_TOOLBAR_DOCK = 'pointer-events-none absolute inset-x-0 bottom-4 z-30 flex items-center justify-center gap-2 px-4'
 /** The lift under each pill of that bar. */
 export const BOARD_TOOLBAR_LIFT = 'pointer-events-auto shadow-[0_8px_24px_-6px_rgba(0,0,0,0.45),0_2px_6px_-2px_rgba(0,0,0,0.3)]'
+/** The board's pause, docked apart from the bar at the board's bottom-right
+ *  corner — on the bar's line, so the two read as one row of board tools. */
+export const BOARD_PLAY_DOCK = `absolute bottom-4 right-5 z-30 rounded-full ${BOARD_TOOLBAR_LIFT}`
+
+/**
+ * Pause / play for the board's autoplay (WCAG 2.2.2: content that moves on its
+ * own needs a way to stop it). One round icon, the bar's own dark finish.
+ * Pausing puts every tile back on its default state, as the inspector does;
+ * the entrance wave still plays. Remembered per browser (`setBoardPaused`).
+ */
+export function BoardPlayToggle() {
+  const { t } = useI18n()
+  const paused = useBoardPaused()
+  return (
+    <HintTip label={paused ? t('Play animation') : t('Pause animation')}>
+      <button
+        type="button"
+        onClick={() => setBoardPaused(!paused)}
+        aria-label={t('Pause animation')}
+        aria-pressed={paused}
+        className="dark flex h-10 w-10 items-center justify-center rounded-full border border-white/[0.12] bg-[#050506] text-fg-muted transition-[color,transform] duration-150 ease-[var(--ease-out-quint)] hover:text-fg active:scale-95 motion-reduce:active:scale-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui"
+      >
+        <PhIcon id={paused ? 'play' : 'pause'} size={14} />
+      </button>
+    </HintTip>
+  )
+}
 
 /**
  * UPDATE (2026-11-12, owner's call): the Undo · Redo BUTTONS left this bar for
