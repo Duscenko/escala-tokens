@@ -10203,6 +10203,88 @@
         }
       ]
     },
+    "CalendarPresets": {
+      "key": "CalendarPresets",
+      "slots": [
+        "root",
+        "label",
+        "preset"
+      ],
+      "defaults": {
+        "Size": "default",
+        "Variant": "default"
+      },
+      "parts": [
+        {
+          "axes": [],
+          "values": {
+            "": {
+              "root": {
+                "stroke": "color.border.default",
+                "strokeRightWidth": "stroke.divider",
+                "gap": "spacing.0_5"
+              },
+              "label": {
+                "text": "color.content.secondary",
+                "font": "type.caption"
+              },
+              "preset": {
+                "radius": "radius.action",
+                "paddingX": "spacing.2",
+                "text": "color.content.primary",
+                "font": "type.body-sm"
+              }
+            }
+          }
+        },
+        {
+          "axes": [
+            "Size"
+          ],
+          "values": {
+            "default": {
+              "root": {
+                "width": "spacing.32+spacing.8",
+                "paddingX": "spacing.inset-surface",
+                "paddingY": "spacing.inset-surface"
+              },
+              "preset": {
+                "height": "size.compact"
+              }
+            },
+            "sm": {
+              "root": {
+                "width": "spacing.32+spacing.3",
+                "paddingX": "spacing.inset-control",
+                "paddingY": "spacing.inset-control"
+              },
+              "preset": {
+                "height": "spacing.6+spacing.1"
+              }
+            }
+          }
+        },
+        {
+          "axes": [
+            "Variant"
+          ],
+          "values": {
+            "default": {
+              "preset[data-selected=\"true\"]": {
+                "fill": "color.surface.selected",
+                "text": "color.content.accent"
+              }
+            },
+            "secondary": {
+              "preset[data-selected=\"true\"]": {
+                "fill": "color.surface.muted",
+                "text": "color.content.primary"
+              }
+            }
+          }
+        }
+      ]
+    },
     "DatePickerPopover": {
       "key": "DatePickerPopover",
       "slots": [

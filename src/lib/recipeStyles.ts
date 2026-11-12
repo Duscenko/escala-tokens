@@ -116,6 +116,8 @@ function declarations(props: SlotProps): string[] {
       // One hairline on one side (an accordion row's divider, a tab strip's underline).
       case 'strokeTopWidth': out.push(`border-top-width: ${dim(ref)}`, 'border-top-style: solid'); break
       case 'strokeBottomWidth': out.push(`border-bottom-width: ${dim(ref)}`, 'border-bottom-style: solid'); break
+      // A rail's divider on its right edge (CalendarPresets).
+      case 'strokeRightWidth': out.push(`border-right-width: ${dim(ref)}`, 'border-right-style: solid'); break
       // Alone, a FIELD's focus halo (Figma's Input): the field keeps its 1px
       // edge, and a `stroke.focus` ring straddles it — half over the edge,
       // half outside. An outline with a negative offset paints exactly that

@@ -4595,6 +4595,28 @@ var init_componentCatalogue = __esm({
         accessibility: "Each day is a button (see CalendarDay); Disabled and Unavailable days are disabled. The weekday row is plain text."
       },
       {
+        key: "CalendarPresets",
+        label: "Calendar Presets",
+        category: "Form Controls",
+        description: 'The rail beside a range Calendar: a "PRESETS" label over quick ranges, the one matching the selection tinted like the range.',
+        usage: "Use on the left of a range Calendar for common spans (Today, Last 7 days\u2026). Pick the Variant that matches the CalendarDay cells next to it.",
+        // The Figma file\'s axes, value for value (design-plans/calendar-presets-contract.md).
+        axes: [
+          { name: "Size", values: ["default", "sm"] },
+          { name: "Variant", values: ["default", "secondary"] }
+        ],
+        figmaSets: ["CalendarPresets"],
+        props: [
+          { name: "size", type: '"default" | "sm"', description: "Figma Size: a 160 or 140 px rail, 32 or 28 px rows." },
+          { name: "variant", type: '"default" | "secondary"', description: "Figma Variant: the selected preset's tint, as CalendarDay's range." },
+          { name: "presets", type: "string[]", description: "The quick ranges. Default: Today, Yesterday, Last 7 days, Last 30 days, This month." },
+          { name: "selected", type: "string | null", description: 'The preset matching the selection. Default "Last 7 days".' },
+          { name: "onSelect", type: "(preset: string) => void", description: "A preset was pressed." },
+          { name: "label", type: "ReactNode", description: 'The heading, default "PRESETS".' }
+        ],
+        accessibility: "Each preset is a button whose visible text is its name; the selected one carries aria-pressed."
+      },
+      {
         key: "Calendar",
         label: "Calendar",
         category: "Form Controls",
@@ -9120,7 +9142,7 @@ function switchPaint(checked, state2) {
     thumb: { fill: c(on && !disabled ? "content.on-action" : "surface.input") }
   };
 }
-var FIELD_FIXED, FIELD_FOCUS, INPUT_STATES, INPUT_SIZES, INPUT_TYPES, INPUT_GEOMETRY, INPUT_GLYPH, INPUT_STROKE_IN_LAYOUT, INPUT, TEXTAREA_SIZES, TEXTAREA_STATES, TEXTAREA_HEIGHT, TEXTAREA_PAD, TEXTAREA_FONT, TEXTAREA_GLYPH, TEXTAREA, DATE_PICKER_TRIGGER_SIZES, DATE_PICKER_TRIGGER_STATES, DPT_GEOMETRY, DATE_PICKER_TRIGGER, DATE_PICKER_POPOVER, CALENDAR_DAY_SIZES, CALENDAR_DAY_STATES, CALENDAR_DAY_VARIANTS, CALENDAR_DAY_GEOMETRY, CALENDAR_DAY, CALENDAR_HEADER_SIZES, CALENDAR_HEADER_GEOMETRY, SEVEN, CALENDAR_HEADER, CALENDAR_MONTH, GROUP_LIVE, GROUP_CONTROL, INPUT_GROUP, NUMBER_INPUT_SIZES, NUMBER_INPUT_STATES, NUMBER_BOX, NUMBER_INPUT, INPUT_TAG_LAYOUTS, INPUT_TAG_SIZES, INPUT_TAG_STATES, TAG_BOX, INPUT_TAG, INPUT_TAG_CHIP_SIZES, INPUT_TAG_CHIP_STATES, INPUT_TAG_CHIP_VARIANTS, CHIP_GEOMETRY, INPUT_TAG_CHIP, INPUT_TAG_OPTION_STATES, INPUT_TAG_OPTION, SELECT_GEOMETRY, MENU_ITEM, MENU_CONTENT, SELECT, COMBOBOX, INPUT_OTP_SIZES, INPUT_OTP_VARIANTS, INPUT_OTP_STATES, INPUT_OTP_SLOT_STATES, INPUT_OTP, OTP_SLOT_BOX, OTP_SLOT_FONT, OTP_CARET, INPUT_OTP_SLOT, CHECKBOX, RADIO_GROUP, SWITCH_GEOMETRY, SWITCH, SLIDER, FIELD_STATES, FIELD, LABEL, PASSWORD_STRENGTH_SIZES, PASSWORD_STRENGTHS, STRENGTH_SEGMENT, STRENGTH_LEVEL, PASSWORD_STRENGTH, METER_HEIGHT, PASSWORD_STRENGTH_METER, RULE_ICON, RULE_MARKER, RULE_FONT, PASSWORD_STRENGTH_RULE, FILE_UPLOAD, DROPZONE, NATIVE_SELECT_STATES, NATIVE_SELECT, CALENDAR;
+var FIELD_FIXED, FIELD_FOCUS, INPUT_STATES, INPUT_SIZES, INPUT_TYPES, INPUT_GEOMETRY, INPUT_GLYPH, INPUT_STROKE_IN_LAYOUT, INPUT, TEXTAREA_SIZES, TEXTAREA_STATES, TEXTAREA_HEIGHT, TEXTAREA_PAD, TEXTAREA_FONT, TEXTAREA_GLYPH, TEXTAREA, DATE_PICKER_TRIGGER_SIZES, DATE_PICKER_TRIGGER_STATES, DPT_GEOMETRY, DATE_PICKER_TRIGGER, DATE_PICKER_POPOVER, CALENDAR_DAY_SIZES, CALENDAR_DAY_STATES, CALENDAR_DAY_VARIANTS, CALENDAR_DAY_GEOMETRY, CALENDAR_DAY, CALENDAR_HEADER_SIZES, CALENDAR_HEADER_GEOMETRY, SEVEN, CALENDAR_HEADER, CALENDAR_MONTH, CALENDAR_PRESETS_SIZES, CALENDAR_PRESETS_VARIANTS, CALENDAR_PRESETS_GEOMETRY, CALENDAR_PRESETS, GROUP_LIVE, GROUP_CONTROL, INPUT_GROUP, NUMBER_INPUT_SIZES, NUMBER_INPUT_STATES, NUMBER_BOX, NUMBER_INPUT, INPUT_TAG_LAYOUTS, INPUT_TAG_SIZES, INPUT_TAG_STATES, TAG_BOX, INPUT_TAG, INPUT_TAG_CHIP_SIZES, INPUT_TAG_CHIP_STATES, INPUT_TAG_CHIP_VARIANTS, CHIP_GEOMETRY, INPUT_TAG_CHIP, INPUT_TAG_OPTION_STATES, INPUT_TAG_OPTION, SELECT_GEOMETRY, MENU_ITEM, MENU_CONTENT, SELECT, COMBOBOX, INPUT_OTP_SIZES, INPUT_OTP_VARIANTS, INPUT_OTP_STATES, INPUT_OTP_SLOT_STATES, INPUT_OTP, OTP_SLOT_BOX, OTP_SLOT_FONT, OTP_CARET, INPUT_OTP_SLOT, CHECKBOX, RADIO_GROUP, SWITCH_GEOMETRY, SWITCH, SLIDER, FIELD_STATES, FIELD, LABEL, PASSWORD_STRENGTH_SIZES, PASSWORD_STRENGTHS, STRENGTH_SEGMENT, STRENGTH_LEVEL, PASSWORD_STRENGTH, METER_HEIGHT, PASSWORD_STRENGTH_METER, RULE_ICON, RULE_MARKER, RULE_FONT, PASSWORD_STRENGTH_RULE, FILE_UPLOAD, DROPZONE, NATIVE_SELECT_STATES, NATIVE_SELECT, CALENDAR;
 var init_forms = __esm({
   "src/lib/recipes/forms.ts"() {
     init_helpers();
@@ -9339,6 +9361,32 @@ var init_forms = __esm({
             week: { height: g.box }
           };
         })
+      ]
+    };
+    CALENDAR_PRESETS_SIZES = ["default", "sm"];
+    CALENDAR_PRESETS_VARIANTS = ["default", "secondary"];
+    CALENDAR_PRESETS_GEOMETRY = {
+      // No token is 160 or 140 wide: summed spacing steps (128 + 32 · 128 + 12).
+      default: { width: "spacing.32+spacing.8", inset: "spacing.inset-surface", row: "size.compact" },
+      sm: { width: "spacing.32+spacing.3", inset: "spacing.inset-control", row: "spacing.6+spacing.1" }
+    };
+    CALENDAR_PRESETS = {
+      key: "CalendarPresets",
+      slots: ["root", "label", "preset"],
+      defaults: { Size: "default", Variant: "default" },
+      parts: [
+        part({}, () => ({
+          root: { stroke: c("border.default"), strokeRightWidth: "stroke.divider", gap: "spacing.0_5" },
+          label: { text: c("content.secondary"), font: "type.caption" },
+          preset: { radius: "radius.action", paddingX: "spacing.2", text: c("content.primary"), font: "type.body-sm" }
+        })),
+        part({ Size: CALENDAR_PRESETS_SIZES }, (size) => {
+          const g = CALENDAR_PRESETS_GEOMETRY[size];
+          return { root: { width: g.width, paddingX: g.inset, paddingY: g.inset }, preset: { height: g.row } };
+        }),
+        part({ Variant: CALENDAR_PRESETS_VARIANTS }, (variant) => ({
+          'preset[data-selected="true"]': variant === "secondary" ? { fill: c("surface.muted"), text: c("content.primary") } : { fill: c("surface.selected"), text: c("content.accent") }
+        }))
       ]
     };
     GROUP_LIVE = ':not([data-force-state]):not([aria-disabled="true"]):not(:has(:disabled))';
@@ -11072,6 +11120,7 @@ var init_componentRecipes = __esm({
       CalendarDay: CALENDAR_DAY,
       CalendarHeader: CALENDAR_HEADER,
       CalendarMonth: CALENDAR_MONTH,
+      CalendarPresets: CALENDAR_PRESETS,
       DatePickerPopover: DATE_PICKER_POPOVER,
       InputGroup: INPUT_GROUP,
       NumberInput: NUMBER_INPUT,
@@ -13957,7 +14006,7 @@ var init_useDesignStore = __esm({
         }),
         {
           name: "scalable-designs-store",
-          version: 122,
+          version: 123,
           migrate: (persisted, version) => {
             if (persisted) {
               delete persisted.styleDirection;
@@ -15442,6 +15491,19 @@ var init_useDesignStore = __esm({
                 const at = sel.indexOf("Calendar");
                 if (at < 0 || sel.includes("CalendarMonth")) return;
                 sel.splice(at, 0, "CalendarMonth");
+              };
+              add2(persisted);
+              if (Array.isArray(persisted.savedSystems)) {
+                for (const sys of persisted.savedSystems) add2(sys?.snapshot);
+              }
+            }
+            if (version < 123) {
+              const add2 = (state2) => {
+                if (!Array.isArray(state2?.selectedComponents)) return;
+                const sel = state2.selectedComponents;
+                const at = sel.indexOf("Calendar");
+                if (at < 0 || sel.includes("CalendarPresets")) return;
+                sel.splice(at, 0, "CalendarPresets");
               };
               add2(persisted);
               if (Array.isArray(persisted.savedSystems)) {

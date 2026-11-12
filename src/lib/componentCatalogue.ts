@@ -699,6 +699,28 @@ export const COMPONENTS: ComponentDef[] = [
     accessibility: 'Each day is a button (see CalendarDay); Disabled and Unavailable days are disabled. The weekday row is plain text.',
   },
   {
+    key: 'CalendarPresets',
+    label: 'Calendar Presets',
+    category: 'Form Controls',
+    description: 'The rail beside a range Calendar: a "PRESETS" label over quick ranges, the one matching the selection tinted like the range.',
+    usage: 'Use on the left of a range Calendar for common spans (Today, Last 7 days…). Pick the Variant that matches the CalendarDay cells next to it.',
+    // The Figma file\'s axes, value for value (design-plans/calendar-presets-contract.md).
+    axes: [
+      { name: 'Size', values: ['default', 'sm'] },
+      { name: 'Variant', values: ['default', 'secondary'] },
+    ],
+    figmaSets: ['CalendarPresets'],
+    props: [
+      { name: 'size', type: '"default" | "sm"', description: 'Figma Size: a 160 or 140 px rail, 32 or 28 px rows.' },
+      { name: 'variant', type: '"default" | "secondary"', description: 'Figma Variant: the selected preset\'s tint, as CalendarDay\'s range.' },
+      { name: 'presets', type: 'string[]', description: 'The quick ranges. Default: Today, Yesterday, Last 7 days, Last 30 days, This month.' },
+      { name: 'selected', type: 'string | null', description: 'The preset matching the selection. Default "Last 7 days".' },
+      { name: 'onSelect', type: '(preset: string) => void', description: 'A preset was pressed.' },
+      { name: 'label', type: 'ReactNode', description: 'The heading, default "PRESETS".' },
+    ],
+    accessibility: 'Each preset is a button whose visible text is its name; the selected one carries aria-pressed.',
+  },
+  {
     key: 'Calendar',
     label: 'Calendar',
     category: 'Form Controls',

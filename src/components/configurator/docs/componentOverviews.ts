@@ -165,6 +165,10 @@ export const OVERVIEWS: Record<string, Overview> = {
     each('State', ['RangeStart', 'RangeMiddle', 'RangeEnd', 'Disabled', 'Unavailable'], { Variant: 'secondary' }, 64),
     each('Size', ['default', 'sm'], { State: 'Selected' }, 64),
   ],
+  CalendarPresets: [
+    each('Variant', ['default', 'secondary'], { Size: 'default' }, 180),
+    each('Variant', ['default', 'secondary'], { Size: 'sm' }, 160),
+  ],
   CalendarMonth: [
     ...stack('Mode', ['single', 'multiple', 'range'], { Size: 'default', Variant: 'default' }),
     ...stack('Variant', ['default', 'secondary'], { Size: 'default', Mode: 'range' }),

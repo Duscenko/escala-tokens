@@ -377,6 +377,45 @@ export const CALENDAR_MONTH: ComponentRecipe = {
   ],
 }
 
+// ── CalendarPresets ────────────────────────────────────────────────────────
+// The Figma `CalendarPresets` set (design-plans/calendar-presets-contract.md, 423:988, 4 variants:
+// Size default · sm × Variant default · secondary). The rail beside a range Calendar: a column 160
+// (default) · 140 (sm) wide, padded Spacing/inset-surface · inset-control, with a Stroke/divider edge
+// in Border/default on its RIGHT side only, 2px between rows. The "PRESETS" label (Type/caption,
+// Content/secondary) over the presets: rows as wide as the rail, 32 · 28 tall, 8px inline padding,
+// Radius/action, Type/body-sm in Content/primary. The preset whose range is the selection takes the
+// range tint: Surface/selected + Content/accent, or Surface/muted + Content/primary for secondary
+// (the CalendarDay RangeMiddle pair). The file draws no hover or focus.
+export const CALENDAR_PRESETS_SIZES = ['default', 'sm'] as const
+export const CALENDAR_PRESETS_VARIANTS = ['default', 'secondary'] as const
+const CALENDAR_PRESETS_GEOMETRY: Record<string, { width: string; inset: string; row: string }> = {
+  // No token is 160 or 140 wide: summed spacing steps (128 + 32 · 128 + 12).
+  default: { width: 'spacing.32+spacing.8', inset: 'spacing.inset-surface', row: 'size.compact' },
+  sm: { width: 'spacing.32+spacing.3', inset: 'spacing.inset-control', row: 'spacing.6+spacing.1' },
+}
+
+export const CALENDAR_PRESETS: ComponentRecipe = {
+  key: 'CalendarPresets',
+  slots: ['root', 'label', 'preset'],
+  defaults: { Size: 'default', Variant: 'default' },
+  parts: [
+    part({}, () => ({
+      root: { stroke: c('border.default'), strokeRightWidth: 'stroke.divider', gap: 'spacing.0_5' },
+      label: { text: c('content.secondary'), font: 'type.caption' },
+      preset: { radius: 'radius.action', paddingX: 'spacing.2', text: c('content.primary'), font: 'type.body-sm' },
+    })),
+    part({ Size: CALENDAR_PRESETS_SIZES }, (size) => {
+      const g = CALENDAR_PRESETS_GEOMETRY[size]
+      return { root: { width: g.width, paddingX: g.inset, paddingY: g.inset }, preset: { height: g.row } }
+    }),
+    part({ Variant: CALENDAR_PRESETS_VARIANTS }, (variant) => ({
+      'preset[data-selected="true"]': variant === 'secondary'
+        ? { fill: c('surface.muted'), text: c('content.primary') }
+        : { fill: c('surface.selected'), text: c('content.accent') },
+    })),
+  ],
+}
+
 // ── InputGroup ─────────────────────────────────────────────────────────────
 
 // The group IS the field box, so it paints what the bare Input paints in each

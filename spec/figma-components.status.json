@@ -26,10 +26,6 @@
       "status": "part",
       "of": "Calendar"
     },
-    "CalendarPresets": {
-      "status": "part",
-      "of": "Calendar"
-    },
     "FileUpload": {
       "status": "rebuild"
     },

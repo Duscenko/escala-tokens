@@ -190,3 +190,13 @@ Every row cost a round trip with the owner. Check each one before calling a comp
 | A set that is only a grid of another set's instances (Month = weekdays + 5 weeks of CalendarDay) | Tempting to redraw days or put paint in the Month recipe | The recipe holds only the Month's own geometry (7 × day box, weekday cell, Type/caption ink); the days are `<CalendarDay>` with the Figma state per date |
 | A sample frame that mixes states (Today next to Selected, Unavailable beside Disabled) | Looks like a bug to "fix" | Copy it as the default data when no `selected` / `range` / `today` / `disabledDays` props arrive; real data overrides it |
 | A python edit script with a syntax error | Nothing applied (python compiles the whole heredoc first) except what ran in an earlier script | Check `git status` after a multi-file edit before measuring |
+
+# Lessons from the CalendarPresets (2026-11-12)
+
+| Trap | What it looked like | The fix (where it lives) |
+|---|---|---|
+| A border on ONE side (the rail's right divider, `strokeRightWeight` bound to Stroke/divider, the other sides 0) | `strokeWidth` draws all four sides | Recipe property `strokeRightWidth` (`helpers.ts` RECIPE_PROPS, `recipeStyles.ts`, `tokenTrace.ts` label + list), beside `strokeTopWidth` / `strokeBottomWidth`; colour with `stroke`. Not in `figmaRefs` (the frozen plugin does not bind it) |
+| `figma.mixed` (a Symbol) inside a template string | `TypeError: cannot convert symbol to string` (a frame with per-side strokes has `strokeWeight` mixed) | Wrap reads in `typeof x === 'symbol' ? 'mixed' : x`, and read `strokeTopWeight` … `strokeLeftWeight` for per-side strokes |
+| A fixed width with no variable (160 · 140) | No size token | Summed spacing steps (`spacing.32+spacing.8`, `spacing.32+spacing.3`) |
+| A label written in capitals in the text ("PRESETS", textCase ORIGINAL) | Tempting to add `uppercase` | Render the string as written; the default `label` prop is the uppercase text |
+| A review that says gaps are wrong everywhere | Ten components "missing gap" | Measure each against the file first (Storybook positions vs Figma `absoluteBoundingBox` relative to the variant): all ten matched to the pixel; ask for screenshots instead of changing code |

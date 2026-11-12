@@ -23,6 +23,12 @@
 // the file's axes. With no data it shows the file's own November 2026 sample (today the 7th; selected
 // the 12th, the 4th, 12th, 19th and 30th, or the range 10–18; 24 and 25 disabled, 27 unavailable).
 // Paint: the CalendarMonth recipe; the cells are CalendarDay.
+//
+// CalendarPresets is the FIGMA `CalendarPresets` set (design-plans/calendar-presets-contract.md, 423:988):
+// the rail beside a range Calendar, a "PRESETS" label over a list of quick ranges with a divider on its
+// right edge. `size` default · sm and `variant` default · secondary (CalendarDay's) are the file's axes;
+// `presets`, `selected` and `onSelect` are code. The selected preset takes the range tint.
+// Paint: the CalendarPresets recipe.
 import * as React from 'react'
 import { DayPicker, getDefaultClassNames, type DayButtonProps } from 'react-day-picker'
 import { cn } from '../../lib/utils'
@@ -322,4 +328,54 @@ function CalendarMonth({
   )
 }
 
-export { Calendar, CalendarDayButton, CalendarDay, CalendarHeader, CalendarMonth }
+export const CALENDAR_PRESETS_SIZES = ['default', 'sm'] as const
+export type CalendarPresetsSize = (typeof CALENDAR_PRESETS_SIZES)[number]
+export const CALENDAR_PRESETS_VARIANTS = ['default', 'secondary'] as const
+export type CalendarPresetsVariant = (typeof CALENDAR_PRESETS_VARIANTS)[number]
+/** The file's five presets, in its order. */
+export const CALENDAR_PRESET_LABELS = ['Today', 'Yesterday', 'Last 7 days', 'Last 30 days', 'This month']
+
+export interface CalendarPresetsProps extends Omit<React.ComponentProps<'div'>, 'children' | 'onSelect'> {
+  size?: CalendarPresetsSize
+  /** Matches CalendarDay's Variant: the tint of the selected preset. */
+  variant?: CalendarPresetsVariant
+  /** The rail's heading. Default "PRESETS", as the file writes it. */
+  label?: React.ReactNode
+  /** The presets, in order. Default: the file's five. */
+  presets?: string[]
+  /** The preset whose range is the selection. Default "Last 7 days", the file's sample. */
+  selected?: string | null
+  onSelect?: (preset: string) => void
+}
+
+function CalendarPresets({
+  size = 'default', variant = 'default', label = 'PRESETS', presets = CALENDAR_PRESET_LABELS, selected = 'Last 7 days', onSelect, className, ...props
+}: CalendarPresetsProps) {
+  return (
+    <div
+      data-slot="calendar-presets"
+      data-escala="CalendarPresets"
+      data-size={size}
+      data-variant={variant}
+      className={cn('flex shrink-0 flex-col', className)}
+      {...props}
+    >
+      <span data-part="CalendarPresets.label">{label}</span>
+      {presets.map((p) => (
+        <button
+          key={p}
+          type="button"
+          data-part="CalendarPresets.preset"
+          data-selected={p === selected ? 'true' : undefined}
+          aria-pressed={p === selected}
+          onClick={onSelect ? () => onSelect(p) : undefined}
+          className="flex w-full shrink-0 cursor-pointer items-center border-0 bg-transparent text-left outline-none"
+        >
+          {p}
+        </button>
+      ))}
+    </div>
+  )
+}
+
+export { Calendar, CalendarDayButton, CalendarDay, CalendarHeader, CalendarMonth, CalendarPresets }
