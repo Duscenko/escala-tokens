@@ -29,7 +29,9 @@ function IconButton({ icon, badge, variant = 'default', appearance = 'solid', si
       size={size}
       data-slot="icon-button"
       className={badge ? ['relative', className].filter(Boolean).join(' ') : className}
-      leading={icon}
+      // The icon slot is the file's `icon` frame (Size/icon-sm · sm · md · lg per Size):
+      // whatever glyph arrives fills it, so an unsized SVG cannot fill the whole button.
+      leading={<span data-part="IconButton.icon" className="inline-flex shrink-0 items-center justify-center [&>svg]:size-full">{icon}</span>}
     >
       {badge ? (
         <span data-part="IconButton.badge" className="absolute -top-1 -right-1">

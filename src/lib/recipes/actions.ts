@@ -122,6 +122,8 @@ export const BUTTON: ComponentRecipe = {
   ],
 }
 
+const ICON_BUTTON_GLYPH: Record<string, string> = { xs: 'icon.small', sm: 'icon.small', default: 'icon.medium', lg: 'icon.large' }
+
 /** The icon-only button: a square at the Button heights, no inset, one icon slot. */
 export const ICON_BUTTON: ComponentRecipe = {
   key: 'IconButton',
@@ -133,6 +135,8 @@ export const ICON_BUTTON: ComponentRecipe = {
     })),
     part({ Size: BUTTON_SIZES }, (size) => ({
       root: { height: BUTTON_HEIGHT[size], width: BUTTON_HEIGHT[size], paddingX: 'spacing.0' },
+      // The file's icon frame: Size/icon-sm at xs and sm, icon-md at default, icon-lg at lg.
+      icon: { width: ICON_BUTTON_GLYPH[size], height: ICON_BUTTON_GLYPH[size] },
     })),
     part({ Variant: BUTTON_VARIANTS, Appearance: BUTTON_APPEARANCES, State: BUTTON_STATES }, (v, a, s) => buttonPaint(v, a, s, true)),
   ],
