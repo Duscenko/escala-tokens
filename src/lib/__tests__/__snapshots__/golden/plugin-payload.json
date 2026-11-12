@@ -14339,18 +14339,30 @@
         "root",
         "label",
         "value",
+        "control",
         "track",
         "range",
-        "thumb"
+        "tooltips",
+        "tooltip",
+        "marks",
+        "mark",
+        "tick",
+        "markLabel"
       ],
-      "defaults": {},
+      "defaults": {
+        "Size": "default",
+        "Range": "single",
+        "State": "Default",
+        "Variant": "default"
+      },
       "parts": [
         {
           "axes": [],
           "values": {
             "": {
               "root": {
-                "gap": "spacing.gap-control"
+                "gap": "spacing.gap-control",
+                "width": "spacing.32+spacing.32+spacing.16"
               },
               "label": {
                 "text": "color.content.secondary",
@@ -14362,26 +14374,238 @@
               },
               "track": {
                 "fill": "color.surface.muted",
-                "height": "spacing.1_5",
-                "radius": "radius.pill"
+                "radius": "radius.control"
               },
               "range": {
-                "fill": "color.action.primary.default",
-                "radius": "radius.pill"
+                "radius": "radius.control"
               },
-              "thumb": {
-                "fill": "color.surface.page",
-                "stroke": "color.action.primary.default",
+              "tooltips": {
+                "height": "spacing.6+spacing.1"
+              },
+              "tooltip": {
+                "fill": "color.surface.inverse",
+                "text": "color.content.inverse",
+                "font": "type.caption",
+                "radius": "radius.control",
+                "width": "spacing.8+spacing.1",
+                "height": "spacing.6"
+              },
+              "marks": {
+                "height": "spacing.6"
+              },
+              "mark": {
+                "width": "spacing.5",
+                "height": "spacing.5",
+                "gap": "spacing.gap-tight"
+              },
+              "tick": {
+                "fill": "color.border.strong",
+                "opacity": "0.5",
+                "width": "spacing.0_5",
+                "height": "spacing.1_5"
+              },
+              "markLabel": {
+                "text": "color.content.secondary",
+                "font": "type.caption"
+              }
+            }
+          }
+        },
+        {
+          "axes": [
+            "Size"
+          ],
+          "values": {
+            "xs": {
+              "control": {
+                "height": "size.compact"
+              },
+              "track": {
+                "height": "spacing.1"
+              }
+            },
+            "sm": {
+              "control": {
+                "height": "spacing.8+spacing.1"
+              },
+              "track": {
+                "height": "spacing.1_5"
+              }
+            },
+            "default": {
+              "control": {
+                "height": "size.control"
+              },
+              "track": {
+                "height": "spacing.2"
+              }
+            }
+          }
+        },
+        {
+          "axes": [
+            "Variant",
+            "State"
+          ],
+          "values": {
+            "default|Default": {
+              "range": {
+                "fill": "color.action.primary.default"
+              }
+            },
+            "default|Dragging": {
+              "range": {
+                "fill": "color.action.primary.default"
+              }
+            },
+            "default|Disabled": {
+              "range": {
+                "fill": "color.action.disabled.default"
+              }
+            },
+            "secondary|Default": {
+              "range": {
+                "fill": "color.content.primary"
+              }
+            },
+            "secondary|Dragging": {
+              "range": {
+                "fill": "color.content.primary"
+              }
+            },
+            "secondary|Disabled": {
+              "range": {
+                "fill": "color.action.disabled.default"
+              }
+            }
+          }
+        }
+      ]
+    },
+    "SliderThumb": {
+      "key": "SliderThumb",
+      "slots": [
+        "root"
+      ],
+      "defaults": {
+        "Size": "default",
+        "State": "Default",
+        "Variant": "default"
+      },
+      "parts": [
+        {
+          "axes": [],
+          "values": {
+            "": {
+              "root": {
+                "radius": "radius.control",
                 "strokeWidth": "stroke.md",
-                "height": "selector.control",
-                "width": "selector.control",
-                "radius": "radius.pill",
-                "shadow": "shadow.sm",
                 "hit": "size.hit"
-              },
-              "thumb:focus-visible": {
+              }
+            }
+          }
+        },
+        {
+          "axes": [
+            "Size"
+          ],
+          "values": {
+            "xs": {
+              "root": {
+                "width": "spacing.3+spacing.0_5",
+                "height": "spacing.3+spacing.0_5"
+              }
+            },
+            "sm": {
+              "root": {
+                "width": "spacing.4",
+                "height": "spacing.4"
+              }
+            },
+            "default": {
+              "root": {
+                "width": "spacing.5",
+                "height": "spacing.5"
+              }
+            }
+          }
+        },
+        {
+          "axes": [
+            "Variant",
+            "State"
+          ],
+          "values": {
+            "default|Default": {
+              "root": {
+                "fill": "color.content.on-action",
+                "stroke": "color.action.primary.default",
+                "shadow": "shadow.xs"
+              }
+            },
+            "default|Hover": {
+              "root": {
+                "fill": "color.content.on-action",
+                "stroke": "color.action.primary.hover",
+                "shadow": "shadow.xs"
+              }
+            },
+            "default|Focused": {
+              "root": {
+                "fill": "color.content.on-action",
+                "stroke": "color.border.focus",
                 "focus": "color.border.focus",
                 "ring": "color.border.ring.default"
+              }
+            },
+            "default|Dragging": {
+              "root": {
+                "fill": "color.content.on-action",
+                "stroke": "color.action.primary.default",
+                "highlight": "none"
+              }
+            },
+            "default|Disabled": {
+              "root": {
+                "fill": "color.surface.muted",
+                "stroke": "color.action.disabled.default",
+                "highlight": "none"
+              }
+            },
+            "secondary|Default": {
+              "root": {
+                "fill": "color.content.on-action",
+                "stroke": "color.content.primary",
+                "shadow": "shadow.xs"
+              }
+            },
+            "secondary|Hover": {
+              "root": {
+                "fill": "color.content.on-action",
+                "stroke": "color.content.secondary",
+                "shadow": "shadow.xs"
+              }
+            },
+            "secondary|Focused": {
+              "root": {
+                "fill": "color.content.on-action",
+                "stroke": "color.border.strong",
+                "focus": "color.border.strong",
+                "ring": "color.border.subtle"
+              }
+            },
+            "secondary|Dragging": {
+              "root": {
+                "fill": "color.content.on-action",
+                "stroke": "color.content.primary",
+                "highlight": "none"
+              }
+            },
+            "secondary|Disabled": {
+              "root": {
+                "fill": "color.surface.muted",
+                "stroke": "color.action.disabled.default",
+                "highlight": "none"
               }
             }
           }
@@ -14389,8 +14613,8 @@
       ],
       "motion": {
         "transitions": {
-          "thumb": {
-            "transform": "use-hover",
+          "root": {
+            "border-color": "use-hover",
             "box-shadow": "use-focus"
           }
         }

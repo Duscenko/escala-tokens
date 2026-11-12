@@ -323,7 +323,7 @@ describe('Input (Figma)', () => {
 // minimum target. The glyph keeps its size; a transparent `::before` of at
 // least `size.hit` is the pointer target (Figma audit, Phase 4).
 describe('target size', () => {
-  const hitSlots: [string, string][] = [['Checkbox', 'root'], ['Switch', 'root'], ['RadioGroup', 'item'], ['Slider', 'thumb'], ['Chip', 'remove']]
+  const hitSlots: [string, string][] = [['Checkbox', 'root'], ['Switch', 'root'], ['RadioGroup', 'item'], ['SliderThumb', 'root'], ['Chip', 'remove']]
   it.each(hitSlots)('%s %s carries a size.hit target', (key, slot) => {
     expect(resolveRecipe(COMPONENT_RECIPES[key])[slot]?.hit).toBe('size.hit')
   })

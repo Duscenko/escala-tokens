@@ -294,3 +294,13 @@ Every row cost a round trip with the owner. Check each one before calling a comp
 | The selection used to slide (SlidingSelection pill) | In the file the checked item IS the raised thumb | Dropped the pill; the item paints its own fill and shadow; background / shadow transition in `recipes/motion.ts` (key `SegmentedControlItem`) |
 | A roving radiogroup | One tab stop, arrows move and select | `tabIndex` 0 only on the checked item, the group's `onKeyDown` clicks the next enabled radio |
 | Text width 31.49 vs Figma 32 | Every item 1px narrower | Figma rounds the text box; same layout (padding 12 + text) |
+
+# Lessons from the Slider and SliderThumb (2026-11-12)
+
+| Trap | What it looked like | The fix (where it lives) |
+|---|---|---|
+| Radix draws the range from 0 to the value's percent of the track | 128px at 40 % vs the file's 130 (the thumb centre) | Own `<span data-part="Slider.range">` positioned by `calc(half-thumb + p × (100% − thumb))`; Radix still gives the thumbs, keyboard and pointer |
+| The thumb is a separate set with the states | A Radix thumb has no `dragging` | `SliderThumb` is its own component; `Radix Thumb asChild` wraps it. The Slider pins `Dragging` on the thumb that MOVED (index from `onValueChange`, not from focus) while the pointer is down |
+| A flex child squeezed to 0 (tick 2×6 inside a 20px mark that holds 26px) | tick height 0 | `shrink-0` on the tick; the mark overflows like the file's |
+| A recipe slot test written for the old slot (`['Slider','thumb']`) | `hitSlots` expected `Slider.thumb` | Point it at `SliderThumb.root` |
+| A shadow style with no ring and a 4px halo with spread | Dragging draws nothing | Copy: no effect (spread on a non-clipping frame) |

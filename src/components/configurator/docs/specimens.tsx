@@ -38,7 +38,7 @@ import {
   SkeletonInputSpecimen, SkeletonTextareaSpecimen, SkeletonInputGroupSpecimen, SkeletonNumberInputSpecimen,
   SkeletonInputTagSpecimen, SkeletonInputTagChipSpecimen, SkeletonInputTagOptionSpecimen, SkeletonSelectSpecimen, SkeletonComboboxSpecimen, SkeletonInputOTPSpecimen, SkeletonInputOTPSlotSpecimen,
   SkeletonCheckboxSpecimen, SkeletonCheckboxItemSpecimen, SkeletonCheckboxGroupSpecimen, SkeletonRadioGroupSpecimen,
-  SkeletonSwitchSpecimen, SkeletonSwitchGroupSpecimen, SkeletonSliderSpecimen, SkeletonFileUploadSpecimen,
+  SkeletonSwitchSpecimen, SkeletonSwitchGroupSpecimen, SkeletonSliderSpecimen, SkeletonSliderThumbSpecimen, SkeletonFileUploadSpecimen,
   SkeletonFileUploadDropzoneSpecimen, SkeletonFileUploadItemSpecimen, SkeletonFieldSpecimen, SkeletonLabelSpecimen, SkeletonPasswordStrengthSpecimen, SkeletonPasswordStrengthMeterSpecimen, SkeletonPasswordStrengthRuleSpecimen,
   SkeletonNativeSelectSpecimen,
 } from './skeleton/forms'
@@ -405,6 +405,7 @@ export const SPECIMENS: Record<string, (p: SpecimenProps) => ReactNode> = {
   Switch: SkeletonSwitchSpecimen,
   SwitchGroup: SkeletonSwitchGroupSpecimen,
   Slider: SkeletonSliderSpecimen,
+  SliderThumb: SkeletonSliderThumbSpecimen,
   FileUpload: SkeletonFileUploadSpecimen,
   FileUploadDropzone: SkeletonFileUploadDropzoneSpecimen,
   FileUploadItem: SkeletonFileUploadItemSpecimen,

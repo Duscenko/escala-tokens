@@ -4812,18 +4812,43 @@ var init_componentCatalogue = __esm({
         key: "Slider",
         label: "Slider",
         category: "Form Controls",
-        description: "Draggable track for picking a value inside a continuous range.",
-        usage: "Use when the precise value matters less than the position in a range. Show the value.",
-        axes: [],
+        description: "Single or range value with an optional tooltip above the thumbs and tick marks under the track.",
+        usage: "Use when the precise value matters less than the position in a range. Show the value (tooltip) when it matters. Range picks two ends.",
+        // The Figma file's axes, value for value (design-plans/slider-contract.md).
+        axes: [
+          { name: "Size", values: ["xs", "sm", "default"] },
+          { name: "Range", values: ["single", "range"] },
+          { name: "State", values: ["Default", "Dragging", "Disabled"] },
+          { name: "Variant", values: ["default", "secondary"] }
+        ],
         figmaSets: ["Slider"],
         props: [
-          { name: "label", type: "ReactNode", description: "Name shown with the live value." },
-          { name: "value / defaultValue", type: "number", description: "Current value." },
+          { name: "value / defaultValue / onValueChange", type: "number | number[]", description: "A number is a single slider, an array a range (Figma Range)." },
           { name: "min / max / step", type: "number", description: "Range and increment." },
-          { name: "onValueChange", type: "(value: number) => void", description: "Fires while dragging." },
-          { name: "format", type: "(value: number) => string", description: 'How the live value reads (default "60%").' }
+          { name: "size / variant", type: "Size / Variant", description: "Control 32 \xB7 36 \xB7 40 high; edge and fill colour (default accent, secondary neutral)." },
+          { name: "tooltipVisible / marksVisible", type: "boolean", description: "Figma TooltipVisible and MarksVisible." },
+          { name: "tooltipText / tooltipEndText", type: "string", description: "Figma TooltipText and TooltipEndText: what the tooltips read (default: the values)." },
+          { name: "forceState", type: '"Default" | "Dragging" | "Disabled"', description: "Pin a state for docs." }
         ],
-        accessibility: 'role="slider" with aria-valuenow/min/max. Arrow keys adjust by step.'
+        accessibility: 'role="slider" with aria-valuenow/min/max on each thumb. Arrow keys adjust by step; give the slider an aria-label.'
+      },
+      {
+        key: "SliderThumb",
+        label: "Slider Thumb",
+        category: "Form Controls",
+        description: "The thumb of a Slider: a white square with an edge in the variant colour; Hover, Focused, Dragging and Disabled states.",
+        usage: "Only inside a Slider.",
+        axes: [
+          { name: "Size", values: ["xs", "sm", "default"] },
+          { name: "State", values: ["Default", "Hover", "Focused", "Dragging", "Disabled"] },
+          { name: "Variant", values: ["default", "secondary"] }
+        ],
+        figmaSets: ["SliderThumb"],
+        props: [
+          { name: "size / variant", type: "Size / Variant", description: "Thumb 14 \xB7 16 \xB7 20; edge colour." },
+          { name: "forceState", type: "State", description: "Pin a state for docs." }
+        ],
+        accessibility: 'Presentational: the Slider gives it role="slider" through Radix.'
       },
       {
         key: "FileUpload",
@@ -9322,6 +9347,22 @@ function switchPaint(checked, state2) {
     thumbIcon: { text: c(disabled ? "content.disabled" : on ? "action.primary.default" : "content.subtle") }
   };
 }
+function sliderThumbPaint(variant, state2) {
+  const k = SLIDER_THUMB_EDGE[variant];
+  if (state2 === "Disabled") return { root: { fill: c("surface.muted"), stroke: c("action.disabled.default"), highlight: NONE } };
+  const root = { fill: c("content.on-action"), stroke: c(k.rest), shadow: "shadow.xs" };
+  if (state2 === "Hover") root.stroke = c(k.hover);
+  else if (state2 === "Focused") {
+    root.stroke = c(k.focus);
+    root.focus = c(k.focus);
+    root.ring = c(k.ring);
+    delete root.shadow;
+  } else if (state2 === "Dragging") {
+    delete root.shadow;
+    root.highlight = NONE;
+  }
+  return { root };
+}
 function fileUploadDropzonePaint(state2) {
   const ink = (role) => ({ text: c(role) });
   if (state2 === "Dragging") return {
@@ -9349,7 +9390,7 @@ function fileUploadDropzonePaint(state2) {
     description: ink("content.secondary")
   };
 }
-var FIELD_FIXED, FIELD_FOCUS, INPUT_STATES, INPUT_SIZES, INPUT_TYPES, INPUT_GEOMETRY, INPUT_GLYPH, INPUT_STROKE_IN_LAYOUT, INPUT, TEXTAREA_SIZES, TEXTAREA_STATES, TEXTAREA_HEIGHT, TEXTAREA_PAD, TEXTAREA_FONT, TEXTAREA_GLYPH, TEXTAREA, DATE_PICKER_TRIGGER_SIZES, DATE_PICKER_TRIGGER_STATES, DPT_GEOMETRY, DATE_PICKER_TRIGGER, DATE_PICKER_POPOVER, CALENDAR_DAY_SIZES, CALENDAR_DAY_STATES, CALENDAR_DAY_VARIANTS, CALENDAR_DAY_GEOMETRY, CALENDAR_DAY, CALENDAR_HEADER_SIZES, CALENDAR_HEADER_GEOMETRY, SEVEN, CALENDAR_HEADER, CALENDAR_MONTH, CALENDAR_PRESETS_SIZES, CALENDAR_PRESETS_VARIANTS, CALENDAR_PRESETS_GEOMETRY, CALENDAR_PRESETS, CALENDAR_FOOTER_SIZES, CALENDAR_FOOTER_GEOMETRY, CALENDAR_FOOTER, GROUP_LIVE, GROUP_CONTROL, INPUT_GROUP, NUMBER_INPUT_SIZES, NUMBER_INPUT_STATES, NUMBER_BOX, NUMBER_INPUT, INPUT_TAG_LAYOUTS, INPUT_TAG_SIZES, INPUT_TAG_STATES, TAG_BOX, INPUT_TAG, INPUT_TAG_CHIP_SIZES, INPUT_TAG_CHIP_STATES, INPUT_TAG_CHIP_VARIANTS, CHIP_GEOMETRY, INPUT_TAG_CHIP, INPUT_TAG_OPTION_STATES, INPUT_TAG_OPTION, SELECT_GEOMETRY, MENU_ITEM, MENU_CONTENT, SELECT, COMBOBOX, INPUT_OTP_SIZES, INPUT_OTP_VARIANTS, INPUT_OTP_STATES, INPUT_OTP_SLOT_STATES, INPUT_OTP, OTP_SLOT_BOX, OTP_SLOT_FONT, OTP_CARET, INPUT_OTP_SLOT, CHECKBOX_SIZES, CHECKBOX_CHECKED, CHECKBOX_STATES, CHECKBOX_VARIANTS, CHECKBOX_ON, CHECKBOX, CHECKBOX_ITEM_SIZES, CHECKBOX_ITEM_STATES, CHECKBOX_ITEM_TYPE, CHECKBOX_ITEM, CHECKBOX_GROUP_STATES, CHECKBOX_GROUP, RADIO_GROUP, SWITCH_SIZES, SWITCH_STATES, SWITCH_CHECKED, SWITCH_THUMBS, SWITCH_GEOMETRY, SWITCH, SWITCH_GROUP_SIZES, SWITCH_GROUP_STATES, SWITCH_GROUP_TYPE, SWITCH_GROUP, SLIDER, FIELD_STATES, FIELD, LABEL, PASSWORD_STRENGTH_SIZES, PASSWORD_STRENGTHS, STRENGTH_SEGMENT, STRENGTH_LEVEL, PASSWORD_STRENGTH, METER_HEIGHT, PASSWORD_STRENGTH_METER, RULE_ICON, RULE_MARKER, RULE_FONT, PASSWORD_STRENGTH_RULE, FILE_UPLOAD_SIZES, FILE_UPLOAD, FILE_UPLOAD_DROPZONE_SIZES, FILE_UPLOAD_DROPZONE_STATES, FUD_GEOMETRY, FILE_UPLOAD_DROPZONE, FILE_UPLOAD_ITEM_SIZES, FILE_UPLOAD_ITEM_STATUSES, FILE_UPLOAD_ITEM, NATIVE_SELECT_STATES, NATIVE_SELECT, CALENDAR_SIZES, CALENDAR;
+var FIELD_FIXED, FIELD_FOCUS, INPUT_STATES, INPUT_SIZES, INPUT_TYPES, INPUT_GEOMETRY, INPUT_GLYPH, INPUT_STROKE_IN_LAYOUT, INPUT, TEXTAREA_SIZES, TEXTAREA_STATES, TEXTAREA_HEIGHT, TEXTAREA_PAD, TEXTAREA_FONT, TEXTAREA_GLYPH, TEXTAREA, DATE_PICKER_TRIGGER_SIZES, DATE_PICKER_TRIGGER_STATES, DPT_GEOMETRY, DATE_PICKER_TRIGGER, DATE_PICKER_POPOVER, CALENDAR_DAY_SIZES, CALENDAR_DAY_STATES, CALENDAR_DAY_VARIANTS, CALENDAR_DAY_GEOMETRY, CALENDAR_DAY, CALENDAR_HEADER_SIZES, CALENDAR_HEADER_GEOMETRY, SEVEN, CALENDAR_HEADER, CALENDAR_MONTH, CALENDAR_PRESETS_SIZES, CALENDAR_PRESETS_VARIANTS, CALENDAR_PRESETS_GEOMETRY, CALENDAR_PRESETS, CALENDAR_FOOTER_SIZES, CALENDAR_FOOTER_GEOMETRY, CALENDAR_FOOTER, GROUP_LIVE, GROUP_CONTROL, INPUT_GROUP, NUMBER_INPUT_SIZES, NUMBER_INPUT_STATES, NUMBER_BOX, NUMBER_INPUT, INPUT_TAG_LAYOUTS, INPUT_TAG_SIZES, INPUT_TAG_STATES, TAG_BOX, INPUT_TAG, INPUT_TAG_CHIP_SIZES, INPUT_TAG_CHIP_STATES, INPUT_TAG_CHIP_VARIANTS, CHIP_GEOMETRY, INPUT_TAG_CHIP, INPUT_TAG_OPTION_STATES, INPUT_TAG_OPTION, SELECT_GEOMETRY, MENU_ITEM, MENU_CONTENT, SELECT, COMBOBOX, INPUT_OTP_SIZES, INPUT_OTP_VARIANTS, INPUT_OTP_STATES, INPUT_OTP_SLOT_STATES, INPUT_OTP, OTP_SLOT_BOX, OTP_SLOT_FONT, OTP_CARET, INPUT_OTP_SLOT, CHECKBOX_SIZES, CHECKBOX_CHECKED, CHECKBOX_STATES, CHECKBOX_VARIANTS, CHECKBOX_ON, CHECKBOX, CHECKBOX_ITEM_SIZES, CHECKBOX_ITEM_STATES, CHECKBOX_ITEM_TYPE, CHECKBOX_ITEM, CHECKBOX_GROUP_STATES, CHECKBOX_GROUP, RADIO_GROUP, SWITCH_SIZES, SWITCH_STATES, SWITCH_CHECKED, SWITCH_THUMBS, SWITCH_GEOMETRY, SWITCH, SWITCH_GROUP_SIZES, SWITCH_GROUP_STATES, SWITCH_GROUP_TYPE, SWITCH_GROUP, SLIDER_SIZES, SLIDER_THUMB_STATES, SLIDER_STATES, SLIDER_VARIANTS, SLIDER_THUMB_PX, SLIDER_THUMB_EDGE, SLIDER_THUMB, SLIDER_CONTROL, SLIDER, FIELD_STATES, FIELD, LABEL, PASSWORD_STRENGTH_SIZES, PASSWORD_STRENGTHS, STRENGTH_SEGMENT, STRENGTH_LEVEL, PASSWORD_STRENGTH, METER_HEIGHT, PASSWORD_STRENGTH_METER, RULE_ICON, RULE_MARKER, RULE_FONT, PASSWORD_STRENGTH_RULE, FILE_UPLOAD_SIZES, FILE_UPLOAD, FILE_UPLOAD_DROPZONE_SIZES, FILE_UPLOAD_DROPZONE_STATES, FUD_GEOMETRY, FILE_UPLOAD_DROPZONE, FILE_UPLOAD_ITEM_SIZES, FILE_UPLOAD_ITEM_STATUSES, FILE_UPLOAD_ITEM, NATIVE_SELECT_STATES, NATIVE_SELECT, CALENDAR_SIZES, CALENDAR;
 var init_forms = __esm({
   "src/lib/recipes/forms.ts"() {
     init_helpers();
@@ -10024,28 +10065,55 @@ var init_forms = __esm({
         })
       ]
     };
+    SLIDER_SIZES = ["xs", "sm", "default"];
+    SLIDER_THUMB_STATES = ["Default", "Hover", "Focused", "Dragging", "Disabled"];
+    SLIDER_STATES = ["Default", "Dragging", "Disabled"];
+    SLIDER_VARIANTS = ["default", "secondary"];
+    SLIDER_THUMB_PX = { xs: "spacing.3+spacing.0_5", sm: "spacing.4", default: "spacing.5" };
+    SLIDER_THUMB_EDGE = {
+      default: { rest: "action.primary.default", hover: "action.primary.hover", focus: "border.focus", ring: "border.ring.default" },
+      secondary: { rest: "content.primary", hover: "content.secondary", focus: "border.strong", ring: "border.subtle" }
+    };
+    SLIDER_THUMB = {
+      key: "SliderThumb",
+      slots: ["root"],
+      defaults: { Size: "default", State: "Default", Variant: "default" },
+      parts: [
+        part({}, () => ({ root: { radius: "radius.control", strokeWidth: "stroke.md", hit: "size.hit" } })),
+        part({ Size: SLIDER_SIZES }, (size) => ({ root: { width: SLIDER_THUMB_PX[size], height: SLIDER_THUMB_PX[size] } })),
+        part({ Variant: SLIDER_VARIANTS, State: SLIDER_THUMB_STATES }, sliderThumbPaint)
+      ]
+    };
+    SLIDER_CONTROL = {
+      xs: { h: "size.compact", track: "spacing.1" },
+      sm: { h: "spacing.8+spacing.1", track: "spacing.1_5" },
+      default: { h: "size.control", track: "spacing.2" }
+    };
     SLIDER = {
       key: "Slider",
-      slots: ["root", "label", "value", "track", "range", "thumb"],
-      defaults: {},
+      slots: ["root", "label", "value", "control", "track", "range", "tooltips", "tooltip", "marks", "mark", "tick", "markLabel"],
+      defaults: { Size: "default", Range: "single", State: "Default", Variant: "default" },
       parts: [
         part({}, () => ({
-          root: { gap: "spacing.gap-control" },
+          root: { gap: "spacing.gap-control", width: "spacing.32+spacing.32+spacing.16" },
+          // MIGRATION ONLY: the header row (label + live value) of the shadcn-era slider.
           label: { text: c("content.secondary"), font: "type.caption" },
           value: { text: c("content.primary"), font: "type.caption" },
-          track: { fill: c("surface.muted"), height: "spacing.1_5", radius: "radius.pill" },
-          range: { fill: c("action.primary.default"), radius: "radius.pill" },
-          thumb: {
-            fill: c("surface.page"),
-            stroke: c("action.primary.default"),
-            strokeWidth: "stroke.md",
-            height: "selector.control",
-            width: "selector.control",
-            radius: "radius.pill",
-            shadow: "shadow.sm",
-            hit: "size.hit"
-          },
-          "thumb:focus-visible": FOCUS
+          track: { fill: c("surface.muted"), radius: "radius.control" },
+          range: { radius: "radius.control" },
+          tooltips: { height: "spacing.6+spacing.1" },
+          tooltip: { fill: c("surface.inverse"), text: c("content.inverse"), font: "type.caption", radius: "radius.control", width: "spacing.8+spacing.1", height: "spacing.6" },
+          marks: { height: "spacing.6" },
+          mark: { width: "spacing.5", height: "spacing.5", gap: "spacing.gap-tight" },
+          tick: { fill: c("border.strong"), opacity: "0.5", width: "spacing.0_5", height: "spacing.1_5" },
+          markLabel: { text: c("content.secondary"), font: "type.caption" }
+        })),
+        part({ Size: SLIDER_SIZES }, (size) => ({
+          control: { height: SLIDER_CONTROL[size].h },
+          track: { height: SLIDER_CONTROL[size].track }
+        })),
+        part({ Variant: SLIDER_VARIANTS, State: SLIDER_STATES }, (variant, state2) => ({
+          range: { fill: c(state2 === "Disabled" ? "action.disabled.default" : variant === "secondary" ? "content.primary" : "action.primary.default") }
         }))
       ]
     };
@@ -11444,7 +11512,7 @@ var init_motion2 = __esm({
       Checkbox: { transitions: { root: states("background-color", "border-color", "box-shadow") } },
       RadioGroup: { transitions: { item: states("background-color", "border-color", "box-shadow") } },
       Switch: { transitions: { root: states("background-color", "box-shadow"), thumb: { transform: "use-toggle" } } },
-      Slider: { transitions: { thumb: { transform: "use-hover", "box-shadow": "use-focus" } } },
+      SliderThumb: { transitions: { root: states("border-color", "box-shadow") } },
       Progress: { transitions: { indicator: { width: "base-functional-standard" } } },
       Accordion: disclosure("--radix-accordion-content-height"),
       Collapsible: disclosure("--radix-collapsible-content-height"),
@@ -11515,6 +11583,7 @@ var init_componentRecipes = __esm({
       Switch: SWITCH,
       SwitchGroup: SWITCH_GROUP,
       Slider: SLIDER,
+      SliderThumb: SLIDER_THUMB,
       FileUpload: FILE_UPLOAD,
       FileUploadDropzone: FILE_UPLOAD_DROPZONE,
       FileUploadItem: FILE_UPLOAD_ITEM,
@@ -14388,7 +14457,7 @@ var init_useDesignStore = __esm({
         }),
         {
           name: "scalable-designs-store",
-          version: 130,
+          version: 131,
           migrate: (persisted, version) => {
             if (persisted) {
               delete persisted.styleDirection;
@@ -15978,6 +16047,19 @@ var init_useDesignStore = __esm({
                 const at = sel.indexOf("SegmentedControl");
                 if (at < 0 || sel.includes("SegmentedControlItem")) return;
                 sel.splice(at + 1, 0, "SegmentedControlItem");
+              };
+              add2(persisted);
+              if (Array.isArray(persisted.savedSystems)) {
+                for (const sys of persisted.savedSystems) add2(sys?.snapshot);
+              }
+            }
+            if (version < 131) {
+              const add2 = (state2) => {
+                if (!Array.isArray(state2?.selectedComponents)) return;
+                const sel = state2.selectedComponents;
+                const at = sel.indexOf("Slider");
+                if (at < 0 || sel.includes("SliderThumb")) return;
+                sel.splice(at + 1, 0, "SliderThumb");
               };
               add2(persisted);
               if (Array.isArray(persisted.savedSystems)) {

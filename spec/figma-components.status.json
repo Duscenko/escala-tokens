@@ -34,13 +34,6 @@
       "status": "part",
       "of": "RadioGroup"
     },
-    "Slider": {
-      "status": "rebuild"
-    },
-    "SliderThumb": {
-      "status": "part",
-      "of": "Slider"
-    },
     "RatingGroup": {
       "status": "rename",
       "code": "Rating"

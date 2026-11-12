@@ -17,7 +17,7 @@ import { InputOTP as SkInputOTP, InputOTPSlot as SkInputOTPSlot, type InputOTPLe
 import { CheckboxGroup as SkCheckboxGroup, type CheckboxGroupState, CheckboxItem as SkCheckboxItem, type CheckboxItemState, type CheckboxItemPlacement, Checkbox as SkCheckbox, type CheckboxChecked, type CheckboxSize, type CheckboxState, type CheckboxVariant } from '../../../escala-ui/checkbox'
 import { RadioGroup as SkRadioGroup, RadioGroupItem as SkRadioGroupItem } from '../../../escala-ui/radio-group'
 import { Switch as SkSwitch, SwitchGroup as SkSwitchGroup, type SwitchGroupPlacement, type SwitchGroupState, type SwitchSize, type SwitchState, type SwitchThumb } from '../../../escala-ui/switch'
-import { Slider as SkSlider } from '../../../escala-ui/slider'
+import { Slider as SkSlider, SliderThumb as SkSliderThumb, type SliderRange, type SliderSize, type SliderState, type SliderThumbState, type SliderVariant } from '../../../escala-ui/slider'
 import { Label as SkLabel } from '../../../escala-ui/label'
 import {
   Field as SkField, FieldContent as SkFieldContent, FieldDescription as SkFieldDescription, FieldGroup as SkFieldGroup,
@@ -475,10 +475,39 @@ export function SkeletonSettingsList({ t, control, legend, rows, w }: {
   )
 }
 
-export function SkeletonSliderSpecimen({ t, w }: SpecimenProps) {
+/** The Figma Slider (Size · Range · State · Variant). Callers that name none of them (the board's
+ *  «Border radius» row) get the shadcn-era labelled slider. */
+export function SkeletonSliderSpecimen({ t, v, w }: SpecimenProps) {
+  const legacy = v.Size === undefined && v.Range === undefined
   return (
     <RecipeScope t={t}>
-      <SkSlider label="Border radius" defaultValue={60} style={{ width: w ?? 260, maxWidth: '100%' }} />
+      {legacy ? (
+        <SkSlider label="Border radius" defaultValue={60} style={{ width: w ?? 260, maxWidth: '100%' }} />
+      ) : (
+        <SkSlider
+          key={`${v.Range}-${v.Size}`}
+          aria-label="Volume"
+          size={(v.Size ?? 'default') as SliderSize}
+          variant={(v.Variant ?? 'default') as SliderVariant}
+          defaultValue={((v.Range ?? 'single') as SliderRange) === 'range' ? [25, 70] : 40}
+          forceState={(v.State ?? 'Default') as SliderState}
+          tooltipVisible
+          style={{ width: w ?? 320, maxWidth: '100%' }}
+        />
+      )}
+    </RecipeScope>
+  )
+}
+
+/** One Figma slider thumb on its own (the overview and the docs playground). */
+export function SkeletonSliderThumbSpecimen({ t, v }: SpecimenProps) {
+  return (
+    <RecipeScope t={t}>
+      <SkSliderThumb
+        size={(v.Size ?? 'default') as SliderSize}
+        variant={(v.Variant ?? 'default') as SliderVariant}
+        forceState={(v.State ?? 'Default') as SliderThumbState}
+      />
     </RecipeScope>
   )
 }

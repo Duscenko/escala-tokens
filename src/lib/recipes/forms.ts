@@ -1075,24 +1075,80 @@ export const SWITCH_GROUP: ComponentRecipe = {
   ],
 }
 
-// ── Slider ─────────────────────────────────────────────────────────────────
+// ── SliderThumb + Slider ───────────────────────────────────────────────────
+// The Figma `SliderThumb` (design-plans/slider-thumb-contract.md, 441:75, 30 variants: Size xs · sm ·
+// default × State Default · Hover · Focused · Dragging · Disabled × Variant default · secondary) and
+// `Slider` (design-plans/slider-contract.md, 447:19, 36 variants: Size × Range single · range × State
+// Default · Dragging · Disabled × Variant, plus TooltipVisible and MarksVisible).
+// Thumb: a 14 · 16 · 20 square, Radius/control, white fill (Content/on-action) with a 2px edge in the
+// variant colour and Shadow/xs at rest and on hover; Focused draws Border/focus + a halo and no shadow;
+// Dragging and Disabled draw no effect (the file's 4px ring has a spread on a non-clipping frame, so it
+// paints nothing).
+export const SLIDER_SIZES = ['xs', 'sm', 'default'] as const
+export const SLIDER_THUMB_STATES = ['Default', 'Hover', 'Focused', 'Dragging', 'Disabled'] as const
+export const SLIDER_STATES = ['Default', 'Dragging', 'Disabled'] as const
+export const SLIDER_VARIANTS = ['default', 'secondary'] as const
+export const SLIDER_RANGES = ['single', 'range'] as const
+const SLIDER_THUMB_PX: Record<string, string> = { xs: 'spacing.3+spacing.0_5', sm: 'spacing.4', default: 'spacing.5' }
+const SLIDER_THUMB_EDGE: Record<string, { rest: string; hover: string; focus: string; ring: string }> = {
+  default: { rest: 'action.primary.default', hover: 'action.primary.hover', focus: 'border.focus', ring: 'border.ring.default' },
+  secondary: { rest: 'content.primary', hover: 'content.secondary', focus: 'border.strong', ring: 'border.subtle' },
+}
+
+function sliderThumbPaint(variant: string, state: string): SlotMap {
+  const k = SLIDER_THUMB_EDGE[variant]
+  if (state === 'Disabled') return { root: { fill: c('surface.muted'), stroke: c('action.disabled.default'), highlight: NONE } }
+  const root: SlotProps = { fill: c('content.on-action'), stroke: c(k.rest), shadow: 'shadow.xs' }
+  if (state === 'Hover') root.stroke = c(k.hover)
+  else if (state === 'Focused') { root.stroke = c(k.focus); root.focus = c(k.focus); root.ring = c(k.ring); delete root.shadow }
+  else if (state === 'Dragging') { delete root.shadow; root.highlight = NONE }
+  return { root }
+}
+
+export const SLIDER_THUMB: ComponentRecipe = {
+  key: 'SliderThumb',
+  slots: ['root'],
+  defaults: { Size: 'default', State: 'Default', Variant: 'default' },
+  parts: [
+    part({}, () => ({ root: { radius: 'radius.control', strokeWidth: 'stroke.md', hit: 'size.hit' } })),
+    part({ Size: SLIDER_SIZES }, (size) => ({ root: { width: SLIDER_THUMB_PX[size], height: SLIDER_THUMB_PX[size] } })),
+    part({ Variant: SLIDER_VARIANTS, State: SLIDER_THUMB_STATES }, sliderThumbPaint),
+  ],
+}
+
+// The control is 32 · 36 · 40 high with a 4 · 6 · 8 track; the column above it (tooltips, 28) and below
+// it (marks, 24) sit gap-control apart. The range is the stretch between the thumbs' centres.
+const SLIDER_CONTROL: Record<string, { h: string; track: string }> = {
+  xs: { h: 'size.compact', track: 'spacing.1' },
+  sm: { h: 'spacing.8+spacing.1', track: 'spacing.1_5' },
+  default: { h: 'size.control', track: 'spacing.2' },
+}
 
 export const SLIDER: ComponentRecipe = {
   key: 'Slider',
-  slots: ['root', 'label', 'value', 'track', 'range', 'thumb'],
-  defaults: {},
+  slots: ['root', 'label', 'value', 'control', 'track', 'range', 'tooltips', 'tooltip', 'marks', 'mark', 'tick', 'markLabel'],
+  defaults: { Size: 'default', Range: 'single', State: 'Default', Variant: 'default' },
   parts: [
     part({}, () => ({
-      root: { gap: 'spacing.gap-control' },
+      root: { gap: 'spacing.gap-control', width: 'spacing.32+spacing.32+spacing.16' },
+      // MIGRATION ONLY: the header row (label + live value) of the shadcn-era slider.
       label: { text: c('content.secondary'), font: 'type.caption' },
       value: { text: c('content.primary'), font: 'type.caption' },
-      track: { fill: c('surface.muted'), height: 'spacing.1_5', radius: 'radius.pill' },
-      range: { fill: c('action.primary.default'), radius: 'radius.pill' },
-      thumb: {
-        fill: c('surface.page'), stroke: c('action.primary.default'), strokeWidth: 'stroke.md',
-        height: 'selector.control', width: 'selector.control', radius: 'radius.pill', shadow: 'shadow.sm', hit: 'size.hit',
-      },
-      'thumb:focus-visible': FOCUS,
+      track: { fill: c('surface.muted'), radius: 'radius.control' },
+      range: { radius: 'radius.control' },
+      tooltips: { height: 'spacing.6+spacing.1' },
+      tooltip: { fill: c('surface.inverse'), text: c('content.inverse'), font: 'type.caption', radius: 'radius.control', width: 'spacing.8+spacing.1', height: 'spacing.6' },
+      marks: { height: 'spacing.6' },
+      mark: { width: 'spacing.5', height: 'spacing.5', gap: 'spacing.gap-tight' },
+      tick: { fill: c('border.strong'), opacity: '0.5', width: 'spacing.0_5', height: 'spacing.1_5' },
+      markLabel: { text: c('content.secondary'), font: 'type.caption' },
+    })),
+    part({ Size: SLIDER_SIZES }, (size) => ({
+      control: { height: SLIDER_CONTROL[size].h },
+      track: { height: SLIDER_CONTROL[size].track },
+    })),
+    part({ Variant: SLIDER_VARIANTS, State: SLIDER_STATES }, (variant, state) => ({
+      range: { fill: c(state === 'Disabled' ? 'action.disabled.default' : variant === 'secondary' ? 'content.primary' : 'action.primary.default') },
     })),
   ],
 }

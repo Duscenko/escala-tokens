@@ -178,7 +178,7 @@ describe.skipIf(!existsSync(pluginFile))('plugin ↔ web recipe parity', () => {
     // DatePickerTrigger / DatePickerPopover / CalendarDay / CalendarHeader / CalendarMonth / CalendarPresets / CalendarFooter (2026-11-12): sets the file has and the frozen plugin never built (the date picker and calendar pages).
     // ButtonGroupItem / ButtonGroupDivider (2026-11-12): the file's own sets for the
     // group's segments and lines, rebuilt from it.
-    const WEB_ONLY = new Set(['CloseButton', 'TextLink', 'FABButton', 'FABGroup', 'ButtonGroupItem', 'ButtonGroupDivider', 'NumberInput', 'InputOTPSlot', 'InputTagChip', 'InputTagOption', 'DatePickerTrigger', 'DatePickerPopover', 'CalendarDay', 'CalendarHeader', 'CalendarMonth', 'CalendarPresets', 'CalendarFooter', 'PasswordStrengthMeter', 'PasswordStrengthRule', 'FileUploadDropzone', 'FileUploadItem', 'CheckboxItem', 'CheckboxGroup', 'SwitchGroup', 'SegmentedControlItem'])
+    const WEB_ONLY = new Set(['CloseButton', 'TextLink', 'FABButton', 'FABGroup', 'ButtonGroupItem', 'ButtonGroupDivider', 'NumberInput', 'InputOTPSlot', 'InputTagChip', 'InputTagOption', 'DatePickerTrigger', 'DatePickerPopover', 'CalendarDay', 'CalendarHeader', 'CalendarMonth', 'CalendarPresets', 'CalendarFooter', 'PasswordStrengthMeter', 'PasswordStrengthRule', 'FileUploadDropzone', 'FileUploadItem', 'CheckboxItem', 'CheckboxGroup', 'SwitchGroup', 'SegmentedControlItem', 'SliderThumb'])
     const webAndPlugin = Object.keys(COMPONENT_RECIPES).filter((key) => !WEB_ONLY.has(key))
     // Plugin builders whose web recipe was RENAMED from the Figma file after the
     // freeze (2026-11-12): InputStepper is the file's NumberInput, Dropzone its
@@ -189,7 +189,7 @@ describe.skipIf(!existsSync(pluginFile))('plugin ↔ web recipe parity', () => {
     // builder predates them, so they are web + Storybook only (a decision).
     // Switch io / thumbIcon (2026-11-12): the file's I / O marks and thumb glyph, which the frozen plugin never drew.
     // SegmentedControl content (2026-11-12): the file's slot inside the track.
-    const WEB_ONLY_SLOTS: Record<string, string[]> = { SegmentedControl: ['content'], Switch: ['io', 'thumbIcon'], Input: ['addon', 'divider', 'kbd'], ButtonGroup: ['item', 'border'], Field: ['labelRow', 'required'],
+    const WEB_ONLY_SLOTS: Record<string, string[]> = { SegmentedControl: ['content'], Slider: ['control', 'tooltips', 'tooltip', 'marks', 'mark', 'tick', 'markLabel'], Switch: ['io', 'thumbIcon'], Input: ['addon', 'divider', 'kbd'], ButtonGroup: ['item', 'border'], Field: ['labelRow', 'required'],
       // 2026-11-12: Textarea rebuilt from the file (394:152): its corner glyphs and resize grip.
       Textarea: ['adornment', 'status', 'spinner', 'corner', 'grip'],
       // 2026-11-12: InputOTP rebuilt from the file (416:994): the separator between halves.

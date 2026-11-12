@@ -2058,7 +2058,7 @@ export const useDesignStore = create<DesignStore>()(
     }),
     {
       name: 'scalable-designs-store',
-      version: 130,
+      version: 131,
       migrate: (persisted: any, version: number) => {
         if (persisted) {
           // v1→v2: remove styleDirection, rename selectedAtoms → selectedComponents
@@ -4154,6 +4154,20 @@ export const useDesignStore = create<DesignStore>()(
             const at = sel.indexOf('SegmentedControl')
             if (at < 0 || sel.includes('SegmentedControlItem')) return
             sel.splice(at + 1, 0, 'SegmentedControlItem')
+          }
+          add(persisted)
+          if (Array.isArray(persisted.savedSystems)) {
+            for (const sys of persisted.savedSystems) add(sys?.snapshot)
+          }
+        }
+        if (version < 131) {
+          // v130→v131: SliderThumb is a component of the Figma file; a selection with Slider gets it.
+          const add = (state: any) => {
+            if (!Array.isArray(state?.selectedComponents)) return
+            const sel: string[] = state.selectedComponents
+            const at = sel.indexOf('Slider')
+            if (at < 0 || sel.includes('SliderThumb')) return
+            sel.splice(at + 1, 0, 'SliderThumb')
           }
           add(persisted)
           if (Array.isArray(persisted.savedSystems)) {

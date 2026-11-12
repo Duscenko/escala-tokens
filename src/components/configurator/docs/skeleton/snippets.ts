@@ -198,8 +198,10 @@ export const SKELETON_SNIPPETS: Record<string, Snippet> = {
     `import { Switch } from "@/components/ui/switch"\n\n<Switch${v.Size && v.Size !== 'default' ? ` size="${v.Size}"` : ''}${v.Thumb === 'long' ? ' thumb="long"' : ''}${v.Checked === 'false' ? '' : ' defaultChecked'}${v.State === 'Disabled' ? ' disabled' : ''} aria-label="Notifications" />`,
   SwitchGroup: (v) =>
     `import { SwitchGroup } from "@/components/ui/switch"\n\n<SwitchGroup\n  label="Email notifications"\n  description="Receive a summary of activity in your inbox."\n  footer="Changes apply immediately."${v.Size && v.Size !== 'default' ? `\n  size="${v.Size}"` : ''}${v.Placement === 'right' ? '\n  placement="right"' : ''}${v.State === 'Invalid' ? '\n  invalid' : ''}${v.State === 'Disabled' ? '\n  disabled' : ''}${v.State === 'Loading' ? '\n  loading' : ''}\n  defaultChecked\n/>`,
-  Slider: () =>
-    `import { Slider } from "@/components/ui/slider"\n\n<Slider label="Border radius" defaultValue={60} onValueChange={setRadius} />`,
+  Slider: (v) =>
+    `import { Slider } from "@/components/ui/slider"\n\n<Slider${v.Size && v.Size !== 'default' ? ` size="${v.Size}"` : ''}${v.Variant === 'secondary' ? ' variant="secondary"' : ''}${v.Range === 'range' ? ' defaultValue={[25, 70]}' : ' defaultValue={40}'}${v.State === 'Disabled' ? ' disabled' : ''} tooltipVisible aria-label="Volume" onValueChange={setVolume} />`,
+  SliderThumb: (v) =>
+    `import { SliderThumb } from "@/components/ui/slider"\n\n<SliderThumb${v.Size && v.Size !== 'default' ? ` size="${v.Size}"` : ''}${v.Variant === 'secondary' ? ' variant="secondary"' : ''} />`,
   FileUpload: (v) =>
     `import { FileUpload, FileUploadItem } from "@/components/ui/file-upload"\n\n<FileUpload${v.Size && v.Size !== 'default' ? ` size="${v.Size}"` : ''}${v.Layout === 'trigger' ? ' layout="trigger"' : ''} onFiles={upload} announcement={status}>\n  <FileUploadItem status="completed" name="brand-guidelines.pdf" onRemove={remove} />\n  <FileUploadItem status="uploading" name="Q3-financial-report.pdf" progress={48} />\n</FileUpload>`,
   FileUploadItem: (v) =>

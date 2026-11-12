@@ -235,6 +235,17 @@ export const OVERVIEWS: Record<string, Overview> = {
     each('Placement', ['left', 'right']),
     each('Size', ['xs', 'sm', 'default']),
   ],
+  Slider: [
+    each('Range', ['single', 'range']),
+    each('State', ['Default', 'Dragging', 'Disabled']),
+    each('Size', ['xs', 'sm', 'default']),
+    each('Variant', ['default', 'secondary']),
+  ],
+  SliderThumb: [
+    each('State', ['Default', 'Hover', 'Focused', 'Dragging', 'Disabled']),
+    each('Size', ['xs', 'sm', 'default']),
+    each('Variant', ['default', 'secondary']),
+  ],
   Switch: [
     each('Checked', ['true', 'false']),
     each('State', ['Default', 'Hover', 'Focused', 'Disabled'], { Checked: 'true' }),
