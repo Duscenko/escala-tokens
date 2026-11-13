@@ -74,7 +74,9 @@ export const BUDGETS = {
   // upload) and Checkbox carries 270 variants (Size × Checked × State × Variant).
   // 105k → 120k (2026-11-12): Avatar (350 variants + status and group parts), FeaturedIcon and Badge
   // (525 variants) each carry a design-skill file with their full variant tables.
-  contextAllTokens: 120_000,
+  // 120k → 135k (2026-11-13): Table and its 13 parts (about 400 variants) and Alert (96 variants), each with its
+  // design-skill file and variant tables.
+  contextAllTokens: 135_000,
   contextFoundationTokens: 12_000,
 }
 

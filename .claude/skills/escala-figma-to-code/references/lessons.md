@@ -394,3 +394,12 @@ Every row cost a round trip with the owner. Check each one before calling a comp
 | Focused row = 2px ring all round and NO bottom hairline; Dragging = 1px all round | The default state's `strokeBottomWidth` would stay | Per-state recipe slot sets `strokeWidth` and omits the bottom divider; the more specific state rule wins over the border shorthand |
 | Part recipes for a frozen plugin | Parity test wants the keys in `WEB_ONLY` | Add the 13 keys (the plugin has a `Table` builder that already passes). Ledger: delete all 14 entries together |
 | axe `color-contrast` 4.22 | `Content/secondary` on `Surface/muted` (head label, Light) | Copied (rule 1), reported. Same pair as the Accordion note |
+
+# Lessons from the Alert (2026-11-13)
+| Trap | What it looked like | The fix (where it lives) |
+|---|---|---|
+| The old Alert is shadcn's (title + description, `default · destructive`) and four callers compose it | Rebuilding on the Figma API would break `AlertTitle` / `AlertDescription` users | `children` keeps the older composition (boxed, no close, no icon unless given); `variant="destructive"` stays as an alias of `critical`; the callers are untouched. The catalogue lists only the file's axes |
+| A hairline on ONE side that the file lays out (horizontal outline: 65 = 64 + 1) vs all sides (vertical outline: 320×67) | `strokeWidth` makes the padding give the border back (`--escala-stroke-width`), `strokeBottomWidth` does not | Horizontal: `strokeBottomWidth` and the plain padding; vertical outline: `strokeWidth` and the padding `spacing.inset-surface+stroke.control` |
+| An absolute close at x284 y12 in a box with a 1px border | CSS absolute offsets start INSIDE the border | `calc(var(--spacing-inset-control) - var(--stroke-control))` for the outline appearance only (the custom property `--escala-stroke-width` is not inherited by the child) |
+| 96 variants, colours invariant of Layout × Size | One line per variant | Grouped read by Variant · Appearance (24 groups of 4); the severity table in the contract |
+| `exportAudit` I10 budget again | 120k → 135k with a dated note (Table + Alert) | `src/lib/exportAudit.ts` |

@@ -5,40 +5,76 @@
 import { c, part, type ComponentRecipe } from './helpers.js'
 
 // ── Alert ──────────────────────────────────────────────────────────────────
-// shadcn: `bg-card` with a hairline, `default` in the card's ink, `destructive`
-// in the critical ink (title, description and icon), the surface unchanged.
+// The Figma set (design-plans/alert-contract.md, 397:1932, 96 variants): a message bar. Layout horizontal is the
+// full-width banner (no radius, a bottom hairline when outline), vertical a boxed message (Radius/container, a
+// hairline all round when outline; its content leaves 32px for the close). The icon, the text and the surface
+// come from Variant (severity) × Appearance (outline · solid · soft · inverse).
 
-export const ALERT_VARIANTS = ['default', 'destructive'] as const
+export const ALERT_VARIANTS = ['success', 'info', 'warning', 'default', 'critical', 'secondary'] as const
+export const ALERT_APPEARANCES = ['outline', 'solid', 'soft', 'inverse'] as const
+export const ALERT_LAYOUTS = ['horizontal', 'vertical'] as const
+export const ALERT_SIZES = ['sm', 'default'] as const
+
+interface AlertTone { stroke: string; ink: string; solid: string; onSolid: string; soft: string; softInk: string; softText: string }
+const STATUS_TONE = (s: string): AlertTone => ({
+  stroke: `status.${s}.border`, ink: `status.${s}.content`, solid: `status.${s}.surface-solid`, onSolid: `status.${s}.on-solid`,
+  soft: `status.${s}.surface`, softInk: `status.${s}.content`, softText: `status.${s}.content`,
+})
+const ALERT_TONE: Record<string, AlertTone> = {
+  default: { stroke: 'border.accent', ink: 'content.accent', solid: 'action.primary.default', onSolid: 'content.on-action', soft: 'surface.accent', softInk: 'content.accent', softText: 'content.accent' },
+  critical: STATUS_TONE('critical'),
+  success: STATUS_TONE('success'),
+  info: STATUS_TONE('info'),
+  warning: STATUS_TONE('warning'),
+  secondary: { stroke: 'border.default', ink: 'content.secondary', solid: 'action.secondary.default', onSolid: 'content.on-secondary', soft: 'surface.layer-2', softInk: 'content.secondary', softText: 'content.primary' },
+}
 
 export const ALERT: ComponentRecipe = {
   key: 'Alert',
-  slots: ['root', 'icon', 'title', 'description'],
-  defaults: { Variant: 'default' },
+  slots: ['root', 'content', 'icon', 'title', 'description', 'actions', 'close'],
+  defaults: { Variant: 'default', Appearance: 'outline', Layout: 'horizontal', Size: 'default' },
   parts: [
     part({}, () => ({
-      root: {
-        fill: c('surface.layer-1'), stroke: c('border.default'), strokeWidth: 'stroke.control',
-        radius: 'radius.container', paddingX: 'spacing.4', paddingY: 'spacing.3',
-        // shadcn: `has-[>svg]:gap-x-3 gap-y-0.5` — the icon column is 12px off the
-        // text, title and description 2px apart. In Figma `gap` is the icon slot's
-        // spacing; the body column keeps the row gap.
-        gap: 'spacing.3', rowGap: 'spacing.0_5',
-        font: 'type.body-sm',
-      },
+      content: { gap: 'spacing.gap-control' },
+      actions: { gap: 'spacing.gap-control' },
       title: { font: 'type.label' },
-      description: { font: 'type.body-sm' },
     })),
-    part({ Variant: ALERT_VARIANTS }, (variant) => variant === 'destructive'
-      ? {
-          root: { text: c('status.critical.content') },
-          icon: { text: c('status.critical.content') },
-          description: { text: c('status.critical.content') },
-        }
-      : {
-          root: { text: c('content.primary') },
-          icon: { text: c('content.primary') },
-          description: { text: c('content.secondary') },
-        }),
+    part({ Layout: ALERT_LAYOUTS }, (layout) => ({
+      root: layout === 'horizontal'
+        ? { paddingX: 'spacing.inset-surface', paddingY: 'spacing.inset-control', gap: 'spacing.gap-group', radius: 'radius.none' }
+        : { gap: 'spacing.gap-group', radius: 'radius.container' },
+      ...(layout === 'vertical' ? { content: { gap: 'spacing.gap-control', paddingRight: 'size.sm' } } : {}),
+    })),
+    part({ Size: ALERT_SIZES }, (size) => ({
+      icon: size === 'sm' ? { width: 'icon.small', height: 'icon.small' } : { width: 'icon.medium', height: 'icon.medium' },
+      description: { font: size === 'sm' ? 'type.body-md' : 'type.body-lg' },
+    })),
+    // Vertical pads 20 all round; its outline hairline is laid out, so the padding adds it.
+    part({ Layout: ALERT_LAYOUTS, Appearance: ALERT_APPEARANCES }, (layout, appearance) => ({
+      root: layout === 'vertical'
+        ? (appearance === 'outline'
+          ? { paddingX: 'spacing.inset-surface+stroke.control', paddingY: 'spacing.inset-surface+stroke.control' }
+          : { paddingX: 'spacing.inset-surface', paddingY: 'spacing.inset-surface' })
+        : {},
+    })),
+    part({ Variant: ALERT_VARIANTS, Appearance: ALERT_APPEARANCES, Layout: ALERT_LAYOUTS }, (variant, appearance, layout) => {
+      const t = ALERT_TONE[variant]
+      switch (appearance) {
+        case 'solid':
+          return { root: { fill: c(t.solid) }, icon: { text: c(t.onSolid) }, description: { text: c(t.onSolid) }, title: { text: c(t.onSolid) } }
+        case 'soft':
+          return { root: { fill: c(t.soft) }, icon: { text: c(t.softInk) }, description: { text: c(t.softText) }, title: { text: c(t.softText) } }
+        case 'inverse':
+          return { root: { fill: c('surface.inverse') }, icon: { text: c('content.inverse-secondary') }, description: { text: c('content.inverse') }, title: { text: c('content.inverse') } }
+        default:
+          return {
+            root: layout === 'horizontal'
+              ? { fill: c('surface.layer-1'), stroke: c(t.stroke), strokeBottomWidth: 'stroke.control' }
+              : { fill: c('surface.layer-1'), stroke: c(t.stroke), strokeWidth: 'stroke.control' },
+            icon: { text: c(t.ink) }, description: { text: c('content.primary') }, title: { text: c('content.primary') },
+          }
+      }
+    }),
   ],
 }
 

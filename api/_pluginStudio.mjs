@@ -5890,17 +5890,24 @@ var init_componentCatalogue = __esm({
         key: "Alert",
         label: "Alert",
         category: "Feedback",
-        description: "shadcn/ui Alert: a callout with an icon, a title and a description, in default and destructive.",
-        usage: "Use for a message about the content around it. For a transient notice, use Sonner.",
-        axes: [{ name: "Variant", values: ["default", "destructive"] }],
+        description: "A message bar for app-wide notices, subscription warnings, announcements and global errors: an icon, a description, optional actions and a close.",
+        usage: "Use for a message about the product or the page around it. Horizontal is the full-width banner above or below the header, vertical a boxed message in content. For auto-dismissing feedback use Toast, for form validation Field.",
+        // The Figma file's axes, value for value (design-plans/alert-contract.md).
+        axes: [
+          { name: "Variant", values: ["success", "info", "warning", "default", "critical", "secondary"] },
+          { name: "Appearance", values: ["outline", "solid", "soft", "inverse"] },
+          { name: "Layout", values: ["horizontal", "vertical"] },
+          { name: "Size", values: ["sm", "default"] }
+        ],
         figmaSets: ["Alert"],
         props: [
-          { name: "variant", type: '"default" | "destructive"', description: "shadcn's variants: the card's ink, or the critical ink." },
-          { name: "AlertTitle / AlertDescription", type: "component", description: "First line and supporting copy." },
-          { name: "AlertAction", type: "component", description: "An action pinned to the top-right corner." },
-          { name: "children (icon)", type: "ReactNode", description: "An <svg> (or AlertIcon) as the first child takes the icon column." }
+          { name: "variant / appearance / layout / size", type: "Figma axes", description: "Variant is the severity; horizontal has no radius (a bottom edge when outline), vertical is boxed at Radius/container." },
+          { name: "description / iconVisible / icon", type: "ReactNode / boolean", description: "Figma Description, IconVisible and Icon (the Sparkle by default)." },
+          { name: "actionsVisible / actions", type: "boolean / ReactNode", description: "Figma ActionsVisible: a Button beside the text." },
+          { name: "closeVisible / onClose / closeLabel", type: "boolean / () => void / string", description: "Figma CloseVisible: a CloseButton named by closeLabel." },
+          { name: "children", type: "ReactNode", description: "The older composition: AlertTitle + AlertDescription in a boxed alert with no close." }
         ],
-        accessibility: 'role="alert". The icon is decorative; the title carries the meaning.'
+        accessibility: 'role="alert". Convey severity with the icon and the text as well as colour, and give the close button an accessible name.'
       },
       {
         key: "Skeleton",
@@ -11499,42 +11506,70 @@ var init_navigation = __esm({
 });
 
 // src/lib/recipes/feedback.ts
-var ALERT_VARIANTS, ALERT, SONNER_TYPES, SONNER_ICON, SONNER, SKELETON, EMPTY;
+var ALERT_VARIANTS, ALERT_APPEARANCES, ALERT_LAYOUTS, ALERT_SIZES, STATUS_TONE, ALERT_TONE, ALERT, SONNER_TYPES, SONNER_ICON, SONNER, SKELETON, EMPTY;
 var init_feedback = __esm({
   "src/lib/recipes/feedback.ts"() {
     init_helpers();
-    ALERT_VARIANTS = ["default", "destructive"];
+    ALERT_VARIANTS = ["success", "info", "warning", "default", "critical", "secondary"];
+    ALERT_APPEARANCES = ["outline", "solid", "soft", "inverse"];
+    ALERT_LAYOUTS = ["horizontal", "vertical"];
+    ALERT_SIZES = ["sm", "default"];
+    STATUS_TONE = (s) => ({
+      stroke: `status.${s}.border`,
+      ink: `status.${s}.content`,
+      solid: `status.${s}.surface-solid`,
+      onSolid: `status.${s}.on-solid`,
+      soft: `status.${s}.surface`,
+      softInk: `status.${s}.content`,
+      softText: `status.${s}.content`
+    });
+    ALERT_TONE = {
+      default: { stroke: "border.accent", ink: "content.accent", solid: "action.primary.default", onSolid: "content.on-action", soft: "surface.accent", softInk: "content.accent", softText: "content.accent" },
+      critical: STATUS_TONE("critical"),
+      success: STATUS_TONE("success"),
+      info: STATUS_TONE("info"),
+      warning: STATUS_TONE("warning"),
+      secondary: { stroke: "border.default", ink: "content.secondary", solid: "action.secondary.default", onSolid: "content.on-secondary", soft: "surface.layer-2", softInk: "content.secondary", softText: "content.primary" }
+    };
     ALERT = {
       key: "Alert",
-      slots: ["root", "icon", "title", "description"],
-      defaults: { Variant: "default" },
+      slots: ["root", "content", "icon", "title", "description", "actions", "close"],
+      defaults: { Variant: "default", Appearance: "outline", Layout: "horizontal", Size: "default" },
       parts: [
         part({}, () => ({
-          root: {
-            fill: c("surface.layer-1"),
-            stroke: c("border.default"),
-            strokeWidth: "stroke.control",
-            radius: "radius.container",
-            paddingX: "spacing.4",
-            paddingY: "spacing.3",
-            // shadcn: `has-[>svg]:gap-x-3 gap-y-0.5` — the icon column is 12px off the
-            // text, title and description 2px apart. In Figma `gap` is the icon slot's
-            // spacing; the body column keeps the row gap.
-            gap: "spacing.3",
-            rowGap: "spacing.0_5",
-            font: "type.body-sm"
-          },
-          title: { font: "type.label" },
-          description: { font: "type.body-sm" }
+          content: { gap: "spacing.gap-control" },
+          actions: { gap: "spacing.gap-control" },
+          title: { font: "type.label" }
         })),
-        part({ Variant: ALERT_VARIANTS }, (variant) => variant === "destructive" ? {
-          root: { text: c("status.critical.content") },
-          icon: { text: c("status.critical.content") },
-          description: { text: c("status.critical.content") }
-        } : {
-          root: { text: c("content.primary") },
-          icon: { text: c("content.primary") },
-          description: { text: c("content.secondary") }
+        part({ Layout: ALERT_LAYOUTS }, (layout) => ({
+          root: layout === "horizontal" ? { paddingX: "spacing.inset-surface", paddingY: "spacing.inset-control", gap: "spacing.gap-group", radius: "radius.none" } : { gap: "spacing.gap-group", radius: "radius.container" },
+          ...layout === "vertical" ? { content: { gap: "spacing.gap-control", paddingRight: "size.sm" } } : {}
+        })),
+        part({ Size: ALERT_SIZES }, (size) => ({
+          icon: size === "sm" ? { width: "icon.small", height: "icon.small" } : { width: "icon.medium", height: "icon.medium" },
+          description: { font: size === "sm" ? "type.body-md" : "type.body-lg" }
+        })),
+        // Vertical pads 20 all round; its outline hairline is laid out, so the padding adds it.
+        part({ Layout: ALERT_LAYOUTS, Appearance: ALERT_APPEARANCES }, (layout, appearance) => ({
+          root: layout === "vertical" ? appearance === "outline" ? { paddingX: "spacing.inset-surface+stroke.control", paddingY: "spacing.inset-surface+stroke.control" } : { paddingX: "spacing.inset-surface", paddingY: "spacing.inset-surface" } : {}
+        })),
+        part({ Variant: ALERT_VARIANTS, Appearance: ALERT_APPEARANCES, Layout: ALERT_LAYOUTS }, (variant, appearance, layout) => {
+          const t = ALERT_TONE[variant];
+          switch (appearance) {
+            case "solid":
+              return { root: { fill: c(t.solid) }, icon: { text: c(t.onSolid) }, description: { text: c(t.onSolid) }, title: { text: c(t.onSolid) } };
+            case "soft":
+              return { root: { fill: c(t.soft) }, icon: { text: c(t.softInk) }, description: { text: c(t.softText) }, title: { text: c(t.softText) } };
+            case "inverse":
+              return { root: { fill: c("surface.inverse") }, icon: { text: c("content.inverse-secondary") }, description: { text: c("content.inverse") }, title: { text: c("content.inverse") } };
+            default:
+              return {
+                root: layout === "horizontal" ? { fill: c("surface.layer-1"), stroke: c(t.stroke), strokeBottomWidth: "stroke.control" } : { fill: c("surface.layer-1"), stroke: c(t.stroke), strokeWidth: "stroke.control" },
+                icon: { text: c(t.ink) },
+                description: { text: c("content.primary") },
+                title: { text: c("content.primary") }
+              };
+          }
         })
       ]
     };

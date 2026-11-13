@@ -372,6 +372,12 @@ export const OVERVIEWS: Record<string, Overview> = {
   TableHeader: [each('Size', ['default', 'xs', 'sm', 'lg'], {}, 800), each('Scrolled', ['false', 'true'], {}, 800), each('Dividers', ['rows', 'grid'], {}, 800)],
   TableFooter: [each('Size', ['default', 'xs', 'sm', 'lg'], {}, 800), each('Dividers', ['rows', 'grid'], {}, 800)],
   TableLoadMore: [each('State', ['Default', 'Loading'], {}, 800)],
+  Alert: [
+    each('Variant', ['success', 'info', 'warning', 'default', 'critical', 'secondary'], { Layout: 'vertical' }, 320),
+    each('Appearance', ['outline', 'solid', 'soft', 'inverse'], {}, 800),
+    each('Layout', ['horizontal', 'vertical']),
+    each('Size', ['sm', 'default'], {}, 800),
+  ],
   Image: [each('Ratio', ['auto', '16:9', '4:3', '3:2', '1:1', '3:4']), each('Shape', ['square', 'rounded'])],
   AlertDialog: [each('Size', ['default', 'sm'])],
   // Drawn inline, left/right and top/bottom look alike: one of each shape.
@@ -401,7 +407,6 @@ export const OVERVIEWS: Record<string, Overview> = {
     ...stack('Type', ['default', 'success', 'info'], {}, 340),
     ...stack('Type', ['warning', 'error', 'loading'], {}, 340),
   ],
-  Alert: stack('Variant', ['default', 'destructive'], {}, 380),
   Empty: [each('Media', ['default', 'icon'])],
 
   // ── Navigation ─────────────────────────────────────────────────────────────

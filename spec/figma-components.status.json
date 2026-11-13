@@ -34,9 +34,6 @@
       "status": "part",
       "of": "RadioGroup"
     },
-    "Alert": {
-      "status": "rebuild"
-    },
     "Toast": {
       "status": "rename",
       "code": "Sonner"

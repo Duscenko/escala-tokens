@@ -171,19 +171,23 @@ export function SkeletonScrollAreaSpecimen({ t }: SpecimenProps) {
 
 // ── Feedback ──────────────────────────────────────────────────────────────
 
+/** The Figma Alert at its sample widths (800 banner, 320 boxed). Passing `children` (the artefacts' title + description)
+ *  keeps the boxed, close-less composition; `destructive` is the older name of `critical`. */
 export function SkeletonAlertSpecimen({ t, v, w, children }: SpecimenProps) {
-  const variant = (v.Variant ?? 'default') as AlertVariant
-  const destructive = variant === 'destructive'
+  const variant = ((v.Variant === 'destructive' ? 'critical' : v.Variant) ?? 'default') as AlertVariant
+  const layout = (v.Layout ?? (children ? 'vertical' : 'horizontal')) as 'horizontal' | 'vertical'
   return (
     <RecipeScope t={t}>
-      <SkAlert variant={variant} style={{ width: w ?? 320, maxWidth: '100%' }}>
-        <SkAlertIcon><PreviewIcon concept={destructive ? 'alert' : 'info'} size={iconOf(15)} /></SkAlertIcon>
-        {children ?? (
-          <>
-            <SkAlertTitle>{destructive ? 'Export failed' : 'Heads up'}</SkAlertTitle>
-            <SkAlertDescription>{destructive ? 'Check the token names and try again.' : 'Semantic tokens re-derive when the accent changes.'}</SkAlertDescription>
-          </>
-        )}
+      <SkAlert
+        variant={variant}
+        appearance={(v.Appearance ?? 'outline') as 'outline' | 'solid' | 'soft' | 'inverse'}
+        layout={layout}
+        size={(v.Size ?? 'default') as 'sm' | 'default'}
+        actionsVisible={v.Actions === 'True'}
+        actions={<SkButton variant="secondary" appearance="solid" size={v.Size === 'sm' ? 'sm' : 'default'}>Action</SkButton>}
+        style={{ width: w ?? (layout === 'vertical' ? 320 : 800), maxWidth: '100%' }}
+      >
+        {children}
       </SkAlert>
     </RecipeScope>
   )
