@@ -5,13 +5,52 @@ import { useDesignStore, captureSnapshot, type DesignSnapshot } from '../../stor
 import { recordEdit } from '../../lib/editHistory'
 import { useI18n } from '../../lib/i18n'
 import { resolveThemeFoundations } from '../../lib/themeFoundations'
-import { MOTION_PRESETS, MOTION_PRESET_KEYS, matchMotionPreset, motionPresetPatch, normalizeMotionSettings, type MotionPresetKey } from '../../lib/motion'
+import { MOTION_EASINGS, MOTION_PRESETS, MOTION_PRESET_KEYS, durationMs, matchMotionPreset, motionPresetPatch, normalizeMotionSettings, type MotionPresetKey } from '../../lib/motion'
 import { HintTip } from '../ui/HintTip'
 import { useCloseOnAnchorScroll } from '../ui/useCloseOnAnchorScroll'
 import { MENU_CHECK, SELECT_LIST, SELECT_OPTION, SELECT_OPTION_FOCUS, SELECT_OPTION_OFF, SELECT_OPTION_ON } from './themeWorkspaceLayout'
 
-const MENU_W = 260
+const MENU_W = 200
 const MENU_GAP = 6
+
+/** How far the sample dot travels in its 36px track. */
+const SAMPLE_TRAVEL = 18
+
+/**
+ * A preset shown, not described: a dot crossing a short track on that preset's
+ * own emphasis timing (`use-emphasis-in` — the role where the five differ most:
+ * Snappy is quick, Playful overshoots on its bouncy spring). A preset with no
+ * travel (Calm) fades the dot in place instead, which is what it does. Holds
+ * still under reduced motion.
+ */
+function PresetSample({ presetKey, still }: { presetKey: MotionPresetKey; still: boolean }) {
+  const settings = MOTION_PRESETS[presetKey].settings
+  const pick = settings.roles['use-emphasis-in']
+  const ms = durationMs(pick.duration, settings)
+  const easing = MOTION_EASINGS[pick.easing]
+  const travels = settings.transforms.enter > 0
+  const [across, setAcross] = useState(false)
+  useEffect(() => {
+    if (still) return
+    // Each leg lands, then rests, so the arrival — where presets differ — reads.
+    const id = window.setInterval(() => setAcross((a) => !a), ms + 520)
+    return () => window.clearInterval(id)
+  }, [ms, still])
+  return (
+    <span aria-hidden className="relative flex h-5 w-9 flex-shrink-0 items-center rounded-full bg-fg/[0.06]">
+      <span
+        className="absolute left-1 h-2.5 w-2.5 rounded-full bg-accent-ui"
+        style={{
+          transform: travels && across ? `translateX(${SAMPLE_TRAVEL}px)` : 'translateX(0)',
+          opacity: !travels && !across ? 0.25 : 1,
+          left: travels ? undefined : '50%',
+          marginLeft: travels ? undefined : -5,
+          transition: still ? 'none' : `transform ${ms}ms ${easing}, opacity ${ms}ms ${easing}`,
+        }}
+      />
+    </span>
+  )
+}
 
 /**
  * The brand's motion preset, on the board toolbar. With the inspector off the
@@ -129,13 +168,14 @@ export function BoardMotionPreset({ themeKey }: { themeKey: string }) {
                 role="option"
                 aria-selected={on}
                 onClick={() => pick(key)}
-                className={`${SELECT_OPTION} flex items-start gap-2 ${SELECT_OPTION_FOCUS} ${on ? SELECT_OPTION_ON : SELECT_OPTION_OFF}`}
+                aria-describedby={`motion-preset-brief-${key}`}
+                className={`${SELECT_OPTION} flex items-center gap-2.5 ${SELECT_OPTION_FOCUS} ${on ? SELECT_OPTION_ON : SELECT_OPTION_OFF}`}
               >
-                <span className="min-w-0 flex-1">
-                  <span className="block text-ui">{t(MOTION_PRESETS[key].label)}</span>
-                  <span className="mt-0.5 block text-mini font-normal text-fg-faint">{t(MOTION_PRESETS[key].brief)}</span>
-                </span>
-                <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden className={`${MENU_CHECK} mt-0.5 ${on ? '' : 'invisible'}`}>
+                <PresetSample presetKey={key} still={Boolean(reduce)} />
+                <span className="min-w-0 flex-1 truncate text-ui">{t(MOTION_PRESETS[key].label)}</span>
+                {/* The brief stays for screen readers; on screen the sample says it. */}
+                <span id={`motion-preset-brief-${key}`} className="sr-only">{t(MOTION_PRESETS[key].brief)}</span>
+                <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden className={`${MENU_CHECK} ${on ? '' : 'invisible'}`}>
                   <path d="M3.5 8.5l3 3 6-7" />
                 </svg>
               </button>
