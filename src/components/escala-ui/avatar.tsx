@@ -33,6 +33,22 @@ const STATUS_SIZE: Record<AvatarSize, AvatarStatusSize> = {
 const USER_BOLD =
   'M234.38,210a123.36,123.36,0,0,0-60.78-53.23,76,76,0,1,0-91.2,0A123.36,123.36,0,0,0,21.62,210a12,12,0,1,0,20.77,12c18.12-31.32,50.12-50,85.61-50s67.49,18.69,85.61,50a12,12,0,0,0,20.77-12ZM76,96a52,52,0,1,1,52,52A52.06,52.06,0,0,1,76,96Z'
 
+// ── The photo-less fill ──────────────────────────────────────────────────────
+
+const hsl = (h: number, s: number, l: number) => `hsl(${((h % 360) + 360) % 360} ${Math.round(s * 100)}% ${Math.round(l * 100)}%)`
+/** The three stops of the gradient that stands in for a photo. */
+export const avatarGradientStops = (hue: number) => [hsl(hue, 0.52, 0.8), hsl(hue, 0.62, 0.62), hsl(hue, 0.55, 0.44)] as const
+export function avatarGradientCss(hue: number): string {
+  const [a, b, c] = avatarGradientStops(hue)
+  return `linear-gradient(140deg, ${a} 0%, ${b} 52%, ${c} 100%)`
+}
+/** A stable hue (0–359) from any string, so the same person always gets the same gradient. */
+export function hueFromText(text: string, base = 250): number {
+  let h = 0
+  for (let i = 0; i < text.length; i++) h = (h * 31 + text.charCodeAt(i)) % 360
+  return text ? h : base
+}
+
 // ── AvatarStatus ─────────────────────────────────────────────────────────────
 
 export interface AvatarStatusProps extends React.ComponentProps<'span'> {
@@ -84,6 +100,11 @@ export interface AvatarProps extends Omit<React.ComponentProps<'span'>, 'childre
   /** Figma Photo (the swap): the image URL. */
   src?: string
   alt?: string
+  /** A photo-less image avatar paints an OPAQUE gradient at this hue (0–359; default: from `alt`) — the stand-in
+   *  for the file's Media-library photos. Never a translucent tint: stacked, it would show the avatar below. */
+  hue?: number
+  /** A CSS background for that photo-less image avatar (wins over `hue`): a system's own avatar gradient. */
+  fill?: string
   /** Figma Icon (the swap): the glyph. Default: a user. */
   icon?: React.ReactNode
   /** The initials (Type initials): one letter on 2xs, two otherwise. */
@@ -92,7 +113,7 @@ export interface AvatarProps extends Omit<React.ComponentProps<'span'>, 'childre
 
 function Avatar({
   type = 'image', size: sizeProp, shape: shapeProp, variant = 'secondary', appearance = 'soft',
-  ringVisible = false, statusVisible = false, status = 'online', src, alt = '', icon, children, className, ...props
+  ringVisible = false, statusVisible = false, status = 'online', src, alt = '', hue, fill, icon, children, className, ...props
 }: AvatarProps) {
   const group = React.useContext(GroupContext)
   const size = sizeProp ?? group?.size ?? 'default'
@@ -114,6 +135,9 @@ function Avatar({
       {...props}
     >
       {type === 'image' && src && <img data-part="Avatar.image" src={src} alt="" className="absolute left-0 top-0 object-cover" />}
+      {type === 'image' && !src && (
+        <span data-part="Avatar.image" aria-hidden className="absolute left-0 top-0" style={{ background: fill ?? avatarGradientCss(hue ?? hueFromText(alt || (props['aria-label'] as string | undefined) || '')) }} />
+      )}
       {type === 'initials' && <span data-part="Avatar.initials" className="inline-flex items-center justify-center">{children}</span>}
       {type === 'icon' && (
         <span data-part="Avatar.icon" className="inline-flex items-center justify-center [&>svg]:size-full">
@@ -162,11 +186,12 @@ function AvatarGroup({ size = 'default', shape = 'circle', count, countLabel, ch
         style={overlap ? ({ '--escala-overlap': `calc(-1 * ${overlap})`, ...style } as React.CSSProperties) : style}
         {...props}
       >
+        {/* Items are positioned so they stack in DOM order (the file: item-1 at the bottom). Unpositioned, the positioned Avatar of item N painted OVER the page ring of item N+1 and over the +N tile. */}
         {React.Children.map(children, (child, i) => (
-          <div data-part="AvatarGroup.item" key={i} className="inline-flex shrink-0">{child}</div>
+          <div data-part="AvatarGroup.item" key={i} className="relative inline-flex shrink-0">{child}</div>
         ))}
         {count ? (
-          <div data-part="AvatarGroup.item" className="inline-flex shrink-0">
+          <div data-part="AvatarGroup.item" className="relative inline-flex shrink-0">
             <div
               data-part="AvatarGroup.action"
               role="img"

@@ -429,3 +429,12 @@ Every row cost a round trip with the owner. Check each one before calling a comp
 | The file marks a sorted column but lists the rows in its own order | Sorting on mount reordered the people vs the screenshot | Rows reorder only after the first click (`sorted`) |
 | The file's avatars are stock photos from its Media library | Code has none | `lib/avatarGradient.ts`: an opaque gradient SVG data URI through the same `src` the Photo swap uses |
 | axe on a composed table | `role="img"` avatars with no name; a focusable `separator` with no `aria-valuenow` | Avatar: unnamed photo = decorative (`aria-hidden`), named = `role=img`; TableResizer reports its column's width (`aria-valuenow`, ResizeObserver on the parent) and has an `aria-label` |
+
+# Lessons from the AvatarGroup fix (2026-11-13)
+Source: the file's «AvatarGroup Prototype» (868:28472): four PHOTO avatars + the dark `+3` tile, default circle / rounded, sm and xl, Light and Dark.
+| Trap | What it looked like | The fix (where it lives) |
+|---|---|---|
+| Soft initials in a stack | A 12 % tint reads as "painted", and the story used it as the group's default | The file's people are photos (opaque). A photo-less image Avatar paints an OPAQUE gradient (`hue` / `fill` props, `avatarGradientCss`); the stories, the AvatarGroup specimen and the Avatar `Image` specimen use it. Soft / solid initials stay as opt-in fills |
+| Overlap looked wrong although the margins were the file's (−4 … −16, widths 74 · 106 · 148 · 188 · 212 · 252 · 286) | The left avatar's translucent edge (and its hairline) showed OVER the next item's `Surface/page` ring and over the `+N` tile: a pale sliver on the tile | Stacking, not spacing: the Avatar is `relative`, the item frames were not, so positioned avatars painted above later unpositioned frames. Items are `relative` now (DOM order = z order, as the file's item-1 at the bottom). Measured: page ring cuts every avatar, nothing shows through, widths unchanged |
+| `escala-ui` files ship in the shadcn registry | `gen:registry-sources` threw «imports app internals (../../lib/…)» after a helper import | A registry component is self-contained: the gradient helpers live in `avatar.tsx`; `lib/avatarGradient.ts` re-exports them and adds the data-URI form |
+| `cmd1 && cat > file <<EOF` | The first command failed, so the file was never rewritten and Storybook's index looked stale | Check the file, not the index |

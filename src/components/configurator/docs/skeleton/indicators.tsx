@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import type { SpecimenProps } from '../specimens'
-import { PhosphorWeightProvider, PreviewIcon, avatarFillOf, avatarHueGradient } from '../specimens'
+import { PhosphorWeightProvider, PreviewIcon, avatarFillOf, avatarHueGradient, AVATAR_STACK_HUES } from '../specimens'
 import { iconOf, iconRoleOf } from '../../../../lib/previewTokens'
 import type { IconRole } from '../../../../lib/iconSizing'
 import { Badge as SkBadge, StatusBadge as SkStatusBadge, type BadgeAppearance, type BadgeShape, type BadgeSize, type BadgeType, type BadgeVariant, type Presence } from '../../../escala-ui/badge'
@@ -166,7 +166,8 @@ export function SkeletonAvatarSpecimen({ t, v }: SpecimenProps) {
         appearance={(v.Appearance ?? 'soft') as AvatarAppearance}
         ringVisible={v.RingVisible === 'True'}
         statusVisible={v.StatusVisible === 'True'}
-        style={background ? { background } : undefined}
+        style={background && type !== 'image' ? { background } : undefined}
+        fill={type === 'image' ? background : undefined}
       >
         {gradient ? null : size === '2xs' ? 'M' : 'MD'}
       </SkAvatar>
@@ -183,15 +184,16 @@ export function SkeletonAvatarStatusSpecimen({ t, v }: SpecimenProps) {
   )
 }
 
-/** The Figma AvatarGroup: four people (the swap's sample photos are not shipped, so initials) and +3. */
+/** The Figma AvatarGroup: four people and +3. The file's people are photos; code has none, so each is an image avatar
+ *  painted with the system's gradient at its own hue (opaque, so the overlap never shows the avatar below). */
 export function SkeletonAvatarGroupSpecimen({ t, v }: SpecimenProps) {
   const size = (v.Size ?? 'default') as AvatarSize
-  const variants: AvatarVariant[] = ['default', 'success', 'warning', 'info']
+  const names = ['Ada', 'Ben', 'Cleo', 'Dan']
   return (
     <RecipeScope t={t}>
       <SkAvatarGroup aria-label="Team" size={size} shape={(v.Shape ?? 'circle') as AvatarShape} count={3} countLabel="3 more people">
-        {['AB', 'CD', 'EF', 'GH'].map((initials, i) => (
-          <SkAvatar key={initials} type="initials" variant={variants[i]} aria-label={initials}>{size === '2xs' ? initials[0] : initials}</SkAvatar>
+        {names.map((name, i) => (
+          <SkAvatar key={name} type="image" aria-label={name} fill={avatarHueGradient(t, AVATAR_STACK_HUES[i])} />
         ))}
       </SkAvatarGroup>
     </RecipeScope>

@@ -4,14 +4,17 @@
  * Opaque by construction — a translucent tint lets the avatar underneath show through when they overlap.
  * Same lightness / chroma envelope as `avatarHueGradient` (`docs/specimens.tsx`), rotated by `hue`.
  */
-const hsl = (h: number, s: number, l: number) => `hsl(${((h % 360) + 360) % 360} ${Math.round(s * 100)}% ${Math.round(l * 100)}%)`
+import { avatarGradientStops } from '../components/escala-ui/avatar'
+const STOPS = avatarGradientStops
+
+export { avatarGradientCss, hueFromText } from '../components/escala-ui/avatar'
 
 export function avatarGradientSrc(hue: number): string {
   const svg =
     `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" preserveAspectRatio="none">` +
     `<defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1" gradientTransform="rotate(-5 .5 .5)">` +
-    `<stop offset="0" stop-color="${hsl(hue, 0.52, 0.8)}"/><stop offset=".52" stop-color="${hsl(hue, 0.62, 0.62)}"/>` +
-    `<stop offset="1" stop-color="${hsl(hue, 0.55, 0.44)}"/></linearGradient></defs>` +
+    `<stop offset="0" stop-color="${STOPS(hue)[0]}"/><stop offset=".52" stop-color="${STOPS(hue)[1]}"/>` +
+    `<stop offset="1" stop-color="${STOPS(hue)[2]}"/></linearGradient></defs>` +
     `<rect width="64" height="64" fill="url(#g)"/></svg>`
   return `data:image/svg+xml;utf8,${encodeURIComponent(svg)}`
 }
