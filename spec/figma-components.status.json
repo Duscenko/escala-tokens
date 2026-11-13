@@ -34,10 +34,6 @@
       "status": "part",
       "of": "RadioGroup"
     },
-    "Toast": {
-      "status": "rename",
-      "code": "Sonner"
-    },
     "Modal": {
       "status": "rename",
       "code": "Dialog"

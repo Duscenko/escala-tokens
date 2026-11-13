@@ -289,7 +289,7 @@ function motionChoreographies(settings) {
     },
     "sonner-enter": {
       pattern: "coordinated",
-      components: ["Sonner"],
+      components: ["Toast"],
       intent: { usage: ["toasts", "notifications"], direction: bounces ? "The toast springs in: pop, overshoot, settle." : travels ? "The toast rises into place." : "The toast fades in." },
       tracks: [bounces ? { keyframes: "spring-in", motion: { duration: "cinematic", easing: "standard" }, delay: 0 } : { keyframes: travels ? "rise" : "fade-in", motion: r("use-disclosure-in"), delay: 0 }],
       reducedMotion: { collapseTo: "coordinated", pattern: "coordinated", tracks: [{ keyframes: "fade-in", motion: FADE_IN, delay: 0 }] }
@@ -5894,20 +5894,24 @@ var init_componentCatalogue = __esm({
       },
       // ── Feedback ────────────────────────────────────────────────────────────────
       {
-        key: "Sonner",
-        label: "Sonner",
+        key: "Toast",
+        label: "Toast",
         category: "Feedback",
-        description: "shadcn/ui Sonner: the toaster. A toast has a type \u2014 default, success, info, warning, error or loading \u2014 told apart by its icon.",
-        usage: "Mount <Toaster /> once; call toast() / toast.success() \u2026 from anywhere. Use for transient confirmations, not for errors the user must act on (use Alert).",
-        axes: [{ name: "Type", values: ["default", "success", "info", "warning", "error", "loading"] }],
-        figmaSets: ["Sonner"],
-        props: [
-          { name: "toast(message, options)", type: "function", description: "Shows a toast; toast.success / .info / .warning / .error / .loading set its type." },
-          { name: "description", type: "ReactNode", description: "Second line under the message." },
-          { name: "action", type: "{ label, onClick }", description: 'One action button ("Undo").' },
-          { name: "Toaster position", type: '"top-left" | \u2026 | "bottom-right"', description: "Where toasts stack (default bottom-right)." }
+        description: "A short, non-blocking confirmation over the page that dismisses itself: an icon told apart by severity, a title, an optional description, actions, a close and a progress hairline.",
+        usage: "Use for transient feedback (saved, copied, undone). Keep the title under six words; an action such as Undo needs a second way to be reached because the toast times out. For a persistent notice use Alert, for form validation Field.",
+        // The Figma file's axes, value for value (design-plans/toast-contract.md).
+        axes: [
+          { name: "Appearance", values: ["solid", "soft", "filled", "outline"] },
+          { name: "Variant", values: ["default", "secondary", "success", "info", "warning", "critical"] }
         ],
-        accessibility: "Sonner renders an aria-live region; toasts pause on hover and are dismissable with Escape."
+        figmaSets: ["Toast"],
+        props: [
+          { name: "appearance / variant", type: "Figma axes", description: "Variant is the severity: it picks the icon (Sparkle, Info, CheckCircle, Warning, WarningCircle) and the colour." },
+          { name: "title / description / descriptionVisible", type: "ReactNode / boolean", description: "Figma Title, Description and DescriptionVisible." },
+          { name: "iconVisible / actionsVisible / closeVisible / progressVisible", type: "boolean", description: "The Figma booleans; progress is the time-left hairline (progress = 0\u2013100)." },
+          { name: "showToast(props)", type: "function", description: "Puts a Toast in the Toaster queue; mount <Toaster /> once." }
+        ],
+        accessibility: 'role="status" (polite), and role="alert" for critical. Do not rely on colour alone: the icon and the text carry the severity. Keep the toast on screen long enough to read.'
       },
       {
         key: "Alert",
@@ -6204,7 +6208,7 @@ var init_componentCatalogue = __esm({
       "Dialog",
       "Tooltip",
       "Separator",
-      "Sonner",
+      "Toast",
       "Tabs"
     ];
   }
@@ -11529,7 +11533,7 @@ var init_navigation = __esm({
 });
 
 // src/lib/recipes/feedback.ts
-var ALERT_VARIANTS, ALERT_APPEARANCES, ALERT_LAYOUTS, ALERT_SIZES, STATUS_TONE, ALERT_TONE, ALERT, SONNER_TYPES, SONNER_ICON, SONNER, SKELETON, EMPTY;
+var ALERT_VARIANTS, ALERT_APPEARANCES, ALERT_LAYOUTS, ALERT_SIZES, STATUS_TONE, ALERT_TONE, ALERT, TOAST_APPEARANCES, TOAST_VARIANTS, TOAST_STATUS, TOAST_TONE, TOAST, SKELETON, EMPTY;
 var init_feedback = __esm({
   "src/lib/recipes/feedback.ts"() {
     init_helpers();
@@ -11596,49 +11600,82 @@ var init_feedback = __esm({
         })
       ]
     };
-    SONNER_TYPES = ["default", "success", "info", "warning", "error", "loading"];
-    SONNER_ICON = {
-      default: "content.primary",
-      loading: "content.secondary",
-      success: "status.success.content",
-      info: "status.info.content",
-      warning: "status.warning.content",
-      error: "status.critical.content"
+    TOAST_APPEARANCES = ["solid", "soft", "filled", "outline"];
+    TOAST_VARIANTS = ["default", "secondary", "success", "info", "warning", "critical"];
+    TOAST_STATUS = (s) => ({
+      ink: `status.${s}.content`,
+      border: `status.${s}.border`,
+      soft: `status.${s}.surface`,
+      solid: `status.${s}.surface-solid`,
+      onSolid: `status.${s}.on-solid`,
+      track: `status.${s}.surface`,
+      trackSoft: `status.${s}.border`,
+      bar: `status.${s}.surface-solid`
+    });
+    TOAST_TONE = {
+      default: { ink: "content.accent", border: "border.accent", soft: "surface.accent", solid: "action.primary.default", onSolid: "content.on-action", track: "surface.accent", trackSoft: "border.accent", bar: "action.primary.default" },
+      secondary: { ink: "content.secondary", border: "border.default", soft: "surface.muted", solid: "surface.inverse", onSolid: "content.inverse", track: "surface.muted", trackSoft: "border.default", bar: "surface.inverse" },
+      success: TOAST_STATUS("success"),
+      info: TOAST_STATUS("info"),
+      warning: TOAST_STATUS("warning"),
+      critical: TOAST_STATUS("critical")
     };
-    SONNER = {
-      key: "Sonner",
-      slots: ["root", "icon", "title", "description", "action"],
-      defaults: { Type: "default" },
-      dom: {
-        // Sonner's own sheet is `[data-sonner-toast][data-styled='true'] …`, injected
-        // after ours: the toaster and `[data-styled]` in the selector outrank it.
-        root: '[data-escala="Sonner"] [data-sonner-toaster] [data-sonner-toast][data-styled]',
-        slots: { icon: "[data-icon]", title: "[data-title]", description: "[data-description]", action: "[data-button]" }
-      },
+    TOAST = {
+      key: "Toast",
+      slots: ["root", "icon", "content", "title", "description", "actions", "close", "progress", "bar"],
+      defaults: { Appearance: "filled", Variant: "default" },
       parts: [
         part({}, () => ({
-          root: {
-            fill: c("surface.layer-1"),
-            stroke: c("border.default"),
-            strokeWidth: "stroke.control",
-            text: c("content.primary"),
-            radius: "radius.container",
-            shadow: "shadow.lg",
-            paddingX: "spacing.4",
-            paddingY: "spacing.4",
-            gap: "spacing.1_5"
-          },
+          root: { radius: "radius.overlay", gap: "spacing.gap-control", lift: "rest" },
+          icon: { width: "icon.medium", height: "icon.medium" },
+          content: { gap: "spacing.gap-tight" },
           title: { font: "type.label" },
-          description: { text: c("content.secondary"), font: "type.body-sm" },
-          action: {
-            fill: c("action.primary.default"),
-            text: c("content.on-action"),
-            radius: "radius.action",
-            paddingX: "spacing.2",
-            font: "type.caption"
-          }
+          description: { font: "type.body-sm" },
+          actions: { gap: "spacing.gap-control" },
+          progress: { height: "spacing.1" }
         })),
-        part({ Type: SONNER_TYPES }, (type) => ({ icon: { text: c(SONNER_ICON[type]) } }))
+        part({ Appearance: TOAST_APPEARANCES, Variant: TOAST_VARIANTS }, (appearance, variant) => {
+          const t = TOAST_TONE[variant];
+          const pad = appearance === "filled" || appearance === "outline" ? { paddingX: "spacing.inset-control+stroke.control", paddingY: "spacing.inset-control+stroke.control" } : { paddingX: "spacing.inset-control", paddingY: "spacing.inset-control" };
+          switch (appearance) {
+            case "solid":
+              return {
+                root: { ...pad, fill: c(t.solid) },
+                icon: { text: c(t.onSolid) },
+                title: { text: c(t.onSolid) },
+                description: { text: c(variant === "secondary" ? "content.inverse-secondary" : t.onSolid) },
+                progress: { fill: c("surface.inverse-muted") },
+                bar: { fill: c(t.onSolid) }
+              };
+            case "soft":
+              return {
+                root: { ...pad, fill: c(t.soft) },
+                icon: { text: c(t.ink) },
+                title: { text: c("content.primary") },
+                description: { text: c("content.primary") },
+                progress: { fill: c(t.trackSoft) },
+                bar: { fill: c(t.bar) }
+              };
+            case "outline":
+              return {
+                root: { ...pad, fill: c("surface.layer-1"), stroke: c(t.border), strokeWidth: "stroke.control" },
+                icon: { text: c(t.ink) },
+                title: { text: c(variant === "secondary" ? "content.primary" : t.ink) },
+                description: { text: c(variant === "secondary" ? "content.secondary" : t.ink) },
+                progress: { fill: c(t.track) },
+                bar: { fill: c(t.bar) }
+              };
+            default:
+              return {
+                root: { ...pad, fill: c("surface.layer-2"), stroke: c("border.default"), strokeWidth: "stroke.control" },
+                icon: { text: c(t.ink) },
+                title: { text: c("content.primary") },
+                description: { text: c("content.secondary") },
+                progress: { fill: c(t.track) },
+                bar: { fill: c(t.bar) }
+              };
+          }
+        })
       ]
     };
     SKELETON = {
@@ -12526,7 +12563,7 @@ var init_componentRecipes = __esm({
       Tooltip: TOOLTIP,
       ScrollArea: SCROLL_AREA,
       Alert: ALERT,
-      Sonner: SONNER,
+      Toast: TOAST,
       Tabs: TABS,
       TabMenu: TAB_MENU,
       SegmentedControl: SEGMENTED_CONTROL,
@@ -15353,7 +15390,7 @@ var init_useDesignStore = __esm({
         }),
         {
           name: "scalable-designs-store",
-          version: 138,
+          version: 139,
           migrate: (persisted, version) => {
             if (persisted) {
               delete persisted.styleDirection;
@@ -17049,6 +17086,18 @@ var init_useDesignStore = __esm({
                 if (at >= 0) sel.splice(at, 1, "ProgressLine");
                 const line = sel.indexOf("ProgressLine");
                 if (line >= 0 && !sel.includes("ProgressCircle")) sel.splice(line + 1, 0, "ProgressCircle");
+              };
+              rename(persisted);
+              if (Array.isArray(persisted.savedSystems)) {
+                for (const sys of persisted.savedSystems) rename(sys?.snapshot);
+              }
+            }
+            if (version < 139) {
+              const rename = (state2) => {
+                if (!Array.isArray(state2?.selectedComponents)) return;
+                const sel = state2.selectedComponents;
+                const at = sel.indexOf("Sonner");
+                if (at >= 0) sel.splice(at, 1, "Toast");
               };
               rename(persisted);
               if (Array.isArray(persisted.savedSystems)) {

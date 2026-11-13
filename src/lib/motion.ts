@@ -739,7 +739,7 @@ export function motionChoreographies(settings: MotionSettings): Record<string, C
     },
     'sonner-enter': {
       pattern: 'coordinated',
-      components: ['Sonner'],
+      components: ['Toast'],
       intent: { usage: ['toasts', 'notifications'], direction: bounces ? 'The toast springs in: pop, overshoot, settle.' : travels ? 'The toast rises into place.' : 'The toast fades in.' },
       tracks: [bounces
         ? { keyframes: 'spring-in', motion: { duration: 'cinematic', easing: 'standard' }, delay: 0 }

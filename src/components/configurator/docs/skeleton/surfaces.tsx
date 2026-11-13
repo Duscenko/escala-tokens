@@ -17,7 +17,7 @@ import { Tooltip as SkTooltip, TooltipContent as SkTooltipContent, TooltipProvid
 import { ScrollArea as SkScrollArea, ScrollAreaRow as SkScrollAreaRow } from '../../../escala-ui/scroll-area'
 import { iconOf, spaceOf } from '../../../../lib/previewTokens'
 import { Alert as SkAlert, AlertDescription as SkAlertDescription, AlertIcon as SkAlertIcon, AlertTitle as SkAlertTitle, type AlertVariant } from '../../../escala-ui/alert'
-import { Toaster as SkToaster, toast, type SonnerType } from '../../../escala-ui/sonner'
+import { Toast as SkToast, type ToastAppearance, type ToastVariant } from '../../../escala-ui/toast'
 import { Spinner as SkSpinner } from '../../../escala-ui/spinner'
 import { RecipeScope } from './scope'
 import { AlertDialog as SkAlertDialog, AlertDialogAction as SkAlertDialogAction, AlertDialogCancel as SkAlertDialogCancel, AlertDialogContent as SkAlertDialogContent, AlertDialogDescription as SkAlertDialogDescription, AlertDialogFooter as SkAlertDialogFooter, AlertDialogHeader as SkAlertDialogHeader, AlertDialogMedia as SkAlertDialogMedia, AlertDialogTitle as SkAlertDialogTitle, type AlertDialogSize } from '../../../escala-ui/alert-dialog'
@@ -193,86 +193,39 @@ export function SkeletonAlertSpecimen({ t, v, w, children }: SpecimenProps) {
   )
 }
 
-const SONNER_COPY: Record<SonnerType, [string, string]> = {
+const TOAST_COPY: Record<string, [string, string]> = {
   default: ['Event created', 'Sunday, 3 November at 9:00'],
+  secondary: ['Draft saved', 'Your changes are kept locally.'],
   success: ['Changes saved', 'Your tokens are up to date.'],
   info: ['A new version is available', 'Reload to get the latest.'],
   warning: ['Storage almost full', '90% of your plan is in use.'],
-  error: ['Something went wrong', 'The tokens were not published.'],
-  loading: ['Publishing…', 'Sending your tokens to Figma.'],
+  critical: ['Something went wrong', 'The tokens were not published.'],
 }
 
-/**
- * The real Sonner toaster, drawn in place: one Toaster per specimen (its own
- * `id`, so a toast lands only here), its list taken out of the viewport corner
- * and laid in the flow at the front toast's height. The toast never expires.
- */
 /** One pass of a toast on the playing board: in, held, out on the last step. */
-const SONNER_PLAY_STEPS = 7
+const TOAST_PLAY_STEPS = 7
 
-export function SkeletonSonnerSpecimen({ t, v, w, children }: SpecimenProps) {
-  const id = useId()
-  const type = (v.Type ?? 'default') as SonnerType
-  const [title, description] = SONNER_COPY[type] ?? SONNER_COPY.default
-  const message = typeof children === 'string' ? children : title
-  useEffect(() => {
-    const opts = { id: `${id}-toast`, toasterId: id, description, duration: Infinity, action: type === 'default' ? { label: 'Undo', onClick: () => undefined } : undefined }
-    if (type === 'default') toast(message, opts)
-    else toast[type](message, opts)
-    return () => { toast.dismiss(`${id}-toast`) }
-  }, [id, type, message, description])
-  // Sonner sizes its list from `getBoundingClientRect`, which a `scale()`d
-  // ancestor (the board's photographed tiles) shrinks: the list collapsed to
-  // the scaled height and stacked toasts overlapped. `offsetHeight` ignores
-  // transforms, so the front toast is measured here instead.
-  const box = useRef<HTMLDivElement>(null)
-  const [height, setHeight] = useState<number | null>(null)
-  useEffect(() => {
-    const root = box.current
-    if (!root) return
-    let ro: ResizeObserver | null = null
-    let watched: HTMLElement | null = null
-    // Sonner swaps the toast node (a dismiss + re-add with the same id). An
-    // observer left on the detached node reported 0 and the list collapsed,
-    // so a new node is re-observed.
-    const attach = () => {
-      const toastEl = root.querySelector<HTMLElement>('[data-sonner-toast]')
-      if (!toastEl || toastEl === watched) return
-      ro?.disconnect()
-      watched = toastEl
-      ro = new ResizeObserver(() => { if (toastEl.isConnected && toastEl.offsetHeight) setHeight(toastEl.offsetHeight) })
-      ro.observe(toastEl)
-      if (toastEl.offsetHeight) setHeight(toastEl.offsetHeight)
-    }
-    attach()
-    const mo = new MutationObserver(attach)
-    mo.observe(root, { childList: true, subtree: true })
-    return () => { mo.disconnect(); ro?.disconnect() }
-  }, [])
-  const icon = (concept: 'success' | 'info' | 'warning' | 'error') => <PreviewIcon concept={concept} size={iconOf(16)} />
-  // While the board plays, the toast leaves and arrives again on the brand's
-  // own `sonner-enter` choreography (Sonner's built-in motion is the library's,
-  // not a token). The box keeps its size, so nothing around it moves.
-  const beat = useAutoplayStep(SONNER_PLAY_STEPS, type === 'success' ? 800 : 950)
+/** The Figma Toast, drawn in place at its 360px (the `Toaster` queue is the consumer's). While the board plays it
+ *  leaves and arrives again on the brand's own `sonner-enter` choreography. */
+export function SkeletonToastSpecimen({ t, v, w, children }: SpecimenProps) {
+  const variant = (v.Variant ?? 'default') as ToastVariant
+  const [title, description] = TOAST_COPY[variant] ?? TOAST_COPY.default
+  const beat = useAutoplayStep(TOAST_PLAY_STEPS, variant === 'success' ? 800 : 950)
   const play: React.CSSProperties | undefined = beat == null ? undefined
-    : beat === SONNER_PLAY_STEPS - 1
+    : beat === TOAST_PLAY_STEPS - 1
       ? { opacity: 0, transition: 'opacity var(--motion-use-overlay-out)' }
       : { animation: `var(${choreographyVar('sonner-enter')})` }
   return (
     <RecipeScope t={t}>
-      <div ref={box} style={{ width: w ?? 356, maxWidth: '100%', ...play }}>
-        <SkToaster
-          id={id}
-          // Sonner collapses a stack and EXPANDS it on hover. A specimen holds
-          // one toast, so expanding shows nothing new — it only re-measured the
-          // list, changed its height and shifted the whole board under the
-          // pointer (8 layout shifts per pass; the inspector then highlighted
-          // the toast that had moved there). Starting expanded makes hover a no-op.
-          expand
-          offset={0}
-          mobileOffset={0}
-          icons={{ success: icon('success'), info: icon('info'), warning: icon('warning'), error: icon('error'), loading: <SkSpinner /> }}
-          style={{ position: 'relative', inset: 'auto', transform: 'none', width: '100%', height: height ?? 'var(--front-toast-height)', '--width': '100%' } as React.CSSProperties}
+      <div style={{ width: w ?? 360, maxWidth: '100%', ...play }}>
+        <SkToast
+          appearance={(v.Appearance ?? 'filled') as ToastAppearance}
+          variant={variant}
+          title={typeof children === 'string' ? children : title}
+          description={description}
+          actionsVisible={v.Actions === 'True'}
+          actions={<SkButton variant="secondary" appearance="solid" size="sm">Undo</SkButton>}
+          className="!w-full"
         />
       </div>
     </RecipeScope>

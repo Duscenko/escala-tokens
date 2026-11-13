@@ -26,7 +26,7 @@ const SwitchSpec = SPECIMENS.Switch
 const InputSpec = SPECIMENS.Input
 const SliderSpec = SPECIMENS.Slider
 const StatusBadgeSpec = SPECIMENS.StatusBadge
-const ToastSpec = SPECIMENS.Sonner
+const ToastSpec = SPECIMENS.Toast
 const InputGroupSpec = SPECIMENS.InputGroup
 const PasswordStrengthSpec = SPECIMENS.PasswordStrength
 const TabMenuSpec = SPECIMENS.TabMenu
@@ -145,7 +145,7 @@ function ColorCollage({
         <BadgeSpec t={tokens} v={{ Variant: 'secondary', Appearance: 'outline' }} />
       </div>
 
-      <ToastSpec t={tokens} v={{ Type: 'success' }} />
+      <ToastSpec t={tokens} v={{ Variant: 'success' }} />
       <Live c="FileUploadDropzone" t={tokens} />
       <Live c="Select" t={tokens} />
       <InputGroupSpec t={tokens} v={{}} />

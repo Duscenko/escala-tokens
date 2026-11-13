@@ -1999,20 +1999,24 @@ export const COMPONENTS: ComponentDef[] = [
   },
   // ── Feedback ────────────────────────────────────────────────────────────────
   {
-    key: 'Sonner',
-    label: 'Sonner',
+    key: 'Toast',
+    label: 'Toast',
     category: 'Feedback',
-    description: 'shadcn/ui Sonner: the toaster. A toast has a type — default, success, info, warning, error or loading — told apart by its icon.',
-    usage: 'Mount <Toaster /> once; call toast() / toast.success() … from anywhere. Use for transient confirmations, not for errors the user must act on (use Alert).',
-    axes: [{ name: 'Type', values: ['default', 'success', 'info', 'warning', 'error', 'loading'] }],
-    figmaSets: ['Sonner'],
-    props: [
-      { name: 'toast(message, options)', type: 'function', description: 'Shows a toast; toast.success / .info / .warning / .error / .loading set its type.' },
-      { name: 'description', type: 'ReactNode', description: 'Second line under the message.' },
-      { name: 'action', type: '{ label, onClick }', description: 'One action button ("Undo").' },
-      { name: 'Toaster position', type: '"top-left" | … | "bottom-right"', description: 'Where toasts stack (default bottom-right).' },
+    description: 'A short, non-blocking confirmation over the page that dismisses itself: an icon told apart by severity, a title, an optional description, actions, a close and a progress hairline.',
+    usage: 'Use for transient feedback (saved, copied, undone). Keep the title under six words; an action such as Undo needs a second way to be reached because the toast times out. For a persistent notice use Alert, for form validation Field.',
+    // The Figma file's axes, value for value (design-plans/toast-contract.md).
+    axes: [
+      { name: 'Appearance', values: ['solid', 'soft', 'filled', 'outline'] },
+      { name: 'Variant', values: ['default', 'secondary', 'success', 'info', 'warning', 'critical'] },
     ],
-    accessibility: 'Sonner renders an aria-live region; toasts pause on hover and are dismissable with Escape.',
+    figmaSets: ['Toast'],
+    props: [
+      { name: 'appearance / variant', type: 'Figma axes', description: 'Variant is the severity: it picks the icon (Sparkle, Info, CheckCircle, Warning, WarningCircle) and the colour.' },
+      { name: 'title / description / descriptionVisible', type: 'ReactNode / boolean', description: 'Figma Title, Description and DescriptionVisible.' },
+      { name: 'iconVisible / actionsVisible / closeVisible / progressVisible', type: 'boolean', description: 'The Figma booleans; progress is the time-left hairline (progress = 0–100).' },
+      { name: 'showToast(props)', type: 'function', description: 'Puts a Toast in the Toaster queue; mount <Toaster /> once.' },
+    ],
+    accessibility: 'role="status" (polite), and role="alert" for critical. Do not rely on colour alone: the icon and the text carry the severity. Keep the toast on screen long enough to read.',
   },
   {
     key: 'Alert',
@@ -2316,7 +2320,7 @@ export const CATEGORIES = ['Button & Actions', 'Form Controls', 'Indicators', 'C
 //
 // Keep this list in lockstep with the plugin's `SAMPLE_SETS` array in code.ts.
 export const FIGMA_SAMPLE_KEYS: readonly string[] = [
-  'Button', 'Input', 'Select', 'Checkbox', 'Switch', 'Badge', 'StatusBadge', 'Sonner', 'Avatar',
+  'Button', 'Input', 'Select', 'Checkbox', 'Switch', 'Badge', 'StatusBadge', 'Toast', 'Avatar',
 ]
 
 /** Does the live Figma import render this key as a real component today —
@@ -2345,7 +2349,7 @@ export const ESSENTIAL_COMPONENT_KEYS = [
   'Input', 'Select', 'Checkbox', 'Switch',
   'Badge',
   'Card', 'Avatar', 'Dialog', 'Tooltip', 'Separator',
-  'Sonner',
+  'Toast',
   'Tabs',
 ] as const
 

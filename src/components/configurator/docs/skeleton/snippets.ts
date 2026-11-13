@@ -41,10 +41,8 @@ export const SKELETON_SNIPPETS: Record<string, Snippet> = {
 
   Alert: (v) =>
     `import { Alert } from "@/components/ui/alert"\n\n<Alert${v.Variant && v.Variant !== 'default' ? ` variant="${v.Variant}"` : ''}${v.Appearance && v.Appearance !== 'outline' ? ` appearance="${v.Appearance}"` : ''}${v.Layout === 'vertical' ? ' layout="vertical"' : ''}${v.Size === 'sm' ? ' size="sm"' : ''} description="Your plan renews tomorrow." onClose={dismiss} />`,
-  Sonner: (v) => {
-    const type = v.Type && v.Type !== 'default' ? `.${v.Type}` : ''
-    return `import { Toaster } from "@/components/ui/sonner"\nimport { toast } from "sonner"\n\n// once, at the root of the app\n<Toaster />\n\n// anywhere\ntoast${type}("Changes saved", { description: "Your tokens are up to date." })`
-  },
+  Toast: (v) =>
+    `import { Toaster, showToast } from "@/components/ui/toast"\n\n// once, at the root of your app\n<Toaster />\n\n// anywhere\nshowToast({ ${v.Variant && v.Variant !== 'default' ? `variant: "${v.Variant}", ` : ''}${v.Appearance && v.Appearance !== 'filled' ? `appearance: "${v.Appearance}", ` : ''}title: "Changes saved", description: "Your tokens are up to date." })`,
 
   ToggleGroup: (v) =>
     `import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group"\n\n<ToggleGroup type="multiple"${v.Variant === 'outline' ? ' variant="outline"' : ''}${sizeProp(v)}>\n  <ToggleGroupItem value="bold" aria-label="Bold"><Bold /></ToggleGroupItem>\n  <ToggleGroupItem value="italic" aria-label="Italic"><Italic /></ToggleGroupItem>\n  <ToggleGroupItem value="underline" aria-label="Underline"><Underline /></ToggleGroupItem>\n</ToggleGroup>`,

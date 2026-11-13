@@ -77,7 +77,7 @@ describe('every catalogue component is described by a recipe', () => {
     expect(rolesForComponent('Switch')).toContain('action.primary.hover')
   })
 
-  it('Sonner names the popover pair shadcn maps it to', () => {
-    expect(rolesForComponent('Sonner')).toEqual(expect.arrayContaining(['surface.layer-1', 'content.primary', 'border.default']))
+  it('Toast names the surface, ink and edge the Figma set paints', () => {
+    expect(rolesForComponent('Toast')).toEqual(expect.arrayContaining(['surface.layer-2', 'content.primary', 'border.default']))
   })
 })

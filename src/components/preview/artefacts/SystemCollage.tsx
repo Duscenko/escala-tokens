@@ -62,7 +62,7 @@ const InlineLink = ({ t, children }: { t: PreviewTokens; children: ReactNode }) 
   </TokenInspector>
 )
 const Segmented = inspectable('SegmentedControl')
-const Sonner = inspectable('Sonner')
+const Toast = inspectable('Toast')
 const TabMenu = inspectable('TabMenu')
 const Progress = inspectable('ProgressLine')
 const StatusBadge = inspectable('StatusBadge')
@@ -1085,8 +1085,8 @@ export function SystemCollage({
           appearance={appearanceAt(15)}
           style={{ gap: gap(tile(15), 'gap-group', '16px') }}
         >
-          <Sonner t={tile(15)} v={{ Type: 'success' }} w="100%" />
-          <Sonner t={tile(15)} v={{ Type: 'error' }} w="100%" />
+          <Toast t={tile(15)} v={{ Variant: 'success' }} w="100%" />
+          <Toast t={tile(15)} v={{ Variant: 'critical' }} w="100%" />
         </ScaledModule>
     ),
     tabsProgress: (

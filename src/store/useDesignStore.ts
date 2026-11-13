@@ -2058,7 +2058,7 @@ export const useDesignStore = create<DesignStore>()(
     }),
     {
       name: 'scalable-designs-store',
-      version: 138,
+      version: 139,
       migrate: (persisted: any, version: number) => {
         if (persisted) {
           // v1→v2: remove styleDirection, rename selectedAtoms → selectedComponents
@@ -4268,6 +4268,19 @@ export const useDesignStore = create<DesignStore>()(
             if (at >= 0) sel.splice(at, 1, 'ProgressLine')
             const line = sel.indexOf('ProgressLine')
             if (line >= 0 && !sel.includes('ProgressCircle')) sel.splice(line + 1, 0, 'ProgressCircle')
+          }
+          rename(persisted)
+          if (Array.isArray(persisted.savedSystems)) {
+            for (const sys of persisted.savedSystems) rename(sys?.snapshot)
+          }
+        }
+        if (version < 139) {
+          // v138→v139: Sonner is now Toast (the Figma set; the sonner library stays the queue behind it).
+          const rename = (state: any) => {
+            if (!Array.isArray(state?.selectedComponents)) return
+            const sel: string[] = state.selectedComponents
+            const at = sel.indexOf('Sonner')
+            if (at >= 0) sel.splice(at, 1, 'Toast')
           }
           rename(persisted)
           if (Array.isArray(persisted.savedSystems)) {

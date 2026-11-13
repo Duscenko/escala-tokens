@@ -405,9 +405,9 @@ export const OVERVIEWS: Record<string, Overview> = {
   Chart: [each('Type', ['bar', 'line', 'area'], {}, 260)],
 
   // ── Feedback ───────────────────────────────────────────────────────────────
-  Sonner: [
-    ...stack('Type', ['default', 'success', 'info'], {}, 340),
-    ...stack('Type', ['warning', 'error', 'loading'], {}, 340),
+  Toast: [
+    each('Variant', ['default', 'secondary', 'success', 'info', 'warning', 'critical'], { Appearance: 'filled' }, 360),
+    each('Appearance', ['solid', 'soft', 'filled', 'outline'], {}, 360),
   ],
   Empty: [each('Media', ['default', 'icon'])],
 

@@ -1,5 +1,5 @@
 /**
- * Feedback recipes: Alert (shadcn's Alert) and Sonner (shadcn's toaster).
+ * Feedback recipes: Alert and Toast (the Figma sets).
  * Rules as in `componentRecipes.ts`.
  */
 import { c, part, type ComponentRecipe } from './helpers.js'
@@ -78,46 +78,87 @@ export const ALERT: ComponentRecipe = {
   ],
 }
 
-// ── Sonner ─────────────────────────────────────────────────────────────────
-// shadcn's Toaster maps Sonner onto the popover: `--normal-bg: var(--popover)`,
-// `--normal-text: var(--popover-foreground)`, `--normal-border: var(--border)`.
-// The toast `type` changes only the icon, as in shadcn — and the icon takes
-// that severity's ink (`status.*.content`), so a success reads as a success
-// and not as a neutral note with a tick. Sonner puts `data-type` on the toast,
-// which is the attribute the `Type` axis reads. Sonner renders the DOM, so the
-// parts are its own attributes.
+// ── Toast ──────────────────────────────────────────────────────────────────
+// The Figma set (design-plans/toast-contract.md, 1117:114, 24 variants). 360 wide, Radius/overlay, Shadow/lg (the key +
+// ambient lift: the file's ring and negative spreads paint nothing), padding 12 (left 20: the component), gap 8; a 4px
+// progress hairline along the bottom edge. Appearance solid · soft · filled · outline × Variant (default · secondary ·
+// success · info · warning · critical). A stroke (filled, outline) is laid out, so the padding adds it.
 
-export const SONNER_TYPES = ['default', 'success', 'info', 'warning', 'error', 'loading'] as const
-const SONNER_ICON: Record<string, string> = {
-  default: 'content.primary', loading: 'content.secondary',
-  success: 'status.success.content', info: 'status.info.content',
-  warning: 'status.warning.content', error: 'status.critical.content',
+export const TOAST_APPEARANCES = ['solid', 'soft', 'filled', 'outline'] as const
+export const TOAST_VARIANTS = ['default', 'secondary', 'success', 'info', 'warning', 'critical'] as const
+
+interface ToastTone { ink: string; border: string; soft: string; solid: string; onSolid: string; track: string; trackSoft: string; bar: string }
+const TOAST_STATUS = (s: string): ToastTone => ({
+  ink: `status.${s}.content`, border: `status.${s}.border`, soft: `status.${s}.surface`, solid: `status.${s}.surface-solid`,
+  onSolid: `status.${s}.on-solid`, track: `status.${s}.surface`, trackSoft: `status.${s}.border`, bar: `status.${s}.surface-solid`,
+})
+const TOAST_TONE: Record<string, ToastTone> = {
+  default: { ink: 'content.accent', border: 'border.accent', soft: 'surface.accent', solid: 'action.primary.default', onSolid: 'content.on-action', track: 'surface.accent', trackSoft: 'border.accent', bar: 'action.primary.default' },
+  secondary: { ink: 'content.secondary', border: 'border.default', soft: 'surface.muted', solid: 'surface.inverse', onSolid: 'content.inverse', track: 'surface.muted', trackSoft: 'border.default', bar: 'surface.inverse' },
+  success: TOAST_STATUS('success'),
+  info: TOAST_STATUS('info'),
+  warning: TOAST_STATUS('warning'),
+  critical: TOAST_STATUS('critical'),
 }
 
-export const SONNER: ComponentRecipe = {
-  key: 'Sonner',
-  slots: ['root', 'icon', 'title', 'description', 'action'],
-  defaults: { Type: 'default' },
-  dom: {
-    // Sonner's own sheet is `[data-sonner-toast][data-styled='true'] …`, injected
-    // after ours: the toaster and `[data-styled]` in the selector outrank it.
-    root: '[data-escala="Sonner"] [data-sonner-toaster] [data-sonner-toast][data-styled]',
-    slots: { icon: '[data-icon]', title: '[data-title]', description: '[data-description]', action: '[data-button]' },
-  },
+export const TOAST: ComponentRecipe = {
+  key: 'Toast',
+  slots: ['root', 'icon', 'content', 'title', 'description', 'actions', 'close', 'progress', 'bar'],
+  defaults: { Appearance: 'filled', Variant: 'default' },
   parts: [
     part({}, () => ({
-      root: {
-        fill: c('surface.layer-1'), stroke: c('border.default'), strokeWidth: 'stroke.control', text: c('content.primary'),
-        radius: 'radius.container', shadow: 'shadow.lg', paddingX: 'spacing.4', paddingY: 'spacing.4', gap: 'spacing.1_5',
-      },
+      root: { radius: 'radius.overlay', gap: 'spacing.gap-control', lift: 'rest' },
+      icon: { width: 'icon.medium', height: 'icon.medium' },
+      content: { gap: 'spacing.gap-tight' },
       title: { font: 'type.label' },
-      description: { text: c('content.secondary'), font: 'type.body-sm' },
-      action: {
-        fill: c('action.primary.default'), text: c('content.on-action'), radius: 'radius.action',
-        paddingX: 'spacing.2', font: 'type.caption',
-      },
+      description: { font: 'type.body-sm' },
+      actions: { gap: 'spacing.gap-control' },
+      progress: { height: 'spacing.1' },
     })),
-    part({ Type: SONNER_TYPES }, (type) => ({ icon: { text: c(SONNER_ICON[type]) } })),
+    part({ Appearance: TOAST_APPEARANCES, Variant: TOAST_VARIANTS }, (appearance, variant) => {
+      const t = TOAST_TONE[variant]
+      const pad = appearance === 'filled' || appearance === 'outline'
+        ? { paddingX: 'spacing.inset-control+stroke.control', paddingY: 'spacing.inset-control+stroke.control' }
+        : { paddingX: 'spacing.inset-control', paddingY: 'spacing.inset-control' }
+      switch (appearance) {
+        case 'solid':
+          return {
+            root: { ...pad, fill: c(t.solid) },
+            icon: { text: c(t.onSolid) },
+            title: { text: c(t.onSolid) },
+            description: { text: c(variant === 'secondary' ? 'content.inverse-secondary' : t.onSolid) },
+            progress: { fill: c('surface.inverse-muted') },
+            bar: { fill: c(t.onSolid) },
+          }
+        case 'soft':
+          return {
+            root: { ...pad, fill: c(t.soft) },
+            icon: { text: c(t.ink) },
+            title: { text: c('content.primary') },
+            description: { text: c('content.primary') },
+            progress: { fill: c(t.trackSoft) },
+            bar: { fill: c(t.bar) },
+          }
+        case 'outline':
+          return {
+            root: { ...pad, fill: c('surface.layer-1'), stroke: c(t.border), strokeWidth: 'stroke.control' },
+            icon: { text: c(t.ink) },
+            title: { text: c(variant === 'secondary' ? 'content.primary' : t.ink) },
+            description: { text: c(variant === 'secondary' ? 'content.secondary' : t.ink) },
+            progress: { fill: c(t.track) },
+            bar: { fill: c(t.bar) },
+          }
+        default:
+          return {
+            root: { ...pad, fill: c('surface.layer-2'), stroke: c('border.default'), strokeWidth: 'stroke.control' },
+            icon: { text: c(t.ink) },
+            title: { text: c('content.primary') },
+            description: { text: c('content.secondary') },
+            progress: { fill: c(t.track) },
+            bar: { fill: c(t.bar) },
+          }
+      }
+    }),
   ],
 }
 

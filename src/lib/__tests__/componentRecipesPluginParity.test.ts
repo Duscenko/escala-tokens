@@ -178,14 +178,14 @@ describe.skipIf(!existsSync(pluginFile))('plugin ↔ web recipe parity', () => {
     // DatePickerTrigger / DatePickerPopover / CalendarDay / CalendarHeader / CalendarMonth / CalendarPresets / CalendarFooter (2026-11-12): sets the file has and the frozen plugin never built (the date picker and calendar pages).
     // ButtonGroupItem / ButtonGroupDivider (2026-11-12): the file's own sets for the
     // group's segments and lines, rebuilt from it.
-    const WEB_ONLY = new Set(['CloseButton', 'TextLink', 'FABButton', 'FABGroup', 'ButtonGroupItem', 'ButtonGroupDivider', 'NumberInput', 'InputOTPSlot', 'InputTagChip', 'InputTagOption', 'DatePickerTrigger', 'DatePickerPopover', 'CalendarDay', 'CalendarHeader', 'CalendarMonth', 'CalendarPresets', 'CalendarFooter', 'PasswordStrengthMeter', 'PasswordStrengthRule', 'FileUploadDropzone', 'FileUploadItem', 'CheckboxItem', 'CheckboxGroup', 'SwitchGroup', 'SegmentedControlItem', 'SliderThumb', 'RatingGroup', 'RatingGroupItem', 'AvatarStatus', 'AvatarGroup', 'FeaturedIcon', 'Image', 'AccordionItem', 'TableCell', 'TableHead', 'TableMediaCell', 'TableTrendCell', 'TableResizer', 'TableRow', 'TableHeader', 'TableFooter', 'TableCaption', 'TableDropIndicator', 'TableEmpty', 'TableLoading', 'TableLoadMore', 'ProgressLine', 'ProgressCircle'])
+    const WEB_ONLY = new Set(['CloseButton', 'TextLink', 'FABButton', 'FABGroup', 'ButtonGroupItem', 'ButtonGroupDivider', 'NumberInput', 'InputOTPSlot', 'InputTagChip', 'InputTagOption', 'DatePickerTrigger', 'DatePickerPopover', 'CalendarDay', 'CalendarHeader', 'CalendarMonth', 'CalendarPresets', 'CalendarFooter', 'PasswordStrengthMeter', 'PasswordStrengthRule', 'FileUploadDropzone', 'FileUploadItem', 'CheckboxItem', 'CheckboxGroup', 'SwitchGroup', 'SegmentedControlItem', 'SliderThumb', 'RatingGroup', 'RatingGroupItem', 'AvatarStatus', 'AvatarGroup', 'FeaturedIcon', 'Image', 'AccordionItem', 'TableCell', 'TableHead', 'TableMediaCell', 'TableTrendCell', 'TableResizer', 'TableRow', 'TableHeader', 'TableFooter', 'TableCaption', 'TableDropIndicator', 'TableEmpty', 'TableLoading', 'TableLoadMore', 'ProgressLine', 'ProgressCircle', 'Toast'])
     const webAndPlugin = Object.keys(COMPONENT_RECIPES).filter((key) => !WEB_ONLY.has(key))
     // Plugin builders whose web recipe was RENAMED from the Figma file after the
     // freeze (2026-11-12): InputStepper is the file's NumberInput, Dropzone its
     // FileUploadDropzone (WEB_ONLY above).
     // Rating → RatingGroup (2026-11-12): the file's name for the rating row.
     // AspectRatio → Image (2026-11-12): the file's name for the cropped media box.
-    const RENAMED_ON_WEB = new Set(['InputStepper', 'Dropzone', 'Rating', 'AspectRatio', 'Progress'])
+    const RENAMED_ON_WEB = new Set(['InputStepper', 'Dropzone', 'Rating', 'AspectRatio', 'Progress', 'Sonner'])
     expect(Object.keys(plugin.RECIPE_BUILDERS).filter((k) => !RENAMED_ON_WEB.has(k)).sort()).toEqual(webAndPlugin.sort())
     // Parts a recipe gained from the Figma file after the freeze: the plugin's
     // builder predates them, so they are web + Storybook only (a decision).

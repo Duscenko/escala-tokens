@@ -45,7 +45,7 @@ import {
 import {
   SkeletonCardSpecimen, SkeletonDialogSpecimen, SkeletonSeparatorSpecimen, SkeletonAccordionSpecimen, SkeletonAccordionItemSpecimen, SkeletonTableCellSpecimen, SkeletonTableHeadSpecimen, SkeletonTableMediaCellSpecimen, SkeletonTableTrendCellSpecimen, SkeletonTableResizerSpecimen, SkeletonTableRowSpecimen, SkeletonTableHeaderSpecimen, SkeletonTableFooterSpecimen, SkeletonTableCaptionSpecimen, SkeletonTableDropIndicatorSpecimen, SkeletonTableEmptySpecimen, SkeletonTableLoadingSpecimen, SkeletonTableLoadMoreSpecimen,
   SkeletonImageSpecimen, SkeletonPopoverSpecimen, SkeletonTooltipSpecimen,
-  SkeletonScrollAreaSpecimen, SkeletonAlertSpecimen, SkeletonSonnerSpecimen,
+  SkeletonScrollAreaSpecimen, SkeletonAlertSpecimen, SkeletonToastSpecimen,
   SkeletonCollapsibleSpecimen, SkeletonTableSpecimen, SkeletonSkeletonSpecimen, SkeletonEmptySpecimen,
   SkeletonAlertDialogSpecimen, SkeletonSheetSpecimen, SkeletonDrawerSpecimen, SkeletonHoverCardSpecimen, SkeletonItemSpecimen,
   SkeletonAttachmentSpecimen, SkeletonMessageSpecimen, SkeletonBubbleSpecimen, SkeletonResizableSpecimen,
@@ -467,7 +467,7 @@ export const SPECIMENS: Record<string, (p: SpecimenProps) => ReactNode> = {
   Tooltip: SkeletonTooltipSpecimen,
   ScrollArea: SkeletonScrollAreaSpecimen,
   // Feedback
-  Sonner: SkeletonSonnerSpecimen,
+  Toast: SkeletonToastSpecimen,
   Alert: SkeletonAlertSpecimen,
   Skeleton: SkeletonSkeletonSpecimen,
   Empty: SkeletonEmptySpecimen,
