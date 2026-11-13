@@ -33,6 +33,9 @@ function stack(axis: string, values: string[], base: Record<string, string> = {}
   return each(axis, values, base, w).map((item) => [item])
 }
 
+/** A Table overview item this wide is the Figma «Table Prototype» (people, select-all, sort, pinned…), not the plain sample. */
+export const TABLE_PROTOTYPE_W = 1040
+
 export const OVERVIEWS: Record<string, Overview> = {
   // ── Button & Actions ───────────────────────────────────────────────────────
   Button: [
@@ -345,6 +348,10 @@ export const OVERVIEWS: Record<string, Overview> = {
     each('Variant', ['ghost-default', 'ghost-underline', 'ghost-rounded', 'outline-rounded', 'outline-sharp', 'filled-rounded'], { State: 'Open' }),
   ],
   Table: [
+    // The file's two prototype examples: Dividers rows = «Example Light» (resting · hover · selected · disabled),
+    // Dividers grid = «Example Dark» (grid · pinned · sorted · resizing · scrolled header).
+    [{ v: { Dividers: 'rows' }, w: TABLE_PROTOTYPE_W }],
+    [{ v: { Dividers: 'grid' }, w: TABLE_PROTOTYPE_W }],
     each('Size', ['default', 'xs', 'sm', 'lg'], { Appearance: 'filled' }, 800),
     each('Appearance', ['filled', 'ghost'], {}, 800),
     each('Dividers', ['rows', 'grid'], {}, 800),

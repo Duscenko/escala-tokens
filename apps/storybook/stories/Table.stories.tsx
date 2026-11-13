@@ -2,6 +2,7 @@ import type { Meta, StoryObj } from '@storybook/react-vite'
 import {
   Table, TableBody, TableCell, TableFooter, TableHead, TableHeader, TableRow, type TableDividers, type TableSize,
 } from '../../../src/components/escala-ui/table'
+import { TablePrototype } from '../../../src/components/configurator/docs/skeleton/tablePrototype'
 const CELLS = [['Olivia Martin', 'Design', 'Active', '1,280.00']]
 function Cells({ row = CELLS[0] }: { row?: string[] }) {
   return (<><TableCell label={row[0]} /><TableCell label={row[1]} /><TableCell label={row[2]} /><TableCell label={row[3]} align="end" /></>)
@@ -56,4 +57,31 @@ export const Sizes: Story = {
       {(['default', 'xs', 'sm', 'lg'] as TableSize[]).map((size) => <div key={size}>{render({ ...args, size })}</div>)}
     </div>
   ),
+}
+
+// ── The file's «Table Prototype» (1025:2250), design-plans/table-prototype-contract.md ──────────────────
+// Two examples on a 1440 board: «Example Light» (rows) and «Example Dark» (grid · pinned · sorted · resizing).
+// Switch the toolbar theme for the dark look; the stories differ in the props the file differs in.
+interface ProtoArgs { size: TableSize; appearance: 'filled' | 'ghost'; dividers: TableDividers; pinned: boolean; resizing: boolean; scrolled: boolean }
+const protoMeta = {
+  args: { size: 'default', appearance: 'filled', dividers: 'rows', pinned: false, resizing: false, scrolled: false } as ProtoArgs,
+  argTypes: {
+    size: { name: 'Size', control: 'select', options: ['default', 'xs', 'sm', 'lg'] },
+    appearance: { name: 'Appearance', control: 'select', options: ['filled', 'ghost'] },
+    dividers: { name: 'Dividers', control: 'select', options: ['grid', 'rows'] },
+    pinned: { name: 'Pinned (Name)', control: 'boolean' },
+    resizing: { name: 'Resizer (Role)', control: 'boolean' },
+    scrolled: { name: 'Scrolled', control: 'boolean' },
+  } as const,
+}
+/** Resting · hover · selected · disabled; Name sorted ascending; select-all indeterminate. Click the heads, the boxes. */
+export const PrototypeLight: StoryObj<ProtoArgs> = {
+  ...protoMeta,
+  render: (a) => <TablePrototype {...a} />,
+}
+/** Grid dividers, pinned Name, Join date sorted descending, Role being resized, scrolled header. */
+export const PrototypeDark: StoryObj<ProtoArgs> = {
+  ...protoMeta,
+  args: { ...protoMeta.args, dividers: 'grid', pinned: true, resizing: true, scrolled: true },
+  render: (a) => <TablePrototype {...a} defaultSort={{ key: 'joined', dir: 'descending' }} />,
 }

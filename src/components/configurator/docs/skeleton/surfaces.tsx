@@ -31,6 +31,8 @@ import { Bubble as SkBubble, BubbleContent as SkBubbleContent, type BubbleVarian
 import { ResizableHandle as SkResizableHandle, ResizablePanel as SkResizablePanel, ResizablePanelGroup as SkResizablePanelGroup } from '../../../escala-ui/resizable'
 import { Collapsible as SkCollapsible, CollapsibleContent as SkCollapsibleContent, CollapsibleItem as SkCollapsibleItem, CollapsibleTrigger as SkCollapsibleTrigger } from '../../../escala-ui/collapsible'
 import { Table as SkTable, TableBody as SkTableBody, TableCaption as SkTableCaption, TableCell as SkTableCell, TableDropIndicator as SkTableDropIndicator, TableEmpty as SkTableEmpty, TableFooter as SkTableFooter, TableHead as SkTableHead, TableHeader as SkTableHeader, TableLoadMore as SkTableLoadMore, TableLoading as SkTableLoading, TableMediaCell as SkTableMediaCell, TableResizer as SkTableResizer, TableRow as SkTableRow, TableTrendCell as SkTableTrendCell, type TableSize } from '../../../escala-ui/table'
+import { TablePrototype } from './tablePrototype'
+import { TABLE_PROTOTYPE_W } from '../componentOverviews'
 import { Skeleton as SkSkeleton } from '../../../escala-ui/skeleton'
 import { Empty as SkEmpty, EmptyContent as SkEmptyContent, EmptyDescription as SkEmptyDescription, EmptyHeader as SkEmptyHeader, EmptyMedia as SkEmptyMedia, EmptyTitle as SkEmptyTitle } from '../../../escala-ui/empty'
 
@@ -398,6 +400,13 @@ export function SkeletonTableFooterSpecimen({ t, v, w }: SpecimenProps) {
 export function SkeletonTableSpecimen({ t, v, w }: SpecimenProps) {
   return (
     <RecipeScope t={t}>
+      {w === TABLE_PROTOTYPE_W ? (
+        // «Table Prototype»: Dividers grid is its dark example (pinned Name, resizing Role, Join date sorted, scrolled header).
+        <TablePrototype
+          width={w} size={sizeOf(v)} appearance={(v.Appearance ?? 'filled') as 'filled' | 'ghost'} dividers={dividersOf(v)}
+          {...(dividersOf(v) === 'grid' ? { pinned: true, resizing: true, scrolled: true, defaultSort: { key: 'joined' as const, dir: 'descending' as const } } : {})}
+        />
+      ) : (
       <div style={{ width: w ?? 800, maxWidth: '100%' }}>
         <SkTable size={sizeOf(v)} appearance={(v.Appearance ?? 'filled') as 'filled' | 'ghost'} dividers={dividersOf(v)} aria-label="Team members">
           <SkTableHeader><SampleHeads /></SkTableHeader>
@@ -409,6 +418,7 @@ export function SkeletonTableSpecimen({ t, v, w }: SpecimenProps) {
           </SkTableBody>
         </SkTable>
       </div>
+      )}
     </RecipeScope>
   )
 }

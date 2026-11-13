@@ -421,3 +421,11 @@ Every row cost a round trip with the owner. Check each one before calling a comp
 | A progress hairline ABSOLUTE across the whole frame, over the stroke | A CSS absolute child starts inside the border and `overflow: hidden` clips at the padding box → 358 wide at x 1 | `overflow: clip` + `overflow-clip-margin: border-box` (keeps the radius clip over the border) and `left` / `bottom` of `−stroke.control`, width `100% + 2 × stroke.control` for filled / outline: measured 0,62 360×4 |
 | A shadow style with a 1px ring and negative spreads | Same as DatePickerPopover | `lift: rest` |
 | The new recipe breaks the inspector's ordering test | `tokenInspector` expected popover roles | Surface, then border, then the icon ink (`content.accent`): the test now says what the set paints |
+
+# Lessons from the Table Prototype (2026-11-13)
+| Trap | What it looked like | The fix (where it lives) |
+|---|---|---|
+| A Figma «Prototype» section is a COMPOSITION, not a set: no axes, so the catalogue / Overview axis test cannot name it | Adding an `Example` axis would have broken «catalogue axes = Figma's» | A composed component outside `escala-ui` (`docs/skeleton/tablePrototype.tsx`), stories `PrototypePro…`, and an Overview item recognised by its WIDTH (`TABLE_PROTOTYPE_W`, a constant in `componentOverviews.ts`); Dividers rows = the file's Light example, grid = its Dark example (pinned, resizing, scrolled, sorted) |
+| The file marks a sorted column but lists the rows in its own order | Sorting on mount reordered the people vs the screenshot | Rows reorder only after the first click (`sorted`) |
+| The file's avatars are stock photos from its Media library | Code has none | `lib/avatarGradient.ts`: an opaque gradient SVG data URI through the same `src` the Photo swap uses |
+| axe on a composed table | `role="img"` avatars with no name; a focusable `separator` with no `aria-valuenow` | Avatar: unnamed photo = decorative (`aria-hidden`), named = `role=img`; TableResizer reports its column's width (`aria-valuenow`, ResizeObserver on the parent) and has an `aria-label` |

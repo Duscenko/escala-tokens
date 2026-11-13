@@ -444,10 +444,27 @@ export interface TableResizerProps extends Omit<React.ComponentProps<'div'>, 'ch
 
 function TableResizer({ resizing, forceState, className, ...props }: TableResizerProps) {
   const state = forceState ?? (resizing ? 'Resizing' : undefined)
+  // A focusable separator is a slider-like widget: it reports the width of the column it resizes.
+  const ref = React.useRef<HTMLDivElement>(null)
+  const [width, setWidth] = React.useState<number | undefined>(undefined)
+  React.useLayoutEffect(() => {
+    const col = ref.current?.parentElement
+    if (!col) return
+    const read = () => setWidth(Math.round(col.getBoundingClientRect().width))
+    read()
+    if (typeof ResizeObserver === 'undefined') return
+    const ro = new ResizeObserver(read)
+    ro.observe(col)
+    return () => ro.disconnect()
+  }, [])
   return (
     <div
+      ref={ref}
       role="separator"
       aria-orientation="vertical"
+      aria-valuenow={width}
+      aria-valuemin={0}
+      aria-label="Resize column"
       tabIndex={0}
       data-slot="table-resizer"
       data-escala="TableResizer"

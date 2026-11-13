@@ -99,7 +99,9 @@ function Avatar({
   const shape = shapeProp ?? group?.shape ?? 'circle'
   return (
     <span
-      role="img"
+      // Named (alt / aria-label) it is an image; a photo with no name is decoration (the name sits beside it).
+      role={alt || props['aria-label'] ? 'img' : undefined}
+      aria-hidden={!alt && !props['aria-label'] && type !== 'initials' && !statusVisible ? true : undefined}
       aria-label={alt || undefined}
       data-slot="avatar"
       data-escala="Avatar"
