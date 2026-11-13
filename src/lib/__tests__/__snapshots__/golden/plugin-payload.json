@@ -18715,42 +18715,76 @@
         }
       }
     },
-    "Progress": {
-      "key": "Progress",
+    "ProgressLine": {
+      "key": "ProgressLine",
       "slots": [
         "root",
-        "header",
-        "label",
-        "value",
-        "track",
         "indicator"
       ],
-      "defaults": {},
+      "defaults": {
+        "Size": "default",
+        "Appearance": "solid"
+      },
       "parts": [
         {
-          "axes": [],
+          "axes": [
+            "Size"
+          ],
           "values": {
-            "": {
+            "xs": {
               "root": {
-                "gap": "spacing.gap-control"
+                "fill": "color.surface.muted",
+                "height": "spacing.1",
+                "radius": "radius.pill"
               },
-              "label": {
-                "text": "color.content.secondary",
-                "font": "type.caption"
-              },
-              "value": {
-                "text": "color.content.primary",
-                "font": "type.caption"
-              },
-              "track": {
+              "indicator": {
+                "radius": "radius.pill"
+              }
+            },
+            "sm": {
+              "root": {
                 "fill": "color.surface.muted",
                 "height": "spacing.1_5",
                 "radius": "radius.pill"
               },
               "indicator": {
-                "fill": "color.action.primary.default",
                 "radius": "radius.pill"
               }
+            },
+            "default": {
+              "root": {
+                "fill": "color.surface.muted",
+                "height": "spacing.2",
+                "radius": "radius.pill"
+              },
+              "indicator": {
+                "radius": "radius.pill"
+              }
+            },
+            "lg": {
+              "root": {
+                "fill": "color.surface.muted",
+                "height": "spacing.3",
+                "radius": "radius.pill"
+              },
+              "indicator": {
+                "radius": "radius.pill"
+              }
+            }
+          }
+        },
+        {
+          "axes": [
+            "Appearance"
+          ],
+          "values": {
+            "solid": {
+              "indicator": {
+                "fill": "color.action.primary.default"
+              }
+            },
+            "gradient": {
+              "indicator": {}
             }
           }
         }
@@ -18762,6 +18796,88 @@
           }
         }
       }
+    },
+    "ProgressCircle": {
+      "key": "ProgressCircle",
+      "slots": [
+        "root",
+        "track",
+        "arc"
+      ],
+      "defaults": {
+        "Size": "default",
+        "Cap": "round",
+        "Appearance": "solid"
+      },
+      "parts": [
+        {
+          "axes": [
+            "Size"
+          ],
+          "values": {
+            "xs": {
+              "root": {
+                "width": "size.xs",
+                "height": "size.xs"
+              }
+            },
+            "sm": {
+              "root": {
+                "width": "size.sm",
+                "height": "size.sm"
+              }
+            },
+            "default": {
+              "root": {
+                "width": "size.lg",
+                "height": "size.lg"
+              }
+            },
+            "lg": {
+              "root": {
+                "width": "size.xl",
+                "height": "size.xl"
+              }
+            }
+          }
+        },
+        {
+          "axes": [
+            "Appearance",
+            "Cap"
+          ],
+          "values": {
+            "solid|round": {
+              "track": {
+                "text": "color.surface.muted"
+              },
+              "arc": {
+                "text": "color.action.primary.default"
+              }
+            },
+            "solid|butt": {
+              "track": {
+                "text": "color.surface.muted"
+              },
+              "arc": {
+                "text": "color.action.primary.default"
+              }
+            },
+            "gradient|round": {
+              "track": {
+                "text": "color.surface.muted"
+              },
+              "arc": {}
+            },
+            "gradient|butt": {
+              "track": {
+                "text": "color.surface.muted"
+              },
+              "arc": {}
+            }
+          }
+        }
+      ]
     },
     "Spinner": {
       "key": "Spinner",

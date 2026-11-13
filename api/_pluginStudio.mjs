@@ -5078,19 +5078,42 @@ var init_componentCatalogue = __esm({
         accessibility: 'The label is a toggle button (aria-pressed); the close control is its own button named "Remove". Disabled sets aria-disabled and disables both.'
       },
       {
-        key: "Progress",
-        label: "Progress",
+        key: "ProgressLine",
+        label: "Progress Line",
         category: "Indicators",
-        description: "Linear progress indicator; track and bar reference the progress tokens.",
-        usage: "Use for operations over 2s. Show percentage when known. Pair with a label.",
-        axes: [],
-        figmaSets: ["Progress"],
-        props: [
-          { name: "value", type: "number", description: "0\u2013100." },
-          { name: "label", type: "ReactNode", description: "Name shown beside the percentage." },
-          { name: "showValue", type: "boolean", description: "Show the percentage (default on)." }
+        description: "A horizontal progress indicator for a value from 0 to 100: a muted track and a bar that is solid or a gradient of the primary action.",
+        usage: "Use for operations that take more than a couple of seconds and report how far along they are. Pair it with a label and the percentage in the surrounding UI. For an unknown duration use Spinner.",
+        // The Figma file's axes, value for value (design-plans/progress-contract.md).
+        axes: [
+          { name: "Size", values: ["xs", "sm", "default", "lg"] },
+          { name: "Appearance", values: ["solid", "gradient"] },
+          { name: "Value", values: ["0", "25", "50", "75", "100"] }
         ],
-        accessibility: 'role="progressbar" with aria-valuenow, aria-valuemin, aria-valuemax.'
+        figmaSets: ["ProgressLine"],
+        props: [
+          { name: "size / appearance", type: "Figma axes", description: "The track is 4 \xB7 6 \xB7 8 \xB7 12 thick; gradient runs Action/primary/default \u2192 /hover." },
+          { name: "value", type: "number", description: "Figma Value, 0\u2013100 (any number; the file draws five)." }
+        ],
+        accessibility: 'role="progressbar" with aria-valuenow, aria-valuemin and aria-valuemax; give it an accessible name (aria-label).'
+      },
+      {
+        key: "ProgressCircle",
+        label: "Progress Circle",
+        category: "Indicators",
+        description: "A circular progress indicator for a value from 0 to 100: a muted ring and an arc from the top, with round or butt ends.",
+        usage: "Use where a bar does not fit (a button, a card corner, an avatar). Show the percentage next to it when it matters.",
+        axes: [
+          { name: "Size", values: ["xs", "sm", "default", "lg"] },
+          { name: "Cap", values: ["round", "butt"] },
+          { name: "Appearance", values: ["solid", "gradient"] },
+          { name: "Value", values: ["0", "25", "50", "75", "100"] }
+        ],
+        figmaSets: ["ProgressCircle"],
+        props: [
+          { name: "size / cap / appearance", type: "Figma axes", description: "The ring is 24 \xB7 32 \xB7 48 \xB7 56 across; round caps add a half-thickness dot at each end of the arc." },
+          { name: "value", type: "number", description: "Figma Value, 0\u2013100." }
+        ],
+        accessibility: 'role="progressbar" with aria-valuenow, aria-valuemin and aria-valuemax; give it an accessible name (aria-label).'
       },
       {
         key: "Spinner",
@@ -11720,7 +11743,7 @@ function ratingItemPaint(type, checked, state2) {
   const ink = on ? "content.accent" : state2 === "Hover" || state2 === "Pressed" ? "content.primary" : "content.secondary";
   return { root: { fill: hoverFill, text: c(ink), ...focus } };
 }
-var BADGE_APPEARANCES, BADGE_SHAPES, BADGE_SIZES, BADGE_TYPES, BADGE_VARIANTS, BADGE_GEOMETRY, BADGE, PRESENCE_DOT, STATUS_BADGE, CHIP_VARIANTS, CHIP_APPEARANCES, CHIP_SIZES, CHIP_STATES, CHIP_SHAPES, CHIP_GEOMETRY2, CHIP, PROGRESS, SPINNER, ICON_ROLE, ICON, RATING_GROUP_SIZES, RATING_GROUP_TYPES, RATING_GROUP_ITEM_STATES, RATING_ITEM, RATING_GROUP, RATING_GROUP_ITEM, FORMAT_TONE, FILE_FORMAT, AVATAR_SIZES, AVATAR_SHAPES, AVATAR_VARIANTS, AVATAR_APPEARANCES, AVATAR_STATUSES, AVATAR_STATUS_SIZES, AVATAR_GEOMETRY, AVATAR_TONE, AVATAR, STATUS_FILL, STATUS_GEOMETRY, AVATAR_STATUS, GROUP_GEOMETRY, AVATAR_GROUP, FEATURED_ICON_SIZES, FEATURED_ICON_VARIANTS, FEATURED_ICON_GEOMETRY, FEATURED_ICON, KBD_SIZES, KBD_GEOMETRY, KBD;
+var BADGE_APPEARANCES, BADGE_SHAPES, BADGE_SIZES, BADGE_TYPES, BADGE_VARIANTS, BADGE_GEOMETRY, BADGE, PRESENCE_DOT, STATUS_BADGE, CHIP_VARIANTS, CHIP_APPEARANCES, CHIP_SIZES, CHIP_STATES, CHIP_SHAPES, CHIP_GEOMETRY2, CHIP, PROGRESS_SIZES, PROGRESS_APPEARANCES, LINE_THICKNESS, RING_DIAMETER, PROGRESS_LINE, PROGRESS_CIRCLE, SPINNER, ICON_ROLE, ICON, RATING_GROUP_SIZES, RATING_GROUP_TYPES, RATING_GROUP_ITEM_STATES, RATING_ITEM, RATING_GROUP, RATING_GROUP_ITEM, FORMAT_TONE, FILE_FORMAT, AVATAR_SIZES, AVATAR_SHAPES, AVATAR_VARIANTS, AVATAR_APPEARANCES, AVATAR_STATUSES, AVATAR_STATUS_SIZES, AVATAR_GEOMETRY, AVATAR_TONE, AVATAR, STATUS_FILL, STATUS_GEOMETRY, AVATAR_STATUS, GROUP_GEOMETRY, AVATAR_GROUP, FEATURED_ICON_SIZES, FEATURED_ICON_VARIANTS, FEATURED_ICON_GEOMETRY, FEATURED_ICON, KBD_SIZES, KBD_GEOMETRY, KBD;
 var init_indicators = __esm({
   "src/lib/recipes/indicators.ts"() {
     init_helpers();
@@ -11817,17 +11840,33 @@ var init_indicators = __esm({
         part({ Variant: CHIP_VARIANTS, Appearance: CHIP_APPEARANCES, State: CHIP_STATES }, (variant, appearance, state2) => ({ root: chipPaint2(variant, appearance, state2) }))
       ]
     };
-    PROGRESS = {
-      key: "Progress",
-      slots: ["root", "header", "label", "value", "track", "indicator"],
-      defaults: {},
+    PROGRESS_SIZES = ["xs", "sm", "default", "lg"];
+    PROGRESS_APPEARANCES = ["solid", "gradient"];
+    LINE_THICKNESS = { xs: "spacing.1", sm: "spacing.1_5", default: "spacing.2", lg: "spacing.3" };
+    RING_DIAMETER = { xs: "size.xs", sm: "size.sm", default: "size.lg", lg: "size.xl" };
+    PROGRESS_LINE = {
+      key: "ProgressLine",
+      slots: ["root", "indicator"],
+      defaults: { Size: "default", Appearance: "solid" },
       parts: [
-        part({}, () => ({
-          root: { gap: "spacing.gap-control" },
-          label: { text: c("content.secondary"), font: "type.caption" },
-          value: { text: c("content.primary"), font: "type.caption" },
-          track: { fill: c("surface.muted"), height: "spacing.1_5", radius: "radius.pill" },
-          indicator: { fill: c("action.primary.default"), radius: "radius.pill" }
+        part({ Size: PROGRESS_SIZES }, (size) => ({
+          root: { fill: c("surface.muted"), height: LINE_THICKNESS[size], radius: "radius.pill" },
+          indicator: { radius: "radius.pill" }
+        })),
+        part({ Appearance: PROGRESS_APPEARANCES }, (appearance) => ({
+          indicator: appearance === "solid" ? { fill: c("action.primary.default") } : {}
+        }))
+      ]
+    };
+    PROGRESS_CIRCLE = {
+      key: "ProgressCircle",
+      slots: ["root", "track", "arc"],
+      defaults: { Size: "default", Cap: "round", Appearance: "solid" },
+      parts: [
+        part({ Size: PROGRESS_SIZES }, (size) => ({ root: { width: RING_DIAMETER[size], height: RING_DIAMETER[size] } })),
+        part({ Appearance: PROGRESS_APPEARANCES, Cap: ["round", "butt"] }, (appearance) => ({
+          track: { text: c("surface.muted") },
+          arc: appearance === "solid" ? { text: c("action.primary.default") } : {}
         }))
       ]
     };
@@ -12348,7 +12387,7 @@ var init_motion2 = __esm({
       Switch: { transitions: { root: states("background-color", "box-shadow"), thumb: { transform: "use-toggle" } } },
       RatingGroupItem: { transitions: { root: FILL } },
       SliderThumb: { transitions: { root: states("border-color", "box-shadow") } },
-      Progress: { transitions: { indicator: { width: "base-functional-standard" } } },
+      ProgressLine: { transitions: { indicator: { width: "base-functional-standard" } } },
       // AccordionItem (the Figma file, 2026-11-12): the item owns the trigger and the content, so the chevron
       // and the expand / collapse play on it; the Accordion only stacks items.
       AccordionItem: { ...disclosure("--radix-accordion-content-height"), transitions: { chevron: { transform: "use-disclosure-in" } } },
@@ -12433,7 +12472,8 @@ var init_componentRecipes = __esm({
       Badge: BADGE,
       StatusBadge: STATUS_BADGE,
       Chip: CHIP,
-      Progress: PROGRESS,
+      ProgressLine: PROGRESS_LINE,
+      ProgressCircle: PROGRESS_CIRCLE,
       Spinner: SPINNER,
       Icon: ICON,
       FeaturedIcon: FEATURED_ICON,
@@ -15313,7 +15353,7 @@ var init_useDesignStore = __esm({
         }),
         {
           name: "scalable-designs-store",
-          version: 137,
+          version: 138,
           migrate: (persisted, version) => {
             if (persisted) {
               delete persisted.styleDirection;
@@ -16999,6 +17039,20 @@ var init_useDesignStore = __esm({
               add2(persisted);
               if (Array.isArray(persisted.savedSystems)) {
                 for (const sys of persisted.savedSystems) add2(sys?.snapshot);
+              }
+            }
+            if (version < 138) {
+              const rename = (state2) => {
+                if (!Array.isArray(state2?.selectedComponents)) return;
+                const sel = state2.selectedComponents;
+                const at = sel.indexOf("Progress");
+                if (at >= 0) sel.splice(at, 1, "ProgressLine");
+                const line = sel.indexOf("ProgressLine");
+                if (line >= 0 && !sel.includes("ProgressCircle")) sel.splice(line + 1, 0, "ProgressCircle");
+              };
+              rename(persisted);
+              if (Array.isArray(persisted.savedSystems)) {
+                for (const sys of persisted.savedSystems) rename(sys?.snapshot);
               }
             }
             return persisted;

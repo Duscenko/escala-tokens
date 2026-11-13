@@ -190,19 +190,40 @@ export const CHIP: ComponentRecipe = {
   ],
 }
 
-// ── Progress ───────────────────────────────────────────────────────────────
+// ── ProgressLine and ProgressCircle ────────────────────────────────────────
+// The Figma sets (design-plans/progress-contract.md; 410:687, 40 variants; 411:523, 80). A line is a Surface/muted track
+// 240 wide and 4 · 6 · 8 · 12 thick (Radius/full) with a bar of the Value on Action/primary/default (gradient: →
+// /hover); a ring is 24 · 32 · 48 · 56 across, the track Surface/muted and the arc the same fill.
 
-export const PROGRESS: ComponentRecipe = {
-  key: 'Progress',
-  slots: ['root', 'header', 'label', 'value', 'track', 'indicator'],
-  defaults: {},
+export const PROGRESS_SIZES = ['xs', 'sm', 'default', 'lg'] as const
+export const PROGRESS_APPEARANCES = ['solid', 'gradient'] as const
+const LINE_THICKNESS: Record<string, string> = { xs: 'spacing.1', sm: 'spacing.1_5', default: 'spacing.2', lg: 'spacing.3' }
+const RING_DIAMETER: Record<string, string> = { xs: 'size.xs', sm: 'size.sm', default: 'size.lg', lg: 'size.xl' }
+
+export const PROGRESS_LINE: ComponentRecipe = {
+  key: 'ProgressLine',
+  slots: ['root', 'indicator'],
+  defaults: { Size: 'default', Appearance: 'solid' },
   parts: [
-    part({}, () => ({
-      root: { gap: 'spacing.gap-control' },
-      label: { text: c('content.secondary'), font: 'type.caption' },
-      value: { text: c('content.primary'), font: 'type.caption' },
-      track: { fill: c('surface.muted'), height: 'spacing.1_5', radius: 'radius.pill' },
-      indicator: { fill: c('action.primary.default'), radius: 'radius.pill' },
+    part({ Size: PROGRESS_SIZES }, (size) => ({
+      root: { fill: c('surface.muted'), height: LINE_THICKNESS[size], radius: 'radius.pill' },
+      indicator: { radius: 'radius.pill' },
+    })),
+    part({ Appearance: PROGRESS_APPEARANCES }, (appearance) => ({
+      indicator: appearance === 'solid' ? { fill: c('action.primary.default') } : {},
+    })),
+  ],
+}
+
+export const PROGRESS_CIRCLE: ComponentRecipe = {
+  key: 'ProgressCircle',
+  slots: ['root', 'track', 'arc'],
+  defaults: { Size: 'default', Cap: 'round', Appearance: 'solid' },
+  parts: [
+    part({ Size: PROGRESS_SIZES }, (size) => ({ root: { width: RING_DIAMETER[size], height: RING_DIAMETER[size] } })),
+    part({ Appearance: PROGRESS_APPEARANCES, Cap: ['round', 'butt'] as const }, (appearance) => ({
+      track: { text: c('surface.muted') },
+      arc: appearance === 'solid' ? { text: c('action.primary.default') } : {},
     })),
   ],
 }

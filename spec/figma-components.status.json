@@ -38,13 +38,6 @@
       "status": "rename",
       "code": "Sonner"
     },
-    "ProgressCircle": {
-      "status": "new"
-    },
-    "ProgressLine": {
-      "status": "rename",
-      "code": "Progress"
-    },
     "Modal": {
       "status": "rename",
       "code": "Dialog"

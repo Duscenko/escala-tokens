@@ -23,7 +23,7 @@ import { Input } from '../escala-ui/input'
 import { Label } from '../escala-ui/label'
 import { Alert, AlertDescription, AlertTitle } from '../escala-ui/alert'
 import { Chip } from '../escala-ui/chip'
-import { Progress } from '../escala-ui/progress'
+import { ProgressLine as Progress } from '../escala-ui/progress-line'
 import { SegmentedControl } from '../escala-ui/segmented-control'
 import { ToggleGroup, ToggleGroupItem } from '../escala-ui/toggle-group'
 import { Switch } from '../escala-ui/switch'
@@ -316,7 +316,7 @@ function MetricTile({ t }: { t: T }) {
       </div>
       <span className="tabular-nums" style={{ ...ty('heading-sm'), fontSize: 'calc(var(--text-heading-sm-font-size) * 1.6)', lineHeight: 1, color: INK.primary }}>98%</span>
       {/* The figure above is the value: the bar shows no second "98%". */}
-      <Progress value={98} showValue={false} />
+      <Progress value={98} aria-label="Upload" />
     </Tile>
   )
 }

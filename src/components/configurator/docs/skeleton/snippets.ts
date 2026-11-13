@@ -152,8 +152,14 @@ export const SKELETON_SNIPPETS: Record<string, Snippet> = {
     `import { StatusBadge } from "@/components/ui/badge"\n\n<StatusBadge status="${v.Status ?? 'online'}" />`,
   Chip: (v) =>
     `import { Chip } from "@/components/ui/chip"\n\n<Chip${v.Variant && v.Variant !== 'default' ? ` variant="${v.Variant}"` : ''}${v.Appearance === 'soft' ? ' appearance="soft"' : ''}${v.Size && v.Size !== 'default' ? ` size="${v.Size}"` : ''}${v.Shape === 'pill' ? ' shape="pill"' : ''}${v.State === 'Selected' ? ' selected' : ''}${v.State === 'Disabled' ? ' disabled' : ''}${v.CloseVisible === 'True' ? ' onRemove={remove}' : ''} onPressedChange={setSelected}>\n  Design tokens\n</Chip>`,
-  Progress: () =>
-    `import { Progress } from "@/components/ui/progress"\n\n<Progress label="Uploading…" value={60} />`,
+  ProgressLine: (v) =>
+    `import { ProgressLine } from "@/components/ui/progress-line"
+
+<ProgressLine${v.Size && v.Size !== 'default' ? ` size="${v.Size}"` : ''}${v.Appearance === 'gradient' ? ' appearance="gradient"' : ''} aria-label="Uploading" value={${v.Value ?? 60}} />`,
+  ProgressCircle: (v) =>
+    `import { ProgressCircle } from "@/components/ui/progress-line"
+
+<ProgressCircle${v.Size && v.Size !== 'default' ? ` size="${v.Size}"` : ''}${v.Cap === 'butt' ? ' cap="butt"' : ''}${v.Appearance === 'gradient' ? ' appearance="gradient"' : ''} aria-label="Uploading" value={${v.Value ?? 50}} />`,
   Spinner: () =>
     `import { Spinner } from "@/components/ui/spinner"\n\n<Spinner />  // size it with a class: <Spinner className="size-6" />`,
   Icon: (v) =>

@@ -22,7 +22,7 @@ import {
   SkeletonSocialLoginButtonSpecimen, SkeletonAppStoreBadgeSpecimen, SkeletonToggleGroupSpecimen, SkeletonToggleSpecimen,
 } from './skeleton/actions'
 import {
-  SkeletonBadgeSpecimen, SkeletonStatusBadgeSpecimen, SkeletonChipSpecimen, SkeletonProgressSpecimen,
+  SkeletonBadgeSpecimen, SkeletonStatusBadgeSpecimen, SkeletonChipSpecimen, SkeletonProgressLineSpecimen, SkeletonProgressCircleSpecimen,
   SkeletonSpinnerSpecimen, SkeletonIconSpecimen, SkeletonRatingGroupSpecimen, SkeletonRatingGroupItemSpecimen, SkeletonFileFormatSpecimen, SkeletonAvatarSpecimen, SkeletonAvatarStatusSpecimen, SkeletonAvatarGroupSpecimen, SkeletonFeaturedIconSpecimen,
   SkeletonKbdSpecimen,
 } from './skeleton/indicators'
@@ -418,7 +418,8 @@ export const SPECIMENS: Record<string, (p: SpecimenProps) => ReactNode> = {
   Badge: SkeletonBadgeSpecimen,
   StatusBadge: SkeletonStatusBadgeSpecimen,
   Chip: SkeletonChipSpecimen,
-  Progress: SkeletonProgressSpecimen,
+  ProgressLine: SkeletonProgressLineSpecimen,
+  ProgressCircle: SkeletonProgressCircleSpecimen,
   Spinner: SkeletonSpinnerSpecimen,
   Icon: SkeletonIconSpecimen,
   FeaturedIcon: SkeletonFeaturedIconSpecimen,

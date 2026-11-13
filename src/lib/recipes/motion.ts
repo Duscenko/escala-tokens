@@ -65,7 +65,7 @@ export const RECIPE_MOTION: Record<string, RecipeMotion> = {
   Switch: { transitions: { root: states('background-color', 'box-shadow'), thumb: { transform: 'use-toggle' } } },
   RatingGroupItem: { transitions: { root: FILL } },
   SliderThumb: { transitions: { root: states('border-color', 'box-shadow') } },
-  Progress: { transitions: { indicator: { width: 'base-functional-standard' } } },
+  ProgressLine: { transitions: { indicator: { width: 'base-functional-standard' } } },
   // AccordionItem (the Figma file, 2026-11-12): the item owns the trigger and the content, so the chevron
   // and the expand / collapse play on it; the Accordion only stacks items.
   AccordionItem: { ...disclosure('--radix-accordion-content-height'), transitions: { chevron: { transform: 'use-disclosure-in' } } },

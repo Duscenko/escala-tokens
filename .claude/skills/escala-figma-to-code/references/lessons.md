@@ -403,3 +403,12 @@ Every row cost a round trip with the owner. Check each one before calling a comp
 | An absolute close at x284 y12 in a box with a 1px border | CSS absolute offsets start INSIDE the border | `calc(var(--spacing-inset-control) - var(--stroke-control))` for the outline appearance only (the custom property `--escala-stroke-width` is not inherited by the child) |
 | 96 variants, colours invariant of Layout × Size | One line per variant | Grouped read by Variant · Appearance (24 groups of 4); the severity table in the contract |
 | `exportAudit` I10 budget again | 120k → 135k with a dated note (Table + Alert) | `src/lib/exportAudit.ts` |
+
+# Lessons from ProgressLine and ProgressCircle (2026-11-13)
+| Trap | What it looked like | The fix (where it lives) |
+|---|---|---|
+| A rename (Progress → ProgressLine) AND a new sibling (ProgressCircle) on one Figma page | Same checklist as Rating / Image plus a part | `git mv progress.tsx progress-line.tsx` (the circle lives in it: `FILE_OF`), catalogue, recipes, motion, specimens, snippets, overviews, `SystemCollage` `inspectable`, a caller, sitemap, store v138 (rename inside `selectedComponents` + add the part), parity `RENAMED_ON_WEB` (`Progress`) + `WEB_ONLY` |
+| The old Progress had a label + percentage header the file does not draw | Keeping it would add a part with no Figma twin | Dropped; the consumer labels it. The specimen / callers lose `label`; an `aria-label` names the bar |
+| A ring drawn as two ELLIPSE arcs with an `innerRadius` ratio (0.667 · 0.75 · 0.714) | The thickness is not a token | The ring is an SVG (viewBox 100, `pathLength` 100, `stroke-dasharray`); thickness = `50 × (1 − innerRadius)` (mind the factor: a first pass doubled it to 8px on the 24px ring); measured 4 · 4 · 6 · 8 px |
+| Figma's round caps are separate dots at the arc ends | CSS has no such thing | SVG `stroke-linecap: round` is the same shape (a half-thickness past each end); Value 100 uses butt so the ring closes cleanly |
+| A gradient fill (default → hover) over a bar and a ring | The recipe has solid fills only | Inline `linear-gradient(to right, var(--color-action-primary-default), var(--color-action-primary-hover))` on the bar and an SVG `<linearGradient>` rotated 90° to undo the arc's −90° rotation; the stops are the same CSS vars the recipe reads |

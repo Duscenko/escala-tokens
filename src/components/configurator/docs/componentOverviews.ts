@@ -372,6 +372,8 @@ export const OVERVIEWS: Record<string, Overview> = {
   TableHeader: [each('Size', ['default', 'xs', 'sm', 'lg'], {}, 800), each('Scrolled', ['false', 'true'], {}, 800), each('Dividers', ['rows', 'grid'], {}, 800)],
   TableFooter: [each('Size', ['default', 'xs', 'sm', 'lg'], {}, 800), each('Dividers', ['rows', 'grid'], {}, 800)],
   TableLoadMore: [each('State', ['Default', 'Loading'], {}, 800)],
+  ProgressLine: [each('Size', ['xs', 'sm', 'default', 'lg'], {}, 240), each('Appearance', ['solid', 'gradient'], {}, 240), each('Value', ['0', '25', '50', '75', '100'], {}, 240)],
+  ProgressCircle: [each('Size', ['xs', 'sm', 'default', 'lg']), each('Cap', ['round', 'butt'], { Value: '75' }), each('Appearance', ['solid', 'gradient'], { Value: '75' }), each('Value', ['0', '25', '50', '75', '100'])],
   Alert: [
     each('Variant', ['success', 'info', 'warning', 'default', 'critical', 'secondary'], { Layout: 'vertical' }, 320),
     each('Appearance', ['outline', 'solid', 'soft', 'inverse'], {}, 800),

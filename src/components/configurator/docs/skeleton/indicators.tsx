@@ -6,7 +6,7 @@ import type { IconRole } from '../../../../lib/iconSizing'
 import { Badge as SkBadge, StatusBadge as SkStatusBadge, type BadgeAppearance, type BadgeShape, type BadgeSize, type BadgeType, type BadgeVariant, type Presence } from '../../../escala-ui/badge'
 import { Chip as SkChip, type ChipAppearance, type ChipShape, type ChipSize, type ChipState, type ChipVariant } from '../../../escala-ui/chip'
 import { useAutoplayStep } from '../../../preview/artefacts/boardAutoplay'
-import { Progress as SkProgress } from '../../../escala-ui/progress'
+import { ProgressCircle as SkProgressCircle, ProgressLine as SkProgressLine, type ProgressAppearance, type ProgressCap, type ProgressSize } from '../../../escala-ui/progress-line'
 import { Spinner as SkSpinner } from '../../../escala-ui/spinner'
 import { Icon as SkIcon } from '../../../escala-ui/icon'
 import { RatingGroup as SkRatingGroup, RatingGroupItem as SkRatingGroupItem, type RatingGroupItemState, type RatingGroupSize, type RatingGroupType } from '../../../escala-ui/rating-group'
@@ -78,9 +78,23 @@ function ChipPlayground({ t, v, children }: SpecimenProps) {
 /** An upload as the board plays it: fills in steps, rests full, starts over. */
 const PROGRESS_PLAY = [0, 24, 60, 82, 100, 100]
 
-export function SkeletonProgressSpecimen({ t, w }: SpecimenProps) {
+/** The Figma ProgressLine at its 240px sample; `v.Value` pins the value (the board plays an upload through it). */
+export function SkeletonProgressLineSpecimen({ t, v, w }: SpecimenProps) {
   const step = useAutoplayStep(PROGRESS_PLAY.length, 1100)
-  return <RecipeScope t={t}><SkProgress label="Uploading…" value={step == null ? 60 : PROGRESS_PLAY[step]} style={{ width: w ?? 240, maxWidth: '100%' }} /></RecipeScope>
+  const value = v.Value != null ? Number(v.Value) : step == null ? 60 : PROGRESS_PLAY[step]
+  return (
+    <RecipeScope t={t}>
+      <SkProgressLine aria-label="Uploading" size={(v.Size ?? 'default') as ProgressSize} appearance={(v.Appearance ?? 'solid') as ProgressAppearance} value={value} style={{ width: w ?? 240, maxWidth: '100%' }} />
+    </RecipeScope>
+  )
+}
+
+export function SkeletonProgressCircleSpecimen({ t, v }: SpecimenProps) {
+  return (
+    <RecipeScope t={t}>
+      <SkProgressCircle aria-label="Uploading" size={(v.Size ?? 'default') as ProgressSize} cap={(v.Cap ?? 'round') as ProgressCap} appearance={(v.Appearance ?? 'solid') as ProgressAppearance} value={Number(v.Value ?? 50)} />
+    </RecipeScope>
+  )
 }
 
 export function SkeletonSpinnerSpecimen({ t }: SpecimenProps) {

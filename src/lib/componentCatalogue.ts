@@ -1183,19 +1183,42 @@ export const COMPONENTS: ComponentDef[] = [
     accessibility: 'The label is a toggle button (aria-pressed); the close control is its own button named "Remove". Disabled sets aria-disabled and disables both.',
   },
   {
-    key: 'Progress',
-    label: 'Progress',
+    key: 'ProgressLine',
+    label: 'Progress Line',
     category: 'Indicators',
-    description: 'Linear progress indicator; track and bar reference the progress tokens.',
-    usage: 'Use for operations over 2s. Show percentage when known. Pair with a label.',
-    axes: [],
-    figmaSets: ['Progress'],
-    props: [
-      { name: 'value', type: 'number', description: '0–100.' },
-      { name: 'label', type: 'ReactNode', description: 'Name shown beside the percentage.' },
-      { name: 'showValue', type: 'boolean', description: 'Show the percentage (default on).' },
+    description: 'A horizontal progress indicator for a value from 0 to 100: a muted track and a bar that is solid or a gradient of the primary action.',
+    usage: 'Use for operations that take more than a couple of seconds and report how far along they are. Pair it with a label and the percentage in the surrounding UI. For an unknown duration use Spinner.',
+    // The Figma file's axes, value for value (design-plans/progress-contract.md).
+    axes: [
+      { name: 'Size', values: ['xs', 'sm', 'default', 'lg'] },
+      { name: 'Appearance', values: ['solid', 'gradient'] },
+      { name: 'Value', values: ['0', '25', '50', '75', '100'] },
     ],
-    accessibility: 'role="progressbar" with aria-valuenow, aria-valuemin, aria-valuemax.',
+    figmaSets: ['ProgressLine'],
+    props: [
+      { name: 'size / appearance', type: 'Figma axes', description: 'The track is 4 · 6 · 8 · 12 thick; gradient runs Action/primary/default → /hover.' },
+      { name: 'value', type: 'number', description: 'Figma Value, 0–100 (any number; the file draws five).' },
+    ],
+    accessibility: 'role="progressbar" with aria-valuenow, aria-valuemin and aria-valuemax; give it an accessible name (aria-label).',
+  },
+  {
+    key: 'ProgressCircle',
+    label: 'Progress Circle',
+    category: 'Indicators',
+    description: 'A circular progress indicator for a value from 0 to 100: a muted ring and an arc from the top, with round or butt ends.',
+    usage: 'Use where a bar does not fit (a button, a card corner, an avatar). Show the percentage next to it when it matters.',
+    axes: [
+      { name: 'Size', values: ['xs', 'sm', 'default', 'lg'] },
+      { name: 'Cap', values: ['round', 'butt'] },
+      { name: 'Appearance', values: ['solid', 'gradient'] },
+      { name: 'Value', values: ['0', '25', '50', '75', '100'] },
+    ],
+    figmaSets: ['ProgressCircle'],
+    props: [
+      { name: 'size / cap / appearance', type: 'Figma axes', description: 'The ring is 24 · 32 · 48 · 56 across; round caps add a half-thickness dot at each end of the arc.' },
+      { name: 'value', type: 'number', description: 'Figma Value, 0–100.' },
+    ],
+    accessibility: 'role="progressbar" with aria-valuenow, aria-valuemin and aria-valuemax; give it an accessible name (aria-label).',
   },
   {
     key: 'Spinner',
