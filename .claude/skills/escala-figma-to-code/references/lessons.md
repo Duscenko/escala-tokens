@@ -543,3 +543,12 @@ Source: the file's «AvatarGroup Prototype» (868:28472): four PHOTO avatars + t
 | The marker's number is the step's position, not a prop of the Stepper | `StepperItem` has no index | The Stepper wraps each child in an index context; the Item passes it to its Icon (`label` overrides) |
 | An Icon in Disabled shows the same paint for every status, an Indicator line goes `Border/subtle` | Nested components need the state too | The Item passes `data-force-state="Disabled"` to its Indicator and Icon; each reads its own recipe |
 | The connector line must stretch the free space (`grow 1`) of a column or row whose size comes from the sibling | A fixed length would break at other sizes | `flex: 1` with `flex-basis: 0` and `self-stretch`; measured 1×18 beside a 62 item and 173×1 across a 217 one |
+
+# Lessons from the Separator (2026-11-13)
+| Trap | What it looked like | The fix (where it lives) |
+|---|---|---|
+| A one-axis shadcn Separator (Radix, `orientation`) against a four-axis set with a label (Align · Orientation · Tone · Variant) | Plain `<Separator />` is used by Item, the docs artefacts and the board tiles | Same component and Radix root; `align`, `tone`, `variant` and the label as `children` are new, a label alone centres itself, all old call sites compile. The default Tone is `Border/default`, one step above the `Border/subtle` the code drew: reported, not hidden |
+| Dashed lines are a 4 · 4 dash pattern in the file | CSS `dashed` is 3 · 3 and varies | A repeated linear gradient over the line's colour (`--escala-paint`, set by the recipe's `paint`), 90° or 180° |
+| Lines that «grow» between a label and the edge | A fixed length would break at any width | `flex: 1 1 0` lines with the label `shrink-0`; measured 287 · 136 + 136 · 287 of 320 and 78 · 31 + 31 of 112, root 18 high / 17 wide, none 320×1 and 1×112 |
+| agentContextAudit requires `data-orientation` in the FILE text | Radix writes it at runtime, the test reads the source | Written explicitly on the root |
+| A role test that pinned `Separator` to `border.subtle` only | It described the old single-hairline recipe | Now the three tones plus the label ink |

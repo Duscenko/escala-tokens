@@ -340,7 +340,7 @@ export const OVERVIEWS: Record<string, Overview> = {
 
   // ── Content & Surfaces ─────────────────────────────────────────────────────
   Card: [each('Size', ['default', 'sm'])],
-  Separator: [each('Orientation', ['horizontal', 'vertical'])],
+  Separator: [each('Align', ['none', 'start', 'center', 'end'], {}, 320), each('Tone', ['default', 'subtle', 'strong'], {}, 320), each('Variant', ['default', 'dashed'], { Align: 'center' }, 320), each('Align', ['none', 'center'], { Orientation: 'vertical' }, 40)],
   Collapsible: [each('Open', ['False', 'True'])],
   Accordion: [each('Variant', ['ghost-default', 'ghost-underline', 'ghost-rounded', 'outline-rounded', 'outline-sharp', 'filled-rounded'])],
   AccordionItem: [

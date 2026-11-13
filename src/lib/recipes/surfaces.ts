@@ -108,16 +108,21 @@ export const MODAL_FOOTER: ComponentRecipe = {
 
 // ── Separator ──────────────────────────────────────────────────────────────
 
+// The Figma Separator (402:9063; design-plans/separator-contract.md): a 1px line, solid or dashed (4 · 4), horizontal or
+// vertical, optionally with a label at its start, centre or end. Tone picks the line colour.
+export const SEPARATOR_ALIGNS = ['none', 'start', 'center', 'end'] as const
+export const SEPARATOR_ORIENTATIONS = ['horizontal', 'vertical'] as const
+export const SEPARATOR_TONES = ['default', 'subtle', 'strong'] as const
+export const SEPARATOR_VARIANTS = ['dashed', 'default'] as const
+
 export const SEPARATOR: ComponentRecipe = {
   key: 'Separator',
-  slots: ['root'],
-  defaults: { Orientation: 'horizontal' },
+  slots: ['root', 'line', 'label'],
+  defaults: { Align: 'none', Orientation: 'horizontal', Tone: 'default', Variant: 'default' },
   parts: [
-    part({ Orientation: ['horizontal', 'vertical'] as const }, (o) => ({
-      root: o === 'horizontal'
-        ? { fill: c('border.subtle'), height: 'stroke.divider' }
-        : { fill: c('border.subtle'), width: 'stroke.divider', height: 'size.2xl' },
-    })),
+    part({}, () => ({ root: { gap: 'spacing.gap-group' }, label: { text: c('content.secondary'), font: 'type.label' } })),
+    part({ Orientation: SEPARATOR_ORIENTATIONS }, (o) => ({ line: o === 'horizontal' ? { height: 'stroke.divider' } : { width: 'stroke.divider' } })),
+    part({ Tone: SEPARATOR_TONES }, (tone) => ({ line: { paint: c(tone === 'subtle' ? 'border.subtle' : tone === 'strong' ? 'border.strong' : 'border.default') } })),
   ],
 }
 

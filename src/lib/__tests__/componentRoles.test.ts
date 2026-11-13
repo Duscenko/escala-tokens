@@ -58,8 +58,9 @@ describe('every catalogue component is described by a recipe', () => {
     expect(rolesForComponent('Chip')).toContain('surface.selected')
   })
 
-  it('Separator — a single hairline with no live axis — resolves only its border', () => {
-    expect(rolesForComponent('Separator')).toEqual(['border.subtle'])
+  it('Separator resolves its three Tones and the label ink', () => {
+    // The Figma Tone axis (2026-11-13): default · subtle · strong lines, and the label on Content/secondary.
+    expect(rolesForComponent('Separator').sort()).toEqual(['border.default', 'border.strong', 'border.subtle', 'content.secondary'])
   })
 
   it('SegmentedControl can name the surface its track paints', () => {

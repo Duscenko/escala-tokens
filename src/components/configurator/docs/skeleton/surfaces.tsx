@@ -9,7 +9,7 @@ import { useAutoplayStep } from '../../../preview/artefacts/boardAutoplay'
 import { Button as SkButton } from '../../../escala-ui/button'
 import { type CardSize, Card as SkCard, CardHeader as SkCardHeader, CardTitle as SkCardTitle, CardDescription as SkCardDescription, CardFooter as SkCardFooter } from '../../../escala-ui/card'
 import { Modal as SkModal, ModalContent as SkModalContent, ModalHeader as SkModalHeader, ModalFooter as SkModalFooter, type ModalSize, type ModalHeaderAlign, type ModalFooterLayout } from '../../../escala-ui/modal'
-import { Separator as SkSeparator } from '../../../escala-ui/separator'
+import { Separator as SkSeparator, type SeparatorAlign, type SeparatorTone, type SeparatorVariant } from '../../../escala-ui/separator'
 import { Accordion as SkAccordion, AccordionItem as SkAccordionItem, type AccordionVariant, type AccordionItemState } from '../../../escala-ui/accordion'
 import { Image as SkImage, type ImageRatio, type ImageShape } from '../../../escala-ui/image'
 import { Popover as SkPopover, PopoverContent as SkPopoverContent, PopoverFooter as SkPopoverFooter, type PopoverSize, type PopoverSide, type PopoverFooterLayout } from '../../../escala-ui/popover'
@@ -113,9 +113,18 @@ export function SkeletonModalFooterSpecimen({ t, v }: SpecimenProps) {
 
 export function SkeletonSeparatorSpecimen({ t, v, w }: SpecimenProps) {
   const horizontal = (v.Orientation ?? 'horizontal') === 'horizontal'
+  const align = (v.Align ?? 'none') as SeparatorAlign
   return (
     <RecipeScope t={t}>
-      <SkSeparator orientation={horizontal ? 'horizontal' : 'vertical'} style={horizontal ? { width: w ?? 220 } : undefined} />
+      <SkSeparator
+        orientation={horizontal ? 'horizontal' : 'vertical'}
+        align={align}
+        tone={(v.Tone ?? 'default') as SeparatorTone}
+        variant={(v.Variant ?? 'default') as SeparatorVariant}
+        style={horizontal ? { width: w ?? 220 } : { height: 112 }}
+      >
+        {align !== 'none' ? 'OR' : undefined}
+      </SkSeparator>
     </RecipeScope>
   )
 }

@@ -20034,28 +20034,66 @@
     "Separator": {
       "key": "Separator",
       "slots": [
-        "root"
+        "root",
+        "line",
+        "label"
       ],
       "defaults": {
-        "Orientation": "horizontal"
+        "Align": "none",
+        "Orientation": "horizontal",
+        "Tone": "default",
+        "Variant": "default"
       },
       "parts": [
+        {
+          "axes": [],
+          "values": {
+            "": {
+              "root": {
+                "gap": "spacing.gap-group"
+              },
+              "label": {
+                "text": "color.content.secondary",
+                "font": "type.label"
+              }
+            }
+          }
+        },
         {
           "axes": [
             "Orientation"
           ],
           "values": {
             "horizontal": {
-              "root": {
-                "fill": "color.border.subtle",
+              "line": {
                 "height": "stroke.divider"
               }
             },
             "vertical": {
-              "root": {
-                "fill": "color.border.subtle",
-                "width": "stroke.divider",
-                "height": "size.2xl"
+              "line": {
+                "width": "stroke.divider"
+              }
+            }
+          }
+        },
+        {
+          "axes": [
+            "Tone"
+          ],
+          "values": {
+            "default": {
+              "line": {
+                "paint": "color.border.default"
+              }
+            },
+            "subtle": {
+              "line": {
+                "paint": "color.border.subtle"
+              }
+            },
+            "strong": {
+              "line": {
+                "paint": "color.border.strong"
               }
             }
           }

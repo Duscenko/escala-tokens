@@ -5312,15 +5312,21 @@ var init_componentCatalogue = __esm({
         key: "Separator",
         label: "Separator",
         category: "Content & Surfaces",
-        description: "Rule between sections or list items. Fill \u2192 divider/color token.",
-        usage: "Use sparingly \u2014 whitespace is usually sufficient. Add label only for section breaks.",
-        axes: [{ name: "Orientation", values: ["horizontal", "vertical"] }],
+        description: "Thin rule that divides content, horizontal or vertical, solid or dashed, with an optional label at its start, centre or end.",
+        usage: "Use sparingly \u2014 whitespace is usually sufficient. Add a label only for section breaks (the classic \xABOR\xBB).",
+        axes: [
+          { name: "Align", values: ["none", "start", "center", "end"] },
+          { name: "Orientation", values: ["horizontal", "vertical"] },
+          { name: "Tone", values: ["default", "subtle", "strong"] },
+          { name: "Variant", values: ["dashed", "default"] }
+        ],
         figmaSets: ["Separator"],
         props: [
-          { name: "orientation", type: '"horizontal" | "vertical"', description: "Direction." },
+          { name: "align / orientation / tone / variant", type: "string", description: "Figma Align, Orientation, Tone and Variant." },
+          { name: "children", type: "ReactNode", description: "Figma Label; shown when Align is not none (a label alone centres it)." },
           { name: "decorative", type: "boolean", description: 'A purely visual rule (default). Set false to expose role="separator".' }
         ],
-        accessibility: 'role="separator". Decorative dividers use aria-hidden="true".'
+        accessibility: 'Decorative by default; role="separator" with aria-orientation only when the rule conveys structure.'
       },
       {
         key: "Accordion",
@@ -11132,7 +11138,7 @@ function tooltipTriggerInk(variant, state2) {
       return hot ? "action.primary.hover" : "action.primary.default";
   }
 }
-var CARD, OVERLAY_TITLE, MODAL_SIZES, MODAL, MODAL_HEADER, MODAL_FOOTER, SEPARATOR, ACCORDION_VARIANTS, ACCORDION_ITEM_STATES, ACCORDION, ACCORDION_ITEM, IMAGE_RATIOS, IMAGE_SHAPES, IMAGE, POPOVER_SIZES, POPOVER, POPOVER_FOOTER, TOOLTIP_SIZES, TOOLTIP_VARIANTS, TOOLTIP_TRIGGER_STATES, TOOLTIP_TONE, TOOLTIP_CONTENT, TOOLTIP_INFO_TRIGGER, SCROLL_AREA, COLLAPSIBLE, ALERT_DIALOG, SHEET, DRAWER, HOVER_CARD, ITEM_VARIANTS, ITEM_SIZES, ITEM_GEOMETRY2, ITEM_DESCRIPTION, ITEM_CONTENT_GAP, ITEM_MEDIA, ITEM, ATTACHMENT_SIZES, ATTACHMENT_GEOMETRY, ATTACHMENT_MEDIA, ATTACHMENT, MESSAGE, BUBBLE_VARIANTS, BUBBLE_PAINT, BUBBLE, RESIZABLE, CAROUSEL, CHART;
+var CARD, OVERLAY_TITLE, MODAL_SIZES, MODAL, MODAL_HEADER, MODAL_FOOTER, SEPARATOR_ORIENTATIONS, SEPARATOR_TONES, SEPARATOR, ACCORDION_VARIANTS, ACCORDION_ITEM_STATES, ACCORDION, ACCORDION_ITEM, IMAGE_RATIOS, IMAGE_SHAPES, IMAGE, POPOVER_SIZES, POPOVER, POPOVER_FOOTER, TOOLTIP_SIZES, TOOLTIP_VARIANTS, TOOLTIP_TRIGGER_STATES, TOOLTIP_TONE, TOOLTIP_CONTENT, TOOLTIP_INFO_TRIGGER, SCROLL_AREA, COLLAPSIBLE, ALERT_DIALOG, SHEET, DRAWER, HOVER_CARD, ITEM_VARIANTS, ITEM_SIZES, ITEM_GEOMETRY2, ITEM_DESCRIPTION, ITEM_CONTENT_GAP, ITEM_MEDIA, ITEM, ATTACHMENT_SIZES, ATTACHMENT_GEOMETRY, ATTACHMENT_MEDIA, ATTACHMENT, MESSAGE, BUBBLE_VARIANTS, BUBBLE_PAINT, BUBBLE, RESIZABLE, CAROUSEL, CHART;
 var init_surfaces = __esm({
   "src/lib/recipes/surfaces.ts"() {
     init_helpers();
@@ -11225,14 +11231,16 @@ var init_surfaces = __esm({
         }))
       ]
     };
+    SEPARATOR_ORIENTATIONS = ["horizontal", "vertical"];
+    SEPARATOR_TONES = ["default", "subtle", "strong"];
     SEPARATOR = {
       key: "Separator",
-      slots: ["root"],
-      defaults: { Orientation: "horizontal" },
+      slots: ["root", "line", "label"],
+      defaults: { Align: "none", Orientation: "horizontal", Tone: "default", Variant: "default" },
       parts: [
-        part({ Orientation: ["horizontal", "vertical"] }, (o) => ({
-          root: o === "horizontal" ? { fill: c("border.subtle"), height: "stroke.divider" } : { fill: c("border.subtle"), width: "stroke.divider", height: "size.2xl" }
-        }))
+        part({}, () => ({ root: { gap: "spacing.gap-group" }, label: { text: c("content.secondary"), font: "type.label" } })),
+        part({ Orientation: SEPARATOR_ORIENTATIONS }, (o) => ({ line: o === "horizontal" ? { height: "stroke.divider" } : { width: "stroke.divider" } })),
+        part({ Tone: SEPARATOR_TONES }, (tone2) => ({ line: { paint: c(tone2 === "subtle" ? "border.subtle" : tone2 === "strong" ? "border.strong" : "border.default") } }))
       ]
     };
     ACCORDION_VARIANTS = ["ghost-default", "ghost-underline", "ghost-rounded", "outline-rounded", "outline-sharp", "filled-rounded"];

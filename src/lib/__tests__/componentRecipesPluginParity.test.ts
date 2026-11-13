@@ -210,7 +210,9 @@ describe.skipIf(!existsSync(pluginFile))('plugin ↔ web recipe parity', () => {
       // 2026-11-13: TabMenu rebuilt from the file (984:1830): the Content slot and the hairline track; its items are TabMenuItem / TabMenuLineItem.
       TabMenu: ['content', 'track'],
       // 2026-11-13: Pagination rebuilt from the file (989:714): the Content slot; its links are PaginationLink and PaginationEllipsis.
-      Pagination: ['content'] }
+      Pagination: ['content'],
+      // 2026-11-13: Separator rebuilt from the file (402:9063): the line segments and the label.
+      Separator: ['line', 'label'] }
     const gaps: Record<string, string[]> = {}
     for (const key of webAndPlugin) {
       const g = plugin.anatomyGaps(code, table, key).filter((s: string) => !(WEB_ONLY_SLOTS[key] ?? []).includes(s))
