@@ -28,7 +28,7 @@ import {
 } from './skeleton/indicators'
 import {
   SkeletonTabsSpecimen, SkeletonTabMenuSpecimen, SkeletonTabMenuItemSpecimen, SkeletonTabMenuLineItemSpecimen, SkeletonNavItemSpecimen, SkeletonBrandSpecimen, SkeletonAccountMenuTriggerSpecimen, SkeletonSegmentedControlSpecimen, SkeletonSegmentedControlItemSpecimen, SkeletonBreadcrumbSpecimen, SkeletonBreadcrumbItemSpecimen, SkeletonBreadcrumbEllipsisSpecimen, SkeletonBreadcrumbSeparatorSpecimen,
-  SkeletonPaginationSpecimen, SkeletonStepperSpecimen, SkeletonDropdownMenuSpecimen, SkeletonDropdownMenuLabelSpecimen, SkeletonDropdownMenuItemSpecimen, SkeletonDropdownMenuFooterSpecimen, SkeletonContextMenuSpecimen,
+  SkeletonPaginationSpecimen, SkeletonPaginationLinkSpecimen, SkeletonPaginationEllipsisSpecimen, SkeletonStepperSpecimen, SkeletonDropdownMenuSpecimen, SkeletonDropdownMenuLabelSpecimen, SkeletonDropdownMenuItemSpecimen, SkeletonDropdownMenuFooterSpecimen, SkeletonContextMenuSpecimen,
   SkeletonCommandSpecimen, SkeletonNavbarSpecimen, SkeletonSidebarSpecimen,
   SkeletonMenubarSpecimen, SkeletonNavigationMenuSpecimen,
 } from './skeleton/navigation'
@@ -490,6 +490,8 @@ export const SPECIMENS: Record<string, (p: SpecimenProps) => ReactNode> = {
   BreadcrumbEllipsis: SkeletonBreadcrumbEllipsisSpecimen,
   BreadcrumbSeparator: SkeletonBreadcrumbSeparatorSpecimen,
   Pagination: SkeletonPaginationSpecimen,
+  PaginationLink: SkeletonPaginationLinkSpecimen,
+  PaginationEllipsis: SkeletonPaginationEllipsisSpecimen,
   Stepper: SkeletonStepperSpecimen,
   DropdownMenu: SkeletonDropdownMenuSpecimen,
   DropdownMenuLabel: SkeletonDropdownMenuLabelSpecimen,

@@ -6287,17 +6287,48 @@ var init_componentCatalogue = __esm({
         key: "Pagination",
         label: "Pagination",
         category: "Navigation",
-        description: "Page switcher with previous/next arrows, numbered pages and overflow ellipsis.",
-        usage: "Use for result sets over one page. Keep the current page visually unmistakable.",
-        axes: [],
+        description: "Page navigation: First / Previous, numbered links with ellipses, Next / Last. Joined like a ButtonGroup or as ghost buttons apart.",
+        usage: "Use for result sets over one page. Disable First / Previous on page 1 and Next / Last on the last page; never mark the current page with colour alone.",
+        axes: [
+          { name: "Size", values: ["default", "xs", "sm", "lg"] },
+          { name: "Variant", values: ["compact", "compact-grouped"] }
+        ],
         figmaSets: ["Pagination"],
         props: [
-          { name: "pages", type: '(number | "\u2026")[]', description: "Page numbers to show." },
-          { name: "page", type: "number", description: "The current page." },
-          { name: "onPageChange", type: "(page: number) => void", description: "Fires on selection." },
-          { name: "prevIcon / nextIcon", type: "ReactNode", description: "Arrow glyphs." }
+          { name: "size / variant", type: "string", description: "Figma Size and Variant (compact-grouped by default)." },
+          { name: "jumpButtons", type: "boolean", description: "Figma JumpButtonsVisible: First and Last." },
+          { name: "pages / page / onPageChange", type: '(number | "\u2026")[] / number / (page) => void', description: "Shortcut for the Content slot and the arrows." },
+          { name: "children", type: "PaginationLink | PaginationEllipsis", description: "The Content slot." }
         ],
-        accessibility: 'nav aria-label="Pagination". Current page uses aria-current="page".'
+        accessibility: 'nav aria-label="pagination". The current page is aria-current="page"; the arrows carry aria-labels and disable at the ends.'
+      },
+      {
+        key: "PaginationLink",
+        label: "Pagination Link",
+        category: "Navigation",
+        description: "Numbered page link: ghost when inactive, outlined (or filled in a grouped Pagination) when Active.",
+        usage: "Inside a Pagination.",
+        axes: [
+          { name: "Size", values: ["default", "xs", "sm", "lg"] },
+          { name: "State", values: ["Default", "Hover", "Pressed", "Focused", "Disabled"] },
+          { name: "Active", values: ["false", "true"] }
+        ],
+        figmaSets: ["PaginationLink"],
+        props: [
+          { name: "active / disabled / forceState / size", type: "boolean / State", description: 'Active is aria-current="page"; Size follows the Pagination.' }
+        ],
+        accessibility: 'A button; the active one is aria-current="page".'
+      },
+      {
+        key: "PaginationEllipsis",
+        label: "Pagination Ellipsis",
+        category: "Navigation",
+        description: "Non-interactive gap marker between page ranges.",
+        usage: "Between two ranges of PaginationLinks.",
+        axes: [{ name: "Size", values: ["default", "xs", "sm", "lg"] }],
+        figmaSets: ["PaginationEllipsis"],
+        props: [{ name: "size", type: "string", description: "Figma Size; follows the Pagination." }],
+        accessibility: 'role="presentation" with a screen-reader-only "More pages".'
       },
       {
         key: "Stepper",
@@ -11679,7 +11710,7 @@ function dropdownItemPaint(variant, state2) {
       return { fill: NONE };
   }
 }
-var TABS, TAB_MENU_SIZES, TAB_MENU_VARIANTS, TAB_MENU_ITEM_STATES, TAB_MENU_INDICATORS, TAB_MENU, tabMenuSizeSlots, TAB_MENU_ITEM, TAB_MENU_LINE_ITEM, NAV_ITEM_SIZES, NAV_ITEM_STATES, NAV_ITEM, BRAND_SIZES, BRAND, ACCOUNT_MENU_TRIGGER_SIZES, ACCOUNT_MENU_TRIGGER_STATES, ACCOUNT_MENU_TRIGGER, SEGMENTED_CONTROL_SIZES, SEGMENTED_CONTROL, SEGMENTED_CONTROL_ITEM_STATES, SEGMENT_ITEM, SEGMENTED_CONTROL_ITEM, BREADCRUMB_SIZES, BREADCRUMB_APPEARANCES, BREADCRUMB_SEPARATORS, BREADCRUMB_VARIANTS, BREADCRUMB_ITEM_STATES, BREADCRUMB_ELLIPSIS_STATES, BREADCRUMB, BREADCRUMB_ITEM, BREADCRUMB_ELLIPSIS, BREADCRUMB_SEPARATOR, PAGINATION, STEPPER, MENU_PANEL_RADIUS, DROPDOWN_SIZES, DROPDOWN_ITEM_STATES, DROPDOWN_ITEM_VARIANTS, DROPDOWN_MENU, DROPDOWN_MENU_LABEL, DROPDOWN_MENU_ITEM, DROPDOWN_MENU_FOOTER, CONTEXT_MENU, COMMAND, NAVBAR, SIDEBAR, MENUBAR, NAVIGATION_MENU;
+var TABS, TAB_MENU_SIZES, TAB_MENU_VARIANTS, TAB_MENU_ITEM_STATES, TAB_MENU_INDICATORS, TAB_MENU, tabMenuSizeSlots, TAB_MENU_ITEM, TAB_MENU_LINE_ITEM, NAV_ITEM_SIZES, NAV_ITEM_STATES, NAV_ITEM, BRAND_SIZES, BRAND, ACCOUNT_MENU_TRIGGER_SIZES, ACCOUNT_MENU_TRIGGER_STATES, ACCOUNT_MENU_TRIGGER, SEGMENTED_CONTROL_SIZES, SEGMENTED_CONTROL, SEGMENTED_CONTROL_ITEM_STATES, SEGMENT_ITEM, SEGMENTED_CONTROL_ITEM, BREADCRUMB_SIZES, BREADCRUMB_APPEARANCES, BREADCRUMB_SEPARATORS, BREADCRUMB_VARIANTS, BREADCRUMB_ITEM_STATES, BREADCRUMB_ELLIPSIS_STATES, BREADCRUMB, BREADCRUMB_ITEM, BREADCRUMB_ELLIPSIS, BREADCRUMB_SEPARATOR, PAGINATION_SIZES, PAGINATION_VARIANTS, PAGINATION_LINK_STATES, PAGINATION_LINK_ACTIVE, paginationBox, paginationIcon, PAGINATION, PAGINATION_LINK, PAGINATION_ELLIPSIS, STEPPER, MENU_PANEL_RADIUS, DROPDOWN_SIZES, DROPDOWN_ITEM_STATES, DROPDOWN_ITEM_VARIANTS, DROPDOWN_MENU, DROPDOWN_MENU_LABEL, DROPDOWN_MENU_ITEM, DROPDOWN_MENU_FOOTER, CONTEXT_MENU, COMMAND, NAVBAR, SIDEBAR, MENUBAR, NAVIGATION_MENU;
 var init_navigation = __esm({
   "src/lib/recipes/navigation.ts"() {
     init_helpers();
@@ -11897,35 +11928,61 @@ var init_navigation = __esm({
         })
       ]
     };
+    PAGINATION_SIZES = ["default", "xs", "sm", "lg"];
+    PAGINATION_VARIANTS = ["compact", "compact-grouped"];
+    PAGINATION_LINK_STATES = ["Default", "Hover", "Pressed", "Focused", "Disabled"];
+    PAGINATION_LINK_ACTIVE = ["false", "true"];
+    paginationBox = (size) => size === "xs" ? "size.xs" : size === "sm" ? "size.sm" : size === "lg" ? "size.lg" : "size.md";
+    paginationIcon = (size) => size === "lg" ? "icon.large" : size === "default" ? "icon.medium" : "icon.small";
     PAGINATION = {
       key: "Pagination",
-      slots: ["root", "cell", "pill"],
-      defaults: {},
+      slots: ["root", "content"],
+      defaults: { Size: "default", Variant: "compact-grouped" },
       parts: [
-        part({}, () => ({
+        part({ Variant: PAGINATION_VARIANTS }, (variant) => ({
+          root: { gap: variant === "compact" ? "spacing.gap-tight" : "spacing.none" },
+          content: { gap: variant === "compact" ? "spacing.gap-tight" : "spacing.none" }
+        }))
+      ]
+    };
+    PAGINATION_LINK = {
+      key: "PaginationLink",
+      slots: ["root", "label"],
+      defaults: { Size: "default", State: "Default", Active: "false" },
+      parts: [
+        part({ Size: PAGINATION_SIZES }, (size) => ({
           root: {
-            fill: c("surface.layer-1"),
-            stroke: c("border.subtle"),
-            strokeWidth: "stroke.control",
-            radius: "radius.pill",
-            paddingX: "spacing.1",
-            paddingY: "spacing.1",
-            gap: "spacing.0_5"
-          },
-          // A pill track holds pill cells (concentric at any inset).
-          pill: { fill: c("action.primary.default"), radius: "radius.pill" },
-          cell: {
-            text: c("content.secondary"),
-            font: "type.body-sm",
-            radius: "radius.pill",
-            height: "size.compact",
-            minHeight: "size.compact",
-            paddingX: "spacing.1_5"
-          },
-          "cell:hover": { text: c("content.primary") },
-          'cell[aria-current="page"]': { text: c("content.on-action") },
-          'cell[aria-current="page"]:hover': { text: c("content.on-action") },
-          "cell:disabled": { text: c("content.subtle") }
+            height: paginationBox(size),
+            minWidth: paginationBox(size),
+            radius: "radius.action",
+            paddingX: "spacing.gap-tight",
+            paddingY: "spacing.none",
+            gap: size === "xs" || size === "sm" ? "spacing.gap-tight" : "spacing.gap-control",
+            font: "type.button",
+            strokeWidth: "stroke.control"
+          }
+        })),
+        part({ State: PAGINATION_LINK_STATES, Active: PAGINATION_LINK_ACTIVE }, (state2, active) => {
+          const edge = active === "true" ? c("border.control") : NONE;
+          const root = { text: c(state2 === "Disabled" ? "content.disabled" : "content.primary"), fill: NONE, stroke: edge };
+          if (state2 === "Hover") root.fill = c("action.ghost.hover");
+          if (state2 === "Pressed") root.fill = c("action.ghost.pressed");
+          if (state2 === "Focused") {
+            root.focus = c("border.focus");
+            root.ring = c("border.ring.default");
+          }
+          return { root };
+        })
+      ]
+    };
+    PAGINATION_ELLIPSIS = {
+      key: "PaginationEllipsis",
+      slots: ["root", "icon"],
+      defaults: { Size: "default" },
+      parts: [
+        part({ Size: PAGINATION_SIZES }, (size) => ({
+          root: { width: paginationBox(size), height: paginationBox(size), text: c("content.secondary") },
+          icon: { width: paginationIcon(size), height: paginationIcon(size) }
         }))
       ]
     };
@@ -13079,7 +13136,7 @@ var init_motion2 = __esm({
       Toggle: { transitions: { root: FILL } },
       ToggleGroup: { transitions: { item: FILL } },
       Item: { transitions: { root: FILL } },
-      Pagination: { transitions: { cell: FILL } },
+      PaginationLink: { transitions: { root: FILL } },
       TabMenuItem: { transitions: { root: FILL } },
       TabMenuLineItem: { transitions: { root: FILL } },
       NavItem: { transitions: { root: FILL } },
@@ -13264,6 +13321,8 @@ var init_componentRecipes = __esm({
       BreadcrumbEllipsis: BREADCRUMB_ELLIPSIS,
       BreadcrumbSeparator: BREADCRUMB_SEPARATOR,
       Pagination: PAGINATION,
+      PaginationLink: PAGINATION_LINK,
+      PaginationEllipsis: PAGINATION_ELLIPSIS,
       Stepper: STEPPER,
       DropdownMenu: DROPDOWN_MENU,
       DropdownMenuLabel: DROPDOWN_MENU_LABEL,
@@ -16089,7 +16148,7 @@ var init_useDesignStore = __esm({
         }),
         {
           name: "scalable-designs-store",
-          version: 146,
+          version: 147,
           migrate: (persisted, version) => {
             if (persisted) {
               delete persisted.styleDirection;
@@ -17883,6 +17942,18 @@ var init_useDesignStore = __esm({
                 const sel = state2.selectedComponents;
                 const at = sel.indexOf("TabMenuLineItem");
                 if (at >= 0) sel.splice(at + 1, 0, ...["NavItem", "Brand", "AccountMenuTrigger"].filter((k) => !sel.includes(k)));
+              };
+              add2(persisted);
+              if (Array.isArray(persisted.savedSystems)) {
+                for (const sys of persisted.savedSystems) add2(sys?.snapshot);
+              }
+            }
+            if (version < 147) {
+              const add2 = (state2) => {
+                if (!Array.isArray(state2?.selectedComponents)) return;
+                const sel = state2.selectedComponents;
+                const at = sel.indexOf("Pagination");
+                if (at >= 0) sel.splice(at + 1, 0, ...["PaginationLink", "PaginationEllipsis"].filter((k) => !sel.includes(k)));
               };
               add2(persisted);
               if (Array.isArray(persisted.savedSystems)) {

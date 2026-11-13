@@ -53,17 +53,6 @@
       "status": "part",
       "of": "Sidebar"
     },
-    "Pagination": {
-      "status": "rebuild"
-    },
-    "PaginationEllipsis": {
-      "status": "part",
-      "of": "Pagination"
-    },
-    "PaginationLink": {
-      "status": "part",
-      "of": "Pagination"
-    },
     "Stepper": {
       "status": "rebuild"
     },

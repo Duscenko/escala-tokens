@@ -130,6 +130,8 @@
   <url><loc>https://www.escalatokens.com/components/BreadcrumbEllipsis</loc></url>
   <url><loc>https://www.escalatokens.com/components/BreadcrumbSeparator</loc></url>
   <url><loc>https://www.escalatokens.com/components/Pagination</loc></url>
+  <url><loc>https://www.escalatokens.com/components/PaginationLink</loc></url>
+  <url><loc>https://www.escalatokens.com/components/PaginationEllipsis</loc></url>
   <url><loc>https://www.escalatokens.com/components/Stepper</loc></url>
   <url><loc>https://www.escalatokens.com/components/DropdownMenu</loc></url>
   <url><loc>https://www.escalatokens.com/components/DropdownMenuLabel</loc></url>

@@ -2058,7 +2058,7 @@ export const useDesignStore = create<DesignStore>()(
     }),
     {
       name: 'scalable-designs-store',
-      version: 146,
+      version: 147,
       migrate: (persisted: any, version: number) => {
         if (persisted) {
           // v1→v2: remove styleDirection, rename selectedAtoms → selectedComponents
@@ -4374,6 +4374,19 @@ export const useDesignStore = create<DesignStore>()(
             const sel: string[] = state.selectedComponents
             const at = sel.indexOf('TabMenuLineItem')
             if (at >= 0) sel.splice(at + 1, 0, ...['NavItem', 'Brand', 'AccountMenuTrigger'].filter((k) => !sel.includes(k)))
+          }
+          add(persisted)
+          if (Array.isArray(persisted.savedSystems)) {
+            for (const sys of persisted.savedSystems) add(sys?.snapshot)
+          }
+        }
+        if (version < 147) {
+          // v146→v147: Pagination gains its Figma parts PaginationLink and PaginationEllipsis.
+          const add = (state: any) => {
+            if (!Array.isArray(state?.selectedComponents)) return
+            const sel: string[] = state.selectedComponents
+            const at = sel.indexOf('Pagination')
+            if (at >= 0) sel.splice(at + 1, 0, ...['PaginationLink', 'PaginationEllipsis'].filter((k) => !sel.includes(k)))
           }
           add(persisted)
           if (Array.isArray(persisted.savedSystems)) {

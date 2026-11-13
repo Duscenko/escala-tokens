@@ -11,7 +11,7 @@ import { Brand as SkBrand, type BrandSize } from '../../../escala-ui/brand'
 import { AccountMenuTrigger as SkAccountMenuTrigger, type AccountMenuTriggerSize, type AccountMenuTriggerState } from '../../../escala-ui/account-menu-trigger'
 import { SegmentedControl as SkSegmentedControl, SegmentedControlItem as SkSegmentedControlItem, type SegmentedControlItemState, type SegmentedControlSize } from '../../../escala-ui/segmented-control'
 import { Breadcrumb as SkBreadcrumb, BreadcrumbEllipsis as SkBreadcrumbEllipsis, BreadcrumbItem as SkBreadcrumbItem, BreadcrumbList as SkBreadcrumbList, BreadcrumbSeparator as SkBreadcrumbSeparator, BREADCRUMB_GLYPHS, type BreadcrumbAppearance, type BreadcrumbEllipsisState, type BreadcrumbItemState, type BreadcrumbSeparatorKind, type BreadcrumbSize, type BreadcrumbVariant } from '../../../escala-ui/breadcrumb'
-import { Pagination as SkPagination } from '../../../escala-ui/pagination'
+import { Pagination as SkPagination, PaginationScope as SkPaginationScope, PaginationEllipsis as SkPaginationEllipsis, PaginationLink as SkPaginationLink, type PaginationLinkState, type PaginationSize, type PaginationVariant } from '../../../escala-ui/pagination'
 import { useAutoplayStep } from '../../../preview/artefacts/boardAutoplay'
 import { Stepper as SkStepper } from '../../../escala-ui/stepper'
 import { DropdownMenu as SkDropdownMenu, DropdownMenuContent as SkDropdownMenuContent, DropdownMenuItem as SkDropdownMenuItem, DropdownMenuLabel as SkDropdownMenuLabel, DropdownMenuFooter as SkDropdownMenuFooter, DropdownMenuSeparator as SkDropdownMenuSeparator, type DropdownMenuSize, type DropdownMenuItemState, type DropdownMenuItemVariant, type DropdownMenuFooterLayout } from '../../../escala-ui/dropdown-menu'
@@ -184,11 +184,29 @@ export function SkeletonBreadcrumbSeparatorSpecimen({ t, v }: SpecimenProps) {
   )
 }
 
-export function SkeletonPaginationSpecimen({ t }: SpecimenProps) {
+/** The Figma Pagination (989:714) in place: Previous, 1, 2 (current), 3, …, 10, Next. */
+export function SkeletonPaginationSpecimen({ t, v }: SpecimenProps) {
   const [page, setPage] = useState(2)
-  return <RecipeScope t={t}><SkPagination pages={[1, 2, 3, '…', 8]} page={page} onPageChange={setPage}
-    prevIcon={<PreviewIcon concept="chevron-left" size={iconOf(13)} />}
-    nextIcon={<PreviewIcon concept="chevron-right" size={iconOf(13)} />} /></RecipeScope>
+  return (
+    <RecipeScope t={t}>
+      <SkPagination size={(v.Size ?? 'default') as PaginationSize} variant={(v.Variant ?? 'compact-grouped') as PaginationVariant} pages={[1, 2, 3, '…', 10]} page={page} onPageChange={setPage} />
+    </RecipeScope>
+  )
+}
+
+/** A lone link: it sits in a compact Pagination so it keeps its context. */
+export function SkeletonPaginationLinkSpecimen({ t, v }: SpecimenProps) {
+  return (
+    <RecipeScope t={t}>
+      <SkPaginationScope size={(v.Size ?? 'default') as PaginationSize}>
+        <SkPaginationLink active={v.Active === 'true'} forceState={(v.State ?? 'Default') as PaginationLinkState} disabled={v.State === 'Disabled'}>1</SkPaginationLink>
+      </SkPaginationScope>
+    </RecipeScope>
+  )
+}
+
+export function SkeletonPaginationEllipsisSpecimen({ t, v }: SpecimenProps) {
+  return <RecipeScope t={t}><SkPaginationEllipsis size={(v.Size ?? 'default') as PaginationSize} /></RecipeScope>
 }
 
 export function SkeletonStepperSpecimen({ t, w }: SpecimenProps) {

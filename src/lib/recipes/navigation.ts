@@ -303,28 +303,60 @@ export const BREADCRUMB_SEPARATOR: ComponentRecipe = {
   ],
 }
 
-// ── Pagination ─────────────────────────────────────────────────────────────
+// ── Pagination, PaginationLink and PaginationEllipsis ──────────────────────
+// The Figma sets Pagination (989:714), PaginationLink (988:330) and PaginationEllipsis (988:343)
+// (design-plans/pagination-contract.md). `compact-grouped` is an outline ButtonGroup of ButtonGroupItems
+// (the group paints itself); `compact` is IconButtons and PaginationLinks four apart.
+export const PAGINATION_SIZES = ['default', 'xs', 'sm', 'lg'] as const
+export const PAGINATION_VARIANTS = ['compact', 'compact-grouped'] as const
+export const PAGINATION_LINK_STATES = ['Default', 'Hover', 'Pressed', 'Focused', 'Disabled'] as const
+export const PAGINATION_LINK_ACTIVE = ['false', 'true'] as const
+
+const paginationBox = (size: string) => (size === 'xs' ? 'size.xs' : size === 'sm' ? 'size.sm' : size === 'lg' ? 'size.lg' : 'size.md')
+const paginationIcon = (size: string) => (size === 'lg' ? 'icon.large' : size === 'default' ? 'icon.medium' : 'icon.small')
 
 export const PAGINATION: ComponentRecipe = {
   key: 'Pagination',
-  slots: ['root', 'cell', 'pill'],
-  defaults: {},
+  slots: ['root', 'content'],
+  defaults: { Size: 'default', Variant: 'compact-grouped' },
   parts: [
-    part({}, () => ({
+    part({ Variant: PAGINATION_VARIANTS }, (variant) => ({
+      root: { gap: variant === 'compact' ? 'spacing.gap-tight' : 'spacing.none' },
+      content: { gap: variant === 'compact' ? 'spacing.gap-tight' : 'spacing.none' },
+    })),
+  ],
+}
+
+export const PAGINATION_LINK: ComponentRecipe = {
+  key: 'PaginationLink',
+  slots: ['root', 'label'],
+  defaults: { Size: 'default', State: 'Default', Active: 'false' },
+  parts: [
+    part({ Size: PAGINATION_SIZES }, (size) => ({
       root: {
-        fill: c('surface.layer-1'), stroke: c('border.subtle'), strokeWidth: 'stroke.control', radius: 'radius.pill',
-        paddingX: 'spacing.1', paddingY: 'spacing.1', gap: 'spacing.0_5',
+        height: paginationBox(size), minWidth: paginationBox(size), radius: 'radius.action', paddingX: 'spacing.gap-tight', paddingY: 'spacing.none',
+        gap: size === 'xs' || size === 'sm' ? 'spacing.gap-tight' : 'spacing.gap-control', font: 'type.button', strokeWidth: 'stroke.control',
       },
-      // A pill track holds pill cells (concentric at any inset).
-      pill: { fill: c('action.primary.default'), radius: 'radius.pill' },
-      cell: {
-        text: c('content.secondary'), font: 'type.body-sm', radius: 'radius.pill',
-        height: 'size.compact', minHeight: 'size.compact', paddingX: 'spacing.1_5',
-      },
-      'cell:hover': { text: c('content.primary') },
-      'cell[aria-current="page"]': { text: c('content.on-action') },
-      'cell[aria-current="page"]:hover': { text: c('content.on-action') },
-      'cell:disabled': { text: c('content.subtle') },
+    })),
+    part({ State: PAGINATION_LINK_STATES, Active: PAGINATION_LINK_ACTIVE }, (state, active) => {
+      const edge = active === 'true' ? c('border.control') : NONE
+      const root: SlotProps = { text: c(state === 'Disabled' ? 'content.disabled' : 'content.primary'), fill: NONE, stroke: edge }
+      if (state === 'Hover') root.fill = c('action.ghost.hover')
+      if (state === 'Pressed') root.fill = c('action.ghost.pressed')
+      if (state === 'Focused') { root.focus = c('border.focus'); root.ring = c('border.ring.default') }
+      return { root }
+    }),
+  ],
+}
+
+export const PAGINATION_ELLIPSIS: ComponentRecipe = {
+  key: 'PaginationEllipsis',
+  slots: ['root', 'icon'],
+  defaults: { Size: 'default' },
+  parts: [
+    part({ Size: PAGINATION_SIZES }, (size) => ({
+      root: { width: paginationBox(size), height: paginationBox(size), text: c('content.secondary') },
+      icon: { width: paginationIcon(size), height: paginationIcon(size) },
     })),
   ],
 }

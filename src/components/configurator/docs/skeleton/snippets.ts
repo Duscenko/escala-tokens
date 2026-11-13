@@ -40,8 +40,12 @@ export const SKELETON_SNIPPETS: Record<string, Snippet> = {
     `import { BreadcrumbEllipsis } from "@/components/ui/breadcrumb"\n\n<BreadcrumbEllipsis${v.Variant && v.Variant !== 'default' ? ` variant="${v.Variant}"` : ''}${v.Appearance && v.Appearance !== 'ghost' ? ` appearance="${v.Appearance}"` : ''}${v.Size && v.Size !== 'default' ? ` size="${v.Size}"` : ''} />`,
   BreadcrumbSeparator: (v) =>
     `import { BreadcrumbSeparator } from "@/components/ui/breadcrumb"\n\n<BreadcrumbSeparator${v.Variant && v.Variant !== 'chevron' ? ` variant="${v.Variant}"` : ''}${v.Size && v.Size !== 'default' ? ` size="${v.Size}"` : ''} />`,
-  Pagination: () =>
-    `import { Pagination } from "@/components/ui/pagination"\n\n<Pagination pages={[1, 2, 3, "…", 8]} page={page} onPageChange={setPage} />`,
+  Pagination: (v) =>
+    `import { Pagination } from "@/components/ui/pagination"\n\n<Pagination${v.Size && v.Size !== 'default' ? ` size="${v.Size}"` : ''}${v.Variant && v.Variant !== 'compact-grouped' ? ` variant="${v.Variant}"` : ''} pages={[1, 2, 3, "…", 10]} page={page} onPageChange={setPage} />`,
+  PaginationLink: (v) =>
+    `import { Pagination, PaginationLink } from "@/components/ui/pagination"\n\n<Pagination variant="compact">\n  <PaginationLink${v.Size && v.Size !== 'default' ? ` size="${v.Size}"` : ''}${v.Active === 'true' ? ' active' : ''}${v.State === 'Disabled' ? ' disabled' : ''}>2</PaginationLink>\n</Pagination>`,
+  PaginationEllipsis: (v) =>
+    `import { PaginationEllipsis } from "@/components/ui/pagination"\n\n<PaginationEllipsis${v.Size && v.Size !== 'default' ? ` size="${v.Size}"` : ''} />`,
   Stepper: () =>
     `import { Stepper } from "@/components/ui/stepper"\n\n<Stepper steps={["Account", "Tokens", "Publish"]} current={2} />`,
   DropdownMenu: (v) =>

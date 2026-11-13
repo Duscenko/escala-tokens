@@ -178,7 +178,7 @@ describe.skipIf(!existsSync(pluginFile))('plugin ↔ web recipe parity', () => {
     // DatePickerTrigger / DatePickerPopover / CalendarDay / CalendarHeader / CalendarMonth / CalendarPresets / CalendarFooter (2026-11-12): sets the file has and the frozen plugin never built (the date picker and calendar pages).
     // ButtonGroupItem / ButtonGroupDivider (2026-11-12): the file's own sets for the
     // group's segments and lines, rebuilt from it.
-    const WEB_ONLY = new Set(['CloseButton', 'TextLink', 'FABButton', 'FABGroup', 'ButtonGroupItem', 'ButtonGroupDivider', 'NumberInput', 'InputOTPSlot', 'InputTagChip', 'InputTagOption', 'DatePickerTrigger', 'DatePickerPopover', 'CalendarDay', 'CalendarHeader', 'CalendarMonth', 'CalendarPresets', 'CalendarFooter', 'PasswordStrengthMeter', 'PasswordStrengthRule', 'FileUploadDropzone', 'FileUploadItem', 'CheckboxItem', 'CheckboxGroup', 'SwitchGroup', 'SegmentedControlItem', 'SliderThumb', 'RatingGroup', 'RatingGroupItem', 'AvatarStatus', 'AvatarGroup', 'FeaturedIcon', 'Image', 'AccordionItem', 'TableCell', 'TableHead', 'TableMediaCell', 'TableTrendCell', 'TableResizer', 'TableRow', 'TableHeader', 'TableFooter', 'TableCaption', 'TableDropIndicator', 'TableEmpty', 'TableLoading', 'TableLoadMore', 'ProgressLine', 'ProgressCircle', 'Toast', 'Modal', 'ModalHeader', 'ModalFooter', 'PopoverFooter', 'DropdownMenuLabel', 'DropdownMenuItem', 'DropdownMenuFooter', 'TooltipContent', 'TooltipInfoTrigger', 'BreadcrumbItem', 'BreadcrumbEllipsis', 'BreadcrumbSeparator', 'TabMenuItem', 'TabMenuLineItem', 'NavItem', 'Brand', 'AccountMenuTrigger'])
+    const WEB_ONLY = new Set(['CloseButton', 'TextLink', 'FABButton', 'FABGroup', 'ButtonGroupItem', 'ButtonGroupDivider', 'NumberInput', 'InputOTPSlot', 'InputTagChip', 'InputTagOption', 'DatePickerTrigger', 'DatePickerPopover', 'CalendarDay', 'CalendarHeader', 'CalendarMonth', 'CalendarPresets', 'CalendarFooter', 'PasswordStrengthMeter', 'PasswordStrengthRule', 'FileUploadDropzone', 'FileUploadItem', 'CheckboxItem', 'CheckboxGroup', 'SwitchGroup', 'SegmentedControlItem', 'SliderThumb', 'RatingGroup', 'RatingGroupItem', 'AvatarStatus', 'AvatarGroup', 'FeaturedIcon', 'Image', 'AccordionItem', 'TableCell', 'TableHead', 'TableMediaCell', 'TableTrendCell', 'TableResizer', 'TableRow', 'TableHeader', 'TableFooter', 'TableCaption', 'TableDropIndicator', 'TableEmpty', 'TableLoading', 'TableLoadMore', 'ProgressLine', 'ProgressCircle', 'Toast', 'Modal', 'ModalHeader', 'ModalFooter', 'PopoverFooter', 'DropdownMenuLabel', 'DropdownMenuItem', 'DropdownMenuFooter', 'TooltipContent', 'TooltipInfoTrigger', 'BreadcrumbItem', 'BreadcrumbEllipsis', 'BreadcrumbSeparator', 'TabMenuItem', 'TabMenuLineItem', 'NavItem', 'Brand', 'AccountMenuTrigger', 'PaginationLink', 'PaginationEllipsis'])
     const webAndPlugin = Object.keys(COMPONENT_RECIPES).filter((key) => !WEB_ONLY.has(key))
     // Plugin builders whose web recipe was RENAMED from the Figma file after the
     // freeze (2026-11-12): InputStepper is the file's NumberInput, Dropzone its
@@ -208,7 +208,9 @@ describe.skipIf(!existsSync(pluginFile))('plugin ↔ web recipe parity', () => {
       // 2026-11-12: FileUpload rebuilt from the file (994:1399): the Content slot and the trigger's glyph; its rows are FileUploadItem.
       FileUpload: ['content', 'triggerIcon'],
       // 2026-11-13: TabMenu rebuilt from the file (984:1830): the Content slot and the hairline track; its items are TabMenuItem / TabMenuLineItem.
-      TabMenu: ['content', 'track'] }
+      TabMenu: ['content', 'track'],
+      // 2026-11-13: Pagination rebuilt from the file (989:714): the Content slot; its links are PaginationLink and PaginationEllipsis.
+      Pagination: ['content'] }
     const gaps: Record<string, string[]> = {}
     for (const key of webAndPlugin) {
       const g = plugin.anatomyGaps(code, table, key).filter((s: string) => !(WEB_ONLY_SLOTS[key] ?? []).includes(s))
@@ -218,7 +220,7 @@ describe.skipIf(!existsSync(pluginFile))('plugin ↔ web recipe parity', () => {
     // Every documented difference names real slots of that recipe.
     // A frozen plugin may still document slots of a recipe rebuilt from the file
     // after the freeze (ButtonGroup lost shadcn's `text` / `separator`, 2026-11-12).
-    const STALE_ANATOMY: Record<string, string[]> = { ButtonGroup: ['text', 'separator'], Textarea: ['label', 'hint', 'count', 'field'], InputTag: ['input', 'tag', 'tagRemove'], SegmentedControl: ['item', 'pill'], TabMenu: ['item', 'pill'] }
+    const STALE_ANATOMY: Record<string, string[]> = { ButtonGroup: ['text', 'separator'], Textarea: ['label', 'hint', 'count', 'field'], InputTag: ['input', 'tag', 'tagRemove'], SegmentedControl: ['item', 'pill'], TabMenu: ['item', 'pill'], Pagination: ['cell', 'pill'] }
     for (const [key, a] of Object.entries(plugin.RECIPE_FIGMA_ANATOMY as Record<string, { root?: string; omit?: string[] }>)) {
       if (!COMPONENT_RECIPES[key]) continue // a plugin key renamed on the web (RENAMED_ON_WEB)
       for (const slot of [...(a.omit ?? []), ...(a.root ? [a.root] : [])]) {

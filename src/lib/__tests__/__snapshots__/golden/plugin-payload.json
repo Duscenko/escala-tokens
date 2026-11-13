@@ -26857,47 +26857,183 @@
       "key": "Pagination",
       "slots": [
         "root",
-        "cell",
-        "pill"
+        "content"
       ],
-      "defaults": {},
+      "defaults": {
+        "Size": "default",
+        "Variant": "compact-grouped"
+      },
       "parts": [
         {
-          "axes": [],
+          "axes": [
+            "Variant"
+          ],
           "values": {
-            "": {
+            "compact": {
               "root": {
-                "fill": "color.surface.layer-1",
-                "stroke": "color.border.subtle",
-                "strokeWidth": "stroke.control",
-                "radius": "radius.pill",
-                "paddingX": "spacing.1",
-                "paddingY": "spacing.1",
-                "gap": "spacing.0_5"
+                "gap": "spacing.gap-tight"
               },
-              "pill": {
-                "fill": "color.action.primary.default",
-                "radius": "radius.pill"
+              "content": {
+                "gap": "spacing.gap-tight"
+              }
+            },
+            "compact-grouped": {
+              "root": {
+                "gap": "spacing.none"
               },
-              "cell": {
-                "text": "color.content.secondary",
-                "font": "type.body-sm",
-                "radius": "radius.pill",
-                "height": "size.compact",
-                "minHeight": "size.compact",
-                "paddingX": "spacing.1_5"
-              },
-              "cell:hover": {
-                "text": "color.content.primary"
-              },
-              "cell[aria-current=\"page\"]": {
-                "text": "color.content.on-action"
-              },
-              "cell[aria-current=\"page\"]:hover": {
-                "text": "color.content.on-action"
-              },
-              "cell:disabled": {
-                "text": "color.content.subtle"
+              "content": {
+                "gap": "spacing.none"
+              }
+            }
+          }
+        }
+      ]
+    },
+    "PaginationLink": {
+      "key": "PaginationLink",
+      "slots": [
+        "root",
+        "label"
+      ],
+      "defaults": {
+        "Size": "default",
+        "State": "Default",
+        "Active": "false"
+      },
+      "parts": [
+        {
+          "axes": [
+            "Size"
+          ],
+          "values": {
+            "default": {
+              "root": {
+                "height": "size.md",
+                "minWidth": "size.md",
+                "radius": "radius.action",
+                "paddingX": "spacing.gap-tight",
+                "paddingY": "spacing.none",
+                "gap": "spacing.gap-control",
+                "font": "type.button",
+                "strokeWidth": "stroke.control"
+              }
+            },
+            "xs": {
+              "root": {
+                "height": "size.xs",
+                "minWidth": "size.xs",
+                "radius": "radius.action",
+                "paddingX": "spacing.gap-tight",
+                "paddingY": "spacing.none",
+                "gap": "spacing.gap-tight",
+                "font": "type.button",
+                "strokeWidth": "stroke.control"
+              }
+            },
+            "sm": {
+              "root": {
+                "height": "size.sm",
+                "minWidth": "size.sm",
+                "radius": "radius.action",
+                "paddingX": "spacing.gap-tight",
+                "paddingY": "spacing.none",
+                "gap": "spacing.gap-tight",
+                "font": "type.button",
+                "strokeWidth": "stroke.control"
+              }
+            },
+            "lg": {
+              "root": {
+                "height": "size.lg",
+                "minWidth": "size.lg",
+                "radius": "radius.action",
+                "paddingX": "spacing.gap-tight",
+                "paddingY": "spacing.none",
+                "gap": "spacing.gap-control",
+                "font": "type.button",
+                "strokeWidth": "stroke.control"
+              }
+            }
+          }
+        },
+        {
+          "axes": [
+            "State",
+            "Active"
+          ],
+          "values": {
+            "Default|false": {
+              "root": {
+                "text": "color.content.primary",
+                "fill": "none",
+                "stroke": "none"
+              }
+            },
+            "Default|true": {
+              "root": {
+                "text": "color.content.primary",
+                "fill": "none",
+                "stroke": "color.border.control"
+              }
+            },
+            "Hover|false": {
+              "root": {
+                "text": "color.content.primary",
+                "fill": "color.action.ghost.hover",
+                "stroke": "none"
+              }
+            },
+            "Hover|true": {
+              "root": {
+                "text": "color.content.primary",
+                "fill": "color.action.ghost.hover",
+                "stroke": "color.border.control"
+              }
+            },
+            "Pressed|false": {
+              "root": {
+                "text": "color.content.primary",
+                "fill": "color.action.ghost.pressed",
+                "stroke": "none"
+              }
+            },
+            "Pressed|true": {
+              "root": {
+                "text": "color.content.primary",
+                "fill": "color.action.ghost.pressed",
+                "stroke": "color.border.control"
+              }
+            },
+            "Focused|false": {
+              "root": {
+                "text": "color.content.primary",
+                "fill": "none",
+                "stroke": "none",
+                "focus": "color.border.focus",
+                "ring": "color.border.ring.default"
+              }
+            },
+            "Focused|true": {
+              "root": {
+                "text": "color.content.primary",
+                "fill": "none",
+                "stroke": "color.border.control",
+                "focus": "color.border.focus",
+                "ring": "color.border.ring.default"
+              }
+            },
+            "Disabled|false": {
+              "root": {
+                "text": "color.content.disabled",
+                "fill": "none",
+                "stroke": "none"
+              }
+            },
+            "Disabled|true": {
+              "root": {
+                "text": "color.content.disabled",
+                "fill": "none",
+                "stroke": "color.border.control"
               }
             }
           }
@@ -26905,12 +27041,75 @@
       ],
       "motion": {
         "transitions": {
-          "cell": {
+          "root": {
             "background-color": "use-hover",
             "color": "use-hover"
           }
         }
       }
+    },
+    "PaginationEllipsis": {
+      "key": "PaginationEllipsis",
+      "slots": [
+        "root",
+        "icon"
+      ],
+      "defaults": {
+        "Size": "default"
+      },
+      "parts": [
+        {
+          "axes": [
+            "Size"
+          ],
+          "values": {
+            "default": {
+              "root": {
+                "width": "size.md",
+                "height": "size.md",
+                "text": "color.content.secondary"
+              },
+              "icon": {
+                "width": "icon.medium",
+                "height": "icon.medium"
+              }
+            },
+            "xs": {
+              "root": {
+                "width": "size.xs",
+                "height": "size.xs",
+                "text": "color.content.secondary"
+              },
+              "icon": {
+                "width": "icon.small",
+                "height": "icon.small"
+              }
+            },
+            "sm": {
+              "root": {
+                "width": "size.sm",
+                "height": "size.sm",
+                "text": "color.content.secondary"
+              },
+              "icon": {
+                "width": "icon.small",
+                "height": "icon.small"
+              }
+            },
+            "lg": {
+              "root": {
+                "width": "size.lg",
+                "height": "size.lg",
+                "text": "color.content.secondary"
+              },
+              "icon": {
+                "width": "icon.large",
+                "height": "icon.large"
+              }
+            }
+          }
+        }
+      ]
     },
     "Stepper": {
       "key": "Stepper",
