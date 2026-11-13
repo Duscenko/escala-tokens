@@ -43,7 +43,7 @@ import {
   SkeletonNativeSelectSpecimen,
 } from './skeleton/forms'
 import {
-  SkeletonCardSpecimen, SkeletonDialogSpecimen, SkeletonSeparatorSpecimen, SkeletonAccordionSpecimen, SkeletonAccordionItemSpecimen, SkeletonTableCellSpecimen, SkeletonTableHeadSpecimen, SkeletonTableMediaCellSpecimen, SkeletonTableTrendCellSpecimen, SkeletonTableResizerSpecimen, SkeletonTableRowSpecimen, SkeletonTableHeaderSpecimen, SkeletonTableFooterSpecimen, SkeletonTableCaptionSpecimen, SkeletonTableDropIndicatorSpecimen, SkeletonTableEmptySpecimen, SkeletonTableLoadingSpecimen, SkeletonTableLoadMoreSpecimen,
+  SkeletonCardSpecimen, SkeletonModalSpecimen, SkeletonModalHeaderSpecimen, SkeletonModalFooterSpecimen, SkeletonSeparatorSpecimen, SkeletonAccordionSpecimen, SkeletonAccordionItemSpecimen, SkeletonTableCellSpecimen, SkeletonTableHeadSpecimen, SkeletonTableMediaCellSpecimen, SkeletonTableTrendCellSpecimen, SkeletonTableResizerSpecimen, SkeletonTableRowSpecimen, SkeletonTableHeaderSpecimen, SkeletonTableFooterSpecimen, SkeletonTableCaptionSpecimen, SkeletonTableDropIndicatorSpecimen, SkeletonTableEmptySpecimen, SkeletonTableLoadingSpecimen, SkeletonTableLoadMoreSpecimen,
   SkeletonImageSpecimen, SkeletonPopoverSpecimen, SkeletonTooltipSpecimen,
   SkeletonScrollAreaSpecimen, SkeletonAlertSpecimen, SkeletonToastSpecimen,
   SkeletonCollapsibleSpecimen, SkeletonTableSpecimen, SkeletonSkeletonSpecimen, SkeletonEmptySpecimen,
@@ -462,7 +462,9 @@ export const SPECIMENS: Record<string, (p: SpecimenProps) => ReactNode> = {
   Accordion: SkeletonAccordionSpecimen,
   AccordionItem: SkeletonAccordionItemSpecimen,
   Image: SkeletonImageSpecimen,
-  Dialog: SkeletonDialogSpecimen,
+  Modal: SkeletonModalSpecimen,
+  ModalHeader: SkeletonModalHeaderSpecimen,
+  ModalFooter: SkeletonModalFooterSpecimen,
   Popover: SkeletonPopoverSpecimen,
   Tooltip: SkeletonTooltipSpecimen,
   ScrollArea: SkeletonScrollAreaSpecimen,

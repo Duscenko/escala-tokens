@@ -648,7 +648,7 @@ export function motionChoreographies(settings: MotionSettings): Record<string, C
   return {
     'dialog-enter': {
       pattern: 'coordinated',
-      components: ['Dialog', 'AlertDialog'],
+      components: ['Modal', 'AlertDialog'],
       intent: { usage: ['dialogs', 'confirmations', 'focal overlays'], direction: 'The backdrop fades while the card pops a beat behind it. The card is the focal point, so it takes the emphasis role and a `quick` delay.' },
       tracks: [
         { slot: 'overlay', keyframes: 'fade-in', motion: r('use-overlay-in'), delay: 0 },
@@ -658,7 +658,7 @@ export function motionChoreographies(settings: MotionSettings): Record<string, C
     },
     'dialog-exit': {
       pattern: 'coordinated',
-      components: ['Dialog', 'AlertDialog'],
+      components: ['Modal', 'AlertDialog'],
       intent: { usage: ['dialogs', 'confirmations'], direction: 'Card and backdrop leave together, fast.' },
       tracks: [
         { slot: 'content', keyframes: 'shrink', motion: r('use-overlay-out'), delay: 0 },

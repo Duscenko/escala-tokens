@@ -62,16 +62,18 @@ const highlightShadow = (color: string) => `inset 0 var(--stroke-focus, 2px) 0 0
  *  (−4 · −2, −4 · −4, −1 · −2) that Figma does NOT render: the frame does not clip
  *  its content, so a drop shadow's spread paints nothing (measured on the file's own
  *  pixels: 237 at the side edge, not 245). The spread is therefore left out here. */
-const LIFT: Record<string, (key: string, ambient: string) => string[]> = {
+const LIFT: Record<string, (key: string, ambient: string, ring: string) => string[]> = {
   rest: (k, a) => [`0 12px 16px ${k}`, `0 4px 6px ${a}`],
   hover: (k, a) => [`0 20px 24px ${k}`, `0 8px 8px ${a}`],
   pressed: (k, a) => [`0 4px 6px ${k}`, `0 2px 4px ${a}`],
+  // The Modal's Shadow/xl: the frame CLIPS its content, so Figma paints the ring and the negative spreads.
+  modal: (k, a, r) => [`0 0 0 1px ${r}`, `0 20px 24px -4px ${k}`, `0 8px 8px -4px ${a}`],
   // The Chip being dragged: Shadow/sm without its spreads (Figma paints none on a frame that does not clip).
   drag: (k, a) => [`0 1px 3px ${k}`, `0 1px 2px ${a}`],
 }
 /** The surface effects a slot carries: its lift, then the top highlight. */
 function surfaceShadows(props: SlotProps, v: (ref: string) => string): string[] {
-  const lift = props.lift && LIFT[props.lift] ? LIFT[props.lift](v('color.elevation.shadow-key'), v('color.elevation.shadow-ambient')) : []
+  const lift = props.lift && LIFT[props.lift] ? LIFT[props.lift](v('color.elevation.shadow-key'), v('color.elevation.shadow-ambient'), v('color.elevation.shadow-ring')) : []
   return [...lift, ...(props.highlight && props.highlight !== 'none' ? [highlightShadow(v(props.highlight))] : [])]
 }
 

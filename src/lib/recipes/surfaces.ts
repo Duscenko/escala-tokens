@@ -35,26 +35,73 @@ export const CARD: ComponentRecipe = {
 // squeezed into a 320px panel.
 const OVERLAY_TITLE = 'type.heading-2xs'
 
-// ── Dialog ─────────────────────────────────────────────────────────────────
-// shadcn's Dialog: the close control is a ghost icon-sm Button (its recipe).
+// ── Modal, ModalHeader, ModalFooter ────────────────────────────────────────
+// The Figma sets (design-plans/modal-contract.md; Modal 967:102 · ModalHeader 965:81 · ModalFooter 966:114). The Modal is a
+// 480 (default) / 640 (lg) card on Surface/layer-2 with a 1px Border/default edge, Radius/overlay and the Shadow/xl stack
+// (the frame clips, so its ring and negative spreads DO paint: `lift: modal`). Its `main` pads 20 with 16 between the
+// header and the content; the footer sits under it; the close is a ghost pill CloseButton 20 from the corner.
 
-export const DIALOG: ComponentRecipe = {
-  key: 'Dialog',
-  slots: ['content', 'overlay', 'header', 'title', 'description', 'footer'],
+export const MODAL_SIZES = ['default', 'lg'] as const
+export const MODAL_HEADER_ALIGNS = ['horizontal', 'vertical-left', 'vertical-center'] as const
+export const MODAL_FOOTER_LAYOUTS = ['inline', 'stacked'] as const
+
+export const MODAL: ComponentRecipe = {
+  key: 'Modal',
+  slots: ['root', 'overlay', 'main', 'content', 'close'],
   detachedSlots: ['overlay'],
-  defaults: {},
+  defaults: { Size: 'default' },
   parts: [
     part({}, () => ({
       overlay: { fill: c('surface.overlay') },
-      content: {
-        fill: c('surface.layer-2'), stroke: c('border.subtle'), strokeWidth: 'stroke.control',
-        radius: 'radius.overlay', paddingX: 'spacing.inset-surface', paddingY: 'spacing.inset-surface',
-        gap: 'spacing.gap-group', shadow: 'shadow.2xl',
+      root: {
+        fill: c('surface.layer-2'), stroke: c('border.default'), strokeWidth: 'stroke.divider',
+        radius: 'radius.overlay', lift: 'modal',
       },
-      header: { gap: 'spacing.1_5' },
-      title: { text: c('content.primary'), font: OVERLAY_TITLE },
-      description: { text: c('content.secondary'), font: 'type.body-sm' },
-      footer: { gap: 'spacing.gap-control' },
+      main: { paddingX: 'spacing.inset-surface', paddingY: 'spacing.inset-surface', gap: 'spacing.gap-group' },
+      content: { gap: 'spacing.gap-group', text: c('content.secondary'), font: 'type.body-md' },
+    })),
+    part({ Size: MODAL_SIZES }, (size) => ({
+      // 480 = 3 × 128 + 96; 640 = 5 × 128 (the file's widths have no variable).
+      root: { width: size === 'lg' ? 'spacing.32+spacing.32+spacing.32+spacing.32+spacing.32' : 'spacing.32+spacing.32+spacing.32+spacing.24' },
+    })),
+  ],
+}
+
+export const MODAL_HEADER: ComponentRecipe = {
+  key: 'ModalHeader',
+  slots: ['root', 'content', 'title', 'description', 'trailing', 'clearance'],
+  defaults: { Size: 'default', Align: 'horizontal' },
+  parts: [
+    part({}, () => ({
+      root: { gap: 'spacing.gap-group' },
+      content: { gap: 'spacing.gap-tight' },
+      title: { text: c('content.primary') },
+      description: { text: c('content.secondary') },
+      trailing: { gap: 'spacing.gap-control' },
+    })),
+    part({ Size: MODAL_SIZES }, (size) => ({
+      title: { font: size === 'lg' ? 'type.heading-md' : 'type.heading-sm' },
+      description: { font: size === 'lg' ? 'type.body-md' : 'type.body-sm' },
+      clearance: size === 'lg'
+        ? { width: 'size.md', height: 'size.md' }
+        : { width: 'size.sm', height: 'size.sm' },
+    })),
+  ],
+}
+
+export const MODAL_FOOTER: ComponentRecipe = {
+  key: 'ModalFooter',
+  slots: ['root', 'leading', 'actions'],
+  defaults: { Size: 'default', Layout: 'inline' },
+  parts: [
+    part({}, () => ({
+      // A hairline along the TOP only (Border/subtle, inside); the padding is the surface inset on every side.
+      root: {
+        paddingX: 'spacing.inset-surface', paddingY: 'spacing.inset-surface', gap: 'spacing.gap-control',
+        stroke: c('border.subtle'), strokeTopWidth: 'stroke.divider',
+      },
+      leading: { gap: 'spacing.gap-tight', text: c('content.secondary'), font: 'type.caption' },
+      actions: { gap: 'spacing.gap-control' },
     })),
   ],
 }

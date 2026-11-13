@@ -70,7 +70,7 @@ export const RECIPE_MOTION: Record<string, RecipeMotion> = {
   // and the expand / collapse play on it; the Accordion only stacks items.
   AccordionItem: { ...disclosure('--radix-accordion-content-height'), transitions: { chevron: { transform: 'use-disclosure-in' } } },
   Collapsible: disclosure('--radix-collapsible-content-height'),
-  Dialog: { enter: { name: 'dialog-enter' }, exit: { name: 'dialog-exit' } },
+  Modal: { enter: { name: 'dialog-enter' }, exit: { name: 'dialog-exit' } },
   AlertDialog: { enter: { name: 'dialog-enter' }, exit: { name: 'dialog-exit' } },
   Sheet: { enter: { name: 'sheet-enter' }, exit: { name: 'sheet-exit' }, sideAttr: 'side' },
   Popover: popover('--radix-popover-content-transform-origin'),

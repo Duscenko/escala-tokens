@@ -8,7 +8,7 @@ import { choreographyVar } from '../../../../lib/motion'
 import { useAutoplayStep } from '../../../preview/artefacts/boardAutoplay'
 import { Button as SkButton } from '../../../escala-ui/button'
 import { type CardSize, Card as SkCard, CardHeader as SkCardHeader, CardTitle as SkCardTitle, CardDescription as SkCardDescription, CardFooter as SkCardFooter } from '../../../escala-ui/card'
-import { Dialog as SkDialog, DialogContent as SkDialogContent, DialogHeader as SkDialogHeader, DialogTitle as SkDialogTitle, DialogDescription as SkDialogDescription, DialogFooter as SkDialogFooter } from '../../../escala-ui/dialog'
+import { Modal as SkModal, ModalContent as SkModalContent, ModalHeader as SkModalHeader, ModalFooter as SkModalFooter, type ModalSize, type ModalHeaderAlign, type ModalFooterLayout } from '../../../escala-ui/modal'
 import { Separator as SkSeparator } from '../../../escala-ui/separator'
 import { Accordion as SkAccordion, AccordionItem as SkAccordionItem, type AccordionVariant, type AccordionItemState } from '../../../escala-ui/accordion'
 import { Image as SkImage, type ImageRatio, type ImageShape } from '../../../escala-ui/image'
@@ -57,21 +57,56 @@ export function SkeletonCardSpecimen({ t, v, w, children, elev }: SpecimenProps)
   )
 }
 
-export function SkeletonDialogSpecimen({ t }: { t: PreviewTokens }) {
+const MODAL_BODY = 'Replace this slot with the dialog body: a short paragraph, form fields, settings rows, a list or media. The body scrolls inside the dialog when it is taller than the viewport.'
+
+function modalActions(layout: ModalFooterLayout, size: ModalSize) {
+  const btn = size === 'lg' ? 'lg' : 'default'
+  const confirm = <SkButton key="confirm" variant="default" appearance="solid" size={btn}>Confirm</SkButton>
+  const cancel = <SkButton key="cancel" variant="secondary" appearance="solid" size={btn}>Cancel</SkButton>
+  return layout === 'stacked' ? [confirm, cancel] : [cancel, confirm]
+}
+
+/** The Figma Modal (967:102): header, the Content slot and the footer in a 480 / 640 card, shown in place. */
+export function SkeletonModalSpecimen({ t, v }: SpecimenProps) {
+  const size = (v.Size ?? 'default') as ModalSize
   return (
     <RecipeScope t={t}>
-      <SkDialog open modal={false}>
-        <SkDialogContent inline style={{ width: 320 }} closeIcon={<PreviewIcon concept="close" size={16} />}>
-          <SkDialogHeader>
-            <SkDialogTitle>Delete project?</SkDialogTitle>
-            <SkDialogDescription>This action can't be undone. All tokens in this project will be removed.</SkDialogDescription>
-          </SkDialogHeader>
-          <SkDialogFooter>
-            <SkButton variant="outline" size="sm">Cancel</SkButton>
-            <SkButton variant="destructive" size="sm">Delete</SkButton>
-          </SkDialogFooter>
-        </SkDialogContent>
-      </SkDialog>
+      <SkModal open modal={false}>
+        <SkModalContent
+          inline
+          size={size}
+          closeIcon={<PreviewIcon concept="close" size={16} />}
+          header={<SkModalHeader title="System notification" description="Review the details and take action." icon={<PreviewIcon concept="info" size={20} />} />}
+          footer={<SkModalFooter>{modalActions('inline', size)}</SkModalFooter>}
+        >
+          {MODAL_BODY}
+        </SkModalContent>
+      </SkModal>
+    </RecipeScope>
+  )
+}
+
+/** The Figma ModalHeader (965:81) on its own, at the width the Modal gives it (440 / 600). */
+export function SkeletonModalHeaderSpecimen({ t, v }: SpecimenProps) {
+  const size = (v.Size ?? 'default') as ModalSize
+  return (
+    <RecipeScope t={t}>
+      <div style={{ width: size === 'lg' ? 600 : 440 }}>
+        <SkModalHeader size={size} align={(v.Align ?? 'horizontal') as ModalHeaderAlign} title="System notification" description="Review the details and take action." icon={<PreviewIcon concept="info" size={20} />} />
+      </div>
+    </RecipeScope>
+  )
+}
+
+/** The Figma ModalFooter (966:114) on its own, at the Modal's width (480 / 640). */
+export function SkeletonModalFooterSpecimen({ t, v }: SpecimenProps) {
+  const size = (v.Size ?? 'default') as ModalSize
+  const layout = (v.Layout ?? 'inline') as ModalFooterLayout
+  return (
+    <RecipeScope t={t}>
+      <div style={{ width: size === 'lg' ? 640 : 480 }}>
+        <SkModalFooter size={size} layout={layout}>{modalActions(layout, size)}</SkModalFooter>
+      </div>
     </RecipeScope>
   )
 }

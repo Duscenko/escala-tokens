@@ -1,5 +1,5 @@
 {
-  "$comment": "Hand-maintained ledger: how far the code catalogue is from the Figma file (spec/figma-components.json). A component leaves `pending` when its catalogue axes equal Figma's — the test then demands the entry be removed. `codeOnly` are catalogue components Figma does not document: frozen, no new work. See design-plans/figma-components-inventory.md.",
+  "$comment": "Hand-maintained ledger: how far the code catalogue is from the Figma file (spec/figma-components.json). A component leaves `pending` when its catalogue axes equal Figma's \u2014 the test then demands the entry be removed. `codeOnly` are catalogue components Figma does not document: frozen, no new work. See design-plans/figma-components-inventory.md.",
   "pending": {
     "SocialLoginButton": {
       "status": "rebuild"
@@ -33,18 +33,6 @@
     "RadioItem": {
       "status": "part",
       "of": "RadioGroup"
-    },
-    "Modal": {
-      "status": "rename",
-      "code": "Dialog"
-    },
-    "ModalFooter": {
-      "status": "part",
-      "of": "Modal"
-    },
-    "ModalHeader": {
-      "status": "part",
-      "of": "Modal"
     },
     "Popover": {
       "status": "rebuild"

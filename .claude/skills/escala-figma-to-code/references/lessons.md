@@ -455,3 +455,14 @@ Source: the file's «AvatarGroup Prototype» (868:28472): four PHOTO avatars + t
 | The file's last column overruns the table by 2px (264 in 1438) and the file clips it | A full-width table scrolled 2px | The last prototype column takes what is left (262, `flex-grow 1`) |
 | A sortable head is a tab stop and the set draws no focus | Keyboard focus invisible on Name / Join date | `'root:focus-visible': { focus: border.focus }` — the row's own Focused treatment, 2px inside |
 | Measuring by eye in a scaled Browser pane | The pane scales a 1500 viewport down; "looks right" proved nothing | Compare `getBoundingClientRect` relative to the table with the Figma read (`absoluteBoundingBox` relative to the Table instance) for every leaf |
+
+# Lessons from the Modal, ModalHeader and ModalFooter (2026-11-13)
+| Trap | What it looked like | The fix (where it lives) |
+|---|---|---|
+| A rename (Dialog → Modal) with two parts on one page; the old file is `dialog.tsx` | Same checklist as Toast / Rating, plus the parts | `git mv dialog.tsx modal.tsx` (parts in it: `FILE_OF`), `Dialog*` names kept as export aliases, catalogue (3 entries), recipes, `recipes/motion.ts` + `lib/motion.ts` (`dialog-enter` components), specimens, snippets, overviews, sitemap, store v140 (`Dialog` → `Modal`, `ModalHeader`, `ModalFooter`), parity (`RENAMED_ON_WEB` `Dialog`, `WEB_ONLY` the three) |
+| `use_figma` text read with `slice(0, 80)` | The body looked 2 lines (42px) vs the file's 63 | Never truncate a TEXT you will copy as default copy; read it whole once (`characters`) |
+| A frame that CLIPS content with spread shadows (Shadow/xl on the Modal) | The FAB / Toast lesson says "spreads paint nothing" | That holds only for NON-clipping frames: the Modal clips, so ring `0 0 0 1` and the `−4` spreads DO paint. Recipe `lift: modal` (ring + key `0 20 24 −4` + ambient `0 8 8 −4`); the file's numbers beat `elevationTokens` xl (8·16 / 4·8) |
+| A close button the card nests at a smaller Size than the card (Modal default → CloseButton `sm` 32, lg → `default` 40) | The CloseButton took the Modal's size name (40 / 48) | Map it in the component, measure x/y against the instance (427,21 · 579,21) |
+| A header whose clearance for the close is a hidden frame | Header content 384 standalone, 334 inside the Modal | `closeClearance` comes from a context the Modal provides; the header only draws it for `horizontal` |
+| Radix Title outside a Dialog throws | A header alone (specimen / story) crashes | A context flag: inside `ModalContent` the title is Radix's (even `inline`, still a Root), outside it is a plain `h2` / `p` |
+| Fixed card widths with no variable (480 / 640) | — | Summed spacing steps (`spacing.32` = 128 px × 3 + `spacing.24`; × 5) |

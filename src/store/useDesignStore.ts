@@ -2058,7 +2058,7 @@ export const useDesignStore = create<DesignStore>()(
     }),
     {
       name: 'scalable-designs-store',
-      version: 139,
+      version: 140,
       migrate: (persisted: any, version: number) => {
         if (persisted) {
           // v1→v2: remove styleDirection, rename selectedAtoms → selectedComponents
@@ -4281,6 +4281,19 @@ export const useDesignStore = create<DesignStore>()(
             const sel: string[] = state.selectedComponents
             const at = sel.indexOf('Sonner')
             if (at >= 0) sel.splice(at, 1, 'Toast')
+          }
+          rename(persisted)
+          if (Array.isArray(persisted.savedSystems)) {
+            for (const sys of persisted.savedSystems) rename(sys?.snapshot)
+          }
+        }
+        if (version < 140) {
+          // v139→v140: Dialog is now Modal (the Figma set), with its two parts ModalHeader and ModalFooter.
+          const rename = (state: any) => {
+            if (!Array.isArray(state?.selectedComponents)) return
+            const sel: string[] = state.selectedComponents
+            const at = sel.indexOf('Dialog')
+            if (at >= 0) sel.splice(at, 1, 'Modal', 'ModalHeader', 'ModalFooter')
           }
           rename(persisted)
           if (Array.isArray(persisted.savedSystems)) {

@@ -79,7 +79,9 @@
   <url><loc>https://www.escalatokens.com/components/AccordionItem</loc></url>
   <url><loc>https://www.escalatokens.com/components/Collapsible</loc></url>
   <url><loc>https://www.escalatokens.com/components/Image</loc></url>
-  <url><loc>https://www.escalatokens.com/components/Dialog</loc></url>
+  <url><loc>https://www.escalatokens.com/components/Modal</loc></url>
+  <url><loc>https://www.escalatokens.com/components/ModalHeader</loc></url>
+  <url><loc>https://www.escalatokens.com/components/ModalFooter</loc></url>
   <url><loc>https://www.escalatokens.com/components/AlertDialog</loc></url>
   <url><loc>https://www.escalatokens.com/components/Sheet</loc></url>
   <url><loc>https://www.escalatokens.com/components/Drawer</loc></url>

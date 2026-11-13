@@ -61,7 +61,7 @@ describe('registry sources', () => {
   it('every catalogue component is served by some item', () => {
     const missing = Object.keys(COMPONENT_RECIPES).filter((k) => !registryItemFor(k))
     expect(missing).toEqual([])
-    expect(registryItemFor('Dialog')).toBe('dialog')
+    expect(registryItemFor('Modal')).toBe('modal')
     expect(registryItemFor('Button')).toBe('button')
   })
 

@@ -344,6 +344,9 @@ export const SKELETON_SNIPPETS: Record<string, Snippet> = {
 
   Card: (v) =>
     `import {\n  Card, CardHeader, CardTitle, CardDescription, CardFooter,\n} from "@/components/ui/card"\n\n<Card${v.Size === 'sm' ? ' size="sm"' : ''}>\n  <CardHeader>\n    <CardTitle>Card title</CardTitle>\n    <CardDescription>Supporting copy…</CardDescription>\n  </CardHeader>\n  <CardFooter>\n    <Button variant="link" size="sm">Learn more →</Button>\n  </CardFooter>\n</Card>`,
-  Dialog: () =>
-    `import {\n  Dialog, DialogContent, DialogHeader, DialogTitle,\n  DialogDescription, DialogFooter,\n} from "@/components/ui/dialog"\n\n<Dialog open={open} onOpenChange={setOpen}>\n  <DialogContent>\n    <DialogHeader>\n      <DialogTitle>Delete project?</DialogTitle>\n      <DialogDescription>This action can't be undone.</DialogDescription>\n    </DialogHeader>\n    <DialogFooter>\n      <Button variant="outline">Cancel</Button>\n      <Button variant="destructive">Delete</Button>\n    </DialogFooter>\n  </DialogContent>\n</Dialog>`,
-}
+  Modal: (v) =>
+    `import {\n  Modal, ModalContent, ModalFooter, ModalHeader, ModalClose,\n} from "@/components/ui/modal"\n\n<Modal open={open} onOpenChange={setOpen}>\n  <ModalContent${v.Size === 'lg' ? ' size="lg"' : ''}\n    header={<ModalHeader title="Delete project?" description="This action can't be undone." />}\n    footer={<ModalFooter><ModalClose asChild><Button variant="secondary">Cancel</Button></ModalClose><Button>Delete</Button></ModalFooter>}\n  >\n    All tokens in this project will be removed.\n  </ModalContent>\n</Modal>`,
+  ModalHeader: (v) =>
+    `import { ModalHeader } from "@/components/ui/modal"\n\n<ModalHeader${v.Size === 'lg' ? ' size="lg"' : ''}${v.Align && v.Align !== 'horizontal' ? ` align="${v.Align}"` : ''} title="System notification" description="Review the details and take action." icon={<Info />} />`,
+  ModalFooter: (v) =>
+    `import { ModalFooter } from "@/components/ui/modal"\n\n<ModalFooter${v.Size === 'lg' ? ' size="lg"' : ''}${v.Layout === 'stacked' ? ' layout="stacked"' : ''}>\n  <Button>Confirm</Button>\n  <Button variant="secondary">Cancel</Button>\n</ModalFooter>`,}

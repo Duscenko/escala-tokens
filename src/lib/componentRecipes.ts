@@ -37,7 +37,7 @@ import {
   INPUT, TEXTAREA, DATE_PICKER_TRIGGER, DATE_PICKER_POPOVER, CALENDAR_DAY, CALENDAR_HEADER, CALENDAR_MONTH, CALENDAR_PRESETS, CALENDAR_FOOTER, INPUT_GROUP, NUMBER_INPUT, INPUT_TAG, INPUT_TAG_CHIP, INPUT_TAG_OPTION, SELECT, COMBOBOX, INPUT_OTP, INPUT_OTP_SLOT,
   CHECKBOX, CHECKBOX_ITEM, CHECKBOX_GROUP, RADIO_GROUP, SWITCH, SWITCH_GROUP, SLIDER, SLIDER_THUMB, FIELD, LABEL, PASSWORD_STRENGTH, PASSWORD_STRENGTH_METER, PASSWORD_STRENGTH_RULE, FILE_UPLOAD, FILE_UPLOAD_DROPZONE, FILE_UPLOAD_ITEM, NATIVE_SELECT, CALENDAR,
 } from './recipes/forms.js'
-import { CARD, DIALOG, SEPARATOR, ACCORDION, ACCORDION_ITEM, IMAGE, POPOVER, TOOLTIP, SCROLL_AREA, COLLAPSIBLE, ALERT_DIALOG, SHEET, DRAWER, HOVER_CARD, ITEM, ATTACHMENT, MESSAGE, BUBBLE, RESIZABLE, CAROUSEL, CHART,
+import { CARD, MODAL, MODAL_HEADER, MODAL_FOOTER, SEPARATOR, ACCORDION, ACCORDION_ITEM, IMAGE, POPOVER, TOOLTIP, SCROLL_AREA, COLLAPSIBLE, ALERT_DIALOG, SHEET, DRAWER, HOVER_CARD, ITEM, ATTACHMENT, MESSAGE, BUBBLE, RESIZABLE, CAROUSEL, CHART,
 } from './recipes/surfaces.js'
 import {
   TABS, TAB_MENU, SEGMENTED_CONTROL, SEGMENTED_CONTROL_ITEM, BREADCRUMB, PAGINATION, STEPPER, DROPDOWN_MENU, CONTEXT_MENU, COMMAND, NAVBAR, SIDEBAR, MENUBAR, NAVIGATION_MENU,
@@ -170,7 +170,9 @@ export const COMPONENT_RECIPES: Record<string, ComponentRecipe> = {
   Navbar: NAVBAR,
   Sidebar: SIDEBAR,
   Card: CARD,
-  Dialog: DIALOG,
+  Modal: MODAL,
+  ModalHeader: MODAL_HEADER,
+  ModalFooter: MODAL_FOOTER,
 }
 
 // How each component moves (lib/recipes/motion.ts) joins its recipe here, so
@@ -221,7 +223,7 @@ export function recipeTokenRefs(recipe: ComponentRecipe): string[] {
         for (const [prop, ref] of Object.entries(props)) {
           if (!ref || ref === NONE) continue
           // A named elevation paints with the two Elevation colours (recipeStyles `LIFT`).
-          if (prop === 'lift') { refs.add('color.elevation.shadow-key'); refs.add('color.elevation.shadow-ambient'); continue }
+          if (prop === 'lift') { refs.add('color.elevation.shadow-key'); refs.add('color.elevation.shadow-ambient'); if (ref === 'modal') refs.add('color.elevation.shadow-ring'); continue }
           if (NON_TOKEN_PROPS.includes(prop)) continue
           for (const term of refFn(ref)?.terms ?? ref.split('+')) refs.add(term)
         }

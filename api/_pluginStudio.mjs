@@ -198,7 +198,7 @@ function motionChoreographies(settings) {
   return {
     "dialog-enter": {
       pattern: "coordinated",
-      components: ["Dialog", "AlertDialog"],
+      components: ["Modal", "AlertDialog"],
       intent: { usage: ["dialogs", "confirmations", "focal overlays"], direction: "The backdrop fades while the card pops a beat behind it. The card is the focal point, so it takes the emphasis role and a `quick` delay." },
       tracks: [
         { slot: "overlay", keyframes: "fade-in", motion: r("use-overlay-in"), delay: 0 },
@@ -208,7 +208,7 @@ function motionChoreographies(settings) {
     },
     "dialog-exit": {
       pattern: "coordinated",
-      components: ["Dialog", "AlertDialog"],
+      components: ["Modal", "AlertDialog"],
       intent: { usage: ["dialogs", "confirmations"], direction: "Card and backdrop leave together, fast." },
       tracks: [
         { slot: "content", keyframes: "shrink", motion: r("use-overlay-out"), delay: 0 },
@@ -5393,20 +5393,60 @@ var init_componentCatalogue = __esm({
         accessibility: 'The image needs alt text; alt="" when decorative. Purely presentational otherwise.'
       },
       {
-        key: "Dialog",
-        label: "Dialog",
+        key: "Modal",
+        label: "Modal",
         category: "Content & Surfaces",
-        description: "Modal window with footer actions for critical flows that require full attention.",
-        usage: "Reserve for destructive confirmations or multi-step flows. Don't use for notifications.",
-        axes: [],
-        figmaSets: ["Dialog"],
-        props: [
-          { name: "open / onOpenChange", type: "boolean / (open) => void", description: "Controlled visibility (Esc and the overlay close it)." },
-          { name: "DialogTrigger / DialogClose", type: "component", description: "Open and close buttons (asChild)." },
-          { name: "DialogHeader / DialogTitle / DialogDescription / DialogFooter", type: "component", description: "The parts; the close \xD7 is a ghost icon-sm Button." },
-          { name: "showCloseButton", type: "boolean", description: "Hide the corner \xD7 (default true)." }
+        description: "Dialog card that interrupts the flow for a decision or a short task: a header, a content slot and a footer over a scrim.",
+        usage: "Use for a decision or a short task that needs full attention (a confirmation, a small form). Not for notifications: use a Toast or an Alert.",
+        axes: [
+          { name: "Size", values: ["default", "lg"] }
         ],
-        accessibility: 'role="dialog", aria-modal="true". Focus trapped inside. Returns focus on close.'
+        figmaSets: ["Modal"],
+        props: [
+          { name: "open / onOpenChange", type: "boolean / (open) => void", description: "Controlled visibility (Escape and the scrim close it)." },
+          { name: "size", type: "'default' | 'lg'", description: "Figma Size: 480 or 640 wide. It cascades to the header and the footer." },
+          { name: "header / footer", type: "ReactNode", description: "A ModalHeader above the content and a ModalFooter under it (Figma FooterVisible)." },
+          { name: "children", type: "ReactNode", description: "The Content slot." },
+          { name: "showCloseButton", type: "boolean", description: "Figma CloseVisible: the ghost pill close in the corner (default true)." }
+        ],
+        accessibility: 'role="dialog", aria-modal="true", labelled by the title (aria-labelledby) and described by the description. Focus is trapped; Escape and the close button dismiss; focus returns to the trigger.'
+      },
+      {
+        key: "ModalHeader",
+        label: "Modal Header",
+        category: "Content & Surfaces",
+        description: "Header row of the Modal: an optional icon, the title and description, and an optional trailing slot.",
+        usage: "Inside a Modal. Align sets the layout; vertical-center suits confirmations and has no trailing slot. Never hide the title: it is the dialog name.",
+        axes: [
+          { name: "Size", values: ["default", "lg"] },
+          { name: "Align", values: ["horizontal", "vertical-left", "vertical-center"] }
+        ],
+        figmaSets: ["ModalHeader"],
+        props: [
+          { name: "title / description", type: "ReactNode", description: "Figma Title and Description (DescriptionVisible hides the second)." },
+          { name: "icon / iconVisible", type: "ReactNode / boolean", description: "A FeaturedIcon (soft, circle) before the text." },
+          { name: "trailing / trailingVisible", type: "ReactNode / boolean", description: "Header actions or a count (horizontal only)." },
+          { name: "align", type: "'horizontal' | 'vertical-left' | 'vertical-center'", description: "Figma Align." }
+        ],
+        accessibility: "The title is the Modal's accessible name (aria-labelledby) and the description its aria-describedby."
+      },
+      {
+        key: "ModalFooter",
+        label: "Modal Footer",
+        category: "Content & Surfaces",
+        description: "Action tray below the Modal content, divided by a Border/subtle rule.",
+        usage: "Inline puts the actions at the end, primary last; stacked gives full-width buttons for narrow viewports.",
+        axes: [
+          { name: "Size", values: ["default", "lg"] },
+          { name: "Layout", values: ["inline", "stacked"] }
+        ],
+        figmaSets: ["ModalFooter"],
+        props: [
+          { name: "children", type: "ReactNode", description: "The Actions slot (Cancel is a ModalClose)." },
+          { name: "leading / leadingVisible", type: "ReactNode / boolean", description: "A step counter or link at the start (inline)." },
+          { name: "layout", type: "'inline' | 'stacked'", description: "Figma Layout." }
+        ],
+        accessibility: "Put the primary action last in inline order; the buttons keep their own focus order."
       },
       {
         key: "AlertDialog",
@@ -6205,7 +6245,7 @@ var init_componentCatalogue = __esm({
       "Badge",
       "Card",
       "Avatar",
-      "Dialog",
+      "Modal",
       "Tooltip",
       "Separator",
       "Toast",
@@ -10740,7 +10780,7 @@ function accordionItemShell(variant, state2) {
       return { fill: NONE };
   }
 }
-var CARD, OVERLAY_TITLE, DIALOG, SEPARATOR, ACCORDION_VARIANTS, ACCORDION_ITEM_STATES, ACCORDION, ACCORDION_ITEM, IMAGE_RATIOS, IMAGE_SHAPES, IMAGE, POPOVER, TIP, TOOLTIP, SCROLL_AREA, COLLAPSIBLE, ALERT_DIALOG, SHEET, DRAWER, HOVER_CARD, ITEM_VARIANTS, ITEM_SIZES, ITEM_GEOMETRY2, ITEM_DESCRIPTION, ITEM_CONTENT_GAP, ITEM_MEDIA, ITEM, ATTACHMENT_SIZES, ATTACHMENT_GEOMETRY, ATTACHMENT_MEDIA, ATTACHMENT, MESSAGE, BUBBLE_VARIANTS, BUBBLE_PAINT, BUBBLE, RESIZABLE, CAROUSEL, CHART;
+var CARD, OVERLAY_TITLE, MODAL_SIZES, MODAL, MODAL_HEADER, MODAL_FOOTER, SEPARATOR, ACCORDION_VARIANTS, ACCORDION_ITEM_STATES, ACCORDION, ACCORDION_ITEM, IMAGE_RATIOS, IMAGE_SHAPES, IMAGE, POPOVER, TIP, TOOLTIP, SCROLL_AREA, COLLAPSIBLE, ALERT_DIALOG, SHEET, DRAWER, HOVER_CARD, ITEM_VARIANTS, ITEM_SIZES, ITEM_GEOMETRY2, ITEM_DESCRIPTION, ITEM_CONTENT_GAP, ITEM_MEDIA, ITEM, ATTACHMENT_SIZES, ATTACHMENT_GEOMETRY, ATTACHMENT_MEDIA, ATTACHMENT, MESSAGE, BUBBLE_VARIANTS, BUBBLE_PAINT, BUBBLE, RESIZABLE, CAROUSEL, CHART;
 var init_surfaces = __esm({
   "src/lib/recipes/surfaces.ts"() {
     init_helpers();
@@ -10770,28 +10810,66 @@ var init_surfaces = __esm({
       ]
     };
     OVERLAY_TITLE = "type.heading-2xs";
-    DIALOG = {
-      key: "Dialog",
-      slots: ["content", "overlay", "header", "title", "description", "footer"],
+    MODAL_SIZES = ["default", "lg"];
+    MODAL = {
+      key: "Modal",
+      slots: ["root", "overlay", "main", "content", "close"],
       detachedSlots: ["overlay"],
-      defaults: {},
+      defaults: { Size: "default" },
       parts: [
         part({}, () => ({
           overlay: { fill: c("surface.overlay") },
-          content: {
+          root: {
             fill: c("surface.layer-2"),
-            stroke: c("border.subtle"),
-            strokeWidth: "stroke.control",
+            stroke: c("border.default"),
+            strokeWidth: "stroke.divider",
             radius: "radius.overlay",
+            lift: "modal"
+          },
+          main: { paddingX: "spacing.inset-surface", paddingY: "spacing.inset-surface", gap: "spacing.gap-group" },
+          content: { gap: "spacing.gap-group", text: c("content.secondary"), font: "type.body-md" }
+        })),
+        part({ Size: MODAL_SIZES }, (size) => ({
+          // 480 = 3 × 128 + 96; 640 = 5 × 128 (the file's widths have no variable).
+          root: { width: size === "lg" ? "spacing.32+spacing.32+spacing.32+spacing.32+spacing.32" : "spacing.32+spacing.32+spacing.32+spacing.24" }
+        }))
+      ]
+    };
+    MODAL_HEADER = {
+      key: "ModalHeader",
+      slots: ["root", "content", "title", "description", "trailing", "clearance"],
+      defaults: { Size: "default", Align: "horizontal" },
+      parts: [
+        part({}, () => ({
+          root: { gap: "spacing.gap-group" },
+          content: { gap: "spacing.gap-tight" },
+          title: { text: c("content.primary") },
+          description: { text: c("content.secondary") },
+          trailing: { gap: "spacing.gap-control" }
+        })),
+        part({ Size: MODAL_SIZES }, (size) => ({
+          title: { font: size === "lg" ? "type.heading-md" : "type.heading-sm" },
+          description: { font: size === "lg" ? "type.body-md" : "type.body-sm" },
+          clearance: size === "lg" ? { width: "size.md", height: "size.md" } : { width: "size.sm", height: "size.sm" }
+        }))
+      ]
+    };
+    MODAL_FOOTER = {
+      key: "ModalFooter",
+      slots: ["root", "leading", "actions"],
+      defaults: { Size: "default", Layout: "inline" },
+      parts: [
+        part({}, () => ({
+          // A hairline along the TOP only (Border/subtle, inside); the padding is the surface inset on every side.
+          root: {
             paddingX: "spacing.inset-surface",
             paddingY: "spacing.inset-surface",
-            gap: "spacing.gap-group",
-            shadow: "shadow.2xl"
+            gap: "spacing.gap-control",
+            stroke: c("border.subtle"),
+            strokeTopWidth: "stroke.divider"
           },
-          header: { gap: "spacing.1_5" },
-          title: { text: c("content.primary"), font: OVERLAY_TITLE },
-          description: { text: c("content.secondary"), font: "type.body-sm" },
-          footer: { gap: "spacing.gap-control" }
+          leading: { gap: "spacing.gap-tight", text: c("content.secondary"), font: "type.caption" },
+          actions: { gap: "spacing.gap-control" }
         }))
       ]
     };
@@ -12448,7 +12526,7 @@ var init_motion2 = __esm({
       // and the expand / collapse play on it; the Accordion only stacks items.
       AccordionItem: { ...disclosure("--radix-accordion-content-height"), transitions: { chevron: { transform: "use-disclosure-in" } } },
       Collapsible: disclosure("--radix-collapsible-content-height"),
-      Dialog: { enter: { name: "dialog-enter" }, exit: { name: "dialog-exit" } },
+      Modal: { enter: { name: "dialog-enter" }, exit: { name: "dialog-exit" } },
       AlertDialog: { enter: { name: "dialog-enter" }, exit: { name: "dialog-exit" } },
       Sheet: { enter: { name: "sheet-enter" }, exit: { name: "sheet-exit" }, sideAttr: "side" },
       Popover: popover("--radix-popover-content-transform-origin"),
@@ -12596,7 +12674,9 @@ var init_componentRecipes = __esm({
       Navbar: NAVBAR,
       Sidebar: SIDEBAR,
       Card: CARD,
-      Dialog: DIALOG
+      Modal: MODAL,
+      ModalHeader: MODAL_HEADER,
+      ModalFooter: MODAL_FOOTER
     };
     for (const [key2, motion] of Object.entries(RECIPE_MOTION)) {
       const recipe = COMPONENT_RECIPES[key2];
@@ -15409,7 +15489,7 @@ var init_useDesignStore = __esm({
         }),
         {
           name: "scalable-designs-store",
-          version: 139,
+          version: 140,
           migrate: (persisted, version) => {
             if (persisted) {
               delete persisted.styleDirection;
@@ -17117,6 +17197,18 @@ var init_useDesignStore = __esm({
                 const sel = state2.selectedComponents;
                 const at = sel.indexOf("Sonner");
                 if (at >= 0) sel.splice(at, 1, "Toast");
+              };
+              rename(persisted);
+              if (Array.isArray(persisted.savedSystems)) {
+                for (const sys of persisted.savedSystems) rename(sys?.snapshot);
+              }
+            }
+            if (version < 140) {
+              const rename = (state2) => {
+                if (!Array.isArray(state2?.selectedComponents)) return;
+                const sel = state2.selectedComponents;
+                const at = sel.indexOf("Dialog");
+                if (at >= 0) sel.splice(at, 1, "Modal", "ModalHeader", "ModalFooter");
               };
               rename(persisted);
               if (Array.isArray(persisted.savedSystems)) {
