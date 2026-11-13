@@ -507,3 +507,12 @@ Source: the file's «AvatarGroup Prototype» (868:28472): four PHOTO avatars + t
 | axe `landmark-unique` on a story that stacks nine `nav`s | Story-only artefact | Each trail gets its own `aria-label` in the stories |
 | axe 4.22:1 `Content/secondary` on `Surface/muted` (solid, Light) | Same pair as the Accordion / Table / DropdownMenu notes | Copied (rule 1), reported |
 | `npx tsc -b` run without `cd` ran in the main checkout | The cwd resets on every Bash call | Always `cd` into the worktree in the same command |
+
+# Lessons from the TabMenu, TabMenuItem and TabMenuLineItem (2026-11-13)
+| Trap | What it looked like | The fix (where it lives) |
+|---|---|---|
+| The old TabMenu slid a pill (`SlidingSelection`), had `role=tablist` / `tab` and took `items` | The file's selection is static and its description says `group` of buttons with `aria-pressed`, each item its own tab stop | Figma wins: items are `<button aria-pressed>`; `items` stays as a shortcut that renders the item type of the Variant; the board's autoplay selector (`boardAutoplay.CHOICES`) and the inspector test moved to `button` / `aria-pressed` / `TabMenuItem` (the file's selected fill lives in the item, not the group). `SlidingSelection` stays for SegmentedControl / Pagination |
+| One Variant picks WHICH item set the Content slot holds (line → TabMenuLineItem, button → TabMenuItem) | A single TabMenu API cannot say it | `TabMenu` reads the Variant to render the right item for `items`; with `children` the caller uses the matching item; the vertical Variants make items fill the width (`w-full`), the horizontal ones hug |
+| A track rectangle and an indicator bar drawn ABSOLUTE inside the frames (1px `Border/subtle`; 2px `Border/accent`, only Selected) | Borders on the items would shift layout and double the line | Own elements: `TabMenu.track` (absolute, bottom or left, recipe gives its 1px) and `TabMenuLineItem.indicator` (rendered only when Selected, `Indicator` bottom → x0, h−2 / left → 2 × h); measured 0,39 323×1 and 0,38 79×2 / 0,0 2×40 |
+| A padding that does NOT change with Size (12 at sm and lg) | The usual ladder would have changed it | Copied: `spacing.inset-control` for all sizes; heights 32 · 40 · 48, icons 16 · 20 · 24 |
+| Plugin parity: the plugin's TabMenu documents `item` / `pill`, the rebuilt recipe has `content` / `track` | `anatomyGaps: TabMenu` | `WEB_ONLY_SLOTS` and `STALE_ANATOMY` (dated), never a plugin edit |

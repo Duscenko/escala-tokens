@@ -6071,17 +6071,55 @@ var init_componentCatalogue = __esm({
         key: "TabMenu",
         label: "Tab Menu",
         category: "Navigation",
-        description: "Pill-style horizontal menu \u2014 the softer sibling of Tabs for page-level sections.",
-        usage: "Use for top-level page sections where an underline bar feels too heavy.",
-        axes: [],
-        figmaSets: ["Tab Menu"],
-        props: [
-          { name: "items", type: "string[]", description: "Tab labels, in order." },
-          { name: "value / defaultValue", type: "string", description: "The selected tab." },
-          { name: "onValueChange", type: "(value: string) => void", description: "Fires on selection." },
-          { name: "fill", type: "boolean", description: "Items share the width equally." }
+        description: "Group of buttons that switches between sibling views or routes: a line layout (hairline track and accent bar) or a button layout (selected item filled), horizontal or vertical.",
+        usage: "Use for page-level sections or routes. Exactly one item is selected; use Tabs when the panels swap in place.",
+        axes: [
+          { name: "Size", values: ["default", "sm", "lg"] },
+          { name: "Variant", values: ["horizontal-line", "horizontal-button", "vertical-line", "vertical-button"] }
         ],
-        accessibility: 'Same ARIA tabs pattern as Tabs \u2014 role="tablist" with arrow-key navigation.'
+        figmaSets: ["TabMenu"],
+        props: [
+          { name: "size / variant", type: "string", description: "Figma Size and Variant; Size cascades to every item." },
+          { name: "value / defaultValue / onValueChange", type: "string", description: "The selected item." },
+          { name: "items / fill", type: "string[] / boolean", description: "Shortcut for plain items; items share the width." },
+          { name: "children", type: "TabMenuItem | TabMenuLineItem", description: "The Content slot: line items for the line variants, items for the button ones." }
+        ],
+        accessibility: 'role="group" of real buttons with aria-pressed; each item is its own tab stop and Space or Enter activates it.'
+      },
+      {
+        key: "TabMenuItem",
+        label: "Tab Menu Item",
+        category: "Navigation",
+        description: "Button tab of a TabMenu: optional leading icon, label and a trailing count badge. Selected fills Surface/selected.",
+        usage: "Inside a button-variant TabMenu.",
+        axes: [
+          { name: "Size", values: ["default", "sm", "lg"] },
+          { name: "State", values: ["Default", "Hover", "Selected", "Focused", "Disabled"] }
+        ],
+        figmaSets: ["TabMenuItem"],
+        props: [
+          { name: "value / size / forceState", type: "string", description: "The item value (defaults to its text), Size (follows the TabMenu) and a pinned state for docs." },
+          { name: "iconLeading / trailing / iconTrailing", type: "ReactNode", description: "Figma icon slots and the trailing count Badge." }
+        ],
+        accessibility: "A button with aria-pressed; disabled uses the native attribute."
+      },
+      {
+        key: "TabMenuLineItem",
+        label: "Tab Menu Line Item",
+        category: "Navigation",
+        description: "Line tab of a TabMenu: the selected item carries a 2px accent bar on its bottom or left edge.",
+        usage: "Inside a line-variant TabMenu.",
+        axes: [
+          { name: "Size", values: ["default", "sm", "lg"] },
+          { name: "State", values: ["Default", "Hover", "Selected", "Focused", "Disabled"] },
+          { name: "Indicator", values: ["bottom", "left"] }
+        ],
+        figmaSets: ["TabMenuLineItem"],
+        props: [
+          { name: "value / size / forceState / indicator", type: "string", description: "As the item; Indicator defaults to left in a vertical TabMenu." },
+          { name: "iconLeading / trailing / iconTrailing", type: "ReactNode", description: "Figma icon slots and the trailing count Badge." }
+        ],
+        accessibility: "A button with aria-pressed; disabled uses the native attribute."
       },
       {
         key: "SegmentedControl",
@@ -11511,6 +11549,20 @@ var init_surfaces = __esm({
 });
 
 // src/lib/recipes/navigation.ts
+function tabMenuItemPaint(state2, line) {
+  switch (state2) {
+    case "Hover":
+      return { text: c("content.primary"), fill: line ? NONE : c("action.ghost.hover") };
+    case "Selected":
+      return { text: c("content.accent"), fill: line ? NONE : c("surface.selected") };
+    case "Focused":
+      return { text: c("content.secondary"), fill: NONE, focus: c("border.focus"), ring: c("border.ring.default") };
+    case "Disabled":
+      return { text: c("content.disabled"), fill: NONE };
+    default:
+      return { text: c("content.secondary"), fill: NONE };
+  }
+}
 function segmentPaint(checked, state2) {
   const on = checked === "true";
   if (state2 === "Disabled") return { root: { fill: on ? c("surface.input") : NONE, text: c("content.disabled"), radius: on ? "radius.control" : "radius.action", ...on ? { highlight: NONE } : {} } };
@@ -11578,7 +11630,7 @@ function dropdownItemPaint(variant, state2) {
       return { fill: NONE };
   }
 }
-var TABS, TAB_MENU, SEGMENTED_CONTROL_SIZES, SEGMENTED_CONTROL, SEGMENTED_CONTROL_ITEM_STATES, SEGMENT_ITEM, SEGMENTED_CONTROL_ITEM, BREADCRUMB_SIZES, BREADCRUMB_APPEARANCES, BREADCRUMB_SEPARATORS, BREADCRUMB_VARIANTS, BREADCRUMB_ITEM_STATES, BREADCRUMB_ELLIPSIS_STATES, BREADCRUMB, BREADCRUMB_ITEM, BREADCRUMB_ELLIPSIS, BREADCRUMB_SEPARATOR, PAGINATION, STEPPER, MENU_PANEL_RADIUS, DROPDOWN_SIZES, DROPDOWN_ITEM_STATES, DROPDOWN_ITEM_VARIANTS, DROPDOWN_MENU, DROPDOWN_MENU_LABEL, DROPDOWN_MENU_ITEM, DROPDOWN_MENU_FOOTER, CONTEXT_MENU, COMMAND, NAVBAR, SIDEBAR, MENUBAR, NAVIGATION_MENU;
+var TABS, TAB_MENU_SIZES, TAB_MENU_VARIANTS, TAB_MENU_ITEM_STATES, TAB_MENU_INDICATORS, TAB_MENU, tabMenuSizeSlots, TAB_MENU_ITEM, TAB_MENU_LINE_ITEM, SEGMENTED_CONTROL_SIZES, SEGMENTED_CONTROL, SEGMENTED_CONTROL_ITEM_STATES, SEGMENT_ITEM, SEGMENTED_CONTROL_ITEM, BREADCRUMB_SIZES, BREADCRUMB_APPEARANCES, BREADCRUMB_SEPARATORS, BREADCRUMB_VARIANTS, BREADCRUMB_ITEM_STATES, BREADCRUMB_ELLIPSIS_STATES, BREADCRUMB, BREADCRUMB_ITEM, BREADCRUMB_ELLIPSIS, BREADCRUMB_SEPARATOR, PAGINATION, STEPPER, MENU_PANEL_RADIUS, DROPDOWN_SIZES, DROPDOWN_ITEM_STATES, DROPDOWN_ITEM_VARIANTS, DROPDOWN_MENU, DROPDOWN_MENU_LABEL, DROPDOWN_MENU_ITEM, DROPDOWN_MENU_FOOTER, CONTEXT_MENU, COMMAND, NAVBAR, SIDEBAR, MENUBAR, NAVIGATION_MENU;
 var init_navigation = __esm({
   "src/lib/recipes/navigation.ts"() {
     init_helpers();
@@ -11603,25 +11655,55 @@ var init_navigation = __esm({
         })
       ]
     };
+    TAB_MENU_SIZES = ["default", "sm", "lg"];
+    TAB_MENU_VARIANTS = ["horizontal-line", "horizontal-button", "vertical-line", "vertical-button"];
+    TAB_MENU_ITEM_STATES = ["Default", "Hover", "Selected", "Focused", "Disabled"];
+    TAB_MENU_INDICATORS = ["bottom", "left"];
     TAB_MENU = {
       key: "TabMenu",
-      slots: ["root", "item", "pill"],
-      defaults: {},
+      slots: ["root", "content", "track"],
+      defaults: { Size: "default", Variant: "horizontal-line" },
       parts: [
-        part({}, () => ({
-          root: { gap: "spacing.gap-tight" },
-          pill: { fill: c("surface.selected"), radius: "radius.pill" },
-          item: {
-            text: c("content.secondary"),
-            font: "type.button",
-            radius: "radius.pill",
-            paddingX: "spacing.4",
-            paddingY: "spacing.1_5"
-          },
-          "item:hover": { text: c("content.primary") },
-          "item:focus-visible": FOCUS,
-          'item[aria-selected="true"]': { text: c("content.accent") },
-          'item[aria-selected="true"]:hover': { text: c("content.accent") }
+        part({ Variant: TAB_MENU_VARIANTS }, (variant) => ({
+          content: { gap: variant.endsWith("line") ? "spacing.none" : "spacing.gap-tight" },
+          track: { fill: c("border.subtle"), ...variant === "horizontal-line" ? { height: "stroke.divider" } : variant === "vertical-line" ? { width: "stroke.divider" } : {} }
+        }))
+      ]
+    };
+    tabMenuSizeSlots = (size) => {
+      const icon = size === "sm" ? "icon.small" : size === "lg" ? "icon.large" : "icon.medium";
+      return {
+        root: {
+          height: size === "sm" ? "size.sm" : size === "lg" ? "size.lg" : "size.md",
+          radius: "radius.action",
+          paddingX: "spacing.inset-control",
+          paddingY: "spacing.none",
+          gap: "spacing.gap-control",
+          font: "type.button"
+        },
+        iconLeading: { width: icon, height: icon },
+        iconTrailing: { width: icon, height: icon }
+      };
+    };
+    TAB_MENU_ITEM = {
+      key: "TabMenuItem",
+      slots: ["root", "iconLeading", "label", "badge", "iconTrailing"],
+      defaults: { Size: "default", State: "Default" },
+      parts: [
+        part({ Size: TAB_MENU_SIZES }, tabMenuSizeSlots),
+        part({ State: TAB_MENU_ITEM_STATES }, (state2) => ({ root: tabMenuItemPaint(state2, false) }))
+      ]
+    };
+    TAB_MENU_LINE_ITEM = {
+      key: "TabMenuLineItem",
+      slots: ["root", "iconLeading", "label", "badge", "iconTrailing", "indicator"],
+      defaults: { Size: "default", State: "Default", Indicator: "bottom" },
+      parts: [
+        part({ Size: TAB_MENU_SIZES }, tabMenuSizeSlots),
+        part({ State: TAB_MENU_ITEM_STATES }, (state2) => ({ root: tabMenuItemPaint(state2, true) })),
+        // The 2px accent bar of the selected item (`Stroke/focus`), on its bottom or left edge.
+        part({ Indicator: TAB_MENU_INDICATORS }, (indicator) => ({
+          indicator: { fill: c("border.accent"), ...indicator === "bottom" ? { height: "stroke.focus" } : { width: "stroke.focus" } }
         }))
       ]
     };
@@ -12901,7 +12983,8 @@ var init_motion2 = __esm({
       ToggleGroup: { transitions: { item: FILL } },
       Item: { transitions: { root: FILL } },
       Pagination: { transitions: { cell: FILL } },
-      TabMenu: { transitions: { item: FILL } },
+      TabMenuItem: { transitions: { root: FILL } },
+      TabMenuLineItem: { transitions: { root: FILL } },
       SegmentedControlItem: { transitions: { root: FILL } },
       Sidebar: { transitions: { button: FILL } },
       Tabs: { transitions: { trigger: states("color", "background-color", "border-color", "box-shadow") } },
@@ -13070,6 +13153,8 @@ var init_componentRecipes = __esm({
       Toast: TOAST,
       Tabs: TABS,
       TabMenu: TAB_MENU,
+      TabMenuItem: TAB_MENU_ITEM,
+      TabMenuLineItem: TAB_MENU_LINE_ITEM,
       SegmentedControl: SEGMENTED_CONTROL,
       SegmentedControlItem: SEGMENTED_CONTROL_ITEM,
       Breadcrumb: BREADCRUMB,
@@ -15902,7 +15987,7 @@ var init_useDesignStore = __esm({
         }),
         {
           name: "scalable-designs-store",
-          version: 144,
+          version: 145,
           migrate: (persisted, version) => {
             if (persisted) {
               delete persisted.styleDirection;
@@ -17672,6 +17757,18 @@ var init_useDesignStore = __esm({
                 const sel = state2.selectedComponents;
                 const at = sel.indexOf("Breadcrumb");
                 if (at >= 0) sel.splice(at + 1, 0, ...["BreadcrumbItem", "BreadcrumbEllipsis", "BreadcrumbSeparator"].filter((k) => !sel.includes(k)));
+              };
+              add2(persisted);
+              if (Array.isArray(persisted.savedSystems)) {
+                for (const sys of persisted.savedSystems) add2(sys?.snapshot);
+              }
+            }
+            if (version < 145) {
+              const add2 = (state2) => {
+                if (!Array.isArray(state2?.selectedComponents)) return;
+                const sel = state2.selectedComponents;
+                const at = sel.indexOf("TabMenu");
+                if (at >= 0) sel.splice(at + 1, 0, ...["TabMenuItem", "TabMenuLineItem"].filter((k) => !sel.includes(k)));
               };
               add2(persisted);
               if (Array.isArray(persisted.savedSystems)) {

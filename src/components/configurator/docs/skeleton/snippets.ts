@@ -16,8 +16,12 @@ const sizeProp = (v: AxisValues) => (v.Size && v.Size !== 'default' ? ` size="${
 export const SKELETON_SNIPPETS: Record<string, Snippet> = {
   Tabs: (v) =>
     `import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"\n\n<Tabs defaultValue="overview">\n  <TabsList${v.Variant === 'line' ? ' variant="line"' : ''}>\n    <TabsTrigger value="overview">Overview</TabsTrigger>\n    <TabsTrigger value="tokens">Tokens</TabsTrigger>\n  </TabsList>\n  <TabsContent value="overview">…</TabsContent>\n</Tabs>`,
-  TabMenu: () =>
-    `import { TabMenu } from "@/components/ui/tab-menu"\n\n<TabMenu items={["All", "Drafts", "Published"]} onValueChange={setView} />`,
+  TabMenu: (v) =>
+    `import { TabMenu, TabMenuItem, TabMenuLineItem } from "@/components/ui/tab-menu"\n\n<TabMenu defaultValue="overview"${v.Variant && v.Variant !== 'horizontal-line' ? ` variant="${v.Variant}"` : ''}${v.Size && v.Size !== 'default' ? ` size="${v.Size}"` : ''}>\n  <${(v.Variant ?? 'horizontal-line').endsWith('button') ? 'TabMenuItem' : 'TabMenuLineItem'} value="overview">Overview</${(v.Variant ?? 'horizontal-line').endsWith('button') ? 'TabMenuItem' : 'TabMenuLineItem'}>\n  <${(v.Variant ?? 'horizontal-line').endsWith('button') ? 'TabMenuItem' : 'TabMenuLineItem'} value="activity">Activity</${(v.Variant ?? 'horizontal-line').endsWith('button') ? 'TabMenuItem' : 'TabMenuLineItem'}>\n</TabMenu>`,
+  TabMenuItem: (v) =>
+    `import { TabMenu, TabMenuItem } from "@/components/ui/tab-menu"\n\n<TabMenu variant="horizontal-button" defaultValue="overview">\n  <TabMenuItem value="overview"${v.Size && v.Size !== 'default' ? ` size="${v.Size}"` : ''}>Overview</TabMenuItem>\n</TabMenu>`,
+  TabMenuLineItem: (v) =>
+    `import { TabMenu, TabMenuLineItem } from "@/components/ui/tab-menu"\n\n<TabMenu defaultValue="overview">\n  <TabMenuLineItem value="overview"${v.Size && v.Size !== 'default' ? ` size="${v.Size}"` : ''}${v.Indicator && v.Indicator !== 'bottom' ? ` indicator="${v.Indicator}"` : ''}>Overview</TabMenuLineItem>\n</TabMenu>`,
   SegmentedControl: (v) =>
     `import { SegmentedControl, SegmentedControlItem } from "@/components/ui/segmented-control"\n\n<SegmentedControl${v.Size && v.Size !== 'default' ? ` size="${v.Size}"` : ''} defaultValue="Day" onValueChange={setRange}>\n  <SegmentedControlItem value="Day" label="Day" />\n  <SegmentedControlItem value="Week" label="Week" />\n  <SegmentedControlItem value="Month" label="Month" />\n</SegmentedControl>`,
   SegmentedControlItem: (v) =>

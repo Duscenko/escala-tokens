@@ -118,6 +118,8 @@
   <url><loc>https://www.escalatokens.com/components/Empty</loc></url>
   <url><loc>https://www.escalatokens.com/components/Tabs</loc></url>
   <url><loc>https://www.escalatokens.com/components/TabMenu</loc></url>
+  <url><loc>https://www.escalatokens.com/components/TabMenuItem</loc></url>
+  <url><loc>https://www.escalatokens.com/components/TabMenuLineItem</loc></url>
   <url><loc>https://www.escalatokens.com/components/SegmentedControl</loc></url>
   <url><loc>https://www.escalatokens.com/components/SegmentedControlItem</loc></url>
   <url><loc>https://www.escalatokens.com/components/Breadcrumb</loc></url>

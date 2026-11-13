@@ -34,17 +34,6 @@
       "status": "part",
       "of": "RadioGroup"
     },
-    "TabMenu": {
-      "status": "rebuild"
-    },
-    "TabMenuItem": {
-      "status": "part",
-      "of": "TabMenu"
-    },
-    "TabMenuLineItem": {
-      "status": "part",
-      "of": "TabMenu"
-    },
     "NavItem": {
       "status": "new"
     },

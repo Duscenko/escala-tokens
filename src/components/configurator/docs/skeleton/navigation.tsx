@@ -4,7 +4,8 @@ import type { SpecimenProps } from '../specimens'
 import { PreviewIcon } from '../specimens'
 import { iconOf } from '../../../../lib/previewTokens'
 import { Tabs as SkTabs, TabsList as SkTabsList, TabsTrigger as SkTabsTrigger, type TabsListVariant } from '../../../escala-ui/tabs'
-import { TabMenu as SkTabMenu } from '../../../escala-ui/tab-menu'
+import { TabMenu as SkTabMenu, TabMenuItem as SkTabMenuItem, TabMenuLineItem as SkTabMenuLineItem, type TabMenuIndicator, type TabMenuItemState, type TabMenuSize, type TabMenuVariant } from '../../../escala-ui/tab-menu'
+import { Badge as SkBadge } from '../../../escala-ui/badge'
 import { SegmentedControl as SkSegmentedControl, SegmentedControlItem as SkSegmentedControlItem, type SegmentedControlItemState, type SegmentedControlSize } from '../../../escala-ui/segmented-control'
 import { Breadcrumb as SkBreadcrumb, BreadcrumbEllipsis as SkBreadcrumbEllipsis, BreadcrumbItem as SkBreadcrumbItem, BreadcrumbList as SkBreadcrumbList, BreadcrumbSeparator as SkBreadcrumbSeparator, BREADCRUMB_GLYPHS, type BreadcrumbAppearance, type BreadcrumbEllipsisState, type BreadcrumbItemState, type BreadcrumbSeparatorKind, type BreadcrumbSize, type BreadcrumbVariant } from '../../../escala-ui/breadcrumb'
 import { Pagination as SkPagination } from '../../../escala-ui/pagination'
@@ -35,10 +36,41 @@ export function SkeletonTabsSpecimen({ t, v }: SpecimenProps) {
   )
 }
 
-export function SkeletonTabMenuSpecimen({ t, w }: SpecimenProps) {
+/** The Figma TabMenu (984:1830) in place: Overview selected, Activity, Members with its count and Settings. */
+export function SkeletonTabMenuSpecimen({ t, v, w }: SpecimenProps) {
+  const variant = (v.Variant ?? 'horizontal-line') as TabMenuVariant
+  const Item = variant.endsWith('line') ? SkTabMenuLineItem : SkTabMenuItem
+  const fill = w === '100%'
   return (
     <RecipeScope t={t}>
-      <SkTabMenu items={['All', 'Drafts', 'Published']} fill={w === '100%'} />
+      <SkTabMenu variant={variant} size={(v.Size ?? 'default') as TabMenuSize} defaultValue="Overview" fill={fill} style={variant.startsWith('vertical') ? { width: 224 } : undefined}>
+        <Item>Overview</Item>
+        <Item>Activity</Item>
+        {!fill && <Item trailing={<SkBadge appearance="soft" shape="pill" size="xs" type="number" variant="secondary" count={8} />}>Members</Item>}
+        <Item>Settings</Item>
+      </SkTabMenu>
+    </RecipeScope>
+  )
+}
+
+/** A lone item: it sits in a TabMenu so it keeps its context. */
+export function SkeletonTabMenuItemSpecimen({ t, v }: SpecimenProps) {
+  return (
+    <RecipeScope t={t}>
+      <SkTabMenu variant="horizontal-button" size={(v.Size ?? 'default') as TabMenuSize}>
+        <SkTabMenuItem forceState={(v.State ?? 'Default') as TabMenuItemState} disabled={v.State === 'Disabled'}>Overview</SkTabMenuItem>
+      </SkTabMenu>
+    </RecipeScope>
+  )
+}
+
+export function SkeletonTabMenuLineItemSpecimen({ t, v }: SpecimenProps) {
+  const indicator = (v.Indicator ?? 'bottom') as TabMenuIndicator
+  return (
+    <RecipeScope t={t}>
+      <SkTabMenu variant={indicator === 'left' ? 'vertical-line' : 'horizontal-line'} size={(v.Size ?? 'default') as TabMenuSize} style={indicator === 'left' ? { width: 120 } : undefined}>
+        <SkTabMenuLineItem indicator={indicator} forceState={(v.State ?? 'Default') as TabMenuItemState} disabled={v.State === 'Disabled'}>Overview</SkTabMenuLineItem>
+      </SkTabMenu>
     </RecipeScope>
   )
 }

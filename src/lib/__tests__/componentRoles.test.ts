@@ -38,8 +38,8 @@ describe('every catalogue component is described by a recipe', () => {
     expect(rolesForComponent('Input')).toContain('surface.input')
   })
 
-  it('TabMenu binds the selected-tab surface', () => {
-    expect(rolesForComponent('TabMenu')).toContain('surface.selected')
+  it('TabMenuItem binds the selected-tab surface', () => {
+    expect(rolesForComponent('TabMenuItem')).toContain('surface.selected')
   })
 
   it('Button (link variant) binds the link roles, not accent copy', () => {

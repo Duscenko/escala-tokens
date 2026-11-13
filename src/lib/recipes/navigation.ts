@@ -36,23 +36,70 @@ export const TABS: ComponentRecipe = {
   ],
 }
 
-// ── TabMenu (sliding pill) ─────────────────────────────────────────────────
+// ── TabMenu, TabMenuItem and TabMenuLineItem ───────────────────────────────
+// The Figma sets TabMenu (984:1830), TabMenuItem (984:939) and TabMenuLineItem (984:1156)
+// (design-plans/tab-menu-contract.md). Four layouts (Variant): a line variant draws a 1px
+// `Border/subtle` track along the bottom (horizontal) or the left (vertical) edge and its items
+// touch; a button variant spaces them `Spacing/gap-tight` apart and fills the selected one.
+export const TAB_MENU_SIZES = ['default', 'sm', 'lg'] as const
+export const TAB_MENU_VARIANTS = ['horizontal-line', 'horizontal-button', 'vertical-line', 'vertical-button'] as const
+export const TAB_MENU_ITEM_STATES = ['Default', 'Hover', 'Selected', 'Focused', 'Disabled'] as const
+export const TAB_MENU_INDICATORS = ['bottom', 'left'] as const
 
 export const TAB_MENU: ComponentRecipe = {
   key: 'TabMenu',
-  slots: ['root', 'item', 'pill'],
-  defaults: {},
+  slots: ['root', 'content', 'track'],
+  defaults: { Size: 'default', Variant: 'horizontal-line' },
   parts: [
-    part({}, () => ({
-      root: { gap: 'spacing.gap-tight' },
-      pill: { fill: c('surface.selected'), radius: 'radius.pill' },
-      item: {
-        text: c('content.secondary'), font: 'type.button', radius: 'radius.pill', paddingX: 'spacing.4', paddingY: 'spacing.1_5',
-      },
-      'item:hover': { text: c('content.primary') },
-      'item:focus-visible': FOCUS,
-      'item[aria-selected="true"]': { text: c('content.accent') },
-      'item[aria-selected="true"]:hover': { text: c('content.accent') },
+    part({ Variant: TAB_MENU_VARIANTS }, (variant) => ({
+      content: { gap: variant.endsWith('line') ? 'spacing.none' : 'spacing.gap-tight' },
+      track: { fill: c('border.subtle'), ...(variant === 'horizontal-line' ? { height: 'stroke.divider' } : variant === 'vertical-line' ? { width: 'stroke.divider' } : {}) },
+    })),
+  ],
+}
+
+const tabMenuSizeSlots = (size: string): SlotMap => {
+  const icon = size === 'sm' ? 'icon.small' : size === 'lg' ? 'icon.large' : 'icon.medium'
+  return {
+    root: {
+      height: size === 'sm' ? 'size.sm' : size === 'lg' ? 'size.lg' : 'size.md', radius: 'radius.action', paddingX: 'spacing.inset-control', paddingY: 'spacing.none',
+      gap: 'spacing.gap-control', font: 'type.button',
+    },
+    iconLeading: { width: icon, height: icon },
+    iconTrailing: { width: icon, height: icon },
+  }
+}
+
+function tabMenuItemPaint(state: string, line: boolean): SlotProps {
+  switch (state) {
+    case 'Hover': return { text: c('content.primary'), fill: line ? NONE : c('action.ghost.hover') }
+    case 'Selected': return { text: c('content.accent'), fill: line ? NONE : c('surface.selected') }
+    case 'Focused': return { text: c('content.secondary'), fill: NONE, focus: c('border.focus'), ring: c('border.ring.default') }
+    case 'Disabled': return { text: c('content.disabled'), fill: NONE }
+    default: return { text: c('content.secondary'), fill: NONE }
+  }
+}
+
+export const TAB_MENU_ITEM: ComponentRecipe = {
+  key: 'TabMenuItem',
+  slots: ['root', 'iconLeading', 'label', 'badge', 'iconTrailing'],
+  defaults: { Size: 'default', State: 'Default' },
+  parts: [
+    part({ Size: TAB_MENU_SIZES }, tabMenuSizeSlots),
+    part({ State: TAB_MENU_ITEM_STATES }, (state) => ({ root: tabMenuItemPaint(state, false) })),
+  ],
+}
+
+export const TAB_MENU_LINE_ITEM: ComponentRecipe = {
+  key: 'TabMenuLineItem',
+  slots: ['root', 'iconLeading', 'label', 'badge', 'iconTrailing', 'indicator'],
+  defaults: { Size: 'default', State: 'Default', Indicator: 'bottom' },
+  parts: [
+    part({ Size: TAB_MENU_SIZES }, tabMenuSizeSlots),
+    part({ State: TAB_MENU_ITEM_STATES }, (state) => ({ root: tabMenuItemPaint(state, true) })),
+    // The 2px accent bar of the selected item (`Stroke/focus`), on its bottom or left edge.
+    part({ Indicator: TAB_MENU_INDICATORS }, (indicator) => ({
+      indicator: { fill: c('border.accent'), ...(indicator === 'bottom' ? { height: 'stroke.focus' } : { width: 'stroke.focus' }) },
     })),
   ],
 }
