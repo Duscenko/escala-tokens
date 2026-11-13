@@ -404,7 +404,7 @@ export function SkeletonTableSpecimen({ t, v, w }: SpecimenProps) {
         // «Table Prototype»: Dividers grid is its dark example (pinned Name, resizing Role, Join date sorted, scrolled header).
         <TablePrototype
           width={w} size={sizeOf(v)} appearance={(v.Appearance ?? 'filled') as 'filled' | 'ghost'} dividers={dividersOf(v)}
-          {...(dividersOf(v) === 'grid' ? { pinned: true, resizing: true, scrolled: true, defaultSort: { key: 'joined' as const, dir: 'descending' as const } } : {})}
+          {...(dividersOf(v) === 'grid' ? { pinned: true, scrolled: true, defaultSort: { key: 'joined' as const, dir: 'descending' as const } } : {})}
         />
       ) : (
       <div style={{ width: w ?? 800, maxWidth: '100%' }}>

@@ -79,9 +79,9 @@ export const PrototypeLight: StoryObj<ProtoArgs> = {
   ...protoMeta,
   render: (a) => <TablePrototype {...a} />,
 }
-/** Grid dividers, pinned Name, Join date sorted descending, Role being resized, scrolled header. */
+/** Grid dividers, pinned Name, Join date sorted descending, scrolled header. The Role handle rests (the file pins it in Resizing, an accent line the owner asked to drop); toggle «Resizer» to see it. */
 export const PrototypeDark: StoryObj<ProtoArgs> = {
   ...protoMeta,
-  args: { ...protoMeta.args, dividers: 'grid', pinned: true, resizing: true, scrolled: true },
+  args: { ...protoMeta.args, dividers: 'grid', pinned: true, resizing: false, scrolled: true },
   render: (a) => <TablePrototype {...a} defaultSort={{ key: 'joined', dir: 'descending' }} />,
 }

@@ -35,7 +35,8 @@ export interface TablePrototypeProps {
   appearance?: 'filled' | 'ghost'
   /** Pins the Name column (and draws its edge). Dark example: true. */
   pinned?: boolean
-  /** Shows the Role column's resize handle in its Resizing state. */
+  /** Pins the Role handle in its Resizing state (Border/accent). Off by default: the file's accent line between Role and
+   *  Status read as a stray divider (owner's call, 2026-11-13); the handle is still there, and hover / drag light it. */
   resizing?: boolean
   /** Header over scrolled content (a stronger bottom hairline). */
   scrolled?: boolean
@@ -76,7 +77,7 @@ export function TablePrototype({
             leading={<Checkbox all={all} none={none} onChange={(on) => setSelected(on ? enabled : [])} size={size} label="Select all rows" />} />
           <TableHead style={cw(1)} label="Name" sort={sortOf('name')} pinned={pin} onSort={() => toggleSort('name')} />
           <TableHead style={cw(2)} label="Department" />
-          <TableHead style={cw(3)} label="Role" resizerVisible={resizing} resizing={resizing} />
+          <TableHead style={cw(3)} label="Role" resizerVisible={dividers === 'grid' || resizing} resizing={resizing} />
           <TableHead style={cw(4)} label="Status" />
           <TableHead style={cw(5)} label="Join date" sort={sortOf('joined')} onSort={() => toggleSort('joined')} />
           <TableHead style={cw(6)} label="Progress" />

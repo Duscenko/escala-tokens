@@ -43,3 +43,4 @@ Everything the prototype draws already exists as a part (TableHead sort/pinned/r
 
 ## Owner's call (2026-11-13)
 The Name column's Avatar is `sm` (32) in code, not the file's `default` (40): with the gradient stand-in instead of photos, 40 read too big. Everything else stays the file's.
+Also (same day): the Dark example's Role handle is NOT pinned in Resizing (the file draws it Border/accent; it read as a stray divider). It rests like the other heads' edges and lights on hover / drag; the `Resizer` control still pins it.
