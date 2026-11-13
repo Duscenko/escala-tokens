@@ -552,3 +552,13 @@ Source: the file's «AvatarGroup Prototype» (868:28472): four PHOTO avatars + t
 | Lines that «grow» between a label and the edge | A fixed length would break at any width | `flex: 1 1 0` lines with the label `shrink-0`; measured 287 · 136 + 136 · 287 of 320 and 78 · 31 + 31 of 112, root 18 high / 17 wide, none 320×1 and 1×112 |
 | agentContextAudit requires `data-orientation` in the FILE text | Radix writes it at runtime, the test reads the source | Written explicitly on the root |
 | A role test that pinned `Separator` to `border.subtle` only | It described the old single-hairline recipe | Now the three tones plus the label ink |
+
+# Lessons from the ScrollArea and ScrollBar (2026-11-13)
+| Trap | What it looked like | The fix (where it lives) |
+|---|---|---|
+| Radix draws NO thumb in the Browser pane until the page renders a frame (its measure is a ResizeObserver behind a `requestAnimationFrame`) | `[data-escala="ScrollBar"]` had no child and `--radix-scroll-area-thumb-height: 18px` for minutes; I added a size «nudge» hack to the component before finding out | A `computer` `screenshot` forces a render: the thumb appears (178 of 280) with no code change. **Before blaming a component for a Radix part that is missing in the pane, take a screenshot and re-read.** The hack was removed |
+| The thumb is `flex-1` in the old component | The thumb filled the whole track (280 long) instead of the viewport ratio | Radix sizes the thumb with `--radix-scroll-area-thumb-height / -width`: no `flex-1`; its cross axis stretches by itself |
+| Bars sit 4px from the OUTER edge but the root has a 1px border | Radix positions inside the border: x 179, y 5, height 278 instead of 180, 4, 280 | Offsets are `calc(spacing.gap-tight − stroke.control)` (and `4 + thickness + 4` for the far end of each bar when Orientation is both: 268 long) |
+| The file's bars are always visible with a track | Radix hides them until you scroll | `type="always"` on the root; the viewport is `role="region"` when named (axe `aria-prohibited-attr` on a bare labelled div) and joins the tab order |
+| Radix wraps the viewport content in a `display: table` div | A vertical Content slot would not fill the width | `[&>div]:!block` on the viewport and `w-full` (vertical) / `w-max min-w-full` (horizontal, both) on the Content div; measured 190 wide inside the 1px border |
+| A fade that never goes away | The file draws it permanently when FadeVisible | It hides itself when the scroll reaches the end (`scrollTop` / `scrollLeft` check on scroll and resize) |

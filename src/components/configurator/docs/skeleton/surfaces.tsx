@@ -1,5 +1,5 @@
 import type * as React from 'react'
-import { useEffect, useId, useRef, useState } from 'react'
+import { useEffect, useId, useRef, useState, Fragment } from 'react'
 import type { SpecimenProps } from '../specimens'
 import { PreviewIcon, avatarFillOf } from '../specimens'
 import type { PreviewTokens } from '../../../preview/ButtonPreview'
@@ -14,7 +14,7 @@ import { Accordion as SkAccordion, AccordionItem as SkAccordionItem, type Accord
 import { Image as SkImage, type ImageRatio, type ImageShape } from '../../../escala-ui/image'
 import { Popover as SkPopover, PopoverContent as SkPopoverContent, PopoverFooter as SkPopoverFooter, type PopoverSize, type PopoverSide, type PopoverFooterLayout } from '../../../escala-ui/popover'
 import { Tooltip as SkTooltip, TooltipContent as SkTooltipContent, TooltipInfoTrigger as SkTooltipInfoTrigger, TooltipProvider as SkTooltipProvider, type TooltipSize, type TooltipSide, type TooltipAlign, type TooltipVariant, type TooltipTriggerState } from '../../../escala-ui/tooltip'
-import { ScrollArea as SkScrollArea, ScrollAreaRow as SkScrollAreaRow } from '../../../escala-ui/scroll-area'
+import { ScrollArea as SkScrollArea, type ScrollAppearance, type ScrollAreaOrientation, type ScrollAreaSize } from '../../../escala-ui/scroll-area'
 import { iconOf, spaceOf } from '../../../../lib/previewTokens'
 import { Alert as SkAlert, AlertDescription as SkAlertDescription, AlertIcon as SkAlertIcon, AlertTitle as SkAlertTitle, type AlertVariant } from '../../../escala-ui/alert'
 import { Toast as SkToast, type ToastAppearance, type ToastVariant } from '../../../escala-ui/toast'
@@ -254,12 +254,53 @@ export function SkeletonTooltipInfoTriggerSpecimen({ t, v }: SpecimenProps) {
   )
 }
 
-export function SkeletonScrollAreaSpecimen({ t }: SpecimenProps) {
-  const rows = ['Accent / 500', 'Accent / 600', 'Neutral / 100', 'Neutral / 200', 'Success / 500', 'Warning / 500', 'Error / 500']
+const SCROLL_TAGS = ['v1.2.0-beta.50', 'v1.2.0-beta.49', 'v1.2.0-beta.48', 'v1.2.0-beta.47', 'v1.2.0-beta.46', 'v1.2.0-beta.45', 'v1.2.0-beta.44', 'v1.2.0-beta.43', 'v1.2.0-beta.42', 'v1.2.0-beta.41']
+const SCROLL_PROJECTS = ['Q4 Campaign · Draft · 128 files · Updated 2 h ago · Owner Maya Chen', 'Brand refresh · Review · 64 files · Updated yesterday · Owner Julien Roux', 'Onboarding flow · Live · 32 files · Updated 3 d ago · Owner Marta Ruiz', 'Pricing page · Draft · 18 files · Updated 5 d ago · Owner Leo Martin', 'Design tokens v2 · Live · 240 files · Updated 1 w ago · Owner Ana Lucía']
+const SCROLL_PHOTOS = [['linear-gradient(135deg,#c6b7bf,#e8cec0)', 'Photo by Ana Lucía'], ['linear-gradient(135deg,#b9b6c9,#dec6c6)', 'Photo by Marta Ruiz'], ['linear-gradient(135deg,#b9b5c7,#dfc3bf)', 'Photo by Julien Roux'], ['linear-gradient(135deg,#aeb9b9,#d0d8cb)', 'Photo by Inès Haddad'], ['linear-gradient(135deg,#c6b7bf,#e8cec0)', 'Photo by Leo Martin']]
+
+/** The Figma ScrollArea (977:572) in place: a tag list (vertical), a photo strip (horizontal) or a long project list (both). */
+export function SkeletonScrollAreaSpecimen({ t, v }: SpecimenProps) {
+  const orientation = (v.Orientation ?? 'vertical') as ScrollAreaOrientation
+  const frame = orientation === 'horizontal' ? { width: 384, height: 248 } : orientation === 'both' ? { width: 288, height: 288 } : { width: 192, height: 288 }
   return (
     <RecipeScope t={t}>
-      <SkScrollArea style={{ width: 240, height: 150 }}>
-        {rows.map((r) => <SkScrollAreaRow key={r}>{r}</SkScrollAreaRow>)}
+      <SkScrollArea aria-label="Scrollable content" size={(v.Size ?? 'default') as ScrollAreaSize} orientation={orientation} appearance={(v.Appearance ?? 'filled') as ScrollAppearance} style={frame}>
+        {orientation === 'horizontal' ? (
+          <div className="flex" style={{ gap: 'var(--spacing-gap-control)' }}>
+            {SCROLL_PHOTOS.map(([bg, caption]) => (
+              <figure key={caption} className="m-0 flex shrink-0 flex-col" style={{ width: 144, gap: 'var(--spacing-gap-control)' }}>
+                <div style={{ height: 176, background: bg, borderRadius: 'var(--radius-control)' }} />
+                <figcaption style={{ font: 'var(--type-caption)', color: 'var(--color-content-secondary)' }}>{caption}</figcaption>
+              </figure>
+            ))}
+          </div>
+        ) : orientation === 'both' ? (
+          <>
+            <p className="m-0 whitespace-nowrap" style={{ font: 'var(--type-label)', color: 'var(--color-content-primary)' }}>Recent projects</p>
+            {SCROLL_PROJECTS.map((r) => <p key={r} className="m-0 whitespace-nowrap" style={{ font: 'var(--type-body-sm)', color: 'var(--color-content-primary)' }}>{r}</p>)}
+          </>
+        ) : (
+          <>
+            <p className="m-0" style={{ font: 'var(--type-label)', color: 'var(--color-content-primary)' }}>Tags</p>
+            {SCROLL_TAGS.map((tag) => (
+              <Fragment key={tag}>
+                <p className="m-0" style={{ font: 'var(--type-body-sm)', color: 'var(--color-content-primary)' }}>{tag}</p>
+                <SkSeparator tone="subtle" />
+              </Fragment>
+            ))}
+          </>
+        )}
+      </SkScrollArea>
+    </RecipeScope>
+  )
+}
+
+export function SkeletonScrollBarSpecimen({ t, v }: SpecimenProps) {
+  const vertical = (v.Orientation ?? 'vertical') === 'vertical'
+  return (
+    <RecipeScope t={t}>
+      <SkScrollArea aria-label="Scroll bar" size={(v.Size ?? 'default') as ScrollAreaSize} orientation={vertical ? 'vertical' : 'horizontal'} appearance={(v.Appearance ?? 'filled') as ScrollAppearance} style={vertical ? { width: 40, height: 160, border: 0 } : { width: 160, height: 40, border: 0 }}>
+        <div style={vertical ? { height: 400 } : { width: 400, height: 8 }} />
       </SkScrollArea>
     </RecipeScope>
   )

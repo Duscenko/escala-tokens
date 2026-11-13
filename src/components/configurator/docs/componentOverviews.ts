@@ -407,6 +407,8 @@ export const OVERVIEWS: Record<string, Overview> = {
   StepperItem: [each('Status', ['active', 'completed', 'error', 'locked'], {}, 320), each('Status', ['active', 'completed', 'error', 'locked'], { State: 'Disabled' }, 320), each('Status', ['active', 'completed'], { Orientation: 'horizontal' }, 240)],
   StepperIndicator: [each('Status', ['active', 'completed', 'error', 'locked']), each('Status', ['active', 'completed', 'error', 'locked'], { State: 'Disabled' }), each('Size', ['default', 'xs', 'sm', 'lg'], { Orientation: 'horizontal' }, 200)],
   StepperIcon: [each('Status', ['active', 'completed', 'error', 'locked']), each('Status', ['active', 'completed', 'error', 'locked'], { State: 'Disabled' }), each('Size', ['default', 'xs', 'sm', 'lg'])],
+  ScrollArea: [each('Orientation', ['vertical', 'horizontal', 'both'], {}, 300), each('Appearance', ['filled', 'ghost'], {}, 220), each('Size', ['default', 'sm', 'lg'], {}, 220)],
+  ScrollBar: [each('Size', ['default', 'sm', 'lg'], {}, 40), each('Appearance', ['filled', 'ghost'], {}, 40), each('Orientation', ['vertical', 'horizontal'], {}, 160)],
   Breadcrumb: [each('Appearance', ['ghost', 'outline', 'solid'], {}, 460), each('Separator', ['chevron', 'slash', 'dot'], {}, 460), each('Size', ['xs', 'sm', 'default'], {}, 460)],
   BreadcrumbItem: [each('State', ['Default', 'Hover', 'Focused', 'Current', 'Disabled']), each('Appearance', ['ghost', 'outline', 'solid']), each('Variant', ['default', 'secondary']), each('Size', ['xs', 'sm', 'default'])],
   BreadcrumbEllipsis: [each('State', ['Default', 'Hover', 'Focused', 'Disabled']), each('Appearance', ['ghost', 'outline', 'solid']), each('Size', ['xs', 'sm', 'default'])],

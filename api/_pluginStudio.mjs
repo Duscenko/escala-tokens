@@ -5602,15 +5602,35 @@ var init_componentCatalogue = __esm({
         key: "ScrollArea",
         label: "Scroll Area",
         category: "Content & Surfaces",
-        description: "Custom-scrollbar container that keeps overflow styling consistent cross-platform.",
-        usage: "Use inside panels and menus with bounded height. Never trap page scroll.",
-        axes: [],
-        figmaSets: ["Scroll Area"],
-        props: [
-          { name: "style / className", type: "CSSProperties | string", description: "Give it a height; content past it scrolls with a themed scrollbar." },
-          { name: "ScrollAreaRow", type: "component", description: "A list row inside the viewport." }
+        description: "Scrollable viewport with overlay ScrollBars and an optional fade at the scroll end. Size and Appearance cascade to the bars.",
+        usage: "Use inside panels and menus with bounded height or width. Never trap page scroll; give the viewport an accessible name when it holds primary content.",
+        axes: [
+          { name: "Size", values: ["default", "sm", "lg"] },
+          { name: "Orientation", values: ["vertical", "horizontal", "both"] },
+          { name: "Appearance", values: ["filled", "ghost"] }
         ],
-        accessibility: "Container is keyboard-scrollable (tabIndex 0 + arrow keys) with an aria-label."
+        figmaSets: ["ScrollArea"],
+        props: [
+          { name: "size / orientation / appearance", type: "string", description: "Figma Size (bar thickness), Orientation (which bars) and Appearance (filled or ghost)." },
+          { name: "fadeVisible", type: "boolean", description: "Figma FadeVisible: a fade into the surface at the scroll end." },
+          { name: "style / className", type: "CSSProperties | string", description: "Give it a height (and width); content past it scrolls." }
+        ],
+        accessibility: "The viewport is focusable and scrolls with the arrows, PageUp / PageDown and Home / End; the bars are aria-hidden. Add aria-label when it holds primary content."
+      },
+      {
+        key: "ScrollBar",
+        label: "Scroll Bar",
+        category: "Content & Surfaces",
+        description: "Overlay scrollbar of a ScrollArea: a Radius/full thumb on a Surface/muted track (filled) or on nothing (ghost).",
+        usage: "Inside a ScrollArea (it places its own); use it standalone only for custom scrollbar placement.",
+        axes: [
+          { name: "Size", values: ["default", "sm", "lg"] },
+          { name: "Orientation", values: ["vertical", "horizontal"] },
+          { name: "Appearance", values: ["filled", "ghost"] }
+        ],
+        figmaSets: ["ScrollBar"],
+        props: [{ name: "size / orientation / appearance", type: "string", description: "Figma axes; Size and Appearance follow the ScrollArea." }],
+        accessibility: "Decorative and aria-hidden: the viewport carries focus and keyboard scrolling."
       },
       {
         key: "Table",
@@ -11138,7 +11158,7 @@ function tooltipTriggerInk(variant, state2) {
       return hot ? "action.primary.hover" : "action.primary.default";
   }
 }
-var CARD, OVERLAY_TITLE, MODAL_SIZES, MODAL, MODAL_HEADER, MODAL_FOOTER, SEPARATOR_ORIENTATIONS, SEPARATOR_TONES, SEPARATOR, ACCORDION_VARIANTS, ACCORDION_ITEM_STATES, ACCORDION, ACCORDION_ITEM, IMAGE_RATIOS, IMAGE_SHAPES, IMAGE, POPOVER_SIZES, POPOVER, POPOVER_FOOTER, TOOLTIP_SIZES, TOOLTIP_VARIANTS, TOOLTIP_TRIGGER_STATES, TOOLTIP_TONE, TOOLTIP_CONTENT, TOOLTIP_INFO_TRIGGER, SCROLL_AREA, COLLAPSIBLE, ALERT_DIALOG, SHEET, DRAWER, HOVER_CARD, ITEM_VARIANTS, ITEM_SIZES, ITEM_GEOMETRY2, ITEM_DESCRIPTION, ITEM_CONTENT_GAP, ITEM_MEDIA, ITEM, ATTACHMENT_SIZES, ATTACHMENT_GEOMETRY, ATTACHMENT_MEDIA, ATTACHMENT, MESSAGE, BUBBLE_VARIANTS, BUBBLE_PAINT, BUBBLE, RESIZABLE, CAROUSEL, CHART;
+var CARD, OVERLAY_TITLE, MODAL_SIZES, MODAL, MODAL_HEADER, MODAL_FOOTER, SEPARATOR_ORIENTATIONS, SEPARATOR_TONES, SEPARATOR, ACCORDION_VARIANTS, ACCORDION_ITEM_STATES, ACCORDION, ACCORDION_ITEM, IMAGE_RATIOS, IMAGE_SHAPES, IMAGE, POPOVER_SIZES, POPOVER, POPOVER_FOOTER, TOOLTIP_SIZES, TOOLTIP_VARIANTS, TOOLTIP_TRIGGER_STATES, TOOLTIP_TONE, TOOLTIP_CONTENT, TOOLTIP_INFO_TRIGGER, SCROLL_AREA_SIZES, SCROLL_BAR_ORIENTATIONS, SCROLL_APPEARANCES, SCROLL_AREA, SCROLL_BAR_THICKNESS, SCROLL_BAR, COLLAPSIBLE, ALERT_DIALOG, SHEET, DRAWER, HOVER_CARD, ITEM_VARIANTS, ITEM_SIZES, ITEM_GEOMETRY2, ITEM_DESCRIPTION, ITEM_CONTENT_GAP, ITEM_MEDIA, ITEM, ATTACHMENT_SIZES, ATTACHMENT_GEOMETRY, ATTACHMENT_MEDIA, ATTACHMENT, MESSAGE, BUBBLE_VARIANTS, BUBBLE_PAINT, BUBBLE, RESIZABLE, CAROUSEL, CHART;
 var init_surfaces = __esm({
   "src/lib/recipes/surfaces.ts"() {
     init_helpers();
@@ -11386,23 +11406,32 @@ var init_surfaces = __esm({
         })
       ]
     };
+    SCROLL_AREA_SIZES = ["default", "sm", "lg"];
+    SCROLL_BAR_ORIENTATIONS = ["vertical", "horizontal"];
+    SCROLL_APPEARANCES = ["filled", "ghost"];
     SCROLL_AREA = {
       key: "ScrollArea",
-      slots: ["root", "row", "scrollbar", "thumb"],
-      defaults: {},
+      slots: ["root", "content", "fade"],
+      defaults: { Size: "default", Orientation: "vertical", Appearance: "filled" },
       parts: [
         part({}, () => ({
-          root: {
-            fill: c("surface.layer-1"),
-            stroke: c("border.subtle"),
-            strokeWidth: "stroke.control",
-            radius: PANEL_RADIUS,
-            paddingX: "spacing.1_5",
-            paddingY: "spacing.1_5"
-          },
-          row: { text: c("content.primary"), font: "type.body-sm", paddingX: "spacing.2_5", paddingY: "spacing.2", radius: "radius.control" },
-          "row:hover": { fill: c("action.ghost.hover") },
-          scrollbar: { width: "spacing.2" },
+          root: { fill: c("surface.layer-1"), stroke: c("border.default"), strokeWidth: "stroke.control", radius: "radius.container" },
+          content: { paddingX: "spacing.inset-control", paddingY: "spacing.inset-control", gap: "spacing.gap-control" },
+          fade: { paint: c("surface.layer-1") }
+        }))
+      ]
+    };
+    SCROLL_BAR_THICKNESS = { default: "spacing.2", sm: "spacing.1_5", lg: "spacing.3" };
+    SCROLL_BAR = {
+      key: "ScrollBar",
+      slots: ["root", "thumb"],
+      defaults: { Size: "default", Orientation: "vertical", Appearance: "filled" },
+      parts: [
+        part({ Size: SCROLL_AREA_SIZES, Orientation: SCROLL_BAR_ORIENTATIONS }, (size, orientation) => ({
+          root: orientation === "vertical" ? { width: SCROLL_BAR_THICKNESS[size] } : { height: SCROLL_BAR_THICKNESS[size] }
+        })),
+        part({ Appearance: SCROLL_APPEARANCES }, (appearance) => ({
+          root: { radius: "radius.pill", fill: appearance === "filled" ? c("surface.muted") : NONE },
           thumb: { fill: c("surface.muted-hover"), radius: "radius.pill" }
         }))
       ]
@@ -13268,7 +13297,6 @@ var init_motion2 = __esm({
       TableRow: { transitions: { root: states("background-color") } },
       TableHead: { transitions: { root: states("background-color") } },
       TableResizer: { transitions: { handle: states("background-color") } },
-      ScrollArea: { transitions: { scrollbar: states("background-color") } },
       FileUploadDropzone: { transitions: { root: states("background-color", "border-color") } },
       Input: { transitions: { root: FIELD2 } },
       DatePickerTrigger: { transitions: { root: FIELD2 } },
@@ -13426,6 +13454,7 @@ var init_componentRecipes = __esm({
       TooltipContent: TOOLTIP_CONTENT,
       TooltipInfoTrigger: TOOLTIP_INFO_TRIGGER,
       ScrollArea: SCROLL_AREA,
+      ScrollBar: SCROLL_BAR,
       Alert: ALERT,
       Toast: TOAST,
       Tabs: TABS,
@@ -16272,7 +16301,7 @@ var init_useDesignStore = __esm({
         }),
         {
           name: "scalable-designs-store",
-          version: 148,
+          version: 149,
           migrate: (persisted, version) => {
             if (persisted) {
               delete persisted.styleDirection;
@@ -18090,6 +18119,18 @@ var init_useDesignStore = __esm({
                 const sel = state2.selectedComponents;
                 const at = sel.indexOf("Stepper");
                 if (at >= 0) sel.splice(at + 1, 0, ...["StepperItem", "StepperIndicator", "StepperIcon"].filter((k) => !sel.includes(k)));
+              };
+              add2(persisted);
+              if (Array.isArray(persisted.savedSystems)) {
+                for (const sys of persisted.savedSystems) add2(sys?.snapshot);
+              }
+            }
+            if (version < 149) {
+              const add2 = (state2) => {
+                if (!Array.isArray(state2?.selectedComponents)) return;
+                const sel = state2.selectedComponents;
+                const at = sel.indexOf("ScrollArea");
+                if (at >= 0 && !sel.includes("ScrollBar")) sel.splice(at + 1, 0, "ScrollBar");
               };
               add2(persisted);
               if (Array.isArray(persisted.savedSystems)) {

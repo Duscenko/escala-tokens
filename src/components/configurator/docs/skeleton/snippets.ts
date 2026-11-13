@@ -170,8 +170,10 @@ export const SKELETON_SNIPPETS: Record<string, Snippet> = {
     `import {\n  Tooltip, TooltipTrigger, TooltipContent, TooltipProvider,\n} from "@/components/ui/tooltip"\n\n<TooltipProvider>\n  <Tooltip>\n    <TooltipTrigger asChild><Button variant="secondary">Hover</Button></TooltipTrigger>\n    <TooltipContent${v.Size && v.Size !== 'default' ? ` size="${v.Size}"` : ''}${v.Side && v.Side !== 'top' ? ` side="${v.Side}"` : ''}${v.Align && v.Align !== 'start' ? ` align="${v.Align}"` : ''}${v.Variant && v.Variant !== 'default' ? ` variant="${v.Variant}"` : ''}>Used on invoices and receipts.</TooltipContent>\n  </Tooltip>\n</TooltipProvider>`,
   TooltipInfoTrigger: (v) =>
     `import { Tooltip, TooltipContent, TooltipInfoTrigger, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"\n\n<TooltipProvider>\n  <Tooltip>\n    <TooltipTrigger asChild><TooltipInfoTrigger${v.Size && v.Size !== 'default' ? ` size="${v.Size}"` : ''}${v.Variant && v.Variant !== 'default' ? ` variant="${v.Variant}"` : ''} aria-label="More information" /></TooltipTrigger>\n    <TooltipContent${v.Variant && v.Variant !== 'default' ? ` variant="${v.Variant}"` : ''}>Tax ID: used on invoices and receipts.</TooltipContent>\n  </Tooltip>\n</TooltipProvider>`,
-  ScrollArea: () =>
-    `import { ScrollArea, ScrollAreaRow } from "@/components/ui/scroll-area"\n\n<ScrollArea style={{ height: 150 }}>\n  {tokens.map((t) => <ScrollAreaRow key={t}>{t}</ScrollAreaRow>)}\n</ScrollArea>`,
+  ScrollArea: (v) =>
+    `import { ScrollArea } from "@/components/ui/scroll-area"\n\n<ScrollArea aria-label="Tags"${v.Size && v.Size !== 'default' ? ` size="${v.Size}"` : ''}${v.Orientation && v.Orientation !== 'vertical' ? ` orientation="${v.Orientation}"` : ''}${v.Appearance === 'ghost' ? ' appearance="ghost"' : ''} style={{ height: 288 }}>\n  {tags.map((tag) => <p key={tag}>{tag}</p>)}\n</ScrollArea>`,
+  ScrollBar: (v) =>
+    `import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area"\n\n// Inside a ScrollArea the bars place themselves; render one yourself only for custom placement.\n<ScrollBar${v.Orientation === 'horizontal' ? ' orientation="horizontal"' : ''}${v.Size && v.Size !== 'default' ? ` size="${v.Size}"` : ''}${v.Appearance === 'ghost' ? ' appearance="ghost"' : ''} />`,
 
   Badge: (v) => {
     const type = v.Type && v.Type !== 'default' ? ` type="${v.Type}"` : ''

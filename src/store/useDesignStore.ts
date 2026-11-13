@@ -2058,7 +2058,7 @@ export const useDesignStore = create<DesignStore>()(
     }),
     {
       name: 'scalable-designs-store',
-      version: 148,
+      version: 149,
       migrate: (persisted: any, version: number) => {
         if (persisted) {
           // v1→v2: remove styleDirection, rename selectedAtoms → selectedComponents
@@ -4400,6 +4400,19 @@ export const useDesignStore = create<DesignStore>()(
             const sel: string[] = state.selectedComponents
             const at = sel.indexOf('Stepper')
             if (at >= 0) sel.splice(at + 1, 0, ...['StepperItem', 'StepperIndicator', 'StepperIcon'].filter((k) => !sel.includes(k)))
+          }
+          add(persisted)
+          if (Array.isArray(persisted.savedSystems)) {
+            for (const sys of persisted.savedSystems) add(sys?.snapshot)
+          }
+        }
+        if (version < 149) {
+          // v148→v149: ScrollArea gains its Figma part ScrollBar.
+          const add = (state: any) => {
+            if (!Array.isArray(state?.selectedComponents)) return
+            const sel: string[] = state.selectedComponents
+            const at = sel.indexOf('ScrollArea')
+            if (at >= 0 && !sel.includes('ScrollBar')) sel.splice(at + 1, 0, 'ScrollBar')
           }
           add(persisted)
           if (Array.isArray(persisted.savedSystems)) {

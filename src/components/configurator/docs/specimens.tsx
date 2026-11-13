@@ -45,7 +45,7 @@ import {
 import {
   SkeletonCardSpecimen, SkeletonModalSpecimen, SkeletonModalHeaderSpecimen, SkeletonModalFooterSpecimen, SkeletonSeparatorSpecimen, SkeletonAccordionSpecimen, SkeletonAccordionItemSpecimen, SkeletonTableCellSpecimen, SkeletonTableHeadSpecimen, SkeletonTableMediaCellSpecimen, SkeletonTableTrendCellSpecimen, SkeletonTableResizerSpecimen, SkeletonTableRowSpecimen, SkeletonTableHeaderSpecimen, SkeletonTableFooterSpecimen, SkeletonTableCaptionSpecimen, SkeletonTableDropIndicatorSpecimen, SkeletonTableEmptySpecimen, SkeletonTableLoadingSpecimen, SkeletonTableLoadMoreSpecimen,
   SkeletonImageSpecimen, SkeletonPopoverSpecimen, SkeletonPopoverFooterSpecimen, SkeletonTooltipContentSpecimen, SkeletonTooltipInfoTriggerSpecimen,
-  SkeletonScrollAreaSpecimen, SkeletonAlertSpecimen, SkeletonToastSpecimen,
+  SkeletonScrollAreaSpecimen, SkeletonScrollBarSpecimen, SkeletonAlertSpecimen, SkeletonToastSpecimen,
   SkeletonCollapsibleSpecimen, SkeletonTableSpecimen, SkeletonSkeletonSpecimen, SkeletonEmptySpecimen,
   SkeletonAlertDialogSpecimen, SkeletonSheetSpecimen, SkeletonDrawerSpecimen, SkeletonHoverCardSpecimen, SkeletonItemSpecimen,
   SkeletonAttachmentSpecimen, SkeletonMessageSpecimen, SkeletonBubbleSpecimen, SkeletonResizableSpecimen,
@@ -470,6 +470,7 @@ export const SPECIMENS: Record<string, (p: SpecimenProps) => ReactNode> = {
   TooltipContent: SkeletonTooltipContentSpecimen,
   TooltipInfoTrigger: SkeletonTooltipInfoTriggerSpecimen,
   ScrollArea: SkeletonScrollAreaSpecimen,
+  ScrollBar: SkeletonScrollBarSpecimen,
   // Feedback
   Toast: SkeletonToastSpecimen,
   Alert: SkeletonAlertSpecimen,

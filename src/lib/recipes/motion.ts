@@ -50,7 +50,6 @@ export const RECIPE_MOTION: Record<string, RecipeMotion> = {
   TableRow: { transitions: { root: states('background-color') } },
   TableHead: { transitions: { root: states('background-color') } },
   TableResizer: { transitions: { handle: states('background-color') } },
-  ScrollArea: { transitions: { scrollbar: states('background-color') } },
   FileUploadDropzone: { transitions: { root: states('background-color', 'border-color') } },
   Input: { transitions: { root: FIELD } },
   DatePickerTrigger: { transitions: { root: FIELD } },

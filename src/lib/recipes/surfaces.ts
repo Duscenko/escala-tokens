@@ -346,19 +346,38 @@ export const TOOLTIP_INFO_TRIGGER: ComponentRecipe = {
 
 // ── ScrollArea ─────────────────────────────────────────────────────────────
 
+// The Figma ScrollArea (977:572) and ScrollBar (976:27; design-plans/scroll-area-contract.md): a clipping box on Surface/layer-1 with a
+// 1px Border/default edge (laid out), a Content slot padded 12 with 8 between rows and overlay bars 4 from the edge.
+export const SCROLL_AREA_SIZES = ['default', 'sm', 'lg'] as const
+export const SCROLL_AREA_ORIENTATIONS = ['vertical', 'horizontal', 'both'] as const
+export const SCROLL_BAR_ORIENTATIONS = ['vertical', 'horizontal'] as const
+export const SCROLL_APPEARANCES = ['filled', 'ghost'] as const
+
 export const SCROLL_AREA: ComponentRecipe = {
   key: 'ScrollArea',
-  slots: ['root', 'row', 'scrollbar', 'thumb'],
-  defaults: {},
+  slots: ['root', 'content', 'fade'],
+  defaults: { Size: 'default', Orientation: 'vertical', Appearance: 'filled' },
   parts: [
     part({}, () => ({
-      root: {
-        fill: c('surface.layer-1'), stroke: c('border.subtle'), strokeWidth: 'stroke.control', radius: PANEL_RADIUS,
-        paddingX: 'spacing.1_5', paddingY: 'spacing.1_5',
-      },
-      row: { text: c('content.primary'), font: 'type.body-sm', paddingX: 'spacing.2_5', paddingY: 'spacing.2', radius: 'radius.control' },
-      'row:hover': { fill: c('action.ghost.hover') },
-      scrollbar: { width: 'spacing.2' },
+      root: { fill: c('surface.layer-1'), stroke: c('border.default'), strokeWidth: 'stroke.control', radius: 'radius.container' },
+      content: { paddingX: 'spacing.inset-control', paddingY: 'spacing.inset-control', gap: 'spacing.gap-control' },
+      fade: { paint: c('surface.layer-1') },
+    })),
+  ],
+}
+
+const SCROLL_BAR_THICKNESS: Record<string, string> = { default: 'spacing.2', sm: 'spacing.1_5', lg: 'spacing.3' }
+
+export const SCROLL_BAR: ComponentRecipe = {
+  key: 'ScrollBar',
+  slots: ['root', 'thumb'],
+  defaults: { Size: 'default', Orientation: 'vertical', Appearance: 'filled' },
+  parts: [
+    part({ Size: SCROLL_AREA_SIZES, Orientation: SCROLL_BAR_ORIENTATIONS }, (size, orientation) => ({
+      root: orientation === 'vertical' ? { width: SCROLL_BAR_THICKNESS[size] } : { height: SCROLL_BAR_THICKNESS[size] },
+    })),
+    part({ Appearance: SCROLL_APPEARANCES }, (appearance) => ({
+      root: { radius: 'radius.pill', fill: appearance === 'filled' ? c('surface.muted') : NONE },
       thumb: { fill: c('surface.muted-hover'), radius: 'radius.pill' },
     })),
   ],

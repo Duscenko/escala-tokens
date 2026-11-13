@@ -53,13 +53,6 @@
       "status": "part",
       "of": "Sidebar"
     },
-    "ScrollArea": {
-      "status": "rebuild"
-    },
-    "ScrollBar": {
-      "status": "part",
-      "of": "ScrollArea"
-    },
     "AuthAccountLocked": {
       "status": "block",
       "page": "Auth"
