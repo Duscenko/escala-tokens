@@ -22,8 +22,14 @@ export const SKELETON_SNIPPETS: Record<string, Snippet> = {
     `import { SegmentedControl, SegmentedControlItem } from "@/components/ui/segmented-control"\n\n<SegmentedControl${v.Size && v.Size !== 'default' ? ` size="${v.Size}"` : ''} defaultValue="Day" onValueChange={setRange}>\n  <SegmentedControlItem value="Day" label="Day" />\n  <SegmentedControlItem value="Week" label="Week" />\n  <SegmentedControlItem value="Month" label="Month" />\n</SegmentedControl>`,
   SegmentedControlItem: (v) =>
     `import { SegmentedControlItem } from "@/components/ui/segmented-control"\n\n<SegmentedControlItem${v.Size && v.Size !== 'default' ? ` size="${v.Size}"` : ''}${v.Checked === 'true' ? ' checked' : ''}${v.State === 'Disabled' ? ' disabled' : ''} label="Week" />`,
-  Breadcrumb: () =>
-    `import {\n  Breadcrumb, BreadcrumbList, BreadcrumbItem, BreadcrumbLink, BreadcrumbPage, BreadcrumbSeparator,\n} from "@/components/ui/breadcrumb"\n\n<Breadcrumb>\n  <BreadcrumbList>\n    <BreadcrumbItem><BreadcrumbLink href="/">Home</BreadcrumbLink></BreadcrumbItem>\n    <BreadcrumbSeparator />\n    <BreadcrumbItem><BreadcrumbPage>Design tokens</BreadcrumbPage></BreadcrumbItem>\n  </BreadcrumbList>\n</Breadcrumb>`,
+  Breadcrumb: (v) =>
+    `import {\n  Breadcrumb, BreadcrumbList, BreadcrumbItem, BreadcrumbSeparator,\n} from "@/components/ui/breadcrumb"\n\n<Breadcrumb${v.Appearance && v.Appearance !== 'ghost' ? ` appearance="${v.Appearance}"` : ''}${v.Separator && v.Separator !== 'chevron' ? ` separator="${v.Separator}"` : ''}${v.Size && v.Size !== 'default' ? ` size="${v.Size}"` : ''}>\n  <BreadcrumbList>\n    <BreadcrumbItem href="/">Home</BreadcrumbItem>\n    <BreadcrumbSeparator />\n    <BreadcrumbItem href="/docs">Docs</BreadcrumbItem>\n    <BreadcrumbSeparator />\n    <BreadcrumbItem current>Breadcrumb</BreadcrumbItem>\n  </BreadcrumbList>\n</Breadcrumb>`,
+  BreadcrumbItem: (v) =>
+    `import { BreadcrumbItem } from "@/components/ui/breadcrumb"\n\n<BreadcrumbItem href="/docs"${v.Variant && v.Variant !== 'default' ? ` variant="${v.Variant}"` : ''}${v.Appearance && v.Appearance !== 'ghost' ? ` appearance="${v.Appearance}"` : ''}${v.Size && v.Size !== 'default' ? ` size="${v.Size}"` : ''}${v.State === 'Current' ? ' current' : ''}${v.State === 'Disabled' ? ' disabled' : ''}>Docs</BreadcrumbItem>`,
+  BreadcrumbEllipsis: (v) =>
+    `import { BreadcrumbEllipsis } from "@/components/ui/breadcrumb"\n\n<BreadcrumbEllipsis${v.Variant && v.Variant !== 'default' ? ` variant="${v.Variant}"` : ''}${v.Appearance && v.Appearance !== 'ghost' ? ` appearance="${v.Appearance}"` : ''}${v.Size && v.Size !== 'default' ? ` size="${v.Size}"` : ''} />`,
+  BreadcrumbSeparator: (v) =>
+    `import { BreadcrumbSeparator } from "@/components/ui/breadcrumb"\n\n<BreadcrumbSeparator${v.Variant && v.Variant !== 'chevron' ? ` variant="${v.Variant}"` : ''}${v.Size && v.Size !== 'default' ? ` size="${v.Size}"` : ''} />`,
   Pagination: () =>
     `import { Pagination } from "@/components/ui/pagination"\n\n<Pagination pages={[1, 2, 3, "…", 8]} page={page} onPageChange={setPage} />`,
   Stepper: () =>

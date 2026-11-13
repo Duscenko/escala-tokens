@@ -111,19 +111,96 @@ export const SEGMENTED_CONTROL_ITEM: ComponentRecipe = {
 }
 
 // ── Breadcrumb ─────────────────────────────────────────────────────────────
+// The Figma sets Breadcrumb, BreadcrumbItem, BreadcrumbEllipsis and BreadcrumbSeparator
+// (design-plans/breadcrumb-contract.md). The item and the ellipsis keep a 1px border in
+// every state (transparent when Figma draws none) and the padding gives it back, so
+// Focused changes colour only: no layout jump (Figma lays the focus stroke out).
+
+export const BREADCRUMB_SIZES = ['xs', 'sm', 'default'] as const
+export const BREADCRUMB_APPEARANCES = ['ghost', 'outline', 'solid'] as const
+export const BREADCRUMB_SEPARATORS = ['chevron', 'slash', 'dot'] as const
+export const BREADCRUMB_VARIANTS = ['default', 'secondary'] as const
+export const BREADCRUMB_ITEM_STATES = ['Default', 'Hover', 'Focused', 'Current', 'Disabled'] as const
+export const BREADCRUMB_ELLIPSIS_STATES = ['Default', 'Hover', 'Focused', 'Disabled'] as const
 
 export const BREADCRUMB: ComponentRecipe = {
   key: 'Breadcrumb',
-  slots: ['root', 'link', 'separator', 'page'],
-  defaults: {},
+  slots: ['root'],
+  defaults: { Appearance: 'ghost', Separator: 'chevron', Size: 'default' },
   parts: [
-    part({}, () => ({
-      root: { gap: 'spacing.gap-control', font: 'type.body-md' },
-      link: { text: c('content.secondary') },
-      'link:hover': { text: c('content.primary') },
-      separator: { text: c('content.subtle') },
-      page: { text: c('content.primary'), font: 'type.label' },
-    })),
+    part({ Size: BREADCRUMB_SIZES }, (size) => ({ root: { gap: size === 'xs' ? 'spacing.none' : 'spacing.gap-tight' } })),
+  ],
+}
+
+function breadcrumbPaint(variant: string, appearance: string, state: string): SlotProps {
+  const secondary = variant === 'secondary'
+  const text = state === 'Disabled' ? 'content.disabled' : state === 'Current' ? 'content.primary' : state === 'Hover' ? (secondary ? 'content.primary' : 'content.accent') : 'content.secondary'
+  let fill = NONE
+  let stroke = NONE
+  if (appearance === 'solid') {
+    fill = state === 'Disabled' ? 'action.disabled.default' : state === 'Hover' ? (secondary ? 'surface.muted-hover' : 'surface.accent') : 'surface.muted'
+  }
+  if (appearance === 'outline') {
+    stroke = state === 'Disabled' ? 'border.subtle' : state === 'Current' ? 'border.default' : state === 'Hover' ? (secondary ? 'border.control-hover' : 'border.accent') : 'border.control'
+  }
+  const root: SlotProps = { text: c(text), fill: fill === NONE ? NONE : c(fill), stroke: stroke === NONE ? NONE : c(stroke) }
+  if (state === 'Focused') {
+    root.stroke = c(secondary ? 'border.strong' : 'border.focus')
+    root.halo = c(secondary ? 'border.subtle' : 'border.ring.default')
+  }
+  return root
+}
+
+export const BREADCRUMB_ITEM: ComponentRecipe = {
+  key: 'BreadcrumbItem',
+  slots: ['root', 'leading', 'label', 'trailing'],
+  defaults: { Variant: 'default', Appearance: 'ghost', Size: 'default', State: 'Default' },
+  parts: [
+    part({ Size: BREADCRUMB_SIZES }, (size) => {
+      const icon = size === 'default' ? 'icon.medium' : 'icon.small'
+      return {
+        root: { height: size === 'xs' ? 'size.xs' : size === 'sm' ? 'size.sm' : 'size.md', radius: 'radius.control', gap: size === 'default' ? 'spacing.gap-control' : 'spacing.gap-tight', font: size === 'xs' ? 'type.caption' : size === 'sm' ? 'type.body-sm' : 'type.body-md', strokeWidth: 'stroke.control', paddingY: 'spacing.none' },
+        leading: { width: icon, height: icon },
+        trailing: { width: icon, height: icon },
+      }
+    }),
+    // Outline lays its stroke out (Default 62 = 60 + 2): the padding carries it.
+    part({ Size: BREADCRUMB_SIZES, Appearance: BREADCRUMB_APPEARANCES }, (size, appearance) => {
+      const x = size === 'xs' ? 'spacing.gap-tight' : size === 'sm' ? 'spacing.gap-control' : 'spacing.inset-control'
+      return { root: { paddingX: appearance === 'outline' ? `${x}+stroke.control` : x } }
+    }),
+    part({ Variant: BREADCRUMB_VARIANTS, Appearance: BREADCRUMB_APPEARANCES, State: BREADCRUMB_ITEM_STATES }, (variant, appearance, state) => ({ root: breadcrumbPaint(variant, appearance, state) })),
+  ],
+}
+
+export const BREADCRUMB_ELLIPSIS: ComponentRecipe = {
+  key: 'BreadcrumbEllipsis',
+  slots: ['root', 'icon'],
+  defaults: { Variant: 'default', Appearance: 'ghost', Size: 'default', State: 'Default' },
+  parts: [
+    part({ Size: BREADCRUMB_SIZES }, (size) => {
+      const box = size === 'xs' ? 'size.xs' : size === 'sm' ? 'size.sm' : 'size.md'
+      const icon = size === 'default' ? 'icon.medium' : 'icon.small'
+      return { root: { width: box, height: box, radius: 'radius.control', strokeWidth: 'stroke.control', paddingX: 'spacing.none', paddingY: 'spacing.none' }, icon: { width: icon, height: icon } }
+    }),
+    part({ Variant: BREADCRUMB_VARIANTS, Appearance: BREADCRUMB_APPEARANCES, State: BREADCRUMB_ELLIPSIS_STATES }, (variant, appearance, state) => ({ root: breadcrumbPaint(variant, appearance, state) })),
+  ],
+}
+
+export const BREADCRUMB_SEPARATOR: ComponentRecipe = {
+  key: 'BreadcrumbSeparator',
+  slots: ['root', 'icon'],
+  defaults: { Variant: 'chevron', Size: 'default' },
+  parts: [
+    part({ Variant: BREADCRUMB_SEPARATORS, Size: BREADCRUMB_SIZES }, (variant, size) => {
+      const icon = size === 'default' ? 'icon.medium' : 'icon.small'
+      return {
+        root: variant === 'slash'
+          ? { text: c('content.subtle'), font: size === 'xs' ? 'type.caption' : size === 'sm' ? 'type.body-sm' : 'type.body-md' }
+          : { text: c('content.subtle'), width: icon, height: icon },
+        icon: { width: icon, height: icon },
+      }
+    }),
   ],
 }
 

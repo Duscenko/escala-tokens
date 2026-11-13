@@ -6125,17 +6125,76 @@ var init_componentCatalogue = __esm({
         key: "Breadcrumb",
         label: "Breadcrumbs",
         category: "Navigation",
-        description: "Breadcrumb trail showing the user's location within a multi-level structure.",
-        usage: "Only use when hierarchy is 3+ levels deep. Don't duplicate primary navigation.",
-        axes: [],
+        description: "Navigation trail of items, separators and an optional ellipsis that collapses the start of a long trail.",
+        usage: "Only use when hierarchy is 3+ levels deep. Don't duplicate primary navigation. The last item is the current page.",
+        axes: [
+          { name: "Appearance", values: ["ghost", "outline", "solid"] },
+          { name: "Separator", values: ["chevron", "slash", "dot"] },
+          { name: "Size", values: ["xs", "sm", "default"] }
+        ],
         figmaSets: ["Breadcrumb"],
         props: [
-          { name: "Breadcrumb / BreadcrumbList", type: "component", description: "Landmark and list." },
-          { name: "BreadcrumbLink asChild", type: "boolean", description: "Use your router link." },
-          { name: "BreadcrumbPage", type: "component", description: "The current page (aria-current)." },
-          { name: "BreadcrumbSeparator", type: "ReactNode", description: 'Divider between items (default "/").' }
+          { name: "appearance / separator / size", type: "string", description: "Figma Appearance, Separator and Size; they cascade to every item, separator and the ellipsis." },
+          { name: "Breadcrumb / BreadcrumbList", type: "component", description: "Landmark (nav) and ordered list." },
+          { name: "BreadcrumbItem / BreadcrumbEllipsis / BreadcrumbSeparator", type: "component", description: "The segments, the collapsed start and the divider (the Figma sets of the same names)." }
         ],
-        accessibility: 'nav aria-label="Breadcrumb". Current page has aria-current="page".'
+        accessibility: 'nav aria-label="Breadcrumb" over an ordered list. The current page is aria-current="page" and not a link; separators are hidden from assistive technology.'
+      },
+      {
+        key: "BreadcrumbItem",
+        label: "Breadcrumb Item",
+        category: "Navigation",
+        description: "One segment of a breadcrumb trail, rendered as a link (or the current page).",
+        usage: "Inside a Breadcrumb. Mark the last item current and keep it non-interactive.",
+        axes: [
+          { name: "Variant", values: ["default", "secondary"] },
+          { name: "Appearance", values: ["ghost", "outline", "solid"] },
+          { name: "Size", values: ["xs", "sm", "default"] },
+          { name: "State", values: ["Default", "Hover", "Focused", "Current", "Disabled"] }
+        ],
+        figmaSets: ["BreadcrumbItem"],
+        props: [
+          { name: "variant / appearance / size", type: "string", description: "Figma Variant, Appearance and Size (appearance and size follow the Breadcrumb)." },
+          { name: "current / disabled / forceState", type: "boolean / State", description: "Current page (aria-current), disabled, or a pinned state for docs." },
+          { name: "iconLeading / iconTrailing / asChild", type: "ReactNode / boolean", description: "Figma icon slots; use your router link as the element." }
+        ],
+        accessibility: 'A link; the current item is aria-current="page" and not interactive.'
+      },
+      {
+        key: "BreadcrumbEllipsis",
+        label: "Breadcrumb Ellipsis",
+        category: "Navigation",
+        description: "Collapsed middle of a long breadcrumb trail that opens a menu of the hidden segments.",
+        usage: "Replace the first segments of a trail longer than four items.",
+        axes: [
+          { name: "Variant", values: ["default", "secondary"] },
+          { name: "Appearance", values: ["ghost", "outline", "solid"] },
+          { name: "Size", values: ["xs", "sm", "default"] },
+          { name: "State", values: ["Default", "Hover", "Focused", "Disabled"] }
+        ],
+        figmaSets: ["BreadcrumbEllipsis"],
+        props: [
+          { name: "variant / appearance / size / forceState", type: "string", description: "Figma axes; appearance and size follow the Breadcrumb." },
+          { name: "aria-label", type: "string", description: 'Defaults to "Show hidden breadcrumbs".' }
+        ],
+        accessibility: "A button with an accessible name."
+      },
+      {
+        key: "BreadcrumbSeparator",
+        label: "Breadcrumb Separator",
+        category: "Navigation",
+        description: "Decorative divider between breadcrumb items: chevron, slash or dot.",
+        usage: "Between items; the same Size as the items.",
+        axes: [
+          { name: "Variant", values: ["chevron", "slash", "dot"] },
+          { name: "Size", values: ["xs", "sm", "default"] }
+        ],
+        figmaSets: ["BreadcrumbSeparator"],
+        props: [
+          { name: "variant / size", type: "string", description: "Figma Variant (follows the Breadcrumb Separator) and Size." },
+          { name: "children", type: "ReactNode", description: "Another glyph or text." }
+        ],
+        accessibility: 'role="presentation" and aria-hidden: it carries no information.'
       },
       {
         key: "Pagination",
@@ -11460,6 +11519,24 @@ function segmentPaint(checked, state2) {
   const fill = state2 === "Hover" ? c("action.ghost.hover") : state2 === "Pressed" ? c("action.ghost.pressed") : NONE;
   return { root: { fill, text: c(state2 === "Hover" || state2 === "Pressed" ? "content.primary" : "content.secondary"), radius: "radius.action", ...focus } };
 }
+function breadcrumbPaint(variant, appearance, state2) {
+  const secondary = variant === "secondary";
+  const text = state2 === "Disabled" ? "content.disabled" : state2 === "Current" ? "content.primary" : state2 === "Hover" ? secondary ? "content.primary" : "content.accent" : "content.secondary";
+  let fill = NONE;
+  let stroke = NONE;
+  if (appearance === "solid") {
+    fill = state2 === "Disabled" ? "action.disabled.default" : state2 === "Hover" ? secondary ? "surface.muted-hover" : "surface.accent" : "surface.muted";
+  }
+  if (appearance === "outline") {
+    stroke = state2 === "Disabled" ? "border.subtle" : state2 === "Current" ? "border.default" : state2 === "Hover" ? secondary ? "border.control-hover" : "border.accent" : "border.control";
+  }
+  const root = { text: c(text), fill: fill === NONE ? NONE : c(fill), stroke: stroke === NONE ? NONE : c(stroke) };
+  if (state2 === "Focused") {
+    root.stroke = c(secondary ? "border.strong" : "border.focus");
+    root.halo = c(secondary ? "border.subtle" : "border.ring.default");
+  }
+  return root;
+}
 function menu(key2) {
   const slots = {
     root: {
@@ -11501,7 +11578,7 @@ function dropdownItemPaint(variant, state2) {
       return { fill: NONE };
   }
 }
-var TABS, TAB_MENU, SEGMENTED_CONTROL_SIZES, SEGMENTED_CONTROL, SEGMENTED_CONTROL_ITEM_STATES, SEGMENT_ITEM, SEGMENTED_CONTROL_ITEM, BREADCRUMB, PAGINATION, STEPPER, MENU_PANEL_RADIUS, DROPDOWN_SIZES, DROPDOWN_ITEM_STATES, DROPDOWN_ITEM_VARIANTS, DROPDOWN_MENU, DROPDOWN_MENU_LABEL, DROPDOWN_MENU_ITEM, DROPDOWN_MENU_FOOTER, CONTEXT_MENU, COMMAND, NAVBAR, SIDEBAR, MENUBAR, NAVIGATION_MENU;
+var TABS, TAB_MENU, SEGMENTED_CONTROL_SIZES, SEGMENTED_CONTROL, SEGMENTED_CONTROL_ITEM_STATES, SEGMENT_ITEM, SEGMENTED_CONTROL_ITEM, BREADCRUMB_SIZES, BREADCRUMB_APPEARANCES, BREADCRUMB_SEPARATORS, BREADCRUMB_VARIANTS, BREADCRUMB_ITEM_STATES, BREADCRUMB_ELLIPSIS_STATES, BREADCRUMB, BREADCRUMB_ITEM, BREADCRUMB_ELLIPSIS, BREADCRUMB_SEPARATOR, PAGINATION, STEPPER, MENU_PANEL_RADIUS, DROPDOWN_SIZES, DROPDOWN_ITEM_STATES, DROPDOWN_ITEM_VARIANTS, DROPDOWN_MENU, DROPDOWN_MENU_LABEL, DROPDOWN_MENU_ITEM, DROPDOWN_MENU_FOOTER, CONTEXT_MENU, COMMAND, NAVBAR, SIDEBAR, MENUBAR, NAVIGATION_MENU;
 var init_navigation = __esm({
   "src/lib/recipes/navigation.ts"() {
     init_helpers();
@@ -11579,18 +11656,66 @@ var init_navigation = __esm({
         part({ Checked: ["false", "true"], State: SEGMENTED_CONTROL_ITEM_STATES }, segmentPaint)
       ]
     };
+    BREADCRUMB_SIZES = ["xs", "sm", "default"];
+    BREADCRUMB_APPEARANCES = ["ghost", "outline", "solid"];
+    BREADCRUMB_SEPARATORS = ["chevron", "slash", "dot"];
+    BREADCRUMB_VARIANTS = ["default", "secondary"];
+    BREADCRUMB_ITEM_STATES = ["Default", "Hover", "Focused", "Current", "Disabled"];
+    BREADCRUMB_ELLIPSIS_STATES = ["Default", "Hover", "Focused", "Disabled"];
     BREADCRUMB = {
       key: "Breadcrumb",
-      slots: ["root", "link", "separator", "page"],
-      defaults: {},
+      slots: ["root"],
+      defaults: { Appearance: "ghost", Separator: "chevron", Size: "default" },
       parts: [
-        part({}, () => ({
-          root: { gap: "spacing.gap-control", font: "type.body-md" },
-          link: { text: c("content.secondary") },
-          "link:hover": { text: c("content.primary") },
-          separator: { text: c("content.subtle") },
-          page: { text: c("content.primary"), font: "type.label" }
-        }))
+        part({ Size: BREADCRUMB_SIZES }, (size) => ({ root: { gap: size === "xs" ? "spacing.none" : "spacing.gap-tight" } }))
+      ]
+    };
+    BREADCRUMB_ITEM = {
+      key: "BreadcrumbItem",
+      slots: ["root", "leading", "label", "trailing"],
+      defaults: { Variant: "default", Appearance: "ghost", Size: "default", State: "Default" },
+      parts: [
+        part({ Size: BREADCRUMB_SIZES }, (size) => {
+          const icon = size === "default" ? "icon.medium" : "icon.small";
+          return {
+            root: { height: size === "xs" ? "size.xs" : size === "sm" ? "size.sm" : "size.md", radius: "radius.control", gap: size === "default" ? "spacing.gap-control" : "spacing.gap-tight", font: size === "xs" ? "type.caption" : size === "sm" ? "type.body-sm" : "type.body-md", strokeWidth: "stroke.control", paddingY: "spacing.none" },
+            leading: { width: icon, height: icon },
+            trailing: { width: icon, height: icon }
+          };
+        }),
+        // Outline lays its stroke out (Default 62 = 60 + 2): the padding carries it.
+        part({ Size: BREADCRUMB_SIZES, Appearance: BREADCRUMB_APPEARANCES }, (size, appearance) => {
+          const x = size === "xs" ? "spacing.gap-tight" : size === "sm" ? "spacing.gap-control" : "spacing.inset-control";
+          return { root: { paddingX: appearance === "outline" ? `${x}+stroke.control` : x } };
+        }),
+        part({ Variant: BREADCRUMB_VARIANTS, Appearance: BREADCRUMB_APPEARANCES, State: BREADCRUMB_ITEM_STATES }, (variant, appearance, state2) => ({ root: breadcrumbPaint(variant, appearance, state2) }))
+      ]
+    };
+    BREADCRUMB_ELLIPSIS = {
+      key: "BreadcrumbEllipsis",
+      slots: ["root", "icon"],
+      defaults: { Variant: "default", Appearance: "ghost", Size: "default", State: "Default" },
+      parts: [
+        part({ Size: BREADCRUMB_SIZES }, (size) => {
+          const box = size === "xs" ? "size.xs" : size === "sm" ? "size.sm" : "size.md";
+          const icon = size === "default" ? "icon.medium" : "icon.small";
+          return { root: { width: box, height: box, radius: "radius.control", strokeWidth: "stroke.control", paddingX: "spacing.none", paddingY: "spacing.none" }, icon: { width: icon, height: icon } };
+        }),
+        part({ Variant: BREADCRUMB_VARIANTS, Appearance: BREADCRUMB_APPEARANCES, State: BREADCRUMB_ELLIPSIS_STATES }, (variant, appearance, state2) => ({ root: breadcrumbPaint(variant, appearance, state2) }))
+      ]
+    };
+    BREADCRUMB_SEPARATOR = {
+      key: "BreadcrumbSeparator",
+      slots: ["root", "icon"],
+      defaults: { Variant: "chevron", Size: "default" },
+      parts: [
+        part({ Variant: BREADCRUMB_SEPARATORS, Size: BREADCRUMB_SIZES }, (variant, size) => {
+          const icon = size === "default" ? "icon.medium" : "icon.small";
+          return {
+            root: variant === "slash" ? { text: c("content.subtle"), font: size === "xs" ? "type.caption" : size === "sm" ? "type.body-sm" : "type.body-md" } : { text: c("content.subtle"), width: icon, height: icon },
+            icon: { width: icon, height: icon }
+          };
+        })
       ]
     };
     PAGINATION = {
@@ -12948,6 +13073,9 @@ var init_componentRecipes = __esm({
       SegmentedControl: SEGMENTED_CONTROL,
       SegmentedControlItem: SEGMENTED_CONTROL_ITEM,
       Breadcrumb: BREADCRUMB,
+      BreadcrumbItem: BREADCRUMB_ITEM,
+      BreadcrumbEllipsis: BREADCRUMB_ELLIPSIS,
+      BreadcrumbSeparator: BREADCRUMB_SEPARATOR,
       Pagination: PAGINATION,
       Stepper: STEPPER,
       DropdownMenu: DROPDOWN_MENU,
@@ -15774,7 +15902,7 @@ var init_useDesignStore = __esm({
         }),
         {
           name: "scalable-designs-store",
-          version: 143,
+          version: 144,
           migrate: (persisted, version) => {
             if (persisted) {
               delete persisted.styleDirection;
@@ -17536,6 +17664,18 @@ var init_useDesignStore = __esm({
               rename(persisted);
               if (Array.isArray(persisted.savedSystems)) {
                 for (const sys of persisted.savedSystems) rename(sys?.snapshot);
+              }
+            }
+            if (version < 144) {
+              const add2 = (state2) => {
+                if (!Array.isArray(state2?.selectedComponents)) return;
+                const sel = state2.selectedComponents;
+                const at = sel.indexOf("Breadcrumb");
+                if (at >= 0) sel.splice(at + 1, 0, ...["BreadcrumbItem", "BreadcrumbEllipsis", "BreadcrumbSeparator"].filter((k) => !sel.includes(k)));
+              };
+              add2(persisted);
+              if (Array.isArray(persisted.savedSystems)) {
+                for (const sys of persisted.savedSystems) add2(sys?.snapshot);
               }
             }
             return persisted;

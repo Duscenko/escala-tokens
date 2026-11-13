@@ -27,7 +27,7 @@ import {
   SkeletonKbdSpecimen,
 } from './skeleton/indicators'
 import {
-  SkeletonTabsSpecimen, SkeletonTabMenuSpecimen, SkeletonSegmentedControlSpecimen, SkeletonSegmentedControlItemSpecimen, SkeletonBreadcrumbSpecimen,
+  SkeletonTabsSpecimen, SkeletonTabMenuSpecimen, SkeletonSegmentedControlSpecimen, SkeletonSegmentedControlItemSpecimen, SkeletonBreadcrumbSpecimen, SkeletonBreadcrumbItemSpecimen, SkeletonBreadcrumbEllipsisSpecimen, SkeletonBreadcrumbSeparatorSpecimen,
   SkeletonPaginationSpecimen, SkeletonStepperSpecimen, SkeletonDropdownMenuSpecimen, SkeletonDropdownMenuLabelSpecimen, SkeletonDropdownMenuItemSpecimen, SkeletonDropdownMenuFooterSpecimen, SkeletonContextMenuSpecimen,
   SkeletonCommandSpecimen, SkeletonNavbarSpecimen, SkeletonSidebarSpecimen,
   SkeletonMenubarSpecimen, SkeletonNavigationMenuSpecimen,
@@ -481,6 +481,9 @@ export const SPECIMENS: Record<string, (p: SpecimenProps) => ReactNode> = {
   SegmentedControl: SkeletonSegmentedControlSpecimen,
   SegmentedControlItem: SkeletonSegmentedControlItemSpecimen,
   Breadcrumb: SkeletonBreadcrumbSpecimen,
+  BreadcrumbItem: SkeletonBreadcrumbItemSpecimen,
+  BreadcrumbEllipsis: SkeletonBreadcrumbEllipsisSpecimen,
+  BreadcrumbSeparator: SkeletonBreadcrumbSeparatorSpecimen,
   Pagination: SkeletonPaginationSpecimen,
   Stepper: SkeletonStepperSpecimen,
   DropdownMenu: SkeletonDropdownMenuSpecimen,

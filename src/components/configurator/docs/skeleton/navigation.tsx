@@ -6,7 +6,7 @@ import { iconOf } from '../../../../lib/previewTokens'
 import { Tabs as SkTabs, TabsList as SkTabsList, TabsTrigger as SkTabsTrigger, type TabsListVariant } from '../../../escala-ui/tabs'
 import { TabMenu as SkTabMenu } from '../../../escala-ui/tab-menu'
 import { SegmentedControl as SkSegmentedControl, SegmentedControlItem as SkSegmentedControlItem, type SegmentedControlItemState, type SegmentedControlSize } from '../../../escala-ui/segmented-control'
-import { Breadcrumb as SkBreadcrumb, BreadcrumbItem as SkBreadcrumbItem, BreadcrumbLink as SkBreadcrumbLink, BreadcrumbList as SkBreadcrumbList, BreadcrumbPage as SkBreadcrumbPage, BreadcrumbSeparator as SkBreadcrumbSeparator } from '../../../escala-ui/breadcrumb'
+import { Breadcrumb as SkBreadcrumb, BreadcrumbEllipsis as SkBreadcrumbEllipsis, BreadcrumbItem as SkBreadcrumbItem, BreadcrumbList as SkBreadcrumbList, BreadcrumbSeparator as SkBreadcrumbSeparator, BREADCRUMB_GLYPHS, type BreadcrumbAppearance, type BreadcrumbEllipsisState, type BreadcrumbItemState, type BreadcrumbSeparatorKind, type BreadcrumbSize, type BreadcrumbVariant } from '../../../escala-ui/breadcrumb'
 import { Pagination as SkPagination } from '../../../escala-ui/pagination'
 import { useAutoplayStep } from '../../../preview/artefacts/boardAutoplay'
 import { Stepper as SkStepper } from '../../../escala-ui/stepper'
@@ -65,18 +65,66 @@ export function SkeletonSegmentedControlItemSpecimen({ t, v }: SpecimenProps) {
   )
 }
 
-export function SkeletonBreadcrumbSpecimen({ t }: SpecimenProps) {
+/** The Figma Breadcrumb (402:7814) in place: Home · Projects · Escala · the current page. */
+export function SkeletonBreadcrumbSpecimen({ t, v }: SpecimenProps) {
   return (
     <RecipeScope t={t}>
-      <SkBreadcrumb>
+      <SkBreadcrumb appearance={(v.Appearance ?? 'ghost') as BreadcrumbAppearance} separator={(v.Separator ?? 'chevron') as BreadcrumbSeparatorKind} size={(v.Size ?? 'default') as BreadcrumbSize}>
         <SkBreadcrumbList>
-          <SkBreadcrumbItem><SkBreadcrumbLink href="#" onClick={(e) => e.preventDefault()}>Home</SkBreadcrumbLink></SkBreadcrumbItem>
-          <SkBreadcrumbSeparator><PreviewIcon concept="chevron-right" size={iconOf(12)} /></SkBreadcrumbSeparator>
-          <SkBreadcrumbItem><SkBreadcrumbLink href="#" onClick={(e) => e.preventDefault()}>Library</SkBreadcrumbLink></SkBreadcrumbItem>
-          <SkBreadcrumbSeparator><PreviewIcon concept="chevron-right" size={iconOf(12)} /></SkBreadcrumbSeparator>
-          <SkBreadcrumbItem><SkBreadcrumbPage>Design tokens</SkBreadcrumbPage></SkBreadcrumbItem>
+          <SkBreadcrumbItem href="#" onClick={(e) => e.preventDefault()} iconLeading={BREADCRUMB_GLYPHS.house}>Home</SkBreadcrumbItem>
+          <SkBreadcrumbSeparator />
+          <SkBreadcrumbItem href="#" onClick={(e) => e.preventDefault()}>Projects</SkBreadcrumbItem>
+          <SkBreadcrumbSeparator />
+          <SkBreadcrumbItem href="#" onClick={(e) => e.preventDefault()}>Escala</SkBreadcrumbItem>
+          <SkBreadcrumbSeparator />
+          <SkBreadcrumbItem current>Breadcrumb</SkBreadcrumbItem>
         </SkBreadcrumbList>
       </SkBreadcrumb>
+    </RecipeScope>
+  )
+}
+
+/** A lone item: it sits in a list so the markup stays valid. */
+export function SkeletonBreadcrumbItemSpecimen({ t, v }: SpecimenProps) {
+  return (
+    <RecipeScope t={t}>
+      <ol className="m-0 flex list-none p-0">
+        <SkBreadcrumbItem
+          href="#"
+          onClick={(e) => e.preventDefault()}
+          variant={(v.Variant ?? 'default') as BreadcrumbVariant}
+          appearance={(v.Appearance ?? 'ghost') as BreadcrumbAppearance}
+          size={(v.Size ?? 'default') as BreadcrumbSize}
+          forceState={(v.State ?? 'Default') as BreadcrumbItemState}
+          disabled={v.State === 'Disabled'}
+        >Label</SkBreadcrumbItem>
+      </ol>
+    </RecipeScope>
+  )
+}
+
+export function SkeletonBreadcrumbEllipsisSpecimen({ t, v }: SpecimenProps) {
+  return (
+    <RecipeScope t={t}>
+      <ol className="m-0 flex list-none p-0">
+        <SkBreadcrumbEllipsis
+          variant={(v.Variant ?? 'default') as BreadcrumbVariant}
+          appearance={(v.Appearance ?? 'ghost') as BreadcrumbAppearance}
+          size={(v.Size ?? 'default') as BreadcrumbSize}
+          forceState={(v.State ?? 'Default') as BreadcrumbEllipsisState}
+          disabled={v.State === 'Disabled'}
+        />
+      </ol>
+    </RecipeScope>
+  )
+}
+
+export function SkeletonBreadcrumbSeparatorSpecimen({ t, v }: SpecimenProps) {
+  return (
+    <RecipeScope t={t}>
+      <ol className="m-0 flex list-none p-0">
+        <SkBreadcrumbSeparator variant={(v.Variant ?? 'chevron') as BreadcrumbSeparatorKind} size={(v.Size ?? 'default') as BreadcrumbSize} />
+      </ol>
     </RecipeScope>
   )
 }

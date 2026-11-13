@@ -121,6 +121,9 @@
   <url><loc>https://www.escalatokens.com/components/SegmentedControl</loc></url>
   <url><loc>https://www.escalatokens.com/components/SegmentedControlItem</loc></url>
   <url><loc>https://www.escalatokens.com/components/Breadcrumb</loc></url>
+  <url><loc>https://www.escalatokens.com/components/BreadcrumbItem</loc></url>
+  <url><loc>https://www.escalatokens.com/components/BreadcrumbEllipsis</loc></url>
+  <url><loc>https://www.escalatokens.com/components/BreadcrumbSeparator</loc></url>
   <url><loc>https://www.escalatokens.com/components/Pagination</loc></url>
   <url><loc>https://www.escalatokens.com/components/Stepper</loc></url>
   <url><loc>https://www.escalatokens.com/components/DropdownMenu</loc></url>

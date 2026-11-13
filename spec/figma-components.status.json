@@ -34,21 +34,6 @@
       "status": "part",
       "of": "RadioGroup"
     },
-    "Breadcrumb": {
-      "status": "rebuild"
-    },
-    "BreadcrumbEllipsis": {
-      "status": "part",
-      "of": "Breadcrumb"
-    },
-    "BreadcrumbItem": {
-      "status": "part",
-      "of": "Breadcrumb"
-    },
-    "BreadcrumbSeparator": {
-      "status": "part",
-      "of": "Breadcrumb"
-    },
     "TabMenu": {
       "status": "rebuild"
     },
