@@ -103,10 +103,10 @@ function TableHeader({ size: sizeProp, dividers: dividersProp, scrolled = false,
         data-size={size}
         data-dividers={dividers}
         data-scrolled={scrolled ? 'true' : 'false'}
-        className={cn('flex w-full', className)}
+        className={cn('flex w-full', STROKE_OVERLAY, className)}
         {...props}
       >
-        <tr role="row" className={cn('flex min-w-0 flex-1', IN_ROW)}>{children}</tr>
+        <tr role="row" className="flex min-w-0 flex-1">{children}</tr>
       </thead>
     </Cascade>
   )
@@ -130,10 +130,10 @@ function TableFooter({ size: sizeProp, dividers: dividersProp, className, childr
         data-escala="TableFooter"
         data-size={size}
         data-dividers={dividers}
-        className={cn('flex w-full', className)}
+        className={cn('flex w-full', STROKE_OVERLAY, className)}
         {...props}
       >
-        <tr role="row" className={cn('flex min-w-0 flex-1', IN_ROW)}>{children}</tr>
+        <tr role="row" className="flex min-w-0 flex-1">{children}</tr>
       </tfoot>
     </Cascade>
   )
@@ -178,7 +178,7 @@ function TableRow({ size: sizeProp, dividers: dividersProp, selected, disabled, 
         aria-disabled={state === 'Disabled' ? true : undefined}
         tabIndex={act && state !== 'Disabled' ? 0 : undefined}
         onClick={state === 'Disabled' ? undefined : onClick}
-        className={cn('flex w-full min-w-0', IN_ROW, className)}
+        className={cn('flex w-full min-w-0', STROKE_OVERLAY, className)}
         {...props}
       >
         {children}
@@ -191,15 +191,17 @@ function TableRow({ size: sizeProp, dividers: dividersProp, selected, disabled, 
 
 type CellState = 'Default' | 'Disabled'
 const CELL_BASE = 'relative flex min-w-0 flex-1 items-center'
-/** Inside a row the cells STRETCH to the row's content box instead of their own 48 / 32 / 40 / 56: at their own height
- *  they ran 1px over the row's bottom hairline, which an opaque cell (pinned, head) then painted over. Alone, a cell
- *  keeps the file's height. */
-const IN_ROW = '[&>*]:!h-auto'
+/** The row's strokes (recipe `root::after`) are an overlay over the cells, as Figma draws an INSIDE stroke: they take no
+ *  layout space and no opaque cell (pinned, head) can cover them. */
+const STROKE_OVERLAY = "relative after:pointer-events-none after:absolute after:inset-0 after:z-[2] after:content-['']"
 function pinEdge(pinned: TablePinned) {
   return pinned === 'none' ? null : (
-    <span data-part="TableCell.pin" aria-hidden className={cn('pointer-events-none absolute inset-y-0', pinned === 'start' ? 'right-0' : 'left-0')} />
+    <span data-part="TableCell.pin" aria-hidden className={cn('pointer-events-none absolute inset-y-0', pinned === 'start' ? PIN_START : 'left-0')} />
   )
 }
+/** A start pin sits on the cell's last pixel, as the file draws it — in a grid that is the right hairline itself
+ *  (inside the border-box), so the two read as ONE line; `right-0` put the pin 1px inside it (a double line). */
+const PIN_START = 'right-0 [[data-grid]:not(:last-child)>&]:right-[calc(-1*var(--stroke-divider))]'
 const PIN_STICKY = (pinned: TablePinned) => (pinned === 'start' ? 'sticky left-0 z-[1]' : pinned === 'end' ? 'sticky right-0 z-[1]' : '')
 
 export interface TableCellProps extends Omit<React.ComponentProps<'td'>, 'children' | 'align'> {
@@ -429,7 +431,7 @@ function TableHead({
         {children ?? (labelVisible && <span data-part="TableHead.label" className="min-w-0 truncate">{label}</span>)}
         {sort !== 'none' && <span data-part="TableHead.sortIcon" aria-hidden className={ICON}>{glyph(sort === 'ascending' ? G.up : G.down)}</span>}
       </span>
-      {pinEdge(pinned) && <span data-part="TableHead.pin" aria-hidden className={cn('pointer-events-none absolute inset-y-0', pinned === 'start' ? 'right-0' : 'left-0')} />}
+      {pinEdge(pinned) && <span data-part="TableHead.pin" aria-hidden className={cn('pointer-events-none absolute inset-y-0', pinned === 'start' ? PIN_START : 'left-0')} />}
       {resizerVisible && (
         <TableResizer resizing={resizing} onPointerDown={onResizeStart} className="absolute top-0 left-[calc(100%-var(--spacing-1))] h-full" />
       )}

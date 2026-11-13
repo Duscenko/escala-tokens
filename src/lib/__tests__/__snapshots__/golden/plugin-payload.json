@@ -20426,6 +20426,9 @@
               "root[data-grid]:not(:last-child)": {
                 "stroke": "color.border.subtle",
                 "strokeRightWidth": "stroke.divider"
+              },
+              "root:focus-visible": {
+                "focus": "color.border.focus"
               }
             }
           }
@@ -20952,84 +20955,108 @@
           "values": {
             "Default|rows": {
               "root": {
-                "stroke": "color.border.subtle",
-                "strokeBottomWidth": "stroke.divider",
                 "fill": "none"
+              },
+              "root::after": {
+                "stroke": "color.border.subtle",
+                "strokeBottomWidth": "stroke.divider"
               }
             },
             "Default|grid": {
               "root": {
-                "stroke": "color.border.subtle",
-                "strokeBottomWidth": "stroke.divider",
                 "fill": "none"
+              },
+              "root::after": {
+                "stroke": "color.border.subtle",
+                "strokeBottomWidth": "stroke.divider"
               }
             },
             "Hover|rows": {
               "root": {
-                "stroke": "color.border.subtle",
-                "strokeBottomWidth": "stroke.divider",
                 "fill": "color.action.ghost.hover"
+              },
+              "root::after": {
+                "stroke": "color.border.subtle",
+                "strokeBottomWidth": "stroke.divider"
               }
             },
             "Hover|grid": {
               "root": {
-                "stroke": "color.border.subtle",
-                "strokeBottomWidth": "stroke.divider",
                 "fill": "color.action.ghost.hover"
+              },
+              "root::after": {
+                "stroke": "color.border.subtle",
+                "strokeBottomWidth": "stroke.divider"
               }
             },
             "Selected|rows": {
               "root": {
-                "stroke": "color.border.subtle",
-                "strokeBottomWidth": "stroke.divider",
                 "fill": "color.surface.selected"
+              },
+              "root::after": {
+                "stroke": "color.border.subtle",
+                "strokeBottomWidth": "stroke.divider"
               }
             },
             "Selected|grid": {
               "root": {
-                "stroke": "color.border.subtle",
-                "strokeBottomWidth": "stroke.divider",
                 "fill": "color.surface.selected"
+              },
+              "root::after": {
+                "stroke": "color.border.subtle",
+                "strokeBottomWidth": "stroke.divider"
               }
             },
             "Focused|rows": {
               "root": {
-                "fill": "none",
+                "fill": "none"
+              },
+              "root::after": {
                 "stroke": "color.border.focus",
                 "strokeWidth": "stroke.focus"
               }
             },
             "Focused|grid": {
               "root": {
-                "fill": "none",
+                "fill": "none"
+              },
+              "root::after": {
                 "stroke": "color.border.focus",
                 "strokeWidth": "stroke.focus"
               }
             },
             "Disabled|rows": {
               "root": {
-                "stroke": "color.border.subtle",
-                "strokeBottomWidth": "stroke.divider",
                 "fill": "none"
+              },
+              "root::after": {
+                "stroke": "color.border.subtle",
+                "strokeBottomWidth": "stroke.divider"
               }
             },
             "Disabled|grid": {
               "root": {
-                "stroke": "color.border.subtle",
-                "strokeBottomWidth": "stroke.divider",
                 "fill": "none"
+              },
+              "root::after": {
+                "stroke": "color.border.subtle",
+                "strokeBottomWidth": "stroke.divider"
               }
             },
             "Dragging|rows": {
               "root": {
-                "fill": "color.surface.layer-2",
+                "fill": "color.surface.layer-2"
+              },
+              "root::after": {
                 "stroke": "color.border.default",
                 "strokeWidth": "stroke.divider"
               }
             },
             "Dragging|grid": {
               "root": {
-                "fill": "color.surface.layer-2",
+                "fill": "color.surface.layer-2"
+              },
+              "root::after": {
                 "stroke": "color.border.default",
                 "strokeWidth": "stroke.divider"
               }
@@ -21090,25 +21117,25 @@
           ],
           "values": {
             "rows|true": {
-              "root": {
+              "root::after": {
                 "stroke": "color.border.default",
                 "strokeBottomWidth": "stroke.divider"
               }
             },
             "rows|false": {
-              "root": {
+              "root::after": {
                 "stroke": "color.border.subtle",
                 "strokeBottomWidth": "stroke.divider"
               }
             },
             "grid|true": {
-              "root": {
+              "root::after": {
                 "stroke": "color.border.default",
                 "strokeBottomWidth": "stroke.divider"
               }
             },
             "grid|false": {
-              "root": {
+              "root::after": {
                 "stroke": "color.border.subtle",
                 "strokeBottomWidth": "stroke.divider"
               }
@@ -21161,14 +21188,18 @@
           "values": {
             "rows": {
               "root": {
-                "fill": "color.surface.muted",
+                "fill": "color.surface.muted"
+              },
+              "root::after": {
                 "stroke": "color.border.subtle",
                 "strokeTopWidth": "stroke.divider"
               }
             },
             "grid": {
               "root": {
-                "fill": "color.surface.muted",
+                "fill": "color.surface.muted"
+              },
+              "root::after": {
                 "stroke": "color.border.subtle",
                 "strokeTopWidth": "stroke.divider"
               }

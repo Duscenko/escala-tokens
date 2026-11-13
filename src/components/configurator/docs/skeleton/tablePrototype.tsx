@@ -23,8 +23,9 @@ export const PEOPLE: Person[] = [
   { id: 'noah', name: 'Noah Dubois', email: 'noah@escala.design', department: 'Design', role: 'Product Designer', status: 'Inactive', joined: 'Jun 18, 2024', joinedAt: 20240618, progress: 0, disabled: true },
 ]
 const STATUS_VARIANT = { Active: 'success', 'On leave': 'warning', Inactive: 'secondary' } as const
-/** The file's column widths at 1440. */
-const WIDTHS = [56, 320, 200, 240, 160, 200, 264]
+/** The file's column widths at 1440. The last one (264) runs 2px past the 1438 the table's edge leaves; the file clips
+ *  it. Here it takes what is left (262), or a 1440 table would scroll by 2px. */
+const WIDTHS = [56, 320, 200, 240, 160, 200, 262]
 
 type SortKey = 'name' | 'joined'
 export interface TablePrototypeProps {
@@ -65,7 +66,7 @@ export function TablePrototype({
   const toggleSort = (key: SortKey) => { setSorted(true); setSort((s) => ({ key, dir: s.key === key && s.dir === 'ascending' ? 'descending' : 'ascending' })) }
   const sortOf = (key: SortKey): TableSort => (sort.key === key ? sort.dir : 'none')
   const pin = pinned ? 'start' : 'none'
-  const cw = (i: number) => ({ flex: `0 0 ${(WIDTHS[i] * width) / 1440}px`, minWidth: 0 })
+  const cw = (i: number) => ({ flex: `${i === WIDTHS.length - 1 ? 1 : 0} 0 ${(WIDTHS[i] * width) / 1440}px`, minWidth: 0 })
   return (
     <div style={{ width, maxWidth: '100%', overflowX: 'auto' }}>
       <Table size={size} dividers={dividers} appearance={appearance} aria-label="Team members">

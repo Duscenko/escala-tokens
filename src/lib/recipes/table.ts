@@ -79,6 +79,9 @@ export const TABLE_HEAD: ComponentRecipe = {
       content: { gap: 'spacing.gap-tight' },
       pin: PIN,
       'root[data-grid]:not(:last-child)': GRID_EDGE,
+      // A sortable head takes the keyboard; the set draws no focus, so it gets the row's own Focused ring (Border/focus,
+      // 2px inside) — never a focusable control with no indicator (WCAG 2.4.7).
+      'root:focus-visible': { focus: c('border.focus') },
     })),
     part({ Size: TABLE_SIZES }, (size) => ({ root: cellBox(size) })),
     part({ State: TABLE_HEAD_STATES, Sort: TABLE_SORTS }, (state, sort) => ({
@@ -171,12 +174,18 @@ export const TABLE_ROW: ComponentRecipe = {
   defaults: { Size: 'default', State: 'Default', Dividers: 'rows' },
   parts: [
     part({ Size: TABLE_SIZES }, (size) => ({ root: { height: TABLE_ROW_HEIGHT[size] } })),
-    // The bottom hairline (Border/subtle); Focused and Dragging trade it for a ring all round.
-    part({ State: TABLE_ROW_STATES, Dividers: TABLE_DIVIDERS }, (state) => ({
-      root: state === 'Focused' || state === 'Dragging'
-        ? rowShell(state)
-        : { stroke: c('border.subtle'), strokeBottomWidth: 'stroke.divider', ...rowShell(state) },
-    })),
+    // The bottom hairline (Border/subtle); Focused and Dragging trade it for a ring all round. Figma strokes are INSIDE and
+    // drawn OVER the cells, so they live on an overlay (`root::after`, laid out by the component): as a CSS border on the
+    // row they took layout space (cells 47 tall, content 0.5px off, a 2px shift on focus) and an opaque cell covered them.
+    part({ State: TABLE_ROW_STATES, Dividers: TABLE_DIVIDERS }, (state) => {
+      const { fill, ...stroke } = rowShell(state)
+      return {
+        root: { fill },
+        'root::after': state === 'Focused' || state === 'Dragging'
+          ? stroke
+          : { stroke: c('border.subtle'), strokeBottomWidth: 'stroke.divider' },
+      }
+    }),
   ],
 }
 
@@ -187,8 +196,9 @@ export const TABLE_HEADER: ComponentRecipe = {
   defaults: { Size: 'default', Dividers: 'rows', Scrolled: 'false' },
   parts: [
     part({ Size: TABLE_SIZES }, (size) => ({ root: { height: TABLE_ROW_HEIGHT[size] } })),
+    // Over the heads, like the row's (`root::after`): an opaque head would otherwise cover it.
     part({ Dividers: TABLE_DIVIDERS, Scrolled: ['true', 'false'] as const }, (_d, scrolled) => ({
-      root: { stroke: c(scrolled === 'true' ? 'border.default' : 'border.subtle'), strokeBottomWidth: 'stroke.divider' },
+      'root::after': { stroke: c(scrolled === 'true' ? 'border.default' : 'border.subtle'), strokeBottomWidth: 'stroke.divider' },
     })),
   ],
 }
@@ -201,7 +211,8 @@ export const TABLE_FOOTER: ComponentRecipe = {
   parts: [
     part({ Size: TABLE_SIZES }, (size) => ({ root: { height: TABLE_ROW_HEIGHT[size] } })),
     part({ Dividers: TABLE_DIVIDERS }, () => ({
-      root: { fill: c('surface.muted'), stroke: c('border.subtle'), strokeTopWidth: 'stroke.divider' },
+      root: { fill: c('surface.muted') },
+      'root::after': { stroke: c('border.subtle'), strokeTopWidth: 'stroke.divider' },
     })),
   ],
 }
