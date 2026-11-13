@@ -1,6 +1,7 @@
 // The Figma «Table Prototype» (section 1025:2250), composed from the parts: a people table with select-all,
 // row selection, sortable Name / Join date, a pinned Name column and a resizable Role column.
-// Contract: design-plans/table-prototype-contract.md. A composition for docs and stories — not a part.
+// Contract: design-plans/table-prototype-contract.md. Owner's call (2026-11-13): the people avatars are sm (32), not the
+// file's default (40) — the gradient stand-in reads heavier than the file's photos. A composition for docs and stories — not a part.
 import * as React from 'react'
 import { Avatar } from '../../../escala-ui/avatar'
 import { Badge } from '../../../escala-ui/badge'
@@ -90,7 +91,7 @@ export function TablePrototype({
                 <TableCell style={cw(0)} state={st} labelVisible={false} leadingVisible
                   leading={<Checkbox all={on} none={!on} disabled={p.disabled} size={size} label={`Select ${p.name}`} onChange={(v) => setSelected((s) => (v ? [...s, p.id] : s.filter((x) => x !== p.id)))} />} />
                 <TableCell style={cw(1)} state={st} pinned={pin} label={p.name} description={p.email} descriptionVisible leadingVisible
-                  leading={<Avatar src={avatarGradientSrc(hue)} alt="" />} />
+                  leading={<Avatar size="sm" src={avatarGradientSrc(hue)} alt="" />} />
                 <TableCell style={cw(2)} state={st} labelVisible={false} leadingVisible leading={<Badge size="sm" shape="pill" variant="secondary" appearance="soft">{p.department}</Badge>} />
                 <TableCell style={cw(3)} state={st} label={p.role} />
                 <TableCell style={cw(4)} state={st} labelVisible={false} leadingVisible leading={<Badge size="sm" shape="pill" variant={STATUS_VARIANT[p.status]} appearance="soft">{p.status}</Badge>} />

@@ -40,3 +40,6 @@ Everything the prototype draws already exists as a part (TableHead sort/pinned/r
 - A composed **TablePrototype** (docs/story composition, not an escala-ui part): real behaviour for the select-all indeterminate Checkbox, row selection, click-to-sort on Name / Join date, a Resizing handle state, Pinned Name column.
 - Photos: the file uses stock photos (`904:6116…`). Code has no photos → the Avatar draws the system's **gradient fill** (see Avatar group fix, same commit family), one hue per person.
 - Specimen/overview: Table overview gets the two prototype rows.
+
+## Owner's call (2026-11-13)
+The Name column's Avatar is `sm` (32) in code, not the file's `default` (40): with the gradient stand-in instead of photos, 40 read too big. Everything else stays the file's.
