@@ -34,14 +34,6 @@
       "status": "part",
       "of": "RadioGroup"
     },
-    "TooltipContent": {
-      "status": "rename",
-      "code": "Tooltip"
-    },
-    "TooltipInfoTrigger": {
-      "status": "part",
-      "of": "TooltipContent"
-    },
     "Breadcrumb": {
       "status": "rebuild"
     },

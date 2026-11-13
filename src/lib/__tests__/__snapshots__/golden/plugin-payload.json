@@ -4512,7 +4512,7 @@
         "components": [
           "Popover",
           "DatePickerPopover",
-          "Tooltip",
+          "TooltipContent",
           "HoverCard",
           "DropdownMenu",
           "ContextMenu",
@@ -4556,7 +4556,7 @@
         "components": [
           "Popover",
           "DatePickerPopover",
-          "Tooltip",
+          "TooltipContent",
           "HoverCard",
           "DropdownMenu",
           "ContextMenu",
@@ -5250,7 +5250,7 @@
     "Card",
     "Avatar",
     "Modal",
-    "Tooltip",
+    "TooltipContent",
     "Separator",
     "Toast",
     "Tabs"
@@ -23392,28 +23392,142 @@
         }
       ]
     },
-    "Tooltip": {
-      "key": "Tooltip",
+    "TooltipContent": {
+      "key": "TooltipContent",
       "slots": [
         "root",
+        "bubble",
+        "title",
+        "text",
         "arrow"
       ],
-      "defaults": {},
+      "defaults": {
+        "Size": "default",
+        "Variant": "default"
+      },
       "parts": [
         {
           "axes": [],
           "values": {
             "": {
-              "root": {
-                "fill": "color.surface.inverse",
-                "text": "color.content.inverse",
-                "radius": "radius.action",
-                "font": "type.caption",
+              "bubble": {
+                "radius": "radius.overlay",
+                "gap": "spacing.0_5",
+                "lift": "popover-md"
+              },
+              "title": {
+                "font": "type.label"
+              }
+            }
+          }
+        },
+        {
+          "axes": [
+            "Size"
+          ],
+          "values": {
+            "default": {
+              "bubble": {
                 "paddingX": "spacing.2_5",
+                "paddingY": "spacing.2"
+              },
+              "text": {
+                "font": "type.body-sm"
+              }
+            },
+            "sm": {
+              "bubble": {
+                "paddingX": "spacing.2",
                 "paddingY": "spacing.1_5"
+              },
+              "text": {
+                "font": "type.caption"
+              }
+            },
+            "lg": {
+              "bubble": {
+                "paddingX": "spacing.3",
+                "paddingY": "spacing.2_5"
+              },
+              "text": {
+                "font": "type.body-md"
+              }
+            }
+          }
+        },
+        {
+          "axes": [
+            "Variant"
+          ],
+          "values": {
+            "default": {
+              "bubble": {
+                "fill": "color.action.primary.default"
+              },
+              "title": {
+                "text": "color.content.on-action"
+              },
+              "text": {
+                "text": "color.content.on-action"
+              },
+              "arrow": {
+                "paint": "color.action.primary.default"
+              }
+            },
+            "secondary": {
+              "bubble": {
+                "fill": "color.surface.muted"
+              },
+              "title": {
+                "text": "color.content.primary"
+              },
+              "text": {
+                "text": "color.content.primary"
+              },
+              "arrow": {
+                "paint": "color.surface.muted"
+              }
+            },
+            "inverse": {
+              "bubble": {
+                "fill": "color.surface.inverse"
+              },
+              "title": {
+                "text": "color.content.inverse"
+              },
+              "text": {
+                "text": "color.content.inverse"
               },
               "arrow": {
                 "paint": "color.surface.inverse"
+              }
+            },
+            "critical": {
+              "bubble": {
+                "fill": "color.status.critical.surface-solid"
+              },
+              "title": {
+                "text": "color.status.critical.on-solid"
+              },
+              "text": {
+                "text": "color.status.critical.on-solid"
+              },
+              "arrow": {
+                "paint": "color.status.critical.surface-solid"
+              }
+            },
+            "info": {
+              "bubble": {
+                "fill": "color.status.info.surface-solid"
+              },
+              "title": {
+                "text": "color.status.info.on-solid"
+              },
+              "text": {
+                "text": "color.status.info.on-solid"
+              },
+              "arrow": {
+                "paint": "color.status.info.surface-solid"
               }
             }
           }
@@ -23428,6 +23542,218 @@
         },
         "origin": "var(--radix-tooltip-content-transform-origin, center)"
       }
+    },
+    "TooltipInfoTrigger": {
+      "key": "TooltipInfoTrigger",
+      "slots": [
+        "root",
+        "icon"
+      ],
+      "defaults": {
+        "Size": "default",
+        "State": "Default",
+        "Variant": "default"
+      },
+      "parts": [
+        {
+          "axes": [
+            "Size"
+          ],
+          "values": {
+            "default": {
+              "root": {
+                "radius": "radius.pill",
+                "paddingX": "spacing.0_5",
+                "paddingY": "spacing.0_5"
+              },
+              "icon": {
+                "width": "icon.small",
+                "height": "icon.small"
+              }
+            },
+            "sm": {
+              "root": {
+                "radius": "radius.pill",
+                "paddingX": "spacing.0_5",
+                "paddingY": "spacing.0_5"
+              },
+              "icon": {
+                "width": "spacing.3+spacing.0_5",
+                "height": "spacing.3+spacing.0_5"
+              }
+            },
+            "lg": {
+              "root": {
+                "radius": "radius.pill",
+                "paddingX": "spacing.0_5",
+                "paddingY": "spacing.0_5"
+              },
+              "icon": {
+                "width": "icon.medium",
+                "height": "icon.medium"
+              }
+            }
+          }
+        },
+        {
+          "axes": [
+            "Variant",
+            "State"
+          ],
+          "values": {
+            "default|Default": {
+              "icon": {
+                "text": "color.action.primary.default"
+              },
+              "root": {},
+              "icon[data-open]": {
+                "text": "color.action.primary.hover"
+              }
+            },
+            "default|Hover": {
+              "icon": {
+                "text": "color.action.primary.hover"
+              },
+              "root": {}
+            },
+            "default|Open": {
+              "icon": {
+                "text": "color.action.primary.hover"
+              },
+              "root": {}
+            },
+            "default|Focused": {
+              "icon": {
+                "text": "color.action.primary.default"
+              },
+              "root": {
+                "focus": "color.border.focus",
+                "ring": "color.border.ring.default"
+              }
+            },
+            "secondary|Default": {
+              "icon": {
+                "text": "color.content.secondary"
+              },
+              "root": {},
+              "icon[data-open]": {
+                "text": "color.content.primary"
+              }
+            },
+            "secondary|Hover": {
+              "icon": {
+                "text": "color.content.primary"
+              },
+              "root": {}
+            },
+            "secondary|Open": {
+              "icon": {
+                "text": "color.content.primary"
+              },
+              "root": {}
+            },
+            "secondary|Focused": {
+              "icon": {
+                "text": "color.content.secondary"
+              },
+              "root": {
+                "focus": "color.border.strong",
+                "ring": "color.border.ring.default"
+              }
+            },
+            "inverse|Default": {
+              "icon": {
+                "text": "color.content.secondary"
+              },
+              "root": {},
+              "icon[data-open]": {
+                "text": "color.content.primary"
+              }
+            },
+            "inverse|Hover": {
+              "icon": {
+                "text": "color.content.primary"
+              },
+              "root": {}
+            },
+            "inverse|Open": {
+              "icon": {
+                "text": "color.content.primary"
+              },
+              "root": {}
+            },
+            "inverse|Focused": {
+              "icon": {
+                "text": "color.content.secondary"
+              },
+              "root": {
+                "focus": "color.border.strong",
+                "ring": "color.border.ring.default"
+              }
+            },
+            "critical|Default": {
+              "icon": {
+                "text": "color.status.critical.content"
+              },
+              "root": {},
+              "icon[data-open]": {
+                "text": "color.status.critical.surface-solid"
+              }
+            },
+            "critical|Hover": {
+              "icon": {
+                "text": "color.status.critical.surface-solid"
+              },
+              "root": {}
+            },
+            "critical|Open": {
+              "icon": {
+                "text": "color.status.critical.surface-solid"
+              },
+              "root": {}
+            },
+            "critical|Focused": {
+              "icon": {
+                "text": "color.status.critical.content"
+              },
+              "root": {
+                "focus": "color.status.critical.border-strong",
+                "ring": "color.status.critical.border"
+              }
+            },
+            "info|Default": {
+              "icon": {
+                "text": "color.status.info.content"
+              },
+              "root": {},
+              "icon[data-open]": {
+                "text": "color.status.info.surface-solid"
+              }
+            },
+            "info|Hover": {
+              "icon": {
+                "text": "color.status.info.surface-solid"
+              },
+              "root": {}
+            },
+            "info|Open": {
+              "icon": {
+                "text": "color.status.info.surface-solid"
+              },
+              "root": {}
+            },
+            "info|Focused": {
+              "icon": {
+                "text": "color.status.info.content"
+              },
+              "root": {
+                "focus": "color.status.info.border-strong",
+                "ring": "color.status.info.border"
+              }
+            }
+          }
+        }
+      ]
     },
     "ScrollArea": {
       "key": "ScrollArea",

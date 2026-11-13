@@ -262,18 +262,81 @@ export const POPOVER_FOOTER: ComponentRecipe = {
   ],
 }
 
-// ── Tooltip ──────────────────────────────────────────────────────────
+// ── TooltipContent, TooltipInfoTrigger ─────────────────────────────────────
+// The Figma sets (design-plans/tooltip-contract.md; TooltipContent 415:773, TooltipInfoTrigger 415:556). A bubble (Radius/overlay, Shadow/md with
+// ring and spreads, 6/8 · 8/10 · 10/12 padding) and a 5px arrow frame on the opposite edge; Variant is the tone. The info trigger is a 18 / 20 / 24 round
+// button holding the info glyph (14 · 16 · 20), inked by Variant × State.
 
-const TIP: SlotProps = {
-  fill: c('surface.inverse'), text: c('content.inverse'), radius: 'radius.action',
-  font: 'type.caption', paddingX: 'spacing.2_5', paddingY: 'spacing.1_5',
+export const TOOLTIP_SIZES = ['default', 'sm', 'lg'] as const
+export const TOOLTIP_SIDES = ['top', 'bottom', 'left', 'right'] as const
+export const TOOLTIP_ALIGNS = ['start', 'center', 'end'] as const
+export const TOOLTIP_VARIANTS = ['default', 'secondary', 'inverse', 'critical', 'info'] as const
+export const TOOLTIP_TRIGGER_STATES = ['Default', 'Hover', 'Open', 'Focused'] as const
+
+const TOOLTIP_TONE: Record<string, { fill: string; ink: string }> = {
+  default: { fill: 'action.primary.default', ink: 'content.on-action' },
+  secondary: { fill: 'surface.muted', ink: 'content.primary' },
+  inverse: { fill: 'surface.inverse', ink: 'content.inverse' },
+  critical: { fill: 'status.critical.surface-solid', ink: 'status.critical.on-solid' },
+  info: { fill: 'status.info.surface-solid', ink: 'status.info.on-solid' },
 }
 
-export const TOOLTIP: ComponentRecipe = {
-  key: 'Tooltip',
-  slots: ['root', 'arrow'],
-  defaults: {},
-  parts: [part({}, () => ({ root: TIP, arrow: { paint: c('surface.inverse') } }))],
+export const TOOLTIP_CONTENT: ComponentRecipe = {
+  key: 'TooltipContent',
+  slots: ['root', 'bubble', 'title', 'text', 'arrow'],
+  defaults: { Size: 'default', Variant: 'default' },
+  parts: [
+    part({}, () => ({ bubble: { radius: 'radius.overlay', gap: 'spacing.0_5', lift: 'popover-md' }, title: { font: 'type.label' } })),
+    part({ Size: TOOLTIP_SIZES }, (size) => ({
+      bubble: size === 'sm'
+        ? { paddingX: 'spacing.2', paddingY: 'spacing.1_5' }
+        : size === 'lg' ? { paddingX: 'spacing.3', paddingY: 'spacing.2_5' } : { paddingX: 'spacing.2_5', paddingY: 'spacing.2' },
+      text: { font: size === 'sm' ? 'type.caption' : size === 'lg' ? 'type.body-md' : 'type.body-sm' },
+    })),
+    part({ Variant: TOOLTIP_VARIANTS }, (variant) => {
+      const t = TOOLTIP_TONE[variant]
+      return { bubble: { fill: c(t.fill) }, title: { text: c(t.ink) }, text: { text: c(t.ink) }, arrow: { paint: c(t.fill) } }
+    }),
+  ],
+}
+
+function tooltipTriggerInk(variant: string, state: string): string {
+  const hot = state === 'Hover' || state === 'Open'
+  switch (variant) {
+    case 'secondary':
+    case 'inverse':
+      return hot ? 'content.primary' : 'content.secondary'
+    case 'critical':
+      return hot ? 'status.critical.surface-solid' : 'status.critical.content'
+    case 'info':
+      return hot ? 'status.info.surface-solid' : 'status.info.content'
+    default:
+      return hot ? 'action.primary.hover' : 'action.primary.default'
+  }
+}
+
+export const TOOLTIP_INFO_TRIGGER: ComponentRecipe = {
+  key: 'TooltipInfoTrigger',
+  slots: ['root', 'icon'],
+  defaults: { Size: 'default', State: 'Default', Variant: 'default' },
+  parts: [
+    part({ Size: TOOLTIP_SIZES }, (size) => ({
+      root: { radius: 'radius.pill', paddingX: 'spacing.0_5', paddingY: 'spacing.0_5' },
+      // 14 = 12 + 2 (no token); 16 and 20 are the icon roles.
+      icon: size === 'sm' ? { width: 'spacing.3+spacing.0_5', height: 'spacing.3+spacing.0_5' } : size === 'lg' ? { width: 'icon.medium', height: 'icon.medium' } : { width: 'icon.small', height: 'icon.small' },
+    })),
+    part({ Variant: TOOLTIP_VARIANTS, State: TOOLTIP_TRIGGER_STATES }, (variant, state) => {
+      const focused = state === 'Focused'
+      const edge = variant === 'critical' ? 'status.critical.border-strong' : variant === 'info' ? 'status.info.border-strong' : variant === 'default' ? 'border.focus' : 'border.strong'
+      const ring = variant === 'critical' ? 'status.critical.border' : variant === 'info' ? 'status.info.border' : 'border.ring.default'
+      return {
+        icon: { text: c(tooltipTriggerInk(variant, state)) },
+        root: focused ? { focus: c(edge), ring: c(ring) } : {},
+        // Radix marks an open trigger `data-state="open"`: the file's Open look.
+        ...(state === 'Default' ? { 'icon[data-open]': { text: c(tooltipTriggerInk(variant, 'Open')) } } : {}),
+      }
+    }),
+  ],
 }
 
 // ── ScrollArea ─────────────────────────────────────────────────────────────

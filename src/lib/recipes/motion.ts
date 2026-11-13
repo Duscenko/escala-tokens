@@ -74,7 +74,7 @@ export const RECIPE_MOTION: Record<string, RecipeMotion> = {
   AlertDialog: { enter: { name: 'dialog-enter' }, exit: { name: 'dialog-exit' } },
   Sheet: { enter: { name: 'sheet-enter' }, exit: { name: 'sheet-exit' }, sideAttr: 'side' },
   Popover: popover('--radix-popover-content-transform-origin'),
-  Tooltip: popover('--radix-tooltip-content-transform-origin'),
+  TooltipContent: popover('--radix-tooltip-content-transform-origin'),
   HoverCard: popover('--radix-hover-card-content-transform-origin'),
   DropdownMenu: popover('--radix-dropdown-menu-content-transform-origin'),
   ContextMenu: popover('--radix-context-menu-content-transform-origin'),

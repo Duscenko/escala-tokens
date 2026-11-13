@@ -2058,7 +2058,7 @@ export const useDesignStore = create<DesignStore>()(
     }),
     {
       name: 'scalable-designs-store',
-      version: 142,
+      version: 143,
       migrate: (persisted: any, version: number) => {
         if (persisted) {
           // v1→v2: remove styleDirection, rename selectedAtoms → selectedComponents
@@ -4326,6 +4326,19 @@ export const useDesignStore = create<DesignStore>()(
           add(persisted)
           if (Array.isArray(persisted.savedSystems)) {
             for (const sys of persisted.savedSystems) add(sys?.snapshot)
+          }
+        }
+        if (version < 143) {
+          // v142→v143: Tooltip is now TooltipContent (the Figma set), with its part TooltipInfoTrigger.
+          const rename = (state: any) => {
+            if (!Array.isArray(state?.selectedComponents)) return
+            const sel: string[] = state.selectedComponents
+            const at = sel.indexOf('Tooltip')
+            if (at >= 0) sel.splice(at, 1, 'TooltipContent', 'TooltipInfoTrigger')
+          }
+          rename(persisted)
+          if (Array.isArray(persisted.savedSystems)) {
+            for (const sys of persisted.savedSystems) rename(sys?.snapshot)
           }
         }
         return persisted

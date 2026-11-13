@@ -13,7 +13,7 @@ import { Separator as SkSeparator } from '../../../escala-ui/separator'
 import { Accordion as SkAccordion, AccordionItem as SkAccordionItem, type AccordionVariant, type AccordionItemState } from '../../../escala-ui/accordion'
 import { Image as SkImage, type ImageRatio, type ImageShape } from '../../../escala-ui/image'
 import { Popover as SkPopover, PopoverContent as SkPopoverContent, PopoverFooter as SkPopoverFooter, type PopoverSize, type PopoverSide, type PopoverFooterLayout } from '../../../escala-ui/popover'
-import { Tooltip as SkTooltip, TooltipContent as SkTooltipContent, TooltipProvider as SkTooltipProvider } from '../../../escala-ui/tooltip'
+import { Tooltip as SkTooltip, TooltipContent as SkTooltipContent, TooltipInfoTrigger as SkTooltipInfoTrigger, TooltipProvider as SkTooltipProvider, type TooltipSize, type TooltipSide, type TooltipAlign, type TooltipVariant, type TooltipTriggerState } from '../../../escala-ui/tooltip'
 import { ScrollArea as SkScrollArea, ScrollAreaRow as SkScrollAreaRow } from '../../../escala-ui/scroll-area'
 import { iconOf, spaceOf } from '../../../../lib/previewTokens'
 import { Alert as SkAlert, AlertDescription as SkAlertDescription, AlertIcon as SkAlertIcon, AlertTitle as SkAlertTitle, type AlertVariant } from '../../../escala-ui/alert'
@@ -208,14 +208,39 @@ export function SkeletonPopoverFooterSpecimen({ t, v }: SpecimenProps) {
   )
 }
 
-export function SkeletonTooltipSpecimen({ t }: SpecimenProps) {
+/** The Figma TooltipContent (415:773) in place, with the file's sample text. */
+export function SkeletonTooltipContentSpecimen({ t, v }: SpecimenProps) {
   return (
     <RecipeScope t={t}>
       <SkTooltipProvider>
         <SkTooltip>
-          <SkTooltipContent inline>Copy to clipboard</SkTooltipContent>
+          <SkTooltipContent
+            inline
+            size={(v.Size ?? 'default') as TooltipSize}
+            side={(v.Side ?? 'top') as TooltipSide}
+            align={(v.Align ?? 'start') as TooltipAlign}
+            variant={(v.Variant ?? 'default') as TooltipVariant}
+          >
+            Used on invoices and receipts. Format: 12-3456789.
+          </SkTooltipContent>
         </SkTooltip>
       </SkTooltipProvider>
+    </RecipeScope>
+  )
+}
+
+/** The Figma TooltipInfoTrigger (415:556): the info-circle button, a state at a time. */
+export function SkeletonTooltipInfoTriggerSpecimen({ t, v }: SpecimenProps) {
+  const size = (v.Size ?? 'default') as TooltipSize
+  return (
+    <RecipeScope t={t}>
+      <SkTooltipInfoTrigger
+        size={size}
+        variant={(v.Variant ?? 'default') as TooltipVariant}
+        forceState={(v.State ?? 'Default') as TooltipTriggerState}
+        aria-label="More information"
+        icon={<PreviewIcon concept="info" size={size === 'sm' ? 14 : size === 'lg' ? 20 : 16} />}
+      />
     </RecipeScope>
   )
 }

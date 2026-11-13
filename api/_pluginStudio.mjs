@@ -275,14 +275,14 @@ function motionChoreographies(settings) {
     },
     "popover-enter": {
       pattern: "coordinated",
-      components: ["Popover", "DatePickerPopover", "Tooltip", "HoverCard", "DropdownMenu", "ContextMenu", "Select", "Menubar"],
+      components: ["Popover", "DatePickerPopover", "TooltipContent", "HoverCard", "DropdownMenu", "ContextMenu", "Select", "Menubar"],
       intent: { usage: ["popovers", "tooltips", "menus"], direction: "A floating layer grows out of its trigger: a short pop on the disclosure role." },
       tracks: [{ keyframes: s.pop < 1 ? "pop" : "fade-in", motion: r("use-disclosure-in"), delay: 0 }],
       reducedMotion: { collapseTo: "coordinated", pattern: "coordinated", tracks: [{ keyframes: "fade-in", motion: FADE_IN, delay: 0 }] }
     },
     "popover-exit": {
       pattern: "coordinated",
-      components: ["Popover", "DatePickerPopover", "Tooltip", "HoverCard", "DropdownMenu", "ContextMenu", "Select", "Menubar"],
+      components: ["Popover", "DatePickerPopover", "TooltipContent", "HoverCard", "DropdownMenu", "ContextMenu", "Select", "Menubar"],
       intent: { usage: ["popovers", "tooltips", "menus"], direction: "Gets out of the way, faster than it came." },
       tracks: [{ keyframes: s.shrink < 1 ? "shrink" : "fade-out", motion: r("use-disclosure-out"), delay: 0 }],
       reducedMotion: { collapseTo: "coordinated", pattern: "coordinated", tracks: [{ keyframes: "fade-out", motion: FADE_OUT, delay: 0 }] }
@@ -5554,19 +5554,43 @@ var init_componentCatalogue = __esm({
         accessibility: "Hover-only: keyboard and touch users never see it, so it must only repeat what the link already offers."
       },
       {
-        key: "Tooltip",
+        key: "TooltipContent",
         label: "Tooltip",
         category: "Content & Surfaces",
-        description: "Contextual label on hover or focus. Fill \u2192 tooltip/bg \u2192 surface/inverse.",
-        usage: "Only use for icon-only buttons or truncated text (an info \u24D8 next to a label is a ghost icon Button as the trigger). Never put interactive content inside.",
-        axes: [],
-        figmaSets: ["Tooltip"],
-        props: [
-          { name: "TooltipProvider", type: "component", description: "Wrap once near the root; sets the open delay." },
-          { name: "TooltipTrigger asChild", type: "boolean", description: "Use your own element as the anchor." },
-          { name: "TooltipContent side / sideOffset", type: '"top" | "right" | "bottom" | "left" / number', description: "Placement of the bubble." }
+        description: "Short hint bubble on hover or focus: an optional title, the text and an arrow on the edge opposite to Side.",
+        usage: "Use for a short label or hint that never carries the only copy of information or an action. Variant must match its trigger.",
+        axes: [
+          { name: "Size", values: ["default", "sm", "lg"] },
+          { name: "Side", values: ["top", "bottom", "left", "right"] },
+          { name: "Align", values: ["start", "center", "end"] },
+          { name: "Variant", values: ["default", "secondary", "inverse", "critical", "info"] }
         ],
-        accessibility: 'role="tooltip" linked via aria-describedby. Appears on focus and hover.'
+        figmaSets: ["TooltipContent"],
+        props: [
+          { name: "Tooltip / TooltipTrigger asChild / TooltipProvider", type: "component", description: "Radix root, the anchor and the delay provider." },
+          { name: "size / side / align / variant", type: "string", description: "Figma Size, Side (the edge it opens from), Align and Variant (the tone)." },
+          { name: "title / arrow", type: "ReactNode / boolean", description: "Figma Title (TitleVisible) and ArrowVisible (default true); children is the Text." }
+        ],
+        accessibility: 'role="tooltip", referenced from the trigger by aria-describedby; it opens on hover and keyboard focus and closes with Escape.'
+      },
+      {
+        key: "TooltipInfoTrigger",
+        label: "Tooltip Info Trigger",
+        category: "Content & Surfaces",
+        description: "Info-circle button that opens a tooltip.",
+        usage: "Next to a label or field that needs an explanation. Variant must match the bubble it opens.",
+        axes: [
+          { name: "Size", values: ["default", "sm", "lg"] },
+          { name: "State", values: ["Default", "Hover", "Open", "Focused"] },
+          { name: "Variant", values: ["default", "secondary", "inverse", "critical", "info"] }
+        ],
+        figmaSets: ["TooltipInfoTrigger"],
+        props: [
+          { name: "size / variant", type: "string", description: "Figma Size (glyph 14 \xB7 16 \xB7 20) and Variant." },
+          { name: "icon", type: "ReactNode", description: "Another glyph; defaults to Phosphor's Info." },
+          { name: "aria-label", type: "string", description: "Required: the button has no visible text." }
+        ],
+        accessibility: "A focusable button with an accessible name (aria-label); the open state follows the tooltip it controls (data-state=open)."
       },
       {
         key: "ScrollArea",
@@ -6324,7 +6348,7 @@ var init_componentCatalogue = __esm({
       "Card",
       "Avatar",
       "Modal",
-      "Tooltip",
+      "TooltipContent",
       "Separator",
       "Toast",
       "Tabs"
@@ -10858,7 +10882,21 @@ function accordionItemShell(variant, state2) {
       return { fill: NONE };
   }
 }
-var CARD, OVERLAY_TITLE, MODAL_SIZES, MODAL, MODAL_HEADER, MODAL_FOOTER, SEPARATOR, ACCORDION_VARIANTS, ACCORDION_ITEM_STATES, ACCORDION, ACCORDION_ITEM, IMAGE_RATIOS, IMAGE_SHAPES, IMAGE, POPOVER_SIZES, POPOVER, POPOVER_FOOTER, TIP, TOOLTIP, SCROLL_AREA, COLLAPSIBLE, ALERT_DIALOG, SHEET, DRAWER, HOVER_CARD, ITEM_VARIANTS, ITEM_SIZES, ITEM_GEOMETRY2, ITEM_DESCRIPTION, ITEM_CONTENT_GAP, ITEM_MEDIA, ITEM, ATTACHMENT_SIZES, ATTACHMENT_GEOMETRY, ATTACHMENT_MEDIA, ATTACHMENT, MESSAGE, BUBBLE_VARIANTS, BUBBLE_PAINT, BUBBLE, RESIZABLE, CAROUSEL, CHART;
+function tooltipTriggerInk(variant, state2) {
+  const hot = state2 === "Hover" || state2 === "Open";
+  switch (variant) {
+    case "secondary":
+    case "inverse":
+      return hot ? "content.primary" : "content.secondary";
+    case "critical":
+      return hot ? "status.critical.surface-solid" : "status.critical.content";
+    case "info":
+      return hot ? "status.info.surface-solid" : "status.info.content";
+    default:
+      return hot ? "action.primary.hover" : "action.primary.default";
+  }
+}
+var CARD, OVERLAY_TITLE, MODAL_SIZES, MODAL, MODAL_HEADER, MODAL_FOOTER, SEPARATOR, ACCORDION_VARIANTS, ACCORDION_ITEM_STATES, ACCORDION, ACCORDION_ITEM, IMAGE_RATIOS, IMAGE_SHAPES, IMAGE, POPOVER_SIZES, POPOVER, POPOVER_FOOTER, TOOLTIP_SIZES, TOOLTIP_VARIANTS, TOOLTIP_TRIGGER_STATES, TOOLTIP_TONE, TOOLTIP_CONTENT, TOOLTIP_INFO_TRIGGER, SCROLL_AREA, COLLAPSIBLE, ALERT_DIALOG, SHEET, DRAWER, HOVER_CARD, ITEM_VARIANTS, ITEM_SIZES, ITEM_GEOMETRY2, ITEM_DESCRIPTION, ITEM_CONTENT_GAP, ITEM_MEDIA, ITEM, ATTACHMENT_SIZES, ATTACHMENT_GEOMETRY, ATTACHMENT_MEDIA, ATTACHMENT, MESSAGE, BUBBLE_VARIANTS, BUBBLE_PAINT, BUBBLE, RESIZABLE, CAROUSEL, CHART;
 var init_surfaces = __esm({
   "src/lib/recipes/surfaces.ts"() {
     init_helpers();
@@ -11055,19 +11093,54 @@ var init_surfaces = __esm({
         }))
       ]
     };
-    TIP = {
-      fill: c("surface.inverse"),
-      text: c("content.inverse"),
-      radius: "radius.action",
-      font: "type.caption",
-      paddingX: "spacing.2_5",
-      paddingY: "spacing.1_5"
+    TOOLTIP_SIZES = ["default", "sm", "lg"];
+    TOOLTIP_VARIANTS = ["default", "secondary", "inverse", "critical", "info"];
+    TOOLTIP_TRIGGER_STATES = ["Default", "Hover", "Open", "Focused"];
+    TOOLTIP_TONE = {
+      default: { fill: "action.primary.default", ink: "content.on-action" },
+      secondary: { fill: "surface.muted", ink: "content.primary" },
+      inverse: { fill: "surface.inverse", ink: "content.inverse" },
+      critical: { fill: "status.critical.surface-solid", ink: "status.critical.on-solid" },
+      info: { fill: "status.info.surface-solid", ink: "status.info.on-solid" }
     };
-    TOOLTIP = {
-      key: "Tooltip",
-      slots: ["root", "arrow"],
-      defaults: {},
-      parts: [part({}, () => ({ root: TIP, arrow: { paint: c("surface.inverse") } }))]
+    TOOLTIP_CONTENT = {
+      key: "TooltipContent",
+      slots: ["root", "bubble", "title", "text", "arrow"],
+      defaults: { Size: "default", Variant: "default" },
+      parts: [
+        part({}, () => ({ bubble: { radius: "radius.overlay", gap: "spacing.0_5", lift: "popover-md" }, title: { font: "type.label" } })),
+        part({ Size: TOOLTIP_SIZES }, (size) => ({
+          bubble: size === "sm" ? { paddingX: "spacing.2", paddingY: "spacing.1_5" } : size === "lg" ? { paddingX: "spacing.3", paddingY: "spacing.2_5" } : { paddingX: "spacing.2_5", paddingY: "spacing.2" },
+          text: { font: size === "sm" ? "type.caption" : size === "lg" ? "type.body-md" : "type.body-sm" }
+        })),
+        part({ Variant: TOOLTIP_VARIANTS }, (variant) => {
+          const t = TOOLTIP_TONE[variant];
+          return { bubble: { fill: c(t.fill) }, title: { text: c(t.ink) }, text: { text: c(t.ink) }, arrow: { paint: c(t.fill) } };
+        })
+      ]
+    };
+    TOOLTIP_INFO_TRIGGER = {
+      key: "TooltipInfoTrigger",
+      slots: ["root", "icon"],
+      defaults: { Size: "default", State: "Default", Variant: "default" },
+      parts: [
+        part({ Size: TOOLTIP_SIZES }, (size) => ({
+          root: { radius: "radius.pill", paddingX: "spacing.0_5", paddingY: "spacing.0_5" },
+          // 14 = 12 + 2 (no token); 16 and 20 are the icon roles.
+          icon: size === "sm" ? { width: "spacing.3+spacing.0_5", height: "spacing.3+spacing.0_5" } : size === "lg" ? { width: "icon.medium", height: "icon.medium" } : { width: "icon.small", height: "icon.small" }
+        })),
+        part({ Variant: TOOLTIP_VARIANTS, State: TOOLTIP_TRIGGER_STATES }, (variant, state2) => {
+          const focused = state2 === "Focused";
+          const edge = variant === "critical" ? "status.critical.border-strong" : variant === "info" ? "status.info.border-strong" : variant === "default" ? "border.focus" : "border.strong";
+          const ring = variant === "critical" ? "status.critical.border" : variant === "info" ? "status.info.border" : "border.ring.default";
+          return {
+            icon: { text: c(tooltipTriggerInk(variant, state2)) },
+            root: focused ? { focus: c(edge), ring: c(ring) } : {},
+            // Radix marks an open trigger `data-state="open"`: the file's Open look.
+            ...state2 === "Default" ? { "icon[data-open]": { text: c(tooltipTriggerInk(variant, "Open")) } } : {}
+          };
+        })
+      ]
     };
     SCROLL_AREA = {
       key: "ScrollArea",
@@ -12737,7 +12810,7 @@ var init_motion2 = __esm({
       AlertDialog: { enter: { name: "dialog-enter" }, exit: { name: "dialog-exit" } },
       Sheet: { enter: { name: "sheet-enter" }, exit: { name: "sheet-exit" }, sideAttr: "side" },
       Popover: popover("--radix-popover-content-transform-origin"),
-      Tooltip: popover("--radix-tooltip-content-transform-origin"),
+      TooltipContent: popover("--radix-tooltip-content-transform-origin"),
       HoverCard: popover("--radix-hover-card-content-transform-origin"),
       DropdownMenu: popover("--radix-dropdown-menu-content-transform-origin"),
       ContextMenu: popover("--radix-context-menu-content-transform-origin"),
@@ -12865,7 +12938,8 @@ var init_componentRecipes = __esm({
       Image: IMAGE,
       Popover: POPOVER,
       PopoverFooter: POPOVER_FOOTER,
-      Tooltip: TOOLTIP,
+      TooltipContent: TOOLTIP_CONTENT,
+      TooltipInfoTrigger: TOOLTIP_INFO_TRIGGER,
       ScrollArea: SCROLL_AREA,
       Alert: ALERT,
       Toast: TOAST,
@@ -15700,7 +15774,7 @@ var init_useDesignStore = __esm({
         }),
         {
           name: "scalable-designs-store",
-          version: 142,
+          version: 143,
           migrate: (persisted, version) => {
             if (persisted) {
               delete persisted.styleDirection;
@@ -17450,6 +17524,18 @@ var init_useDesignStore = __esm({
               add2(persisted);
               if (Array.isArray(persisted.savedSystems)) {
                 for (const sys of persisted.savedSystems) add2(sys?.snapshot);
+              }
+            }
+            if (version < 143) {
+              const rename = (state2) => {
+                if (!Array.isArray(state2?.selectedComponents)) return;
+                const sel = state2.selectedComponents;
+                const at = sel.indexOf("Tooltip");
+                if (at >= 0) sel.splice(at, 1, "TooltipContent", "TooltipInfoTrigger");
+              };
+              rename(persisted);
+              if (Array.isArray(persisted.savedSystems)) {
+                for (const sys of persisted.savedSystems) rename(sys?.snapshot);
               }
             }
             return persisted;

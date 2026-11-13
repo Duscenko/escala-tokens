@@ -394,6 +394,8 @@ export const OVERVIEWS: Record<string, Overview> = {
   DropdownMenuLabel: [each('Size', ['default', 'sm', 'lg'], {}, 256)],
   DropdownMenuItem: [each('State', ['Default', 'Focused', 'Selected', 'Disabled'], {}, 256), each('State', ['Default', 'Focused', 'Disabled'], { Variant: 'destructive' }, 256), each('Size', ['default', 'sm', 'lg'], {}, 256)],
   DropdownMenuFooter: [each('Layout', ['inline', 'stacked'], {}, 256), each('Size', ['default', 'sm', 'lg'], {}, 256)],
+  TooltipContent: [each('Variant', ['default', 'secondary', 'inverse', 'critical', 'info'], {}, 260), each('Side', ['top', 'bottom', 'left', 'right'], {}, 260), each('Size', ['sm', 'default', 'lg'], {}, 300)],
+  TooltipInfoTrigger: [each('Variant', ['default', 'secondary', 'inverse', 'critical', 'info']), each('State', ['Default', 'Hover', 'Open', 'Focused'])],
   Modal: [each('Size', ['default', 'lg'], {}, 640)],
   ModalHeader: [each('Align', ['horizontal', 'vertical-left', 'vertical-center'], {}, 440), each('Size', ['default', 'lg'], {}, 600)],
   ModalFooter: [each('Layout', ['inline', 'stacked'], {}, 480), each('Size', ['default', 'lg'], {}, 640)],

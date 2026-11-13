@@ -486,3 +486,13 @@ Source: the file's «AvatarGroup Prototype» (868:28472): four PHOTO avatars + t
 | A part set (Item) measured alone is 256 wide, but inside the menu it is 246 (Content padding 4) | The single-item story / specimen showed 248 | Standalone item wrappers zero the content padding (`[&>[data-part='DropdownMenu.content']]:!p-0`); the menu keeps the file's padding |
 | `Content/secondary` on `Surface/muted` (the Focused row's shortcut and description, Light) | axe 4.22:1 ×4 | Copied (rule 1), reported; same pair as the Accordion / Table notes |
 | New recipe slots on a plugin-built set | parity `anatomyGaps: DropdownMenu: [header, content]` | `WEB_ONLY_SLOTS` (dated), never a plugin edit |
+
+# Lessons from the TooltipContent and TooltipInfoTrigger (2026-11-13)
+| Trap | What it looked like | The fix (where it lives) |
+|---|---|---|
+| A rename (Tooltip → TooltipContent) with a new part and a 180-variant set | One read per variant is far over 48 KB | Read the geometry for default Size across Side × Align (+ sm / lg at top · center), then ONE line per Variant for bubble · text · title · arrow colours; every Size / Side / Align shares them |
+| Bubble paddings with no variable (6/8 · 8/10 · 10/12) and widths 200 · 240 · 280 | `get_metadata` shows raw numbers | Spacing steps of the same px (`1_5/2`, `2/2_5`, `2_5/3`) and summed steps as a max width in the component (`spacing.32 + 16 + 2` …); the bubble hugs, the text wraps at the cap |
+| Arrow frame 5px on the OPPOSITE edge of Side, shape aligned by Align with padding `Radius/overlay` | Radix's own Arrow is centred and rotated | DOM order [arrow frame, bubble] reversed by flex per side (as Popover); an own SVG triangle per side (`10×5` / `5×10`); `Align` pads the frame: start 16, end 16, centre auto. Measured arrow at x 16 · 115 · 214 and y 16 · 21 · 26 |
+| A trigger state Open that Radix expresses as `data-state="open"` on the button (via asChild Slot) | A recipe state cannot select a child by an ancestor's attribute | The component reads `props['data-state']` and writes `data-open` on the icon; the Default part adds `'icon[data-open]'` with the Open ink |
+| Focused trigger grows 20 → 24 in the file (a 2px stroke laid out) | A layout jump on focus | The owner asked for no jumps: `focus` + `ring` as box-shadows (no growth); noted in the contract as a deliberate deviation |
+| A snippet edit that cut at the wrong backtick | The previous key (`Tooltip: () =>`) stayed glued to the line above and the Popover snippet became a tagged template (tsc passed at first) | After a scripted splice in a `Record` of template strings, run `tsc` AND read the lines around the cut; fixed in this commit for the PopoverFooter entry too |

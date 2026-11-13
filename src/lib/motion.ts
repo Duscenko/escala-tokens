@@ -725,14 +725,14 @@ export function motionChoreographies(settings: MotionSettings): Record<string, C
     },
     'popover-enter': {
       pattern: 'coordinated',
-      components: ['Popover', 'DatePickerPopover', 'Tooltip', 'HoverCard', 'DropdownMenu', 'ContextMenu', 'Select', 'Menubar'],
+      components: ['Popover', 'DatePickerPopover', 'TooltipContent', 'HoverCard', 'DropdownMenu', 'ContextMenu', 'Select', 'Menubar'],
       intent: { usage: ['popovers', 'tooltips', 'menus'], direction: 'A floating layer grows out of its trigger: a short pop on the disclosure role.' },
       tracks: [{ keyframes: s.pop < 1 ? 'pop' : 'fade-in', motion: r('use-disclosure-in'), delay: 0 }],
       reducedMotion: { collapseTo: 'coordinated', pattern: 'coordinated', tracks: [{ keyframes: 'fade-in', motion: FADE_IN, delay: 0 }] },
     },
     'popover-exit': {
       pattern: 'coordinated',
-      components: ['Popover', 'DatePickerPopover', 'Tooltip', 'HoverCard', 'DropdownMenu', 'ContextMenu', 'Select', 'Menubar'],
+      components: ['Popover', 'DatePickerPopover', 'TooltipContent', 'HoverCard', 'DropdownMenu', 'ContextMenu', 'Select', 'Menubar'],
       intent: { usage: ['popovers', 'tooltips', 'menus'], direction: 'Gets out of the way, faster than it came.' },
       tracks: [{ keyframes: s.shrink < 1 ? 'shrink' : 'fade-out', motion: r('use-disclosure-out'), delay: 0 }],
       reducedMotion: { collapseTo: 'coordinated', pattern: 'coordinated', tracks: [{ keyframes: 'fade-out', motion: FADE_OUT, delay: 0 }] },
