@@ -96,7 +96,7 @@ function LoginScreen({ t, compact }: ArtefactProps) {
           <div style={{ display: 'flex', flexDirection: 'column', gap: gap(t, 'gap-group', '16px') }}>
             <Input t={t} v={{ Type: 'E-Mail' }} w="100%" />
             <Input t={t} v={{ Type: 'Password' }} w="100%" />
-            <Checkbox t={t} v={{ Checked: 'True' }} />
+            <Checkbox t={t} v={{ Checked: 'true' }} />
             {/* `touch` is the system's own mobile-CTA height role; LG resolves
                 the same `lg` primitive it points at. */}
             <Button t={t} v={{ Variant: 'default', Size: 'lg' }} w="100%">{translate('Sign in')}</Button>

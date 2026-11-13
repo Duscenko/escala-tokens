@@ -68,11 +68,18 @@ export const BUDGETS = {
   // item, divider), each with its own design-skill file.
   // 85k → 90k (2026-11-12): InputTag became three Figma components (field, chip,
   // option), each with its own design-skill file.
-  // 90k → 95k (2026-11-12): Combobox became four Figma components (trigger, popover,
-  // item, group label), each with its own design-skill file.
-  // 95k → 100k (2026-11-12): date picker page (trigger, popover) and CalendarDay on top of
-  // Combobox's four components, each with its own design-skill file.
-  contextAllTokens: 100_000,
+  // 90k → 95k (2026-11-12): date picker page (trigger, popover) and CalendarDay, each with
+  // its own design-skill file.
+  // 95k → 105k (2026-11-12): FileUpload became three Figma components (dropzone, item,
+  // upload) and Checkbox carries 270 variants (Size × Checked × State × Variant).
+  // 105k → 120k (2026-11-12): Avatar (350 variants + status and group parts), FeaturedIcon and Badge
+  // (525 variants) each carry a design-skill file with their full variant tables.
+  // 120k → 135k (2026-11-13): Table and its 13 parts (about 400 variants) and Alert (96 variants), each with its
+  // design-skill file and variant tables.
+  // 135k → 140k (2026-11-13): Combobox's four components, the date picker and Calendar's
+  // parts joined the Table / Avatar / Checkbox work in one branch, each with its own
+  // design-skill file.
+  contextAllTokens: 140_000,
   contextFoundationTokens: 12_000,
 }
 

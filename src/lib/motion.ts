@@ -648,7 +648,7 @@ export function motionChoreographies(settings: MotionSettings): Record<string, C
   return {
     'dialog-enter': {
       pattern: 'coordinated',
-      components: ['Dialog', 'AlertDialog'],
+      components: ['Modal', 'AlertDialog'],
       intent: { usage: ['dialogs', 'confirmations', 'focal overlays'], direction: 'The backdrop fades while the card pops a beat behind it. The card is the focal point, so it takes the emphasis role and a `quick` delay.' },
       tracks: [
         { slot: 'overlay', keyframes: 'fade-in', motion: r('use-overlay-in'), delay: 0 },
@@ -658,7 +658,7 @@ export function motionChoreographies(settings: MotionSettings): Record<string, C
     },
     'dialog-exit': {
       pattern: 'coordinated',
-      components: ['Dialog', 'AlertDialog'],
+      components: ['Modal', 'AlertDialog'],
       intent: { usage: ['dialogs', 'confirmations'], direction: 'Card and backdrop leave together, fast.' },
       tracks: [
         { slot: 'content', keyframes: 'shrink', motion: r('use-overlay-out'), delay: 0 },
@@ -709,7 +709,7 @@ export function motionChoreographies(settings: MotionSettings): Record<string, C
     },
     'accordion-expand': {
       pattern: 'disclosure',
-      components: ['Accordion', 'Collapsible'],
+      components: ['Accordion', 'AccordionItem', 'Collapsible'],
       intent: { usage: ['accordion', 'collapsible'], direction: 'Height eases open; never a jump cut.' },
       direction: 'expand',
       motion: r('use-disclosure-in'),
@@ -717,7 +717,7 @@ export function motionChoreographies(settings: MotionSettings): Record<string, C
     },
     'accordion-collapse': {
       pattern: 'disclosure',
-      components: ['Accordion', 'Collapsible'],
+      components: ['Accordion', 'AccordionItem', 'Collapsible'],
       intent: { usage: ['accordion', 'collapsible'], direction: 'Height eases closed, faster than it opened.' },
       direction: 'collapse',
       motion: r('use-disclosure-out'),
@@ -725,21 +725,21 @@ export function motionChoreographies(settings: MotionSettings): Record<string, C
     },
     'popover-enter': {
       pattern: 'coordinated',
-      components: ['Popover', 'DatePickerPopover', 'Tooltip', 'HoverCard', 'DropdownMenu', 'ContextMenu', 'Select', 'Menubar'],
+      components: ['Popover', 'DatePickerPopover', 'TooltipContent', 'HoverCard', 'DropdownMenu', 'ContextMenu', 'Select', 'Menubar'],
       intent: { usage: ['popovers', 'tooltips', 'menus'], direction: 'A floating layer grows out of its trigger: a short pop on the disclosure role.' },
       tracks: [{ keyframes: s.pop < 1 ? 'pop' : 'fade-in', motion: r('use-disclosure-in'), delay: 0 }],
       reducedMotion: { collapseTo: 'coordinated', pattern: 'coordinated', tracks: [{ keyframes: 'fade-in', motion: FADE_IN, delay: 0 }] },
     },
     'popover-exit': {
       pattern: 'coordinated',
-      components: ['Popover', 'DatePickerPopover', 'Tooltip', 'HoverCard', 'DropdownMenu', 'ContextMenu', 'Select', 'Menubar'],
+      components: ['Popover', 'DatePickerPopover', 'TooltipContent', 'HoverCard', 'DropdownMenu', 'ContextMenu', 'Select', 'Menubar'],
       intent: { usage: ['popovers', 'tooltips', 'menus'], direction: 'Gets out of the way, faster than it came.' },
       tracks: [{ keyframes: s.shrink < 1 ? 'shrink' : 'fade-out', motion: r('use-disclosure-out'), delay: 0 }],
       reducedMotion: { collapseTo: 'coordinated', pattern: 'coordinated', tracks: [{ keyframes: 'fade-out', motion: FADE_OUT, delay: 0 }] },
     },
     'sonner-enter': {
       pattern: 'coordinated',
-      components: ['Sonner'],
+      components: ['Toast'],
       intent: { usage: ['toasts', 'notifications'], direction: bounces ? 'The toast springs in: pop, overshoot, settle.' : travels ? 'The toast rises into place.' : 'The toast fades in.' },
       tracks: [bounces
         ? { keyframes: 'spring-in', motion: { duration: 'cinematic', easing: 'standard' }, delay: 0 }

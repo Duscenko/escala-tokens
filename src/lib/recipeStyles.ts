@@ -62,14 +62,21 @@ const highlightShadow = (color: string) => `inset 0 var(--stroke-focus, 2px) 0 0
  *  (−4 · −2, −4 · −4, −1 · −2) that Figma does NOT render: the frame does not clip
  *  its content, so a drop shadow's spread paints nothing (measured on the file's own
  *  pixels: 237 at the side edge, not 245). The spread is therefore left out here. */
-const LIFT: Record<string, (key: string, ambient: string) => string[]> = {
+const LIFT: Record<string, (key: string, ambient: string, ring: string) => string[]> = {
   rest: (k, a) => [`0 12px 16px ${k}`, `0 4px 6px ${a}`],
   hover: (k, a) => [`0 20px 24px ${k}`, `0 8px 8px ${a}`],
   pressed: (k, a) => [`0 4px 6px ${k}`, `0 2px 4px ${a}`],
+  // The Modal's Shadow/xl: the frame CLIPS its content, so Figma paints the ring and the negative spreads.
+  modal: (k, a, r) => [`0 0 0 1px ${r}`, `0 20px 24px -4px ${k}`, `0 8px 8px -4px ${a}`],
+  // The Popover's Shadow/md and Shadow/lg (the panel clips, so ring and spreads paint).
+  'popover-md': (k, a, r) => [`0 0 0 1px ${r}`, `0 4px 6px -1px ${k}`, `0 2px 4px -2px ${a}`],
+  'popover-lg': (k, a, r) => [`0 0 0 1px ${r}`, `0 12px 16px -4px ${k}`, `0 4px 6px -2px ${a}`],
+  // The Chip being dragged: Shadow/sm without its spreads (Figma paints none on a frame that does not clip).
+  drag: (k, a) => [`0 1px 3px ${k}`, `0 1px 2px ${a}`],
 }
 /** The surface effects a slot carries: its lift, then the top highlight. */
 function surfaceShadows(props: SlotProps, v: (ref: string) => string): string[] {
-  const lift = props.lift && LIFT[props.lift] ? LIFT[props.lift](v('color.elevation.shadow-key'), v('color.elevation.shadow-ambient')) : []
+  const lift = props.lift && LIFT[props.lift] ? LIFT[props.lift](v('color.elevation.shadow-key'), v('color.elevation.shadow-ambient'), v('color.elevation.shadow-ring')) : []
   return [...lift, ...(props.highlight && props.highlight !== 'none' ? [highlightShadow(v(props.highlight))] : [])]
 }
 
@@ -98,6 +105,10 @@ function declarations(props: SlotProps): string[] {
       case 'overlay2':
         break // painted by `fill`
       case 'opacity': out.push(`opacity: ${ref}`); break
+      // An unbound text style (Avatar initials): literal px, Medium, line height 100%.
+      case 'hairline': out.push(`border-width: ${ref}px`, 'border-style: solid', `${STROKE_WIDTH_VAR}: ${ref}px`); break
+      case 'outerStroke': out.push(`box-shadow: 0 0 0 ${props.outerStrokeWidth && props.outerStrokeWidth !== 'none' ? v(props.outerStrokeWidth) : '1px'} ${color(ref)}`); break
+      case 'fontLiteral': out.push(`font-size: ${ref}px`, 'line-height: 100%', 'font-weight: 500', 'letter-spacing: 0'); break
       // A halo fully outside the control (no edge): Figma's `focus-ring` frame,
       // `stroke.focus` wide, stroked OUTSIDE. The transparent outline is what
       // forced-colors mode paints instead.
@@ -139,10 +150,12 @@ function declarations(props: SlotProps): string[] {
       case 'focus': {
         if (ref === 'none') { out.push('box-shadow: none', 'outline: none'); break }
         const halo = props.ring && props.ring !== 'none' ? `, 0 0 0 ${HALO} ${v(props.ring)}` : ''
+        // The slot's own `shadow` (Shadow/xs on a raised segment) stays under the focus rings.
+        const own = props.shadow && props.shadow !== 'none' ? `, ${v(props.shadow)}` : ''
         const lit = surfaceShadows(props, v).map((sh) => `, ${sh}`).join('')
         out.push(
           `border-color: ${v(ref)}`,
-          `box-shadow: inset 0 0 0 max(0px, calc(var(--stroke-focus, 2px) - var(${STROKE_WIDTH_VAR}, 0px))) ${v(ref)}${halo}${lit}`,
+          `box-shadow: inset 0 0 0 max(0px, calc(var(--stroke-focus, 2px) - var(${STROKE_WIDTH_VAR}, 0px))) ${v(ref)}${halo}${own}${lit}`,
           'outline: var(--stroke-focus, 2px) solid transparent',
         )
         break
@@ -170,6 +183,7 @@ function declarations(props: SlotProps): string[] {
       case 'minWidth': out.push(`min-width: ${dim(ref)}`); break
       case 'width': out.push(`width: ${dim(ref)}`); break
       // A custom property the part reads (a switch thumb's travel); not a CSS property.
+      case 'overlap': out.push(`--escala-overlap: ${dim(ref)}`); break
       case 'travel': out.push(`--escala-travel: ${dim(ref)}`); break
       case 'radius': {
         const f = refFn(ref)

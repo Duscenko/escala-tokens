@@ -23,7 +23,7 @@ import { Input } from '../escala-ui/input'
 import { Label } from '../escala-ui/label'
 import { Alert, AlertDescription, AlertTitle } from '../escala-ui/alert'
 import { Chip } from '../escala-ui/chip'
-import { Progress } from '../escala-ui/progress'
+import { ProgressLine as Progress } from '../escala-ui/progress-line'
 import { SegmentedControl } from '../escala-ui/segmented-control'
 import { ToggleGroup, ToggleGroupItem } from '../escala-ui/toggle-group'
 import { Switch } from '../escala-ui/switch'
@@ -202,10 +202,10 @@ function BadgesTile({ t }: { t: T }) {
   return (
     <Tile label={t('Badges')}>
       <Row layout="stack">
-        <Badge>{t('Published')}</Badge>
+        <Badge appearance="solid">{t('Published')}</Badge>
         <Badge variant="secondary">{t('Draft')}</Badge>
-        <Badge variant="destructive">{t('Critical')}</Badge>
-        <Badge variant="outline">{t('Info')}</Badge>
+        <Badge variant="critical">{t('Critical')}</Badge>
+        <Badge variant="secondary" appearance="outline">{t('Info')}</Badge>
       </Row>
     </Tile>
   )
@@ -316,7 +316,7 @@ function MetricTile({ t }: { t: T }) {
       </div>
       <span className="tabular-nums" style={{ ...ty('heading-sm'), fontSize: 'calc(var(--text-heading-sm-font-size) * 1.6)', lineHeight: 1, color: INK.primary }}>98%</span>
       {/* The figure above is the value: the bar shows no second "98%". */}
-      <Progress value={98} showValue={false} />
+      <Progress value={98} aria-label="Upload" />
     </Tile>
   )
 }
@@ -371,8 +371,8 @@ function FiltersTile({ t }: { t: T }) {
     <Tile wide label={t('Filters')}>
       {/* The chips carry the active filters; the actions sit after them. */}
       <Row>
-        <Chip dismissible removeIcon={<XGlyph />}><FilterLabel field={t('Status')} value={t('In review')} /></Chip>
-        <Chip dismissible removeIcon={<XGlyph />}><FilterLabel field={t('Owner')} value="Emma Collins" /></Chip>
+        <Chip size="sm" closeVisible><FilterLabel field={t('Status')} value={t('In review')} /></Chip>
+        <Chip size="sm" closeVisible><FilterLabel field={t('Owner')} value="Emma Collins" /></Chip>
         <Button size="sm" variant="outline"><PlusGlyph /> {t('Add filter')}</Button>
         <Button size="sm" variant="ghost">{t('Clear all')}</Button>
       </Row>
@@ -474,7 +474,7 @@ function TabsTile({ t }: { t: T }) {
 function CheckoutTile({ t }: { t: T }) {
   return (
     <Tile wide label={t('Checkout')}>
-      <Stepper steps={[t('Account'), t('Plan'), t('Pay')]} current={2} width="100%" doneIcon={<CheckGlyph />} />
+      <Stepper orientation="horizontal" steps={[t('Account'), t('Plan'), t('Pay')]} current={2} width="100%" doneIcon={<CheckGlyph />} aria-label={t('Steps')} />
       <div className="flex justify-center" style={{ paddingTop: 'var(--spacing-2)' }}>
         <Pagination pages={[1, 2, 3, '…', 8]} page={2} onPageChange={() => {}} />
       </div>

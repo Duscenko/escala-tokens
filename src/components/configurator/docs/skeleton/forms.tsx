@@ -14,17 +14,17 @@ import { InputTag as SkInputTag, InputTagChip as SkInputTagChip, InputTagOption 
 import { Select as SkSelect, SelectContent as SkSelectContent, SelectItem as SkSelectItem, SelectTrigger as SkSelectTrigger, SelectValue as SkSelectValue } from '../../../escala-ui/select'
 import { Combobox as SkCombobox, ComboboxGroup as SkComboboxGroup, ComboboxGroupLabel as SkComboboxGroupLabel, ComboboxItem as SkComboboxItem, ComboboxPopover as SkComboboxPopover, ComboboxSeparator as SkComboboxSeparator, type ComboboxItemState, type ComboboxPopoverContent, type ComboboxShape, type ComboboxSize, type ComboboxState, type ComboboxVariant } from '../../../escala-ui/combobox'
 import { InputOTP as SkInputOTP, InputOTPSlot as SkInputOTPSlot, type InputOTPLength, type InputOTPSize, type InputOTPSlotState, type InputOTPState, type InputOTPVariant } from '../../../escala-ui/input-otp'
-import { Checkbox as SkCheckbox } from '../../../escala-ui/checkbox'
+import { CheckboxGroup as SkCheckboxGroup, type CheckboxGroupState, CheckboxItem as SkCheckboxItem, type CheckboxItemState, type CheckboxItemPlacement, Checkbox as SkCheckbox, type CheckboxChecked, type CheckboxSize, type CheckboxState, type CheckboxVariant } from '../../../escala-ui/checkbox'
 import { RadioGroup as SkRadioGroup, RadioGroupItem as SkRadioGroupItem } from '../../../escala-ui/radio-group'
-import { Switch as SkSwitch, type SwitchSize } from '../../../escala-ui/switch'
-import { Slider as SkSlider } from '../../../escala-ui/slider'
+import { Switch as SkSwitch, SwitchGroup as SkSwitchGroup, type SwitchGroupPlacement, type SwitchGroupState, type SwitchSize, type SwitchState, type SwitchThumb } from '../../../escala-ui/switch'
+import { Slider as SkSlider, SliderThumb as SkSliderThumb, type SliderRange, type SliderSize, type SliderState, type SliderThumbState, type SliderVariant } from '../../../escala-ui/slider'
 import { Label as SkLabel } from '../../../escala-ui/label'
 import {
   Field as SkField, FieldContent as SkFieldContent, FieldDescription as SkFieldDescription, FieldGroup as SkFieldGroup,
   FieldLabel as SkFieldLabel, FieldLegend as SkFieldLegend, FieldSet as SkFieldSet, type FieldSize, type FieldState,
 } from '../../../escala-ui/field'
 import { PasswordStrength as SkPasswordStrength, PasswordStrengthMeter as SkPasswordStrengthMeter, PasswordStrengthRule as SkPasswordStrengthRule, type PasswordStrengthSize, type Strength } from '../../../escala-ui/password-strength'
-import { Dropzone as SkDropzone, FileUpload as SkFileUpload, FileUploadFile as SkFileUploadFile } from '../../../escala-ui/file-upload'
+import { FileUploadItem as SkFileUploadItem, type FileUploadItemSize, type FileUploadItemStatus, FileUploadDropzone as SkFileUploadDropzone, type FileUploadDropzoneSize, type FileUploadDropzoneState, FileUpload as SkFileUpload, type FileUploadSize, type FileUploadLayout } from '../../../escala-ui/file-upload'
 import { Button as SkButton } from '../../../escala-ui/button'
 import { TextLink as SkTextLink } from '../../../escala-ui/text-link'
 import { RecipeScope } from './scope'
@@ -396,31 +396,58 @@ export function SkeletonInputOTPSlotSpecimen({ t, v }: SpecimenProps) {
   )
 }
 
-function checkGlyph(t: SpecimenProps['t']) {
-  const px = parseFloat(selectorRoleOf(t, 'control', '18px')) || 18
-  return (
-    <PhosphorWeightProvider weight="bold">
-      <PreviewIcon concept="check" size={Math.round(px * 0.72)} />
-    </PhosphorWeightProvider>
-  )
-}
-
-/** shadcn's docs example: the checkbox in a horizontal Field with its label. */
+/** The Figma Checkbox in a horizontal Field with its label (the board's «Remember me»). Legacy
+ *  links named Checked True / False. */
 export function SkeletonCheckboxSpecimen({ t, v }: SpecimenProps) {
   const { t: translate } = useI18n()
   const id = useId()
+  const raw = v.Checked ?? 'true'
+  const checked: CheckboxChecked = raw === 'indeterminate' ? 'indeterminate' : raw === 'true' || raw === 'True'
   return (
     <RecipeScope t={t}>
       <SkField orientation="horizontal" style={{ width: 'auto' }}>
         <SkCheckbox
           id={id}
-          key={`${v.Checked}`}
-          defaultChecked={(v.Checked ?? 'True') === 'True'}
-          forceState={(v.State ?? 'Default') as 'Default'}
-          icon={checkGlyph(t)}
+          key={`${raw}`}
+          defaultChecked={checked}
+          size={(v.Size ?? 'default') as CheckboxSize}
+          variant={(v.Variant ?? 'default') as CheckboxVariant}
+          forceState={(v.State ?? 'Default') as CheckboxState}
         />
         <SkFieldLabel htmlFor={id}>{translate('Remember me')}</SkFieldLabel>
       </SkField>
+    </RecipeScope>
+  )
+}
+
+export function SkeletonCheckboxItemSpecimen({ t, v, w }: SpecimenProps) {
+  const raw = v.Checked ?? 'false'
+  return (
+    <RecipeScope t={t}>
+      <SkCheckboxItem
+        key={raw}
+        defaultChecked={raw === 'indeterminate' ? 'indeterminate' : raw === 'true'}
+        size={(v.Size ?? 'default') as CheckboxSize}
+        variant={(v.Variant ?? 'default') as CheckboxVariant}
+        placement={(v.Placement ?? 'left') as CheckboxItemPlacement}
+        forceState={(v.State ?? 'Default') as CheckboxItemState}
+        rowStyle={w != null ? { width: w } : undefined}
+      />
+    </RecipeScope>
+  )
+}
+
+export function SkeletonCheckboxGroupSpecimen({ t, v, w }: SpecimenProps) {
+  return (
+    <RecipeScope t={t}>
+      <SkCheckboxGroup
+        size={(v.Size ?? 'default') as CheckboxSize}
+        variant={(v.Variant ?? 'default') as CheckboxVariant}
+        placement={(v.Placement ?? 'left') as CheckboxItemPlacement}
+        forceState={(v.State ?? 'Default') as CheckboxGroupState}
+        footer={v.State === 'Invalid' ? 'Choose at least one channel.' : undefined}
+        style={w != null ? { width: w } : undefined}
+      />
     </RecipeScope>
   )
 }
@@ -445,20 +472,42 @@ export function SkeletonRadioGroupSpecimen({ t, w }: SpecimenProps) {
   )
 }
 
+/** The Figma Switch beside a Field label (the board's toggles). Legacy links named Checked True / False. */
 export function SkeletonSwitchSpecimen({ t, v }: SpecimenProps) {
   const id = useId()
+  const raw = v.Checked ?? 'true'
+  const on = raw === 'true' || raw === 'True'
+  const size = (v.Size === 'sm' || v.Size === 'xs' ? v.Size : 'default') as SwitchSize
   return (
     <RecipeScope t={t}>
       <SkField orientation="horizontal" style={{ width: 'auto' }}>
         <SkSwitch
           id={id}
-          key={v.Checked}
-          defaultChecked={(v.Checked ?? 'True') === 'True'}
-          size={(v.Size ?? 'default') as SwitchSize}
-          forceState={(v.State ?? 'Default') as 'Default'}
+          key={raw}
+          defaultChecked={on}
+          size={size}
+          thumb={(v.Thumb ?? 'short') as SwitchThumb}
+          forceState={(v.State ?? 'Default') as SwitchState}
         />
         <SkFieldLabel htmlFor={id}>Notifications</SkFieldLabel>
       </SkField>
+    </RecipeScope>
+  )
+}
+
+/** The Figma SwitchGroup: a checked Switch with its label, description and footer. */
+export function SkeletonSwitchGroupSpecimen({ t, v }: SpecimenProps) {
+  const state = (v.State ?? 'Default') as SwitchGroupState
+  return (
+    <RecipeScope t={t}>
+      <SkSwitchGroup
+        defaultChecked
+        size={(v.Size ?? 'default') as SwitchSize}
+        placement={(v.Placement ?? 'left') as SwitchGroupPlacement}
+        forceState={state}
+        description="Receive a summary of activity in your inbox."
+        footer={state === 'Invalid' ? 'Enable at least one channel to continue.' : 'Changes apply immediately.'}
+      />
     </RecipeScope>
   )
 }
@@ -479,7 +528,7 @@ export function SkeletonSettingsList({ t, control, legend, rows, w }: {
         <SkFieldGroup style={{ gap: 'var(--spacing-3)' }}>
           {rows.map((r, i) => (
             <SkField key={r.label} orientation="horizontal">
-              {control === 'checkbox' && <SkCheckbox id={`${id}-${i}`} defaultChecked={r.on} icon={checkGlyph(t)} />}
+              {control === 'checkbox' && <SkCheckbox id={`${id}-${i}`} defaultChecked={r.on} />}
               <SkFieldLabel htmlFor={`${id}-${i}`}>{r.label}</SkFieldLabel>
               {control === 'switch' && <SkSwitch id={`${id}-${i}`} defaultChecked={r.on} />}
             </SkField>
@@ -490,10 +539,39 @@ export function SkeletonSettingsList({ t, control, legend, rows, w }: {
   )
 }
 
-export function SkeletonSliderSpecimen({ t, w }: SpecimenProps) {
+/** The Figma Slider (Size · Range · State · Variant). Callers that name none of them (the board's
+ *  «Border radius» row) get the shadcn-era labelled slider. */
+export function SkeletonSliderSpecimen({ t, v, w }: SpecimenProps) {
+  const legacy = v.Size === undefined && v.Range === undefined
   return (
     <RecipeScope t={t}>
-      <SkSlider label="Border radius" defaultValue={60} style={{ width: w ?? 260, maxWidth: '100%' }} />
+      {legacy ? (
+        <SkSlider label="Border radius" defaultValue={60} style={{ width: w ?? 260, maxWidth: '100%' }} />
+      ) : (
+        <SkSlider
+          key={`${v.Range}-${v.Size}`}
+          aria-label="Volume"
+          size={(v.Size ?? 'default') as SliderSize}
+          variant={(v.Variant ?? 'default') as SliderVariant}
+          defaultValue={((v.Range ?? 'single') as SliderRange) === 'range' ? [25, 70] : 40}
+          forceState={(v.State ?? 'Default') as SliderState}
+          tooltipVisible
+          style={{ width: w ?? 320, maxWidth: '100%' }}
+        />
+      )}
+    </RecipeScope>
+  )
+}
+
+/** One Figma slider thumb on its own (the overview and the docs playground). */
+export function SkeletonSliderThumbSpecimen({ t, v }: SpecimenProps) {
+  return (
+    <RecipeScope t={t}>
+      <SkSliderThumb
+        size={(v.Size ?? 'default') as SliderSize}
+        variant={(v.Variant ?? 'default') as SliderVariant}
+        forceState={(v.State ?? 'Default') as SliderThumbState}
+      />
     </RecipeScope>
   )
 }
@@ -557,33 +635,46 @@ export function SkeletonPasswordStrengthRuleSpecimen({ t, v }: SpecimenProps) {
   )
 }
 
-export function SkeletonFileUploadSpecimen({ t, w }: SpecimenProps) {
-  // The board uploads: fills in steps, rests at 100 %, starts over.
+export function SkeletonFileUploadSpecimen({ t, v, w }: SpecimenProps) {
+  // The board (no axes) uploads one file: the trigger layout, sm, the bar filling in steps.
+  const board = v.Layout == null && v.Size == null
   const step = useAutoplayStep(UPLOAD_PLAY.values.length, UPLOAD_PLAY.ms)
   const progress = step == null ? 80 : UPLOAD_PLAY.values[step]
   return (
     <RecipeScope t={t}>
-      <SkFileUpload style={{ width: w ?? 300 }}>
-        <SkButton variant="outline" size="sm" style={{ alignSelf: 'flex-start' }}>
-          <PreviewIcon concept="upload" size={iconOf(14)} />
-          Upload file
-        </SkButton>
-        <SkFileUploadFile name="brand-guide.pdf" kind="PDF" progress={progress} />
-      </SkFileUpload>
+      {board ? (
+        <SkFileUpload size="sm" layout="trigger" style={{ width: w ?? 300 }}>
+          <SkFileUploadItem status="uploading" name="brand-guide.pdf" progress={progress} statusText={`Uploading · ${progress}%`} />
+        </SkFileUpload>
+      ) : (
+        <SkFileUpload
+          size={(v.Size ?? 'default') as FileUploadSize}
+          layout={(v.Layout ?? 'dropzone') as FileUploadLayout}
+          style={w != null ? { width: w } : undefined}
+        />
+      )}
     </RecipeScope>
   )
 }
 
-export function SkeletonDropzoneSpecimen({ t, v }: SpecimenProps) {
-  const error = v.State === 'Error'
+export function SkeletonFileUploadDropzoneSpecimen({ t, v, w }: SpecimenProps) {
+  // Legacy links named the old Dropzone's Error state.
+  const state = (v.State === 'Error' ? 'Invalid' : v.State ?? 'Default') as FileUploadDropzoneState
+  const size = (v.Size ?? 'default') as FileUploadDropzoneSize
   return (
     <RecipeScope t={t}>
-      <SkDropzone
-        forceState={(v.State ?? 'Default') as 'Default'}
-        width={300}
-        icon={<PreviewIcon concept="upload" size={iconOf(17)} />}
-        title={<><span data-part="Dropzone.link">Click to upload</span> or drag and drop</>}
-        hint={error ? 'File exceeds the 10MB limit.' : 'SVG, PNG or PDF (max. 10MB)'}
+      <SkFileUploadDropzone size={size} forceState={state} style={w != null ? { width: w } : undefined} />
+    </RecipeScope>
+  )
+}
+
+export function SkeletonFileUploadItemSpecimen({ t, v, w }: SpecimenProps) {
+  return (
+    <RecipeScope t={t}>
+      <SkFileUploadItem
+        size={(v.Size ?? 'default') as FileUploadItemSize}
+        status={(v.Status ?? 'queued') as FileUploadItemStatus}
+        style={w != null ? { width: w } : undefined}
       />
     </RecipeScope>
   )

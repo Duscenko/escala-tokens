@@ -55,10 +55,10 @@ describe('resolveVariantRoles', () => {
     ])
   })
 
-  it('a Sonner toast names the popover surface, its ink and its edge', () => {
-    const sonnerT = { archTokens: { ...arch, 'surface.layer-1': '#111214', 'border.default': '#2a2a2e', 'content.secondary': '#a1a1aa' } } as never
-    const roles = resolveVariantRoles(sonnerT, 'Sonner', { Type: 'success' }, [])
-    expect(roles?.slice(0, 3).map((r) => r.id)).toEqual(['surface.layer-1', 'content.primary', 'border.default'])
+  it('a filled Toast names its surface, its ink and its edge', () => {
+    const sonnerT = { archTokens: { ...arch, 'surface.layer-1': '#111214', 'surface.layer-2': '#111214', 'border.default': '#2a2a2e', 'content.secondary': '#a1a1aa' } } as never
+    const roles = resolveVariantRoles(sonnerT, 'Toast', { Variant: 'default', Appearance: 'filled' }, [])
+    expect(roles?.slice(0, 3).map((r) => r.id)).toEqual(['surface.layer-2', 'border.default', 'content.accent'])
   })
 
   it('a Soft Success badge gets label and dot contrast on composited tint', () => {

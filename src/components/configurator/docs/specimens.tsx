@@ -22,13 +22,13 @@ import {
   SkeletonSocialLoginButtonSpecimen, SkeletonAppStoreBadgeSpecimen, SkeletonToggleGroupSpecimen, SkeletonToggleSpecimen,
 } from './skeleton/actions'
 import {
-  SkeletonBadgeSpecimen, SkeletonStatusBadgeSpecimen, SkeletonChipSpecimen, SkeletonProgressSpecimen,
-  SkeletonSpinnerSpecimen, SkeletonIconSpecimen, SkeletonRatingSpecimen, SkeletonFileFormatSpecimen, SkeletonAvatarSpecimen,
+  SkeletonBadgeSpecimen, SkeletonStatusBadgeSpecimen, SkeletonChipSpecimen, SkeletonProgressLineSpecimen, SkeletonProgressCircleSpecimen,
+  SkeletonSpinnerSpecimen, SkeletonIconSpecimen, SkeletonRatingGroupSpecimen, SkeletonRatingGroupItemSpecimen, SkeletonFileFormatSpecimen, SkeletonAvatarSpecimen, SkeletonAvatarStatusSpecimen, SkeletonAvatarGroupSpecimen, SkeletonFeaturedIconSpecimen,
   SkeletonKbdSpecimen,
 } from './skeleton/indicators'
 import {
-  SkeletonTabsSpecimen, SkeletonTabMenuSpecimen, SkeletonSegmentedControlSpecimen, SkeletonBreadcrumbSpecimen,
-  SkeletonPaginationSpecimen, SkeletonStepperSpecimen, SkeletonDropdownMenuSpecimen, SkeletonContextMenuSpecimen,
+  SkeletonTabsSpecimen, SkeletonTabMenuSpecimen, SkeletonTabMenuItemSpecimen, SkeletonTabMenuLineItemSpecimen, SkeletonNavItemSpecimen, SkeletonBrandSpecimen, SkeletonAccountMenuTriggerSpecimen, SkeletonSegmentedControlSpecimen, SkeletonSegmentedControlItemSpecimen, SkeletonBreadcrumbSpecimen, SkeletonBreadcrumbItemSpecimen, SkeletonBreadcrumbEllipsisSpecimen, SkeletonBreadcrumbSeparatorSpecimen,
+  SkeletonPaginationSpecimen, SkeletonPaginationLinkSpecimen, SkeletonPaginationEllipsisSpecimen, SkeletonStepperSpecimen, SkeletonStepperItemSpecimen, SkeletonStepperIndicatorSpecimen, SkeletonStepperIconSpecimen, SkeletonDropdownMenuSpecimen, SkeletonDropdownMenuLabelSpecimen, SkeletonDropdownMenuItemSpecimen, SkeletonDropdownMenuFooterSpecimen, SkeletonContextMenuSpecimen,
   SkeletonCommandSpecimen, SkeletonNavbarSpecimen, SkeletonSidebarSpecimen,
   SkeletonMenubarSpecimen, SkeletonNavigationMenuSpecimen,
 } from './skeleton/navigation'
@@ -37,15 +37,15 @@ import {
   SkeletonDatePickerTriggerSpecimen,
   SkeletonInputSpecimen, SkeletonTextareaSpecimen, SkeletonInputGroupSpecimen, SkeletonNumberInputSpecimen,
   SkeletonInputTagSpecimen, SkeletonInputTagChipSpecimen, SkeletonInputTagOptionSpecimen, SkeletonSelectSpecimen, SkeletonComboboxSpecimen, SkeletonComboboxPopoverSpecimen, SkeletonComboboxItemSpecimen, SkeletonComboboxGroupLabelSpecimen, SkeletonInputOTPSpecimen, SkeletonInputOTPSlotSpecimen,
-  SkeletonCheckboxSpecimen, SkeletonRadioGroupSpecimen,
-  SkeletonSwitchSpecimen, SkeletonSliderSpecimen, SkeletonFileUploadSpecimen,
-  SkeletonDropzoneSpecimen, SkeletonFieldSpecimen, SkeletonLabelSpecimen, SkeletonPasswordStrengthSpecimen, SkeletonPasswordStrengthMeterSpecimen, SkeletonPasswordStrengthRuleSpecimen,
+  SkeletonCheckboxSpecimen, SkeletonCheckboxItemSpecimen, SkeletonCheckboxGroupSpecimen, SkeletonRadioGroupSpecimen,
+  SkeletonSwitchSpecimen, SkeletonSwitchGroupSpecimen, SkeletonSliderSpecimen, SkeletonSliderThumbSpecimen, SkeletonFileUploadSpecimen,
+  SkeletonFileUploadDropzoneSpecimen, SkeletonFileUploadItemSpecimen, SkeletonFieldSpecimen, SkeletonLabelSpecimen, SkeletonPasswordStrengthSpecimen, SkeletonPasswordStrengthMeterSpecimen, SkeletonPasswordStrengthRuleSpecimen,
   SkeletonNativeSelectSpecimen,
 } from './skeleton/forms'
 import {
-  SkeletonCardSpecimen, SkeletonDialogSpecimen, SkeletonSeparatorSpecimen, SkeletonAccordionSpecimen,
-  SkeletonAspectRatioSpecimen, SkeletonPopoverSpecimen, SkeletonTooltipSpecimen,
-  SkeletonScrollAreaSpecimen, SkeletonAlertSpecimen, SkeletonSonnerSpecimen,
+  SkeletonCardSpecimen, SkeletonModalSpecimen, SkeletonModalHeaderSpecimen, SkeletonModalFooterSpecimen, SkeletonSeparatorSpecimen, SkeletonAccordionSpecimen, SkeletonAccordionItemSpecimen, SkeletonTableCellSpecimen, SkeletonTableHeadSpecimen, SkeletonTableMediaCellSpecimen, SkeletonTableTrendCellSpecimen, SkeletonTableResizerSpecimen, SkeletonTableRowSpecimen, SkeletonTableHeaderSpecimen, SkeletonTableFooterSpecimen, SkeletonTableCaptionSpecimen, SkeletonTableDropIndicatorSpecimen, SkeletonTableEmptySpecimen, SkeletonTableLoadingSpecimen, SkeletonTableLoadMoreSpecimen,
+  SkeletonImageSpecimen, SkeletonPopoverSpecimen, SkeletonPopoverFooterSpecimen, SkeletonTooltipContentSpecimen, SkeletonTooltipInfoTriggerSpecimen,
+  SkeletonScrollAreaSpecimen, SkeletonScrollBarSpecimen, SkeletonAlertSpecimen, SkeletonToastSpecimen,
   SkeletonCollapsibleSpecimen, SkeletonTableSpecimen, SkeletonSkeletonSpecimen, SkeletonEmptySpecimen,
   SkeletonAlertDialogSpecimen, SkeletonSheetSpecimen, SkeletonDrawerSpecimen, SkeletonHoverCardSpecimen, SkeletonItemSpecimen,
   SkeletonAttachmentSpecimen, SkeletonMessageSpecimen, SkeletonBubbleSpecimen, SkeletonResizableSpecimen,
@@ -402,11 +402,16 @@ export const SPECIMENS: Record<string, (p: SpecimenProps) => ReactNode> = {
   ComboboxItem: SkeletonComboboxItemSpecimen,
   ComboboxGroupLabel: SkeletonComboboxGroupLabelSpecimen,
   Checkbox: SkeletonCheckboxSpecimen,
+  CheckboxItem: SkeletonCheckboxItemSpecimen,
+  CheckboxGroup: SkeletonCheckboxGroupSpecimen,
   RadioGroup: SkeletonRadioGroupSpecimen,
   Switch: SkeletonSwitchSpecimen,
+  SwitchGroup: SkeletonSwitchGroupSpecimen,
   Slider: SkeletonSliderSpecimen,
+  SliderThumb: SkeletonSliderThumbSpecimen,
   FileUpload: SkeletonFileUploadSpecimen,
-  Dropzone: SkeletonDropzoneSpecimen,
+  FileUploadDropzone: SkeletonFileUploadDropzoneSpecimen,
+  FileUploadItem: SkeletonFileUploadItemSpecimen,
   Field: SkeletonFieldSpecimen,
   Label: SkeletonLabelSpecimen,
   PasswordStrength: SkeletonPasswordStrengthSpecimen,
@@ -416,18 +421,36 @@ export const SPECIMENS: Record<string, (p: SpecimenProps) => ReactNode> = {
   Badge: SkeletonBadgeSpecimen,
   StatusBadge: SkeletonStatusBadgeSpecimen,
   Chip: SkeletonChipSpecimen,
-  Progress: SkeletonProgressSpecimen,
+  ProgressLine: SkeletonProgressLineSpecimen,
+  ProgressCircle: SkeletonProgressCircleSpecimen,
   Spinner: SkeletonSpinnerSpecimen,
   Icon: SkeletonIconSpecimen,
-  Rating: SkeletonRatingSpecimen,
+  FeaturedIcon: SkeletonFeaturedIconSpecimen,
+  RatingGroup: SkeletonRatingGroupSpecimen,
+  RatingGroupItem: SkeletonRatingGroupItemSpecimen,
   FileFormat: SkeletonFileFormatSpecimen,
   Kbd: SkeletonKbdSpecimen,
   // Content & Surfaces
   Avatar: SkeletonAvatarSpecimen,
+  AvatarStatus: SkeletonAvatarStatusSpecimen,
+  AvatarGroup: SkeletonAvatarGroupSpecimen,
   Card: SkeletonCardSpecimen,
   Separator: SkeletonSeparatorSpecimen,
   Collapsible: SkeletonCollapsibleSpecimen,
   Table: SkeletonTableSpecimen,
+  TableCell: SkeletonTableCellSpecimen,
+  TableHead: SkeletonTableHeadSpecimen,
+  TableMediaCell: SkeletonTableMediaCellSpecimen,
+  TableTrendCell: SkeletonTableTrendCellSpecimen,
+  TableResizer: SkeletonTableResizerSpecimen,
+  TableRow: SkeletonTableRowSpecimen,
+  TableHeader: SkeletonTableHeaderSpecimen,
+  TableFooter: SkeletonTableFooterSpecimen,
+  TableCaption: SkeletonTableCaptionSpecimen,
+  TableDropIndicator: SkeletonTableDropIndicatorSpecimen,
+  TableEmpty: SkeletonTableEmptySpecimen,
+  TableLoading: SkeletonTableLoadingSpecimen,
+  TableLoadMore: SkeletonTableLoadMoreSpecimen,
   Item: SkeletonItemSpecimen,
   Attachment: SkeletonAttachmentSpecimen,
   Message: SkeletonMessageSpecimen,
@@ -440,24 +463,47 @@ export const SPECIMENS: Record<string, (p: SpecimenProps) => ReactNode> = {
   Drawer: SkeletonDrawerSpecimen,
   HoverCard: SkeletonHoverCardSpecimen,
   Accordion: SkeletonAccordionSpecimen,
-  AspectRatio: SkeletonAspectRatioSpecimen,
-  Dialog: SkeletonDialogSpecimen,
+  AccordionItem: SkeletonAccordionItemSpecimen,
+  Image: SkeletonImageSpecimen,
+  Modal: SkeletonModalSpecimen,
+  ModalHeader: SkeletonModalHeaderSpecimen,
+  ModalFooter: SkeletonModalFooterSpecimen,
   Popover: SkeletonPopoverSpecimen,
-  Tooltip: SkeletonTooltipSpecimen,
+  PopoverFooter: SkeletonPopoverFooterSpecimen,
+  TooltipContent: SkeletonTooltipContentSpecimen,
+  TooltipInfoTrigger: SkeletonTooltipInfoTriggerSpecimen,
   ScrollArea: SkeletonScrollAreaSpecimen,
+  ScrollBar: SkeletonScrollBarSpecimen,
   // Feedback
-  Sonner: SkeletonSonnerSpecimen,
+  Toast: SkeletonToastSpecimen,
   Alert: SkeletonAlertSpecimen,
   Skeleton: SkeletonSkeletonSpecimen,
   Empty: SkeletonEmptySpecimen,
   // Navigation
   Tabs: SkeletonTabsSpecimen,
   TabMenu: SkeletonTabMenuSpecimen,
+  TabMenuItem: SkeletonTabMenuItemSpecimen,
+  TabMenuLineItem: SkeletonTabMenuLineItemSpecimen,
+  NavItem: SkeletonNavItemSpecimen,
+  Brand: SkeletonBrandSpecimen,
+  AccountMenuTrigger: SkeletonAccountMenuTriggerSpecimen,
   SegmentedControl: SkeletonSegmentedControlSpecimen,
+  SegmentedControlItem: SkeletonSegmentedControlItemSpecimen,
   Breadcrumb: SkeletonBreadcrumbSpecimen,
+  BreadcrumbItem: SkeletonBreadcrumbItemSpecimen,
+  BreadcrumbEllipsis: SkeletonBreadcrumbEllipsisSpecimen,
+  BreadcrumbSeparator: SkeletonBreadcrumbSeparatorSpecimen,
   Pagination: SkeletonPaginationSpecimen,
+  PaginationLink: SkeletonPaginationLinkSpecimen,
+  PaginationEllipsis: SkeletonPaginationEllipsisSpecimen,
   Stepper: SkeletonStepperSpecimen,
+  StepperItem: SkeletonStepperItemSpecimen,
+  StepperIndicator: SkeletonStepperIndicatorSpecimen,
+  StepperIcon: SkeletonStepperIconSpecimen,
   DropdownMenu: SkeletonDropdownMenuSpecimen,
+  DropdownMenuLabel: SkeletonDropdownMenuLabelSpecimen,
+  DropdownMenuItem: SkeletonDropdownMenuItemSpecimen,
+  DropdownMenuFooter: SkeletonDropdownMenuFooterSpecimen,
   ContextMenu: SkeletonContextMenuSpecimen,
   Command: SkeletonCommandSpecimen,
   Menubar: SkeletonMenubarSpecimen,
@@ -522,8 +568,8 @@ export function Live({
    *  rises on hover implies a click target that isn't there. */
   lift?: boolean
   /** State a hover resolves to when the component names it something other than
-   *  'Hover'. Dropzone is the case this exists for: its shipped variants are
-   *  Default / Dragging / Error, and hovering an uploader previewing 'Dragging'
+   *  'Hover'. FileUploadDropzone used it once (Dragging); it now ships a Hover
+   *  of its own. Kept for components that name it otherwise, and hovering an uploader previewing 'Dragging'
    *  is exactly the state a real drag would put it in. Still has to name a state
    *  the catalogue offers — the `pick` below drops it otherwise. */
   hoverState?: string
@@ -550,8 +596,10 @@ export function Live({
   const inspecting = useInspectorActive()
 
   const toggleValues = toggle ? axisValues(c, toggle) : []
-  const canToggle = !!toggle && toggleValues.includes('True') && toggleValues.includes('False')
-  const [on, setOn] = useState((v[toggle ?? ''] ?? 'True') === 'True')
+  // The pair is True / False, or the Figma file's lowercase true / false (Checkbox).
+  const [yes, no] = toggleValues.includes('true') && toggleValues.includes('false') ? ['true', 'false'] : ['True', 'False']
+  const canToggle = !!toggle && toggleValues.includes(yes) && toggleValues.includes(no)
+  const [on, setOn] = useState(['True', 'true'].includes(v[toggle ?? ''] ?? yes))
 
   if (!render) return null
 
@@ -567,7 +615,7 @@ export function Live({
 
   const merged: AxisValues = { ...v }
   if (state) merged.State = state
-  if (canToggle) merged[toggle] = on ? 'True' : 'False'
+  if (canToggle) merged[toggle] = on ? yes : no
 
   const flip = canToggle ? () => setOn((o) => !o) : undefined
 

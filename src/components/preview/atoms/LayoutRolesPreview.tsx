@@ -40,7 +40,7 @@ function SpacingExamples({ role, t }: { role: string; t: PreviewTokens }) {
         </div>
         {role === 'gap-control' && <ButtonGroupSpec t={t} v={{}} />}
         {role === 'gap-group' && <FieldSpec t={t} v={{}} />}
-        {role === 'gap-tight' && <ChipSpec t={t} v={{ Dismissible: 'True' }} />}
+        {role === 'gap-tight' && <ChipSpec t={t} v={{ CloseVisible: 'True' }} />}
       </div>
     )
   }

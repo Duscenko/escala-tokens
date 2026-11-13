@@ -26,7 +26,7 @@ const SwitchSpec = SPECIMENS.Switch
 const InputSpec = SPECIMENS.Input
 const SliderSpec = SPECIMENS.Slider
 const StatusBadgeSpec = SPECIMENS.StatusBadge
-const ToastSpec = SPECIMENS.Sonner
+const ToastSpec = SPECIMENS.Toast
 const InputGroupSpec = SPECIMENS.InputGroup
 const PasswordStrengthSpec = SPECIMENS.PasswordStrength
 const TabMenuSpec = SPECIMENS.TabMenu
@@ -134,28 +134,26 @@ function ColorCollage({
           Both actually flip on click (`toggle`), which is the only way to see
           the brand fill arrive and leave the way it will in the product. */}
       <div className="flex flex-wrap items-center gap-4">
-        <Live c="Checkbox" t={tokens} v={{ Checked: 'True' }} toggle="Checked" />
-        <Live c="Switch" t={tokens} v={{ Checked: 'True' }} toggle="Checked" />
+        <Live c="Checkbox" t={tokens} v={{ Checked: 'true' }} toggle="Checked" />
+        <Live c="Switch" t={tokens} v={{ Checked: 'true' }} toggle="Checked" />
       </div>
 
       <div className="flex flex-wrap items-center gap-2.5">
-        <BadgeSpec t={tokens} v={{ Variant: 'default' }} />
+        <BadgeSpec t={tokens} v={{ Variant: 'default', Appearance: 'solid' }} />
         <BadgeSpec t={tokens} v={{ Variant: 'secondary' }} />
-        <BadgeSpec t={tokens} v={{ Variant: 'destructive' }} />
-        <BadgeSpec t={tokens} v={{ Variant: 'outline' }} />
+        <BadgeSpec t={tokens} v={{ Variant: 'critical' }} />
+        <BadgeSpec t={tokens} v={{ Variant: 'secondary', Appearance: 'outline' }} />
       </div>
 
-      <ToastSpec t={tokens} v={{ Type: 'success' }} />
-      {/* Dropzone names its hover-equivalent 'Dragging' — hovering an uploader
-          IS what a drag looks like, and it's a shipped variant, not invented. */}
-      <Live c="Dropzone" t={tokens} hoverState="Dragging" />
+      <ToastSpec t={tokens} v={{ Variant: 'success' }} />
+      <Live c="FileUploadDropzone" t={tokens} />
       <Live c="Select" t={tokens} />
       <InputGroupSpec t={tokens} v={{}} />
       <PasswordStrengthSpec t={tokens} v={{ Strength: '1' }} />
 
       <div className="flex items-center justify-between gap-3">
         <TabMenuSpec t={tokens} v={{}} />
-        <AvatarSpec t={tokens} v={{}} />
+        <AvatarSpec t={tokens} v={{ Size: 'sm' }} />
       </div>
       </div>
     </div>
@@ -460,16 +458,16 @@ export default function PreviewPanel({
 
             <Group title="Badge">
               <Tile tokens={tokens}>
-                <BadgeSpec t={tokens} v={{ Variant: 'default' }} />
+                <BadgeSpec t={tokens} v={{ Variant: 'default', Appearance: 'solid' }} />
                 <BadgeSpec t={tokens} v={{ Variant: 'secondary' }} />
-                <BadgeSpec t={tokens} v={{ Variant: 'outline' }} />
+                <BadgeSpec t={tokens} v={{ Variant: 'secondary', Appearance: 'outline' }} />
               </Tile>
             </Group>
 
             <Group title="Switch">
               <Tile tokens={tokens}>
-                <SwitchSpec t={tokens} v={{ Checked: 'True' }} />
-                <SwitchSpec t={tokens} v={{ Checked: 'False' }} />
+                <SwitchSpec t={tokens} v={{ Checked: 'true' }} />
+                <SwitchSpec t={tokens} v={{ Checked: 'false' }} />
               </Tile>
             </Group>
 

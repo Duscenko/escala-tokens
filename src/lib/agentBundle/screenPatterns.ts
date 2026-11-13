@@ -44,7 +44,7 @@ export const SCREEN_PATTERNS: ScreenPattern[] = [
     parts: [
       { key: 'Card', use: 'the sign-in surface holding the whole form' },
       { key: 'Input', use: 'email, then password, full width' },
-      { key: 'Checkbox', axes: { Checked: 'True' }, use: 'remember me' },
+      { key: 'Checkbox', axes: { Checked: 'true' }, use: 'remember me' },
       { key: 'Button', axes: { Variant: 'default', Size: 'lg' }, use: 'sign in: the one primary action, full width' },
       { key: 'Separator', use: 'the "or" rule, a separator on each side of the word' },
       { key: 'SocialLoginButton', axes: { Provider: 'google' }, use: 'one per provider (google, apple), full width' },
@@ -140,7 +140,7 @@ export const SCREEN_PATTERNS: ScreenPattern[] = [
     source: 'ProfileArtefact.tsx',
     purpose: 'Account settings: identity, preferences, a destructive action last.',
     parts: [
-      { key: 'Avatar', axes: { Size: 'lg' }, use: 'the person, in the header row' },
+      { key: 'Avatar', axes: { Size: 'default' }, use: 'the person, in the header row' },
       { key: 'StatusBadge', axes: { Status: 'online' }, use: 'presence, end of the header row' },
       { key: 'Card', use: 'the notification settings: a list of Switches, each labelled through a Field' },
       { key: 'Button', axes: { Variant: 'destructive', Size: 'lg' }, use: 'delete the account, last on the page' },

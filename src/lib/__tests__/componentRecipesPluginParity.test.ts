@@ -96,10 +96,10 @@ describe.skipIf(!existsSync(pluginFile))('plugin ↔ web recipe parity', () => {
     }
   })
 
-  it('Card and Dialog: surface, edge, title and description match the web', async () => {
+  it('Card: surface, edge, title and description match the web', async () => {
     const plugin = await import(/* @vite-ignore */ pluginFile)
     const table = serializeRecipes()
-    for (const key of ['Card', 'Dialog'] as const) {
+    for (const key of ['Card'] as const) {
       const recipe = COMPONENT_RECIPES[key]
       const web = resolveRecipe(recipe, {})
       const root = web[recipe.slots[0]]
@@ -178,15 +178,23 @@ describe.skipIf(!existsSync(pluginFile))('plugin ↔ web recipe parity', () => {
     // DatePickerTrigger / DatePickerPopover / CalendarDay / CalendarHeader / CalendarMonth / CalendarPresets / CalendarFooter (2026-11-12): sets the file has and the frozen plugin never built (the date picker and calendar pages).
     // ButtonGroupItem / ButtonGroupDivider (2026-11-12): the file's own sets for the
     // group's segments and lines, rebuilt from it.
-    const WEB_ONLY = new Set(['CloseButton', 'TextLink', 'FABButton', 'FABGroup', 'ButtonGroupItem', 'ButtonGroupDivider', 'NumberInput', 'InputOTPSlot', 'InputTagChip', 'InputTagOption', 'DatePickerTrigger', 'DatePickerPopover', 'CalendarDay', 'ComboboxPopover', 'ComboboxItem', 'ComboboxGroupLabel', 'CalendarHeader', 'CalendarMonth', 'CalendarPresets', 'CalendarFooter', 'PasswordStrengthMeter', 'PasswordStrengthRule'])
+    const WEB_ONLY = new Set(['CloseButton', 'TextLink', 'FABButton', 'FABGroup', 'ButtonGroupItem', 'ButtonGroupDivider', 'NumberInput', 'InputOTPSlot', 'InputTagChip', 'InputTagOption', 'DatePickerTrigger', 'DatePickerPopover', 'CalendarDay', 'CalendarHeader', 'CalendarMonth', 'CalendarPresets', 'CalendarFooter', 'PasswordStrengthMeter', 'PasswordStrengthRule', 'ComboboxPopover', 'ComboboxItem', 'ComboboxGroupLabel', 'FileUploadDropzone', 'FileUploadItem', 'CheckboxItem', 'CheckboxGroup', 'SwitchGroup', 'SegmentedControlItem', 'SliderThumb', 'RatingGroup', 'RatingGroupItem', 'AvatarStatus', 'AvatarGroup', 'FeaturedIcon', 'Image', 'AccordionItem', 'TableCell', 'TableHead', 'TableMediaCell', 'TableTrendCell', 'TableResizer', 'TableRow', 'TableHeader', 'TableFooter', 'TableCaption', 'TableDropIndicator', 'TableEmpty', 'TableLoading', 'TableLoadMore', 'ProgressLine', 'ProgressCircle', 'Toast', 'Modal', 'ModalHeader', 'ModalFooter', 'PopoverFooter', 'DropdownMenuLabel', 'DropdownMenuItem', 'DropdownMenuFooter', 'TooltipContent', 'TooltipInfoTrigger', 'BreadcrumbItem', 'BreadcrumbEllipsis', 'BreadcrumbSeparator', 'TabMenuItem', 'TabMenuLineItem', 'NavItem', 'Brand', 'AccountMenuTrigger', 'PaginationLink', 'PaginationEllipsis', 'StepperItem', 'StepperIndicator', 'StepperIcon', 'ScrollBar'])
     const webAndPlugin = Object.keys(COMPONENT_RECIPES).filter((key) => !WEB_ONLY.has(key))
     // Plugin builders whose web recipe was RENAMED from the Figma file after the
-    // freeze (2026-11-12): InputStepper is the file's NumberInput (WEB_ONLY above).
-    const RENAMED_ON_WEB = new Set(['InputStepper'])
+    // freeze (2026-11-12): InputStepper is the file's NumberInput, Dropzone its
+    // FileUploadDropzone (WEB_ONLY above).
+    // Rating → RatingGroup (2026-11-12): the file's name for the rating row.
+    // AspectRatio → Image (2026-11-12): the file's name for the cropped media box.
+    const RENAMED_ON_WEB = new Set(['InputStepper', 'Dropzone', 'Rating', 'AspectRatio', 'Progress', 'Sonner', 'Dialog', 'Tooltip'])
     expect(Object.keys(plugin.RECIPE_BUILDERS).filter((k) => !RENAMED_ON_WEB.has(k)).sort()).toEqual(webAndPlugin.sort())
     // Parts a recipe gained from the Figma file after the freeze: the plugin's
     // builder predates them, so they are web + Storybook only (a decision).
-    const WEB_ONLY_SLOTS: Record<string, string[]> = { Input: ['addon', 'divider', 'kbd'], ButtonGroup: ['item', 'border'], Field: ['labelRow', 'required'],
+    // Switch io / thumbIcon (2026-11-12): the file's I / O marks and thumb glyph, which the frozen plugin never drew.
+    // SegmentedControl content (2026-11-12): the file's slot inside the track.
+    // Avatar rebuilt from the file (378:2094, 2026-11-12): the icon glyph, the hairline edge over the content and the ring.
+    // Badge rebuilt from the file (383:176, 2026-11-12): its icon, label and count layers (the frozen plugin draws one text).
+    // Chip rebuilt from the file (390:10982, 2026-11-12): its leading frame, label and close frame.
+    const WEB_ONLY_SLOTS: Record<string, string[]> = { Chip: ['leading', 'label', 'close'], Badge: ['iconLeading', 'label', 'iconTrailing', 'icon', 'count'], Avatar: ['icon', 'stroke', 'ring'], SegmentedControl: ['content'], Slider: ['control', 'tooltips', 'tooltip', 'marks', 'mark', 'tick', 'markLabel'], Switch: ['io', 'thumbIcon'], Input: ['addon', 'divider', 'kbd'], ButtonGroup: ['item', 'border'], Field: ['labelRow', 'required'], Alert: ['content', 'description', 'actions', 'close', 'title'], Popover: ['panel', 'media', 'header', 'description', 'content', 'close'], DropdownMenu: ['header', 'content'],
       // 2026-11-12: Textarea rebuilt from the file (394:152): its corner glyphs and resize grip.
       Textarea: ['adornment', 'status', 'spinner', 'corner', 'grip'],
       // 2026-11-12: InputOTP rebuilt from the file (416:994): the separator between halves.
@@ -198,7 +206,17 @@ describe.skipIf(!existsSync(pluginFile))('plugin ↔ web recipe parity', () => {
       // 2026-11-12: Combobox rebuilt from the file (413:1478): the <input> is `text`; its list is ComboboxPopover / ComboboxItem.
       Combobox: ['text'],
       // 2026-11-12: Calendar rebuilt from the file (424:4667): the column that holds the body and the footer.
-      Calendar: ['column'] }
+      Calendar: ['column'],
+      // 2026-11-12: FileUpload rebuilt from the file (994:1399): the Content slot and the trigger's glyph; its rows are FileUploadItem.
+      FileUpload: ['content', 'triggerIcon'],
+      // 2026-11-13: TabMenu rebuilt from the file (984:1830): the Content slot and the hairline track; its items are TabMenuItem / TabMenuLineItem.
+      TabMenu: ['content', 'track'],
+      // 2026-11-13: Pagination rebuilt from the file (989:714): the Content slot; its links are PaginationLink and PaginationEllipsis.
+      Pagination: ['content'],
+      // 2026-11-13: Separator rebuilt from the file (402:9063): the line segments and the label.
+      Separator: ['line', 'label'],
+      // 2026-11-13: ScrollArea rebuilt from the file (977:572): the end fades; its bars are ScrollBar.
+      ScrollArea: ['fade'] }
     const gaps: Record<string, string[]> = {}
     for (const key of webAndPlugin) {
       const g = plugin.anatomyGaps(code, table, key).filter((s: string) => !(WEB_ONLY_SLOTS[key] ?? []).includes(s))
@@ -208,7 +226,7 @@ describe.skipIf(!existsSync(pluginFile))('plugin ↔ web recipe parity', () => {
     // Every documented difference names real slots of that recipe.
     // A frozen plugin may still document slots of a recipe rebuilt from the file
     // after the freeze (ButtonGroup lost shadcn's `text` / `separator`, 2026-11-12).
-    const STALE_ANATOMY: Record<string, string[]> = { ButtonGroup: ['text', 'separator'], Textarea: ['label', 'hint', 'count', 'field'], InputTag: ['input', 'tag', 'tagRemove'] }
+    const STALE_ANATOMY: Record<string, string[]> = { ButtonGroup: ['text', 'separator'], Textarea: ['label', 'hint', 'count', 'field'], InputTag: ['input', 'tag', 'tagRemove'], SegmentedControl: ['item', 'pill'], TabMenu: ['item', 'pill'], Pagination: ['cell', 'pill'] }
     for (const [key, a] of Object.entries(plugin.RECIPE_FIGMA_ANATOMY as Record<string, { root?: string; omit?: string[] }>)) {
       if (!COMPONENT_RECIPES[key]) continue // a plugin key renamed on the web (RENAMED_ON_WEB)
       for (const slot of [...(a.omit ?? []), ...(a.root ? [a.root] : [])]) {

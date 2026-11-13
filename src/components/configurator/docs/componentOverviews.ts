@@ -33,6 +33,9 @@ function stack(axis: string, values: string[], base: Record<string, string> = {}
   return each(axis, values, base, w).map((item) => [item])
 }
 
+/** A Table overview item this wide is the Figma «Table Prototype» (people, select-all, sort, pinned…), not the plain sample. */
+export const TABLE_PROTOTYPE_W = 1040
+
 export const OVERVIEWS: Record<string, Overview> = {
   // ── Button & Actions ───────────────────────────────────────────────────────
   Button: [
@@ -230,14 +233,56 @@ export const OVERVIEWS: Record<string, Overview> = {
   // A row of labelled controls repeats the label; two short columns read as
   // the on/off pair, then the same pair disabled.
   Checkbox: [
-    [{ v: { Checked: 'True' } }, { v: { Checked: 'False' } }],
-    [{ v: { Checked: 'True', State: 'Disabled' } }, { v: { Checked: 'False', State: 'Disabled' } }],
+    each('Checked', ['false', 'true', 'indeterminate']),
+    each('Variant', ['default', 'secondary', 'critical', 'success', 'info', 'inverse'], { Checked: 'true' }),
+    each('State', ['Default', 'Hover', 'Focused', 'Disabled', 'Invalid'], { Checked: 'true' }),
+    each('Size', ['xs', 'sm', 'default'], { Checked: 'true' }),
+  ],
+  CheckboxItem: [
+    each('Checked', ['false', 'true', 'indeterminate']),
+    each('State', ['Default', 'Disabled', 'Invalid'], { Checked: 'true' }),
+    each('Placement', ['left', 'right'], { Checked: 'true' }),
+    each('Size', ['xs', 'sm', 'default'], { Checked: 'true' }),
+  ],
+  CheckboxGroup: [
+    each('State', ['Default', 'Invalid', 'Disabled']),
+    each('Placement', ['left', 'right']),
+    each('Size', ['xs', 'sm', 'default']),
+  ],
+  Slider: [
+    each('Range', ['single', 'range']),
+    each('State', ['Default', 'Dragging', 'Disabled']),
+    each('Size', ['xs', 'sm', 'default']),
+    each('Variant', ['default', 'secondary']),
+  ],
+  SliderThumb: [
+    each('State', ['Default', 'Hover', 'Focused', 'Dragging', 'Disabled']),
+    each('Size', ['xs', 'sm', 'default']),
+    each('Variant', ['default', 'secondary']),
   ],
   Switch: [
-    [{ v: { Checked: 'True' } }, { v: { Checked: 'False' } }],
-    [{ v: { Checked: 'True', State: 'Disabled' } }, { v: { Checked: 'False', State: 'Disabled' } }],
+    each('Checked', ['true', 'false']),
+    each('State', ['Default', 'Hover', 'Focused', 'Disabled'], { Checked: 'true' }),
+    each('Size', ['xs', 'sm', 'default'], { Checked: 'true' }),
+    each('Thumb', ['short', 'long'], { Checked: 'true' }),
   ],
-  Dropzone: [each('State', ['Default', 'Dragging', 'Error'])],
+  SwitchGroup: [
+    each('State', ['Default', 'Disabled', 'Invalid', 'Loading']),
+    each('Placement', ['left', 'right']),
+    each('Size', ['xs', 'sm', 'default']),
+  ],
+  FileUpload: [
+    each('Layout', ['dropzone', 'trigger']),
+    each('Size', ['default', 'sm']),
+  ],
+  FileUploadItem: [
+    each('Status', ['queued', 'uploading', 'paused', 'completed', 'error']),
+    each('Size', ['default', 'sm']),
+  ],
+  FileUploadDropzone: [
+    each('State', ['Default', 'Hover', 'Dragging', 'Invalid', 'Disabled']),
+    each('Size', ['sm', 'default', 'lg']),
+  ],
   NumberInput: [
     each('State', ['Default', 'Hover', 'Focused', 'Invalid', 'Disabled']),
     each('Size', ['sm', 'default', 'lg']),
@@ -255,35 +300,135 @@ export const OVERVIEWS: Record<string, Overview> = {
 
   // ── Indicators ─────────────────────────────────────────────────────────────
   Badge: [
-    [
-      { v: { Variant: 'default' }, label: 'New' },
-      { v: { Variant: 'secondary' }, label: 'Draft' },
-      { v: { Variant: 'destructive' }, label: 'Failed' },
-      { v: { Variant: 'outline' }, label: 'v2.4' },
-      { v: { Variant: 'ghost' }, label: 'Beta' },
-      { v: { Variant: 'link' }, label: 'Docs' },
-    ],
+    each('Variant', ['success', 'warning', 'info', 'inverse', 'default', 'secondary', 'critical'], { Appearance: 'solid' }),
+    each('Appearance', ['soft', 'solid', 'outline', 'ghost'], { Variant: 'info' }),
+    each('Size', ['xs', 'sm', 'default']),
+    each('Type', ['default', 'icon', 'number', 'dot'], { Variant: 'success', Appearance: 'solid', Shape: 'pill' }),
+    each('Shape', ['rounded', 'pill']),
   ],
   StatusBadge: [each('Status', ['online', 'away', 'busy', 'offline'])],
   Chip: [
-    [
-      { v: { Selected: 'False', Dismissible: 'False' } },
-      { v: { Selected: 'True', Dismissible: 'False' } },
-      { v: { Selected: 'False', Dismissible: 'True' } },
-      { v: { Selected: 'True', Dismissible: 'True' } },
-    ],
-    each('Size', ['sm', 'default'], { Selected: 'True', Dismissible: 'True' }),
+    each('State', ['Default', 'Hover', 'Focused', 'Selected', 'Disabled', 'Dragging']),
+    each('Variant', ['info', 'success', 'default', 'critical'], { Appearance: 'soft' }),
+    each('Appearance', ['outline', 'soft'], { Variant: 'info' }),
+    each('Size', ['xs', 'sm', 'default', 'lg', 'xl']),
+    each('Shape', ['rounded', 'pill']),
   ],
   Icon: [each('Size', ['sm', 'default', 'lg'])],
-  Rating: stack('Interactive', ['False', 'True']),
+  Kbd: [each('Size', ['xs', 'sm', 'default'])],
+  FeaturedIcon: [
+    each('Size', ['default', 'sm', 'lg', 'xl']),
+    each('Variant', ['default', 'secondary', 'critical', 'success', 'warning', 'info']),
+    each('Appearance', ['soft', 'solid'], { Variant: 'info' }),
+    each('Shape', ['circle', 'rounded']),
+  ],
+  RatingGroup: [
+    each('Type', ['star', 'emoji']),
+    each('Size', ['default', 'sm', 'lg']),
+  ],
+  RatingGroupItem: [
+    each('State', ['Default', 'Hover', 'Pressed', 'Focused', 'Disabled'], { Checked: 'false' }),
+    each('Checked', ['false', 'true']),
+    each('Type', ['star', 'emoji'], { Checked: 'true' }),
+    each('Size', ['default', 'sm', 'lg'], { Checked: 'true' }),
+  ],
   FileFormat: [each('Format', ['pdf', 'png', 'svg', 'zip'])],
-  Avatar: [each('Size', ['sm', 'default', 'lg'])],
+  Avatar: [
+    each('Size', ['2xs', 'xs', 'sm', 'default', 'lg', 'xl', '2xl'], { Type: 'initials' }),
+    each('Type', ['image', 'initials', 'icon']),
+    each('Variant', ['secondary', 'default', 'info', 'success', 'warning', 'critical'], { Type: 'initials' }),
+    each('Appearance', ['soft', 'solid'], { Type: 'initials', Variant: 'default' }),
+    each('Shape', ['circle', 'rounded'], { Type: 'initials' }),
+  ],
+  AvatarStatus: [
+    each('Status', ['online', 'busy', 'away', 'offline', 'do-not-disturb']),
+    each('Size', ['xs', 'sm', 'default', 'lg']),
+  ],
+  AvatarGroup: [
+    each('Size', ['2xs', 'xs', 'sm', 'default', 'lg', 'xl', '2xl']),
+    each('Shape', ['circle', 'rounded']),
+  ],
 
   // ── Content & Surfaces ─────────────────────────────────────────────────────
   Card: [each('Size', ['default', 'sm'])],
-  Separator: [each('Orientation', ['horizontal', 'vertical'])],
+  Separator: [each('Align', ['none', 'start', 'center', 'end'], {}, 320), each('Tone', ['default', 'subtle', 'strong'], {}, 320), each('Variant', ['default', 'dashed'], { Align: 'center' }, 320), each('Align', ['none', 'center'], { Orientation: 'vertical' }, 40)],
   Collapsible: [each('Open', ['False', 'True'])],
-  AspectRatio: [each('Ratio', ['16:9', '4:3', '1:1'])],
+  Accordion: [each('Variant', ['ghost-default', 'ghost-underline', 'ghost-rounded', 'outline-rounded', 'outline-sharp', 'filled-rounded'])],
+  AccordionItem: [
+    each('State', ['Closed', 'Open', 'Disabled'], { Variant: 'outline-rounded' }),
+    each('Variant', ['ghost-default', 'ghost-underline', 'ghost-rounded', 'outline-rounded', 'outline-sharp', 'filled-rounded'], { State: 'Open' }),
+  ],
+  Table: [
+    // The file's two prototype examples: Dividers rows = «Example Light» (resting · hover · selected · disabled),
+    // Dividers grid = «Example Dark» (grid · pinned · sorted · resizing · scrolled header).
+    [{ v: { Dividers: 'rows' }, w: TABLE_PROTOTYPE_W }],
+    [{ v: { Dividers: 'grid' }, w: TABLE_PROTOTYPE_W }],
+    each('Size', ['default', 'xs', 'sm', 'lg'], { Appearance: 'filled' }, 800),
+    each('Appearance', ['filled', 'ghost'], {}, 800),
+    each('Dividers', ['rows', 'grid'], {}, 800),
+  ],
+  TableCell: [
+    each('Size', ['default', 'xs', 'sm', 'lg']),
+    each('Align', ['start', 'end']),
+    each('Pinned', ['none', 'start', 'end']),
+    each('State', ['Default', 'Disabled']),
+  ],
+  TableHead: [
+    each('Size', ['default', 'xs', 'sm', 'lg']),
+    each('Sort', ['none', 'ascending', 'descending']),
+    each('Pinned', ['none', 'start', 'end']),
+    each('State', ['Default', 'Hover'], { Sort: 'ascending' }),
+  ],
+  TableMediaCell: [each('Size', ['default', 'xs', 'sm', 'lg']), each('Ratio', ['square', 'wide']), each('State', ['Default', 'Disabled'])],
+  TableTrendCell: [each('Size', ['default', 'xs', 'sm', 'lg']), each('Trend', ['up', 'down', 'neutral']), each('State', ['Default', 'Disabled'])],
+  TableResizer: [each('State', ['Default', 'Hover', 'Resizing'])],
+  TableRow: [
+    each('State', ['Default', 'Hover', 'Selected', 'Focused', 'Disabled', 'Dragging'], {}, 800),
+    each('Size', ['default', 'xs', 'sm', 'lg'], {}, 800),
+    each('Dividers', ['rows', 'grid'], {}, 800),
+  ],
+  TableHeader: [each('Size', ['default', 'xs', 'sm', 'lg'], {}, 800), each('Scrolled', ['false', 'true'], {}, 800), each('Dividers', ['rows', 'grid'], {}, 800)],
+  TableFooter: [each('Size', ['default', 'xs', 'sm', 'lg'], {}, 800), each('Dividers', ['rows', 'grid'], {}, 800)],
+  TableLoadMore: [each('State', ['Default', 'Loading'], {}, 800)],
+  ProgressLine: [each('Size', ['xs', 'sm', 'default', 'lg'], {}, 240), each('Appearance', ['solid', 'gradient'], {}, 240), each('Value', ['0', '25', '50', '75', '100'], {}, 240)],
+  ProgressCircle: [each('Size', ['xs', 'sm', 'default', 'lg']), each('Cap', ['round', 'butt'], { Value: '75' }), each('Appearance', ['solid', 'gradient'], { Value: '75' }), each('Value', ['0', '25', '50', '75', '100'])],
+  Alert: [
+    each('Variant', ['success', 'info', 'warning', 'default', 'critical', 'secondary'], { Layout: 'vertical' }, 320),
+    each('Appearance', ['outline', 'solid', 'soft', 'inverse'], {}, 800),
+    each('Layout', ['horizontal', 'vertical']),
+    each('Size', ['sm', 'default'], {}, 800),
+  ],
+  Image: [each('Ratio', ['auto', '16:9', '4:3', '3:2', '1:1', '3:4']), each('Shape', ['square', 'rounded'])],
+  Popover: [each('Side', ['bottom', 'top', 'left', 'right'], {}, 340), each('Size', ['default', 'sm', 'lg'], {}, 380)],
+  PopoverFooter: [each('Layout', ['inline', 'stacked'], {}, 256), each('Size', ['default', 'sm', 'lg'], {}, 256)],
+  DropdownMenu: [each('Size', ['default', 'sm', 'lg'], {}, 256)],
+  DropdownMenuLabel: [each('Size', ['default', 'sm', 'lg'], {}, 256)],
+  DropdownMenuItem: [each('State', ['Default', 'Focused', 'Selected', 'Disabled'], {}, 256), each('State', ['Default', 'Focused', 'Disabled'], { Variant: 'destructive' }, 256), each('Size', ['default', 'sm', 'lg'], {}, 256)],
+  DropdownMenuFooter: [each('Layout', ['inline', 'stacked'], {}, 256), each('Size', ['default', 'sm', 'lg'], {}, 256)],
+  TabMenu: [each('Variant', ['horizontal-line', 'horizontal-button'], {}, 360), each('Variant', ['vertical-line', 'vertical-button'], {}, 240), each('Size', ['default', 'sm', 'lg'], {}, 360)],
+  TabMenuItem: [each('State', ['Default', 'Hover', 'Selected', 'Focused', 'Disabled']), each('Size', ['default', 'sm', 'lg'])],
+  TabMenuLineItem: [each('State', ['Default', 'Hover', 'Selected', 'Focused', 'Disabled']), each('Indicator', ['bottom', 'left']), each('Size', ['default', 'sm', 'lg'])],
+  NavItem: [each('State', ['Default', 'Hover', 'Current', 'Focused', 'Disabled']), each('Size', ['default', 'sm', 'lg'])],
+  Brand: [each('Size', ['default', 'sm'])],
+  AccountMenuTrigger: [each('State', ['Default', 'Hover', 'Pressed', 'Focused']), each('Size', ['default', 'sm'])],
+  Pagination: [each('Variant', ['compact-grouped', 'compact'], {}, 380), each('Size', ['default', 'xs', 'sm', 'lg'], {}, 380)],
+  PaginationLink: [each('State', ['Default', 'Hover', 'Pressed', 'Focused', 'Disabled']), each('State', ['Default', 'Hover', 'Pressed', 'Focused', 'Disabled'], { Active: 'true' }), each('Size', ['default', 'xs', 'sm', 'lg'])],
+  PaginationEllipsis: [each('Size', ['default', 'xs', 'sm', 'lg'])],
+  Stepper: [each('Orientation', ['vertical'], {}, 320), each('Orientation', ['horizontal'], {}, 640), each('Size', ['default', 'xs', 'sm', 'lg'], { Orientation: 'horizontal' }, 640)],
+  StepperItem: [each('Status', ['active', 'completed', 'error', 'locked'], {}, 320), each('Status', ['active', 'completed', 'error', 'locked'], { State: 'Disabled' }, 320), each('Status', ['active', 'completed'], { Orientation: 'horizontal' }, 240)],
+  StepperIndicator: [each('Status', ['active', 'completed', 'error', 'locked']), each('Status', ['active', 'completed', 'error', 'locked'], { State: 'Disabled' }), each('Size', ['default', 'xs', 'sm', 'lg'], { Orientation: 'horizontal' }, 200)],
+  StepperIcon: [each('Status', ['active', 'completed', 'error', 'locked']), each('Status', ['active', 'completed', 'error', 'locked'], { State: 'Disabled' }), each('Size', ['default', 'xs', 'sm', 'lg'])],
+  ScrollArea: [each('Orientation', ['vertical', 'horizontal', 'both'], {}, 300), each('Appearance', ['filled', 'ghost'], {}, 220), each('Size', ['default', 'sm', 'lg'], {}, 220)],
+  ScrollBar: [each('Size', ['default', 'sm', 'lg'], {}, 40), each('Appearance', ['filled', 'ghost'], {}, 40), each('Orientation', ['vertical', 'horizontal'], {}, 160)],
+  Breadcrumb: [each('Appearance', ['ghost', 'outline', 'solid'], {}, 460), each('Separator', ['chevron', 'slash', 'dot'], {}, 460), each('Size', ['xs', 'sm', 'default'], {}, 460)],
+  BreadcrumbItem: [each('State', ['Default', 'Hover', 'Focused', 'Current', 'Disabled']), each('Appearance', ['ghost', 'outline', 'solid']), each('Variant', ['default', 'secondary']), each('Size', ['xs', 'sm', 'default'])],
+  BreadcrumbEllipsis: [each('State', ['Default', 'Hover', 'Focused', 'Disabled']), each('Appearance', ['ghost', 'outline', 'solid']), each('Size', ['xs', 'sm', 'default'])],
+  BreadcrumbSeparator: [each('Variant', ['chevron', 'slash', 'dot']), each('Size', ['xs', 'sm', 'default'])],
+  TooltipContent: [each('Variant', ['default', 'secondary', 'inverse', 'critical', 'info'], {}, 260), each('Side', ['top', 'bottom', 'left', 'right'], {}, 260), each('Size', ['sm', 'default', 'lg'], {}, 300)],
+  TooltipInfoTrigger: [each('Variant', ['default', 'secondary', 'inverse', 'critical', 'info']), each('State', ['Default', 'Hover', 'Open', 'Focused'])],
+  Modal: [each('Size', ['default', 'lg'], {}, 640)],
+  ModalHeader: [each('Align', ['horizontal', 'vertical-left', 'vertical-center'], {}, 440), each('Size', ['default', 'lg'], {}, 600)],
+  ModalFooter: [each('Layout', ['inline', 'stacked'], {}, 480), each('Size', ['default', 'lg'], {}, 640)],
   AlertDialog: [each('Size', ['default', 'sm'])],
   // Drawn inline, left/right and top/bottom look alike: one of each shape.
   Sheet: [each('Side', ['right', 'bottom'])],
@@ -308,16 +453,20 @@ export const OVERVIEWS: Record<string, Overview> = {
   Chart: [each('Type', ['bar', 'line', 'area'], {}, 260)],
 
   // ── Feedback ───────────────────────────────────────────────────────────────
-  Sonner: [
-    ...stack('Type', ['default', 'success', 'info'], {}, 340),
-    ...stack('Type', ['warning', 'error', 'loading'], {}, 340),
+  Toast: [
+    each('Variant', ['default', 'secondary', 'success', 'info', 'warning', 'critical'], { Appearance: 'filled' }, 360),
+    each('Appearance', ['solid', 'soft', 'filled', 'outline'], {}, 360),
   ],
-  Alert: stack('Variant', ['default', 'destructive'], {}, 380),
   Empty: [each('Media', ['default', 'icon'])],
 
   // ── Navigation ─────────────────────────────────────────────────────────────
   Tabs: stack('Variant', ['default', 'line']),
-  SegmentedControl: stack('Size', ['default', 'sm']),
+  SegmentedControl: stack('Size', ['default', 'sm', 'lg']),
+  SegmentedControlItem: [
+    each('Checked', ['false', 'true']),
+    each('State', ['Default', 'Hover', 'Pressed', 'Focused', 'Disabled'], { Checked: 'false' }),
+    each('Size', ['default', 'sm', 'lg'], { Checked: 'true' }),
+  ],
   Sidebar: [each('Variant', ['sidebar', 'floating', 'inset'])],
 }
 

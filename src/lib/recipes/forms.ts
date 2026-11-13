@@ -953,33 +953,119 @@ export const INPUT_OTP_SLOT: ComponentRecipe = {
 }
 
 // ── Checkbox ───────────────────────────────────────────────────────────────
-// shadcn's Checkbox: the box alone (label it with Label / a horizontal Field).
-// Checked is shadcn's `data-checked`: bg-primary + primary-foreground check.
-
-function checkPaint(checked: string, state: string): SlotMap {
-  const on = checked === 'True'
-  const disabled = state === 'Disabled'
-  const hover = state === 'Hover'
-  const focus = state === 'Focused' ? c('border.focus') : NONE
-  const ring = state === 'Focused' ? c('border.ring.default') : NONE
-  let root: SlotProps
-  if (disabled) root = { fill: c('action.disabled.default'), stroke: c('action.disabled.default'), focus, ring }
-  else if (on) {
-    const fill = c(hover ? 'action.primary.hover' : 'action.primary.default')
-    root = { fill, stroke: fill, focus, ring }
-  } else root = { fill: c('surface.input'), stroke: c(hover ? 'border.control-hover' : 'border.control'), focus, ring }
-  return { root, indicator: { text: c(disabled ? 'content.disabled' : 'content.on-action') } }
+// The Figma `Checkbox` set (design-plans/checkbox-contract.md, 1014:686, 270 variants: Size xs · sm ·
+// default × Checked false · true · indeterminate × State Default · Hover · Focused · Disabled · Invalid ×
+// Variant default · secondary · critical · success · info · inverse). A Radius/control box (selector
+// sm 16 · sm 16 · md 20) with a Check / Minus glyph (12 · 12 · 16). Colours do not change with Size.
+// Focused: a 2px edge inside + a 2px halo outside, per Variant. Disabled mutes everything; Invalid only
+// turns the edge Status/critical/border-strong.
+export const CHECKBOX_SIZES = ['xs', 'sm', 'default'] as const
+export const CHECKBOX_CHECKED = ['false', 'true', 'indeterminate'] as const
+export const CHECKBOX_STATES = ['Default', 'Hover', 'Focused', 'Disabled', 'Invalid'] as const
+export const CHECKBOX_VARIANTS = ['default', 'secondary', 'critical', 'success', 'info', 'inverse'] as const
+const CHECKBOX_ON: Record<string, { fill: string; hover: string; ink: string; edge: string; ring: string }> = {
+  default: { fill: 'action.primary.default', hover: 'action.primary.hover', ink: 'content.on-action', edge: 'border.focus', ring: 'border.ring.default' },
+  secondary: { fill: 'content.primary', hover: 'content.secondary', ink: 'content.inverse', edge: 'border.strong', ring: 'border.subtle' },
+  critical: { fill: 'status.critical.surface-solid', hover: 'status.critical.surface-solid-hover', ink: 'status.critical.on-solid', edge: 'status.critical.border-strong', ring: 'status.critical.border' },
+  success: { fill: 'status.success.surface-solid', hover: 'status.success.surface-solid-hover', ink: 'status.success.on-solid', edge: 'status.success.border-strong', ring: 'status.success.border' },
+  info: { fill: 'status.info.surface-solid', hover: 'status.info.surface-solid-hover', ink: 'status.info.on-solid', edge: 'status.info.border-strong', ring: 'status.info.border' },
+  inverse: { fill: 'content.inverse', hover: 'content.inverse-secondary', ink: 'content.primary', edge: 'border.inverse', ring: 'surface.inverse-muted' },
+}
+function checkPaint(checked: string, state: string, variant: string): SlotMap {
+  const on = checked !== 'false'
+  const v = CHECKBOX_ON[variant]
+  const inverse = variant === 'inverse'
+  if (state === 'Disabled') return {
+    root: { fill: c('action.disabled.default'), stroke: c('action.disabled.default'), focus: NONE, ring: NONE },
+    indicator: { text: c('content.disabled') },
+  }
+  const restFill = on ? v.fill : inverse ? 'surface.inverse' : 'surface.input'
+  const restEdge = on ? v.fill : inverse ? 'border.inverse' : 'border.control'
+  const root: SlotProps = { fill: c(restFill), stroke: c(restEdge), focus: NONE, ring: NONE }
+  if (state === 'Hover') {
+    const h = on ? v.hover : inverse ? 'content.inverse-secondary' : 'border.control-hover'
+    root.stroke = c(h)
+    if (on) root.fill = c(h)
+  } else if (state === 'Focused') {
+    root.focus = c(v.edge)
+    root.ring = c(v.ring)
+  } else if (state === 'Invalid') root.stroke = c('status.critical.border-strong')
+  return { root, indicator: { text: c(v.ink) } }
 }
 
 export const CHECKBOX: ComponentRecipe = {
   key: 'Checkbox',
   slots: ['root', 'indicator'],
-  defaults: { Checked: 'True', State: 'Default' },
+  defaults: { Size: 'default', Checked: 'false', State: 'Default', Variant: 'default' },
   parts: [
     part({}, () => ({
-      root: { radius: 'radius.control', strokeWidth: 'stroke.control', height: 'selector.control', width: 'selector.control', hit: 'size.hit' },
+      root: { radius: 'radius.control', strokeWidth: 'stroke.control', hit: 'size.hit' },
     })),
-    part({ Checked: ['True', 'False'] as const, State: ['Default', 'Hover', 'Focused', 'Disabled'] as const }, checkPaint),
+    part({ Size: CHECKBOX_SIZES }, (size) => ({
+      root: { height: size === 'default' ? 'selector.control' : 'selector.compact', width: size === 'default' ? 'selector.control' : 'selector.compact' },
+      indicator: { width: size === 'default' ? 'icon.small' : 'spacing.3', height: size === 'default' ? 'icon.small' : 'spacing.3' },
+    })),
+    part({ Checked: CHECKBOX_CHECKED, State: CHECKBOX_STATES, Variant: CHECKBOX_VARIANTS }, checkPaint),
+  ],
+}
+
+// ── CheckboxItem ───────────────────────────────────────────────────────────
+// The Figma `CheckboxItem` set (design-plans/checkbox-item-contract.md, 1015:7515, 324 variants): the
+// file's Checkbox (same Size · Checked · State · Variant) beside a label and an optional description.
+// A 280 row (sample width: summed steps), gap-control; the control is one label line tall and centres
+// the box; the text column stacks at gap-tight. Label body-sm · body-md · body-lg, description caption ·
+// caption · body-sm. Disabled turns both texts Content/disabled; Invalid and Variant leave them alone.
+export const CHECKBOX_ITEM_SIZES = ['xs', 'sm', 'default'] as const
+export const CHECKBOX_ITEM_STATES = ['Default', 'Disabled', 'Invalid'] as const
+const CHECKBOX_ITEM_TYPE: Record<string, { label: string; description: string }> = {
+  xs: { label: 'type.body-sm', description: 'type.caption' },
+  sm: { label: 'type.body-md', description: 'type.caption' },
+  default: { label: 'type.body-lg', description: 'type.body-sm' },
+}
+export const CHECKBOX_ITEM: ComponentRecipe = {
+  key: 'CheckboxItem',
+  slots: ['root', 'control', 'content', 'label', 'description'],
+  defaults: { Size: 'default', State: 'Default' },
+  parts: [
+    part({}, () => ({
+      root: { width: 'spacing.32+spacing.32+spacing.6', gap: 'spacing.gap-control' },
+      content: { gap: 'spacing.gap-tight' },
+    })),
+    part({ Size: CHECKBOX_ITEM_SIZES }, (size) => ({
+      control: { font: CHECKBOX_ITEM_TYPE[size].label },
+      label: { font: CHECKBOX_ITEM_TYPE[size].label },
+      description: { font: CHECKBOX_ITEM_TYPE[size].description },
+    })),
+    part({ State: CHECKBOX_ITEM_STATES }, (state) => ({
+      label: { text: c(state === 'Disabled' ? 'content.disabled' : 'content.primary') },
+      description: { text: c(state === 'Disabled' ? 'content.disabled' : 'content.secondary') },
+    })),
+  ],
+}
+
+// ── CheckboxGroup ──────────────────────────────────────────────────────────
+// The Figma `CheckboxGroup` set (design-plans/checkbox-group-contract.md, 1015:10216, 108 variants:
+// Size × Placement × State Default · Invalid · Disabled × Variant): a 280 column (sample width) at
+// gap-control: the group label (Type/label, Content/primary), the CheckboxItem rows (they take the
+// group's axes) and the footer (Type/body-sm · caption · caption; Content/secondary, Status/critical/
+// content when Invalid, Content/disabled when Disabled — which also mutes the label).
+export const CHECKBOX_GROUP_STATES = ['Default', 'Invalid', 'Disabled'] as const
+export const CHECKBOX_GROUP: ComponentRecipe = {
+  key: 'CheckboxGroup',
+  slots: ['root', 'label', 'footer'],
+  defaults: { Size: 'default', State: 'Default' },
+  parts: [
+    part({}, () => ({
+      root: { width: 'spacing.32+spacing.32+spacing.6', gap: 'spacing.gap-control' },
+      label: { font: 'type.label' },
+    })),
+    part({ Size: CHECKBOX_ITEM_SIZES }, (size) => ({
+      footer: { font: size === 'default' ? 'type.body-sm' : 'type.caption' },
+    })),
+    part({ State: CHECKBOX_GROUP_STATES }, (state) => ({
+      label: { text: c(state === 'Disabled' ? 'content.disabled' : 'content.primary') },
+      footer: { text: c(state === 'Disabled' ? 'content.disabled' : state === 'Invalid' ? 'status.critical.content' : 'content.secondary') },
+    })),
   ],
 }
 
@@ -1008,65 +1094,195 @@ export const RADIO_GROUP: ComponentRecipe = {
 }
 
 // ── Switch ─────────────────────────────────────────────────────────────────
-// shadcn's Switch, `size` default | sm: primary track when checked, the input
-// colour when not.
-
-const SWITCH_GEOMETRY: Record<string, { knob: string; trackH: string; trackW: string; travel: string }> = {
-  // Track = knob + 2px inset each side; the knob travels width − knob − inset.
-  default: { knob: 'selector.control', trackH: 'selector.control+spacing.1', trackW: 'selector.control+spacing.5', travel: 'spacing.4' },
-  sm: { knob: 'selector.compact', trackH: 'selector.compact+spacing.1', trackW: 'selector.compact+spacing.4', travel: 'spacing.3' },
+// The Figma `Switch` set (design-plans/switch-contract.md, 405:358, 48 variants: Size xs · sm · default
+// × State Default · Hover · Focused · Disabled × Checked true · false × Thumb short · long, plus the
+// IoVisible and ThumbIconVisible booleans). A pill track (Size/selector-sm 16 · sm 16 · md 20) with 2px
+// of padding and a thumb of 12 · 12 · 16 (long: 16 · 16 · 20 wide). Focused lays a 2px edge inside the
+// layout (the thumb moves in by 2) and a 2px halo outside. No shadow anywhere.
+export const SWITCH_SIZES = ['xs', 'sm', 'default'] as const
+export const SWITCH_STATES = ['Default', 'Hover', 'Focused', 'Disabled'] as const
+export const SWITCH_CHECKED = ['true', 'false'] as const
+export const SWITCH_THUMBS = ['short', 'long'] as const
+// Track width, thumb width and the thumb's travel (rest · focused), as summed spacing steps.
+const SWITCH_GEOMETRY: Record<string, Record<string, { w: string; thumbW: string; travel: string; focusTravel: string }>> = {
+  xs: {
+    short: { w: 'spacing.6+spacing.1', thumbW: 'spacing.3', travel: 'spacing.3', focusTravel: 'spacing.2' },
+    long: { w: 'spacing.8+spacing.1', thumbW: 'spacing.4', travel: 'spacing.4', focusTravel: 'spacing.3' },
+  },
+  sm: {
+    short: { w: 'spacing.6+spacing.1', thumbW: 'spacing.3', travel: 'spacing.3', focusTravel: 'spacing.2' },
+    long: { w: 'spacing.8+spacing.1', thumbW: 'spacing.4', travel: 'spacing.4', focusTravel: 'spacing.3' },
+  },
+  default: {
+    short: { w: 'spacing.8+spacing.1', thumbW: 'spacing.4', travel: 'spacing.4', focusTravel: 'spacing.3' },
+    long: { w: 'spacing.8+spacing.3', thumbW: 'spacing.5', travel: 'spacing.5', focusTravel: 'spacing.4' },
+  },
 }
 
 function switchPaint(checked: string, state: string): SlotMap {
-  const on = checked === 'True'
+  const on = checked === 'true'
   const disabled = state === 'Disabled'
   const hover = state === 'Hover'
-  const focus = state === 'Focused' ? c('border.focus') : NONE
-  const ring = state === 'Focused' ? c('border.ring.default') : NONE
-  const track = disabled ? 'action.disabled.default'
+  const focused = state === 'Focused'
+  const track = disabled ? (on ? 'action.disabled.default' : 'surface.muted')
     : on ? (hover ? 'action.primary.hover' : 'action.primary.default')
     : (hover ? 'surface.muted-hover' : 'surface.muted')
   return {
-    root: { fill: c(track), focus, ring },
+    root: { fill: c(track), focus: focused ? c('border.focus') : NONE, ring: focused ? c('border.ring.default') : NONE },
     thumb: { fill: c(on && !disabled ? 'content.on-action' : 'surface.input') },
+    // The I / O marks: a ring (off) or a bar (on), drawn in the thumb's opposite half.
+    io: { text: c(on ? (disabled ? 'surface.input' : 'content.on-action') : disabled ? 'content.disabled' : 'content.subtle') },
+    // The glyph on the thumb (not drawn in any variant of the file, which hides it).
+    thumbIcon: { text: c(disabled ? 'content.disabled' : on ? 'action.primary.default' : 'content.subtle') },
   }
 }
 
 export const SWITCH: ComponentRecipe = {
   key: 'Switch',
-  slots: ['root', 'thumb'],
-  defaults: { Checked: 'True', Size: 'default', State: 'Default' },
+  slots: ['root', 'thumb', 'io', 'thumbIcon'],
+  defaults: { Size: 'default', State: 'Default', Checked: 'false', Thumb: 'short' },
   parts: [
     part({}, () => ({
-      root: { radius: 'radius.pill', hit: 'size.hit' },
-      thumb: { radius: 'radius.pill', shadow: 'shadow.xs' },
+      root: { radius: 'radius.pill', hit: 'size.hit', paddingX: 'spacing.0_5', paddingY: 'spacing.0_5' },
+      thumb: { radius: 'radius.pill' },
     })),
-    part({ Size: ['default', 'sm'] as const }, (size) => ({
-      root: { height: SWITCH_GEOMETRY[size].trackH, width: SWITCH_GEOMETRY[size].trackW, travel: SWITCH_GEOMETRY[size].travel },
-      thumb: { height: SWITCH_GEOMETRY[size].knob, width: SWITCH_GEOMETRY[size].knob },
-    })),
-    part({ Checked: ['True', 'False'] as const, State: ['Default', 'Hover', 'Focused', 'Disabled'] as const }, switchPaint),
+    part({ Size: SWITCH_SIZES, Thumb: SWITCH_THUMBS }, (size, thumb) => {
+      const g = SWITCH_GEOMETRY[size][thumb]
+      const h = size === 'default' ? 'spacing.4' : 'spacing.3'
+      return {
+        root: { height: size === 'default' ? 'selector.control' : 'selector.compact', width: g.w },
+        thumb: { height: h, width: g.thumbW },
+        thumbIcon: { height: size === 'default' ? 'spacing.2+spacing.0_5' : 'spacing.2', width: size === 'default' ? 'spacing.2+spacing.0_5' : 'spacing.2' },
+      }
+    }),
+    // Travel = the room the thumb has. Focused: the 2px edge takes room in the layout, so the thumb
+    // sits 2px further in on each side and travels 4 less.
+    part({ Size: SWITCH_SIZES, Thumb: SWITCH_THUMBS, State: SWITCH_STATES }, (size, thumb, state) => {
+      const g = SWITCH_GEOMETRY[size][thumb]
+      return state === 'Focused'
+        ? { root: { paddingX: 'spacing.0_5+stroke.focus', paddingY: 'spacing.0_5+stroke.focus', travel: g.focusTravel } }
+        : { root: { travel: g.travel } }
+    }),
+    part({ Checked: SWITCH_CHECKED, State: SWITCH_STATES }, switchPaint),
   ],
 }
 
-// ── Slider ─────────────────────────────────────────────────────────────────
+// ── SwitchGroup ────────────────────────────────────────────────────────────
+// The Figma `SwitchGroup` set (design-plans/switch-group-contract.md, 405:2153, 24 variants: Size xs ·
+// sm · default × State Default · Disabled · Invalid · Loading × Placement left · right): a Switch
+// (Checked sample) beside a 2px-gapped text column (label, description, footer), 16 apart
+// (Spacing/gap-group), the switch at the top of the row. A 360 sample row. Label Type/label · body-md ·
+// body-lg, description caption · body-sm · body-md, footer helper · helper · body-sm. Disabled turns
+// every text Content/disabled; Invalid reddens the footer; Loading swaps the switch for a Spinner
+// (14 · 16 · 20).
+export const SWITCH_GROUP_SIZES = ['xs', 'sm', 'default'] as const
+export const SWITCH_GROUP_STATES = ['Default', 'Disabled', 'Invalid', 'Loading'] as const
+export const SWITCH_GROUP_PLACEMENTS = ['left', 'right'] as const
+const SWITCH_GROUP_TYPE: Record<string, { label: string; description: string; footer: string; spinner: string }> = {
+  xs: { label: 'type.label', description: 'type.caption', footer: 'type.helper', spinner: 'spacing.3+spacing.0_5' },
+  sm: { label: 'type.body-md', description: 'type.body-sm', footer: 'type.helper', spinner: 'spacing.4' },
+  default: { label: 'type.body-lg', description: 'type.body-md', footer: 'type.body-sm', spinner: 'spacing.5' },
+}
+export const SWITCH_GROUP: ComponentRecipe = {
+  key: 'SwitchGroup',
+  slots: ['root', 'control', 'content', 'label', 'description', 'footer', 'spinner'],
+  defaults: { Size: 'default', State: 'Default', Placement: 'left' },
+  parts: [
+    part({}, () => ({
+      root: { width: 'spacing.32+spacing.32+spacing.24+spacing.2', gap: 'spacing.gap-group' },
+      content: { gap: 'spacing.0_5' },
+    })),
+    part({ Size: SWITCH_GROUP_SIZES }, (size) => ({
+      label: { font: SWITCH_GROUP_TYPE[size].label },
+      description: { font: SWITCH_GROUP_TYPE[size].description },
+      footer: { font: SWITCH_GROUP_TYPE[size].footer },
+      spinner: { width: SWITCH_GROUP_TYPE[size].spinner, height: SWITCH_GROUP_TYPE[size].spinner },
+    })),
+    part({ State: SWITCH_GROUP_STATES }, (state) => {
+      const off = state === 'Disabled'
+      return {
+        label: { text: c(off ? 'content.disabled' : 'content.primary') },
+        description: { text: c(off ? 'content.disabled' : 'content.secondary') },
+        footer: { text: c(off ? 'content.disabled' : state === 'Invalid' ? 'status.critical.content' : 'content.subtle') },
+      }
+    }),
+  ],
+}
+
+// ── SliderThumb + Slider ───────────────────────────────────────────────────
+// The Figma `SliderThumb` (design-plans/slider-thumb-contract.md, 441:75, 30 variants: Size xs · sm ·
+// default × State Default · Hover · Focused · Dragging · Disabled × Variant default · secondary) and
+// `Slider` (design-plans/slider-contract.md, 447:19, 36 variants: Size × Range single · range × State
+// Default · Dragging · Disabled × Variant, plus TooltipVisible and MarksVisible).
+// Thumb: a 14 · 16 · 20 square, Radius/control, white fill (Content/on-action) with a 2px edge in the
+// variant colour and Shadow/xs at rest and on hover; Focused draws Border/focus + a halo and no shadow;
+// Dragging and Disabled draw no effect (the file's 4px ring has a spread on a non-clipping frame, so it
+// paints nothing).
+export const SLIDER_SIZES = ['xs', 'sm', 'default'] as const
+export const SLIDER_THUMB_STATES = ['Default', 'Hover', 'Focused', 'Dragging', 'Disabled'] as const
+export const SLIDER_STATES = ['Default', 'Dragging', 'Disabled'] as const
+export const SLIDER_VARIANTS = ['default', 'secondary'] as const
+export const SLIDER_RANGES = ['single', 'range'] as const
+const SLIDER_THUMB_PX: Record<string, string> = { xs: 'spacing.3+spacing.0_5', sm: 'spacing.4', default: 'spacing.5' }
+const SLIDER_THUMB_EDGE: Record<string, { rest: string; hover: string; focus: string; ring: string }> = {
+  default: { rest: 'action.primary.default', hover: 'action.primary.hover', focus: 'border.focus', ring: 'border.ring.default' },
+  secondary: { rest: 'content.primary', hover: 'content.secondary', focus: 'border.strong', ring: 'border.subtle' },
+}
+
+function sliderThumbPaint(variant: string, state: string): SlotMap {
+  const k = SLIDER_THUMB_EDGE[variant]
+  if (state === 'Disabled') return { root: { fill: c('surface.muted'), stroke: c('action.disabled.default'), highlight: NONE } }
+  const root: SlotProps = { fill: c('content.on-action'), stroke: c(k.rest), shadow: 'shadow.xs' }
+  if (state === 'Hover') root.stroke = c(k.hover)
+  else if (state === 'Focused') { root.stroke = c(k.focus); root.focus = c(k.focus); root.ring = c(k.ring); delete root.shadow }
+  else if (state === 'Dragging') { delete root.shadow; root.highlight = NONE }
+  return { root }
+}
+
+export const SLIDER_THUMB: ComponentRecipe = {
+  key: 'SliderThumb',
+  slots: ['root'],
+  defaults: { Size: 'default', State: 'Default', Variant: 'default' },
+  parts: [
+    part({}, () => ({ root: { radius: 'radius.control', strokeWidth: 'stroke.md', hit: 'size.hit' } })),
+    part({ Size: SLIDER_SIZES }, (size) => ({ root: { width: SLIDER_THUMB_PX[size], height: SLIDER_THUMB_PX[size] } })),
+    part({ Variant: SLIDER_VARIANTS, State: SLIDER_THUMB_STATES }, sliderThumbPaint),
+  ],
+}
+
+// The control is 32 · 36 · 40 high with a 4 · 6 · 8 track; the column above it (tooltips, 28) and below
+// it (marks, 24) sit gap-control apart. The range is the stretch between the thumbs' centres.
+const SLIDER_CONTROL: Record<string, { h: string; track: string }> = {
+  xs: { h: 'size.compact', track: 'spacing.1' },
+  sm: { h: 'spacing.8+spacing.1', track: 'spacing.1_5' },
+  default: { h: 'size.control', track: 'spacing.2' },
+}
 
 export const SLIDER: ComponentRecipe = {
   key: 'Slider',
-  slots: ['root', 'label', 'value', 'track', 'range', 'thumb'],
-  defaults: {},
+  slots: ['root', 'label', 'value', 'control', 'track', 'range', 'tooltips', 'tooltip', 'marks', 'mark', 'tick', 'markLabel'],
+  defaults: { Size: 'default', Range: 'single', State: 'Default', Variant: 'default' },
   parts: [
     part({}, () => ({
-      root: { gap: 'spacing.gap-control' },
+      root: { gap: 'spacing.gap-control', width: 'spacing.32+spacing.32+spacing.16' },
+      // MIGRATION ONLY: the header row (label + live value) of the shadcn-era slider.
       label: { text: c('content.secondary'), font: 'type.caption' },
       value: { text: c('content.primary'), font: 'type.caption' },
-      track: { fill: c('surface.muted'), height: 'spacing.1_5', radius: 'radius.pill' },
-      range: { fill: c('action.primary.default'), radius: 'radius.pill' },
-      thumb: {
-        fill: c('surface.page'), stroke: c('action.primary.default'), strokeWidth: 'stroke.md',
-        height: 'selector.control', width: 'selector.control', radius: 'radius.pill', shadow: 'shadow.sm', hit: 'size.hit',
-      },
-      'thumb:focus-visible': FOCUS,
+      track: { fill: c('surface.muted'), radius: 'radius.control' },
+      range: { radius: 'radius.control' },
+      tooltips: { height: 'spacing.6+spacing.1' },
+      tooltip: { fill: c('surface.inverse'), text: c('content.inverse'), font: 'type.caption', radius: 'radius.control', width: 'spacing.8+spacing.1', height: 'spacing.6' },
+      marks: { height: 'spacing.6' },
+      mark: { width: 'spacing.5', height: 'spacing.5', gap: 'spacing.gap-tight' },
+      tick: { fill: c('border.strong'), opacity: '0.5', width: 'spacing.0_5', height: 'spacing.1_5' },
+      markLabel: { text: c('content.secondary'), font: 'type.caption' },
+    })),
+    part({ Size: SLIDER_SIZES }, (size) => ({
+      control: { height: SLIDER_CONTROL[size].h },
+      track: { height: SLIDER_CONTROL[size].track },
+    })),
+    part({ Variant: SLIDER_VARIANTS, State: SLIDER_STATES }, (variant, state) => ({
+      range: { fill: c(state === 'Disabled' ? 'action.disabled.default' : variant === 'secondary' ? 'content.primary' : 'action.primary.default') },
     })),
   ],
 }
@@ -1191,53 +1407,128 @@ export const PASSWORD_STRENGTH_RULE: ComponentRecipe = {
   ],
 }
 
-// ── FileUpload · Dropzone ──────────────────────────────────────────────────
+// ── FileUpload ──────────────────────────────────────────────────
 
+// The Figma `FileUpload` set (design-plans/file-upload-contract.md, 994:1399, 4 variants: Size
+// default · sm × Layout dropzone · trigger): a 480 column (no variable: summed steps), gap-group
+// between the FileUploadDropzone (lg / default) or the secondary Button «Upload files» (default /
+// sm, UploadSimple leading) and the Content slot, whose FileUploadItem rows stack at gap-control.
+// It paints nothing of its own; the rows and the dropzone carry their recipes.
+export const FILE_UPLOAD_SIZES = ['default', 'sm'] as const
+export const FILE_UPLOAD_LAYOUTS = ['dropzone', 'trigger'] as const
 export const FILE_UPLOAD: ComponentRecipe = {
   key: 'FileUpload',
-  slots: ['root', 'file', 'badge', 'name', 'meta', 'track', 'progress'],
-  defaults: {},
+  slots: ['root', 'content', 'triggerIcon'],
+  defaults: { Size: 'default', Layout: 'dropzone' },
   parts: [
     part({}, () => ({
-      root: { gap: 'spacing.2_5' },
-      file: {
-        fill: c('surface.layer-1'), stroke: c('border.subtle'), strokeWidth: 'stroke.control',
-        radius: 'radius.action', paddingX: 'spacing.inset-control', paddingY: 'spacing.2_5', gap: 'spacing.2_5',
-      },
-      badge: { fill: c('surface.selected'), text: c('content.accent'), font: 'type.caption', radius: 'radius.control', paddingX: 'spacing.1_5' },
-      name: { text: c('content.primary'), font: 'type.caption' },
-      meta: { text: c('content.secondary'), font: 'type.caption' },
-      track: { fill: c('surface.muted'), height: 'spacing.1_5', radius: 'radius.pill' },
-      progress: { fill: c('action.primary.default'), radius: 'radius.pill' },
+      root: { width: 'spacing.32+spacing.32+spacing.32+spacing.24', gap: 'spacing.gap-group' },
+      content: { gap: 'spacing.gap-control' },
+    })),
+    part({ Size: FILE_UPLOAD_SIZES }, (size) => ({
+      triggerIcon: { width: size === 'sm' ? 'icon.small' : 'icon.medium', height: size === 'sm' ? 'icon.small' : 'icon.medium' },
     })),
   ],
 }
 
-export const DROPZONE: ComponentRecipe = {
-  key: 'Dropzone',
-  slots: ['root', 'icon', 'title', 'link', 'hint'],
-  defaults: { State: 'Default' },
+// ── FileUploadDropzone ─────────────────────────────────────────────────────
+// The Figma `FileUploadDropzone` set (design-plans/file-upload-dropzone-contract.md, 994:472,
+// 15 variants: Size default · sm · lg × State Default · Hover · Dragging · Invalid · Disabled).
+// A dashed Radius/container box whose strokes are LAID OUT (padding + the stroke): default and sm
+// are a row (icon · title/description · the system's secondary Button), lg a centred column with
+// an "OR" separator (the file's Separator instance, drawn here until Separator is rebuilt). Widths
+// 480 / 400 / 400 carry no variable: summed spacing steps. sm never shows its description.
+export const FILE_UPLOAD_DROPZONE_SIZES = ['default', 'sm', 'lg'] as const
+export const FILE_UPLOAD_DROPZONE_STATES = ['Default', 'Hover', 'Dragging', 'Invalid', 'Disabled'] as const
+const FUD_GEOMETRY: Record<string, { w: string; pad: string; gap: string; icon: string; title: string }> = {
+  default: { w: 'spacing.32+spacing.32+spacing.32+spacing.24', pad: 'spacing.inset-control+stroke.control', gap: 'spacing.gap-control', icon: 'icon.medium', title: 'type.label' },
+  sm: { w: 'spacing.32+spacing.32+spacing.32+spacing.4', pad: 'spacing.gap-control+stroke.control', gap: 'spacing.gap-control', icon: 'icon.small', title: 'type.body-sm' },
+  lg: { w: 'spacing.32+spacing.32+spacing.32+spacing.4', pad: 'spacing.inset-surface+stroke.control', gap: 'spacing.gap-group', icon: 'icon.large', title: 'type.label' },
+}
+function fileUploadDropzonePaint(state: string): SlotMap {
+  const ink = (role: string) => ({ text: c(role) })
+  if (state === 'Dragging') return {
+    root: { fill: c('surface.accent'), stroke: c('border.accent') },
+    icon: ink('content.accent'), title: ink('content.accent'), description: ink('content.accent'),
+  }
+  if (state === 'Invalid') return {
+    root: { fill: c('status.critical.surface'), stroke: c('status.critical.border-strong') },
+    icon: ink('status.critical.content'), title: ink('status.critical.content'), description: ink('status.critical.content'),
+  }
+  if (state === 'Disabled') return {
+    root: { fill: c('action.disabled.default'), stroke: c('border.control') },
+    icon: ink('content.disabled'), title: ink('content.disabled'), description: ink('content.disabled'),
+  }
+  return {
+    root: { fill: c('surface.layer-1'), stroke: c(state === 'Hover' ? 'border.control-hover' : 'border.control') },
+    icon: ink('content.secondary'), title: ink('content.primary'), description: ink('content.secondary'),
+  }
+}
+export const FILE_UPLOAD_DROPZONE: ComponentRecipe = {
+  key: 'FileUploadDropzone',
+  slots: ['root', 'icon', 'text', 'title', 'description', 'separator', 'rule', 'or'],
+  defaults: { Size: 'default', State: 'Default' },
   parts: [
     part({}, () => ({
-      root: {
-        strokeWidth: 'stroke.control', radius: 'radius.container',
-        paddingX: 'spacing.5', paddingY: 'spacing.8', gap: 'spacing.gap-control',
-      },
-      icon: { height: 'size.control', width: 'size.control', radius: 'radius.pill' },
-      title: { text: c('content.primary'), font: 'type.body-sm' },
-      link: { font: 'type.label' },
-      hint: { font: 'type.helper' },
+      root: { radius: 'radius.container', strokeWidth: 'stroke.control' },
+      title: {}, description: { font: 'type.helper' },
+      separator: { gap: 'spacing.gap-group' },
+      rule: { fill: c('border.subtle'), height: 'stroke.divider' },
+      or: { text: c('content.secondary'), font: 'type.label' },
     })),
-    part({ State: ['Default', 'Dragging', 'Error'] as const }, (state) => {
-      const error = state === 'Error'
+    part({ Size: FILE_UPLOAD_DROPZONE_SIZES }, (size) => {
+      const g = FUD_GEOMETRY[size]
       return {
-        root: {
-          fill: state === 'Dragging' ? c('surface.accent') : error ? c('status.critical.surface') : NONE,
-          stroke: c(error ? 'status.critical.border-strong' : state === 'Dragging' ? 'border.accent' : 'border.control'),
-        },
-        icon: { fill: c(error ? 'status.critical.surface' : 'surface.selected'), text: c(error ? 'status.critical.content' : 'content.accent') },
-        link: { text: c('content.link.default') },
-        hint: { text: c(error ? 'status.critical.content' : 'content.secondary') },
+        root: { width: g.w, paddingX: g.pad, paddingY: g.pad, gap: g.gap },
+        icon: { width: g.icon, height: g.icon },
+        title: { font: g.title },
+      }
+    }),
+    part({ State: FILE_UPLOAD_DROPZONE_STATES }, (state) => fileUploadDropzonePaint(state)),
+  ],
+}
+
+// ── FileUploadItem ─────────────────────────────────────────────────────────
+// The Figma `FileUploadItem` set (design-plans/file-upload-item-contract.md, 994:1074, 10 variants:
+// Size default · sm × Status queued · uploading · paused · completed · error). A 480 row (no
+// variable: summed steps) on Surface/layer-1 with a Border/default edge laid out, the format glyph,
+// then the name, the status and size readouts, the row's IconButtons (secondary · ghost) and, while
+// uploading or paused, the ProgressLine (drawn here: Surface/muted track, Action/primary/default bar,
+// 4px, Radius/full). default stacks header · footer · progress, sm puts everything on one line.
+export const FILE_UPLOAD_ITEM_SIZES = ['default', 'sm'] as const
+export const FILE_UPLOAD_ITEM_STATUSES = ['queued', 'uploading', 'paused', 'completed', 'error'] as const
+export const FILE_UPLOAD_ITEM: ComponentRecipe = {
+  key: 'FileUploadItem',
+  slots: ['root', 'icon', 'content', 'header', 'footer', 'name', 'status', 'statusIcon', 'label', 'meta', 'actions', 'track', 'bar'],
+  defaults: { Size: 'default', Status: 'queued' },
+  parts: [
+    part({}, () => ({
+      root: { width: 'spacing.32+spacing.32+spacing.32+spacing.24', radius: 'radius.container', fill: c('surface.layer-1'), strokeWidth: 'stroke.control', gap: 'spacing.gap-control' },
+      content: { gap: 'spacing.gap-tight' },
+      header: { gap: 'spacing.gap-control' },
+      footer: { gap: 'spacing.gap-control' },
+      name: { text: c('content.primary') },
+      status: { gap: 'spacing.gap-tight' },
+      statusIcon: { width: 'icon.small', height: 'icon.small' },
+      label: { font: 'type.caption' },
+      meta: { text: c('content.secondary'), font: 'type.caption' },
+      actions: { gap: 'spacing.gap-tight' },
+      track: { fill: c('surface.muted'), height: 'spacing.1', radius: 'radius.pill' },
+      bar: { fill: c('action.primary.default'), radius: 'radius.pill' },
+    })),
+    part({ Size: FILE_UPLOAD_ITEM_SIZES }, (size) => ({
+      root: { paddingX: size === 'sm' ? 'spacing.gap-control+stroke.control' : 'spacing.inset-control+stroke.control', paddingY: size === 'sm' ? 'spacing.gap-control+stroke.control' : 'spacing.inset-control+stroke.control' },
+      icon: { width: size === 'sm' ? 'icon.medium' : 'icon.large', height: size === 'sm' ? 'icon.medium' : 'icon.large' },
+      name: { font: size === 'sm' ? 'type.body-sm' : 'type.label' },
+    })),
+    part({ Status: FILE_UPLOAD_ITEM_STATUSES }, (status) => {
+      const error = status === 'error'
+      const ink = error ? 'status.critical.content' : status === 'completed' ? 'status.success.content' : 'content.secondary'
+      return {
+        root: { stroke: c(error ? 'status.critical.border' : 'border.default') },
+        icon: { text: c(error ? 'status.critical.content' : 'content.secondary') },
+        statusIcon: { text: c(ink) },
+        label: { text: c(ink) },
       }
     }),
   ],

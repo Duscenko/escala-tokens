@@ -1,24 +1,40 @@
 import { useState } from 'react'
 import type { SpecimenProps } from '../specimens'
-import { PhosphorWeightProvider, PreviewIcon, avatarFillOf, avatarHueGradient } from '../specimens'
+import { PhosphorWeightProvider, PreviewIcon, avatarFillOf, avatarHueGradient, AVATAR_STACK_HUES } from '../specimens'
 import { iconOf, iconRoleOf } from '../../../../lib/previewTokens'
 import type { IconRole } from '../../../../lib/iconSizing'
-import { Badge as SkBadge, StatusBadge as SkStatusBadge, type BadgeVariant, type Presence } from '../../../escala-ui/badge'
-import { Chip as SkChip } from '../../../escala-ui/chip'
+import { Badge as SkBadge, StatusBadge as SkStatusBadge, type BadgeAppearance, type BadgeShape, type BadgeSize, type BadgeType, type BadgeVariant, type Presence } from '../../../escala-ui/badge'
+import { Chip as SkChip, type ChipAppearance, type ChipShape, type ChipSize, type ChipState, type ChipVariant } from '../../../escala-ui/chip'
 import { useAutoplayStep } from '../../../preview/artefacts/boardAutoplay'
-import { Progress as SkProgress } from '../../../escala-ui/progress'
+import { ProgressCircle as SkProgressCircle, ProgressLine as SkProgressLine, type ProgressAppearance, type ProgressCap, type ProgressSize } from '../../../escala-ui/progress-line'
 import { Spinner as SkSpinner } from '../../../escala-ui/spinner'
 import { Icon as SkIcon } from '../../../escala-ui/icon'
-import { Rating as SkRating } from '../../../escala-ui/rating'
+import { RatingGroup as SkRatingGroup, RatingGroupItem as SkRatingGroupItem, type RatingGroupItemState, type RatingGroupSize, type RatingGroupType } from '../../../escala-ui/rating-group'
 import { FileFormat as SkFileFormat, type Format } from '../../../escala-ui/file-format'
-import { Avatar as SkAvatar, AvatarFallback as SkAvatarFallback, type AvatarSize } from '../../../escala-ui/avatar'
+import {
+  Avatar as SkAvatar, AvatarStatus as SkAvatarStatus, AvatarGroup as SkAvatarGroup,
+  type AvatarSize, type AvatarType, type AvatarShape, type AvatarVariant, type AvatarAppearance, type AvatarStatusValue, type AvatarStatusSize,
+} from '../../../escala-ui/avatar'
+import { FeaturedIcon as SkFeaturedIcon, type FeaturedIconSize, type FeaturedIconShape, type FeaturedIconVariant, type FeaturedIconAppearance } from '../../../escala-ui/featured-icon'
 import { RecipeScope } from './scope'
-import { Kbd as SkKbd, KbdGroup as SkKbdGroup } from '../../../escala-ui/kbd'
+import { Kbd as SkKbd, KbdGroup as SkKbdGroup, type KbdSize } from '../../../escala-ui/kbd'
 
+/** The Figma Badge. `IconLeadingVisible` / `IconTrailingVisible` are Figma booleans (`'True'`); a dot only
+ *  exists solid + pill, so the specimen draws it that way whatever the other axes say. */
 export function SkeletonBadgeSpecimen({ t, v, children }: SpecimenProps) {
+  const type = (v.Type ?? 'default') as BadgeType
   return (
     <RecipeScope t={t}>
-      <SkBadge variant={(v.Variant ?? 'default') as BadgeVariant}>
+      <SkBadge
+        appearance={(v.Appearance ?? 'soft') as BadgeAppearance}
+        shape={(v.Shape ?? 'rounded') as BadgeShape}
+        size={(v.Size ?? 'default') as BadgeSize}
+        type={type}
+        variant={(v.Variant ?? 'default') as BadgeVariant}
+        iconLeading={v.IconLeadingVisible === 'True' ? true : undefined}
+        iconTrailing={v.IconTrailingVisible === 'True' ? true : undefined}
+        aria-label={type === 'icon' ? 'Verified' : type === 'dot' ? 'Online' : undefined}
+      >
         {children ?? 'Badge'}
       </SkBadge>
     </RecipeScope>
@@ -29,26 +45,31 @@ export function SkeletonStatusBadgeSpecimen({ t, v }: SpecimenProps) {
   return <RecipeScope t={t}><SkStatusBadge status={(v.Status ?? 'online') as Presence} /></RecipeScope>
 }
 
-// Keyed by the axis values, so flipping `Selected` in the playground re-seeds
-// the chip's own toggle state (a key on the inner Chip left it stale).
+/** The Figma Chip. `CloseVisible` / `IconLeadingVisible` are Figma booleans (`'True'`). `v.Interactive: 'True'`
+ *  (opt-in, not a catalogue axis) lets a click toggle it, as the board plays it; otherwise State pins it. */
 export function SkeletonChipSpecimen(props: SpecimenProps) {
   const { v } = props
-  return <ChipPlayground key={`${v.Selected}-${v.Dismissible}-${v.Size}`} {...props} />
+  return <ChipPlayground key={`${v.State}-${v.Selected}-${v.Interactive}`} {...props} />
 }
 
-function ChipPlayground({ t, v }: SpecimenProps) {
-  const small = v.Size === 'sm'
-  const [selected, setSelected] = useState((v.Selected ?? 'False') === 'True')
+function ChipPlayground({ t, v, children }: SpecimenProps) {
+  const interactive = v.Interactive === 'True'
+  const [selected, setSelected] = useState(v.State === 'Selected' || v.Selected === 'True')
+  const state = (v.State ?? 'Default') as ChipState
   return (
     <RecipeScope t={t}>
       <SkChip
-        selected={selected}
-        onPressedChange={setSelected}
-        size={small ? 'sm' : 'default'}
-        dismissible={(v.Dismissible ?? 'False') === 'True'}
-        removeIcon={<PreviewIcon concept="close" size={small ? 9 : 10} />}
+        variant={(v.Variant ?? 'default') as ChipVariant}
+        appearance={(v.Appearance ?? 'outline') as ChipAppearance}
+        size={(v.Size ?? 'default') as ChipSize}
+        shape={(v.Shape ?? 'rounded') as ChipShape}
+        selected={interactive ? selected : undefined}
+        onPressedChange={interactive ? setSelected : undefined}
+        forceState={interactive ? undefined : state}
+        closeVisible={v.CloseVisible === 'True' || v.Dismissible === 'True'}
+        iconLeading={v.IconLeadingVisible === 'True' ? true : undefined}
       >
-        Design tokens
+        {children ?? 'Chip'}
       </SkChip>
     </RecipeScope>
   )
@@ -57,9 +78,23 @@ function ChipPlayground({ t, v }: SpecimenProps) {
 /** An upload as the board plays it: fills in steps, rests full, starts over. */
 const PROGRESS_PLAY = [0, 24, 60, 82, 100, 100]
 
-export function SkeletonProgressSpecimen({ t, w }: SpecimenProps) {
+/** The Figma ProgressLine at its 240px sample; `v.Value` pins the value (the board plays an upload through it). */
+export function SkeletonProgressLineSpecimen({ t, v, w }: SpecimenProps) {
   const step = useAutoplayStep(PROGRESS_PLAY.length, 1100)
-  return <RecipeScope t={t}><SkProgress label="Uploading…" value={step == null ? 60 : PROGRESS_PLAY[step]} style={{ width: w ?? 240, maxWidth: '100%' }} /></RecipeScope>
+  const value = v.Value != null ? Number(v.Value) : step == null ? 60 : PROGRESS_PLAY[step]
+  return (
+    <RecipeScope t={t}>
+      <SkProgressLine aria-label="Uploading" size={(v.Size ?? 'default') as ProgressSize} appearance={(v.Appearance ?? 'solid') as ProgressAppearance} value={value} style={{ width: w ?? 240, maxWidth: '100%' }} />
+    </RecipeScope>
+  )
+}
+
+export function SkeletonProgressCircleSpecimen({ t, v }: SpecimenProps) {
+  return (
+    <RecipeScope t={t}>
+      <SkProgressCircle aria-label="Uploading" size={(v.Size ?? 'default') as ProgressSize} cap={(v.Cap ?? 'round') as ProgressCap} appearance={(v.Appearance ?? 'solid') as ProgressAppearance} value={Number(v.Value ?? 50)} />
+    </RecipeScope>
+  )
 }
 
 export function SkeletonSpinnerSpecimen({ t }: SpecimenProps) {
@@ -78,25 +113,29 @@ export function SkeletonIconSpecimen({ t, v }: SpecimenProps) {
   )
 }
 
-export function SkeletonRatingSpecimen(props: SpecimenProps) {
-  return <RatingPlayground key={props.v.Interactive} {...props} />
-}
-
-// Interactive: a click sets the score and the label follows it. Filled stars
-// are the fill weight of the same glyph, so a score reads at a glance.
-function RatingPlayground({ t, v }: SpecimenProps) {
-  const interactive = (v.Interactive ?? 'False') === 'True'
-  const [score, setScore] = useState(4)
-  const size = iconOf(18)
+/** The Figma RatingGroup: five stars (four checked) or five smileys (the fourth chosen). */
+export function SkeletonRatingGroupSpecimen({ t, v }: SpecimenProps) {
   return (
     <RecipeScope t={t}>
-      <SkRating
-        value={score}
-        onValueChange={interactive ? setScore : undefined}
-        interactive={interactive}
-        star={<PreviewIcon concept="star" size={size} />}
-        starOn={<PhosphorWeightProvider weight="fill"><PreviewIcon concept="star" size={size} /></PhosphorWeightProvider>}
-        label={`${score.toFixed(1)} · 128 reviews`}
+      <SkRatingGroup
+        aria-label="How was it?"
+        size={(v.Size ?? 'default') as RatingGroupSize}
+        type={(v.Type ?? 'star') as RatingGroupType}
+      />
+    </RecipeScope>
+  )
+}
+
+/** One Figma rating item on its own (the overview and the docs playground). */
+export function SkeletonRatingGroupItemSpecimen({ t, v }: SpecimenProps) {
+  return (
+    <RecipeScope t={t}>
+      <SkRatingGroupItem
+        aria-label="Rating"
+        size={(v.Size ?? 'default') as RatingGroupSize}
+        kind={(v.Type ?? 'star') as RatingGroupType}
+        checked={v.Checked === 'true'}
+        forceState={(v.State ?? 'Default') as RatingGroupItemState}
       />
     </RecipeScope>
   )
@@ -106,27 +145,82 @@ export function SkeletonFileFormatSpecimen({ t, v }: SpecimenProps) {
   return <RecipeScope t={t}><SkFileFormat format={(v.Format ?? 'pdf') as Format} /></RecipeScope>
 }
 
-/** `v.Fill: 'Gradient'` (opt-in, not a catalogue axis) paints the avatar with
- *  the system's gradient instead of initials; `v.Hue` rotates it. */
+/** The Figma Avatar. `v.Fill: 'Gradient'` (opt-in, not a catalogue axis) paints the avatar with
+ *  the system's gradient and no initials (the board's people); `v.Hue` rotates it. RingVisible and
+ *  StatusVisible are Figma booleans (`'True'` / `'False'`). */
 export function SkeletonAvatarSpecimen({ t, v }: SpecimenProps) {
   const gradient = v.Fill === 'Gradient'
   const hue = Number(v.Hue)
-  const background = gradient ? (Number.isFinite(hue) ? avatarHueGradient(t, hue) : avatarFillOf(t)) : undefined
+  const size = (v.Size ?? 'default') as AvatarSize
+  const type = (gradient ? 'initials' : v.Type ?? 'initials') as AvatarType
+  // The file's photo is a stock image: shown here as the system's own gradient (no image ships).
+  const background = gradient || type === 'image' ? (Number.isFinite(hue) ? avatarHueGradient(t, hue) : avatarFillOf(t)) : undefined
   return (
     <RecipeScope t={t}>
-      <SkAvatar size={(v.Size ?? 'default') as AvatarSize}>
-        <SkAvatarFallback style={background ? { background } : undefined}>{gradient ? null : 'MD'}</SkAvatarFallback>
+      <SkAvatar
+        aria-label="Maya Duscenko"
+        type={type}
+        size={size}
+        shape={(v.Shape ?? 'circle') as AvatarShape}
+        variant={(v.Variant ?? 'secondary') as AvatarVariant}
+        appearance={(v.Appearance ?? 'soft') as AvatarAppearance}
+        ringVisible={v.RingVisible === 'True'}
+        statusVisible={v.StatusVisible === 'True'}
+        style={background && type !== 'image' ? { background } : undefined}
+        fill={type === 'image' ? background : undefined}
+      >
+        {gradient ? null : size === '2xs' ? 'M' : 'MD'}
       </SkAvatar>
     </RecipeScope>
   )
 }
 
-export function SkeletonKbdSpecimen({ t }: SpecimenProps) {
+/** The Figma AvatarStatus dot on its own. */
+export function SkeletonAvatarStatusSpecimen({ t, v }: SpecimenProps) {
+  return (
+    <RecipeScope t={t}>
+      <SkAvatarStatus status={(v.Status ?? 'online') as AvatarStatusValue} size={(v.Size ?? 'default') as AvatarStatusSize} />
+    </RecipeScope>
+  )
+}
+
+/** The Figma AvatarGroup: four people and +3. The file's people are photos; code has none, so each is an image avatar
+ *  painted with the system's gradient at its own hue (opaque, so the overlap never shows the avatar below). */
+export function SkeletonAvatarGroupSpecimen({ t, v }: SpecimenProps) {
+  const size = (v.Size ?? 'default') as AvatarSize
+  const names = ['Ada', 'Ben', 'Cleo', 'Dan']
+  return (
+    <RecipeScope t={t}>
+      <SkAvatarGroup aria-label="Team" size={size} shape={(v.Shape ?? 'circle') as AvatarShape} count={3} countLabel="3 more people">
+        {names.map((name, i) => (
+          <SkAvatar key={name} type="image" aria-label={name} fill={avatarHueGradient(t, AVATAR_STACK_HUES[i])} />
+        ))}
+      </SkAvatarGroup>
+    </RecipeScope>
+  )
+}
+
+/** The Figma FeaturedIcon (a lightning bolt unless it is swapped). */
+export function SkeletonFeaturedIconSpecimen({ t, v }: SpecimenProps) {
+  return (
+    <RecipeScope t={t}>
+      <SkFeaturedIcon
+        size={(v.Size ?? 'default') as FeaturedIconSize}
+        variant={(v.Variant ?? 'default') as FeaturedIconVariant}
+        appearance={(v.Appearance ?? 'soft') as FeaturedIconAppearance}
+        shape={(v.Shape ?? 'circle') as FeaturedIconShape}
+      />
+    </RecipeScope>
+  )
+}
+
+export function SkeletonKbdSpecimen({ t, v }: SpecimenProps) {
+  const size = (v.Size ?? 'default') as KbdSize
   return (
     <RecipeScope t={t}>
       <SkKbdGroup>
-        <SkKbd>⌘</SkKbd>
-        <SkKbd>K</SkKbd>
+        <SkKbd size={size}>⌘</SkKbd>
+        <SkKbd size={size}>K</SkKbd>
       </SkKbdGroup>
     </RecipeScope>
   )

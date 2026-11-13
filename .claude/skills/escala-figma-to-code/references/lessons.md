@@ -228,3 +228,346 @@ Every row cost a round trip with the owner. Check each one before calling a comp
 | Replacing a recipe the frozen plugin builds (Calendar) | Parity: `{ Calendar: ['column'] }`; motion test: `Calendar.day` slot gone | New slots go in `WEB_ONLY_SLOTS`; drop the old slot's entry in `recipes/motion.ts`; goldens move ONLY in the recipe's own block (check the hunk headers are contiguous) |
 | A composite with sample data in its parts (CalendarMonth's November sample) | A real month showed the sample's selection, today and disabled days | The part shows its sample only when it gets no `month`; the composite passes month, today and the selection explicitly |
 | A board tile built on the old component (react-day-picker footer, `!w-full` stretch) | The new calendar is seven cells wide and cannot spread | The tile uses Size sm (250, the old width) centred; the event goes in as `children` under the month |
+
+# Lessons from the FileUploadDropzone (2026-11-12)
+
+| Trap | What it looked like | The fix (where it lives) |
+|---|---|---|
+| A variant overrides a TEXT layer without its property binding (Invalid: «Upload failed», sm Invalid shows only the limit message) | Copying the Title default everywhere | State-specific default copy when the prop is not passed; say it in the contract |
+| A layer hidden in one size and NOT bound to its BOOLEAN (sm description) | Tempting to honour `DescriptionVisible` in sm | Copy: sm never renders it |
+| The set nests a component that is not rebuilt yet (Separator «OR») | Reusing the shadcn Separator would draw a different thing | Draw it as slots of the new recipe with the file's roles; note the swap for when Separator is rebuilt |
+| A dashed stroke (dash 4·4) | No recipe prop for dashes | `borderStyle: dashed` inline; CSS cannot set the dash length — report it |
+| axe in Dark composites a translucent fill over the white `body`, not the `.dark` wrapper (elementsFromPoint shows `.dark` in the stack) | 1.81:1 «failures» on Status/critical/surface | Compute the real composite by hand over the `.dark` page (≈6.5:1 here); only Light flags are real |
+| A rename in the ledger (Dropzone → FileUploadDropzone) | Same list as NumberInput | catalogue, recipe key, `FILE_OF`, motion, specimens, snippets, overview, `PreviewPanel` `Live c=`, sitemap, store migration, `RENAMED_ON_WEB` + `WEB_ONLY` |
+
+# Lessons from the FileUploadItem (2026-11-12)
+
+| Trap | What it looked like | The fix (where it lives) |
+|---|---|---|
+| A nested ProgressLine instance resized wider than its main component | Its bar stays 120 px (Value=50 of ITS 240) inside a 422 track; the label says 48 % | Draw the bar as the progress % of the track; report the file's artefact |
+| Hidden instances (`change`, `download` behind a BOOLEAN) have no children | `findOne(INSTANCE)` returned null | Read their `INSTANCE_SWAP` componentProperties (`Icon → icon/Swap`) instead |
+| Glyphs the shared component icon set lacks (FilePdf, CloudArrowUp, Swap…) | No `PreviewIcon` concept for them | Inline the Phosphor regular path (`@phosphor-icons/core/assets/regular/*.svg`) in the component, as calendar.tsx does |
+
+# Lessons from the FileUpload (2026-11-12)
+
+| Trap | What it looked like | The fix (where it lives) |
+|---|---|---|
+| A SLOT property (`Content`) whose default content is sample rows | — | `children`; the sample rows render only when no children arrive |
+| «Size cascades to every item» | Passing `size` to each row by hand | A context in the parent; the row's own `size` prop still wins |
+| Nested sets FILL the parent but carry a fixed specimen width in their recipe | Dropzone 400 / rows 480 inside a 480 column | `w-full!` on the nested root from the parent (important beats the recipe rule) |
+| A new story file 404s in a running Storybook («importers[path] is not a function») | The index had not picked it up yet | Reload the iframe once |
+| Rebuilt recipe drops the plugin's old slots | Parity `anatomyGaps` | New slots in `WEB_ONLY_SLOTS` (old ones were not demanded here) |
+
+# Lessons from the Checkbox (2026-11-12)
+
+| Trap | What it looked like | The fix (where it lives) |
+|---|---|---|
+| A 270-variant set | One read would pass 48 KB | Geometry from 7 picked variants, then colours grouped by Variant · Checked · State with a Size-invariance check (empty here) |
+| Axis values changed case (`True` → `true`) | `Live`'s toggle only knew `True / False`; callers passed `Checked: 'True'` | `Live` accepts either pair; grep every `Checked: 'True'` (board, artefacts, RadiusRolesPreview, overview, agent screen patterns) and the specimen maps the old values |
+| Per-Variant focus pairs (secondary `Border/strong` + `Border/subtle`, inverse…) | Two tests demanded `border.focus` / "never border.strong" on every Checkbox | Narrow the tests to what the file says (default Variant's focus; the RESTING edge is border.control) with a dated comment |
+| Fills bound to TEXT roles (secondary `Content/primary`, inverse `Content/inverse`) | Looks like a binding mistake | Copy; say it in the contract |
+| `exportAudit` I10 budget again | 95 762 > 95 000 | 105 000 with a dated note |
+
+# Lessons from the CheckboxItem (2026-11-12)
+
+| Trap | What it looked like | The fix (where it lives) |
+|---|---|---|
+| A control frame as tall as the label's FIRST line, centring the box (y 3 in a 25 line) | A fixed offset per size | `h-[1lh]` on the control span with the label's type on it (recipe `control.font`): follows the line height of every Size |
+| «The whole row toggles» | A click handler on a div | The row is a `<label htmlFor>` around Radix's button (a labelable element): click anywhere toggles, the label is the name, no aria-label |
+| A composite whose nested axes always equal its own (324 variants checked) | — | Pass Size · Checked · State · Variant straight through; check it once with a script over every variant |
+
+# Lessons from the CheckboxGroup (2026-11-12)
+
+| Trap | What it looked like | The fix (where it lives) |
+|---|---|---|
+| A group whose axes cascade to its rows (Size · Placement · State · Variant) | Repeating the props on every row | A context in the group; the row's own props win; group State Default leaves rows free |
+| A group label that does not scale with Size (Type/label everywhere) | Tempting to scale it with the rows | Copy: one type for all sizes |
+
+# Lessons from the Switch and SwitchGroup (2026-11-12)
+
+| Trap | What it looked like | The fix (where it lives) |
+|---|---|---|
+| A recipe `part` over a SUBSET of an axis (State Focused only) | `componentRecipes.test`: parts must cover the full axes (`default|long|Focused` vs 24 combinations) | Cover the whole axis and branch inside the builder (`state === 'Focused' ? …`) |
+| A stroke laid out in Focused (thumb 2px further in, travel −4) | The `focus` path draws the edge as an inset shadow: no layout shift | Focused part adds `paddingX/Y: spacing.0_5+stroke.focus` and a shorter `travel` |
+| A hidden instance (thumb-icon) with a `fills` override | `children` empty, ink unreadable | Say it in the contract and pick a plausible Content role; no variant draws it |
+| Absolute marks hand-placed per Size (not centred in sm / default) | Tempting to centre them | Copy the literal x / y per Size · Thumb · Checked in the component (no variable) |
+| A part (SwitchGroup) living in its parent's file | `scripts/registrySources` looks per file | `FILE_OF` in `componentFiles.ts`, literal `data-escala="SwitchGroup"` |
+| Footer `Content/subtle` | axe 3:1 in both themes | Copied (rule 1), reported |
+
+# Lessons from the SegmentedControl and SegmentedControlItem (2026-11-12)
+
+| Trap | What it looked like | The fix (where it lives) |
+|---|---|---|
+| A recipe slot with `focus: none` in a rule that also carries `shadow` | The checked segment lost Shadow/xs in every state: `focus` none writes `box-shadow: none` after it | Set `focus` / `ring` only for Focused; in `recipeStyles.ts` the `focus` rule now keeps the slot's own `shadow` under the rings (Shadow/xs on a raised segment) |
+| A part that must DROP an effect the Default rule paints (checked Disabled) | The state-less rule still applied to Disabled | `highlight: NONE` in that state writes `box-shadow: none` |
+| The selection used to slide (SlidingSelection pill) | In the file the checked item IS the raised thumb | Dropped the pill; the item paints its own fill and shadow; background / shadow transition in `recipes/motion.ts` (key `SegmentedControlItem`) |
+| A roving radiogroup | One tab stop, arrows move and select | `tabIndex` 0 only on the checked item, the group's `onKeyDown` clicks the next enabled radio |
+| Text width 31.49 vs Figma 32 | Every item 1px narrower | Figma rounds the text box; same layout (padding 12 + text) |
+
+# Lessons from the Slider and SliderThumb (2026-11-12)
+
+| Trap | What it looked like | The fix (where it lives) |
+|---|---|---|
+| Radix draws the range from 0 to the value's percent of the track | 128px at 40 % vs the file's 130 (the thumb centre) | Own `<span data-part="Slider.range">` positioned by `calc(half-thumb + p × (100% − thumb))`; Radix still gives the thumbs, keyboard and pointer |
+| The thumb is a separate set with the states | A Radix thumb has no `dragging` | `SliderThumb` is its own component; `Radix Thumb asChild` wraps it. The Slider pins `Dragging` on the thumb that MOVED (index from `onValueChange`, not from focus) while the pointer is down |
+| A flex child squeezed to 0 (tick 2×6 inside a 20px mark that holds 26px) | tick height 0 | `shrink-0` on the tick; the mark overflows like the file's |
+| A recipe slot test written for the old slot (`['Slider','thumb']`) | `hitSlots` expected `Slider.thumb` | Point it at `SliderThumb.root` |
+| A shadow style with no ring and a 4px halo with spread | Dragging draws nothing | Copy: no effect (spread on a non-clipping frame) |
+
+# Lessons from the RatingGroup and RatingGroupItem (2026-11-12)
+
+| Trap | What it looked like | The fix (where it lives) |
+|---|---|---|
+| A rename in the ledger with the file also renamed (`rating.tsx` → `rating-group.tsx`) | Registry, `FILE_OF`, docs imports and every `Rating` string | `git mv` the file; catalogue, recipe key, specimens map, snippets, overviews, `ColourShowcase`, sitemap, motion, store migration (rename inside `selectedComponents` and add the part), parity `RENAMED_ON_WEB` + `WEB_ONLY` |
+| A Figma prop called `Type` on a `<button>` | `type` is the button's own attribute | `kind` on the item (documented); the group keeps `type` (a div has none) |
+| «In a star group set Checked on every item up to the value; code sets aria-checked on the chosen item only» | One boolean cannot be both | The group computes the visual `checked` (≤ value for stars, == for emoji) and the roving `aria-checked` separately |
+| Glyphs the shared component icon set lacks (the five smileys, the filled star) | No `PreviewIcon` concept | Inline Phosphor paths in the component (regular + `star-fill`) |
+
+# Lessons from the Avatar, AvatarStatus and AvatarGroup (2026-11-12)
+
+| Trap | What it looked like | The fix (where it lives) |
+|---|---|---|
+| Text styles the file leaves UNBOUND (`Type/avatar-2xs … 2xl`: literal 8 · 10 · 14 · 16 · 18 · 20 px, Medium, line height 100 %) | No role and no scale step matches (weight, leading and the 8 / 10 px) | Recipe prop `fontLiteral` (the px as a plain string, in `NON_TOKEN_PROPS`; `recipeStyles.ts` writes size / weight / leading). Sizes that DO bind a role (sm = `Type/label`) keep `font` |
+| A hand-set 0.5px hairline | `stroke.sm` is 1px; no token | Prop `hairline` (px string, non-token) |
+| A stroke OUTSIDE a small frame (the status dot, `strokeAlign` OUTSIDE) | A CSS border would grow the box (6 → 8) | Props `outerStroke` (colour) + `outerStrokeWidth` (stroke ref) → `box-shadow: 0 0 0 w c`. Both MUST sit in the SAME recipe part: `outerStroke` reads its width from its own rule, and a part split gave a 1px fallback on the 2px sizes |
+| A negative gap (avatar stack, −4 … −16) | CSS `gap` cannot be negative: it silently computed `normal` | Prop `overlap` → `--escala-overlap`; the component lays out `[&>*+*]:ml-[var(--escala-overlap)]`. A size with no role (−6, −12, −16) sets the variable inline from a spacing step |
+| A set with 350 variants where colours are invariant of Size × Shape | One line per variant would pass 48 KB | Group by Type · Variant · Appearance and count distinct `fill · stroke · ink` lines: 25 groups of 14, one colour line each |
+| A catalogue axis whose values change meaning (old shadcn `sm · default · lg` = 24 · 32 · 40, Figma's = 32 · 40 · 48) | Board and artefacts kept the old strings | grep every `v={{ Size: … }}` caller and move it (`SystemCollage`, `ProfileArtefact`, `PreviewPanel`, `screenPatterns`, `AboutInspectDemo`) |
+
+# Lessons from the FeaturedIcon (2026-11-12)
+
+| Trap | What it looked like | The fix (where it lives) |
+|---|---|---|
+| Variants filled with a pasted RASTER (default·solid and secondary·solid: `fills[0].type === 'IMAGE'`, 600×600 and 704×1408, icon with no painted layer) | The grouped colour read gave `fill IMAGE · ink ?` for 16 of 96 variants | Never copy a photo. Read the image size (`figma.getImageByHash(...).getSizeAsync()`) and a `get_screenshot` to confirm it is an artefact, then reuse the sibling set's solid tones (Avatar: `Action/primary/default` + `Content/on-action`, `Surface/inverse` + `Content/inverse`) and say so in the contract and the report |
+| A set that shares another's tone table | Same Variant × Appearance colours as Avatar | The recipe reuses `AVATAR_TONE` / `AVATAR_SHAPES` / `AVATAR_APPEARANCES` from the same file |
+| A new catalogue key adds `selectedComponents` migration even for a brand-new component | — | Splice it after its sibling (`Icon`) in the store migration (v134) |
+
+# Lessons from the Image (2026-11-12)
+
+| Trap | What it looked like | The fix (where it lives) |
+|---|---|---|
+| A rename in the ledger whose old key is also a FILE (`aspect-ratio.tsx` → `image.tsx`) and a plugin builder (`AspectRatio`) | Same checklist as Rating / Dropzone | `git mv` the file; catalogue, recipe key, specimens map, snippets, overview, sitemap, store migration (v135 renames inside `selectedComponents`), parity `RENAMED_ON_WEB` (`AspectRatio`) + `WEB_ONLY` (`Image`) |
+| A "Media" swap with a stock photo | No image ships | `src` / `alt` (or `children`); the specimen paints the system's gradient (`avatarFillOf`) in the media slot |
+| `Ratio auto` fills its parent | A fixed height in the specimen would lie | The Image is `size-full` for auto; the specimen / story gives it the file's 240 × 160 slot |
+
+# Lessons from the Kbd (2026-11-12)
+
+| Trap | What it looked like | The fix (where it lives) |
+|---|---|---|
+| A small component measured 16 wide in a story when its content needs 19 | The story's wrapper was 0 wide (a flex child of Storybook's root), so the `w-fit` key cap SHRANK to its `min-width` | `shrink-0` on the component (a key cap never shrinks). When a box is narrower than its content, test `flex-shrink: 0` and the parent's width before touching the recipe |
+| Figma text box 12 wide, browser 11 / 11.9 | xs 20 vs 19.0, default 28 vs 27.9 | Figma rounds the glyph's box up; same layout (padding + text) — as the SegmentedControl note |
+| An empty recipe `axes` becoming one axis | Kbd had no axes; the file has Size | Recipe `defaults: { Size: 'default' }` + a Size part; the catalogue axis; the overview row; no store migration (the key did not change) |
+
+# Lessons from the Badge (2026-11-12)
+
+| Trap | What it looked like | The fix (where it lives) |
+|---|---|---|
+| A 525-variant set whose colours are invariant of Size × Shape (and mostly of Type) | One line per variant is far over 48 KB | Group by Type · Variant · Appearance and count the distinct `fill · stroke · ink` lines (91 groups of 6, one colour line each); then read geometry for only one Variant × Appearance (success · solid) over Type × Size |
+| Some Type values exist for only one Appearance / Shape (`dot` = solid + pill only) | A catalogue axis value with no variant behind it | The builder draws a dot solid whatever Appearance arrives; the story / overview pin Appearance solid + Shape pill for it |
+| A stroke that lays out only in `outline` | Outline 63 wide vs 61 for the others | Padding `…+stroke.control` for that Appearance only; every other Appearance has `stroke.none` |
+| Old shadcn values on a changed axis (`default · secondary · destructive · outline · ghost · link` → severities × Appearance) | Callers painted the wrong tone silently | Move every caller: old `default` → `Variant default, Appearance solid`; `destructive` → `critical`; `outline` → `Variant secondary, Appearance outline` (Border/control + Content/primary is exactly the old outline); `secondary` stays (soft secondary = the old neutral fill) |
+| An `inverse` variant on the default page | axe 1.01:1 in Dark (light ink on the dark page) | Draw it on a `Surface/inverse` slot in the story, as Checkbox / CloseButton do |
+| `exportAudit` I10 budget again | 105 000 → 4 findings | 120 000 with a dated note (Avatar, FeaturedIcon, Badge) |
+
+# Lessons from the Chip (2026-11-12)
+
+| Trap | What it looked like | The fix (where it lives) |
+|---|---|---|
+| A stroke the file draws only in some states AND lays out (soft Default 51 wide, soft Focused / Selected / Dragging 53) | One part cannot hold both the padding and the paint | Three parts: geometry (Size × Shape), padding (Size × Appearance × State: `inset+stroke.control` when the state has a stroke), paint (Variant × Appearance × State) |
+| A focus edge of 1px with the ring OUTSIDE (`focus-ring` frame stroked OUTSIDE, 2px) on a pill / rounded chip | The field `ring` path draws the halo straddling the edge | `stroke` = the 1px edge colour + `halo` = the outside ring colour, both in the Focused paint |
+| Non-pointer states in a State axis (Selected, Dragging, Disabled) | The recipe only knows hover / focus from the pointer | The component writes `data-force-state` (Selected from `selected`, Dragging, Disabled + `aria-disabled`); the generated `:hover` rule excludes a forced state, so a selected chip has no hover as in the file |
+| `Shadow/sm` whose rings and negative spreads do not paint | Copying `0 0 0 1 · 0 1 3 · 0 1 2 −1` would add a ring Figma does not draw | `lift: 'drag'` (`0 1 3` key + `0 1 2` ambient, spreads dropped) |
+| A close control smaller than 24px (16 / 20) | `componentRecipes.test` demanded `size.hit` on the old `remove` slot | `hit: 'size.hit'` on the new `close` slot (test moved to `['Chip', 'close']`) |
+| A board tile used `Live toggle="Selected"` on an axis the file no longer has | `Live` only toggles a True / False catalogue axis | The specimen takes an opt-in `v.Interactive: 'True'` (not a catalogue axis) and toggles its own `selected` |
+
+# Lessons from the Accordion and AccordionItem (2026-11-12)
+
+| Trap | What it looked like | The fix (where it lives) |
+|---|---|---|
+| A State axis with no pointer state (Closed · Open · Disabled) | The recipe rules for Closed (the default value) had no selector: `stateSuffixes` returns only `[data-force-state="Closed"]` for an unknown state, so the Closed items lost their fill, edge and radius | The component sets `data-force-state` ALWAYS (Closed · Open · Disabled), not only for the non-default values |
+| The file's Accordion is a stack of AccordionItem instances; an item alone has no Radix root | An item story would crash (Radix Item outside a Root) | The Accordion owns the open values and the Variant in a context (Radix `type="multiple"` driven by it); an item rendered alone wraps itself in a root |
+| The old recipe lived on the container (one rounded panel) | The new look is per item (each item has its own fill / edge / radius) | `ACCORDION` keeps only the gap (0 or 8 by Variant); `ACCORDION_ITEM` paints; `RECIPE_MOTION` moves to the item (chevron transform + content choreography) and the choreography's `components` list gains `AccordionItem` in `lib/motion.ts` |
+| Same label on every item of an `AllCombinations` story | axe `landmark-unique`: the open `region`s share one accessible name | Suffix the label with the variant · state in the story |
+| `Content/secondary` on `Surface/muted` (ghost-rounded Open, filled-rounded) | axe 4.22:1 in Light | Copied (rule 1), reported |
+| `ui/accordion` (About) is a separate shadcn file | Rebuilding `escala-ui/accordion` looked like it would break About | About imports `../ui/accordion`, not escala-ui; untouched |
+
+# Lessons from the Table page (2026-11-12) — Table + 13 parts in one go
+| Trap | What it looked like | The fix (where it lives) |
+|---|---|---|
+| A PAGE of 14 sets, ~400 variants, where every part nests another (Row → Cell, Header → Head, Table → Header · Row) | One read per set would blow the budget | Read each set with the sweep script, but cap the nested instances (`describe` depth 1–2 on Row / Header / Table) and read the instances' `componentProperties`; save every reading in `design-plans/table-contract.md` BEFORE building; build all parts from one recipe file (`recipes/table.ts`) and one component file |
+| Heights with no variable (cell 48 · 32 · 40 · 56 and media thumbnails) | No `Size/*` bound on the frame | They equal `size.lg · sm · md · xl` (row) and `size.md · xs · sm · lg` (media): same px, state it in the contract |
+| A real `<table>` needs flex rows to match the file's frames | `display: table` cells cannot be 200 / 48 like the frames | Native elements with explicit roles (`table`, `rowgroup`, `row`, `columnheader`, `cell`) and `display: flex`; the header and footer are the `<thead>` / `<tfoot>` strip itself with an inner `<tr>`. A story / specimen that shows ONE cell wraps it in `role="table"` + `rowgroup` + `row` or axe says `aria-required-parent` |
+| A cell has a right stroke only in `Dividers: grid` and only if it is not the last | The cell set has no Dividers axis | A context (Table → Row → Cell) and a recipe suffix key on the root: `'root[data-grid]:not(:last-child)': { stroke, strokeRightWidth }` |
+| Hover that exists only for some instances (sortable heads, actionable rows) | A State axis whose pointer states must not always fire | `data-force-state="Default"` on the ones that must not hover (a forced state stops `:hover`); leave it unset where hover is real |
+| Footer cells use Type/label while the same TableCell set is body-sm | A set cannot know where it sits | A context flag → `data-label-type="label"` on the label and a recipe suffix key `'label[data-label-type="label"]'` |
+| Focused row = 2px ring all round and NO bottom hairline; Dragging = 1px all round | The default state's `strokeBottomWidth` would stay | Per-state recipe slot sets `strokeWidth` and omits the bottom divider; the more specific state rule wins over the border shorthand |
+| Part recipes for a frozen plugin | Parity test wants the keys in `WEB_ONLY` | Add the 13 keys (the plugin has a `Table` builder that already passes). Ledger: delete all 14 entries together |
+| axe `color-contrast` 4.22 | `Content/secondary` on `Surface/muted` (head label, Light) | Copied (rule 1), reported. Same pair as the Accordion note |
+
+# Lessons from the Alert (2026-11-13)
+| Trap | What it looked like | The fix (where it lives) |
+|---|---|---|
+| The old Alert is shadcn's (title + description, `default · destructive`) and four callers compose it | Rebuilding on the Figma API would break `AlertTitle` / `AlertDescription` users | `children` keeps the older composition (boxed, no close, no icon unless given); `variant="destructive"` stays as an alias of `critical`; the callers are untouched. The catalogue lists only the file's axes |
+| A hairline on ONE side that the file lays out (horizontal outline: 65 = 64 + 1) vs all sides (vertical outline: 320×67) | `strokeWidth` makes the padding give the border back (`--escala-stroke-width`), `strokeBottomWidth` does not | Horizontal: `strokeBottomWidth` and the plain padding; vertical outline: `strokeWidth` and the padding `spacing.inset-surface+stroke.control` |
+| An absolute close at x284 y12 in a box with a 1px border | CSS absolute offsets start INSIDE the border | `calc(var(--spacing-inset-control) - var(--stroke-control))` for the outline appearance only (the custom property `--escala-stroke-width` is not inherited by the child) |
+| 96 variants, colours invariant of Layout × Size | One line per variant | Grouped read by Variant · Appearance (24 groups of 4); the severity table in the contract |
+| `exportAudit` I10 budget again | 120k → 135k with a dated note (Table + Alert) | `src/lib/exportAudit.ts` |
+
+# Lessons from ProgressLine and ProgressCircle (2026-11-13)
+| Trap | What it looked like | The fix (where it lives) |
+|---|---|---|
+| A rename (Progress → ProgressLine) AND a new sibling (ProgressCircle) on one Figma page | Same checklist as Rating / Image plus a part | `git mv progress.tsx progress-line.tsx` (the circle lives in it: `FILE_OF`), catalogue, recipes, motion, specimens, snippets, overviews, `SystemCollage` `inspectable`, a caller, sitemap, store v138 (rename inside `selectedComponents` + add the part), parity `RENAMED_ON_WEB` (`Progress`) + `WEB_ONLY` |
+| The old Progress had a label + percentage header the file does not draw | Keeping it would add a part with no Figma twin | Dropped; the consumer labels it. The specimen / callers lose `label`; an `aria-label` names the bar |
+| A ring drawn as two ELLIPSE arcs with an `innerRadius` ratio (0.667 · 0.75 · 0.714) | The thickness is not a token | The ring is an SVG (viewBox 100, `pathLength` 100, `stroke-dasharray`); thickness = `50 × (1 − innerRadius)` (mind the factor: a first pass doubled it to 8px on the 24px ring); measured 4 · 4 · 6 · 8 px |
+| Figma's round caps are separate dots at the arc ends | CSS has no such thing | SVG `stroke-linecap: round` is the same shape (a half-thickness past each end); Value 100 uses butt so the ring closes cleanly |
+| A gradient fill (default → hover) over a bar and a ring | The recipe has solid fills only | Inline `linear-gradient(to right, var(--color-action-primary-default), var(--color-action-primary-hover))` on the bar and an SVG `<linearGradient>` rotated 90° to undo the arc's −90° rotation; the stops are the same CSS vars the recipe reads |
+
+# Lessons from the Toast (2026-11-13)
+| Trap | What it looked like | The fix (where it lives) |
+|---|---|---|
+| The ledger's `Toast` is a rename of `Sonner`, a shadcn skin over the `sonner` library (a real Toaster painted through `recipe.dom`) | The Figma Toast has Appearance × Variant, a progress hairline and its own icon per severity: no DOM of a library carries that | `Toast` is a presentational component with its own recipe; `Toaster` / `toast` stay the library's (unstyled) and `showToast` renders `<Toast>` inside it with `toast.custom`. The old `dom` recipe, `SONNER_*` and the Sonner specimen (library measuring + stacking hacks) are gone. Rename checklist as Rating / Progress, plus the callers: SystemCollage, ColourShowcase, PreviewPanel, `FIGMA_SAMPLE_KEYS`, the `sonner-enter` choreography's `components`, three tests that named Sonner |
+| One side of the padding is a different role (left = Spacing/inset-surface 20, the other three 12) and the recipe has no `paddingLeft` | `paddingX` sets both | The component carries `!pl-[var(--spacing-inset-surface)]` (a utility must win over the recipe rule: `!`) |
+| A progress hairline ABSOLUTE across the whole frame, over the stroke | A CSS absolute child starts inside the border and `overflow: hidden` clips at the padding box → 358 wide at x 1 | `overflow: clip` + `overflow-clip-margin: border-box` (keeps the radius clip over the border) and `left` / `bottom` of `−stroke.control`, width `100% + 2 × stroke.control` for filled / outline: measured 0,62 360×4 |
+| A shadow style with a 1px ring and negative spreads | Same as DatePickerPopover | `lift: rest` |
+| The new recipe breaks the inspector's ordering test | `tokenInspector` expected popover roles | Surface, then border, then the icon ink (`content.accent`): the test now says what the set paints |
+
+# Lessons from the Table Prototype (2026-11-13)
+| Trap | What it looked like | The fix (where it lives) |
+|---|---|---|
+| A Figma «Prototype» section is a COMPOSITION, not a set: no axes, so the catalogue / Overview axis test cannot name it | Adding an `Example` axis would have broken «catalogue axes = Figma's» | A composed component outside `escala-ui` (`docs/skeleton/tablePrototype.tsx`), stories `PrototypePro…`, and an Overview item recognised by its WIDTH (`TABLE_PROTOTYPE_W`, a constant in `componentOverviews.ts`); Dividers rows = the file's Light example, grid = its Dark example (pinned, resizing, scrolled, sorted) |
+| The file marks a sorted column but lists the rows in its own order | Sorting on mount reordered the people vs the screenshot | Rows reorder only after the first click (`sorted`) |
+| The file's avatars are stock photos from its Media library | Code has none | `lib/avatarGradient.ts`: an opaque gradient SVG data URI through the same `src` the Photo swap uses |
+| axe on a composed table | `role="img"` avatars with no name; a focusable `separator` with no `aria-valuenow` | Avatar: unnamed photo = decorative (`aria-hidden`), named = `role=img`; TableResizer reports its column's width (`aria-valuenow`, ResizeObserver on the parent) and has an `aria-label` |
+
+# Lessons from the AvatarGroup fix (2026-11-13)
+Source: the file's «AvatarGroup Prototype» (868:28472): four PHOTO avatars + the dark `+3` tile, default circle / rounded, sm and xl, Light and Dark.
+| Trap | What it looked like | The fix (where it lives) |
+|---|---|---|
+| Soft initials in a stack | A 12 % tint reads as "painted", and the story used it as the group's default | The file's people are photos (opaque). A photo-less image Avatar paints an OPAQUE gradient (`hue` / `fill` props, `avatarGradientCss`); the stories, the AvatarGroup specimen and the Avatar `Image` specimen use it. Soft / solid initials stay as opt-in fills |
+| Overlap looked wrong although the margins were the file's (−4 … −16, widths 74 · 106 · 148 · 188 · 212 · 252 · 286) | The left avatar's translucent edge (and its hairline) showed OVER the next item's `Surface/page` ring and over the `+N` tile: a pale sliver on the tile | Stacking, not spacing: the Avatar is `relative`, the item frames were not, so positioned avatars painted above later unpositioned frames. Items are `relative` now (DOM order = z order, as the file's item-1 at the bottom). Measured: page ring cuts every avatar, nothing shows through, widths unchanged |
+| `escala-ui` files ship in the shadcn registry | `gen:registry-sources` threw «imports app internals (../../lib/…)» after a helper import | A registry component is self-contained: the gradient helpers live in `avatar.tsx`; `lib/avatarGradient.ts` re-exports them and adds the data-URI form |
+| `cmd1 && cat > file <<EOF` | The first command failed, so the file was never rewritten and Storybook's index looked stale | Check the file, not the index |
+
+# Lessons from the Table scroll fix (2026-11-13) — reported from the prototype story
+| Trap | What it looked like | The fix (where it lives) |
+|---|---|---|
+| A table wider than its window scrolls inside `Table`, but the `<table>` was `w-full` of the window | Row fills, the selected / hovered tint and the bottom hairlines stopped where the window ended (1613 of 1953) | `<table>` is `w-max min-w-full`: as wide as its columns, never narrower than the box. An 800 table with flex columns is unchanged (800×242, cells 200) |
+| A sticky (pinned) cell with no fill | The scrolled columns showed through the Name column; a selected row lost its colour under it | `PINNED_CELL` in `recipes/table.ts`: a pinned cell is `surface.page` with the ROW's state laid over it (`overlay`), read off the parent row with `:where(tr:hover:not([data-force-state]) > *)`, `[data-force-state="Selected"] > *`, `Dragging`. Never use `:not([data-pinned="none"])` alone: it matches parts that have no `data-pinned` at all |
+| A cell at its own height (48) inside a 48 row with a 1px bottom border | The cell ran 1px over the row's hairline; any opaque cell (pinned, head) erased the divider | Inside a row, header and footer the cells stretch to the row's content box (`IN_ROW = [&>*]:!h-auto`); a lone cell keeps the file's height |
+| The prototype's rows hover in Figma | Rows were non-interactive (pinned to Default) | `interactive` on the prototype rows; Ethan keeps the file's forced Hover |
+
+# Lessons from the Table polish, second pass (2026-11-13) — measured against the Dark example node by node
+| Trap | What it looked like | The fix (where it lives) |
+|---|---|---|
+| A row's INSIDE stroke as a CSS border | Cells 47 tall, content 0.5px off the file (checkbox y 62.5 vs 63, avatar 52.5 vs 53), a 2px jump of every cell on Focused, an opaque cell covering the hairline | Row, header and footer strokes are recipe keys `root::after` (an overlay laid out by the component: `relative`, `after:absolute after:inset-0 after:z-[2]`). Figma draws inside strokes OVER the children; so does the overlay. After: every box = the file's to the pixel |
+| Pin edge in a grid | `right-0` put the 1px pin INSIDE the cell's right hairline: two lines side by side (375 + 376) | The pin sits on the cell's last pixel (`[[data-grid]:not(:last-child)>&]:right-[-stroke]`): one line at 376, as the file |
+| The file's last column overruns the table by 2px (264 in 1438) and the file clips it | A full-width table scrolled 2px | The last prototype column takes what is left (262, `flex-grow 1`) |
+| A sortable head is a tab stop and the set draws no focus | Keyboard focus invisible on Name / Join date | `'root:focus-visible': { focus: border.focus }` — the row's own Focused treatment, 2px inside |
+| Measuring by eye in a scaled Browser pane | The pane scales a 1500 viewport down; "looks right" proved nothing | Compare `getBoundingClientRect` relative to the table with the Figma read (`absoluteBoundingBox` relative to the Table instance) for every leaf |
+
+# Lessons from the Modal, ModalHeader and ModalFooter (2026-11-13)
+| Trap | What it looked like | The fix (where it lives) |
+|---|---|---|
+| A rename (Dialog → Modal) with two parts on one page; the old file is `dialog.tsx` | Same checklist as Toast / Rating, plus the parts | `git mv dialog.tsx modal.tsx` (parts in it: `FILE_OF`), `Dialog*` names kept as export aliases, catalogue (3 entries), recipes, `recipes/motion.ts` + `lib/motion.ts` (`dialog-enter` components), specimens, snippets, overviews, sitemap, store v140 (`Dialog` → `Modal`, `ModalHeader`, `ModalFooter`), parity (`RENAMED_ON_WEB` `Dialog`, `WEB_ONLY` the three) |
+| `use_figma` text read with `slice(0, 80)` | The body looked 2 lines (42px) vs the file's 63 | Never truncate a TEXT you will copy as default copy; read it whole once (`characters`) |
+| A frame that CLIPS content with spread shadows (Shadow/xl on the Modal) | The FAB / Toast lesson says "spreads paint nothing" | That holds only for NON-clipping frames: the Modal clips, so ring `0 0 0 1` and the `−4` spreads DO paint. Recipe `lift: modal` (ring + key `0 20 24 −4` + ambient `0 8 8 −4`); the file's numbers beat `elevationTokens` xl (8·16 / 4·8) |
+| A close button the card nests at a smaller Size than the card (Modal default → CloseButton `sm` 32, lg → `default` 40) | The CloseButton took the Modal's size name (40 / 48) | Map it in the component, measure x/y against the instance (427,21 · 579,21) |
+| A header whose clearance for the close is a hidden frame | Header content 384 standalone, 334 inside the Modal | `closeClearance` comes from a context the Modal provides; the header only draws it for `horizontal` |
+| Radix Title outside a Dialog throws | A header alone (specimen / story) crashes | A context flag: inside `ModalContent` the title is Radix's (even `inline`, still a Root), outside it is a plain `h2` / `p` |
+| Fixed card widths with no variable (480 / 640) | — | Summed spacing steps (`spacing.32` = 128 px × 3 + `spacing.24`; × 5) |
+
+# Lessons from the Popover and PopoverFooter (2026-11-13)
+| Trap | What it looked like | The fix (where it lives) |
+|---|---|---|
+| A floating panel with a separate arrow FRAME (8px) per Side, the arrow a 16×9 vector 1px into the panel's edge | Radix's own Arrow rotates and positions itself and had no 1px overlap | The content is a transparent wrapper: `[arrow frame, panel]` with `flex-col` (bottom) · `flex-col-reverse` (top) · `flex-row` (right) · `flex-row-reverse` (left); an own SVG (open path, `Surface/layer-2` fill via `paint`, `Border/default` stroke via `currentColor`); the file draws the arrow UNDER the panel for bottom / right and OVER it for top / left (a `z-[1]` on those). `sideOffset` 0 because the frame is part of the box. Measured 320×116, 256×99, 360×124 and 328×108 sideways, arrow at 152,0 · 152,107 · 319,46 |
+| Same Shadow style, different sizes (md at default / sm, lg at lg), and the panel CLIPS | `lift` knows only the FAB / Modal stacks | `lift: popover-md` / `popover-lg` (ring + the file's spread numbers); the ring role is added to the recipe's refs for every `modal` / `popover-*` lift |
+| A footer whose top stroke is NOT laid out (48 = 8 + 32 + 8) beside the Modal footer whose stroke is (81 = 20 + 40 + 20 + 1) | A CSS top border added 1px (49) | Read `strokesIncludedInLayout` per set: here the component takes the border out of the top padding (`!pt-[calc(gap-control − stroke-divider)]`) so the box is 48 and the buttons sit at y 8 |
+| Literal `data-escala` through a spread (`{...common}`) | `registryItemFor('Popover')` undefined (the FABGroup lesson again) | Write `data-escala="Popover"` as a literal JSX attribute in BOTH the inline and the portaled branch |
+| axe `region` on a story that renders a bare popover | «Some page content is not contained by landmarks» ×N in every theme | Story-level best practice, not a component defect (the Modal passes only because `role=dialog` is a landmark); everything else is clean |
+
+# Lessons from the DropdownMenu, Label, Item and Footer (2026-11-13)
+| Trap | What it looked like | The fix (where it lives) |
+|---|---|---|
+| The old DropdownMenu recipe came from a shared factory (`menu(key)`) that ContextMenu still uses | Rebuilding it in place would have restyled ContextMenu | Four new recipes beside it (`DROPDOWN_MENU`, `_LABEL`, `_ITEM`, `_FOOTER`); `menu()` stays for ContextMenu / Menubar |
+| A row whose Figma States are Default · Focused · Selected · Disabled but a live menu highlights on hover and arrow keys | The recipe has no «highlighted» state | The Default part also emits `'root[data-highlighted]'` with the Focused paint; the component sets `data-force-state` only for non-Default states, so Radix's highlight is never blocked by a pinned state |
+| A Focused row's 2px edge + 2px halo inside a clipping panel | A layout jump and a clipped halo | `focus` + `ring` are box-shadows (no layout change); the Content's 4px padding leaves room for the halo inside the panel's clip |
+| Selectable rows | `aria-checked` on `role=menuitem` is invalid | `checked` switches to Radix `CheckboxItem` (menuitemcheckbox) with the file's check as the indicator; `inline` draws the same role by hand |
+| A part set (Item) measured alone is 256 wide, but inside the menu it is 246 (Content padding 4) | The single-item story / specimen showed 248 | Standalone item wrappers zero the content padding (`[&>[data-part='DropdownMenu.content']]:!p-0`); the menu keeps the file's padding |
+| `Content/secondary` on `Surface/muted` (the Focused row's shortcut and description, Light) | axe 4.22:1 ×4 | Copied (rule 1), reported; same pair as the Accordion / Table notes |
+| New recipe slots on a plugin-built set | parity `anatomyGaps: DropdownMenu: [header, content]` | `WEB_ONLY_SLOTS` (dated), never a plugin edit |
+
+# Lessons from the TooltipContent and TooltipInfoTrigger (2026-11-13)
+| Trap | What it looked like | The fix (where it lives) |
+|---|---|---|
+| A rename (Tooltip → TooltipContent) with a new part and a 180-variant set | One read per variant is far over 48 KB | Read the geometry for default Size across Side × Align (+ sm / lg at top · center), then ONE line per Variant for bubble · text · title · arrow colours; every Size / Side / Align shares them |
+| Bubble paddings with no variable (6/8 · 8/10 · 10/12) and widths 200 · 240 · 280 | `get_metadata` shows raw numbers | Spacing steps of the same px (`1_5/2`, `2/2_5`, `2_5/3`) and summed steps as a max width in the component (`spacing.32 + 16 + 2` …); the bubble hugs, the text wraps at the cap |
+| Arrow frame 5px on the OPPOSITE edge of Side, shape aligned by Align with padding `Radius/overlay` | Radix's own Arrow is centred and rotated | DOM order [arrow frame, bubble] reversed by flex per side (as Popover); an own SVG triangle per side (`10×5` / `5×10`); `Align` pads the frame: start 16, end 16, centre auto. Measured arrow at x 16 · 115 · 214 and y 16 · 21 · 26 |
+| A trigger state Open that Radix expresses as `data-state="open"` on the button (via asChild Slot) | A recipe state cannot select a child by an ancestor's attribute | The component reads `props['data-state']` and writes `data-open` on the icon; the Default part adds `'icon[data-open]'` with the Open ink |
+| Focused trigger grows 20 → 24 in the file (a 2px stroke laid out) | A layout jump on focus | The owner asked for no jumps: `focus` + `ring` as box-shadows (no growth); noted in the contract as a deliberate deviation |
+| A snippet edit that cut at the wrong backtick | The previous key (`Tooltip: () =>`) stayed glued to the line above and the Popover snippet became a tagged template (tsc passed at first) | After a scripted splice in a `Record` of template strings, run `tsc` AND read the lines around the cut; fixed in this commit for the PopoverFooter entry too |
+
+# Lessons from the Breadcrumb, BreadcrumbItem, BreadcrumbEllipsis and BreadcrumbSeparator (2026-11-13)
+| Trap | What it looked like | The fix (where it lives) |
+|---|---|---|
+| shadcn's `BreadcrumbItem` is the `<li>` and `BreadcrumbLink` / `BreadcrumbPage` the anchor; the file's `BreadcrumbItem` IS the segment | Keeping shadcn's parts would give the file's component no home | Figma wins: `BreadcrumbItem` renders `<li>` + the link (`current` → a `span role=link aria-current`), `BreadcrumbLink` / `BreadcrumbPage` are gone (the only caller was the docs specimen), the separator and ellipsis are sibling `<li>`s. Store v144 adds the three parts after Breadcrumb |
+| The file lays a 1px stroke out only in Focused (ghost / solid) and always in outline | A CSS focus border would make the box jump 2px on focus | Every item / ellipsis root keeps a 1px border in all states (transparent when the file draws none) and the padding gives it back; Focused only changes the colour (`stroke` + `halo`). Outline adds `+stroke.control` to the padding because Figma lays its stroke out (Default 62 = 60 + 2) |
+| `aria-disabled="true"` on the current item (the shadcn habit) | The Disabled-state selector `[aria-disabled="true"]` repainted Current with the disabled ink | The current item carries `role=link` + `aria-current="page"` only |
+| A gap per Size that is 0 at xs (`Spacing/none`) and 4 at sm / default, a slash that is TEXT whose size follows Size | Totals off by 12 px | Read the root's `itemSpacing` per Size; checked against the file's widths (chevron 272 · 344 · 426, slash 236 · 311 · 381): ours land 0.2–1.8 px shorter (Inter fractional label widths, the file rounds Hug up), icons and boxes exact |
+| axe `landmark-unique` on a story that stacks nine `nav`s | Story-only artefact | Each trail gets its own `aria-label` in the stories |
+| axe 4.22:1 `Content/secondary` on `Surface/muted` (solid, Light) | Same pair as the Accordion / Table / DropdownMenu notes | Copied (rule 1), reported |
+| `npx tsc -b` run without `cd` ran in the main checkout | The cwd resets on every Bash call | Always `cd` into the worktree in the same command |
+
+# Lessons from the TabMenu, TabMenuItem and TabMenuLineItem (2026-11-13)
+| Trap | What it looked like | The fix (where it lives) |
+|---|---|---|
+| The old TabMenu slid a pill (`SlidingSelection`), had `role=tablist` / `tab` and took `items` | The file's selection is static and its description says `group` of buttons with `aria-pressed`, each item its own tab stop | Figma wins: items are `<button aria-pressed>`; `items` stays as a shortcut that renders the item type of the Variant; the board's autoplay selector (`boardAutoplay.CHOICES`) and the inspector test moved to `button` / `aria-pressed` / `TabMenuItem` (the file's selected fill lives in the item, not the group). `SlidingSelection` stays for SegmentedControl / Pagination |
+| One Variant picks WHICH item set the Content slot holds (line → TabMenuLineItem, button → TabMenuItem) | A single TabMenu API cannot say it | `TabMenu` reads the Variant to render the right item for `items`; with `children` the caller uses the matching item; the vertical Variants make items fill the width (`w-full`), the horizontal ones hug |
+| A track rectangle and an indicator bar drawn ABSOLUTE inside the frames (1px `Border/subtle`; 2px `Border/accent`, only Selected) | Borders on the items would shift layout and double the line | Own elements: `TabMenu.track` (absolute, bottom or left, recipe gives its 1px) and `TabMenuLineItem.indicator` (rendered only when Selected, `Indicator` bottom → x0, h−2 / left → 2 × h); measured 0,39 323×1 and 0,38 79×2 / 0,0 2×40 |
+| A padding that does NOT change with Size (12 at sm and lg) | The usual ladder would have changed it | Copied: `spacing.inset-control` for all sizes; heights 32 · 40 · 48, icons 16 · 20 · 24 |
+| Plugin parity: the plugin's TabMenu documents `item` / `pill`, the rebuilt recipe has `content` / `track` | `anatomyGaps: TabMenu` | `WEB_ONLY_SLOTS` and `STALE_ANATOMY` (dated), never a plugin edit |
+
+# Lessons from the NavItem, Brand and AccountMenuTrigger (2026-11-13)
+| Trap | What it looked like | The fix (where it lives) |
+|---|---|---|
+| Three `new` ledger entries (no code, no old callers) on three separate pages | Nothing to migrate, but each still needs the whole checklist (recipe, component, catalogue, specimen, overview, snippet, sitemap, store migration, parity `WEB_ONLY`, registry file) | One file per component named after the key (`nav-item.tsx`, `brand.tsx`, `account-menu-trigger.tsx`; `FILE_OF` not needed); store v146 inserts the keys after `TabMenuLineItem`; one commit for the three |
+| NavItem is TabMenuItem with `Current` instead of `Selected` | A second copy of the paint table would drift | The recipe reuses `tabMenuSizeSlots` / `tabMenuItemPaint` and maps `Current` → `Selected`; the component writes `aria-current="page"` and `data-force-state="Current"` |
+| The AccountMenuTrigger avatar is a circle in Default and a rounded square (`Radius/control`) in Hover / Pressed / Focused (the file's own variants) | A CSS-only state cannot change a nested Avatar's `shape` | The trigger tracks pointer / `:focus-visible` in React and passes `shape` to the Avatar (`forceState` pins it for docs). Copied, reported |
+| A trigger whose padding is 12 left and 4 right | `paddingX` sets both | `paddingX` + the existing `paddingRight` recipe prop |
+| axe `label-content-name-mismatch` on a story that wraps Brand in `<a aria-label="Escala home">` | The visible text is «Escala v1.1» | The story's label contains the visible text (`Escala v1.1 home`) |
+
+# Lessons from the Pagination, PaginationLink and PaginationEllipsis (2026-11-13)
+| Trap | What it looked like | The fix (where it lives) |
+|---|---|---|
+| The two Variants nest DIFFERENT components (grouped: ButtonGroupItem + ButtonGroupDivider in an outline group; compact: IconButton secondary ghost + PaginationLink) | One set of paints would draw the active page the same way in both | `Pagination` renders `ButtonGroup variant="outline"` over flattened items (the group's auto dividers give the file's 1px lines, also around the ellipsis) or its own flex with IconButtons; `PaginationLink` is a ButtonGroupItem in the grouped context (active = filled, with `aria-current` replacing `aria-pressed`) and its own recipe in the compact one (active = 1px `Border/control`). Measured 304 · 192 · 248 · 360 compact, exact |
+| The old Pagination slid a pill and took `pages / page / onPageChange` | Three callers (docs specimen, mobile preview, board tile) | The shortcut props stay (they generate links and the ellipsis, and disable the arrows at the ends); the pill and `SlidingSelection` are gone from Pagination; the board autoplay selector still finds `aria-current="page"` buttons |
+| Lone PaginationLink / Ellipsis in a story or specimen | A `Pagination` always draws its arrows | `PaginationScope` (context only) sets Size and Variant without the arrows |
+| 1.2 px short on the grouped widths (256.8 vs 258, same at every size) | Four links whose digit widths are fractional in Chrome and rounded up by Figma | Metrics, not geometry: boxes, dividers and icons match; recorded, not chased |
+| An Active stroke that does not enlarge the 40×40 link | A 1px CSS border would change nothing with `min-width` = height | A transparent 1px border in every state (the padding gives it back); only the colour differs |
+
+# Lessons from the Stepper, StepperItem, StepperIndicator and StepperIcon (2026-11-13)
+| Trap | What it looked like | The fix (where it lives) |
+|---|---|---|
+| The old Stepper was a horizontal bar built from `steps` / `current` with labels under round nodes | The file's default is VERTICAL with titles, descriptions, status and a line per step; four sets nest each other (Item → Indicator → Icon) | Four components in one file (`FILE_OF`), the shortcut props kept (earlier steps completed, `current` active, rest locked); the callers that want the old look pass `orientation="horizontal"` (mobile preview, the board tile through the specimen's `w`). Store v148 adds the three parts |
+| «The last item hides its line» is a Stepper rule the Item set does not carry | A prop per item would need the caller to know it is last | A class on the `li`: `[&:last-child_[data-part="StepperIndicator.line"]]:hidden`; the item keeps its 24px bottom padding (the file's Stepper is 4 × 62) |
+| The marker's number is the step's position, not a prop of the Stepper | `StepperItem` has no index | The Stepper wraps each child in an index context; the Item passes it to its Icon (`label` overrides) |
+| An Icon in Disabled shows the same paint for every status, an Indicator line goes `Border/subtle` | Nested components need the state too | The Item passes `data-force-state="Disabled"` to its Indicator and Icon; each reads its own recipe |
+| The connector line must stretch the free space (`grow 1`) of a column or row whose size comes from the sibling | A fixed length would break at other sizes | `flex: 1` with `flex-basis: 0` and `self-stretch`; measured 1×18 beside a 62 item and 173×1 across a 217 one |
+
+# Lessons from the Separator (2026-11-13)
+| Trap | What it looked like | The fix (where it lives) |
+|---|---|---|
+| A one-axis shadcn Separator (Radix, `orientation`) against a four-axis set with a label (Align · Orientation · Tone · Variant) | Plain `<Separator />` is used by Item, the docs artefacts and the board tiles | Same component and Radix root; `align`, `tone`, `variant` and the label as `children` are new, a label alone centres itself, all old call sites compile. The default Tone is `Border/default`, one step above the `Border/subtle` the code drew: reported, not hidden |
+| Dashed lines are a 4 · 4 dash pattern in the file | CSS `dashed` is 3 · 3 and varies | A repeated linear gradient over the line's colour (`--escala-paint`, set by the recipe's `paint`), 90° or 180° |
+| Lines that «grow» between a label and the edge | A fixed length would break at any width | `flex: 1 1 0` lines with the label `shrink-0`; measured 287 · 136 + 136 · 287 of 320 and 78 · 31 + 31 of 112, root 18 high / 17 wide, none 320×1 and 1×112 |
+| agentContextAudit requires `data-orientation` in the FILE text | Radix writes it at runtime, the test reads the source | Written explicitly on the root |
+| A role test that pinned `Separator` to `border.subtle` only | It described the old single-hairline recipe | Now the three tones plus the label ink |
+
+# Lessons from the ScrollArea and ScrollBar (2026-11-13)
+| Trap | What it looked like | The fix (where it lives) |
+|---|---|---|
+| Radix draws NO thumb in the Browser pane until the page renders a frame (its measure is a ResizeObserver behind a `requestAnimationFrame`) | `[data-escala="ScrollBar"]` had no child and `--radix-scroll-area-thumb-height: 18px` for minutes; I added a size «nudge» hack to the component before finding out | A `computer` `screenshot` forces a render: the thumb appears (178 of 280) with no code change. **Before blaming a component for a Radix part that is missing in the pane, take a screenshot and re-read.** The hack was removed |
+| The thumb is `flex-1` in the old component | The thumb filled the whole track (280 long) instead of the viewport ratio | Radix sizes the thumb with `--radix-scroll-area-thumb-height / -width`: no `flex-1`; its cross axis stretches by itself |
+| Bars sit 4px from the OUTER edge but the root has a 1px border | Radix positions inside the border: x 179, y 5, height 278 instead of 180, 4, 280 | Offsets are `calc(spacing.gap-tight − stroke.control)` (and `4 + thickness + 4` for the far end of each bar when Orientation is both: 268 long) |
+| The file's bars are always visible with a track | Radix hides them until you scroll | `type="always"` on the root; the viewport is `role="region"` when named (axe `aria-prohibited-attr` on a bare labelled div) and joins the tab order |
+| Radix wraps the viewport content in a `display: table` div | A vertical Content slot would not fill the width | `[&>div]:!block` on the viewport and `w-full` (vertical) / `w-max min-w-full` (horizontal, both) on the Content div; measured 190 wide inside the 1px border |
+| A fade that never goes away | The file draws it permanently when FadeVisible | It hides itself when the scroll reaches the end (`scrollTop` / `scrollLeft` check on scroll and resize) |
