@@ -13,7 +13,7 @@ import { SegmentedControl as SkSegmentedControl, SegmentedControlItem as SkSegme
 import { Breadcrumb as SkBreadcrumb, BreadcrumbEllipsis as SkBreadcrumbEllipsis, BreadcrumbItem as SkBreadcrumbItem, BreadcrumbList as SkBreadcrumbList, BreadcrumbSeparator as SkBreadcrumbSeparator, BREADCRUMB_GLYPHS, type BreadcrumbAppearance, type BreadcrumbEllipsisState, type BreadcrumbItemState, type BreadcrumbSeparatorKind, type BreadcrumbSize, type BreadcrumbVariant } from '../../../escala-ui/breadcrumb'
 import { Pagination as SkPagination, PaginationScope as SkPaginationScope, PaginationEllipsis as SkPaginationEllipsis, PaginationLink as SkPaginationLink, type PaginationLinkState, type PaginationSize, type PaginationVariant } from '../../../escala-ui/pagination'
 import { useAutoplayStep } from '../../../preview/artefacts/boardAutoplay'
-import { Stepper as SkStepper } from '../../../escala-ui/stepper'
+import { Stepper as SkStepper, StepperIcon as SkStepperIcon, StepperIndicator as SkStepperIndicator, StepperItem as SkStepperItem, type StepperOrientation, type StepperSize, type StepperStatus } from '../../../escala-ui/stepper'
 import { DropdownMenu as SkDropdownMenu, DropdownMenuContent as SkDropdownMenuContent, DropdownMenuItem as SkDropdownMenuItem, DropdownMenuLabel as SkDropdownMenuLabel, DropdownMenuFooter as SkDropdownMenuFooter, DropdownMenuSeparator as SkDropdownMenuSeparator, type DropdownMenuSize, type DropdownMenuItemState, type DropdownMenuItemVariant, type DropdownMenuFooterLayout } from '../../../escala-ui/dropdown-menu'
 import { ContextMenu as SkContextMenu, ContextMenuContent as SkContextMenuContent, ContextMenuItem as SkContextMenuItem, ContextMenuSeparator as SkContextMenuSeparator, ContextMenuShortcut as SkContextMenuShortcut } from '../../../escala-ui/context-menu'
 import { Command as SkCommand, CommandGroup as SkCommandGroup, CommandInput as SkCommandInput, CommandItem as SkCommandItem, CommandList as SkCommandList } from '../../../escala-ui/command'
@@ -209,13 +209,48 @@ export function SkeletonPaginationEllipsisSpecimen({ t, v }: SpecimenProps) {
   return <RecipeScope t={t}><SkPaginationEllipsis size={(v.Size ?? 'default') as PaginationSize} /></RecipeScope>
 }
 
-export function SkeletonStepperSpecimen({ t, w }: SpecimenProps) {
-  const step = useAutoplayStep(3, 2400)
+/** The Figma Stepper (994:3222) in place: Account (completed), Shipping (active), Payment and Review (locked). */
+export function SkeletonStepperSpecimen({ t, v, w }: SpecimenProps) {
+  const step = useAutoplayStep(4, 2400)
+  const current = step == null ? 2 : step + 1
+  const orientation = (v.Orientation ?? (w ? 'horizontal' : 'vertical')) as StepperOrientation
+  const items = [['Account', 'Your login details'], ['Shipping', 'Where we deliver'], ['Payment', 'Card or transfer'], ['Review', 'Confirm your order']]
   return (
     <RecipeScope t={t}>
-      <SkStepper steps={['Account', 'Tokens', 'Publish']} current={step == null ? 2 : step + 1} width={w} doneIcon={<PreviewIcon concept="check" size={iconOf(12)} />} />
+      <SkStepper aria-label="Checkout" size={(v.Size ?? 'default') as StepperSize} orientation={orientation} width={w ?? (orientation === 'vertical' ? 320 : undefined)}>
+        {items.map(([title, description], i) => (
+          <SkStepperItem key={title} status={i + 1 < current ? 'completed' : i + 1 === current ? 'active' : 'locked'} description={description}>{title}</SkStepperItem>
+        ))}
+      </SkStepper>
     </RecipeScope>
   )
+}
+
+/** A lone item: it sits in a Stepper so it keeps its context. */
+export function SkeletonStepperItemSpecimen({ t, v }: SpecimenProps) {
+  const orientation = (v.Orientation ?? 'vertical') as StepperOrientation
+  return (
+    <RecipeScope t={t}>
+      <SkStepper aria-label="Step" size={(v.Size ?? 'default') as StepperSize} orientation={orientation} width={orientation === 'vertical' ? 320 : 200}>
+        <SkStepperItem status={(v.Status ?? 'active') as StepperStatus} disabled={v.State === 'Disabled'} description="Short description of the step" lineVisible>Step title</SkStepperItem>
+      </SkStepper>
+    </RecipeScope>
+  )
+}
+
+export function SkeletonStepperIndicatorSpecimen({ t, v }: SpecimenProps) {
+  const orientation = (v.Orientation ?? 'vertical') as StepperOrientation
+  return (
+    <RecipeScope t={t}>
+      <div style={orientation === 'vertical' ? { height: 96 } : { width: 200 }} className="flex">
+        <SkStepperIndicator size={(v.Size ?? 'default') as StepperSize} status={(v.Status ?? 'active') as StepperStatus} orientation={orientation} disabled={v.State === 'Disabled'} className={orientation === 'horizontal' ? 'w-full' : undefined} />
+      </div>
+    </RecipeScope>
+  )
+}
+
+export function SkeletonStepperIconSpecimen({ t, v }: SpecimenProps) {
+  return <RecipeScope t={t}><SkStepperIcon size={(v.Size ?? 'default') as StepperSize} status={(v.Status ?? 'active') as StepperStatus} disabled={v.State === 'Disabled'} /></RecipeScope>
 }
 
 /** The Figma DropdownMenu (947:299) in place: a label, three rows (Profile focused), a rule and a destructive row. */

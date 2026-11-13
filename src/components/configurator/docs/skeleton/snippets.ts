@@ -46,8 +46,14 @@ export const SKELETON_SNIPPETS: Record<string, Snippet> = {
     `import { Pagination, PaginationLink } from "@/components/ui/pagination"\n\n<Pagination variant="compact">\n  <PaginationLink${v.Size && v.Size !== 'default' ? ` size="${v.Size}"` : ''}${v.Active === 'true' ? ' active' : ''}${v.State === 'Disabled' ? ' disabled' : ''}>2</PaginationLink>\n</Pagination>`,
   PaginationEllipsis: (v) =>
     `import { PaginationEllipsis } from "@/components/ui/pagination"\n\n<PaginationEllipsis${v.Size && v.Size !== 'default' ? ` size="${v.Size}"` : ''} />`,
-  Stepper: () =>
-    `import { Stepper } from "@/components/ui/stepper"\n\n<Stepper steps={["Account", "Tokens", "Publish"]} current={2} />`,
+  Stepper: (v) =>
+    `import { Stepper, StepperItem } from "@/components/ui/stepper"\n\n<Stepper aria-label="Checkout"${v.Size && v.Size !== 'default' ? ` size="${v.Size}"` : ''}${v.Orientation && v.Orientation !== 'vertical' ? ` orientation="${v.Orientation}"` : ''}>\n  <StepperItem status="completed" description="Your login details">Account</StepperItem>\n  <StepperItem status="active" description="Where we deliver">Shipping</StepperItem>\n  <StepperItem status="locked" description="Card or transfer">Payment</StepperItem>\n</Stepper>`,
+  StepperItem: (v) =>
+    `import { Stepper, StepperItem } from "@/components/ui/stepper"\n\n<Stepper aria-label="Steps">\n  <StepperItem${v.Status && v.Status !== 'active' ? ` status="${v.Status}"` : ''}${v.State === 'Disabled' ? ' disabled' : ''}${v.Size && v.Size !== 'default' ? ` size="${v.Size}"` : ''} description="Short description of the step">Step title</StepperItem>\n</Stepper>`,
+  StepperIndicator: (v) =>
+    `import { StepperIndicator } from "@/components/ui/stepper"\n\n<StepperIndicator${v.Status && v.Status !== 'active' ? ` status="${v.Status}"` : ''}${v.State === 'Disabled' ? ' disabled' : ''}${v.Size && v.Size !== 'default' ? ` size="${v.Size}"` : ''}${v.Orientation === 'horizontal' ? ' orientation="horizontal"' : ''} />`,
+  StepperIcon: (v) =>
+    `import { StepperIcon } from "@/components/ui/stepper"\n\n<StepperIcon${v.Status && v.Status !== 'active' ? ` status="${v.Status}"` : ''}${v.State === 'Disabled' ? ' disabled' : ''}${v.Size && v.Size !== 'default' ? ` size="${v.Size}"` : ''} label="1" />`,
   DropdownMenu: (v) =>
     `import {\n  DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuLabel, DropdownMenuItem, DropdownMenuSeparator,\n} from "@/components/ui/dropdown-menu"\n\n<DropdownMenu>\n  <DropdownMenuTrigger asChild><Button variant="secondary">Options</Button></DropdownMenuTrigger>\n  <DropdownMenuContent${v.Size && v.Size !== 'default' ? ` size="${v.Size}"` : ''}>\n    <DropdownMenuLabel>My account</DropdownMenuLabel>\n    <DropdownMenuItem trailing="⇧⌘P">Profile</DropdownMenuItem>\n    <DropdownMenuItem trailing="⌘S">Settings</DropdownMenuItem>\n    <DropdownMenuSeparator />\n    <DropdownMenuItem variant="destructive">Log out</DropdownMenuItem>\n  </DropdownMenuContent>\n</DropdownMenu>`,
   DropdownMenuLabel: (v) =>

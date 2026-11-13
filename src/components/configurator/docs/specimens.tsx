@@ -28,7 +28,7 @@ import {
 } from './skeleton/indicators'
 import {
   SkeletonTabsSpecimen, SkeletonTabMenuSpecimen, SkeletonTabMenuItemSpecimen, SkeletonTabMenuLineItemSpecimen, SkeletonNavItemSpecimen, SkeletonBrandSpecimen, SkeletonAccountMenuTriggerSpecimen, SkeletonSegmentedControlSpecimen, SkeletonSegmentedControlItemSpecimen, SkeletonBreadcrumbSpecimen, SkeletonBreadcrumbItemSpecimen, SkeletonBreadcrumbEllipsisSpecimen, SkeletonBreadcrumbSeparatorSpecimen,
-  SkeletonPaginationSpecimen, SkeletonPaginationLinkSpecimen, SkeletonPaginationEllipsisSpecimen, SkeletonStepperSpecimen, SkeletonDropdownMenuSpecimen, SkeletonDropdownMenuLabelSpecimen, SkeletonDropdownMenuItemSpecimen, SkeletonDropdownMenuFooterSpecimen, SkeletonContextMenuSpecimen,
+  SkeletonPaginationSpecimen, SkeletonPaginationLinkSpecimen, SkeletonPaginationEllipsisSpecimen, SkeletonStepperSpecimen, SkeletonStepperItemSpecimen, SkeletonStepperIndicatorSpecimen, SkeletonStepperIconSpecimen, SkeletonDropdownMenuSpecimen, SkeletonDropdownMenuLabelSpecimen, SkeletonDropdownMenuItemSpecimen, SkeletonDropdownMenuFooterSpecimen, SkeletonContextMenuSpecimen,
   SkeletonCommandSpecimen, SkeletonNavbarSpecimen, SkeletonSidebarSpecimen,
   SkeletonMenubarSpecimen, SkeletonNavigationMenuSpecimen,
 } from './skeleton/navigation'
@@ -493,6 +493,9 @@ export const SPECIMENS: Record<string, (p: SpecimenProps) => ReactNode> = {
   PaginationLink: SkeletonPaginationLinkSpecimen,
   PaginationEllipsis: SkeletonPaginationEllipsisSpecimen,
   Stepper: SkeletonStepperSpecimen,
+  StepperItem: SkeletonStepperItemSpecimen,
+  StepperIndicator: SkeletonStepperIndicatorSpecimen,
+  StepperIcon: SkeletonStepperIconSpecimen,
   DropdownMenu: SkeletonDropdownMenuSpecimen,
   DropdownMenuLabel: SkeletonDropdownMenuLabelSpecimen,
   DropdownMenuItem: SkeletonDropdownMenuItemSpecimen,

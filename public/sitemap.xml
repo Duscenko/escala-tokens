@@ -133,6 +133,9 @@
   <url><loc>https://www.escalatokens.com/components/PaginationLink</loc></url>
   <url><loc>https://www.escalatokens.com/components/PaginationEllipsis</loc></url>
   <url><loc>https://www.escalatokens.com/components/Stepper</loc></url>
+  <url><loc>https://www.escalatokens.com/components/StepperItem</loc></url>
+  <url><loc>https://www.escalatokens.com/components/StepperIndicator</loc></url>
+  <url><loc>https://www.escalatokens.com/components/StepperIcon</loc></url>
   <url><loc>https://www.escalatokens.com/components/DropdownMenu</loc></url>
   <url><loc>https://www.escalatokens.com/components/DropdownMenuLabel</loc></url>
   <url><loc>https://www.escalatokens.com/components/DropdownMenuItem</loc></url>

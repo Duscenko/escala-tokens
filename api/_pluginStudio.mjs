@@ -6334,17 +6334,76 @@ var init_componentCatalogue = __esm({
         key: "Stepper",
         label: "Stepper",
         category: "Navigation",
-        description: "Step indicator for multi-stage flows \u2014 completed, current and upcoming steps with connectors.",
-        usage: "Use for 3\u20135 step flows (checkout, onboarding). Label every step.",
-        axes: [],
-        figmaSets: ["Step Indicator"],
-        props: [
-          { name: "steps", type: "string[]", description: "Step labels." },
-          { name: "current", type: "number", description: "1-based current step; earlier steps are done." },
-          { name: "doneIcon", type: "ReactNode", description: "Glyph for a finished step." },
-          { name: "width", type: "number | string", description: "Stretch the stepper to this width." }
+        description: "Ordered list of steps: a marker joined to the next by a line, with a title and an optional description. Vertical or horizontal.",
+        usage: "Use for a short, linear flow. One step is active; completed and error markers announce themselves.",
+        axes: [
+          { name: "Size", values: ["default", "xs", "sm", "lg"] },
+          { name: "Orientation", values: ["vertical", "horizontal"] }
         ],
-        accessibility: 'Ordered list semantics. Current step marked with aria-current="step".'
+        figmaSets: ["Stepper"],
+        props: [
+          { name: "size / orientation", type: "string", description: "Figma Size and Orientation; they cascade to every item." },
+          { name: "children", type: "StepperItem", description: "The Content slot." },
+          { name: "steps / current / doneIcon / width", type: "string[] / number / ReactNode / number | string", description: "Shortcut for plain steps and the width." }
+        ],
+        accessibility: 'An ordered list (give it an accessible name); the active step is aria-current="step" and disabled ones aria-disabled.'
+      },
+      {
+        key: "StepperItem",
+        label: "Stepper Item",
+        category: "Navigation",
+        description: "One step of a Stepper: marker and connector with a title and an optional description, coloured by status.",
+        usage: "Inside a Stepper.",
+        axes: [
+          { name: "Size", values: ["default", "xs", "sm", "lg"] },
+          { name: "Status", values: ["active", "completed", "error", "locked"] },
+          { name: "State", values: ["Default", "Disabled"] },
+          { name: "Orientation", values: ["vertical", "horizontal"] }
+        ],
+        figmaSets: ["StepperItem"],
+        props: [
+          { name: "status / disabled / size / orientation", type: "string / boolean", description: "Figma Status, State and the cascaded Size and Orientation." },
+          { name: "children / description", type: "ReactNode", description: "Figma Title and Description (DescriptionVisible)." },
+          { name: "label / icon / lineVisible", type: "ReactNode / boolean", description: "The marker's number and glyph; the connector line (the last item hides it)." }
+        ],
+        accessibility: 'An li; the active step carries aria-current="step", disabled ones aria-disabled.'
+      },
+      {
+        key: "StepperIndicator",
+        label: "Stepper Indicator",
+        category: "Navigation",
+        description: "Marker column or row of a Stepper step: a StepperIcon and the connector line tinted by status.",
+        usage: "Inside a StepperItem; hide the line on the last step.",
+        axes: [
+          { name: "Size", values: ["default", "xs", "sm", "lg"] },
+          { name: "Status", values: ["active", "completed", "error", "locked"] },
+          { name: "State", values: ["Default", "Disabled"] },
+          { name: "Orientation", values: ["vertical", "horizontal"] }
+        ],
+        figmaSets: ["StepperIndicator"],
+        props: [
+          { name: "status / disabled / size / orientation / lineVisible", type: "string / boolean", description: "Figma axes and LineVisible." },
+          { name: "label / icon", type: "ReactNode", description: "The marker's number and glyph." }
+        ],
+        accessibility: 'The line is role="presentation"; status is announced by the marker.'
+      },
+      {
+        key: "StepperIcon",
+        label: "Stepper Icon",
+        category: "Navigation",
+        description: "Round step marker: the number (or an icon) on active and locked steps, an automatic check or warning on completed and error ones.",
+        usage: "Inside a StepperIndicator.",
+        axes: [
+          { name: "Size", values: ["default", "xs", "sm", "lg"] },
+          { name: "Status", values: ["active", "completed", "error", "locked"] },
+          { name: "State", values: ["Default", "Disabled"] }
+        ],
+        figmaSets: ["StepperIcon"],
+        props: [
+          { name: "status / disabled / size", type: "string / boolean", description: "Figma Status, State and Size." },
+          { name: "label / labelVisible / icon", type: "ReactNode / boolean", description: "Figma Label, LabelVisible and Icon." }
+        ],
+        accessibility: 'Presentational; completed and error markers carry a screen-reader-only "Completed" / "Error".'
       },
       {
         key: "DropdownMenu",
@@ -11710,7 +11769,7 @@ function dropdownItemPaint(variant, state2) {
       return { fill: NONE };
   }
 }
-var TABS, TAB_MENU_SIZES, TAB_MENU_VARIANTS, TAB_MENU_ITEM_STATES, TAB_MENU_INDICATORS, TAB_MENU, tabMenuSizeSlots, TAB_MENU_ITEM, TAB_MENU_LINE_ITEM, NAV_ITEM_SIZES, NAV_ITEM_STATES, NAV_ITEM, BRAND_SIZES, BRAND, ACCOUNT_MENU_TRIGGER_SIZES, ACCOUNT_MENU_TRIGGER_STATES, ACCOUNT_MENU_TRIGGER, SEGMENTED_CONTROL_SIZES, SEGMENTED_CONTROL, SEGMENTED_CONTROL_ITEM_STATES, SEGMENT_ITEM, SEGMENTED_CONTROL_ITEM, BREADCRUMB_SIZES, BREADCRUMB_APPEARANCES, BREADCRUMB_SEPARATORS, BREADCRUMB_VARIANTS, BREADCRUMB_ITEM_STATES, BREADCRUMB_ELLIPSIS_STATES, BREADCRUMB, BREADCRUMB_ITEM, BREADCRUMB_ELLIPSIS, BREADCRUMB_SEPARATOR, PAGINATION_SIZES, PAGINATION_VARIANTS, PAGINATION_LINK_STATES, PAGINATION_LINK_ACTIVE, paginationBox, paginationIcon, PAGINATION, PAGINATION_LINK, PAGINATION_ELLIPSIS, STEPPER, MENU_PANEL_RADIUS, DROPDOWN_SIZES, DROPDOWN_ITEM_STATES, DROPDOWN_ITEM_VARIANTS, DROPDOWN_MENU, DROPDOWN_MENU_LABEL, DROPDOWN_MENU_ITEM, DROPDOWN_MENU_FOOTER, CONTEXT_MENU, COMMAND, NAVBAR, SIDEBAR, MENUBAR, NAVIGATION_MENU;
+var TABS, TAB_MENU_SIZES, TAB_MENU_VARIANTS, TAB_MENU_ITEM_STATES, TAB_MENU_INDICATORS, TAB_MENU, tabMenuSizeSlots, TAB_MENU_ITEM, TAB_MENU_LINE_ITEM, NAV_ITEM_SIZES, NAV_ITEM_STATES, NAV_ITEM, BRAND_SIZES, BRAND, ACCOUNT_MENU_TRIGGER_SIZES, ACCOUNT_MENU_TRIGGER_STATES, ACCOUNT_MENU_TRIGGER, SEGMENTED_CONTROL_SIZES, SEGMENTED_CONTROL, SEGMENTED_CONTROL_ITEM_STATES, SEGMENT_ITEM, SEGMENTED_CONTROL_ITEM, BREADCRUMB_SIZES, BREADCRUMB_APPEARANCES, BREADCRUMB_SEPARATORS, BREADCRUMB_VARIANTS, BREADCRUMB_ITEM_STATES, BREADCRUMB_ELLIPSIS_STATES, BREADCRUMB, BREADCRUMB_ITEM, BREADCRUMB_ELLIPSIS, BREADCRUMB_SEPARATOR, PAGINATION_SIZES, PAGINATION_VARIANTS, PAGINATION_LINK_STATES, PAGINATION_LINK_ACTIVE, paginationBox, paginationIcon, PAGINATION, PAGINATION_LINK, PAGINATION_ELLIPSIS, STEPPER_SIZES, STEPPER_ORIENTATIONS, STEPPER_STATUSES, STEPPER_STATES, stepperBox, STEPPER, STEPPER_ITEM, STEPPER_INDICATOR, STEPPER_ICON, MENU_PANEL_RADIUS, DROPDOWN_SIZES, DROPDOWN_ITEM_STATES, DROPDOWN_ITEM_VARIANTS, DROPDOWN_MENU, DROPDOWN_MENU_LABEL, DROPDOWN_MENU_ITEM, DROPDOWN_MENU_FOOTER, CONTEXT_MENU, COMMAND, NAVBAR, SIDEBAR, MENUBAR, NAVIGATION_MENU;
 var init_navigation = __esm({
   "src/lib/recipes/navigation.ts"() {
     init_helpers();
@@ -11986,22 +12045,76 @@ var init_navigation = __esm({
         }))
       ]
     };
+    STEPPER_SIZES = ["default", "xs", "sm", "lg"];
+    STEPPER_ORIENTATIONS = ["vertical", "horizontal"];
+    STEPPER_STATUSES = ["active", "completed", "error", "locked"];
+    STEPPER_STATES = ["Default", "Disabled"];
+    stepperBox = (size) => size === "xs" ? "size.xs" : size === "sm" ? "size.sm" : size === "lg" ? "size.lg" : "size.md";
     STEPPER = {
       key: "Stepper",
-      slots: ["root", "step", "node", "label", "connector"],
-      defaults: {},
+      slots: ["root"],
+      defaults: { Size: "default", Orientation: "vertical" },
       parts: [
-        part({}, () => ({
-          step: { gap: "spacing.1_5" },
-          node: { width: "size.xs", height: "size.xs", radius: "radius.pill", font: "type.button", fill: NONE, text: c("content.secondary") },
-          'node[data-state="done"]': { fill: c("action.primary.default"), text: c("content.on-action") },
-          'node[data-state="current"]': { fill: c("action.primary.default"), text: c("content.on-action") },
-          label: { text: c("content.secondary"), font: "type.helper" },
-          'label[data-state="done"]': { text: c("content.primary") },
-          'label[data-state="current"]': { text: c("content.primary"), font: "type.label" },
-          connector: { fill: c("surface.muted"), height: "spacing.0_5", radius: "radius.pill" },
-          'connector[data-state="done"]': { fill: c("action.primary.default") }
+        part({ Orientation: STEPPER_ORIENTATIONS }, (orientation) => ({ root: { gap: orientation === "horizontal" ? "spacing.gap-tight" : "spacing.none" } }))
+      ]
+    };
+    STEPPER_ITEM = {
+      key: "StepperItem",
+      slots: ["root", "content", "title", "description"],
+      defaults: { Size: "default", Status: "active", State: "Default", Orientation: "vertical" },
+      parts: [
+        part({ Orientation: STEPPER_ORIENTATIONS }, (orientation) => ({
+          root: { gap: "spacing.gap-control" },
+          content: { gap: "spacing.gap-tight", ...orientation === "vertical" ? { paddingBottom: "spacing.gap-section" } : {} },
+          title: { font: "type.label" },
+          description: { font: "type.helper" }
+        })),
+        part({ Status: STEPPER_STATUSES, State: STEPPER_STATES }, (status, state2) => {
+          const off = state2 === "Disabled";
+          return {
+            title: { text: c(off ? "content.disabled" : status === "error" ? "status.critical.content" : status === "locked" ? "content.secondary" : "content.primary") },
+            description: { text: c(off ? "content.disabled" : "content.secondary") }
+          };
+        })
+      ]
+    };
+    STEPPER_INDICATOR = {
+      key: "StepperIndicator",
+      slots: ["root", "line"],
+      defaults: { Size: "default", Status: "active", State: "Default", Orientation: "vertical" },
+      parts: [
+        part({ Orientation: STEPPER_ORIENTATIONS }, (orientation) => ({
+          root: { gap: "spacing.gap-tight" },
+          line: orientation === "vertical" ? { width: "stroke.divider" } : { height: "stroke.divider" }
+        })),
+        part({ Status: STEPPER_STATUSES, State: STEPPER_STATES }, (status, state2) => ({
+          line: { fill: c(state2 === "Disabled" ? "border.subtle" : status === "completed" ? "border.accent" : status === "error" ? "status.critical.border" : "border.default") }
         }))
+      ]
+    };
+    STEPPER_ICON = {
+      key: "StepperIcon",
+      slots: ["root", "label", "icon"],
+      defaults: { Size: "default", Status: "active", State: "Default" },
+      parts: [
+        part({ Size: STEPPER_SIZES }, (size) => ({
+          root: { width: stepperBox(size), height: stepperBox(size), radius: "radius.pill" },
+          label: { font: size === "xs" || size === "sm" ? "type.caption" : "type.label" },
+          icon: size === "lg" ? { width: "icon.large", height: "icon.large" } : size === "default" ? { width: "icon.medium", height: "icon.medium" } : { width: "icon.small", height: "icon.small" }
+        })),
+        part({ Status: STEPPER_STATUSES, State: STEPPER_STATES }, (status, state2) => {
+          if (state2 === "Disabled") return { root: { fill: c("action.disabled.default"), text: c("content.disabled") } };
+          switch (status) {
+            case "completed":
+              return { root: { fill: c("surface.accent"), text: c("content.accent") } };
+            case "error":
+              return { root: { fill: c("status.critical.surface-solid"), text: c("status.critical.on-solid") } };
+            case "locked":
+              return { root: { fill: c("surface.muted"), text: c("content.secondary") } };
+            default:
+              return { root: { fill: c("action.primary.default"), text: c("content.on-action") } };
+          }
+        })
       ]
     };
     MENU_PANEL_RADIUS = PANEL_RADIUS;
@@ -13324,6 +13437,9 @@ var init_componentRecipes = __esm({
       PaginationLink: PAGINATION_LINK,
       PaginationEllipsis: PAGINATION_ELLIPSIS,
       Stepper: STEPPER,
+      StepperItem: STEPPER_ITEM,
+      StepperIndicator: STEPPER_INDICATOR,
+      StepperIcon: STEPPER_ICON,
       DropdownMenu: DROPDOWN_MENU,
       DropdownMenuLabel: DROPDOWN_MENU_LABEL,
       DropdownMenuItem: DROPDOWN_MENU_ITEM,
@@ -16148,7 +16264,7 @@ var init_useDesignStore = __esm({
         }),
         {
           name: "scalable-designs-store",
-          version: 147,
+          version: 148,
           migrate: (persisted, version) => {
             if (persisted) {
               delete persisted.styleDirection;
@@ -17954,6 +18070,18 @@ var init_useDesignStore = __esm({
                 const sel = state2.selectedComponents;
                 const at = sel.indexOf("Pagination");
                 if (at >= 0) sel.splice(at + 1, 0, ...["PaginationLink", "PaginationEllipsis"].filter((k) => !sel.includes(k)));
+              };
+              add2(persisted);
+              if (Array.isArray(persisted.savedSystems)) {
+                for (const sys of persisted.savedSystems) add2(sys?.snapshot);
+              }
+            }
+            if (version < 148) {
+              const add2 = (state2) => {
+                if (!Array.isArray(state2?.selectedComponents)) return;
+                const sel = state2.selectedComponents;
+                const at = sel.indexOf("Stepper");
+                if (at >= 0) sel.splice(at + 1, 0, ...["StepperItem", "StepperIndicator", "StepperIcon"].filter((k) => !sel.includes(k)));
               };
               add2(persisted);
               if (Array.isArray(persisted.savedSystems)) {

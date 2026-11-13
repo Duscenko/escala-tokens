@@ -361,24 +361,82 @@ export const PAGINATION_ELLIPSIS: ComponentRecipe = {
   ],
 }
 
-// ── Stepper ────────────────────────────────────────────────────────────────
+// ── Stepper, StepperItem, StepperIndicator and StepperIcon ─────────────────
+// The Figma sets Stepper (994:3222), StepperItem (994:1904), StepperIndicator (994:850) and StepperIcon (994:569)
+// (design-plans/stepper-contract.md). A step is [marker + connector line | title + description]: side by side in a
+// vertical Stepper, stacked in a horizontal one. Status picks the colours, State=Disabled mutes them all.
+export const STEPPER_SIZES = ['default', 'xs', 'sm', 'lg'] as const
+export const STEPPER_ORIENTATIONS = ['vertical', 'horizontal'] as const
+export const STEPPER_STATUSES = ['active', 'completed', 'error', 'locked'] as const
+export const STEPPER_STATES = ['Default', 'Disabled'] as const
+export const STEPPER_ICON_STATUSES = STEPPER_STATUSES
+
+const stepperBox = (size: string) => (size === 'xs' ? 'size.xs' : size === 'sm' ? 'size.sm' : size === 'lg' ? 'size.lg' : 'size.md')
 
 export const STEPPER: ComponentRecipe = {
   key: 'Stepper',
-  slots: ['root', 'step', 'node', 'label', 'connector'],
-  defaults: {},
+  slots: ['root'],
+  defaults: { Size: 'default', Orientation: 'vertical' },
   parts: [
-    part({}, () => ({
-      step: { gap: 'spacing.1_5' },
-      node: { width: 'size.xs', height: 'size.xs', radius: 'radius.pill', font: 'type.button', fill: NONE, text: c('content.secondary') },
-      'node[data-state="done"]': { fill: c('action.primary.default'), text: c('content.on-action') },
-      'node[data-state="current"]': { fill: c('action.primary.default'), text: c('content.on-action') },
-      label: { text: c('content.secondary'), font: 'type.helper' },
-      'label[data-state="done"]': { text: c('content.primary') },
-      'label[data-state="current"]': { text: c('content.primary'), font: 'type.label' },
-      connector: { fill: c('surface.muted'), height: 'spacing.0_5', radius: 'radius.pill' },
-      'connector[data-state="done"]': { fill: c('action.primary.default') },
+    part({ Orientation: STEPPER_ORIENTATIONS }, (orientation) => ({ root: { gap: orientation === 'horizontal' ? 'spacing.gap-tight' : 'spacing.none' } })),
+  ],
+}
+
+export const STEPPER_ITEM: ComponentRecipe = {
+  key: 'StepperItem',
+  slots: ['root', 'content', 'title', 'description'],
+  defaults: { Size: 'default', Status: 'active', State: 'Default', Orientation: 'vertical' },
+  parts: [
+    part({ Orientation: STEPPER_ORIENTATIONS }, (orientation) => ({
+      root: { gap: 'spacing.gap-control' },
+      content: { gap: 'spacing.gap-tight', ...(orientation === 'vertical' ? { paddingBottom: 'spacing.gap-section' } : {}) },
+      title: { font: 'type.label' },
+      description: { font: 'type.helper' },
     })),
+    part({ Status: STEPPER_STATUSES, State: STEPPER_STATES }, (status, state) => {
+      const off = state === 'Disabled'
+      return {
+        title: { text: c(off ? 'content.disabled' : status === 'error' ? 'status.critical.content' : status === 'locked' ? 'content.secondary' : 'content.primary') },
+        description: { text: c(off ? 'content.disabled' : 'content.secondary') },
+      }
+    }),
+  ],
+}
+
+export const STEPPER_INDICATOR: ComponentRecipe = {
+  key: 'StepperIndicator',
+  slots: ['root', 'line'],
+  defaults: { Size: 'default', Status: 'active', State: 'Default', Orientation: 'vertical' },
+  parts: [
+    part({ Orientation: STEPPER_ORIENTATIONS }, (orientation) => ({
+      root: { gap: 'spacing.gap-tight' },
+      line: orientation === 'vertical' ? { width: 'stroke.divider' } : { height: 'stroke.divider' },
+    })),
+    part({ Status: STEPPER_STATUSES, State: STEPPER_STATES }, (status, state) => ({
+      line: { fill: c(state === 'Disabled' ? 'border.subtle' : status === 'completed' ? 'border.accent' : status === 'error' ? 'status.critical.border' : 'border.default') },
+    })),
+  ],
+}
+
+export const STEPPER_ICON: ComponentRecipe = {
+  key: 'StepperIcon',
+  slots: ['root', 'label', 'icon'],
+  defaults: { Size: 'default', Status: 'active', State: 'Default' },
+  parts: [
+    part({ Size: STEPPER_SIZES }, (size) => ({
+      root: { width: stepperBox(size), height: stepperBox(size), radius: 'radius.pill' },
+      label: { font: size === 'xs' || size === 'sm' ? 'type.caption' : 'type.label' },
+      icon: size === 'lg' ? { width: 'icon.large', height: 'icon.large' } : size === 'default' ? { width: 'icon.medium', height: 'icon.medium' } : { width: 'icon.small', height: 'icon.small' },
+    })),
+    part({ Status: STEPPER_STATUSES, State: STEPPER_STATES }, (status, state) => {
+      if (state === 'Disabled') return { root: { fill: c('action.disabled.default'), text: c('content.disabled') } }
+      switch (status) {
+        case 'completed': return { root: { fill: c('surface.accent'), text: c('content.accent') } }
+        case 'error': return { root: { fill: c('status.critical.surface-solid'), text: c('status.critical.on-solid') } }
+        case 'locked': return { root: { fill: c('surface.muted'), text: c('content.secondary') } }
+        default: return { root: { fill: c('action.primary.default'), text: c('content.on-action') } }
+      }
+    }),
   ],
 }
 

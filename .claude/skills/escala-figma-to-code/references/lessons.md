@@ -534,3 +534,12 @@ Source: the file's «AvatarGroup Prototype» (868:28472): four PHOTO avatars + t
 | Lone PaginationLink / Ellipsis in a story or specimen | A `Pagination` always draws its arrows | `PaginationScope` (context only) sets Size and Variant without the arrows |
 | 1.2 px short on the grouped widths (256.8 vs 258, same at every size) | Four links whose digit widths are fractional in Chrome and rounded up by Figma | Metrics, not geometry: boxes, dividers and icons match; recorded, not chased |
 | An Active stroke that does not enlarge the 40×40 link | A 1px CSS border would change nothing with `min-width` = height | A transparent 1px border in every state (the padding gives it back); only the colour differs |
+
+# Lessons from the Stepper, StepperItem, StepperIndicator and StepperIcon (2026-11-13)
+| Trap | What it looked like | The fix (where it lives) |
+|---|---|---|
+| The old Stepper was a horizontal bar built from `steps` / `current` with labels under round nodes | The file's default is VERTICAL with titles, descriptions, status and a line per step; four sets nest each other (Item → Indicator → Icon) | Four components in one file (`FILE_OF`), the shortcut props kept (earlier steps completed, `current` active, rest locked); the callers that want the old look pass `orientation="horizontal"` (mobile preview, the board tile through the specimen's `w`). Store v148 adds the three parts |
+| «The last item hides its line» is a Stepper rule the Item set does not carry | A prop per item would need the caller to know it is last | A class on the `li`: `[&:last-child_[data-part="StepperIndicator.line"]]:hidden`; the item keeps its 24px bottom padding (the file's Stepper is 4 × 62) |
+| The marker's number is the step's position, not a prop of the Stepper | `StepperItem` has no index | The Stepper wraps each child in an index context; the Item passes it to its Icon (`label` overrides) |
+| An Icon in Disabled shows the same paint for every status, an Indicator line goes `Border/subtle` | Nested components need the state too | The Item passes `data-force-state="Disabled"` to its Indicator and Icon; each reads its own recipe |
+| The connector line must stretch the free space (`grow 1`) of a column or row whose size comes from the sibling | A fixed length would break at other sizes | `flex: 1` with `flex-basis: 0` and `self-stretch`; measured 1×18 beside a 62 item and 173×1 across a 217 one |

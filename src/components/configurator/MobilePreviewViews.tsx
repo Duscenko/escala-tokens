@@ -474,7 +474,7 @@ function TabsTile({ t }: { t: T }) {
 function CheckoutTile({ t }: { t: T }) {
   return (
     <Tile wide label={t('Checkout')}>
-      <Stepper steps={[t('Account'), t('Plan'), t('Pay')]} current={2} width="100%" doneIcon={<CheckGlyph />} />
+      <Stepper orientation="horizontal" steps={[t('Account'), t('Plan'), t('Pay')]} current={2} width="100%" doneIcon={<CheckGlyph />} aria-label={t('Steps')} />
       <div className="flex justify-center" style={{ paddingTop: 'var(--spacing-2)' }}>
         <Pagination pages={[1, 2, 3, '…', 8]} page={2} onPageChange={() => {}} />
       </div>

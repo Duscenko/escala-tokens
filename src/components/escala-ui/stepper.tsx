@@ -1,38 +1,182 @@
-// Escala component: numbered steps joined by a connector. The `current` step is
-// 1-based; earlier steps are done. Appearance: recipe (Stepper).
+// Escala component: Stepper, StepperItem, StepperIndicator and StepperIcon — the Figma sets of the same names
+// (design-plans/stepper-contract.md; 994:3222 · 994:1904 · 994:850 · 994:569), 1:1.
+// An ordered list of steps. A step is a marker (StepperIcon: the step number, or an automatic check / warning) joined to the next one by a
+// connector line (StepperIndicator), plus a title and an optional description. Vertical: marker and text side by side; horizontal: stacked,
+// the items sharing the width. Size and Orientation cascade from the Stepper; the last item hides its line. One item is `aria-current="step"`.
+// Appearance: recipes Stepper, StepperItem, StepperIndicator, StepperIcon (lib/componentRecipes.ts).
 import * as React from 'react'
 import { cn } from '../../lib/utils'
 
-export interface StepperProps extends React.ComponentProps<'ol'> {
-  steps: string[]
-  /** 1-based index of the current step. */
-  current: number
-  /** The glyph for a finished step (a check). */
+export const STEPPER_SIZES = ['default', 'xs', 'sm', 'lg'] as const
+export type StepperSize = (typeof STEPPER_SIZES)[number]
+export const STEPPER_ORIENTATIONS = ['vertical', 'horizontal'] as const
+export type StepperOrientation = (typeof STEPPER_ORIENTATIONS)[number]
+export const STEPPER_STATUSES = ['active', 'completed', 'error', 'locked'] as const
+export type StepperStatus = (typeof STEPPER_STATUSES)[number]
+export const STEPPER_STATES = ['Default', 'Disabled'] as const
+export type StepperState = (typeof STEPPER_STATES)[number]
+
+const StepperContext = React.createContext<{ size: StepperSize; orientation: StepperOrientation }>({ size: 'default', orientation: 'vertical' })
+const IndexContext = React.createContext(1)
+
+// Phosphor regular `check` and `warning`: the markers of completed and error steps.
+const CHECK = 'M229.66,77.66l-128,128a8,8,0,0,1-11.32,0l-56-56a8,8,0,0,1,11.32-11.32L96,188.69,218.34,66.34a8,8,0,0,1,11.32,11.32Z'
+const WARNING = 'M236.8,188.09,149.35,36.22h0a24.76,24.76,0,0,0-42.7,0L19.2,188.09a23.51,23.51,0,0,0,0,23.72A24.35,24.35,0,0,0,40.55,224h174.9a24.35,24.35,0,0,0,21.33-12.19A23.51,23.51,0,0,0,236.8,188.09ZM222.93,203.8a8.5,8.5,0,0,1-7.48,4.2H40.55a8.5,8.5,0,0,1-7.48-4.2,7.59,7.59,0,0,1,0-7.72L120.52,44.21a8.75,8.75,0,0,1,15,0l87.45,151.87A7.59,7.59,0,0,1,222.93,203.8ZM120,144V104a8,8,0,0,1,16,0v40a8,8,0,0,1-16,0Zm20,36a12,12,0,1,1-12-12A12,12,0,0,1,140,180Z'
+const glyph = (d: string) => <svg viewBox="0 0 256 256" fill="currentColor" aria-hidden focusable="false" className="size-full"><path d={d} /></svg>
+
+export interface StepperProps extends Omit<React.ComponentProps<'ol'>, 'children'> {
+  /** Figma Size: marker 40 · 24 · 32 · 48 (cascades). */
+  size?: StepperSize
+  /** Figma Orientation: vertical (default) · horizontal. */
+  orientation?: StepperOrientation
+  /** Figma Content slot: StepperItem steps. */
+  children?: React.ReactNode
+  /** Shortcut for plain steps (their titles): earlier ones are completed, `current` is active, the rest locked. */
+  steps?: string[]
+  /** 1-based index of the current step (with `steps`). */
+  current?: number
+  /** The glyph of a completed step (with `steps`); defaults to the check. */
   doneIcon?: React.ReactNode
-  /** Stretch to this width: steps share it and the connectors flex. */
+  /** Stretch to this width. */
   width?: number | string
 }
 
-function Stepper({ steps, current, doneIcon = '✓', width, className, style, ...props }: StepperProps) {
-  const stretch = width != null
+function Stepper({ size = 'default', orientation = 'vertical', steps, current = 1, doneIcon, width, children, className, style, ...props }: StepperProps) {
+  const ctx = React.useMemo(() => ({ size, orientation }), [size, orientation])
+  const items = children ?? steps?.map((title, i) => (
+    <StepperItem key={title} status={i + 1 < current ? 'completed' : i + 1 === current ? 'active' : 'locked'} icon={i + 1 < current ? doneIcon : undefined}>{title}</StepperItem>
+  ))
   return (
-    <ol data-slot="stepper" data-escala="Stepper" className={cn('m-0 flex list-none items-center p-0', className)} style={{ width, ...style }} {...props}>
-      {steps.map((label, i) => {
-        const state = i + 1 < current ? 'done' : i + 1 === current ? 'current' : 'todo'
-        return (
-          <li key={label} aria-current={state === 'current' ? 'step' : undefined} className={cn('flex min-w-0 items-center', stretch && 'flex-1')}>
-            <span data-part="Stepper.step" className={cn('flex flex-col items-center', stretch ? 'w-full' : 'w-[5.25rem]')}>
-              <span data-part="Stepper.node" data-state={state} className="inline-flex items-center justify-center">{state === 'done' ? doneIcon : i + 1}</span>
-              <span data-part="Stepper.label" data-state={state}>{label}</span>
-            </span>
-            {i < steps.length - 1 && (
-              <span aria-hidden data-part="Stepper.connector" data-state={state} className={cn('mb-5', stretch ? 'min-w-3 flex-1' : 'w-10')} />
-            )}
-          </li>
-        )
-      })}
-    </ol>
+    <StepperContext.Provider value={ctx}>
+      <ol
+        data-slot="stepper"
+        data-escala="Stepper"
+        data-size={size}
+        data-orientation={orientation}
+        className={cn('m-0 flex list-none p-0', orientation === 'vertical' ? 'w-full flex-col items-stretch' : 'w-full flex-row', className)}
+        style={{ width, ...style }}
+        {...props}
+      >
+        {React.Children.toArray(items).map((child, i) => <IndexContext.Provider key={i} value={i + 1}>{child}</IndexContext.Provider>)}
+      </ol>
+    </StepperContext.Provider>
   )
 }
 
-export { Stepper }
+export interface StepperIconProps extends Omit<React.ComponentProps<'span'>, 'children'> {
+  size?: StepperSize
+  /** Figma Status: active · completed (check) · error (warning) · locked. */
+  status?: StepperStatus
+  /** Figma State=Disabled. */
+  disabled?: boolean
+  /** Figma Label (the number) and LabelVisible. */
+  label?: React.ReactNode
+  labelVisible?: boolean
+  /** Figma Icon / IconVisible: replaces the number (and the automatic glyph of completed / error). */
+  icon?: React.ReactNode
+}
+
+/** Figma StepperIcon: the round marker of a step. */
+function StepperIcon({ size, status = 'active', disabled = false, label = '1', labelVisible = true, icon, className, ...props }: StepperIconProps) {
+  const ctx = React.useContext(StepperContext)
+  const auto = status === 'completed' ? glyph(CHECK) : status === 'error' ? glyph(WARNING) : null
+  const glyphNode = icon ?? auto
+  return (
+    <span
+      data-escala="StepperIcon"
+      data-size={size ?? ctx.size}
+      data-status={status}
+      data-force-state={disabled ? 'Disabled' : undefined}
+      className={cn('relative inline-flex shrink-0 items-center justify-center', className)}
+      {...props}
+    >
+      {glyphNode != null
+        ? <span data-part="StepperIcon.icon" aria-hidden className="inline-flex items-center justify-center [&>svg]:size-full">{glyphNode}</span>
+        : labelVisible && <span data-part="StepperIcon.label">{label}</span>}
+      {(status === 'completed' || status === 'error') && <span className="sr-only">{status === 'completed' ? 'Completed' : 'Error'}</span>}
+    </span>
+  )
+}
+
+export interface StepperIndicatorProps extends Omit<React.ComponentProps<'div'>, 'children'> {
+  size?: StepperSize
+  status?: StepperStatus
+  orientation?: StepperOrientation
+  disabled?: boolean
+  /** Figma LineVisible (default true). */
+  lineVisible?: boolean
+  /** The marker's number and glyph (see StepperIcon). */
+  label?: React.ReactNode
+  icon?: React.ReactNode
+}
+
+/** Figma StepperIndicator: the marker and the connector line to the next step. */
+function StepperIndicator({ size, status = 'active', orientation, disabled = false, lineVisible = true, label, icon, className, ...props }: StepperIndicatorProps) {
+  const ctx = React.useContext(StepperContext)
+  const o = orientation ?? ctx.orientation
+  return (
+    <div
+      data-escala="StepperIndicator"
+      data-size={size ?? ctx.size}
+      data-status={status}
+      data-orientation={o}
+      data-force-state={disabled ? 'Disabled' : undefined}
+      className={cn('inline-flex items-center', o === 'vertical' ? 'flex-col self-stretch' : 'flex-row', className)}
+      {...props}
+    >
+      <StepperIcon size={size} status={status} disabled={disabled} label={label} icon={icon} />
+      {lineVisible && <span aria-hidden role="presentation" data-part="StepperIndicator.line" className="min-h-0 min-w-0 flex-1 self-stretch" style={{ flexBasis: 0 }} />}
+    </div>
+  )
+}
+
+export interface StepperItemProps extends Omit<React.ComponentProps<'li'>, 'title'> {
+  size?: StepperSize
+  orientation?: StepperOrientation
+  /** Figma Status: active (the current step, `aria-current="step"`) · completed · error · locked. */
+  status?: StepperStatus
+  /** Figma State=Disabled: no click handler, `aria-disabled`. */
+  disabled?: boolean
+  /** Figma Description / DescriptionVisible. */
+  description?: React.ReactNode
+  /** The marker's number (defaults to the step's position) and glyph. */
+  label?: React.ReactNode
+  icon?: React.ReactNode
+  /** Figma LineVisible (the last item hides it). */
+  lineVisible?: boolean
+  /** Figma Title. */
+  children?: React.ReactNode
+}
+
+/** Figma StepperItem: one step. */
+function StepperItem({ size, orientation, status = 'active', disabled = false, description, label, icon, lineVisible = true, children, className, ...props }: StepperItemProps) {
+  const ctx = React.useContext(StepperContext)
+  const index = React.useContext(IndexContext)
+  const o = orientation ?? ctx.orientation
+  return (
+    <li
+      data-slot="stepper-item"
+      data-escala="StepperItem"
+      data-size={size ?? ctx.size}
+      data-status={status}
+      data-orientation={o}
+      data-force-state={disabled ? 'Disabled' : undefined}
+      aria-current={status === 'active' ? 'step' : undefined}
+      aria-disabled={disabled || undefined}
+      className={cn(
+        'flex min-w-0 [&:last-child_[data-part="StepperIndicator.line"]]:hidden',
+        o === 'vertical' ? 'flex-row items-start' : 'flex-1 flex-col items-stretch',
+        className,
+      )}
+      {...props}
+    >
+      <StepperIndicator size={size} status={status} orientation={o} disabled={disabled} lineVisible={lineVisible} label={label ?? index} icon={icon} className={o === 'horizontal' ? 'self-stretch' : undefined} />
+      <div data-part="StepperItem.content" className="flex min-w-0 flex-1 flex-col">
+        <span data-part="StepperItem.title">{children}</span>
+        {description != null && <span data-part="StepperItem.description">{description}</span>}
+      </div>
+    </li>
+  )
+}
+
+export { Stepper, StepperIcon, StepperIndicator, StepperItem }

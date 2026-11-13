@@ -2058,7 +2058,7 @@ export const useDesignStore = create<DesignStore>()(
     }),
     {
       name: 'scalable-designs-store',
-      version: 147,
+      version: 148,
       migrate: (persisted: any, version: number) => {
         if (persisted) {
           // v1→v2: remove styleDirection, rename selectedAtoms → selectedComponents
@@ -4387,6 +4387,19 @@ export const useDesignStore = create<DesignStore>()(
             const sel: string[] = state.selectedComponents
             const at = sel.indexOf('Pagination')
             if (at >= 0) sel.splice(at + 1, 0, ...['PaginationLink', 'PaginationEllipsis'].filter((k) => !sel.includes(k)))
+          }
+          add(persisted)
+          if (Array.isArray(persisted.savedSystems)) {
+            for (const sys of persisted.savedSystems) add(sys?.snapshot)
+          }
+        }
+        if (version < 148) {
+          // v147→v148: Stepper gains its Figma parts StepperItem, StepperIndicator and StepperIcon.
+          const add = (state: any) => {
+            if (!Array.isArray(state?.selectedComponents)) return
+            const sel: string[] = state.selectedComponents
+            const at = sel.indexOf('Stepper')
+            if (at >= 0) sel.splice(at + 1, 0, ...['StepperItem', 'StepperIndicator', 'StepperIcon'].filter((k) => !sel.includes(k)))
           }
           add(persisted)
           if (Array.isArray(persisted.savedSystems)) {

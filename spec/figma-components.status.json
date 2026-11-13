@@ -53,21 +53,6 @@
       "status": "part",
       "of": "Sidebar"
     },
-    "Stepper": {
-      "status": "rebuild"
-    },
-    "StepperIcon": {
-      "status": "part",
-      "of": "Stepper"
-    },
-    "StepperIndicator": {
-      "status": "part",
-      "of": "Stepper"
-    },
-    "StepperItem": {
-      "status": "part",
-      "of": "Stepper"
-    },
     "Separator": {
       "status": "rebuild"
     },
