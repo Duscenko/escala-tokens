@@ -20304,6 +20304,21 @@
               "root[data-grid]:not(:last-child)": {
                 "stroke": "color.border.subtle",
                 "strokeRightWidth": "stroke.divider"
+              },
+              "root[data-pinned]:not([data-pinned=\"none\"])": {
+                "fill": "color.surface.page"
+              },
+              "root[data-pinned]:not([data-pinned=\"none\"]):where(tr:hover:not([data-force-state]) > *, [data-force-state=\"Hover\"] > *)": {
+                "fill": "color.surface.page",
+                "overlay": "color.action.ghost.hover"
+              },
+              "root[data-pinned]:not([data-pinned=\"none\"]):where([data-force-state=\"Selected\"] > *)": {
+                "fill": "color.surface.page",
+                "overlay": "color.surface.selected"
+              },
+              "root[data-pinned]:not([data-pinned=\"none\"]):where([data-force-state=\"Dragging\"] > *)": {
+                "fill": "color.surface.page",
+                "overlay": "color.surface.layer-2"
               }
             }
           }

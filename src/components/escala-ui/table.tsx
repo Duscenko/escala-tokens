@@ -67,7 +67,7 @@ function Table({ size = 'default', appearance = 'filled', dividers = 'rows', cla
         data-dividers={dividers}
         className="relative w-full overflow-x-auto"
       >
-        <table role="table" data-slot="table" className={cn('block w-full border-collapse text-left', className)} {...props}>
+        <table role="table" data-slot="table" className={cn('block w-max min-w-full border-collapse text-left', className)} {...props}>
           {children}
         </table>
       </div>
@@ -106,7 +106,7 @@ function TableHeader({ size: sizeProp, dividers: dividersProp, scrolled = false,
         className={cn('flex w-full', className)}
         {...props}
       >
-        <tr role="row" className="flex min-w-0 flex-1">{children}</tr>
+        <tr role="row" className={cn('flex min-w-0 flex-1', IN_ROW)}>{children}</tr>
       </thead>
     </Cascade>
   )
@@ -133,7 +133,7 @@ function TableFooter({ size: sizeProp, dividers: dividersProp, className, childr
         className={cn('flex w-full', className)}
         {...props}
       >
-        <tr role="row" className="flex min-w-0 flex-1">{children}</tr>
+        <tr role="row" className={cn('flex min-w-0 flex-1', IN_ROW)}>{children}</tr>
       </tfoot>
     </Cascade>
   )
@@ -178,7 +178,7 @@ function TableRow({ size: sizeProp, dividers: dividersProp, selected, disabled, 
         aria-disabled={state === 'Disabled' ? true : undefined}
         tabIndex={act && state !== 'Disabled' ? 0 : undefined}
         onClick={state === 'Disabled' ? undefined : onClick}
-        className={cn('flex w-full min-w-0', className)}
+        className={cn('flex w-full min-w-0', IN_ROW, className)}
         {...props}
       >
         {children}
@@ -191,6 +191,10 @@ function TableRow({ size: sizeProp, dividers: dividersProp, selected, disabled, 
 
 type CellState = 'Default' | 'Disabled'
 const CELL_BASE = 'relative flex min-w-0 flex-1 items-center'
+/** Inside a row the cells STRETCH to the row's content box instead of their own 48 / 32 / 40 / 56: at their own height
+ *  they ran 1px over the row's bottom hairline, which an opaque cell (pinned, head) then painted over. Alone, a cell
+ *  keeps the file's height. */
+const IN_ROW = '[&>*]:!h-auto'
 function pinEdge(pinned: TablePinned) {
   return pinned === 'none' ? null : (
     <span data-part="TableCell.pin" aria-hidden className={cn('pointer-events-none absolute inset-y-0', pinned === 'start' ? 'right-0' : 'left-0')} />

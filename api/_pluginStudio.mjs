@@ -12162,7 +12162,7 @@ function rowShell(state2) {
       return { fill: NONE };
   }
 }
-var TABLE_SIZES, TABLE_CELL_STATES, TABLE_HEAD_STATES, TABLE_SORTS, TABLE_ROW_STATES, TABLE_DIVIDERS, TABLE_APPEARANCES, TABLE_RATIOS, TABLE_TRENDS, TABLE_RESIZER_STATES, TABLE_ROW_HEIGHT, MEDIA_HEIGHT, GRID_EDGE, PIN, TABLE_CELL, TABLE_HEAD, TABLE_MEDIA_CELL, TREND_INK, TABLE_TREND_CELL, TABLE_RESIZER, TABLE_ROW, TABLE_HEADER, TABLE_FOOTER, TABLE_CAPTION, TABLE_DROP_INDICATOR, TABLE_EMPTY, TABLE_LOADING, TABLE_LOAD_MORE, TABLE;
+var TABLE_SIZES, TABLE_CELL_STATES, TABLE_HEAD_STATES, TABLE_SORTS, TABLE_ROW_STATES, TABLE_DIVIDERS, TABLE_APPEARANCES, TABLE_RATIOS, TABLE_TRENDS, TABLE_RESIZER_STATES, TABLE_ROW_HEIGHT, MEDIA_HEIGHT, GRID_EDGE, PIN, PINNED, PINNED_CELL, TABLE_CELL, TABLE_HEAD, TABLE_MEDIA_CELL, TREND_INK, TABLE_TREND_CELL, TABLE_RESIZER, TABLE_ROW, TABLE_HEADER, TABLE_FOOTER, TABLE_CAPTION, TABLE_DROP_INDICATOR, TABLE_EMPTY, TABLE_LOADING, TABLE_LOAD_MORE, TABLE;
 var init_table = __esm({
   "src/lib/recipes/table.ts"() {
     init_helpers();
@@ -12180,6 +12180,13 @@ var init_table = __esm({
     MEDIA_HEIGHT = { default: "size.md", xs: "size.xs", sm: "size.sm", lg: "size.lg" };
     GRID_EDGE = { stroke: c("border.subtle"), strokeRightWidth: "stroke.divider" };
     PIN = { fill: c("border.default"), width: "stroke.divider" };
+    PINNED = '[data-pinned]:not([data-pinned="none"])';
+    PINNED_CELL = {
+      [`root${PINNED}`]: { fill: c("surface.page") },
+      [`root${PINNED}:where(tr:hover:not([data-force-state]) > *, [data-force-state="Hover"] > *)`]: { fill: c("surface.page"), overlay: c("action.ghost.hover") },
+      [`root${PINNED}:where([data-force-state="Selected"] > *)`]: { fill: c("surface.page"), overlay: c("surface.selected") },
+      [`root${PINNED}:where([data-force-state="Dragging"] > *)`]: { fill: c("surface.page"), overlay: c("surface.layer-2") }
+    };
     TABLE_CELL = {
       key: "TableCell",
       slots: ["root", "leading", "content", "label", "description", "trailing", "pin"],
@@ -12190,7 +12197,8 @@ var init_table = __esm({
           'label[data-label-type="label"]': { font: "type.label" },
           description: { font: "type.helper" },
           pin: PIN,
-          "root[data-grid]:not(:last-child)": GRID_EDGE
+          "root[data-grid]:not(:last-child)": GRID_EDGE,
+          ...PINNED_CELL
         })),
         part({ Size: TABLE_SIZES }, (size) => ({ root: cellBox(size) })),
         part({ State: TABLE_CELL_STATES }, (state2) => ({

@@ -34,6 +34,17 @@ function cellBox(size: string): SlotProps {
 const GRID_EDGE: SlotProps = { stroke: c('border.subtle'), strokeRightWidth: 'stroke.divider' }
 const PIN: SlotProps = { fill: c('border.default'), width: 'stroke.divider' }
 
+// A pinned cell is sticky (it stays while the row scrolls under it), so it must be OPAQUE: the table's page with the
+// row's own state laid over it — otherwise the scrolled columns show through it and a selected / hovered row loses
+// its colour under the pinned column. The overlays are the TableRow states (rowShell), read off the parent row.
+const PINNED = '[data-pinned]:not([data-pinned="none"])'
+const PINNED_CELL: Record<string, SlotProps> = {
+  [`root${PINNED}`]: { fill: c('surface.page') },
+  [`root${PINNED}:where(tr:hover:not([data-force-state]) > *, [data-force-state="Hover"] > *)`]: { fill: c('surface.page'), overlay: c('action.ghost.hover') },
+  [`root${PINNED}:where([data-force-state="Selected"] > *)`]: { fill: c('surface.page'), overlay: c('surface.selected') },
+  [`root${PINNED}:where([data-force-state="Dragging"] > *)`]: { fill: c('surface.page'), overlay: c('surface.layer-2') },
+}
+
 // ── TableCell ──────────────────────────────────────────────────────────────
 export const TABLE_CELL: ComponentRecipe = {
   key: 'TableCell',
@@ -46,6 +57,7 @@ export const TABLE_CELL: ComponentRecipe = {
       description: { font: 'type.helper' },
       pin: PIN,
       'root[data-grid]:not(:last-child)': GRID_EDGE,
+      ...PINNED_CELL,
     })),
     part({ Size: TABLE_SIZES }, (size) => ({ root: cellBox(size) })),
     part({ State: TABLE_CELL_STATES }, (state) => ({

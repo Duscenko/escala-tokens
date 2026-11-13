@@ -85,7 +85,7 @@ export function TablePrototype({
             const st = p.disabled ? 'Disabled' : 'Default'
             const hue = AVATAR_GRADIENT_HUES[PEOPLE.indexOf(p) % AVATAR_GRADIENT_HUES.length]
             return (
-              <TableRow key={p.id} selected={on} disabled={p.disabled} forceState={!on && !p.disabled && p.id === forceHover ? 'Hover' : undefined}>
+              <TableRow key={p.id} interactive selected={on} disabled={p.disabled} forceState={!on && !p.disabled && p.id === forceHover ? 'Hover' : undefined}>
                 <TableCell style={cw(0)} state={st} labelVisible={false} leadingVisible
                   leading={<Checkbox all={on} none={!on} disabled={p.disabled} size={size} label={`Select ${p.name}`} onChange={(v) => setSelected((s) => (v ? [...s, p.id] : s.filter((x) => x !== p.id)))} />} />
                 <TableCell style={cw(1)} state={st} pinned={pin} label={p.name} description={p.email} descriptionVisible leadingVisible
