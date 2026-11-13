@@ -152,7 +152,8 @@ describe('platform axis — store migration v106', () => {
     // storage), so pin the two lines the migration is made of: the version
     // bump and the seed, which is `mergePlatformAxis` — covered above.
     const src = readFileSync(join(dirname(fileURLToPath(import.meta.url)), '../../store/useDesignStore.ts'), 'utf8')
-    expect(src).toContain('version: 106,')
+    // At least v106: later migrations keep bumping the number.
+    expect(Number(src.match(/version: (\d+),/)?.[1])).toBeGreaterThanOrEqual(106)
     expect(src).toContain('if (version < 106) {')
     expect(src).toContain('state.platformAxis = mergePlatformAxis(state.platformAxis)')
     expect(mergePlatformAxis(undefined)).toEqual(defaultPlatformAxis())

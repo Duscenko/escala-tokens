@@ -65,7 +65,11 @@ export function registryItemNames(): string[] {
 
 /** `Dialog` → `dialog`, `Button` → `button`. */
 export function registryItemFor(componentKey: string): string | undefined {
-  return ESCALA_UI_SOURCES.find((s) => s.recipes.includes(componentKey))?.name
+  // A recipe painted by two files (Button's legacy square sizes paint as
+  // IconButton) is served by the file named after it.
+  const own = componentKey.replace(/([a-z0-9])([A-Z])/g, '$1-$2').toLowerCase()
+  const servers = ESCALA_UI_SOURCES.filter((s) => s.recipes.includes(componentKey))
+  return (servers.find((s) => s.name === own) ?? servers[0])?.name
 }
 
 function itemUrl(name: string, o: RegistryOptions): string {

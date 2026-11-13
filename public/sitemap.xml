@@ -10,7 +10,14 @@
   <url><loc>https://www.escalatokens.com/figma-kit</loc></url>
   <url><loc>https://www.escalatokens.com/components</loc></url>
   <url><loc>https://www.escalatokens.com/components/Button</loc></url>
+  <url><loc>https://www.escalatokens.com/components/IconButton</loc></url>
+  <url><loc>https://www.escalatokens.com/components/CloseButton</loc></url>
+  <url><loc>https://www.escalatokens.com/components/TextLink</loc></url>
+  <url><loc>https://www.escalatokens.com/components/FABButton</loc></url>
+  <url><loc>https://www.escalatokens.com/components/FABGroup</loc></url>
   <url><loc>https://www.escalatokens.com/components/ButtonGroup</loc></url>
+  <url><loc>https://www.escalatokens.com/components/ButtonGroupItem</loc></url>
+  <url><loc>https://www.escalatokens.com/components/ButtonGroupDivider</loc></url>
   <url><loc>https://www.escalatokens.com/components/ToggleGroup</loc></url>
   <url><loc>https://www.escalatokens.com/components/Toggle</loc></url>
   <url><loc>https://www.escalatokens.com/components/SocialLoginButton</loc></url>
@@ -19,45 +26,89 @@
   <url><loc>https://www.escalatokens.com/components/InputGroup</loc></url>
   <url><loc>https://www.escalatokens.com/components/Textarea</loc></url>
   <url><loc>https://www.escalatokens.com/components/InputOTP</loc></url>
-  <url><loc>https://www.escalatokens.com/components/InputStepper</loc></url>
+  <url><loc>https://www.escalatokens.com/components/InputOTPSlot</loc></url>
+  <url><loc>https://www.escalatokens.com/components/NumberInput</loc></url>
   <url><loc>https://www.escalatokens.com/components/InputTag</loc></url>
+  <url><loc>https://www.escalatokens.com/components/InputTagChip</loc></url>
+  <url><loc>https://www.escalatokens.com/components/InputTagOption</loc></url>
   <url><loc>https://www.escalatokens.com/components/Select</loc></url>
   <url><loc>https://www.escalatokens.com/components/NativeSelect</loc></url>
+  <url><loc>https://www.escalatokens.com/components/DatePickerTrigger</loc></url>
+  <url><loc>https://www.escalatokens.com/components/DatePickerPopover</loc></url>
+  <url><loc>https://www.escalatokens.com/components/CalendarDay</loc></url>
+  <url><loc>https://www.escalatokens.com/components/CalendarHeader</loc></url>
+  <url><loc>https://www.escalatokens.com/components/CalendarMonth</loc></url>
+  <url><loc>https://www.escalatokens.com/components/CalendarPresets</loc></url>
+  <url><loc>https://www.escalatokens.com/components/CalendarFooter</loc></url>
   <url><loc>https://www.escalatokens.com/components/Calendar</loc></url>
   <url><loc>https://www.escalatokens.com/components/Combobox</loc></url>
+  <url><loc>https://www.escalatokens.com/components/ComboboxPopover</loc></url>
+  <url><loc>https://www.escalatokens.com/components/ComboboxItem</loc></url>
+  <url><loc>https://www.escalatokens.com/components/ComboboxGroupLabel</loc></url>
   <url><loc>https://www.escalatokens.com/components/Checkbox</loc></url>
+  <url><loc>https://www.escalatokens.com/components/CheckboxItem</loc></url>
+  <url><loc>https://www.escalatokens.com/components/CheckboxGroup</loc></url>
   <url><loc>https://www.escalatokens.com/components/RadioGroup</loc></url>
   <url><loc>https://www.escalatokens.com/components/Switch</loc></url>
+  <url><loc>https://www.escalatokens.com/components/SwitchGroup</loc></url>
   <url><loc>https://www.escalatokens.com/components/Slider</loc></url>
+  <url><loc>https://www.escalatokens.com/components/SliderThumb</loc></url>
   <url><loc>https://www.escalatokens.com/components/FileUpload</loc></url>
-  <url><loc>https://www.escalatokens.com/components/Dropzone</loc></url>
+  <url><loc>https://www.escalatokens.com/components/FileUploadItem</loc></url>
+  <url><loc>https://www.escalatokens.com/components/FileUploadDropzone</loc></url>
   <url><loc>https://www.escalatokens.com/components/Field</loc></url>
   <url><loc>https://www.escalatokens.com/components/Label</loc></url>
   <url><loc>https://www.escalatokens.com/components/PasswordStrength</loc></url>
+  <url><loc>https://www.escalatokens.com/components/PasswordStrengthMeter</loc></url>
+  <url><loc>https://www.escalatokens.com/components/PasswordStrengthRule</loc></url>
   <url><loc>https://www.escalatokens.com/components/Badge</loc></url>
   <url><loc>https://www.escalatokens.com/components/StatusBadge</loc></url>
   <url><loc>https://www.escalatokens.com/components/Chip</loc></url>
-  <url><loc>https://www.escalatokens.com/components/Progress</loc></url>
+  <url><loc>https://www.escalatokens.com/components/ProgressLine</loc></url>
+  <url><loc>https://www.escalatokens.com/components/ProgressCircle</loc></url>
   <url><loc>https://www.escalatokens.com/components/Spinner</loc></url>
   <url><loc>https://www.escalatokens.com/components/Icon</loc></url>
+  <url><loc>https://www.escalatokens.com/components/FeaturedIcon</loc></url>
   <url><loc>https://www.escalatokens.com/components/Kbd</loc></url>
-  <url><loc>https://www.escalatokens.com/components/Rating</loc></url>
+  <url><loc>https://www.escalatokens.com/components/RatingGroup</loc></url>
+  <url><loc>https://www.escalatokens.com/components/RatingGroupItem</loc></url>
   <url><loc>https://www.escalatokens.com/components/FileFormat</loc></url>
   <url><loc>https://www.escalatokens.com/components/Avatar</loc></url>
+  <url><loc>https://www.escalatokens.com/components/AvatarStatus</loc></url>
+  <url><loc>https://www.escalatokens.com/components/AvatarGroup</loc></url>
   <url><loc>https://www.escalatokens.com/components/Card</loc></url>
   <url><loc>https://www.escalatokens.com/components/Separator</loc></url>
   <url><loc>https://www.escalatokens.com/components/Accordion</loc></url>
+  <url><loc>https://www.escalatokens.com/components/AccordionItem</loc></url>
   <url><loc>https://www.escalatokens.com/components/Collapsible</loc></url>
-  <url><loc>https://www.escalatokens.com/components/AspectRatio</loc></url>
-  <url><loc>https://www.escalatokens.com/components/Dialog</loc></url>
+  <url><loc>https://www.escalatokens.com/components/Image</loc></url>
+  <url><loc>https://www.escalatokens.com/components/Modal</loc></url>
+  <url><loc>https://www.escalatokens.com/components/ModalHeader</loc></url>
+  <url><loc>https://www.escalatokens.com/components/ModalFooter</loc></url>
   <url><loc>https://www.escalatokens.com/components/AlertDialog</loc></url>
   <url><loc>https://www.escalatokens.com/components/Sheet</loc></url>
   <url><loc>https://www.escalatokens.com/components/Drawer</loc></url>
   <url><loc>https://www.escalatokens.com/components/Popover</loc></url>
+  <url><loc>https://www.escalatokens.com/components/PopoverFooter</loc></url>
   <url><loc>https://www.escalatokens.com/components/HoverCard</loc></url>
-  <url><loc>https://www.escalatokens.com/components/Tooltip</loc></url>
+  <url><loc>https://www.escalatokens.com/components/TooltipContent</loc></url>
+  <url><loc>https://www.escalatokens.com/components/TooltipInfoTrigger</loc></url>
   <url><loc>https://www.escalatokens.com/components/ScrollArea</loc></url>
+  <url><loc>https://www.escalatokens.com/components/ScrollBar</loc></url>
   <url><loc>https://www.escalatokens.com/components/Table</loc></url>
+  <url><loc>https://www.escalatokens.com/components/TableCell</loc></url>
+  <url><loc>https://www.escalatokens.com/components/TableHead</loc></url>
+  <url><loc>https://www.escalatokens.com/components/TableMediaCell</loc></url>
+  <url><loc>https://www.escalatokens.com/components/TableTrendCell</loc></url>
+  <url><loc>https://www.escalatokens.com/components/TableResizer</loc></url>
+  <url><loc>https://www.escalatokens.com/components/TableRow</loc></url>
+  <url><loc>https://www.escalatokens.com/components/TableHeader</loc></url>
+  <url><loc>https://www.escalatokens.com/components/TableFooter</loc></url>
+  <url><loc>https://www.escalatokens.com/components/TableCaption</loc></url>
+  <url><loc>https://www.escalatokens.com/components/TableDropIndicator</loc></url>
+  <url><loc>https://www.escalatokens.com/components/TableEmpty</loc></url>
+  <url><loc>https://www.escalatokens.com/components/TableLoading</loc></url>
+  <url><loc>https://www.escalatokens.com/components/TableLoadMore</loc></url>
   <url><loc>https://www.escalatokens.com/components/Item</loc></url>
   <url><loc>https://www.escalatokens.com/components/Attachment</loc></url>
   <url><loc>https://www.escalatokens.com/components/Message</loc></url>
@@ -65,17 +116,34 @@
   <url><loc>https://www.escalatokens.com/components/Resizable</loc></url>
   <url><loc>https://www.escalatokens.com/components/Carousel</loc></url>
   <url><loc>https://www.escalatokens.com/components/Chart</loc></url>
-  <url><loc>https://www.escalatokens.com/components/Sonner</loc></url>
+  <url><loc>https://www.escalatokens.com/components/Toast</loc></url>
   <url><loc>https://www.escalatokens.com/components/Alert</loc></url>
   <url><loc>https://www.escalatokens.com/components/Skeleton</loc></url>
   <url><loc>https://www.escalatokens.com/components/Empty</loc></url>
   <url><loc>https://www.escalatokens.com/components/Tabs</loc></url>
   <url><loc>https://www.escalatokens.com/components/TabMenu</loc></url>
+  <url><loc>https://www.escalatokens.com/components/TabMenuItem</loc></url>
+  <url><loc>https://www.escalatokens.com/components/TabMenuLineItem</loc></url>
+  <url><loc>https://www.escalatokens.com/components/NavItem</loc></url>
+  <url><loc>https://www.escalatokens.com/components/Brand</loc></url>
+  <url><loc>https://www.escalatokens.com/components/AccountMenuTrigger</loc></url>
   <url><loc>https://www.escalatokens.com/components/SegmentedControl</loc></url>
+  <url><loc>https://www.escalatokens.com/components/SegmentedControlItem</loc></url>
   <url><loc>https://www.escalatokens.com/components/Breadcrumb</loc></url>
+  <url><loc>https://www.escalatokens.com/components/BreadcrumbItem</loc></url>
+  <url><loc>https://www.escalatokens.com/components/BreadcrumbEllipsis</loc></url>
+  <url><loc>https://www.escalatokens.com/components/BreadcrumbSeparator</loc></url>
   <url><loc>https://www.escalatokens.com/components/Pagination</loc></url>
+  <url><loc>https://www.escalatokens.com/components/PaginationLink</loc></url>
+  <url><loc>https://www.escalatokens.com/components/PaginationEllipsis</loc></url>
   <url><loc>https://www.escalatokens.com/components/Stepper</loc></url>
+  <url><loc>https://www.escalatokens.com/components/StepperItem</loc></url>
+  <url><loc>https://www.escalatokens.com/components/StepperIndicator</loc></url>
+  <url><loc>https://www.escalatokens.com/components/StepperIcon</loc></url>
   <url><loc>https://www.escalatokens.com/components/DropdownMenu</loc></url>
+  <url><loc>https://www.escalatokens.com/components/DropdownMenuLabel</loc></url>
+  <url><loc>https://www.escalatokens.com/components/DropdownMenuItem</loc></url>
+  <url><loc>https://www.escalatokens.com/components/DropdownMenuFooter</loc></url>
   <url><loc>https://www.escalatokens.com/components/Menubar</loc></url>
   <url><loc>https://www.escalatokens.com/components/NavigationMenu</loc></url>
   <url><loc>https://www.escalatokens.com/components/ContextMenu</loc></url>

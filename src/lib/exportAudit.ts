@@ -60,7 +60,26 @@ export const RUNTIME_VARS = new Set(['--switch-from', '--switch-to', '--escala-d
  *  duplicated block (×2), not to police normal growth. */
 export const BUDGETS = {
   cssBytes: 160_000,
-  contextAllTokens: 70_000,
+  // 70k → 75k (2026-11-12): Button became Variant × Appearance (12 combinations)
+  // and IconButton a component of its own — real content, not bloat.
+  // 75k → 80k (2026-11-12): CloseButton and TextLink, two more Figma components
+  // with their own design-skill files.
+  // 80k → 85k (2026-11-12): ButtonGroup became three Figma components (group,
+  // item, divider), each with its own design-skill file.
+  // 85k → 90k (2026-11-12): InputTag became three Figma components (field, chip,
+  // option), each with its own design-skill file.
+  // 90k → 95k (2026-11-12): date picker page (trigger, popover) and CalendarDay, each with
+  // its own design-skill file.
+  // 95k → 105k (2026-11-12): FileUpload became three Figma components (dropzone, item,
+  // upload) and Checkbox carries 270 variants (Size × Checked × State × Variant).
+  // 105k → 120k (2026-11-12): Avatar (350 variants + status and group parts), FeaturedIcon and Badge
+  // (525 variants) each carry a design-skill file with their full variant tables.
+  // 120k → 135k (2026-11-13): Table and its 13 parts (about 400 variants) and Alert (96 variants), each with its
+  // design-skill file and variant tables.
+  // 135k → 140k (2026-11-13): Combobox's four components, the date picker and Calendar's
+  // parts joined the Table / Avatar / Checkbox work in one branch, each with its own
+  // design-skill file.
+  contextAllTokens: 140_000,
   contextFoundationTokens: 12_000,
 }
 

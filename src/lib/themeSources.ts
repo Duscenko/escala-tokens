@@ -189,7 +189,7 @@ export interface PrimitiveScales {
   successDarkScale?: ColorScale
   infoScale: ColorScale
   infoDarkScale?: ColorScale
-  customColors: { key: string; scale: ColorScale; darkScale?: ColorScale }[]
+  customColors: { key: string; scale: ColorScale; darkScale?: ColorScale; alpha?: ColorScale; darkAlpha?: ColorScale }[]
   /** The store carries these too. When all four are present `resolveThemePalette`
    *  can also report the page each private family's alpha twin was solved against
    *  (`ThemePalette.alphaPages`); a caller passing a bare ramp set just gets none. */
@@ -255,6 +255,14 @@ export function resolveThemePalette(
   }
   const alphaPages = alphaPagesFor(sources, p)
   if (alphaPages) palette.alphaPages = alphaPages
+  // A family that carries its own alpha twin (a curated palette) is read as is.
+  const pinned: NonNullable<ThemePalette['pinnedAlpha']> = {}
+  for (const slot of FAMILY_SLOTS) {
+    const fam = p.customColors.find((c) => c.key === sources[slot])
+    const twin = kind === 'dark' ? fam?.darkAlpha : fam?.alpha
+    if (twin && Object.keys(twin).length) pinned[ALPHA_NAME[slot]] = twin
+  }
+  if (Object.keys(pinned).length) palette.pinnedAlpha = pinned
   return palette
 }
 

@@ -39,3 +39,6 @@ reports/
 # `npm run gen:phosphor-icons` after bumping @phosphor-icons/core.
 HANDOFF.md
 HANDOFF-1.md
+
+# Storybook build output
+apps/storybook/storybook-static

@@ -1504,7 +1504,8 @@ export function scaleLookup(
       warning: fams.warning, success: fams.success, info: fams.info,
     }
     for (const [fam, solid] of Object.entries(kindCorrectSolid)) {
-      if (solid) fams[`${fam}-a`] = generateAlphaScale(solid, pageOf(fam), kind)
+      const pinned = palette?.pinnedAlpha?.[fam as keyof NonNullable<typeof palette.pinnedAlpha>]
+      if (solid) fams[`${fam}-a`] = pinned ?? generateAlphaScale(solid, pageOf(fam), kind)
     }
   }
   return (fam, tone) => fams[fam]?.[tone]

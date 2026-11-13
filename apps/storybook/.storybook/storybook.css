@@ -1,0 +1,6 @@
+/* Storybook's Vite root is apps/storybook, so Tailwind's automatic source
+   detection never reaches src/ and the components' utility classes
+   (`inline-flex items-center` on Button…) were never generated: the button
+   fell back to inline-block and its icon sat on the text baseline. */
+@import "../../../src/index.css";
+@source "../../../src";

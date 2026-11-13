@@ -82,6 +82,8 @@ const PROP_LABEL: Record<RecipeProp, string> = {
   paddingX: 'Padding X',
   paddingY: 'Padding Y',
   paddingBottom: 'Padding bottom',
+  paddingRight: 'Padding right',
+  minWidth: 'Min width',
   gap: 'Gap',
   rowGap: 'Row gap',
   height: 'Height',
@@ -91,16 +93,28 @@ const PROP_LABEL: Record<RecipeProp, string> = {
   strokeWidth: 'Border width',
   strokeTopWidth: 'Top border width',
   strokeBottomWidth: 'Bottom border width',
+  strokeRightWidth: 'Right border width',
   font: 'Typography',
   shadow: 'Shadow',
   hit: 'Target size',
+  highlight: 'Top highlight',
+  overlay: 'Overlay',
+  overlay2: 'Overlay (second layer)',
+  halo: 'Focus halo',
+  opacity: 'Opacity',
+  lift: 'Elevation',
+  fontLiteral: 'Typography (literal)',
+  hairline: 'Border width (hairline)',
+  outerStroke: 'Outside border',
+  outerStrokeWidth: 'Outside border width',
+  overlap: 'Overlap',
 }
 
 /** Display order inside a slot: paint first, then box, then type. */
 const PROP_ORDER: RecipeProp[] = [
-  'fill', 'text', 'stroke', 'strokeTop', 'focus', 'ring', 'paint',
-  'radius', 'paddingX', 'paddingY', 'paddingBottom', 'gap', 'rowGap', 'height', 'minHeight', 'width', 'travel',
-  'strokeWidth', 'strokeTopWidth', 'strokeBottomWidth', 'shadow', 'font', 'hit',
+  'fill', 'overlay', 'overlay2', 'text', 'stroke', 'outerStroke', 'strokeTop', 'focus', 'ring', 'halo', 'highlight', 'paint',
+  'radius', 'paddingX', 'paddingY', 'paddingBottom', 'paddingRight', 'gap', 'rowGap', 'overlap', 'height', 'minHeight', 'minWidth', 'width', 'travel',
+  'strokeWidth', 'outerStrokeWidth', 'strokeTopWidth', 'strokeBottomWidth', 'strokeRightWidth', 'shadow', 'font', 'hit',
 ]
 
 function kindOf(ref: string): TraceKind {
@@ -125,7 +139,7 @@ function pickIdOf(ref: string): string | undefined {
   const [ns, name] = splitRef(ref)
   if (ns === 'color') return name
   if (ns === 'radius') return `radius.${name}`
-  if (ns === 'type') return `text.${name}`
+  if (ns === 'type') return /^(text|display)-(xs|sm|md|lg|xl|2xl)$/.test(name) ? undefined : `text.${name}`
   // A size ROLE is editable; a raw step (`size.md`) is a primitive, not a role.
   if (ns === 'size' && SIZE_ROLES.some((role) => role.key === name)) return `size.${name}`
   // Spacing, stroke and shadow open `LayoutTokenDetails`: a role re-points,
@@ -169,7 +183,7 @@ function resolveValue(t: PreviewTokens, ref: string): { cssVar: string; value: s
       { label: 'Tracking', cssVar: cssVarOf(ref, 'letter-spacing'), value: px(s.letterSpacing) || '0px' },
     ].filter((f) => f.value)
     const summary = [px(s.fontSize), px(s.lineHeight)].filter(Boolean).join(' / ')
-    return { cssVar: `--text-${name}-*`, value: [summary, s.fontWeight].filter(Boolean).join(' · '), facets }
+    return { cssVar: /^(text|display)-(xs|sm|md|lg|xl|2xl)$/.test(name) ? `--font-size-${name}` : `--text-${name}-*`, value: [summary, s.fontWeight].filter(Boolean).join(' · '), facets }
   }
   const out = previewDimension(t, ref)
   const cssVar = cssVarOf(ref)

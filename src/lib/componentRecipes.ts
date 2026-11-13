@@ -32,61 +32,106 @@
  *   none                         → nothing painted
  */
 
-import { BUTTON, BUTTON_GROUP, SOCIAL_LOGIN_BUTTON, APP_STORE_BADGE, TOGGLE_GROUP, TOGGLE } from './recipes/actions.js'
+import { BUTTON, ICON_BUTTON, CLOSE_BUTTON, TEXT_LINK, FAB_BUTTON, FAB_GROUP, BUTTON_GROUP, BUTTON_GROUP_ITEM, BUTTON_GROUP_DIVIDER, SOCIAL_LOGIN_BUTTON, APP_STORE_BADGE, TOGGLE_GROUP, TOGGLE } from './recipes/actions.js'
 import {
-  INPUT, TEXTAREA, INPUT_GROUP, INPUT_STEPPER, INPUT_TAG, SELECT, COMBOBOX, INPUT_OTP,
-  CHECKBOX, RADIO_GROUP, SWITCH, SLIDER, FIELD, LABEL, PASSWORD_STRENGTH, FILE_UPLOAD, DROPZONE, NATIVE_SELECT, CALENDAR,
+  INPUT, TEXTAREA, DATE_PICKER_TRIGGER, DATE_PICKER_POPOVER, CALENDAR_DAY, CALENDAR_HEADER, CALENDAR_MONTH, CALENDAR_PRESETS, CALENDAR_FOOTER, INPUT_GROUP, NUMBER_INPUT, INPUT_TAG, INPUT_TAG_CHIP, INPUT_TAG_OPTION, SELECT, COMBOBOX, COMBOBOX_POPOVER, COMBOBOX_ITEM, COMBOBOX_GROUP_LABEL, INPUT_OTP, INPUT_OTP_SLOT,
+  CHECKBOX, CHECKBOX_ITEM, CHECKBOX_GROUP, RADIO_GROUP, SWITCH, SWITCH_GROUP, SLIDER, SLIDER_THUMB, FIELD, LABEL, PASSWORD_STRENGTH, PASSWORD_STRENGTH_METER, PASSWORD_STRENGTH_RULE, FILE_UPLOAD, FILE_UPLOAD_DROPZONE, FILE_UPLOAD_ITEM, NATIVE_SELECT, CALENDAR,
 } from './recipes/forms.js'
-import { CARD, DIALOG, SEPARATOR, ACCORDION, ASPECT_RATIO, POPOVER, TOOLTIP, SCROLL_AREA, COLLAPSIBLE, TABLE,
-  ALERT_DIALOG, SHEET, DRAWER, HOVER_CARD, ITEM, ATTACHMENT, MESSAGE, BUBBLE, RESIZABLE, CAROUSEL, CHART,
+import { CARD, MODAL, MODAL_HEADER, MODAL_FOOTER, SEPARATOR, ACCORDION, ACCORDION_ITEM, IMAGE, POPOVER, POPOVER_FOOTER, TOOLTIP_CONTENT, TOOLTIP_INFO_TRIGGER, SCROLL_AREA, SCROLL_BAR, COLLAPSIBLE, ALERT_DIALOG, SHEET, DRAWER, HOVER_CARD, ITEM, ATTACHMENT, MESSAGE, BUBBLE, RESIZABLE, CAROUSEL, CHART,
 } from './recipes/surfaces.js'
 import {
-  TABS, TAB_MENU, SEGMENTED_CONTROL, BREADCRUMB, PAGINATION, STEPPER, DROPDOWN_MENU, CONTEXT_MENU, COMMAND, NAVBAR, SIDEBAR, MENUBAR, NAVIGATION_MENU,
+  TABS, TAB_MENU, TAB_MENU_ITEM, TAB_MENU_LINE_ITEM, NAV_ITEM, BRAND, ACCOUNT_MENU_TRIGGER, SEGMENTED_CONTROL, SEGMENTED_CONTROL_ITEM, BREADCRUMB, BREADCRUMB_ITEM, BREADCRUMB_ELLIPSIS, BREADCRUMB_SEPARATOR, PAGINATION, PAGINATION_LINK, PAGINATION_ELLIPSIS, STEPPER, STEPPER_ITEM, STEPPER_INDICATOR, STEPPER_ICON, DROPDOWN_MENU, DROPDOWN_MENU_LABEL, DROPDOWN_MENU_ITEM, DROPDOWN_MENU_FOOTER, CONTEXT_MENU, COMMAND, NAVBAR, SIDEBAR, MENUBAR, NAVIGATION_MENU,
 } from './recipes/navigation.js'
-import { ALERT, SONNER, SKELETON, EMPTY } from './recipes/feedback.js'
-import { BADGE, STATUS_BADGE, CHIP, PROGRESS, SPINNER, ICON, RATING, FILE_FORMAT, AVATAR, KBD } from './recipes/indicators.js'
+import { ALERT, TOAST, SKELETON, EMPTY } from './recipes/feedback.js'
+import { BADGE, STATUS_BADGE, CHIP, PROGRESS_LINE, PROGRESS_CIRCLE, SPINNER, ICON, RATING_GROUP, RATING_GROUP_ITEM, FILE_FORMAT, AVATAR, AVATAR_STATUS, AVATAR_GROUP, FEATURED_ICON, KBD } from './recipes/indicators.js'
 export {
   RECIPE_PROPS,
   type TokenRef, type RecipeProp, type SlotProps, type RecipeMotion, type RecipeChoreo, type SlotMap, type RecipePart, type ComponentRecipe, type AxisValues,
 } from './recipes/helpers.js'
+import { TABLE, TABLE_CELL, TABLE_HEAD, TABLE_MEDIA_CELL, TABLE_TREND_CELL, TABLE_RESIZER, TABLE_ROW, TABLE_HEADER, TABLE_FOOTER, TABLE_CAPTION, TABLE_DROP_INDICATOR, TABLE_EMPTY, TABLE_LOADING, TABLE_LOAD_MORE } from './recipes/table.js'
 import { RECIPE_MOTION } from './recipes/motion.js'
 import { roleCssVar } from './roleNames.js'
-import { NONE, type ComponentRecipe, type AxisValues, type SlotMap, type TokenRef, type RecipeProp } from './recipes/helpers.js'
+import { NONE, NON_TOKEN_PROPS, type ComponentRecipe, type AxisValues, type SlotMap, type TokenRef, type RecipeProp } from './recipes/helpers.js'
 
 export const COMPONENT_RECIPES: Record<string, ComponentRecipe> = {
   Button: BUTTON,
+  IconButton: ICON_BUTTON,
+  CloseButton: CLOSE_BUTTON,
+  TextLink: TEXT_LINK,
+  FABButton: FAB_BUTTON,
+  FABGroup: FAB_GROUP,
   ButtonGroup: BUTTON_GROUP,
+  ButtonGroupItem: BUTTON_GROUP_ITEM,
+  ButtonGroupDivider: BUTTON_GROUP_DIVIDER,
   SocialLoginButton: SOCIAL_LOGIN_BUTTON,
   AppStoreBadge: APP_STORE_BADGE,
   Input: INPUT,
   Textarea: TEXTAREA,
+  DatePickerTrigger: DATE_PICKER_TRIGGER,
+  CalendarDay: CALENDAR_DAY,
+  CalendarHeader: CALENDAR_HEADER,
+  CalendarMonth: CALENDAR_MONTH,
+  CalendarPresets: CALENDAR_PRESETS,
+  CalendarFooter: CALENDAR_FOOTER,
+  DatePickerPopover: DATE_PICKER_POPOVER,
   InputGroup: INPUT_GROUP,
-  InputStepper: INPUT_STEPPER,
+  NumberInput: NUMBER_INPUT,
   InputTag: INPUT_TAG,
+  InputTagChip: INPUT_TAG_CHIP,
+  InputTagOption: INPUT_TAG_OPTION,
   Select: SELECT,
   Combobox: COMBOBOX,
+  ComboboxPopover: COMBOBOX_POPOVER,
+  ComboboxItem: COMBOBOX_ITEM,
+  ComboboxGroupLabel: COMBOBOX_GROUP_LABEL,
   InputOTP: INPUT_OTP,
+  InputOTPSlot: INPUT_OTP_SLOT,
   Checkbox: CHECKBOX,
+  CheckboxItem: CHECKBOX_ITEM,
+  CheckboxGroup: CHECKBOX_GROUP,
   RadioGroup: RADIO_GROUP,
   Switch: SWITCH,
+  SwitchGroup: SWITCH_GROUP,
   Slider: SLIDER,
+  SliderThumb: SLIDER_THUMB,
   FileUpload: FILE_UPLOAD,
-  Dropzone: DROPZONE,
+  FileUploadDropzone: FILE_UPLOAD_DROPZONE,
+  FileUploadItem: FILE_UPLOAD_ITEM,
   Field: FIELD,
   Label: LABEL,
   PasswordStrength: PASSWORD_STRENGTH,
+  PasswordStrengthMeter: PASSWORD_STRENGTH_METER,
+  PasswordStrengthRule: PASSWORD_STRENGTH_RULE,
   Badge: BADGE,
   StatusBadge: STATUS_BADGE,
   Chip: CHIP,
-  Progress: PROGRESS,
+  ProgressLine: PROGRESS_LINE,
+  ProgressCircle: PROGRESS_CIRCLE,
   Spinner: SPINNER,
   Icon: ICON,
-  Rating: RATING,
+  FeaturedIcon: FEATURED_ICON,
+  RatingGroup: RATING_GROUP,
+  RatingGroupItem: RATING_GROUP_ITEM,
   FileFormat: FILE_FORMAT,
   Avatar: AVATAR,
+  AvatarStatus: AVATAR_STATUS,
+  AvatarGroup: AVATAR_GROUP,
   Separator: SEPARATOR,
   Collapsible: COLLAPSIBLE,
   Table: TABLE,
+  TableCell: TABLE_CELL,
+  TableHead: TABLE_HEAD,
+  TableMediaCell: TABLE_MEDIA_CELL,
+  TableTrendCell: TABLE_TREND_CELL,
+  TableResizer: TABLE_RESIZER,
+  TableRow: TABLE_ROW,
+  TableHeader: TABLE_HEADER,
+  TableFooter: TABLE_FOOTER,
+  TableCaption: TABLE_CAPTION,
+  TableDropIndicator: TABLE_DROP_INDICATOR,
+  TableEmpty: TABLE_EMPTY,
+  TableLoading: TABLE_LOADING,
+  TableLoadMore: TABLE_LOAD_MORE,
   ToggleGroup: TOGGLE_GROUP,
   NativeSelect: NATIVE_SELECT,
   Kbd: KBD,
@@ -108,25 +153,48 @@ export const COMPONENT_RECIPES: Record<string, ComponentRecipe> = {
   Menubar: MENUBAR,
   NavigationMenu: NAVIGATION_MENU,
   Accordion: ACCORDION,
-  AspectRatio: ASPECT_RATIO,
+  AccordionItem: ACCORDION_ITEM,
+  Image: IMAGE,
   Popover: POPOVER,
-  Tooltip: TOOLTIP,
+  PopoverFooter: POPOVER_FOOTER,
+  TooltipContent: TOOLTIP_CONTENT,
+  TooltipInfoTrigger: TOOLTIP_INFO_TRIGGER,
   ScrollArea: SCROLL_AREA,
+  ScrollBar: SCROLL_BAR,
   Alert: ALERT,
-  Sonner: SONNER,
+  Toast: TOAST,
   Tabs: TABS,
   TabMenu: TAB_MENU,
+  TabMenuItem: TAB_MENU_ITEM,
+  TabMenuLineItem: TAB_MENU_LINE_ITEM,
+  NavItem: NAV_ITEM,
+  Brand: BRAND,
+  AccountMenuTrigger: ACCOUNT_MENU_TRIGGER,
   SegmentedControl: SEGMENTED_CONTROL,
+  SegmentedControlItem: SEGMENTED_CONTROL_ITEM,
   Breadcrumb: BREADCRUMB,
+  BreadcrumbItem: BREADCRUMB_ITEM,
+  BreadcrumbEllipsis: BREADCRUMB_ELLIPSIS,
+  BreadcrumbSeparator: BREADCRUMB_SEPARATOR,
   Pagination: PAGINATION,
+  PaginationLink: PAGINATION_LINK,
+  PaginationEllipsis: PAGINATION_ELLIPSIS,
   Stepper: STEPPER,
+  StepperItem: STEPPER_ITEM,
+  StepperIndicator: STEPPER_INDICATOR,
+  StepperIcon: STEPPER_ICON,
   DropdownMenu: DROPDOWN_MENU,
+  DropdownMenuLabel: DROPDOWN_MENU_LABEL,
+  DropdownMenuItem: DROPDOWN_MENU_ITEM,
+  DropdownMenuFooter: DROPDOWN_MENU_FOOTER,
   ContextMenu: CONTEXT_MENU,
   Command: COMMAND,
   Navbar: NAVBAR,
   Sidebar: SIDEBAR,
   Card: CARD,
-  Dialog: DIALOG,
+  Modal: MODAL,
+  ModalHeader: MODAL_HEADER,
+  ModalFooter: MODAL_FOOTER,
 }
 
 // How each component moves (lib/recipes/motion.ts) joins its recipe here, so
@@ -174,8 +242,11 @@ export function recipeTokenRefs(recipe: ComponentRecipe): string[] {
   for (const p of recipe.parts) {
     for (const slots of Object.values(p.values)) {
       for (const props of Object.values(slots)) {
-        for (const ref of Object.values(props)) {
+        for (const [prop, ref] of Object.entries(props)) {
           if (!ref || ref === NONE) continue
+          // A named elevation paints with the two Elevation colours (recipeStyles `LIFT`).
+          if (prop === 'lift') { refs.add('color.elevation.shadow-key'); refs.add('color.elevation.shadow-ambient'); if (ref === 'modal' || String(ref).startsWith('popover-')) refs.add('color.elevation.shadow-ring'); continue }
+          if (NON_TOKEN_PROPS.includes(prop)) continue
           for (const term of refFn(ref)?.terms ?? ref.split('+')) refs.add(term)
         }
       }
@@ -198,7 +269,7 @@ export function recipeRows(recipe: ComponentRecipe): RecipeRow[] {
     for (const slots of Object.values(p.values)) {
       for (const [slot, props] of Object.entries(slots)) {
         for (const [prop, ref] of Object.entries(props)) {
-          if (!ref || ref === NONE) continue
+          if (!ref || ref === NONE || NON_TOKEN_PROPS.includes(prop)) continue
           const k = `${slot}|${prop}|${ref}`
           if (seen.has(k)) continue
           seen.add(k)
@@ -229,12 +300,24 @@ export function splitRef(ref: TokenRef): [string, string] {
   return i < 0 ? [ref, ''] : [ref.slice(0, i), ref.slice(i + 1)]
 }
 
+/** A type scale step used as a reference (`type.text-xl`), not a role. */
+const TYPE_STEP = /^(text|display)-(xs|sm|md|lg|xl|2xl)$/
+
 /** The `variables.css` custom property a reference resolves to. For `type.*`
  *  pass the facet (`font-size`, `line-height`, …). */
 export function cssVarOf(ref: TokenRef, facet = 'font-size'): string {
   const [ns, name] = splitRef(ref)
   if (ns === 'color') return `--color-${name.replace(/\./g, '-')}`
-  if (ns === 'type') return `--text-${name}-${facet}`
+  if (ns === 'type') {
+    // A scale step (`type.text-xl`) reads the scale primitives, as a Figma text
+    // style bound to them does; a role reads its own `--text-<role>-*` alias.
+    if (TYPE_STEP.test(name)) {
+      if (facet === 'font-family') return '--font-family-body'
+      if (facet === 'font-weight') return '--font-weight-regular'
+      return `--${facet}-${name}`
+    }
+    return `--text-${name}-${facet}`
+  }
   // A dimension ROLE takes the Figma file's code-syntax name (`size.hit` →
   // `--size-control-xs`, `radius.pill` → `--radius-full`); a scale step keeps
   // its own (`size.md` → `--size-md`).

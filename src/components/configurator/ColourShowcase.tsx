@@ -19,29 +19,29 @@ type Entry = { key: string; v: AxisValues; w?: number }
 
 export const COLOUR_SHOWCASE: Partial<Record<ColorRoleId, Entry[]>> = {
   success: [
-    { key: 'Sonner', v: { Type: 'success' }, w: 300 },
+    { key: 'Toast', v: { Variant: 'success' }, w: 300 },
     { key: 'StatusBadge', v: { Status: 'online' } },
-    { key: 'PasswordStrength', v: { Strength: 'strong' } },
+    { key: 'PasswordStrength', v: { Strength: '4' } },
   ],
   warning: [
-    { key: 'Sonner', v: { Type: 'warning' }, w: 300 },
+    { key: 'Toast', v: { Variant: 'warning' }, w: 300 },
     { key: 'StatusBadge', v: { Status: 'away' } },
-    { key: 'Rating', v: {} },
+    { key: 'RatingGroup', v: {} },
     { key: 'FileFormat', v: { Format: 'zip' } },
-    { key: 'PasswordStrength', v: { Strength: 'fair' } },
+    { key: 'PasswordStrength', v: { Strength: '3' } },
   ],
   info: [
-    { key: 'Sonner', v: { Type: 'info' }, w: 300 },
+    { key: 'Toast', v: { Variant: 'info' }, w: 300 },
     { key: 'FileFormat', v: { Format: 'png' } },
   ],
   error: [
     { key: 'Alert', v: { Variant: 'destructive' }, w: 300 },
-    { key: 'Sonner', v: { Type: 'error' }, w: 300 },
+    { key: 'Toast', v: { Variant: 'critical' }, w: 300 },
     { key: 'Button', v: { Variant: 'destructive', Size: 'default', State: 'Default' } },
-    { key: 'Badge', v: { Variant: 'destructive' } },
+    { key: 'Badge', v: { Variant: 'critical' } },
     { key: 'StatusBadge', v: { Status: 'busy' } },
     { key: 'FileFormat', v: { Format: 'pdf' } },
-    { key: 'PasswordStrength', v: { Strength: 'weak' } },
+    { key: 'PasswordStrength', v: { Strength: '1' } },
   ],
 }
 

@@ -20,7 +20,7 @@ import { motion, AnimatePresence, useReducedMotion } from 'framer-motion'
 import { useDesignStore, makeDesignDefaults, type ThemeSources } from '../../store/useDesignStore'
 import type { ColorScale } from '../../types/tokens'
 import {
-  NAMING_SCHEMES, BASE_TONE, generateColorScale, generateLightNeutralScale, generateAlphaScale,
+  NAMING_SCHEMES, BASE_TONE, generateColorScale, generateLightNeutralScale, generateAlphaScale, pinnedOrSolvedAlpha,
   generateNeutralDarkScale, generateFamilyDarkScale, backgroundFromBase,
   neutralFromBrand, readableInk,
   BLACK_ALPHA_SCALE, WHITE_ALPHA_SCALE, readHuePosition, colorAtHue,
@@ -982,8 +982,8 @@ export default function ColorPrimitives({
         label: familyDisplayLabel(c.key, themeSources, true) ?? `${c.label}-Alpha`,
         tokenPrefix: `${c.key}-a`,
         base: c.base,
-        light: generateAlphaScale(c.scale, pages.light, 'light'),
-        dark: generateAlphaScale(c.darkScale ?? c.scale, pages.dark, 'dark'),
+        light: pinnedOrSolvedAlpha(c.alpha, c.scale, pages.light, 'light'),
+        dark: pinnedOrSolvedAlpha(c.darkAlpha, c.darkScale ?? c.scale, pages.dark, 'dark'),
         setLight: noopSet, setDark: noopSet, isAlpha: true, alphaOf: c.key,
         solidLight: c.scale, solidDark: c.darkScale ?? c.scale,
       }]

@@ -448,7 +448,8 @@ decides its STRUCTURE; this skill decides every VALUE.
    foundations into the file: collections \`Color Semantics\`,
    \`Dimension Semantics\`, \`Typography\` (plus \`Color Primitives\` and
    \`Dimension Primitives\`, which components never bind), text styles
-   \`Type/<role>\` and effect styles \`Shadow/<step>\`. Look a variable up by its
+   \`Type/<role>\` and effect styles \`Shadow/<step>\` · \`Depth/<step>\` ·
+   \`Blur/<step>\`. Look a variable up by its
    exact name (local or from the library). If one is missing, **stop and say
    which name is missing** — do not create a variable, do not put a hex or a
    px in its place.
@@ -460,7 +461,10 @@ decides its STRUCTURE; this skill decides every VALUE.
      \`Size/target-min\`, \`Stroke/…\`). There is no \`role/\` segment and no
      \`Icon/\` or \`Selector/\` group.
    - Text → apply the text style \`Type/<role>\` (all facets at once).
-   - Elevation → the effect style \`Shadow/<step>\`.
+   - Elevation → an effect style: \`Shadow/<step>\` (drop shadow),
+     \`Depth/<step>\` (inner shadow) or \`Blur/<step>\` (background blur). Their
+     layers are already bound to the \`Elevation/*\` colour roles; never paint
+     an \`Elevation/*\` variable as a fill or stroke.
    - Use auto layout so padding and gap are real properties you can bind.
 3. **Themes and viewports are MODES, not copies.** Check Light / Dark by
    switching the \`Color Semantics\` mode on the frame, and Desktop / Tablet /
@@ -487,8 +491,8 @@ function skillMd(json: Source, repo: boolean): string {
   const frontName = json ? `${slugOf(project)}-architecture` : 'escala-architecture'
   const figmaUse = 'Also use when building or editing components, component sets or a UI kit in Figma: finding the synced Escala variables, binding every fill, stroke, padding, gap, radius, size and text style to them, and checking Light/Dark and Desktop/Tablet/Mobile modes.'
   const description = json
-    ? `How the ${project} design system's token architecture works and which role to use — every semantic role of Color (surface · content · action · status · border), Dimensions (radius · spacing · size · selector · stroke · breakpoint · icon) and Typography (display · heading · body · control), with this system's values. Use when writing or reviewing UI, CSS, components or Figma bindings; when picking a token for a fill, ink, border, gap, padding, radius, height or text style. ${figmaUse}`
-    : `How Escala's token architecture works and how to build with it — the semantic roles of Color (surface · content · action · status · border), Dimensions (radius · spacing · size · selector · stroke · breakpoint · icon) and Typography (display · heading · body · control). Use whenever writing or reviewing UI, CSS or components that consume Escala tokens, or picking a token for a fill, ink, border, gap, padding, radius, height or text style. ${figmaUse}${repo ? ' And when adding or renaming a role in the Escala repo.' : ''}`
+    ? `How the ${project} design system's token architecture works and which role to use — every semantic role of Color (surface · content · action · status · border · elevation), Dimensions (radius · spacing · size · selector · stroke · breakpoint · icon) and Typography (display · heading · body · control), with this system's values. Use when writing or reviewing UI, CSS, components or Figma bindings; when picking a token for a fill, ink, border, shadow, gap, padding, radius, height or text style. ${figmaUse}`
+    : `How Escala's token architecture works and how to build with it — the semantic roles of Color (surface · content · action · status · border · elevation), Dimensions (radius · spacing · size · selector · stroke · breakpoint · icon) and Typography (display · heading · body · control). Use whenever writing or reviewing UI, CSS or components that consume Escala tokens, or picking a token for a fill, ink, border, shadow, gap, padding, radius, height or text style. ${figmaUse}${repo ? ' And when adding or renaming a role in the Escala repo.' : ''}`
   const intro = json
     ? `${project} is built on Escala's three-tier token system. Load \`AGENTS.md\` first; this skill says which ROLE to use. Agents that skip a tier produce UI that looks right in one brand and breaks in the next.`
     : 'Escala is a three-tier token system. Agents that skip a tier produce UI that looks right in one brand and breaks in the next.'
@@ -530,7 +534,7 @@ ${catalogue}
 
 | Domain | Reference | Groups |
 |---|---|---|
-| Colour | [references/color-roles.md](references/color-roles.md) | Surface · Content · Action · Status · Border |
+| Colour | [references/color-roles.md](references/color-roles.md) | Surface · Content · Action · Status · Border · Elevation |
 | Dimensions | [references/dimension-roles.md](references/dimension-roles.md) | Radius (Boxes · Fields · Selectors) · Spacing (Gap · Inset · Overlap) · Size (Control · Special) · Selector · Stroke · Breakpoint + Grid · Icon |
 | Typography | [references/type-roles.md](references/type-roles.md) | Display · Heading · Body · Control |
 
@@ -635,7 +639,7 @@ ${FIGMA_SECTION}## Quick map — "I need …"
 |---|---|
 | Page background | \`color.surface.page\` |
 | Card | \`color.surface.layer-1\` + \`border.default\` + \`radius.container\` + \`spacing.inset-surface\` |
-| Popover / menu / modal | \`color.surface.layer-2\` + \`radius.overlay\` + a shadow; scrim \`color.surface.overlay\` |
+| Popover / menu / modal | \`color.surface.layer-2\` + \`radius.overlay\` + \`--shadow-lg\` for a menu / popover, \`--shadow-2xl\` for a dialog (Figma \`Shadow/lg\` · \`Shadow/2xl\`); scrim \`color.surface.overlay\` |
 | Body text / secondary text | \`color.content.primary\` / \`color.content.secondary\` + \`type.body-md\` |
 | Primary button | \`action.primary.*\` + \`content.on-action\` + \`radius.action\` + \`size.control\` + \`spacing.inset-control\` + \`type.button\` |
 | Text field | \`surface.input\` + \`border.control\` (hover \`border.control-hover\`, focus \`border.focus\` + \`border.ring.default\`) + \`radius.action\` + \`type.placeholder\` / \`type.label\` |

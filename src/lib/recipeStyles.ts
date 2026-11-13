@@ -51,7 +51,40 @@ function dim(ref: string): string {
   return parts.length === 1 ? vars[0] : `calc(${vars.join(' + ')})`
 }
 
-const HALO = 'calc(var(--stroke-focus, 2px) + var(--stroke-control, 1px))'
+/** The focus halo is `stroke.focus` wide (2px), as in the Figma file. */
+const HALO = 'var(--stroke-focus, 2px)'
+/** The top highlight of a solid control: Figma's inner shadow 0 · 2 · 0 · 0
+ *  (the same 2px the focus edge is drawn at). */
+const highlightShadow = (color: string) => `inset 0 var(--stroke-focus, 2px) 0 0 ${color}`
+/** The named elevations a recipe can lift on, as the Figma FAB draws them: a key
+ *  shadow and an ambient one. The file hand-sets the numbers per state (offset and
+ *  blur 12·16 / 20·24 / 4·6 and 4·6 / 8·8 / 2·4) and gives each a negative spread
+ *  (−4 · −2, −4 · −4, −1 · −2) that Figma does NOT render: the frame does not clip
+ *  its content, so a drop shadow's spread paints nothing (measured on the file's own
+ *  pixels: 237 at the side edge, not 245). The spread is therefore left out here. */
+const LIFT: Record<string, (key: string, ambient: string, ring: string) => string[]> = {
+  rest: (k, a) => [`0 12px 16px ${k}`, `0 4px 6px ${a}`],
+  hover: (k, a) => [`0 20px 24px ${k}`, `0 8px 8px ${a}`],
+  pressed: (k, a) => [`0 4px 6px ${k}`, `0 2px 4px ${a}`],
+  // The Modal's Shadow/xl: the frame CLIPS its content, so Figma paints the ring and the negative spreads.
+  modal: (k, a, r) => [`0 0 0 1px ${r}`, `0 20px 24px -4px ${k}`, `0 8px 8px -4px ${a}`],
+  // The Popover's Shadow/md and Shadow/lg (the panel clips, so ring and spreads paint).
+  'popover-md': (k, a, r) => [`0 0 0 1px ${r}`, `0 4px 6px -1px ${k}`, `0 2px 4px -2px ${a}`],
+  'popover-lg': (k, a, r) => [`0 0 0 1px ${r}`, `0 12px 16px -4px ${k}`, `0 4px 6px -2px ${a}`],
+  // The Chip being dragged: Shadow/sm without its spreads (Figma paints none on a frame that does not clip).
+  drag: (k, a) => [`0 1px 3px ${k}`, `0 1px 2px ${a}`],
+}
+/** The surface effects a slot carries: its lift, then the top highlight. */
+function surfaceShadows(props: SlotProps, v: (ref: string) => string): string[] {
+  const lift = props.lift && LIFT[props.lift] ? LIFT[props.lift](v('color.elevation.shadow-key'), v('color.elevation.shadow-ambient'), v('color.elevation.shadow-ring')) : []
+  return [...lift, ...(props.highlight && props.highlight !== 'none' ? [highlightShadow(v(props.highlight))] : [])]
+}
+
+/** The element's own border width, for its padding to give back. Registered
+ *  non-inherited, so a child never subtracts its parent's border. */
+const STROKE_WIDTH_VAR = '--escala-stroke-width'
+const STROKE_WIDTH_PROPERTY = `@property ${STROKE_WIDTH_VAR} {\n  syntax: "<length>";\n  inherits: false;\n  initial-value: 0px;\n}`
+const insetMinusStroke = (inset: string) => `max(0px, calc(${inset} - var(${STROKE_WIDTH_VAR}, 0px)))`
 
 function declarations(props: SlotProps): string[] {
   const out: string[] = []
@@ -60,7 +93,31 @@ function declarations(props: SlotProps): string[] {
   for (const [prop, ref] of Object.entries(props) as [RecipeProp, string][]) {
     if (!ref) continue
     switch (prop) {
-      case 'fill': out.push(`background: ${color(ref)}`); break
+      case 'fill': {
+        // Stacked fills (`overlay`, `overlay2`) are gradient layers of one colour
+        // over the base: Figma's fills array, top layer first in CSS.
+        const layers = [props.overlay2, props.overlay].filter((r): r is string => Boolean(r) && r !== 'none')
+        const stack = layers.map((l) => `linear-gradient(${color(l)}, ${color(l)})`)
+        out.push(`background: ${[...stack, color(ref)].join(', ')}`)
+        break
+      }
+      case 'overlay':
+      case 'overlay2':
+        break // painted by `fill`
+      case 'opacity': out.push(`opacity: ${ref}`); break
+      // An unbound text style (Avatar initials): literal px, Medium, line height 100%.
+      case 'hairline': out.push(`border-width: ${ref}px`, 'border-style: solid', `${STROKE_WIDTH_VAR}: ${ref}px`); break
+      case 'outerStroke': out.push(`box-shadow: 0 0 0 ${props.outerStrokeWidth && props.outerStrokeWidth !== 'none' ? v(props.outerStrokeWidth) : '1px'} ${color(ref)}`); break
+      case 'fontLiteral': out.push(`font-size: ${ref}px`, 'line-height: 100%', 'font-weight: 500', 'letter-spacing: 0'); break
+      // A halo fully outside the control (no edge): Figma's `focus-ring` frame,
+      // `stroke.focus` wide, stroked OUTSIDE. The transparent outline is what
+      // forced-colors mode paints instead.
+      case 'halo': {
+        if (ref === 'none') break
+        const lit = surfaceShadows(props, v).map((sh) => `, ${sh}`).join('')
+        out.push(`box-shadow: 0 0 0 ${HALO} ${v(ref)}${lit}`, `outline: ${HALO} solid transparent`)
+        break
+      }
       case 'stroke': out.push(`border-color: ${color(ref)}`); break
       case 'text': out.push(`color: ${color(ref)}`); break
       // A second colour a part's artwork reads (a file icon's page fill).
@@ -70,46 +127,83 @@ function declarations(props: SlotProps): string[] {
       // One hairline on one side (an accordion row's divider, a tab strip's underline).
       case 'strokeTopWidth': out.push(`border-top-width: ${dim(ref)}`, 'border-top-style: solid'); break
       case 'strokeBottomWidth': out.push(`border-bottom-width: ${dim(ref)}`, 'border-bottom-style: solid'); break
-      // The halo outside a focused control: `stroke.focus` + one hairline, i.e.
-      // shadcn's 3px at the default stroke ramp. Alone it is a FIELD's halo;
-      // with `focus` it is composed into one box-shadow below.
+      // A rail's divider on its right edge (CalendarPresets).
+      case 'strokeRightWidth': out.push(`border-right-width: ${dim(ref)}`, 'border-right-style: solid'); break
+      // Alone, a FIELD's focus halo (Figma's Input): the field keeps its 1px
+      // edge, and a `stroke.focus` ring straddles it — half over the edge,
+      // half outside. An outline with a negative offset paints exactly that
+      // (box-shadow cannot paint over the element's own border). With
+      // `focus` it is composed into the box-shadow below instead.
       case 'ring':
         if (props.focus && props.focus !== 'none') break
-        out.push(ref === 'none' ? 'box-shadow: none' : `box-shadow: 0 0 0 ${HALO} ${v(ref)}`)
+        if (ref === 'none') { out.push('outline: none'); break }
+        out.push(
+          `outline: ${HALO} solid ${v(ref)}`,
+          `outline-offset: calc(var(${STROKE_WIDTH_VAR}, 0px) - ${HALO})`,
+        )
         break
-      // shadcn's `focus-visible:border-ring ring-[3px]`: the edge turns to
-      // `border.focus` (an inset `stroke.focus` ring, so a borderless button
-      // draws it too and nothing shifts) and the halo sits outside. The
-      // transparent outline is what forced-colors mode paints instead of both.
+      // Figma's focused Button / Checkbox: a `stroke.focus` (2px) edge in
+      // `border.focus` — the 1px border plus an inset making up the rest, so a
+      // borderless button draws it too and nothing shifts — and a 2px halo
+      // fully outside. The transparent outline is what forced-colors mode
+      // paints instead of both.
       case 'focus': {
         if (ref === 'none') { out.push('box-shadow: none', 'outline: none'); break }
         const halo = props.ring && props.ring !== 'none' ? `, 0 0 0 ${HALO} ${v(props.ring)}` : ''
+        // The slot's own `shadow` (Shadow/xs on a raised segment) stays under the focus rings.
+        const own = props.shadow && props.shadow !== 'none' ? `, ${v(props.shadow)}` : ''
+        const lit = surfaceShadows(props, v).map((sh) => `, ${sh}`).join('')
         out.push(
           `border-color: ${v(ref)}`,
-          `box-shadow: inset 0 0 0 var(--stroke-focus, 2px) ${v(ref)}${halo}`,
+          `box-shadow: inset 0 0 0 max(0px, calc(var(--stroke-focus, 2px) - var(${STROKE_WIDTH_VAR}, 0px))) ${v(ref)}${halo}${own}${lit}`,
           'outline: var(--stroke-focus, 2px) solid transparent',
         )
         break
       }
+      // A solid's top highlight. A focused control composes it into the focus
+      // shadow above; otherwise it is the box-shadow (`none` clears it).
+      // A named elevation: with a focus or halo it is composed into their shadow;
+      // alone it is the box-shadow (`none` clears it).
+      case 'lift': {
+        if ((props.focus && props.focus !== 'none') || (props.halo && props.halo !== 'none')) break
+        const shadows = surfaceShadows(props, v)
+        out.push(`box-shadow: ${shadows.length ? shadows.join(', ') : 'none'}`)
+        break
+      }
+      case 'highlight': {
+        if (props.focus && props.focus !== 'none') break
+        if (props.halo && props.halo !== 'none') break
+        if (props.lift) break // composed by `lift`
+        const shadows = surfaceShadows(props, v)
+        out.push(`box-shadow: ${shadows.length ? shadows.join(', ') : 'none'}`)
+        break
+      }
       case 'height': out.push(`height: ${dim(ref)}`); break
       case 'minHeight': out.push(`min-height: ${dim(ref)}`); break
+      case 'minWidth': out.push(`min-width: ${dim(ref)}`); break
       case 'width': out.push(`width: ${dim(ref)}`); break
       // A custom property the part reads (a switch thumb's travel); not a CSS property.
+      case 'overlap': out.push(`--escala-overlap: ${dim(ref)}`); break
       case 'travel': out.push(`--escala-travel: ${dim(ref)}`); break
       case 'radius': {
         const f = refFn(ref)
         out.push(`border-radius: ${f ? refFnCss(f, (r) => v(r)) : v(ref)}`)
         break
       }
-      case 'paddingX': out.push(`padding-inline: ${dim(ref)}`); break
-      case 'paddingY': out.push(`padding-block: ${dim(ref)}`); break
+      // Figma draws a stroke INSIDE the frame; a CSS border sits outside the
+      // padding. So the padding gives back the border's width, and a 12px inset
+      // with a 1px stroke lays out exactly as the Figma component does.
+      case 'paddingX': out.push(`padding-inline: ${insetMinusStroke(dim(ref))}`); break
+      case 'paddingY': out.push(`padding-block: ${insetMinusStroke(dim(ref))}`); break
       // The bottom inset alone (an accordion answer hugs its question above it).
       case 'paddingBottom': out.push(`padding-bottom: ${dim(ref)}`); break
+      // The right inset alone (a FAB's label: 8px of its own beyond the root's 12).
+      case 'paddingRight': out.push(`padding-right: ${dim(ref)}`); break
       case 'gap': out.push(`gap: ${dim(ref)}`); break
       // The gap between ROWS when it differs from `gap` (an Alert's icon column
       // sits 12px off the text while title and description sit 2px apart).
       case 'rowGap': out.push(`row-gap: ${dim(ref)}`); break
-      case 'strokeWidth': out.push(`border-width: ${v(ref)}`, 'border-style: solid'); break
+      case 'strokeWidth': out.push(`border-width: ${v(ref)}`, 'border-style: solid', `${STROKE_WIDTH_VAR}: ${v(ref)}`); break
       case 'shadow': out.push(`box-shadow: ${v(ref)}`); break
       // The target itself is the `::before` (see `hitRule`); its host anchors it.
       case 'hit': out.push('position: relative'); break
@@ -186,6 +280,7 @@ export function recipeCss(recipe: ComponentRecipe): string {
       }
     }
   }
+  if (rules.some((r) => r.includes(`${STROKE_WIDTH_VAR}:`))) rules.unshift(STROKE_WIDTH_PROPERTY)
   return rules.join('\n')
 }
 
@@ -293,10 +388,11 @@ export const RECIPE_CSS: string = [
 /** Every custom property the sheet reads — what a container must provide.
  *  Not counted: a property the sheet declares itself (a disclosure's height)
  *  and one Radix publishes on its own element (`--radix-*`, a popper's origin
- *  or a panel's measured height). Neither is a token. */
+ *  or a panel's measured height). Neither is a token. Nor is the element's own
+ *  border width a padding gives back (`--escala-stroke-width`, 0 when unset). */
 export function recipeCssVars(css: string = RECIPE_CSS): string[] {
   const own = new Set(css.match(/--[a-z0-9_-]+(?=:)/g) ?? [])
   return [...new Set(css.match(/var\((--[a-z0-9_-]+)/g)?.map((m) => m.slice(4)) ?? [])]
-    .filter((v) => !own.has(v) && !v.startsWith('--radix-'))
+    .filter((v) => !own.has(v) && !v.startsWith('--radix-') && v !== STROKE_WIDTH_VAR)
     .sort()
 }

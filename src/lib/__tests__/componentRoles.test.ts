@@ -38,8 +38,8 @@ describe('every catalogue component is described by a recipe', () => {
     expect(rolesForComponent('Input')).toContain('surface.input')
   })
 
-  it('TabMenu binds the selected-tab surface', () => {
-    expect(rolesForComponent('TabMenu')).toContain('surface.selected')
+  it('TabMenuItem binds the selected-tab surface', () => {
+    expect(rolesForComponent('TabMenuItem')).toContain('surface.selected')
   })
 
   it('Button (link variant) binds the link roles, not accent copy', () => {
@@ -58,12 +58,14 @@ describe('every catalogue component is described by a recipe', () => {
     expect(rolesForComponent('Chip')).toContain('surface.selected')
   })
 
-  it('Separator — a single hairline with no live axis — resolves only its border', () => {
-    expect(rolesForComponent('Separator')).toEqual(['border.subtle'])
+  it('Separator resolves its three Tones and the label ink', () => {
+    // The Figma Tone axis (2026-11-13): default · subtle · strong lines, and the label on Content/secondary.
+    expect(rolesForComponent('Separator').sort()).toEqual(['border.default', 'border.strong', 'border.subtle', 'content.secondary'])
   })
 
-  it('SegmentedControl can name the floating surface its track paints', () => {
-    expect(rolesForComponent('SegmentedControl')).toContain('surface.layer-2')
+  it('SegmentedControl can name the surface its track paints', () => {
+    // The Figma file paints the track Surface/muted (2026-11-12), no longer layer-2.
+    expect(rolesForComponent('SegmentedControl')).toContain('surface.muted')
   })
 
   it('a text field can name its focus ring', () => {
@@ -76,7 +78,7 @@ describe('every catalogue component is described by a recipe', () => {
     expect(rolesForComponent('Switch')).toContain('action.primary.hover')
   })
 
-  it('Sonner names the popover pair shadcn maps it to', () => {
-    expect(rolesForComponent('Sonner')).toEqual(expect.arrayContaining(['surface.layer-1', 'content.primary', 'border.default']))
+  it('Toast names the surface, ink and edge the Figma set paints', () => {
+    expect(rolesForComponent('Toast')).toEqual(expect.arrayContaining(['surface.layer-2', 'content.primary', 'border.default']))
   })
 })

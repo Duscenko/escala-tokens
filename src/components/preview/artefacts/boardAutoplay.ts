@@ -113,7 +113,7 @@ const FORCE = 'data-force-state'
 /** A set of options where one is selected: the buttons, and which is on. */
 const CHOICES: readonly { root: string; item: string; on: string }[] = [
   { root: '[data-escala="SegmentedControl"]', item: '[role="radio"]', on: '[aria-checked="true"]' },
-  { root: '[data-escala="TabMenu"]', item: '[role="tab"]', on: '[aria-selected="true"]' },
+  { root: '[data-escala="TabMenu"]', item: 'button:not([disabled])', on: '[aria-pressed="true"]' },
   { root: '[data-escala="Pagination"]', item: 'button:not([aria-label]):not([disabled])', on: '[aria-current="page"]' },
 ]
 const TOGGLES = '[data-escala="Switch"], [data-escala="Checkbox"], [data-escala="Chip"]'

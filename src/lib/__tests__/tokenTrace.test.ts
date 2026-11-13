@@ -54,7 +54,7 @@ describe('tokenTrace', () => {
   })
 
   it('a Dialog names the choreographies it plays on open and close', () => {
-    const rows = traceRecipe(t, 'Dialog')!.slots.flatMap((s) => s.rows).filter((r) => r.kind === 'motion')
+    const rows = traceRecipe(t, 'Modal')!.slots.flatMap((s) => s.rows).filter((r) => r.kind === 'motion')
     expect(rows.find((r) => r.prop === 'enter')?.value).toBe('dialog-enter')
     expect(rows.find((r) => r.prop === 'exit')?.value).toBe('dialog-exit')
     const enter = rows.find((r) => r.prop === 'enter')!

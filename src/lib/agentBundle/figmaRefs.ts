@@ -10,6 +10,8 @@
 //                         binds "the Dimension primitive of that exact px"
 //   icon.<role>         → `Dimension Semantics` `Size/icon-md`
 //   type.<role>         → text style `Type/label`
+//   type.<scale step>   → `Typography` `size/text-xl` — a text style the file binds
+//                         straight to the scale (TextLink's `Type/body-xl`), no role
 //   shadow.<step>       → effect style `Shadow/lg`
 // A reference this system does not publish resolves to null: a skill writes
 // "not published" instead of inventing a name.
@@ -24,6 +26,7 @@ export type FigmaCollection =
   | 'Dimension Semantics'
   | 'Dimension Primitives'
   | 'Text style'
+  | 'Typography'
   | 'Effect style'
 
 export interface FigmaRef {
@@ -59,7 +62,11 @@ function oneRef(ref: string, json: TokenJSON, roles: Set<string>): FigmaRef | nu
   const ns = dot < 0 ? ref : ref.slice(0, dot)
   const name = dot < 0 ? '' : ref.slice(dot + 1)
   if (ns === 'color') return roles.has(name) ? { collection: 'Color Semantics', name: figmaSemanticName(name) } : null
-  if (ns === 'type') return json.typography?.roles?.[name] ? { collection: 'Text style', name: `Type/${name}` } : null
+  if (ns === 'type') {
+    if (json.typography?.roles?.[name]) return { collection: 'Text style', name: `Type/${name}` }
+    // A scale step: the primitive the Figma text style is bound to.
+    return /^(text|display)-(xs|sm|md|lg|xl|2xl)$/.test(name) && json.typography?.sizes?.[name] ? { collection: 'Typography', name: `size/${name}` } : null
+  }
   if (ns === 'shadow') return json.shadows?.[name] ? { collection: 'Effect style', name: `Shadow/${name}` } : null
   if (ns === 'icon') return json.icons?.sizes?.roles?.[name] ? { collection: 'Dimension Semantics', name: roleFigmaName('icon', name) ?? `Size/icon-${name}` } : null
   const dim = DIM_GROUP[ns]

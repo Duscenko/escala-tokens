@@ -1,0 +1,236 @@
+{
+  "$comment": "Hand-maintained ledger: how far the code catalogue is from the Figma file (spec/figma-components.json). A component leaves `pending` when its catalogue axes equal Figma's \u2014 the test then demands the entry be removed. `codeOnly` are catalogue components Figma does not document: frozen, no new work. See design-plans/figma-components-inventory.md.",
+  "pending": {
+    "SocialLoginButton": {
+      "status": "rebuild"
+    },
+    "Radio": {
+      "status": "part",
+      "of": "RadioGroup"
+    },
+    "RadioCard": {
+      "status": "part",
+      "of": "RadioGroup"
+    },
+    "RadioGroup": {
+      "status": "rebuild"
+    },
+    "RadioItem": {
+      "status": "part",
+      "of": "RadioGroup"
+    },
+    "Sidebar": {
+      "status": "rebuild"
+    },
+    "SidebarBrand": {
+      "status": "part",
+      "of": "Sidebar"
+    },
+    "SidebarGroup": {
+      "status": "part",
+      "of": "Sidebar"
+    },
+    "SidebarGroupLabel": {
+      "status": "part",
+      "of": "Sidebar"
+    },
+    "SidebarMenuButton": {
+      "status": "part",
+      "of": "Sidebar"
+    },
+    "AuthAccountLocked": {
+      "status": "block",
+      "page": "Auth"
+    },
+    "AuthCheckEmail": {
+      "status": "block",
+      "page": "Auth"
+    },
+    "AuthError": {
+      "status": "block",
+      "page": "Auth"
+    },
+    "AuthForgotPassword": {
+      "status": "block",
+      "page": "Auth"
+    },
+    "AuthMagicLinkSent": {
+      "status": "block",
+      "page": "Auth"
+    },
+    "AuthNewPassword": {
+      "status": "block",
+      "page": "Auth"
+    },
+    "AuthOTPVerification": {
+      "status": "block",
+      "page": "Auth"
+    },
+    "AuthSignIn": {
+      "status": "block",
+      "page": "Auth"
+    },
+    "AuthSignInPhone": {
+      "status": "block",
+      "page": "Auth"
+    },
+    "AuthSignUp": {
+      "status": "block",
+      "page": "Auth"
+    },
+    "AuthSocialSignIn": {
+      "status": "block",
+      "page": "Auth"
+    },
+    "AuthTwoFactor": {
+      "status": "block",
+      "page": "Auth"
+    },
+    "CartDrawer": {
+      "status": "block",
+      "page": "Overlay"
+    },
+    "ConfirmDialog": {
+      "status": "block",
+      "page": "Overlay"
+    },
+    "CookieConsent": {
+      "status": "block",
+      "page": "Overlay"
+    },
+    "DestructiveConfirm": {
+      "status": "block",
+      "page": "Overlay"
+    },
+    "ErrorModal": {
+      "status": "block",
+      "page": "Overlay"
+    },
+    "FeedbackRating": {
+      "status": "block",
+      "page": "Overlay"
+    },
+    "FilterDrawer": {
+      "status": "block",
+      "page": "Overlay"
+    },
+    "FilterModal": {
+      "status": "block",
+      "page": "Overlay"
+    },
+    "FormModal": {
+      "status": "block",
+      "page": "Overlay"
+    },
+    "QuickEditDialog": {
+      "status": "block",
+      "page": "Overlay"
+    },
+    "ReleaseModal": {
+      "status": "block",
+      "page": "Overlay"
+    },
+    "SessionTimeoutWarning": {
+      "status": "block",
+      "page": "Overlay"
+    },
+    "ShareModal": {
+      "status": "block",
+      "page": "Overlay"
+    },
+    "SuccessModal": {
+      "status": "block",
+      "page": "Overlay"
+    },
+    "WarningDialog": {
+      "status": "block",
+      "page": "Overlay"
+    },
+    "AnnouncementBar": {
+      "status": "block",
+      "page": "HeaderNavigation"
+    },
+    "AppHeader": {
+      "status": "block",
+      "page": "HeaderNavigation"
+    },
+    "AppHeaderExtended": {
+      "status": "block",
+      "page": "HeaderNavigation"
+    },
+    "FloatingHeader": {
+      "status": "block",
+      "page": "HeaderNavigation"
+    },
+    "UtilityBar": {
+      "status": "block",
+      "page": "HeaderNavigation"
+    },
+    "DualSidebar": {
+      "status": "block",
+      "page": "SidebarNavigation"
+    },
+    "SidebarStatCard": {
+      "status": "block",
+      "page": "SidebarNavigation"
+    },
+    "ContactSection": {
+      "status": "block",
+      "page": "Marketing"
+    },
+    "FAQSection": {
+      "status": "block",
+      "page": "Marketing"
+    },
+    "Footer": {
+      "status": "block",
+      "page": "Marketing"
+    },
+    "HeroHeader": {
+      "status": "block",
+      "page": "Marketing"
+    },
+    "PricingCard": {
+      "status": "block",
+      "page": "Marketing"
+    },
+    "PricingSection": {
+      "status": "block",
+      "page": "Marketing"
+    }
+  },
+  "codeOnly": [
+    "AlertDialog",
+    "AppStoreBadge",
+    "Attachment",
+    "Bubble",
+    "Card",
+    "Carousel",
+    "Chart",
+    "Collapsible",
+    "Command",
+    "ContextMenu",
+    "Drawer",
+    "Empty",
+    "FileFormat",
+    "HoverCard",
+    "Icon",
+    "InputGroup",
+    "Item",
+    "Label",
+    "Menubar",
+    "Message",
+    "NativeSelect",
+    "Navbar",
+    "NavigationMenu",
+    "Resizable",
+    "Select",
+    "Sheet",
+    "Skeleton",
+    "Spinner",
+    "StatusBadge",
+    "Tabs",
+    "Toggle",
+    "ToggleGroup"
+  ]
+}

@@ -62,7 +62,7 @@ import { CHECKER, ValueMark, slotLabel } from '../preview/artefacts/TokenTracePa
 import { RandomThemeButton } from './ThemeSaveBar'
 import { RecipeScope } from './docs/skeleton/scope'
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '../escala-ui/card'
-import { Avatar, AvatarFallback } from '../escala-ui/avatar'
+import { Avatar } from '../escala-ui/avatar'
 import { Badge } from '../escala-ui/badge'
 import { Alert, AlertDescription, AlertTitle } from '../escala-ui/alert'
 import { Button } from '../escala-ui/button'
@@ -205,15 +205,6 @@ function centerInStrip(strip: HTMLElement | null, selector: string) {
 /** `2_5` is how a half step is keyed (a `.` would split a Figma path). */
 const stepLabel = (key: string) => key.replace('_', '.')
 
-function UserGlyph() {
-  return (
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-      <circle cx="12" cy="8" r="4" />
-      <path d="M4.5 20.5c1.4-3.6 4.2-5.5 7.5-5.5s6.1 1.9 7.5 5.5" />
-    </svg>
-  )
-}
-
 function CheckGlyph() {
   return (
     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
@@ -308,9 +299,7 @@ function DemoCard({ label }: { label: (s: string) => string }) {
     <Card data-demo="card" className="w-full max-w-[340px]">
       <CardHeader>
         <div className="flex items-center gap-3">
-          <Avatar data-demo="avatar" size="lg">
-            <AvatarFallback><UserGlyph /></AvatarFallback>
-          </Avatar>
+          <Avatar data-demo="avatar" type="icon" size="default" aria-label={label('Your account')} />
           <div className="flex min-w-0 flex-col gap-0.5">
             <CardTitle>{label('Upgrade your plan')}</CardTitle>
             <CardDescription>{label('Get more space for your team.')}</CardDescription>
@@ -339,7 +328,7 @@ function DemoPart({ id, label }: { id: PartId; label: (s: string) => string }) {
     case 'card':
       return <div className="w-[340px]"><DemoCard label={label} /></div>
     case 'avatar':
-      return <Avatar size="lg"><AvatarFallback><UserGlyph /></AvatarFallback></Avatar>
+      return <Avatar type="icon" size="default" aria-label={label('Your account')} />
     case 'badge':
       return <Badge variant="secondary"><CheckGlyph /> {label('Special offer')}</Badge>
     case 'alert':

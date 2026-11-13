@@ -62,9 +62,9 @@ const InlineLink = ({ t, children }: { t: PreviewTokens; children: ReactNode }) 
   </TokenInspector>
 )
 const Segmented = inspectable('SegmentedControl')
-const Sonner = inspectable('Sonner')
+const Toast = inspectable('Toast')
 const TabMenu = inspectable('TabMenu')
-const Progress = inspectable('Progress')
+const Progress = inspectable('ProgressLine')
 const StatusBadge = inspectable('StatusBadge')
 const Chip = inspectable('Chip')
 const Sidebar = inspectable('Sidebar')
@@ -75,7 +75,7 @@ const Pagination = inspectable('Pagination')
 const Separator = inspectable('Separator')
 const Chart = inspectable('Chart')
 const Calendar = inspectable('Calendar')
-const InputStepper = inspectable('InputStepper')
+const InputStepper = inspectable('NumberInput')
 
 /** `Live` already carries the catalogue key as `c`, so the marker reads it
  *  straight off the prop rather than being restated. */
@@ -953,16 +953,16 @@ export function SystemCollage({
             className="grid w-full min-w-0 grid-cols-2 justify-items-center"
             style={{ gap: gap(tile(4), 'gap-control', '8px') }}
           >
-            <Badge t={tile(4)} v={{ Variant: 'default' }}>{translate('Published')}</Badge>
+            <Badge t={tile(4)} v={{ Variant: 'default', Appearance: 'solid' }}>{translate('Published')}</Badge>
             <Badge t={tile(4)} v={{ Variant: 'secondary' }}>{translate('Draft')}</Badge>
-            <Badge t={tile(4)} v={{ Variant: 'destructive' }}>{translate('Critical')}</Badge>
-            <Badge t={tile(4)} v={{ Variant: 'outline' }}>{translate('Info')}</Badge>
+            <Badge t={tile(4)} v={{ Variant: 'critical' }}>{translate('Critical')}</Badge>
+            <Badge t={tile(4)} v={{ Variant: 'secondary', Appearance: 'outline' }}>{translate('Info')}</Badge>
           </div>
           <Separator t={tile(4)} v={{}} w="100%" />
           <div className="flex flex-wrap items-center" style={{ gap: gap(tile(4), 'gap-control', '8px') }}>
             <StatusBadge t={tile(4)} v={{ Status: 'online' }} />
             <StatusBadge t={tile(4)} v={{ Status: 'busy' }} />
-            <InspectableLive c="Chip" t={tile(4)} v={{ Selected: 'True' }} toggle="Selected" />
+            <Chip t={tile(4)} v={{ Interactive: 'True', State: 'Selected' }}>Design tokens</Chip>
           </div>
         </ScaledModule>
     ),
@@ -979,7 +979,7 @@ export function SystemCollage({
             className="flex flex-col items-center text-center"
             style={{ gap: gap(tile(5), 'gap-control', '8px'), paddingBottom: spaceOf(tile(5), 2) }}
           >
-            <Avatar t={tile(5)} v={{ Size: 'lg', Fill: 'Gradient' }} />
+            <Avatar t={tile(5)} v={{ Size: 'default', Fill: 'Gradient' }} />
             <p style={{ margin: 0, ...typeStyleOf(tile(5), 'heading-sm'), color: tile(5).neutralText }}>
               {translate('Create an account')}
             </p>
@@ -1015,7 +1015,7 @@ export function SystemCollage({
     profile: (
         <ScaledModule key="profile" t={tile(8)} appearance={appearanceAt(8)}>
           <div className="flex items-start" style={{ gap: gap(tile(8), 'gap-control', '8px') }}>
-            <Avatar t={tile(8)} v={{ Fill: 'Gradient' }} />
+            <Avatar t={tile(8)} v={{ Size: 'sm', Fill: 'Gradient' }} />
             <div className="min-w-0 flex-1">
               <div className="flex items-center" style={{ gap: gap(tile(8), 'gap-tight', '4px') }}>
                 <span style={{ ...typeStyleOf(tile(8), 'label'), color: tile(8).neutralText }}>{projectName}</span>
@@ -1043,7 +1043,7 @@ export function SystemCollage({
     // A lone switch read as a widget, not a screen.
     notifications: (
         <ScaledModule key="notifications" t={tile(13)} appearance={appearanceAt(13)}>
-          <TokenInspector component="Switch" variant={{ Checked: 'True' }}>
+          <TokenInspector component="Switch" variant={{ Checked: 'true' }}>
             <SkeletonSettingsList
               t={tile(13)}
               control="switch"
@@ -1085,8 +1085,8 @@ export function SystemCollage({
           appearance={appearanceAt(15)}
           style={{ gap: gap(tile(15), 'gap-group', '16px') }}
         >
-          <Sonner t={tile(15)} v={{ Type: 'success' }} w="100%" />
-          <Sonner t={tile(15)} v={{ Type: 'error' }} w="100%" />
+          <Toast t={tile(15)} v={{ Variant: 'success' }} w="100%" />
+          <Toast t={tile(15)} v={{ Variant: 'critical' }} w="100%" />
         </ScaledModule>
     ),
     tabsProgress: (
@@ -1101,12 +1101,12 @@ export function SystemCollage({
         </ScaledModule>
     ),
     // The Calendar's root is a card, so it IS the tile (no Card around it);
-    // the selected day's event sits under the month (react-day-picker footer).
+    // the selected day's event sits under the month (the Calendar's children).
     calendar: (
         <ScaledModule key="calendar" t={tile(9)} appearance={appearanceAt(9)} chrome={false} elev="sm">
-          {/* The root is `w-fit`; as the tile it spans the column, days spread. */}
-          <div className="w-full [&_[data-slot=calendar]]:!w-full">
-          <Calendar t={tile(9)} v={{ Mode: 'single' }}>
+          {/* The file's Calendar is seven cells wide: the sm one is the tile. */}
+          <div className="flex w-full justify-center">
+          <Calendar t={tile(9)} v={{ Size: 'sm', Mode: 'single' }}>
             <CalendarEvent t={tile(9)} muted={muted(9)} />
           </Calendar>
           </div>
@@ -1131,7 +1131,7 @@ export function SystemCollage({
     ),
     checkbox: (
         <ScaledModule key="checkbox" t={tile(20)} appearance={appearanceAt(20)}>
-          <TokenInspector component="Checkbox" variant={{ Checked: 'True' }}>
+          <TokenInspector component="Checkbox" variant={{ Checked: 'true' }}>
             <SkeletonSettingsList
               t={tile(20)}
               control="checkbox"
@@ -1189,7 +1189,7 @@ export function SystemCollage({
               boxShadow: `0 0 0 2px ${cardBg}`,
             }}
           >
-            <Avatar t={tile(11)} v={{ Size: 'lg', Fill: 'Gradient', Hue: String(hue) }} />
+            <Avatar t={tile(11)} v={{ Size: 'default', Fill: 'Gradient', Hue: String(hue) }} />
           </span>
         ))}
       </div>

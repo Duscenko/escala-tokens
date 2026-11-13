@@ -277,11 +277,33 @@ describe('field outline is border.control', () => {
 
   it('every field-like recipe paints its resting edge with border.control, never border.strong', async () => {
     const { COMPONENT_RECIPES, recipeColorRoles } = await import('../componentRecipes')
-    for (const key of ['Input', 'Textarea', 'Select', 'Checkbox', 'RadioGroup', 'InputOTP', 'Chip', 'Button']) {
+    for (const key of ['Input', 'Textarea', 'Select', 'RadioGroup', 'InputOTPSlot', 'Chip']) {
       const roles = recipeColorRoles(COMPONENT_RECIPES[key])
       expect(roles, key).toContain('border.control')
-      expect(roles, key).not.toContain('border.strong')
+      // Chip (the Figma file, 2026-11-12): its RESTING edge is border.control; border.strong is the
+      // Dragging edge of the default Variant.
+      if (key !== 'Chip') expect(roles, key).not.toContain('border.strong')
     }
+    // Checkbox (the Figma file, 2026-11-12): its RESTING edge is border.control in every
+    // Variant; border.strong is only secondary's FOCUS edge.
+    {
+      const { resolveRecipe } = await import('../componentRecipes')
+      const rest = new Set<string>()
+      for (const Variant of ['default', 'secondary', 'critical', 'success', 'info']) {
+        rest.add(String(resolveRecipe(COMPONENT_RECIPES.Checkbox, { Variant, Checked: 'false', State: 'Default', Size: 'default' }).root?.stroke))
+      }
+      expect([...rest]).toEqual(['color.border.control'])
+    }
+    // Button: the RESTING edge (stroke) of an outline is border.control. Its
+    // border.strong is secondary · solid's FOCUS edge (the Figma file), not a rest edge.
+    const { resolveRecipe } = await import('../componentRecipes')
+    const strokes = new Set<string>()
+    for (const Variant of ['default', 'secondary', 'critical']) for (const Appearance of ['solid', 'outline', 'ghost', 'link']) {
+      const stroke = resolveRecipe(COMPONENT_RECIPES.Button, { Variant, Appearance, State: 'Default' }).root?.stroke
+      if (stroke && stroke !== 'none') strokes.add(stroke.replace(/^color\./, ''))
+    }
+    expect([...strokes]).toContain('border.control')
+    expect([...strokes]).not.toContain('border.strong')
   })
 })
 
@@ -411,6 +433,7 @@ describe('design skills cite only names the system ships', () => {
           if (col === 'Color Semantics') expect(roles.has(name), `${f.path}: ${name}`).toBe(true)
           else if (col === 'Dimension Primitives') expect(json.dimensions?.[name], `${f.path}: ${name}`).toBeDefined()
           else if (col === 'Text style') expect(json.typography.roles?.[name.replace(/^Type\//, '')], `${f.path}: ${name}`).toBeDefined()
+          else if (col === 'Typography') expect(json.typography.sizes?.[name.replace(/^size\//, '')], `${f.path}: ${name}`).toBeDefined()
           else if (col === 'Effect style') expect(json.shadows?.[name.replace(/^Shadow\//, '')], `${f.path}: ${name}`).toBeDefined()
           else {
             const [family, role] = roleOf(name)
