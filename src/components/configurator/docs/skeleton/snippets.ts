@@ -63,8 +63,8 @@ export const SKELETON_SNIPPETS: Record<string, Snippet> = {
     `import { Toggle } from "@/components/ui/toggle"\n\n<Toggle${v.Variant === 'outline' ? ' variant="outline"' : ''}${sizeProp(v)}${v.Pressed === 'True' ? ' defaultPressed' : ''} aria-label="Bold">\n  <Bold />\n</Toggle>`,
   Calendar: (v) =>
     v.Mode === 'range'
-      ? `import { Calendar } from "@/components/ui/calendar"\nimport type { DateRange } from "react-day-picker"\n\nconst [range, setRange] = useState<DateRange | undefined>()\n\n<Calendar mode="range" selected={range} onSelect={setRange} />`
-      : `import { Calendar } from "@/components/ui/calendar"\n\nconst [date, setDate] = useState<Date | undefined>(new Date())\n\n<Calendar mode="single" selected={date} onSelect={setDate} />`,
+      ? `import { Calendar } from "@/components/ui/calendar"\n\nconst [range, setRange] = useState<CalendarValue>()\n\n<Calendar${v.Size === 'sm' ? ' size="sm"' : ''} mode="range"${v.Header && v.Header !== 'single' ? ` header="${v.Header}"` : ''} presets footer value={range} onValueChange={setRange} />`
+      : `import { Calendar } from "@/components/ui/calendar"\n\nconst [value, setValue] = useState<CalendarValue>(new Date())\n\n<Calendar${v.Size === 'sm' ? ' size="sm"' : ''}${v.Mode === 'multiple' ? ' mode="multiple"' : ''}${v.Header && v.Header !== 'single' ? ` header="${v.Header}"` : ''} value={value} onValueChange={setValue} />`,
   AlertDialog: (v) =>
     `import {\n  AlertDialog, AlertDialogTrigger, AlertDialogContent, AlertDialogHeader, AlertDialogTitle,\n  AlertDialogDescription, AlertDialogFooter, AlertDialogCancel, AlertDialogAction,\n} from "@/components/ui/alert-dialog"\n\n<AlertDialog>\n  <AlertDialogTrigger asChild><Button variant="outline">Delete</Button></AlertDialogTrigger>\n  <AlertDialogContent${v.Size === 'sm' ? ' size="sm"' : ''}>\n    <AlertDialogHeader>\n      <AlertDialogTitle>Delete this project?</AlertDialogTitle>\n      <AlertDialogDescription>You can't undo this.</AlertDialogDescription>\n    </AlertDialogHeader>\n    <AlertDialogFooter>\n      <AlertDialogCancel>Cancel</AlertDialogCancel>\n      <AlertDialogAction variant="destructive">Delete</AlertDialogAction>\n    </AlertDialogFooter>\n  </AlertDialogContent>\n</AlertDialog>`,
   Sheet: (v) =>
@@ -140,9 +140,25 @@ export const SKELETON_SNIPPETS: Record<string, Snippet> = {
     const attrs = [v.Size && v.Size !== 'default' ? ` size="${v.Size}"` : '', v.Variant === 'secondary' ? ' variant="secondary"' : '', v.State && v.State !== 'Default' && v.State !== 'Hover' && v.State !== 'Focused' ? ` state="${v.State}"` : ''].join('')
     return `import { CalendarDay } from "@/components/ui/calendar"\n\n<CalendarDay${attrs}>15</CalendarDay>`
   },
+  CalendarFooter: (v) => {
+    const attrs = v.Size && v.Size !== 'default' ? ` size="${v.Size}"` : ''
+    return `import { CalendarFooter } from "@/components/ui/calendar"\n\n<CalendarFooter${attrs} onToday={goToToday} onClear={clear} onApply={apply} />`
+  },
+  CalendarPresets: (v) => {
+    const attrs = [v.Size && v.Size !== 'default' ? ` size="${v.Size}"` : '', v.Variant === 'secondary' ? ' variant="secondary"' : ''].join('')
+    return `import { CalendarPresets } from "@/components/ui/calendar"\n\n<CalendarPresets${attrs} selected={preset} onSelect={applyPreset} />`
+  },
+  CalendarMonth: (v) => {
+    const attrs = [v.Size && v.Size !== 'default' ? ` size="${v.Size}"` : '', v.Mode && v.Mode !== 'single' ? ` mode="${v.Mode}"` : '', v.Variant === 'secondary' ? ' variant="secondary"' : ''].join('')
+    return `import { CalendarMonth } from "@/components/ui/calendar"\n\n<CalendarMonth${attrs} month={month} selected={selected} onDayClick={pick} />`
+  },
+  CalendarHeader: (v) => {
+    const attrs = [v.Size && v.Size !== 'default' ? ` size="${v.Size}"` : '', v.Header && v.Header !== 'single' ? ` header="${v.Header}"` : ''].join('')
+    return `import { CalendarHeader } from "@/components/ui/calendar"\n\n<CalendarHeader${attrs} label="November 2026" onPreviousMonth={prev} onNextMonth={next} />`
+  },
   DatePickerPopover: (v) => {
     const attrs = [v.Size && v.Size !== 'default' ? ` size="${v.Size}"` : '', v.Mode === 'range' ? ' mode="range"' : ''].join('')
-    return `import { Popover, PopoverTrigger } from "@/components/ui/popover"\nimport { DatePickerPopover, DatePickerTrigger } from "@/components/ui/date-picker"\nimport { Calendar } from "@/components/ui/calendar"\n\n<Popover>\n  <PopoverTrigger asChild><DatePickerTrigger valueText={date} /></PopoverTrigger>\n  <DatePickerPopover${attrs}>\n    <Calendar mode="${v.Mode ?? 'single'}" selected={${v.Mode === 'range' ? 'range' : 'date'}} onSelect={${v.Mode === 'range' ? 'setRange' : 'setDate'}} />\n  </DatePickerPopover>\n</Popover>`
+    return `import { Popover, PopoverTrigger } from "@/components/ui/popover"\nimport { DatePickerPopover, DatePickerTrigger } from "@/components/ui/date-picker"\nimport { Calendar } from "@/components/ui/calendar"\n\n<Popover>\n  <PopoverTrigger asChild><DatePickerTrigger valueText={date} /></PopoverTrigger>\n  <DatePickerPopover${attrs}>\n    <Calendar${v.Size === 'sm' ? ' size="sm"' : ''} mode="${v.Mode ?? 'single'}"${v.Mode === 'range' ? ' presets' : ''} footer value={${v.Mode === 'range' ? 'range' : 'date'}} onValueChange={${v.Mode === 'range' ? 'setRange' : 'setDate'}} onApply={close} />\n  </DatePickerPopover>\n</Popover>`
   },
   InputGroup: () =>
     `import {\n  InputGroup, InputGroupAddon, InputGroupInput, InputGroupButton, InputGroupSeparator,\n} from "@/components/ui/input-group"\n\n<InputGroup>\n  <InputGroupAddon>https://</InputGroupAddon>\n  <InputGroupSeparator />\n  <InputGroupInput defaultValue="escala.design" />\n  <InputGroupSeparator />\n  <InputGroupButton>Copy</InputGroupButton>\n</InputGroup>`,

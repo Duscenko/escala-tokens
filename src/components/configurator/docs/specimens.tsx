@@ -346,7 +346,7 @@ export function inputSeed(type: string | undefined, state: string | undefined): 
 
 // ── Registry + snippet builder ────────────────────────────────────────────────
 
-// Calendar, Chart and Carousel pull react-day-picker, Recharts and Embla: their
+// Calendar (and its parts), Chart and Carousel are large or pull Recharts and Embla: their
 // module loads only when one of them renders.
 let heavyModule: Promise<typeof import('./skeleton/heavy')> | null = null
 /** Starts (once) the load those three wait on. The Board calls it on mount so
@@ -355,7 +355,7 @@ export function preloadHeavySpecimens() {
   heavyModule ??= import('./skeleton/heavy')
   return heavyModule
 }
-function lazySpecimen(name: 'SkeletonCalendarSpecimen' | 'SkeletonCalendarDaySpecimen' | 'SkeletonDatePickerPopoverSpecimen' | 'SkeletonChartSpecimen' | 'SkeletonCarouselSpecimen') {
+function lazySpecimen(name: 'SkeletonCalendarSpecimen' | 'SkeletonCalendarDaySpecimen' | 'SkeletonCalendarHeaderSpecimen' | 'SkeletonCalendarMonthSpecimen' | 'SkeletonCalendarPresetsSpecimen' | 'SkeletonCalendarFooterSpecimen' | 'SkeletonDatePickerPopoverSpecimen' | 'SkeletonChartSpecimen' | 'SkeletonCarouselSpecimen') {
   const L = lazy(() => preloadHeavySpecimens().then((m) => ({ default: m[name] as ComponentType<SpecimenProps> })))
   return function LazySpecimen(p: SpecimenProps) {
     return <Suspense fallback={null}><L {...p} /></Suspense>
@@ -393,6 +393,10 @@ export const SPECIMENS: Record<string, (p: SpecimenProps) => ReactNode> = {
   NativeSelect: SkeletonNativeSelectSpecimen,
   Calendar: lazySpecimen('SkeletonCalendarSpecimen'),
   CalendarDay: lazySpecimen('SkeletonCalendarDaySpecimen'),
+  CalendarHeader: lazySpecimen('SkeletonCalendarHeaderSpecimen'),
+  CalendarMonth: lazySpecimen('SkeletonCalendarMonthSpecimen'),
+  CalendarPresets: lazySpecimen('SkeletonCalendarPresetsSpecimen'),
+  CalendarFooter: lazySpecimen('SkeletonCalendarFooterSpecimen'),
   Combobox: SkeletonComboboxSpecimen,
   ComboboxPopover: SkeletonComboboxPopoverSpecimen,
   ComboboxItem: SkeletonComboboxItemSpecimen,

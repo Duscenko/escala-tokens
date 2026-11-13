@@ -301,6 +301,149 @@ export const CALENDAR_DAY: ComponentRecipe = {
   ],
 }
 
+// ── CalendarHeader ─────────────────────────────────────────────────────────
+// The Figma `CalendarHeader` set (design-plans/calendar-header-contract.md, 422:355, 6 variants:
+// Size default · sm × Header single · multiple · plain). A row as wide as seven day cells
+// (7 × Size/control · 7 × Size/compact), the title centred between two outlined arrow buttons
+// (32 · 28 square, Radius/action, a 1px Border/control edge inside, no fill, Content/secondary glyph).
+// The title is one chip with the combined "Month Year" label (single), a month chip and a year chip
+// (multiple) or the bare label (plain). A chip is hugging: 4px × 8px padding, gap-tight, Radius/action,
+// no fill or stroke, Type/body-md · body-sm label in Content/primary and a 16px chevron-down in
+// Content/secondary. The file draws no hover or focus for any of them.
+export const CALENDAR_HEADER_SIZES = ['default', 'sm'] as const
+export const CALENDAR_HEADER_HEADERS = ['single', 'multiple', 'plain'] as const
+const CALENDAR_HEADER_GEOMETRY: Record<string, { cell: string; nav: string; navIcon: string; font: string }> = {
+  default: { cell: 'size.control', nav: 'size.compact', navIcon: 'icon.medium', font: 'type.body-md' },
+  sm: { cell: 'size.compact', nav: 'spacing.6+spacing.1', navIcon: 'icon.small', font: 'type.body-sm' },
+}
+const SEVEN = (ref: string) => Array.from({ length: 7 }, () => ref).join('+')
+
+export const CALENDAR_HEADER: ComponentRecipe = {
+  key: 'CalendarHeader',
+  slots: ['root', 'nav', 'navIcon', 'title', 'chip', 'label', 'chevron'],
+  defaults: { Size: 'default', Header: 'single' },
+  parts: [
+    part({}, () => ({
+      root: { gap: 'spacing.none' },
+      nav: { radius: 'radius.action', stroke: c('border.control'), strokeWidth: 'stroke.control', text: c('content.secondary') },
+      title: { gap: 'spacing.gap-tight' },
+      chip: { radius: 'radius.action', paddingX: 'spacing.2', paddingY: 'spacing.1', gap: 'spacing.gap-tight' },
+      label: { text: c('content.primary') },
+      chevron: { width: 'icon.small', height: 'icon.small', text: c('content.secondary') },
+    })),
+    part({ Size: CALENDAR_HEADER_SIZES }, (size) => {
+      const g = CALENDAR_HEADER_GEOMETRY[size]
+      return {
+        root: { width: SEVEN(g.cell), height: g.nav },
+        nav: { width: g.nav, height: g.nav },
+        navIcon: { width: g.navIcon, height: g.navIcon },
+        label: { font: g.font },
+      }
+    }),
+  ],
+}
+
+// ── CalendarMonth ──────────────────────────────────────────────────────────
+// The Figma `CalendarMonth` set (design-plans/calendar-month-contract.md, 422:1713, 12 variants:
+// Size default · sm × Mode single · multiple · range × Variant default · secondary). One visible month,
+// Sunday first, a column of 7 day cells wide: a `weekdays` row of seven squares (the day cell's size,
+// Type/caption in Content/secondary, centred) over the weeks, each a row of seven CalendarDay cells with
+// no gap. The month frame has no fill, stroke, padding or gap. Mode and Variant only change which
+// CalendarDay states and variant the cells carry; the geometry is Size's alone.
+export const CALENDAR_MONTH_SIZES = ['default', 'sm'] as const
+export const CALENDAR_MONTH_MODES = ['single', 'multiple', 'range'] as const
+export const CALENDAR_MONTH_VARIANTS = ['default', 'secondary'] as const
+
+export const CALENDAR_MONTH: ComponentRecipe = {
+  key: 'CalendarMonth',
+  slots: ['root', 'weekdays', 'weekday', 'week'],
+  defaults: { Size: 'default', Mode: 'single', Variant: 'default' },
+  parts: [
+    part({}, () => ({
+      root: { gap: 'spacing.none' },
+      weekday: { text: c('content.secondary'), font: 'type.caption' },
+    })),
+    part({ Size: CALENDAR_DAY_SIZES }, (size) => {
+      const g = CALENDAR_DAY_GEOMETRY[size]
+      return {
+        root: { width: SEVEN(g.box) },
+        weekdays: { height: g.box },
+        weekday: { width: g.box, height: g.box },
+        week: { height: g.box },
+      }
+    }),
+  ],
+}
+
+// ── CalendarPresets ────────────────────────────────────────────────────────
+// The Figma `CalendarPresets` set (design-plans/calendar-presets-contract.md, 423:988, 4 variants:
+// Size default · sm × Variant default · secondary). The rail beside a range Calendar: a column 160
+// (default) · 140 (sm) wide, padded Spacing/inset-surface · inset-control, with a Stroke/divider edge
+// in Border/default on its RIGHT side only, 2px between rows. The "PRESETS" label (Type/caption,
+// Content/secondary) over the presets: rows as wide as the rail, 32 · 28 tall, 8px inline padding,
+// Radius/action, Type/body-sm in Content/primary. The preset whose range is the selection takes the
+// range tint: Surface/selected + Content/accent, or Surface/muted + Content/primary for secondary
+// (the CalendarDay RangeMiddle pair). The file draws no hover or focus.
+export const CALENDAR_PRESETS_SIZES = ['default', 'sm'] as const
+export const CALENDAR_PRESETS_VARIANTS = ['default', 'secondary'] as const
+const CALENDAR_PRESETS_GEOMETRY: Record<string, { width: string; inset: string; row: string }> = {
+  // No token is 160 or 140 wide: summed spacing steps (128 + 32 · 128 + 12).
+  default: { width: 'spacing.32+spacing.8', inset: 'spacing.inset-surface', row: 'size.compact' },
+  sm: { width: 'spacing.32+spacing.3', inset: 'spacing.inset-control', row: 'spacing.6+spacing.1' },
+}
+
+export const CALENDAR_PRESETS: ComponentRecipe = {
+  key: 'CalendarPresets',
+  slots: ['root', 'label', 'preset'],
+  defaults: { Size: 'default', Variant: 'default' },
+  parts: [
+    part({}, () => ({
+      root: { stroke: c('border.default'), strokeRightWidth: 'stroke.divider', gap: 'spacing.0_5' },
+      label: { text: c('content.secondary'), font: 'type.caption' },
+      preset: { radius: 'radius.action', paddingX: 'spacing.2', text: c('content.primary'), font: 'type.body-sm' },
+    })),
+    part({ Size: CALENDAR_PRESETS_SIZES }, (size) => {
+      const g = CALENDAR_PRESETS_GEOMETRY[size]
+      return { root: { width: g.width, paddingX: g.inset, paddingY: g.inset }, preset: { height: g.row } }
+    }),
+    part({ Variant: CALENDAR_PRESETS_VARIANTS }, (variant) => ({
+      'preset[data-selected="true"]': variant === 'secondary'
+        ? { fill: c('surface.muted'), text: c('content.primary') }
+        : { fill: c('surface.selected'), text: c('content.accent') },
+    })),
+  ],
+}
+
+// ── CalendarFooter ─────────────────────────────────────────────────────────
+// The Figma `CalendarFooter` set (design-plans/calendar-footer-contract.md, 423:963, 2 variants:
+// Size default · sm). The bottom bar of the Calendar body: as wide as seven day cells plus its padding
+// (312 · 248), 72 · 56 tall, a Stroke/divider edge in Border/default on its TOP side only, padding
+// 16 · 12 on the sides, "Today" (a link Button) at the start and the actions (an outline secondary
+// "Clear" and a solid "Apply", 8 apart) at the end. The buttons are the system's Button at the
+// footer's size; this recipe only lays out the bar.
+export const CALENDAR_FOOTER_SIZES = ['default', 'sm'] as const
+const CALENDAR_FOOTER_GEOMETRY: Record<string, { width: string; height: string; inset: string }> = {
+  // 7 day cells + both side paddings · the button height + both block paddings (no token is 312 / 72).
+  default: { width: `${SEVEN('size.control')}+spacing.4+spacing.4`, height: 'size.control+spacing.4+spacing.4', inset: 'spacing.4' },
+  sm: { width: `${SEVEN('size.compact')}+spacing.3+spacing.3`, height: 'size.compact+spacing.3+spacing.3', inset: 'spacing.3' },
+}
+
+export const CALENDAR_FOOTER: ComponentRecipe = {
+  key: 'CalendarFooter',
+  slots: ['root', 'actions'],
+  defaults: { Size: 'default' },
+  parts: [
+    part({}, () => ({
+      root: { stroke: c('border.default'), strokeTopWidth: 'stroke.divider' },
+      actions: { gap: 'spacing.2' },
+    })),
+    part({ Size: CALENDAR_FOOTER_SIZES }, (size) => {
+      const g = CALENDAR_FOOTER_GEOMETRY[size]
+      return { root: { width: g.width, height: g.height, paddingX: g.inset } }
+    }),
+  ],
+}
+
 // ── InputGroup ─────────────────────────────────────────────────────────────
 
 // The group IS the field box, so it paints what the bare Input paints in each
@@ -1127,31 +1270,26 @@ export const NATIVE_SELECT: ComponentRecipe = {
 }
 
 // ── Calendar ───────────────────────────────────────────────────────────────
-// shadcn's Calendar (react-day-picker): caption, weekdays and ghost day cells;
-// a single or range end day takes the primary action, the range middle and
-// today the muted surface, outside days the subtle ink. Nav arrows are ghost
-// icon Buttons (their own recipe).
+// The Figma `Calendar` set (design-plans/calendar-contract.md, 424:4667, 18 variants: Size default ·
+// sm × Mode single · multiple · range × Header single · multiple · plain, + PresetsVisible and
+// FooterVisible). A Surface/layer-1 card, a Stroke/divider edge in Border/default on every side,
+// Radius/container, clipping its content. Beside the optional presets rail, a column: the body
+// (padding 16 · 12, bound to Dimension primitives, 8 between header and month) and the optional
+// footer. Header, month, presets and footer paint themselves (their own recipes).
+export const CALENDAR_SIZES = ['default', 'sm'] as const
 
 export const CALENDAR: ComponentRecipe = {
   key: 'Calendar',
-  slots: ['root', 'caption', 'weekday', 'day'],
-  defaults: { Mode: 'single' },
+  slots: ['root', 'column', 'body'],
+  defaults: { Size: 'default', Mode: 'single', Header: 'single' },
   parts: [
     part({}, () => ({
-      root: {
-        fill: c('surface.layer-1'), stroke: c('border.subtle'), strokeWidth: 'stroke.control', radius: 'radius.container',
-        paddingX: 'spacing.3', paddingY: 'spacing.3', text: c('content.primary'),
-      },
-      caption: { text: c('content.primary'), font: 'type.label' },
-      weekday: { text: c('content.secondary'), font: 'type.caption' },
-      day: { text: c('content.primary'), font: 'type.body-sm', radius: 'radius.action', height: 'size.compact', width: 'size.compact' },
-      'day:hover': { fill: c('action.ghost.hover') },
-      'day[data-today="true"]': { fill: c('surface.layer-2') },
-      'day[data-outside="true"]': { text: c('content.subtle') },
-      'day[data-range-middle="true"]': { fill: c('surface.layer-2'), text: c('content.primary') },
-      'day[data-selected-single="true"]': { fill: c('action.primary.default'), text: c('content.on-action') },
-      'day[data-range-start="true"]': { fill: c('action.primary.default'), text: c('content.on-action') },
-      'day[data-range-end="true"]': { fill: c('action.primary.default'), text: c('content.on-action') },
+      root: { fill: c('surface.layer-1'), stroke: c('border.default'), strokeWidth: 'stroke.divider', radius: 'radius.container' },
+      body: { gap: 'spacing.2' },
     })),
+    part({ Size: CALENDAR_SIZES }, (size) => {
+      const inset = size === 'sm' ? 'spacing.3' : 'spacing.4'
+      return { body: { paddingX: inset, paddingY: inset } }
+    }),
   ],
 }

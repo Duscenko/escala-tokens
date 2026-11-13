@@ -4,25 +4,6 @@
     "SocialLoginButton": {
       "status": "rebuild"
     },
-    "Calendar": {
-      "status": "rebuild"
-    },
-    "CalendarFooter": {
-      "status": "part",
-      "of": "Calendar"
-    },
-    "CalendarHeader": {
-      "status": "part",
-      "of": "Calendar"
-    },
-    "CalendarMonth": {
-      "status": "part",
-      "of": "Calendar"
-    },
-    "CalendarPresets": {
-      "status": "part",
-      "of": "Calendar"
-    },
     "FileUpload": {
       "status": "rebuild"
     },

@@ -6,7 +6,7 @@ Fecha: 2026-11-12 · Fuente: Figma `Escala Design System (Real)`, página `❖ D
 Descripción del set: «Popover content for the Date Picker: a Calendar panel with Radius/overlay, opened below
 DatePickerTrigger with an 8 px offset. Size default / sm × Mode single / range (range adds the presets rail).»
 
-> Estado: HECHO (2026-11-12). Medido en Storybook (Light y Dark): cáscara con radio 16, sombra `0 12 16 key + 0 4 6 ambient` (Light .1/.05, Dark .4/.2), sin fondo; abierta desde el trigger queda a 8px y alineada a su inicio; `data-size`/`data-mode` en la raíz. Los anchos/altos del panel (322×394, 250×310, 482×394, 390×310) NO se midieron: dependen del Calendar nuevo (hoy el shadcn mide 248 y no tiene presets).
+> Estado: HECHO (2026-11-12). Medido en Storybook (Light y Dark): cáscara con radio 16, sombra `0 12 16 key + 0 4 6 ambient` (Light .1/.05, Dark .4/.2), sin fondo; abierta desde el trigger queda a 8px y alineada a su inicio; `data-size`/`data-mode` en la raíz. Los anchos/altos del panel (322×394, 250×310, 482×394, 390×310) se midieron con el Calendar nuevo: coinciden.
 
 ## Qué es (y qué NO es)
 El set es una **cáscara delgada**: un frame vertical sin relleno, sin trazo y sin padding, con `Radius/overlay` y el
@@ -15,9 +15,9 @@ efecto `Shadow/lg`, que contiene UNA instancia de `Calendar` (`424:4667`). Todo 
 presets) es del **Calendar** y de sus partes: CalendarHeader `422:355`, CalendarMonth `422:1713`, CalendarDay `421:309`,
 CalendarPresets `423:988` (y `423:963`), Calendar `424:4667` = elementos 3–8 de la cola, cada uno su propia sesión.
 Por eso DatePickerPopover NO reconstruye ninguno: el componente acepta el calendario como `children`.
-> **Pendiente para la sesión del Calendar (elemento 8):** cuando exista el Calendar nuevo, el popover debe
-> alojarlo (hoy se compone con el `Calendar` shadcn antiguo en stories/specimens). Los anchos 322 · 250 · 482 · 390 y
-> los altos 394 · 310 los pone el Calendar, no el popover.
+> **HECHO (2026-11-12, sesión del Calendar):** el popover aloja el Calendar del archivo (pie siempre, presets en range)
+> y copia el override de su instancia: el cuerpo pasa a `Spacing/inset-surface` (20) en Size default. Medido: 322×394 ·
+> 482×394 · 250×310 · 390×310, igual que el archivo (ver `calendar-contract.md`).
 
 ## API
 

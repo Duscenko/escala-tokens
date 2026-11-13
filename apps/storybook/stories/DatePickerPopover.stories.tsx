@@ -1,6 +1,5 @@
 import * as React from 'react'
 import type { Meta, StoryObj } from '@storybook/react-vite'
-import type { DateRange } from 'react-day-picker'
 import {
   DatePickerPopover, DatePickerTrigger, formatPickedDate,
   type DatePickerPopoverMode, type DatePickerPopoverSize,
@@ -13,8 +12,7 @@ const MODES: DatePickerPopoverMode[] = ['single', 'range']
 
 /** Story args = the Figma `DatePickerPopover` set (design-plans/date-picker-popover-contract.md),
  *  in the panel's order and with its defaults: Size · Mode. The set is a thin shell (Radius/overlay
- *  + the Shadow/lg lift) around a Calendar; the Calendar here is still the shadcn one until the
- *  file's Calendar (and its parts: CalendarHeader / Month / Day / Presets) is rebuilt. */
+ *  + the Shadow/lg lift) around the file's Calendar: the footer always, the presets rail in range. */
 interface DatePickerPopoverStoryArgs {
   size: DatePickerPopoverSize
   mode: DatePickerPopoverMode
@@ -23,13 +21,9 @@ interface DatePickerPopoverStoryArgs {
 const MONTH = new Date(2026, 10, 1)
 
 function Panel({ size, mode }: DatePickerPopoverStoryArgs) {
-  const [day, setDay] = React.useState<Date | undefined>(new Date(2026, 10, 12))
-  const [range, setRange] = React.useState<DateRange | undefined>({ from: new Date(2026, 10, 10), to: new Date(2026, 10, 18) })
   return (
     <DatePickerPopover inline size={size} mode={mode}>
-      {mode === 'range'
-        ? <Calendar mode="range" defaultMonth={MONTH} selected={range} onSelect={setRange} />
-        : <Calendar mode="single" defaultMonth={MONTH} selected={day} onSelect={setDay} />}
+      <Calendar key={mode} size={size} mode={mode} presets={mode === 'range'} footer />
     </DatePickerPopover>
   )
 }
@@ -73,8 +67,8 @@ export const Modes: Story = {
   ),
 }
 
-/** The real thing: a DatePickerTrigger that opens the popover 8px below it (Escape closes it; a
- *  chosen day closes it too and goes back into the trigger). */
+/** The real thing: a DatePickerTrigger that opens the popover 8px below it (Escape closes it;
+ *  Apply closes it too, and the chosen day goes back into the trigger). */
 export const OpensFromTrigger: Story = {
   name: 'Opens from DatePickerTrigger',
   render: () => {
@@ -87,7 +81,11 @@ export const OpensFromTrigger: Story = {
             <DatePickerTrigger valueText={date ? formatPickedDate(date) : undefined} style={{ width: 280 }} />
           </PopoverTrigger>
           <DatePickerPopover>
-            <Calendar mode="single" defaultMonth={MONTH} selected={date} onSelect={(d) => { setDate(d); setOpen(false) }} />
+            <Calendar
+              size="default" mode="single" footer defaultMonth={MONTH}
+              value={date} onValueChange={(d) => setDate(d instanceof Date ? d : undefined)}
+              onApply={() => setOpen(false)}
+            />
           </DatePickerPopover>
         </Popover>
       </div>

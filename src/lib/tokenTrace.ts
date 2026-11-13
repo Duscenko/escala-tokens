@@ -93,6 +93,7 @@ const PROP_LABEL: Record<RecipeProp, string> = {
   strokeWidth: 'Border width',
   strokeTopWidth: 'Top border width',
   strokeBottomWidth: 'Bottom border width',
+  strokeRightWidth: 'Right border width',
   font: 'Typography',
   shadow: 'Shadow',
   hit: 'Target size',
@@ -108,7 +109,7 @@ const PROP_LABEL: Record<RecipeProp, string> = {
 const PROP_ORDER: RecipeProp[] = [
   'fill', 'overlay', 'overlay2', 'text', 'stroke', 'strokeTop', 'focus', 'ring', 'halo', 'highlight', 'paint',
   'radius', 'paddingX', 'paddingY', 'paddingBottom', 'paddingRight', 'gap', 'rowGap', 'height', 'minHeight', 'minWidth', 'width', 'travel',
-  'strokeWidth', 'strokeTopWidth', 'strokeBottomWidth', 'shadow', 'font', 'hit',
+  'strokeWidth', 'strokeTopWidth', 'strokeBottomWidth', 'strokeRightWidth', 'shadow', 'font', 'hit',
 ]
 
 function kindOf(ref: string): TraceKind {

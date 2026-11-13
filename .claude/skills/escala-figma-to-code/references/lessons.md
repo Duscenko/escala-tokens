@@ -180,3 +180,51 @@ Every row cost a round trip with the owner. Check each one before calling a comp
 | Calendar parts import react-day-picker through `calendar.tsx` | An eager specimen would pull it into the main bundle | Register the specimen through `lazySpecimen` (`skeleton/heavy.tsx`) |
 | Measuring recipe roles with a probe on `body` | Every `var(--color-…)` resolved to the same fallback | Append the probe INSIDE the component (the vars live in `RecipeScope`) |
 | `exportAudit` I10 budget again | Agent context 90 045 > 90 000 | Raise `contextAllTokens` with a dated note |
+
+# Lessons from the CalendarHeader (2026-11-12)
+
+| Trap | What it looked like | The fix (where it lives) |
+|---|---|---|
+| A size with no token (nav button 28 in the sm header) | `Size/*` has 24 · 32 · 40, nothing at 28 | A summed ref (`spacing.6+spacing.1`), as InputTag does; say it in the contract |
+| A set whose width is "N cells of another set" (header = 7 day cells) | A magic 280 / 224 | `size.control` × 7 / `size.compact` × 7 as a summed ref, so it follows the day cell |
+| A set with no hover / focus on any piece (arrows, chips) | Tempting to give the chips a hover wash | Copy: none. No `recipes/motion.ts` entry either |
+| `figma.setCurrentPageAsync(set.parent)` | "expects a PageNode" (the set's parent is a section) | Walk up `.parent` until `type === 'PAGE'` (the read script already does) |
+
+# Lessons from the CalendarMonth (2026-11-12)
+
+| Trap | What it looked like | The fix (where it lives) |
+|---|---|---|
+| `use_figma` return over 48 000 bytes (a set whose default variant has 40+ nested instances) | «Return value exceeds the limit», nothing read | Read in two passes: props + default structure with a child cap (`slice(0, 8)`), then one compact line per cell (`Day:State/Variant`) for every variant |
+| `componentProperties` keys carry a `#id` suffix (`Day#12:3`) | `cp.Day.value` → undefined | `Object.fromEntries(entries.map(([k, x]) => [k.split('#')[0], x.value]))` |
+| A set that is only a grid of another set's instances (Month = weekdays + 5 weeks of CalendarDay) | Tempting to redraw days or put paint in the Month recipe | The recipe holds only the Month's own geometry (7 × day box, weekday cell, Type/caption ink); the days are `<CalendarDay>` with the Figma state per date |
+| A sample frame that mixes states (Today next to Selected, Unavailable beside Disabled) | Looks like a bug to "fix" | Copy it as the default data when no `selected` / `range` / `today` / `disabledDays` props arrive; real data overrides it |
+| A python edit script with a syntax error | Nothing applied (python compiles the whole heredoc first) except what ran in an earlier script | Check `git status` after a multi-file edit before measuring |
+
+# Lessons from the CalendarPresets (2026-11-12)
+
+| Trap | What it looked like | The fix (where it lives) |
+|---|---|---|
+| A border on ONE side (the rail's right divider, `strokeRightWeight` bound to Stroke/divider, the other sides 0) | `strokeWidth` draws all four sides | Recipe property `strokeRightWidth` (`helpers.ts` RECIPE_PROPS, `recipeStyles.ts`, `tokenTrace.ts` label + list), beside `strokeTopWidth` / `strokeBottomWidth`; colour with `stroke`. Not in `figmaRefs` (the frozen plugin does not bind it) |
+| `figma.mixed` (a Symbol) inside a template string | `TypeError: cannot convert symbol to string` (a frame with per-side strokes has `strokeWeight` mixed) | Wrap reads in `typeof x === 'symbol' ? 'mixed' : x`, and read `strokeTopWeight` … `strokeLeftWeight` for per-side strokes |
+| A fixed width with no variable (160 · 140) | No size token | Summed spacing steps (`spacing.32+spacing.8`, `spacing.32+spacing.3`) |
+| A label written in capitals in the text ("PRESETS", textCase ORIGINAL) | Tempting to add `uppercase` | Render the string as written; the default `label` prop is the uppercase text |
+| A review that says gaps are wrong everywhere | Ten components "missing gap" | Measure each against the file first (Storybook positions vs Figma `absoluteBoundingBox` relative to the variant): all ten matched to the pixel; ask for screenshots instead of changing code |
+
+# Lessons from the CalendarFooter (2026-11-12)
+
+| Trap | What it looked like | The fix (where it lives) |
+|---|---|---|
+| A set made of another set's instances (the footer = three Button instances) | Tempting to give the recipe button paint | Render the system's `<Button variant appearance size>` with the instance's props; the recipe only lays out the bar (size, divider, padding, gap) |
+| Padding / gap bound to bare primitives named "16", "12", "8" instead of roles | No role to copy | Use the spacing step of the same px (`spacing.4`, `spacing.3`, `spacing.2`) and say so in the contract |
+| Fixed size with no variable that is clearly a sum (312 = 7 cells + 2 × 16; 72 = button + 2 × 16) | A magic number | A summed ref that keeps following the cell and button sizes |
+| Children at y 17 in Figma, 16.5 in CSS | Looks like a 0.5px miss | Figma rounds the half pixel a 1px top stroke inside the frame leaves; 16.5 is the same layout |
+
+# Lessons from the Calendar (2026-11-12)
+
+| Trap | What it looked like | The fix (where it lives) |
+|---|---|---|
+| A parent set's INSTANCE overrides a nested set (the DatePickerPopover's Calendar pads its body with Spacing/inset-surface 20, the Calendar set pads 16) | Popover 314 wide in code, 322 in Figma | Read the instance in the parent (`findOne` the inner frame, its padding binding) — not only the nested set; copy the override in the parent component (`BODY_INSET` in `date-picker.tsx`) |
+| A utility that must beat a recipe rule on a child | The override did nothing: the recipe's `[data-escala][data-size] [data-part]` rule is more specific | Tailwind v4 important suffix (`…:p-[var(--spacing-inset-surface)]!`), with a comment saying why |
+| Replacing a recipe the frozen plugin builds (Calendar) | Parity: `{ Calendar: ['column'] }`; motion test: `Calendar.day` slot gone | New slots go in `WEB_ONLY_SLOTS`; drop the old slot's entry in `recipes/motion.ts`; goldens move ONLY in the recipe's own block (check the hunk headers are contiguous) |
+| A composite with sample data in its parts (CalendarMonth's November sample) | A real month showed the sample's selection, today and disabled days | The part shows its sample only when it gets no `month`; the composite passes month, today and the selection explicitly |
+| A board tile built on the old component (react-day-picker footer, `!w-full` stretch) | The new calendar is seven cells wide and cannot spread | The tile uses Size sm (250, the old width) centred; the event goes in as `children` under the month |

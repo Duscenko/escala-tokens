@@ -165,6 +165,22 @@ export const OVERVIEWS: Record<string, Overview> = {
     each('State', ['RangeStart', 'RangeMiddle', 'RangeEnd', 'Disabled', 'Unavailable'], { Variant: 'secondary' }, 64),
     each('Size', ['default', 'sm'], { State: 'Selected' }, 64),
   ],
+  CalendarFooter: [
+    each('Size', ['default', 'sm'], {}, 320),
+  ],
+  CalendarPresets: [
+    each('Variant', ['default', 'secondary'], { Size: 'default' }, 180),
+    each('Variant', ['default', 'secondary'], { Size: 'sm' }, 160),
+  ],
+  CalendarMonth: [
+    ...stack('Mode', ['single', 'multiple', 'range'], { Size: 'default', Variant: 'default' }),
+    ...stack('Variant', ['default', 'secondary'], { Size: 'default', Mode: 'range' }),
+    ...stack('Size', ['default', 'sm'], { Mode: 'single', Variant: 'default' }),
+  ],
+  CalendarHeader: [
+    ...stack('Header', ['single', 'multiple', 'plain'], { Size: 'default' }),
+    ...stack('Header', ['single', 'multiple', 'plain'], { Size: 'sm' }),
+  ],
   InputOTP: [
     ...stack('State', ['Empty', 'Typing', 'Filled', 'Invalid', 'Disabled'], { Length: '6' }),
     ...stack('Variant', ['outline', 'filled', 'underline'], { Length: '6', State: 'Filled' }),
@@ -194,7 +210,11 @@ export const OVERVIEWS: Record<string, Overview> = {
     each('State', ['Error', 'Disabled'], {}, 220),
   ],
   NativeSelect: [each('State', ['Default', 'Focused', 'Disabled'], {}, 200)],
-  Calendar: [each('Mode', ['single', 'range'])],
+  Calendar: [
+    ...stack('Mode', ['single', 'multiple', 'range'], { Size: 'default', Header: 'single' }),
+    ...stack('Header', ['multiple', 'plain'], { Size: 'default', Mode: 'single' }),
+    ...stack('Size', ['sm'], { Mode: 'single', Header: 'single' }),
+  ],
   Combobox: [
     each('State', ['Default', 'Hover', 'Focused'], {}, 280),
     each('State', ['Invalid', 'Disabled', 'Loading'], { Value: 'filled' }, 280),

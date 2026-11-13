@@ -33,7 +33,7 @@ MIT — see `LICENSE-shadcn.md`. Source: the `ui-main` archive downloaded
 | `collapsible.tsx` | `bases/radix/ui/collapsible.tsx` | Radix Collapsible; adds the chevron to the trigger and `CollapsibleItem` (the demo's row) |
 | `table.tsx` | `bases/radix/ui/table.tsx` | all parts; `border-collapse` so row hairlines draw |
 | `toggle.tsx` | `bases/radix/ui/toggle.tsx` | `variant` / `size` verbatim; mirrors pressed as `data-pressed` True/False |
-| `calendar.tsx` | `bases/radix/ui/calendar.tsx` | react-day-picker v10; parts via `components` (Root, CaptionLabel, Weekday, DayButton, nav = ghost icon-sm Buttons); icons are props |
+| `calendar.tsx` | — (was `bases/radix/ui/calendar.tsx`) | Rebuilt from the Figma file 2026-11-12: Calendar + CalendarDay / Header / Month / Presets / Footer, no react-day-picker |
 | `alert-dialog.tsx` · `sheet.tsx` · `hover-card.tsx` | `bases/radix/ui/…` | portal into the theme scope; `inline` draws in place |
 | `drawer.tsx` | `bases/radix/ui/drawer.tsx` | vaul; `direction` prop on the content; `inline` with plain title/description |
 | `menubar.tsx` · `navigation-menu.tsx` | `bases/radix/ui/…` | Menubar `inline` panel + trigger `active`; nav trigger chevron is a prop |
