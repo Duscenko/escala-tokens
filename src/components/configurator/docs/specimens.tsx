@@ -28,7 +28,7 @@ import {
 } from './skeleton/indicators'
 import {
   SkeletonTabsSpecimen, SkeletonTabMenuSpecimen, SkeletonSegmentedControlSpecimen, SkeletonSegmentedControlItemSpecimen, SkeletonBreadcrumbSpecimen,
-  SkeletonPaginationSpecimen, SkeletonStepperSpecimen, SkeletonDropdownMenuSpecimen, SkeletonContextMenuSpecimen,
+  SkeletonPaginationSpecimen, SkeletonStepperSpecimen, SkeletonDropdownMenuSpecimen, SkeletonDropdownMenuLabelSpecimen, SkeletonDropdownMenuItemSpecimen, SkeletonDropdownMenuFooterSpecimen, SkeletonContextMenuSpecimen,
   SkeletonCommandSpecimen, SkeletonNavbarSpecimen, SkeletonSidebarSpecimen,
   SkeletonMenubarSpecimen, SkeletonNavigationMenuSpecimen,
 } from './skeleton/navigation'
@@ -483,6 +483,9 @@ export const SPECIMENS: Record<string, (p: SpecimenProps) => ReactNode> = {
   Pagination: SkeletonPaginationSpecimen,
   Stepper: SkeletonStepperSpecimen,
   DropdownMenu: SkeletonDropdownMenuSpecimen,
+  DropdownMenuLabel: SkeletonDropdownMenuLabelSpecimen,
+  DropdownMenuItem: SkeletonDropdownMenuItemSpecimen,
+  DropdownMenuFooter: SkeletonDropdownMenuFooterSpecimen,
   ContextMenu: SkeletonContextMenuSpecimen,
   Command: SkeletonCommandSpecimen,
   Menubar: SkeletonMenubarSpecimen,

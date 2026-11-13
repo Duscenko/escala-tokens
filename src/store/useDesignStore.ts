@@ -2058,7 +2058,7 @@ export const useDesignStore = create<DesignStore>()(
     }),
     {
       name: 'scalable-designs-store',
-      version: 141,
+      version: 142,
       migrate: (persisted: any, version: number) => {
         if (persisted) {
           // v1→v2: remove styleDirection, rename selectedAtoms → selectedComponents
@@ -4307,6 +4307,21 @@ export const useDesignStore = create<DesignStore>()(
             const sel: string[] = state.selectedComponents
             const at = sel.indexOf('Popover')
             if (at >= 0 && !sel.includes('PopoverFooter')) sel.splice(at + 1, 0, 'PopoverFooter')
+          }
+          add(persisted)
+          if (Array.isArray(persisted.savedSystems)) {
+            for (const sys of persisted.savedSystems) add(sys?.snapshot)
+          }
+        }
+        if (version < 142) {
+          // v141→v142: DropdownMenu gains its parts (Label, Item, Footer — the Figma sets).
+          const add = (state: any) => {
+            if (!Array.isArray(state?.selectedComponents)) return
+            const sel: string[] = state.selectedComponents
+            const at = sel.indexOf('DropdownMenu')
+            if (at < 0) return
+            const parts = ['DropdownMenuLabel', 'DropdownMenuItem', 'DropdownMenuFooter'].filter((k) => !sel.includes(k))
+            sel.splice(at + 1, 0, ...parts)
           }
           add(persisted)
           if (Array.isArray(persisted.savedSystems)) {

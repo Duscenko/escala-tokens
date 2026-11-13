@@ -3,7 +3,7 @@
  * Stepper, DropdownMenu, ContextMenu, Command, Navbar, Sidebar.
  * Rules as in `componentRecipes.ts`.
  */
-import { c, NONE, part, PANEL_RADIUS, PANEL_ROW_RADIUS, type ComponentRecipe, type SlotMap, FOCUS } from './helpers.js'
+import { c, NONE, part, PANEL_RADIUS, PANEL_ROW_RADIUS, type ComponentRecipe, type SlotMap, type SlotProps, FOCUS } from './helpers.js'
 
 // ── Tabs (underline) ───────────────────────────────────────────────────────
 
@@ -200,7 +200,116 @@ function menu(key: string): ComponentRecipe {
   }
   return { key, slots: ['root', 'item', 'separator', 'shortcut'], defaults: {}, parts: [part({}, () => slots)] }
 }
-export const DROPDOWN_MENU = menu('DropdownMenu')
+
+// ── DropdownMenu, DropdownMenuLabel, DropdownMenuItem, DropdownMenuFooter ──
+// The Figma sets (design-plans/dropdown-menu-contract.md; 947:299, 947:169, 947:161, 949:3290). A 256 wide panel (Radius/overlay,
+// Surface/layer-2, a 1px Border/default edge, Shadow/md with ring and spreads) holding an optional header (a search Input),
+// the Content (padding 4: labels, items, separators) and an optional footer. Size cascades to every label and item.
+
+export const DROPDOWN_SIZES = ['default', 'sm', 'lg'] as const
+export const DROPDOWN_ITEM_STATES = ['Default', 'Focused', 'Selected', 'Disabled'] as const
+export const DROPDOWN_ITEM_VARIANTS = ['default', 'destructive'] as const
+export const DROPDOWN_FOOTER_LAYOUTS = ['inline', 'stacked'] as const
+
+export const DROPDOWN_MENU: ComponentRecipe = {
+  key: 'DropdownMenu',
+  slots: ['root', 'header', 'content', 'separator'],
+  defaults: { Size: 'default' },
+  parts: [
+    part({}, () => ({
+      root: {
+        fill: c('surface.layer-2'), stroke: c('border.default'), strokeWidth: 'stroke.divider', radius: 'radius.overlay',
+        lift: 'popover-md', width: 'spacing.32+spacing.32',
+      },
+      header: { paddingX: 'spacing.gap-tight', paddingY: 'spacing.gap-tight' },
+      content: { paddingX: 'spacing.gap-tight', paddingY: 'spacing.gap-tight' },
+      // A separator row: 4px above and below a 1px subtle rule.
+      separator: { fill: c('border.subtle'), height: 'stroke.divider' },
+    })),
+  ],
+}
+
+export const DROPDOWN_MENU_LABEL: ComponentRecipe = {
+  key: 'DropdownMenuLabel',
+  slots: ['root'],
+  defaults: { Size: 'default' },
+  parts: [
+    part({ Size: DROPDOWN_SIZES }, (size) => ({
+      root: {
+        paddingX: size === 'lg' ? 'spacing.inset-control' : 'spacing.gap-control', paddingY: 'spacing.gap-tight',
+        text: c('content.secondary'), font: 'type.caption',
+      },
+    })),
+  ],
+}
+
+function dropdownItemPaint(variant: string, state: string): SlotProps {
+  const destructive = variant === 'destructive'
+  switch (state) {
+    case 'Focused':
+      return destructive
+        ? { fill: c('status.critical.surface'), focus: c('status.critical.border-strong'), ring: c('status.critical.border') }
+        : { fill: c('surface.muted'), focus: c('border.focus'), ring: c('border.ring.default') }
+    case 'Selected':
+      return { fill: c('surface.selected') }
+    case 'Disabled':
+      return { fill: NONE }
+    default:
+      return { fill: NONE }
+  }
+}
+
+export const DROPDOWN_MENU_ITEM: ComponentRecipe = {
+  key: 'DropdownMenuItem',
+  slots: ['root', 'iconLeading', 'media', 'text', 'label', 'description', 'trailing', 'control', 'iconTrailing', 'indicator'],
+  defaults: { Size: 'default', State: 'Default', Variant: 'default' },
+  parts: [
+    part({ Size: DROPDOWN_SIZES }, (size) => ({
+      root: {
+        minHeight: size === 'sm' ? 'size.xs' : size === 'lg' ? 'size.md' : 'size.sm', radius: 'radius.control',
+        paddingX: size === 'lg' ? 'spacing.inset-control' : 'spacing.gap-control', paddingY: 'spacing.gap-tight',
+        gap: size === 'sm' ? 'spacing.gap-tight' : 'spacing.gap-control',
+      },
+      iconLeading: size === 'lg' ? { width: 'icon.medium', height: 'icon.medium' } : { width: 'icon.small', height: 'icon.small' },
+      iconTrailing: size === 'lg' ? { width: 'icon.medium', height: 'icon.medium' } : { width: 'icon.small', height: 'icon.small' },
+      indicator: size === 'lg' ? { width: 'icon.medium', height: 'icon.medium' } : { width: 'icon.small', height: 'icon.small' },
+      label: { font: size === 'sm' ? 'type.caption' : size === 'lg' ? 'type.body-md' : 'type.body-sm' },
+      description: { font: 'type.caption' },
+      trailing: { font: 'type.caption' },
+    })),
+    part({ Variant: DROPDOWN_ITEM_VARIANTS, State: DROPDOWN_ITEM_STATES }, (variant, state) => {
+      const disabled = state === 'Disabled'
+      const ink = disabled ? c('content.disabled') : variant === 'destructive' ? c('status.critical.content') : c('content.primary')
+      return {
+        root: dropdownItemPaint(variant, state),
+        label: { text: ink },
+        description: { text: disabled ? c('content.disabled') : c('content.secondary') },
+        trailing: { text: disabled ? c('content.disabled') : c('content.secondary') },
+        iconLeading: { text: disabled ? c('content.disabled') : variant === 'destructive' ? c('status.critical.content') : c('content.primary') },
+        iconTrailing: { text: c('content.secondary') },
+        indicator: { text: c('content.accent') },
+        // A live menu highlights a row on hover or arrow keys: the file's Focused look.
+        ...(state === 'Default' ? { 'root[data-highlighted]': dropdownItemPaint(variant, 'Focused') } : {}),
+      }
+    }),
+  ],
+}
+
+export const DROPDOWN_MENU_FOOTER: ComponentRecipe = {
+  key: 'DropdownMenuFooter',
+  slots: ['root', 'leading', 'actions'],
+  defaults: { Size: 'default', Layout: 'inline' },
+  parts: [
+    part({}, () => ({
+      root: {
+        paddingX: 'spacing.gap-control', paddingY: 'spacing.gap-control', gap: 'spacing.gap-control',
+        stroke: c('border.subtle'), strokeTopWidth: 'stroke.divider',
+      },
+      leading: { gap: 'spacing.gap-tight', text: c('content.secondary'), font: 'type.caption' },
+      actions: { gap: 'spacing.gap-control' },
+    })),
+  ],
+}
 export const CONTEXT_MENU = menu('ContextMenu')
 
 // ── Command ────────────────────────────────────────────────────────────────

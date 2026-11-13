@@ -34,21 +34,6 @@
       "status": "part",
       "of": "RadioGroup"
     },
-    "DropdownMenu": {
-      "status": "rebuild"
-    },
-    "DropdownMenuFooter": {
-      "status": "part",
-      "of": "DropdownMenu"
-    },
-    "DropdownMenuItem": {
-      "status": "part",
-      "of": "DropdownMenu"
-    },
-    "DropdownMenuLabel": {
-      "status": "part",
-      "of": "DropdownMenu"
-    },
     "TooltipContent": {
       "status": "rename",
       "code": "Tooltip"

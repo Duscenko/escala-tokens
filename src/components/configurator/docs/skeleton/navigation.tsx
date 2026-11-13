@@ -10,7 +10,7 @@ import { Breadcrumb as SkBreadcrumb, BreadcrumbItem as SkBreadcrumbItem, Breadcr
 import { Pagination as SkPagination } from '../../../escala-ui/pagination'
 import { useAutoplayStep } from '../../../preview/artefacts/boardAutoplay'
 import { Stepper as SkStepper } from '../../../escala-ui/stepper'
-import { DropdownMenu as SkDropdownMenu, DropdownMenuContent as SkDropdownMenuContent, DropdownMenuItem as SkDropdownMenuItem, DropdownMenuSeparator as SkDropdownMenuSeparator } from '../../../escala-ui/dropdown-menu'
+import { DropdownMenu as SkDropdownMenu, DropdownMenuContent as SkDropdownMenuContent, DropdownMenuItem as SkDropdownMenuItem, DropdownMenuLabel as SkDropdownMenuLabel, DropdownMenuFooter as SkDropdownMenuFooter, DropdownMenuSeparator as SkDropdownMenuSeparator, type DropdownMenuSize, type DropdownMenuItemState, type DropdownMenuItemVariant, type DropdownMenuFooterLayout } from '../../../escala-ui/dropdown-menu'
 import { ContextMenu as SkContextMenu, ContextMenuContent as SkContextMenuContent, ContextMenuItem as SkContextMenuItem, ContextMenuSeparator as SkContextMenuSeparator, ContextMenuShortcut as SkContextMenuShortcut } from '../../../escala-ui/context-menu'
 import { Command as SkCommand, CommandGroup as SkCommandGroup, CommandInput as SkCommandInput, CommandItem as SkCommandItem, CommandList as SkCommandList } from '../../../escala-ui/command'
 import { Navbar as SkNavbar } from '../../../escala-ui/navbar'
@@ -97,23 +97,73 @@ export function SkeletonStepperSpecimen({ t, w }: SpecimenProps) {
   )
 }
 
-export function SkeletonDropdownMenuSpecimen({ t }: SpecimenProps) {
+/** The Figma DropdownMenu (947:299) in place: a label, three rows (Profile focused), a rule and a destructive row. */
+export function SkeletonDropdownMenuSpecimen({ t, v }: SpecimenProps) {
+  const size = (v.Size ?? 'default') as DropdownMenuSize
+  const px = size === 'lg' ? 20 : 16
+  const icon = (concept: 'user' | 'file' | 'settings' | 'sign-out') => <PreviewIcon concept={concept} size={px} />
   return (
     <RecipeScope t={t}>
-      <div className="flex flex-col items-start" style={{ gap: 'var(--spacing-1_5)' }}>
-        <SkButton variant="outline" size="sm">
-          Options
-          <PreviewIcon concept="chevron" size={iconOf(11)} />
-        </SkButton>
-        <SkDropdownMenu>
-          <SkDropdownMenuContent inline style={{ width: 210 }}>
-            <SkDropdownMenuItem highlighted>Duplicate</SkDropdownMenuItem>
-            <SkDropdownMenuItem>Rename</SkDropdownMenuItem>
-            <SkDropdownMenuItem>Export tokens</SkDropdownMenuItem>
-            <SkDropdownMenuSeparator />
-            <SkDropdownMenuItem variant="destructive">Delete</SkDropdownMenuItem>
-          </SkDropdownMenuContent>
-        </SkDropdownMenu>
+      <SkDropdownMenu>
+        <SkDropdownMenuContent inline size={size}>
+          <SkDropdownMenuLabel>My account</SkDropdownMenuLabel>
+          <SkDropdownMenuItem highlighted iconLeading={icon('user')} trailing="⇧⌘P">Profile</SkDropdownMenuItem>
+          <SkDropdownMenuItem iconLeading={icon('file')} trailing="⌘B">Billing</SkDropdownMenuItem>
+          <SkDropdownMenuItem iconLeading={icon('settings')} trailing="⌘S">Settings</SkDropdownMenuItem>
+          <SkDropdownMenuSeparator />
+          <SkDropdownMenuItem variant="destructive" iconLeading={icon('sign-out')} trailing="⇧⌘Q">Log out</SkDropdownMenuItem>
+        </SkDropdownMenuContent>
+      </SkDropdownMenu>
+    </RecipeScope>
+  )
+}
+
+/** The Figma DropdownMenuLabel (947:169) on its own, 256 wide. */
+export function SkeletonDropdownMenuLabelSpecimen({ t, v }: SpecimenProps) {
+  const size = (v.Size ?? 'default') as DropdownMenuSize
+  return (
+    <RecipeScope t={t}>
+      <div style={{ width: 256 }}><SkDropdownMenuLabel size={size}>Action</SkDropdownMenuLabel></div>
+    </RecipeScope>
+  )
+}
+
+/** The Figma DropdownMenuItem (947:161) on its own, 256 wide, with the file's default content (leading icon, shortcut). */
+export function SkeletonDropdownMenuItemSpecimen({ t, v }: SpecimenProps) {
+  const size = (v.Size ?? 'default') as DropdownMenuSize
+  const state = (v.State ?? 'Default') as DropdownMenuItemState
+  return (
+    <RecipeScope t={t}>
+      <SkDropdownMenu>
+        <SkDropdownMenuContent inline size={size} className="[&>[data-part='DropdownMenu.content']]:!p-0" style={{ border: 0, boxShadow: 'none', background: 'transparent' }}>
+          <SkDropdownMenuItem
+            forceState={state}
+            variant={(v.Variant ?? 'default') as DropdownMenuItemVariant}
+            checked={state === 'Selected' ? true : undefined}
+            disabled={state === 'Disabled'}
+            iconLeading={<PreviewIcon concept="home" size={size === 'lg' ? 20 : 16} />}
+            trailing="⌘K"
+          >
+            Option
+          </SkDropdownMenuItem>
+        </SkDropdownMenuContent>
+      </SkDropdownMenu>
+    </RecipeScope>
+  )
+}
+
+/** The Figma DropdownMenuFooter (949:3290) on its own, 256 wide. */
+export function SkeletonDropdownMenuFooterSpecimen({ t, v }: SpecimenProps) {
+  const size = (v.Size ?? 'default') as DropdownMenuSize
+  const layout = (v.Layout ?? 'inline') as DropdownMenuFooterLayout
+  const btn = size === 'sm' ? 'xs' : size === 'lg' ? 'default' : 'sm'
+  return (
+    <RecipeScope t={t}>
+      <div style={{ width: 256 }}>
+        <SkDropdownMenuFooter size={size} layout={layout} leading="12 of 40 selected">
+          <SkButton variant="secondary" appearance="solid" size={btn}>Clear</SkButton>
+          <SkButton variant="default" appearance="solid" size={btn}>Apply</SkButton>
+        </SkDropdownMenuFooter>
       </div>
     </RecipeScope>
   )

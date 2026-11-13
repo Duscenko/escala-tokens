@@ -475,3 +475,14 @@ Source: the file's «AvatarGroup Prototype» (868:28472): four PHOTO avatars + t
 | A footer whose top stroke is NOT laid out (48 = 8 + 32 + 8) beside the Modal footer whose stroke is (81 = 20 + 40 + 20 + 1) | A CSS top border added 1px (49) | Read `strokesIncludedInLayout` per set: here the component takes the border out of the top padding (`!pt-[calc(gap-control − stroke-divider)]`) so the box is 48 and the buttons sit at y 8 |
 | Literal `data-escala` through a spread (`{...common}`) | `registryItemFor('Popover')` undefined (the FABGroup lesson again) | Write `data-escala="Popover"` as a literal JSX attribute in BOTH the inline and the portaled branch |
 | axe `region` on a story that renders a bare popover | «Some page content is not contained by landmarks» ×N in every theme | Story-level best practice, not a component defect (the Modal passes only because `role=dialog` is a landmark); everything else is clean |
+
+# Lessons from the DropdownMenu, Label, Item and Footer (2026-11-13)
+| Trap | What it looked like | The fix (where it lives) |
+|---|---|---|
+| The old DropdownMenu recipe came from a shared factory (`menu(key)`) that ContextMenu still uses | Rebuilding it in place would have restyled ContextMenu | Four new recipes beside it (`DROPDOWN_MENU`, `_LABEL`, `_ITEM`, `_FOOTER`); `menu()` stays for ContextMenu / Menubar |
+| A row whose Figma States are Default · Focused · Selected · Disabled but a live menu highlights on hover and arrow keys | The recipe has no «highlighted» state | The Default part also emits `'root[data-highlighted]'` with the Focused paint; the component sets `data-force-state` only for non-Default states, so Radix's highlight is never blocked by a pinned state |
+| A Focused row's 2px edge + 2px halo inside a clipping panel | A layout jump and a clipped halo | `focus` + `ring` are box-shadows (no layout change); the Content's 4px padding leaves room for the halo inside the panel's clip |
+| Selectable rows | `aria-checked` on `role=menuitem` is invalid | `checked` switches to Radix `CheckboxItem` (menuitemcheckbox) with the file's check as the indicator; `inline` draws the same role by hand |
+| A part set (Item) measured alone is 256 wide, but inside the menu it is 246 (Content padding 4) | The single-item story / specimen showed 248 | Standalone item wrappers zero the content padding (`[&>[data-part='DropdownMenu.content']]:!p-0`); the menu keeps the file's padding |
+| `Content/secondary` on `Surface/muted` (the Focused row's shortcut and description, Light) | axe 4.22:1 ×4 | Copied (rule 1), reported; same pair as the Accordion / Table notes |
+| New recipe slots on a plugin-built set | parity `anatomyGaps: DropdownMenu: [header, content]` | `WEB_ONLY_SLOTS` (dated), never a plugin edit |

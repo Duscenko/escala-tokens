@@ -28,9 +28,14 @@ export const SKELETON_SNIPPETS: Record<string, Snippet> = {
     `import { Pagination } from "@/components/ui/pagination"\n\n<Pagination pages={[1, 2, 3, "…", 8]} page={page} onPageChange={setPage} />`,
   Stepper: () =>
     `import { Stepper } from "@/components/ui/stepper"\n\n<Stepper steps={["Account", "Tokens", "Publish"]} current={2} />`,
-  DropdownMenu: () =>
-    `import {\n  DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator,\n} from "@/components/ui/dropdown-menu"\n\n<DropdownMenu>\n  <DropdownMenuTrigger asChild><Button variant="outline">Options</Button></DropdownMenuTrigger>\n  <DropdownMenuContent>\n    <DropdownMenuItem>Duplicate</DropdownMenuItem>\n    <DropdownMenuSeparator />\n    <DropdownMenuItem variant="destructive">Delete</DropdownMenuItem>\n  </DropdownMenuContent>\n</DropdownMenu>`,
-  ContextMenu: () =>
+  DropdownMenu: (v) =>
+    `import {\n  DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuLabel, DropdownMenuItem, DropdownMenuSeparator,\n} from "@/components/ui/dropdown-menu"\n\n<DropdownMenu>\n  <DropdownMenuTrigger asChild><Button variant="secondary">Options</Button></DropdownMenuTrigger>\n  <DropdownMenuContent${v.Size && v.Size !== 'default' ? ` size="${v.Size}"` : ''}>\n    <DropdownMenuLabel>My account</DropdownMenuLabel>\n    <DropdownMenuItem trailing="⇧⌘P">Profile</DropdownMenuItem>\n    <DropdownMenuItem trailing="⌘S">Settings</DropdownMenuItem>\n    <DropdownMenuSeparator />\n    <DropdownMenuItem variant="destructive">Log out</DropdownMenuItem>\n  </DropdownMenuContent>\n</DropdownMenu>`,
+  DropdownMenuLabel: (v) =>
+    `import { DropdownMenuLabel } from "@/components/ui/dropdown-menu"\n\n<DropdownMenuLabel${v.Size && v.Size !== 'default' ? ` size="${v.Size}"` : ''}>Action</DropdownMenuLabel>`,
+  DropdownMenuItem: (v) =>
+    `import { DropdownMenuItem } from "@/components/ui/dropdown-menu"\n\n<DropdownMenuItem${v.Variant === 'destructive' ? ' variant="destructive"' : ''}${v.Size && v.Size !== 'default' ? ` size="${v.Size}"` : ''}${v.State === 'Selected' ? ' checked' : ''}${v.State === 'Disabled' ? ' disabled' : ''} iconLeading={<House />} trailing="⌘K">Option</DropdownMenuItem>`,
+  DropdownMenuFooter: (v) =>
+    `import { DropdownMenuFooter } from "@/components/ui/dropdown-menu"\n\n<DropdownMenuFooter${v.Size && v.Size !== 'default' ? ` size="${v.Size}"` : ''}${v.Layout === 'stacked' ? ' layout="stacked"' : ''} leading="12 of 40 selected">\n  <Button variant="secondary">Clear</Button>\n  <Button>Apply</Button>\n</DropdownMenuFooter>`,  ContextMenu: () =>
     `import {\n  ContextMenu, ContextMenuTrigger, ContextMenuContent, ContextMenuItem, ContextMenuShortcut,\n} from "@/components/ui/context-menu"\n\n<ContextMenu>\n  <ContextMenuTrigger>Right-click here</ContextMenuTrigger>\n  <ContextMenuContent>\n    <ContextMenuItem>Copy <ContextMenuShortcut>⌘C</ContextMenuShortcut></ContextMenuItem>\n  </ContextMenuContent>\n</ContextMenu>`,
   Command: () =>
     `import {\n  Command, CommandInput, CommandList, CommandGroup, CommandItem,\n} from "@/components/ui/command"\n\n<Command>\n  <CommandInput placeholder="Type a command…" />\n  <CommandList>\n    <CommandGroup heading="Actions">\n      <CommandItem onSelect={openColor}>Open Color foundation</CommandItem>\n    </CommandGroup>\n  </CommandList>\n</Command>`,

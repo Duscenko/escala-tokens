@@ -6149,17 +6149,73 @@ var init_componentCatalogue = __esm({
         key: "DropdownMenu",
         label: "Dropdown Menu",
         category: "Navigation",
-        description: "Action menu opened from a trigger \u2014 items, separators and a destructive zone.",
-        usage: 'Use for 3+ secondary actions behind a "\u22EF" or button. Destructive items go last.',
-        axes: [],
-        figmaSets: ["Dropdown Menu"],
+        description: "Floating menu of commands opened from a trigger (a Button or IconButton): an optional search header, labelled groups of items and an optional footer.",
+        usage: 'Use for 3+ secondary actions behind a "\u22EF" or button. Destructive items go last, after a separator. Size cascades to every label and item.',
+        axes: [
+          { name: "Size", values: ["default", "sm", "lg"] }
+        ],
+        figmaSets: ["DropdownMenu"],
         props: [
           { name: "DropdownMenu", type: "component", description: "Radix root: open, onOpenChange." },
           { name: "DropdownMenuTrigger asChild", type: "boolean", description: "Use your own button as the anchor." },
-          { name: "DropdownMenuItem variant", type: '"danger"', description: "Destructive row." },
-          { name: "DropdownMenuContent / Separator / Shortcut", type: "component", description: "The panel (portals into the theme scope), a rule and a key hint." }
+          { name: "size", type: "'default' | 'sm' | 'lg'", description: "Figma Size: 256 wide, rows 32 \xB7 24 \xB7 40. It cascades to labels, items and the footer." },
+          { name: "header / footer", type: "ReactNode", description: "Figma HeaderVisible (a search Input) and FooterVisible (a DropdownMenuFooter)." },
+          { name: "children", type: "ReactNode", description: "The Content slot: DropdownMenuLabel, DropdownMenuItem, DropdownMenuSeparator." }
         ],
-        accessibility: 'ARIA menu pattern: role="menu"/"menuitem", arrow keys + typeahead, Esc closes.'
+        accessibility: 'ARIA menu pattern: role="menu" / "menuitem" (menuitemcheckbox when selectable), arrow keys and typeahead, Space / Enter opens, Escape closes and returns focus to the trigger. Keep the footer outside the menu role.'
+      },
+      {
+        key: "DropdownMenuLabel",
+        label: "Dropdown Menu Label",
+        category: "Navigation",
+        description: "Overline heading for a group of items inside the DropdownMenu.",
+        usage: "Label a group of related items. It is skipped by arrow-key navigation.",
+        axes: [
+          { name: "Size", values: ["default", "sm", "lg"] }
+        ],
+        figmaSets: ["DropdownMenuLabel"],
+        props: [
+          { name: "children", type: "ReactNode", description: "Figma Label (the file writes it in capitals by hand)." },
+          { name: "size", type: "'default' | 'sm' | 'lg'", description: "Follows the menu." }
+        ],
+        accessibility: "Render it as the label of a role group (aria-labelledby) so screen readers announce the group name."
+      },
+      {
+        key: "DropdownMenuItem",
+        label: "Dropdown Menu Item",
+        category: "Navigation",
+        description: "A command row: optional leading icon, media, description, shortcut, control, caret and a selection check; destructive for irreversible commands.",
+        usage: "One command per row. Put irreversible commands last as a destructive variant.",
+        axes: [
+          { name: "Size", values: ["default", "sm", "lg"] },
+          { name: "State", values: ["Default", "Focused", "Selected", "Disabled"] },
+          { name: "Variant", values: ["default", "destructive"] }
+        ],
+        figmaSets: ["DropdownMenuItem"],
+        props: [
+          { name: "children", type: "ReactNode", description: "Figma Label." },
+          { name: "description / trailing / iconLeading / iconTrailing / media / control", type: "ReactNode", description: "The optional parts of the row, as the file lists them." },
+          { name: "checked", type: "boolean", description: "Selected: shows the check (a menuitemcheckbox)." },
+          { name: "variant", type: "'default' | 'destructive'", description: "Figma Variant." }
+        ],
+        accessibility: "role menuitem (menuitemcheckbox when selectable); reachable by arrow keys; skipped when disabled."
+      },
+      {
+        key: "DropdownMenuFooter",
+        label: "Dropdown Menu Footer",
+        category: "Navigation",
+        description: "Divided action bar pinned below the menu list: status text and buttons.",
+        usage: "Clear / Apply or a single action. Inline puts the text first and the buttons at the end; stacked gives full-width buttons.",
+        axes: [
+          { name: "Size", values: ["default", "sm", "lg"] },
+          { name: "Layout", values: ["inline", "stacked"] }
+        ],
+        figmaSets: ["DropdownMenuFooter"],
+        props: [
+          { name: "children", type: "ReactNode", description: "The Actions slot." },
+          { name: "leading / leadingVisible", type: "ReactNode / boolean", description: "Status text that fills the row (default visible)." }
+        ],
+        accessibility: "Keep it outside role menu; its controls are reachable with Tab after the list."
       },
       {
         key: "Menubar",
@@ -11359,7 +11415,20 @@ function menu(key2) {
   };
   return { key: key2, slots: ["root", "item", "separator", "shortcut"], defaults: {}, parts: [part({}, () => slots)] };
 }
-var TABS, TAB_MENU, SEGMENTED_CONTROL_SIZES, SEGMENTED_CONTROL, SEGMENTED_CONTROL_ITEM_STATES, SEGMENT_ITEM, SEGMENTED_CONTROL_ITEM, BREADCRUMB, PAGINATION, STEPPER, MENU_PANEL_RADIUS, DROPDOWN_MENU, CONTEXT_MENU, COMMAND, NAVBAR, SIDEBAR, MENUBAR, NAVIGATION_MENU;
+function dropdownItemPaint(variant, state2) {
+  const destructive = variant === "destructive";
+  switch (state2) {
+    case "Focused":
+      return destructive ? { fill: c("status.critical.surface"), focus: c("status.critical.border-strong"), ring: c("status.critical.border") } : { fill: c("surface.muted"), focus: c("border.focus"), ring: c("border.ring.default") };
+    case "Selected":
+      return { fill: c("surface.selected") };
+    case "Disabled":
+      return { fill: NONE };
+    default:
+      return { fill: NONE };
+  }
+}
+var TABS, TAB_MENU, SEGMENTED_CONTROL_SIZES, SEGMENTED_CONTROL, SEGMENTED_CONTROL_ITEM_STATES, SEGMENT_ITEM, SEGMENTED_CONTROL_ITEM, BREADCRUMB, PAGINATION, STEPPER, MENU_PANEL_RADIUS, DROPDOWN_SIZES, DROPDOWN_ITEM_STATES, DROPDOWN_ITEM_VARIANTS, DROPDOWN_MENU, DROPDOWN_MENU_LABEL, DROPDOWN_MENU_ITEM, DROPDOWN_MENU_FOOTER, CONTEXT_MENU, COMMAND, NAVBAR, SIDEBAR, MENUBAR, NAVIGATION_MENU;
 var init_navigation = __esm({
   "src/lib/recipes/navigation.ts"() {
     init_helpers();
@@ -11502,7 +11571,100 @@ var init_navigation = __esm({
       ]
     };
     MENU_PANEL_RADIUS = PANEL_RADIUS;
-    DROPDOWN_MENU = menu("DropdownMenu");
+    DROPDOWN_SIZES = ["default", "sm", "lg"];
+    DROPDOWN_ITEM_STATES = ["Default", "Focused", "Selected", "Disabled"];
+    DROPDOWN_ITEM_VARIANTS = ["default", "destructive"];
+    DROPDOWN_MENU = {
+      key: "DropdownMenu",
+      slots: ["root", "header", "content", "separator"],
+      defaults: { Size: "default" },
+      parts: [
+        part({}, () => ({
+          root: {
+            fill: c("surface.layer-2"),
+            stroke: c("border.default"),
+            strokeWidth: "stroke.divider",
+            radius: "radius.overlay",
+            lift: "popover-md",
+            width: "spacing.32+spacing.32"
+          },
+          header: { paddingX: "spacing.gap-tight", paddingY: "spacing.gap-tight" },
+          content: { paddingX: "spacing.gap-tight", paddingY: "spacing.gap-tight" },
+          // A separator row: 4px above and below a 1px subtle rule.
+          separator: { fill: c("border.subtle"), height: "stroke.divider" }
+        }))
+      ]
+    };
+    DROPDOWN_MENU_LABEL = {
+      key: "DropdownMenuLabel",
+      slots: ["root"],
+      defaults: { Size: "default" },
+      parts: [
+        part({ Size: DROPDOWN_SIZES }, (size) => ({
+          root: {
+            paddingX: size === "lg" ? "spacing.inset-control" : "spacing.gap-control",
+            paddingY: "spacing.gap-tight",
+            text: c("content.secondary"),
+            font: "type.caption"
+          }
+        }))
+      ]
+    };
+    DROPDOWN_MENU_ITEM = {
+      key: "DropdownMenuItem",
+      slots: ["root", "iconLeading", "media", "text", "label", "description", "trailing", "control", "iconTrailing", "indicator"],
+      defaults: { Size: "default", State: "Default", Variant: "default" },
+      parts: [
+        part({ Size: DROPDOWN_SIZES }, (size) => ({
+          root: {
+            minHeight: size === "sm" ? "size.xs" : size === "lg" ? "size.md" : "size.sm",
+            radius: "radius.control",
+            paddingX: size === "lg" ? "spacing.inset-control" : "spacing.gap-control",
+            paddingY: "spacing.gap-tight",
+            gap: size === "sm" ? "spacing.gap-tight" : "spacing.gap-control"
+          },
+          iconLeading: size === "lg" ? { width: "icon.medium", height: "icon.medium" } : { width: "icon.small", height: "icon.small" },
+          iconTrailing: size === "lg" ? { width: "icon.medium", height: "icon.medium" } : { width: "icon.small", height: "icon.small" },
+          indicator: size === "lg" ? { width: "icon.medium", height: "icon.medium" } : { width: "icon.small", height: "icon.small" },
+          label: { font: size === "sm" ? "type.caption" : size === "lg" ? "type.body-md" : "type.body-sm" },
+          description: { font: "type.caption" },
+          trailing: { font: "type.caption" }
+        })),
+        part({ Variant: DROPDOWN_ITEM_VARIANTS, State: DROPDOWN_ITEM_STATES }, (variant, state2) => {
+          const disabled = state2 === "Disabled";
+          const ink = disabled ? c("content.disabled") : variant === "destructive" ? c("status.critical.content") : c("content.primary");
+          return {
+            root: dropdownItemPaint(variant, state2),
+            label: { text: ink },
+            description: { text: disabled ? c("content.disabled") : c("content.secondary") },
+            trailing: { text: disabled ? c("content.disabled") : c("content.secondary") },
+            iconLeading: { text: disabled ? c("content.disabled") : variant === "destructive" ? c("status.critical.content") : c("content.primary") },
+            iconTrailing: { text: c("content.secondary") },
+            indicator: { text: c("content.accent") },
+            // A live menu highlights a row on hover or arrow keys: the file's Focused look.
+            ...state2 === "Default" ? { "root[data-highlighted]": dropdownItemPaint(variant, "Focused") } : {}
+          };
+        })
+      ]
+    };
+    DROPDOWN_MENU_FOOTER = {
+      key: "DropdownMenuFooter",
+      slots: ["root", "leading", "actions"],
+      defaults: { Size: "default", Layout: "inline" },
+      parts: [
+        part({}, () => ({
+          root: {
+            paddingX: "spacing.gap-control",
+            paddingY: "spacing.gap-control",
+            gap: "spacing.gap-control",
+            stroke: c("border.subtle"),
+            strokeTopWidth: "stroke.divider"
+          },
+          leading: { gap: "spacing.gap-tight", text: c("content.secondary"), font: "type.caption" },
+          actions: { gap: "spacing.gap-control" }
+        }))
+      ]
+    };
     CONTEXT_MENU = menu("ContextMenu");
     COMMAND = {
       key: "Command",
@@ -12715,6 +12877,9 @@ var init_componentRecipes = __esm({
       Pagination: PAGINATION,
       Stepper: STEPPER,
       DropdownMenu: DROPDOWN_MENU,
+      DropdownMenuLabel: DROPDOWN_MENU_LABEL,
+      DropdownMenuItem: DROPDOWN_MENU_ITEM,
+      DropdownMenuFooter: DROPDOWN_MENU_FOOTER,
       ContextMenu: CONTEXT_MENU,
       Command: COMMAND,
       Navbar: NAVBAR,
@@ -15535,7 +15700,7 @@ var init_useDesignStore = __esm({
         }),
         {
           name: "scalable-designs-store",
-          version: 141,
+          version: 142,
           migrate: (persisted, version) => {
             if (persisted) {
               delete persisted.styleDirection;
@@ -17267,6 +17432,20 @@ var init_useDesignStore = __esm({
                 const sel = state2.selectedComponents;
                 const at = sel.indexOf("Popover");
                 if (at >= 0 && !sel.includes("PopoverFooter")) sel.splice(at + 1, 0, "PopoverFooter");
+              };
+              add2(persisted);
+              if (Array.isArray(persisted.savedSystems)) {
+                for (const sys of persisted.savedSystems) add2(sys?.snapshot);
+              }
+            }
+            if (version < 142) {
+              const add2 = (state2) => {
+                if (!Array.isArray(state2?.selectedComponents)) return;
+                const sel = state2.selectedComponents;
+                const at = sel.indexOf("DropdownMenu");
+                if (at < 0) return;
+                const parts = ["DropdownMenuLabel", "DropdownMenuItem", "DropdownMenuFooter"].filter((k) => !sel.includes(k));
+                sel.splice(at + 1, 0, ...parts);
               };
               add2(persisted);
               if (Array.isArray(persisted.savedSystems)) {
