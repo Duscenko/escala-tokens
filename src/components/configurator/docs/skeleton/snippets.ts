@@ -20,6 +20,12 @@ export const SKELETON_SNIPPETS: Record<string, Snippet> = {
     `import { TabMenu, TabMenuItem, TabMenuLineItem } from "@/components/ui/tab-menu"\n\n<TabMenu defaultValue="overview"${v.Variant && v.Variant !== 'horizontal-line' ? ` variant="${v.Variant}"` : ''}${v.Size && v.Size !== 'default' ? ` size="${v.Size}"` : ''}>\n  <${(v.Variant ?? 'horizontal-line').endsWith('button') ? 'TabMenuItem' : 'TabMenuLineItem'} value="overview">Overview</${(v.Variant ?? 'horizontal-line').endsWith('button') ? 'TabMenuItem' : 'TabMenuLineItem'}>\n  <${(v.Variant ?? 'horizontal-line').endsWith('button') ? 'TabMenuItem' : 'TabMenuLineItem'} value="activity">Activity</${(v.Variant ?? 'horizontal-line').endsWith('button') ? 'TabMenuItem' : 'TabMenuLineItem'}>\n</TabMenu>`,
   TabMenuItem: (v) =>
     `import { TabMenu, TabMenuItem } from "@/components/ui/tab-menu"\n\n<TabMenu variant="horizontal-button" defaultValue="overview">\n  <TabMenuItem value="overview"${v.Size && v.Size !== 'default' ? ` size="${v.Size}"` : ''}>Overview</TabMenuItem>\n</TabMenu>`,
+  NavItem: (v) =>
+    `import { NavItem } from "@/components/ui/nav-item"\n\n<NavItem href="/docs"${v.Size && v.Size !== 'default' ? ` size="${v.Size}"` : ''}${v.State === 'Current' ? ' current' : ''}${v.State === 'Disabled' ? ' disabled' : ''}>Docs</NavItem>`,
+  Brand: (v) =>
+    `import { Brand } from "@/components/ui/brand"\n\n<a href="/" aria-label="Escala home">\n  <Brand${v.Size && v.Size !== 'default' ? ` size="${v.Size}"` : ''} name="Escala" version="v1.1" />\n</a>`,
+  AccountMenuTrigger: (v) =>
+    `import { AccountMenuTrigger } from "@/components/ui/account-menu-trigger"\n\n<DropdownMenu>\n  <DropdownMenuTrigger asChild>\n    <AccountMenuTrigger${v.Size && v.Size !== 'default' ? ` size="${v.Size}"` : ''} name="Ayla" />\n  </DropdownMenuTrigger>\n  <DropdownMenuContent>…</DropdownMenuContent>\n</DropdownMenu>`,
   TabMenuLineItem: (v) =>
     `import { TabMenu, TabMenuLineItem } from "@/components/ui/tab-menu"\n\n<TabMenu defaultValue="overview">\n  <TabMenuLineItem value="overview"${v.Size && v.Size !== 'default' ? ` size="${v.Size}"` : ''}${v.Indicator && v.Indicator !== 'bottom' ? ` indicator="${v.Indicator}"` : ''}>Overview</TabMenuLineItem>\n</TabMenu>`,
   SegmentedControl: (v) =>

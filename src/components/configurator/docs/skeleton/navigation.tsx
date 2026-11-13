@@ -6,6 +6,9 @@ import { iconOf } from '../../../../lib/previewTokens'
 import { Tabs as SkTabs, TabsList as SkTabsList, TabsTrigger as SkTabsTrigger, type TabsListVariant } from '../../../escala-ui/tabs'
 import { TabMenu as SkTabMenu, TabMenuItem as SkTabMenuItem, TabMenuLineItem as SkTabMenuLineItem, type TabMenuIndicator, type TabMenuItemState, type TabMenuSize, type TabMenuVariant } from '../../../escala-ui/tab-menu'
 import { Badge as SkBadge } from '../../../escala-ui/badge'
+import { NavItem as SkNavItem, type NavItemSize, type NavItemState } from '../../../escala-ui/nav-item'
+import { Brand as SkBrand, type BrandSize } from '../../../escala-ui/brand'
+import { AccountMenuTrigger as SkAccountMenuTrigger, type AccountMenuTriggerSize, type AccountMenuTriggerState } from '../../../escala-ui/account-menu-trigger'
 import { SegmentedControl as SkSegmentedControl, SegmentedControlItem as SkSegmentedControlItem, type SegmentedControlItemState, type SegmentedControlSize } from '../../../escala-ui/segmented-control'
 import { Breadcrumb as SkBreadcrumb, BreadcrumbEllipsis as SkBreadcrumbEllipsis, BreadcrumbItem as SkBreadcrumbItem, BreadcrumbList as SkBreadcrumbList, BreadcrumbSeparator as SkBreadcrumbSeparator, BREADCRUMB_GLYPHS, type BreadcrumbAppearance, type BreadcrumbEllipsisState, type BreadcrumbItemState, type BreadcrumbSeparatorKind, type BreadcrumbSize, type BreadcrumbVariant } from '../../../escala-ui/breadcrumb'
 import { Pagination as SkPagination } from '../../../escala-ui/pagination'
@@ -71,6 +74,26 @@ export function SkeletonTabMenuLineItemSpecimen({ t, v }: SpecimenProps) {
       <SkTabMenu variant={indicator === 'left' ? 'vertical-line' : 'horizontal-line'} size={(v.Size ?? 'default') as TabMenuSize} style={indicator === 'left' ? { width: 120 } : undefined}>
         <SkTabMenuLineItem indicator={indicator} forceState={(v.State ?? 'Default') as TabMenuItemState} disabled={v.State === 'Disabled'}>Overview</SkTabMenuLineItem>
       </SkTabMenu>
+    </RecipeScope>
+  )
+}
+
+export function SkeletonNavItemSpecimen({ t, v }: SpecimenProps) {
+  return (
+    <RecipeScope t={t}>
+      <SkNavItem href="#" onClick={(e) => e.preventDefault()} size={(v.Size ?? 'default') as NavItemSize} forceState={(v.State ?? 'Default') as NavItemState} disabled={v.State === 'Disabled'}>Overview</SkNavItem>
+    </RecipeScope>
+  )
+}
+
+export function SkeletonBrandSpecimen({ t, v }: SpecimenProps) {
+  return <RecipeScope t={t}><SkBrand size={(v.Size ?? 'default') as BrandSize} /></RecipeScope>
+}
+
+export function SkeletonAccountMenuTriggerSpecimen({ t, v }: SpecimenProps) {
+  return (
+    <RecipeScope t={t}>
+      <SkAccountMenuTrigger size={(v.Size ?? 'default') as AccountMenuTriggerSize} forceState={(v.State ?? 'Default') as AccountMenuTriggerState} />
     </RecipeScope>
   )
 }

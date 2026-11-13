@@ -104,6 +104,58 @@ export const TAB_MENU_LINE_ITEM: ComponentRecipe = {
   ],
 }
 
+// ── NavItem, Brand and AccountMenuTrigger ──────────────────────────────────
+// The Figma sets NavItem (1095:19644), Brand (1098:42) and AccountMenuTrigger (1098:119)
+// (design-plans/nav-header-contract.md). NavItem is a TabMenuItem whose selected state is `Current`.
+export const NAV_ITEM_SIZES = TAB_MENU_SIZES
+export const NAV_ITEM_STATES = ['Default', 'Hover', 'Current', 'Focused', 'Disabled'] as const
+
+export const NAV_ITEM: ComponentRecipe = {
+  key: 'NavItem',
+  slots: ['root', 'iconLeading', 'label', 'badge', 'iconTrailing'],
+  defaults: { Size: 'default', State: 'Default' },
+  parts: [
+    part({ Size: NAV_ITEM_SIZES }, tabMenuSizeSlots),
+    part({ State: NAV_ITEM_STATES }, (state) => ({ root: tabMenuItemPaint(state === 'Current' ? 'Selected' : state, false) })),
+  ],
+}
+
+export const BRAND_SIZES = ['default', 'sm'] as const
+export const BRAND: ComponentRecipe = {
+  key: 'Brand',
+  slots: ['root', 'logo', 'name', 'version'],
+  defaults: { Size: 'default' },
+  parts: [
+    part({ Size: BRAND_SIZES }, (size) => ({
+      root: { gap: 'spacing.gap-control' },
+      name: { text: c('content.primary'), font: size === 'sm' ? 'type.heading-xs' : 'type.heading-sm' },
+    })),
+  ],
+}
+
+export const ACCOUNT_MENU_TRIGGER_SIZES = ['default', 'sm'] as const
+export const ACCOUNT_MENU_TRIGGER_STATES = ['Default', 'Hover', 'Pressed', 'Focused'] as const
+export const ACCOUNT_MENU_TRIGGER: ComponentRecipe = {
+  key: 'AccountMenuTrigger',
+  slots: ['root', 'avatar', 'name', 'iconTrailing'],
+  defaults: { Size: 'default', State: 'Default' },
+  parts: [
+    part({ Size: ACCOUNT_MENU_TRIGGER_SIZES }, (size) => ({
+      root: {
+        height: size === 'sm' ? 'size.sm' : 'size.md', radius: 'radius.action', paddingX: 'spacing.inset-control', paddingRight: 'spacing.gap-tight', paddingY: 'spacing.none',
+        gap: 'spacing.gap-control', text: c('content.primary'), font: 'type.button',
+      },
+      iconTrailing: size === 'sm' ? { width: 'icon.small', height: 'icon.small' } : { width: 'icon.medium', height: 'icon.medium' },
+    })),
+    part({ State: ACCOUNT_MENU_TRIGGER_STATES }, (state) => ({
+      root: state === 'Hover' ? { fill: c('action.ghost.hover') }
+        : state === 'Pressed' ? { fill: c('action.ghost.pressed') }
+        : state === 'Focused' ? { fill: NONE, focus: c('border.focus'), ring: c('border.ring.default') }
+        : { fill: NONE },
+    })),
+  ],
+}
+
 // ── SegmentedControl + SegmentedControlItem ────────────────────────────────
 // The Figma `SegmentedControl` set (design-plans/segmented-control-contract.md, 1102:5136, 3 variants:
 // Size default · sm · lg) and its `SegmentedControlItem` (1102:5087, 30 variants: Size × Checked ×

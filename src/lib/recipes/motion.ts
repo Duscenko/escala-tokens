@@ -42,6 +42,8 @@ export const RECIPE_MOTION: Record<string, RecipeMotion> = {
   Pagination: { transitions: { cell: FILL } },
   TabMenuItem: { transitions: { root: FILL } },
   TabMenuLineItem: { transitions: { root: FILL } },
+  NavItem: { transitions: { root: FILL } },
+  AccountMenuTrigger: { transitions: { root: FILL } },
   SegmentedControlItem: { transitions: { root: FILL } },
   Sidebar: { transitions: { button: FILL } },
   Tabs: { transitions: { trigger: states('color', 'background-color', 'border-color', 'box-shadow') } },

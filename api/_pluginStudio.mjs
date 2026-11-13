@@ -6122,6 +6122,55 @@ var init_componentCatalogue = __esm({
         accessibility: "A button with aria-pressed; disabled uses the native attribute."
       },
       {
+        key: "NavItem",
+        label: "Nav Item",
+        category: "Navigation",
+        description: "Header navigation link or menu trigger: label, optional leading icon, count Badge and trailing caret.",
+        usage: "In a header or navbar. Current marks the page you are on; with a trailing caret it opens a NavigationMenu. Tabs inside a view use TabMenuItem.",
+        axes: [
+          { name: "Size", values: ["default", "sm", "lg"] },
+          { name: "State", values: ["Default", "Hover", "Current", "Focused", "Disabled"] }
+        ],
+        figmaSets: ["NavItem"],
+        props: [
+          { name: "size / current / disabled / forceState", type: "string / boolean", description: 'Figma Size and State; Current is aria-current="page".' },
+          { name: "iconLeading / trailing / iconTrailing", type: "ReactNode", description: "Figma icon slots and the trailing count Badge." },
+          { name: "asChild", type: "boolean", description: "Use your router link or a button as the element." }
+        ],
+        accessibility: 'A link; the current one is aria-current="page". As a menu trigger add aria-expanded.'
+      },
+      {
+        key: "Brand",
+        label: "Brand",
+        category: "Navigation",
+        description: "Product logo, name and an optional version Badge.",
+        usage: 'sm in app headers, default in marketing headers and footers. Wrap it in a link with an accessible name such as "Escala home".',
+        axes: [{ name: "Size", values: ["default", "sm"] }],
+        figmaSets: ["Brand"],
+        props: [
+          { name: "size / name / version / versionVisible", type: "string / boolean", description: "Figma Size, Name, VersionVisible and the version text." },
+          { name: "logo", type: "ReactNode", description: "Figma Logo slot: an Avatar or an SVG mark." }
+        ],
+        accessibility: "Decorative on its own; the link around it names it."
+      },
+      {
+        key: "AccountMenuTrigger",
+        label: "Account Menu Trigger",
+        category: "Navigation",
+        description: "Opens the user menu: an Avatar, an optional name and a caret, on ghost button roles.",
+        usage: "In a header or sidebar footer, as the trigger of a DropdownMenu.",
+        axes: [
+          { name: "Size", values: ["default", "sm"] },
+          { name: "State", values: ["Default", "Hover", "Pressed", "Focused"] }
+        ],
+        figmaSets: ["AccountMenuTrigger"],
+        props: [
+          { name: "size / forceState", type: "string", description: "Figma Size and State." },
+          { name: "name / nameVisible / avatar", type: "string / boolean / ReactElement", description: "Figma Name and NameVisible; your own Avatar." }
+        ],
+        accessibility: 'A button with aria-haspopup="menu"; named "Account menu for <name>" when the name is hidden. Add aria-expanded.'
+      },
+      {
         key: "SegmentedControl",
         label: "Segmented Control",
         category: "Navigation",
@@ -11630,7 +11679,7 @@ function dropdownItemPaint(variant, state2) {
       return { fill: NONE };
   }
 }
-var TABS, TAB_MENU_SIZES, TAB_MENU_VARIANTS, TAB_MENU_ITEM_STATES, TAB_MENU_INDICATORS, TAB_MENU, tabMenuSizeSlots, TAB_MENU_ITEM, TAB_MENU_LINE_ITEM, SEGMENTED_CONTROL_SIZES, SEGMENTED_CONTROL, SEGMENTED_CONTROL_ITEM_STATES, SEGMENT_ITEM, SEGMENTED_CONTROL_ITEM, BREADCRUMB_SIZES, BREADCRUMB_APPEARANCES, BREADCRUMB_SEPARATORS, BREADCRUMB_VARIANTS, BREADCRUMB_ITEM_STATES, BREADCRUMB_ELLIPSIS_STATES, BREADCRUMB, BREADCRUMB_ITEM, BREADCRUMB_ELLIPSIS, BREADCRUMB_SEPARATOR, PAGINATION, STEPPER, MENU_PANEL_RADIUS, DROPDOWN_SIZES, DROPDOWN_ITEM_STATES, DROPDOWN_ITEM_VARIANTS, DROPDOWN_MENU, DROPDOWN_MENU_LABEL, DROPDOWN_MENU_ITEM, DROPDOWN_MENU_FOOTER, CONTEXT_MENU, COMMAND, NAVBAR, SIDEBAR, MENUBAR, NAVIGATION_MENU;
+var TABS, TAB_MENU_SIZES, TAB_MENU_VARIANTS, TAB_MENU_ITEM_STATES, TAB_MENU_INDICATORS, TAB_MENU, tabMenuSizeSlots, TAB_MENU_ITEM, TAB_MENU_LINE_ITEM, NAV_ITEM_SIZES, NAV_ITEM_STATES, NAV_ITEM, BRAND_SIZES, BRAND, ACCOUNT_MENU_TRIGGER_SIZES, ACCOUNT_MENU_TRIGGER_STATES, ACCOUNT_MENU_TRIGGER, SEGMENTED_CONTROL_SIZES, SEGMENTED_CONTROL, SEGMENTED_CONTROL_ITEM_STATES, SEGMENT_ITEM, SEGMENTED_CONTROL_ITEM, BREADCRUMB_SIZES, BREADCRUMB_APPEARANCES, BREADCRUMB_SEPARATORS, BREADCRUMB_VARIANTS, BREADCRUMB_ITEM_STATES, BREADCRUMB_ELLIPSIS_STATES, BREADCRUMB, BREADCRUMB_ITEM, BREADCRUMB_ELLIPSIS, BREADCRUMB_SEPARATOR, PAGINATION, STEPPER, MENU_PANEL_RADIUS, DROPDOWN_SIZES, DROPDOWN_ITEM_STATES, DROPDOWN_ITEM_VARIANTS, DROPDOWN_MENU, DROPDOWN_MENU_LABEL, DROPDOWN_MENU_ITEM, DROPDOWN_MENU_FOOTER, CONTEXT_MENU, COMMAND, NAVBAR, SIDEBAR, MENUBAR, NAVIGATION_MENU;
 var init_navigation = __esm({
   "src/lib/recipes/navigation.ts"() {
     init_helpers();
@@ -11704,6 +11753,54 @@ var init_navigation = __esm({
         // The 2px accent bar of the selected item (`Stroke/focus`), on its bottom or left edge.
         part({ Indicator: TAB_MENU_INDICATORS }, (indicator) => ({
           indicator: { fill: c("border.accent"), ...indicator === "bottom" ? { height: "stroke.focus" } : { width: "stroke.focus" } }
+        }))
+      ]
+    };
+    NAV_ITEM_SIZES = TAB_MENU_SIZES;
+    NAV_ITEM_STATES = ["Default", "Hover", "Current", "Focused", "Disabled"];
+    NAV_ITEM = {
+      key: "NavItem",
+      slots: ["root", "iconLeading", "label", "badge", "iconTrailing"],
+      defaults: { Size: "default", State: "Default" },
+      parts: [
+        part({ Size: NAV_ITEM_SIZES }, tabMenuSizeSlots),
+        part({ State: NAV_ITEM_STATES }, (state2) => ({ root: tabMenuItemPaint(state2 === "Current" ? "Selected" : state2, false) }))
+      ]
+    };
+    BRAND_SIZES = ["default", "sm"];
+    BRAND = {
+      key: "Brand",
+      slots: ["root", "logo", "name", "version"],
+      defaults: { Size: "default" },
+      parts: [
+        part({ Size: BRAND_SIZES }, (size) => ({
+          root: { gap: "spacing.gap-control" },
+          name: { text: c("content.primary"), font: size === "sm" ? "type.heading-xs" : "type.heading-sm" }
+        }))
+      ]
+    };
+    ACCOUNT_MENU_TRIGGER_SIZES = ["default", "sm"];
+    ACCOUNT_MENU_TRIGGER_STATES = ["Default", "Hover", "Pressed", "Focused"];
+    ACCOUNT_MENU_TRIGGER = {
+      key: "AccountMenuTrigger",
+      slots: ["root", "avatar", "name", "iconTrailing"],
+      defaults: { Size: "default", State: "Default" },
+      parts: [
+        part({ Size: ACCOUNT_MENU_TRIGGER_SIZES }, (size) => ({
+          root: {
+            height: size === "sm" ? "size.sm" : "size.md",
+            radius: "radius.action",
+            paddingX: "spacing.inset-control",
+            paddingRight: "spacing.gap-tight",
+            paddingY: "spacing.none",
+            gap: "spacing.gap-control",
+            text: c("content.primary"),
+            font: "type.button"
+          },
+          iconTrailing: size === "sm" ? { width: "icon.small", height: "icon.small" } : { width: "icon.medium", height: "icon.medium" }
+        })),
+        part({ State: ACCOUNT_MENU_TRIGGER_STATES }, (state2) => ({
+          root: state2 === "Hover" ? { fill: c("action.ghost.hover") } : state2 === "Pressed" ? { fill: c("action.ghost.pressed") } : state2 === "Focused" ? { fill: NONE, focus: c("border.focus"), ring: c("border.ring.default") } : { fill: NONE }
         }))
       ]
     };
@@ -12985,6 +13082,8 @@ var init_motion2 = __esm({
       Pagination: { transitions: { cell: FILL } },
       TabMenuItem: { transitions: { root: FILL } },
       TabMenuLineItem: { transitions: { root: FILL } },
+      NavItem: { transitions: { root: FILL } },
+      AccountMenuTrigger: { transitions: { root: FILL } },
       SegmentedControlItem: { transitions: { root: FILL } },
       Sidebar: { transitions: { button: FILL } },
       Tabs: { transitions: { trigger: states("color", "background-color", "border-color", "box-shadow") } },
@@ -13155,6 +13254,9 @@ var init_componentRecipes = __esm({
       TabMenu: TAB_MENU,
       TabMenuItem: TAB_MENU_ITEM,
       TabMenuLineItem: TAB_MENU_LINE_ITEM,
+      NavItem: NAV_ITEM,
+      Brand: BRAND,
+      AccountMenuTrigger: ACCOUNT_MENU_TRIGGER,
       SegmentedControl: SEGMENTED_CONTROL,
       SegmentedControlItem: SEGMENTED_CONTROL_ITEM,
       Breadcrumb: BREADCRUMB,
@@ -15987,7 +16089,7 @@ var init_useDesignStore = __esm({
         }),
         {
           name: "scalable-designs-store",
-          version: 145,
+          version: 146,
           migrate: (persisted, version) => {
             if (persisted) {
               delete persisted.styleDirection;
@@ -17769,6 +17871,18 @@ var init_useDesignStore = __esm({
                 const sel = state2.selectedComponents;
                 const at = sel.indexOf("TabMenu");
                 if (at >= 0) sel.splice(at + 1, 0, ...["TabMenuItem", "TabMenuLineItem"].filter((k) => !sel.includes(k)));
+              };
+              add2(persisted);
+              if (Array.isArray(persisted.savedSystems)) {
+                for (const sys of persisted.savedSystems) add2(sys?.snapshot);
+              }
+            }
+            if (version < 146) {
+              const add2 = (state2) => {
+                if (!Array.isArray(state2?.selectedComponents)) return;
+                const sel = state2.selectedComponents;
+                const at = sel.indexOf("TabMenuLineItem");
+                if (at >= 0) sel.splice(at + 1, 0, ...["NavItem", "Brand", "AccountMenuTrigger"].filter((k) => !sel.includes(k)));
               };
               add2(persisted);
               if (Array.isArray(persisted.savedSystems)) {

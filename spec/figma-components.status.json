@@ -34,15 +34,6 @@
       "status": "part",
       "of": "RadioGroup"
     },
-    "NavItem": {
-      "status": "new"
-    },
-    "Brand": {
-      "status": "new"
-    },
-    "AccountMenuTrigger": {
-      "status": "new"
-    },
     "Sidebar": {
       "status": "rebuild"
     },

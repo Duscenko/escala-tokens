@@ -516,3 +516,12 @@ Source: the file's «AvatarGroup Prototype» (868:28472): four PHOTO avatars + t
 | A track rectangle and an indicator bar drawn ABSOLUTE inside the frames (1px `Border/subtle`; 2px `Border/accent`, only Selected) | Borders on the items would shift layout and double the line | Own elements: `TabMenu.track` (absolute, bottom or left, recipe gives its 1px) and `TabMenuLineItem.indicator` (rendered only when Selected, `Indicator` bottom → x0, h−2 / left → 2 × h); measured 0,39 323×1 and 0,38 79×2 / 0,0 2×40 |
 | A padding that does NOT change with Size (12 at sm and lg) | The usual ladder would have changed it | Copied: `spacing.inset-control` for all sizes; heights 32 · 40 · 48, icons 16 · 20 · 24 |
 | Plugin parity: the plugin's TabMenu documents `item` / `pill`, the rebuilt recipe has `content` / `track` | `anatomyGaps: TabMenu` | `WEB_ONLY_SLOTS` and `STALE_ANATOMY` (dated), never a plugin edit |
+
+# Lessons from the NavItem, Brand and AccountMenuTrigger (2026-11-13)
+| Trap | What it looked like | The fix (where it lives) |
+|---|---|---|
+| Three `new` ledger entries (no code, no old callers) on three separate pages | Nothing to migrate, but each still needs the whole checklist (recipe, component, catalogue, specimen, overview, snippet, sitemap, store migration, parity `WEB_ONLY`, registry file) | One file per component named after the key (`nav-item.tsx`, `brand.tsx`, `account-menu-trigger.tsx`; `FILE_OF` not needed); store v146 inserts the keys after `TabMenuLineItem`; one commit for the three |
+| NavItem is TabMenuItem with `Current` instead of `Selected` | A second copy of the paint table would drift | The recipe reuses `tabMenuSizeSlots` / `tabMenuItemPaint` and maps `Current` → `Selected`; the component writes `aria-current="page"` and `data-force-state="Current"` |
+| The AccountMenuTrigger avatar is a circle in Default and a rounded square (`Radius/control`) in Hover / Pressed / Focused (the file's own variants) | A CSS-only state cannot change a nested Avatar's `shape` | The trigger tracks pointer / `:focus-visible` in React and passes `shape` to the Avatar (`forceState` pins it for docs). Copied, reported |
+| A trigger whose padding is 12 left and 4 right | `paddingX` sets both | `paddingX` + the existing `paddingRight` recipe prop |
+| axe `label-content-name-mismatch` on a story that wraps Brand in `<a aria-label="Escala home">` | The visible text is «Escala v1.1» | The story's label contains the visible text (`Escala v1.1 home`) |

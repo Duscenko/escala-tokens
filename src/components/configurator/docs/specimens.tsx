@@ -27,7 +27,7 @@ import {
   SkeletonKbdSpecimen,
 } from './skeleton/indicators'
 import {
-  SkeletonTabsSpecimen, SkeletonTabMenuSpecimen, SkeletonTabMenuItemSpecimen, SkeletonTabMenuLineItemSpecimen, SkeletonSegmentedControlSpecimen, SkeletonSegmentedControlItemSpecimen, SkeletonBreadcrumbSpecimen, SkeletonBreadcrumbItemSpecimen, SkeletonBreadcrumbEllipsisSpecimen, SkeletonBreadcrumbSeparatorSpecimen,
+  SkeletonTabsSpecimen, SkeletonTabMenuSpecimen, SkeletonTabMenuItemSpecimen, SkeletonTabMenuLineItemSpecimen, SkeletonNavItemSpecimen, SkeletonBrandSpecimen, SkeletonAccountMenuTriggerSpecimen, SkeletonSegmentedControlSpecimen, SkeletonSegmentedControlItemSpecimen, SkeletonBreadcrumbSpecimen, SkeletonBreadcrumbItemSpecimen, SkeletonBreadcrumbEllipsisSpecimen, SkeletonBreadcrumbSeparatorSpecimen,
   SkeletonPaginationSpecimen, SkeletonStepperSpecimen, SkeletonDropdownMenuSpecimen, SkeletonDropdownMenuLabelSpecimen, SkeletonDropdownMenuItemSpecimen, SkeletonDropdownMenuFooterSpecimen, SkeletonContextMenuSpecimen,
   SkeletonCommandSpecimen, SkeletonNavbarSpecimen, SkeletonSidebarSpecimen,
   SkeletonMenubarSpecimen, SkeletonNavigationMenuSpecimen,
@@ -480,6 +480,9 @@ export const SPECIMENS: Record<string, (p: SpecimenProps) => ReactNode> = {
   TabMenu: SkeletonTabMenuSpecimen,
   TabMenuItem: SkeletonTabMenuItemSpecimen,
   TabMenuLineItem: SkeletonTabMenuLineItemSpecimen,
+  NavItem: SkeletonNavItemSpecimen,
+  Brand: SkeletonBrandSpecimen,
+  AccountMenuTrigger: SkeletonAccountMenuTriggerSpecimen,
   SegmentedControl: SkeletonSegmentedControlSpecimen,
   SegmentedControlItem: SkeletonSegmentedControlItemSpecimen,
   Breadcrumb: SkeletonBreadcrumbSpecimen,
