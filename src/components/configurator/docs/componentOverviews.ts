@@ -388,6 +388,8 @@ export const OVERVIEWS: Record<string, Overview> = {
     each('Size', ['sm', 'default'], {}, 800),
   ],
   Image: [each('Ratio', ['auto', '16:9', '4:3', '3:2', '1:1', '3:4']), each('Shape', ['square', 'rounded'])],
+  Popover: [each('Side', ['bottom', 'top', 'left', 'right'], {}, 340), each('Size', ['default', 'sm', 'lg'], {}, 380)],
+  PopoverFooter: [each('Layout', ['inline', 'stacked'], {}, 256), each('Size', ['default', 'sm', 'lg'], {}, 256)],
   Modal: [each('Size', ['default', 'lg'], {}, 640)],
   ModalHeader: [each('Align', ['horizontal', 'vertical-left', 'vertical-center'], {}, 440), each('Size', ['default', 'lg'], {}, 600)],
   ModalFooter: [each('Layout', ['inline', 'stacked'], {}, 480), each('Size', ['default', 'lg'], {}, 640)],

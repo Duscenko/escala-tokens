@@ -131,9 +131,10 @@ export const SKELETON_SNIPPETS: Record<string, Snippet> = {
     `import { AccordionItem } from "@/components/ui/accordion"\n\n<AccordionItem value="what"${v.Variant && v.Variant !== 'ghost-default' ? ` variant="${v.Variant}"` : ''}${v.State === 'Disabled' ? ' disabled' : ''} label="What is Escala?">\n  Escala is a design system…\n</AccordionItem>`,
   Image: (v) =>
     `import { Image } from "@/components/ui/image"\n\n<Image${v.Ratio && v.Ratio !== 'auto' ? ` ratio="${v.Ratio}"` : ''}${v.Shape === 'rounded' ? ' shape="rounded"' : ''} src={cover} alt="Team at the offsite" />`,
-  Popover: () =>
-    `import {\n  Popover, PopoverTrigger, PopoverContent, PopoverTitle, PopoverDescription,\n} from "@/components/ui/popover"\n\n<Popover>\n  <PopoverTrigger asChild><Button variant="outline">Share</Button></PopoverTrigger>\n  <PopoverContent>\n    <PopoverTitle>Share this system</PopoverTitle>\n    <PopoverDescription>Anyone with the link can view tokens and docs.</PopoverDescription>\n  </PopoverContent>\n</Popover>`,
-  Tooltip: () =>
+  Popover: (v) =>
+    `import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover"\n\n<Popover>\n  <PopoverTrigger asChild><Button>Share</Button></PopoverTrigger>\n  <PopoverContent${v.Size && v.Size !== 'default' ? ` size="${v.Size}"` : ''}${v.Side && v.Side !== 'bottom' ? ` side="${v.Side}"` : ''} title="Share this view" description="Anyone with the link can see the filters and columns you applied." />\n</Popover>`,
+  PopoverFooter: (v) =>
+    `import { PopoverFooter } from "@/components/ui/popover"\n\n<PopoverFooter${v.Size && v.Size !== 'default' ? ` size="${v.Size}"` : ''}${v.Layout === 'stacked' ? ' layout="stacked"' : ''} leading="Step 1 of 3">\n  <Button variant="secondary">Skip</Button>\n  <Button>Next</Button>\n</PopoverFooter>`,  Tooltip: () =>
     `import {\n  Tooltip, TooltipTrigger, TooltipContent, TooltipProvider,\n} from "@/components/ui/tooltip"\n\n<TooltipProvider>\n  <Tooltip>\n    <TooltipTrigger asChild><Button variant="ghost" size="icon-sm" aria-label="Copy"><Copy /></Button></TooltipTrigger>\n    <TooltipContent>Copy to clipboard</TooltipContent>\n  </Tooltip>\n</TooltipProvider>`,
   ScrollArea: () =>
     `import { ScrollArea, ScrollAreaRow } from "@/components/ui/scroll-area"\n\n<ScrollArea style={{ height: 150 }}>\n  {tokens.map((t) => <ScrollAreaRow key={t}>{t}</ScrollAreaRow>)}\n</ScrollArea>`,

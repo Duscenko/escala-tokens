@@ -5504,17 +5504,39 @@ var init_componentCatalogue = __esm({
         key: "Popover",
         label: "Popover",
         category: "Content & Surfaces",
-        description: "Anchored floating panel for rich contextual content \u2014 richer than a tooltip, lighter than a modal.",
-        usage: "Open on click, not hover. Keep one primary action inside at most.",
-        axes: [],
+        description: "Non-modal floating panel anchored to a trigger for rich, interactive content: optional media, a title, a description, a content slot and a footer.",
+        usage: "Open on click, not hover. Side is the trigger edge it opens from. Keep one primary action inside at most.",
+        axes: [
+          { name: "Size", values: ["default", "sm", "lg"] },
+          { name: "Side", values: ["bottom", "top", "left", "right"] }
+        ],
         figmaSets: ["Popover"],
         props: [
           { name: "Popover", type: "component", description: "Radix Popover root: open, defaultOpen, onOpenChange." },
           { name: "PopoverTrigger asChild", type: "boolean", description: "Use your own button as the anchor." },
-          { name: "PopoverContent align / sideOffset", type: '"start" | "center" | "end" / number', description: "Placement; it portals into the theme scope." },
-          { name: "PopoverTitle / PopoverDescription", type: "component", description: "Heading and body copy." }
+          { name: "size / side", type: "'default' | 'sm' | 'lg' / 'bottom' | 'top' | 'left' | 'right'", description: "Figma Size (320 \xB7 256 \xB7 360 wide) and Side (where the arrow sits)." },
+          { name: "title / description / media / footer", type: "ReactNode", description: "Figma Title, Description, Media and the PopoverFooter; children is the Content slot." },
+          { name: "arrow / showCloseButton", type: "boolean", description: "Figma ArrowVisible (default true) and CloseVisible (default false)." }
         ],
-        accessibility: "Trigger gets aria-haspopup + aria-expanded. Esc closes; focus returns to trigger."
+        accessibility: "Trigger gets aria-haspopup + aria-expanded. Escape or an outside click closes it and focus returns to the trigger. Label it with aria-labelledby on the title."
+      },
+      {
+        key: "PopoverFooter",
+        label: "Popover Footer",
+        category: "Content & Surfaces",
+        description: "Action row below the Popover body, divided by a Border/subtle rule: status text and buttons.",
+        usage: "Inline puts the text first and the buttons at the end; stacked gives full-width buttons. Size follows the Popover.",
+        axes: [
+          { name: "Size", values: ["default", "sm", "lg"] },
+          { name: "Layout", values: ["inline", "stacked"] }
+        ],
+        figmaSets: ["PopoverFooter"],
+        props: [
+          { name: "children", type: "ReactNode", description: "The Actions slot." },
+          { name: "leading / leadingVisible", type: "ReactNode / boolean", description: "Status text that fills the row (default visible)." },
+          { name: "layout", type: "'inline' | 'stacked'", description: "Figma Layout." }
+        ],
+        accessibility: "Buttons keep their own focus order; the leading text is plain copy."
       },
       {
         key: "HoverCard",
@@ -10780,7 +10802,7 @@ function accordionItemShell(variant, state2) {
       return { fill: NONE };
   }
 }
-var CARD, OVERLAY_TITLE, MODAL_SIZES, MODAL, MODAL_HEADER, MODAL_FOOTER, SEPARATOR, ACCORDION_VARIANTS, ACCORDION_ITEM_STATES, ACCORDION, ACCORDION_ITEM, IMAGE_RATIOS, IMAGE_SHAPES, IMAGE, POPOVER, TIP, TOOLTIP, SCROLL_AREA, COLLAPSIBLE, ALERT_DIALOG, SHEET, DRAWER, HOVER_CARD, ITEM_VARIANTS, ITEM_SIZES, ITEM_GEOMETRY2, ITEM_DESCRIPTION, ITEM_CONTENT_GAP, ITEM_MEDIA, ITEM, ATTACHMENT_SIZES, ATTACHMENT_GEOMETRY, ATTACHMENT_MEDIA, ATTACHMENT, MESSAGE, BUBBLE_VARIANTS, BUBBLE_PAINT, BUBBLE, RESIZABLE, CAROUSEL, CHART;
+var CARD, OVERLAY_TITLE, MODAL_SIZES, MODAL, MODAL_HEADER, MODAL_FOOTER, SEPARATOR, ACCORDION_VARIANTS, ACCORDION_ITEM_STATES, ACCORDION, ACCORDION_ITEM, IMAGE_RATIOS, IMAGE_SHAPES, IMAGE, POPOVER_SIZES, POPOVER, POPOVER_FOOTER, TIP, TOOLTIP, SCROLL_AREA, COLLAPSIBLE, ALERT_DIALOG, SHEET, DRAWER, HOVER_CARD, ITEM_VARIANTS, ITEM_SIZES, ITEM_GEOMETRY2, ITEM_DESCRIPTION, ITEM_CONTENT_GAP, ITEM_MEDIA, ITEM, ATTACHMENT_SIZES, ATTACHMENT_GEOMETRY, ATTACHMENT_MEDIA, ATTACHMENT, MESSAGE, BUBBLE_VARIANTS, BUBBLE_PAINT, BUBBLE, RESIZABLE, CAROUSEL, CHART;
 var init_surfaces = __esm({
   "src/lib/recipes/surfaces.ts"() {
     init_helpers();
@@ -10931,26 +10953,49 @@ var init_surfaces = __esm({
         part({ Shape: IMAGE_SHAPES }, (shape) => ({ root: { radius: shape === "square" ? "radius.none" : "radius.container" } }))
       ]
     };
+    POPOVER_SIZES = ["default", "sm", "lg"];
     POPOVER = {
       key: "Popover",
-      slots: ["root", "title", "body", "arrow"],
-      defaults: {},
+      slots: ["root", "panel", "arrow", "media", "body", "header", "title", "description", "content", "close"],
+      defaults: { Size: "default", Side: "bottom" },
+      parts: [
+        part({}, () => ({
+          panel: { fill: c("surface.layer-2"), stroke: c("border.default"), strokeWidth: "stroke.divider", radius: "radius.overlay" },
+          arrow: { paint: c("surface.layer-2"), text: c("border.default") },
+          header: { gap: "spacing.gap-tight" },
+          title: { text: c("content.primary") },
+          description: { text: c("content.secondary") },
+          content: { text: c("content.secondary"), font: "type.body-sm" }
+        })),
+        part({ Size: POPOVER_SIZES }, (size) => ({
+          // 320 = 128 + 128 + 64; 256 = 128 + 128; 360 = 128 + 128 + 96 + 8 (the file's widths have no variable).
+          panel: {
+            width: size === "sm" ? "spacing.32+spacing.32" : size === "lg" ? "spacing.32+spacing.32+spacing.24+spacing.2" : "spacing.32+spacing.32+spacing.16",
+            lift: size === "lg" ? "popover-lg" : "popover-md"
+          },
+          media: { height: "spacing.32+spacing.4" },
+          body: size === "sm" ? { paddingX: "spacing.inset-control", paddingY: "spacing.inset-control", gap: "spacing.gap-control" } : { paddingX: "spacing.inset-surface", paddingY: "spacing.inset-surface", gap: size === "lg" ? "spacing.gap-group" : "spacing.gap-control" },
+          title: { font: size === "sm" ? "type.heading-2xs" : size === "lg" ? "type.heading-sm" : "type.heading-xs" },
+          description: { font: size === "lg" ? "type.body-md" : "type.body-sm" },
+          content: { gap: size === "lg" ? "spacing.gap-group" : "spacing.gap-control", font: size === "lg" ? "type.body-md" : "type.body-sm" }
+        }))
+      ]
+    };
+    POPOVER_FOOTER = {
+      key: "PopoverFooter",
+      slots: ["root", "leading", "actions"],
+      defaults: { Size: "default", Layout: "inline" },
       parts: [
         part({}, () => ({
           root: {
-            fill: c("surface.layer-2"),
+            paddingX: "spacing.gap-control",
+            paddingY: "spacing.gap-control",
+            gap: "spacing.gap-control",
             stroke: c("border.subtle"),
-            strokeWidth: "stroke.control",
-            radius: "radius.overlay",
-            shadow: "shadow.xl",
-            paddingX: "spacing.4",
-            paddingY: "spacing.4",
-            gap: "spacing.1_5",
-            text: c("content.primary")
+            strokeTopWidth: "stroke.divider"
           },
-          title: { text: c("content.primary"), font: OVERLAY_TITLE },
-          body: { text: c("content.secondary"), font: "type.body-sm" },
-          arrow: { paint: c("surface.layer-2") }
+          leading: { gap: "spacing.gap-tight", text: c("content.secondary"), font: "type.caption" },
+          actions: { gap: "spacing.gap-control" }
         }))
       ]
     };
@@ -12657,6 +12702,7 @@ var init_componentRecipes = __esm({
       AccordionItem: ACCORDION_ITEM,
       Image: IMAGE,
       Popover: POPOVER,
+      PopoverFooter: POPOVER_FOOTER,
       Tooltip: TOOLTIP,
       ScrollArea: SCROLL_AREA,
       Alert: ALERT,
@@ -15489,7 +15535,7 @@ var init_useDesignStore = __esm({
         }),
         {
           name: "scalable-designs-store",
-          version: 140,
+          version: 141,
           migrate: (persisted, version) => {
             if (persisted) {
               delete persisted.styleDirection;
@@ -17213,6 +17259,18 @@ var init_useDesignStore = __esm({
               rename(persisted);
               if (Array.isArray(persisted.savedSystems)) {
                 for (const sys of persisted.savedSystems) rename(sys?.snapshot);
+              }
+            }
+            if (version < 141) {
+              const add2 = (state2) => {
+                if (!Array.isArray(state2?.selectedComponents)) return;
+                const sel = state2.selectedComponents;
+                const at = sel.indexOf("Popover");
+                if (at >= 0 && !sel.includes("PopoverFooter")) sel.splice(at + 1, 0, "PopoverFooter");
+              };
+              add2(persisted);
+              if (Array.isArray(persisted.savedSystems)) {
+                for (const sys of persisted.savedSystems) add2(sys?.snapshot);
               }
             }
             return persisted;

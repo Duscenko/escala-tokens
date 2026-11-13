@@ -207,21 +207,57 @@ export const IMAGE: ComponentRecipe = {
   ],
 }
 
-// ── Popover ────────────────────────────────────────────────────────────────
+// ── Popover, PopoverFooter ─────────────────────────────────────────────────
+// The Figma sets (design-plans/popover-contract.md; Popover 973:364, PopoverFooter 972:279). `root` is the transparent wrapper
+// that holds the 8px arrow frame and the `panel` (320 / 256 / 360 wide, Radius/overlay, Surface/layer-2, a 1px Border/default
+// edge, Shadow/md · md · lg: the panel clips, so the ring and spreads paint). The body pads 20 / 12 / 20.
+
+export const POPOVER_SIZES = ['default', 'sm', 'lg'] as const
+export const POPOVER_SIDES = ['bottom', 'top', 'left', 'right'] as const
+export const POPOVER_FOOTER_LAYOUTS = ['inline', 'stacked'] as const
 
 export const POPOVER: ComponentRecipe = {
   key: 'Popover',
-  slots: ['root', 'title', 'body', 'arrow'],
-  defaults: {},
+  slots: ['root', 'panel', 'arrow', 'media', 'body', 'header', 'title', 'description', 'content', 'close'],
+  defaults: { Size: 'default', Side: 'bottom' },
+  parts: [
+    part({}, () => ({
+      panel: { fill: c('surface.layer-2'), stroke: c('border.default'), strokeWidth: 'stroke.divider', radius: 'radius.overlay' },
+      arrow: { paint: c('surface.layer-2'), text: c('border.default') },
+      header: { gap: 'spacing.gap-tight' },
+      title: { text: c('content.primary') },
+      description: { text: c('content.secondary') },
+      content: { text: c('content.secondary'), font: 'type.body-sm' },
+    })),
+    part({ Size: POPOVER_SIZES }, (size) => ({
+      // 320 = 128 + 128 + 64; 256 = 128 + 128; 360 = 128 + 128 + 96 + 8 (the file's widths have no variable).
+      panel: {
+        width: size === 'sm' ? 'spacing.32+spacing.32' : size === 'lg' ? 'spacing.32+spacing.32+spacing.24+spacing.2' : 'spacing.32+spacing.32+spacing.16',
+        lift: size === 'lg' ? 'popover-lg' : 'popover-md',
+      },
+      media: { height: 'spacing.32+spacing.4' },
+      body: size === 'sm'
+        ? { paddingX: 'spacing.inset-control', paddingY: 'spacing.inset-control', gap: 'spacing.gap-control' }
+        : { paddingX: 'spacing.inset-surface', paddingY: 'spacing.inset-surface', gap: size === 'lg' ? 'spacing.gap-group' : 'spacing.gap-control' },
+      title: { font: size === 'sm' ? 'type.heading-2xs' : size === 'lg' ? 'type.heading-sm' : 'type.heading-xs' },
+      description: { font: size === 'lg' ? 'type.body-md' : 'type.body-sm' },
+      content: { gap: size === 'lg' ? 'spacing.gap-group' : 'spacing.gap-control', font: size === 'lg' ? 'type.body-md' : 'type.body-sm' },
+    })),
+  ],
+}
+
+export const POPOVER_FOOTER: ComponentRecipe = {
+  key: 'PopoverFooter',
+  slots: ['root', 'leading', 'actions'],
+  defaults: { Size: 'default', Layout: 'inline' },
   parts: [
     part({}, () => ({
       root: {
-        fill: c('surface.layer-2'), stroke: c('border.subtle'), strokeWidth: 'stroke.control', radius: 'radius.overlay',
-        shadow: 'shadow.xl', paddingX: 'spacing.4', paddingY: 'spacing.4', gap: 'spacing.1_5', text: c('content.primary'),
+        paddingX: 'spacing.gap-control', paddingY: 'spacing.gap-control', gap: 'spacing.gap-control',
+        stroke: c('border.subtle'), strokeTopWidth: 'stroke.divider',
       },
-      title: { text: c('content.primary'), font: OVERLAY_TITLE },
-      body: { text: c('content.secondary'), font: 'type.body-sm' },
-      arrow: { paint: c('surface.layer-2') },
+      leading: { gap: 'spacing.gap-tight', text: c('content.secondary'), font: 'type.caption' },
+      actions: { gap: 'spacing.gap-control' },
     })),
   ],
 }

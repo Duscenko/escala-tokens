@@ -44,7 +44,7 @@ import {
 } from './skeleton/forms'
 import {
   SkeletonCardSpecimen, SkeletonModalSpecimen, SkeletonModalHeaderSpecimen, SkeletonModalFooterSpecimen, SkeletonSeparatorSpecimen, SkeletonAccordionSpecimen, SkeletonAccordionItemSpecimen, SkeletonTableCellSpecimen, SkeletonTableHeadSpecimen, SkeletonTableMediaCellSpecimen, SkeletonTableTrendCellSpecimen, SkeletonTableResizerSpecimen, SkeletonTableRowSpecimen, SkeletonTableHeaderSpecimen, SkeletonTableFooterSpecimen, SkeletonTableCaptionSpecimen, SkeletonTableDropIndicatorSpecimen, SkeletonTableEmptySpecimen, SkeletonTableLoadingSpecimen, SkeletonTableLoadMoreSpecimen,
-  SkeletonImageSpecimen, SkeletonPopoverSpecimen, SkeletonTooltipSpecimen,
+  SkeletonImageSpecimen, SkeletonPopoverSpecimen, SkeletonPopoverFooterSpecimen, SkeletonTooltipSpecimen,
   SkeletonScrollAreaSpecimen, SkeletonAlertSpecimen, SkeletonToastSpecimen,
   SkeletonCollapsibleSpecimen, SkeletonTableSpecimen, SkeletonSkeletonSpecimen, SkeletonEmptySpecimen,
   SkeletonAlertDialogSpecimen, SkeletonSheetSpecimen, SkeletonDrawerSpecimen, SkeletonHoverCardSpecimen, SkeletonItemSpecimen,
@@ -466,6 +466,7 @@ export const SPECIMENS: Record<string, (p: SpecimenProps) => ReactNode> = {
   ModalHeader: SkeletonModalHeaderSpecimen,
   ModalFooter: SkeletonModalFooterSpecimen,
   Popover: SkeletonPopoverSpecimen,
+  PopoverFooter: SkeletonPopoverFooterSpecimen,
   Tooltip: SkeletonTooltipSpecimen,
   ScrollArea: SkeletonScrollAreaSpecimen,
   // Feedback

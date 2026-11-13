@@ -68,6 +68,9 @@ const LIFT: Record<string, (key: string, ambient: string, ring: string) => strin
   pressed: (k, a) => [`0 4px 6px ${k}`, `0 2px 4px ${a}`],
   // The Modal's Shadow/xl: the frame CLIPS its content, so Figma paints the ring and the negative spreads.
   modal: (k, a, r) => [`0 0 0 1px ${r}`, `0 20px 24px -4px ${k}`, `0 8px 8px -4px ${a}`],
+  // The Popover's Shadow/md and Shadow/lg (the panel clips, so ring and spreads paint).
+  'popover-md': (k, a, r) => [`0 0 0 1px ${r}`, `0 4px 6px -1px ${k}`, `0 2px 4px -2px ${a}`],
+  'popover-lg': (k, a, r) => [`0 0 0 1px ${r}`, `0 12px 16px -4px ${k}`, `0 4px 6px -2px ${a}`],
   // The Chip being dragged: Shadow/sm without its spreads (Figma paints none on a frame that does not clip).
   drag: (k, a) => [`0 1px 3px ${k}`, `0 1px 2px ${a}`],
 }

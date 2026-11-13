@@ -12,7 +12,7 @@ import { Modal as SkModal, ModalContent as SkModalContent, ModalHeader as SkModa
 import { Separator as SkSeparator } from '../../../escala-ui/separator'
 import { Accordion as SkAccordion, AccordionItem as SkAccordionItem, type AccordionVariant, type AccordionItemState } from '../../../escala-ui/accordion'
 import { Image as SkImage, type ImageRatio, type ImageShape } from '../../../escala-ui/image'
-import { Popover as SkPopover, PopoverContent as SkPopoverContent, PopoverDescription as SkPopoverDescription, PopoverTitle as SkPopoverTitle } from '../../../escala-ui/popover'
+import { Popover as SkPopover, PopoverContent as SkPopoverContent, PopoverFooter as SkPopoverFooter, type PopoverSize, type PopoverSide, type PopoverFooterLayout } from '../../../escala-ui/popover'
 import { Tooltip as SkTooltip, TooltipContent as SkTooltipContent, TooltipProvider as SkTooltipProvider } from '../../../escala-ui/tooltip'
 import { ScrollArea as SkScrollArea, ScrollAreaRow as SkScrollAreaRow } from '../../../escala-ui/scroll-area'
 import { iconOf, spaceOf } from '../../../../lib/previewTokens'
@@ -166,18 +166,43 @@ export function SkeletonImageSpecimen({ t, v }: SpecimenProps) {
   )
 }
 
-export function SkeletonPopoverSpecimen({ t }: SpecimenProps) {
+const POPOVER_DESC = 'Anyone with the link can see the filters and columns you applied.'
+
+function popoverFooterButtons(size: PopoverSize, layout: PopoverFooterLayout) {
+  // Popover sm → Button xs, default → sm, lg → default (the file's footer buttons).
+  const btn = size === 'sm' ? 'xs' : size === 'lg' ? 'default' : 'sm'
+  const skip = <SkButton key="skip" variant="secondary" appearance="solid" size={btn}>Skip</SkButton>
+  const next = <SkButton key="next" variant="default" appearance="solid" size={btn}>Next</SkButton>
+  return [skip, next]
+}
+
+/** The Figma Popover (973:364) in place: arrow, title, description, optional footer / close / media. */
+export function SkeletonPopoverSpecimen({ t, v }: SpecimenProps) {
+  const size = (v.Size ?? 'default') as PopoverSize
   return (
     <RecipeScope t={t}>
-      <div className="flex flex-col items-center" style={{ gap: 'var(--spacing-2)' }}>
-        <SkPopover>
-          <SkPopoverContent inline style={{ width: 260 }}>
-            <SkPopoverTitle>Share this system</SkPopoverTitle>
-            <SkPopoverDescription>Anyone with the link can view tokens and docs.</SkPopoverDescription>
-            <SkButton size="sm" style={{ alignSelf: 'flex-start', marginTop: 'var(--spacing-1)' }}>Copy link</SkButton>
-          </SkPopoverContent>
-        </SkPopover>
-        <SkButton variant="outline" size="sm" style={{ marginTop: 'var(--spacing-1_5)' }}>Share</SkButton>
+      <SkPopover>
+        <SkPopoverContent
+          inline
+          size={size}
+          side={(v.Side ?? 'bottom') as PopoverSide}
+          title="Share this view"
+          description={POPOVER_DESC}
+          closeIcon={<PreviewIcon concept="close" size={size === 'lg' ? 16 : 12} />}
+        />
+      </SkPopover>
+    </RecipeScope>
+  )
+}
+
+/** The Figma PopoverFooter (972:279) on its own, 256 wide. */
+export function SkeletonPopoverFooterSpecimen({ t, v }: SpecimenProps) {
+  const size = (v.Size ?? 'default') as PopoverSize
+  const layout = (v.Layout ?? 'inline') as PopoverFooterLayout
+  return (
+    <RecipeScope t={t}>
+      <div style={{ width: 256 }}>
+        <SkPopoverFooter size={size} layout={layout} leading="Step 1 of 3">{popoverFooterButtons(size, layout)}</SkPopoverFooter>
       </div>
     </RecipeScope>
   )

@@ -2058,7 +2058,7 @@ export const useDesignStore = create<DesignStore>()(
     }),
     {
       name: 'scalable-designs-store',
-      version: 140,
+      version: 141,
       migrate: (persisted: any, version: number) => {
         if (persisted) {
           // v1→v2: remove styleDirection, rename selectedAtoms → selectedComponents
@@ -4298,6 +4298,19 @@ export const useDesignStore = create<DesignStore>()(
           rename(persisted)
           if (Array.isArray(persisted.savedSystems)) {
             for (const sys of persisted.savedSystems) rename(sys?.snapshot)
+          }
+        }
+        if (version < 141) {
+          // v140→v141: Popover gains its part PopoverFooter (the Figma set).
+          const add = (state: any) => {
+            if (!Array.isArray(state?.selectedComponents)) return
+            const sel: string[] = state.selectedComponents
+            const at = sel.indexOf('Popover')
+            if (at >= 0 && !sel.includes('PopoverFooter')) sel.splice(at + 1, 0, 'PopoverFooter')
+          }
+          add(persisted)
+          if (Array.isArray(persisted.savedSystems)) {
+            for (const sys of persisted.savedSystems) add(sys?.snapshot)
           }
         }
         return persisted

@@ -34,13 +34,6 @@
       "status": "part",
       "of": "RadioGroup"
     },
-    "Popover": {
-      "status": "rebuild"
-    },
-    "PopoverFooter": {
-      "status": "part",
-      "of": "Popover"
-    },
     "DropdownMenu": {
       "status": "rebuild"
     },
