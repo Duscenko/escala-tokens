@@ -7,11 +7,11 @@ Plan: "Escala Reuse & Composition Audit — Nov 2026".
 Legend: `- [ ]` todo · `- [x]` done (append commit hash) · `- [!]` blocked (append reason; the loop stops)
 
 ## Project commands (filled in by the first iteration, do not guess)
-- lint: 
-- typecheck: 
-- test: 
-- storybook build: 
-- web build: 
+- lint: `npm run lint`
+- typecheck: `npx tsc -b` and `npm run typecheck:storybook`
+- test: `npm test`
+- storybook build: `npm run build-storybook`
+- web build: `npm run build`
 
 ## Phase A — shared foundations (code twins of Figma decisions)
 - [ ] A1 Create `src/lib/icons.ts`: one module that exports every glyph used by `escala-ui` (Phosphor, same names as Figma `icon/*`, loading = `SpinnerGap`). Replace the check path inlined in checkbox, combobox, dropdown-menu, password-strength, stepper, switch.
