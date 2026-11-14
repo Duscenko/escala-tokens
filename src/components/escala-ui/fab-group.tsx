@@ -10,6 +10,7 @@
 // Figma set has it — there is no per-trigger or per-item styling axis to expose.
 import * as React from 'react'
 import { cn } from '../../lib/utils'
+import { glyph } from '../../lib/icons'
 import { FABButton } from './fab-button'
 
 export const FAB_GROUP_LAYOUTS = ['stack', 'fan-center', 'fan-left', 'fan-right'] as const
@@ -43,18 +44,14 @@ export interface FABGroupProps extends Omit<React.HTMLAttributes<HTMLDivElement>
 /** Phosphor `plus` (regular) — the trigger's closed glyph. */
 function PlusGlyph() {
   return (
-    <svg viewBox="0 0 256 256" fill="currentColor" aria-hidden focusable="false">
-      <path d="M224,128a8,8,0,0,1-8,8H136v80a8,8,0,0,1-16,0V136H40a8,8,0,0,1,0-16h80V40a8,8,0,0,1,16,0v80h80A8,8,0,0,1,224,128Z" />
-    </svg>
+    glyph('plus')
   )
 }
 
 /** Phosphor `x` (regular) — the trigger's open glyph. */
 function XGlyph() {
   return (
-    <svg viewBox="0 0 256 256" fill="currentColor" aria-hidden focusable="false">
-      <path d="M205.66,194.34a8,8,0,0,1-11.32,11.32L128,139.31,61.66,205.66a8,8,0,0,1-11.32-11.32L116.69,128,50.34,61.66A8,8,0,0,1,61.66,50.34L128,116.69l66.34-66.35a8,8,0,0,1,11.32,11.32L139.31,128Z" />
-    </svg>
+    glyph('close')
   )
 }
 

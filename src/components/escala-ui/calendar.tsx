@@ -38,6 +38,7 @@
 // (default · sm, the only axis). Labels and handlers are code. Paint: the CalendarFooter recipe + Button.
 import * as React from 'react'
 import { cn } from '../../lib/utils'
+import { glyph } from '../../lib/icons'
 import { Button } from './button'
 
 export const CALENDAR_DAY_SIZES = ['default', 'sm'] as const
@@ -107,13 +108,6 @@ export type CalendarHeaderSize = (typeof CALENDAR_HEADER_SIZES)[number]
 export const CALENDAR_HEADER_HEADERS = ['single', 'multiple', 'plain'] as const
 export type CalendarHeaderHeader = (typeof CALENDAR_HEADER_HEADERS)[number]
 
-function CaretGlyph({ d }: { d: string }) {
-  return <svg viewBox="0 0 256 256" fill="currentColor" aria-hidden focusable="false" className="size-full"><path d={d} /></svg>
-}
-// Phosphor caret-left · caret-right · caret-down (regular), the file's icon/chevron-*.
-const CARET_LEFT = 'M165.66,202.34a8,8,0,0,1-11.32,11.32l-80-80a8,8,0,0,1,0-11.32l80-80a8,8,0,0,1,11.32,11.32L91.31,128Z'
-const CARET_RIGHT = 'M181.66,133.66l-80,80a8,8,0,0,1-11.32-11.32L164.69,128,90.34,53.66a8,8,0,0,1,11.32-11.32l80,80A8,8,0,0,1,181.66,133.66Z'
-const CARET_DOWN = 'M213.66,101.66l-80,80a8,8,0,0,1-11.32,0l-80-80A8,8,0,0,1,53.66,90.34L128,164.69l74.34-74.35a8,8,0,0,1,11.32,11.32Z'
 
 export interface CalendarHeaderProps extends Omit<React.ComponentProps<'div'>, 'children'> {
   size?: CalendarHeaderSize
@@ -140,7 +134,7 @@ function CalendarHeader({
   const chip = (name: string, text: React.ReactNode, onClick?: () => void) => (
     <button type="button" data-part="CalendarHeader.chip" data-chip={name} onClick={onClick} className="inline-flex cursor-pointer items-center border-0 bg-transparent outline-none">
       <span data-part="CalendarHeader.label">{text}</span>
-      <span data-part="CalendarHeader.chevron" aria-hidden className="inline-flex shrink-0"><CaretGlyph d={CARET_DOWN} /></span>
+      <span data-part="CalendarHeader.chevron" aria-hidden className="inline-flex shrink-0">{glyph('chevron-down', { className: 'size-full' })}</span>
     </button>
   )
   return (
@@ -153,7 +147,7 @@ function CalendarHeader({
       {...props}
     >
       <button type="button" aria-label="Previous month" data-part="CalendarHeader.nav" onClick={onPreviousMonth} className="inline-flex shrink-0 cursor-pointer items-center justify-center bg-transparent p-0 outline-none">
-        <span data-part="CalendarHeader.navIcon" className="inline-flex"><CaretGlyph d={CARET_LEFT} /></span>
+        <span data-part="CalendarHeader.navIcon" className="inline-flex">{glyph('caret-left', { className: 'size-full' })}</span>
       </button>
       <div data-part="CalendarHeader.title" className="flex items-center">
         {header === 'single' && chip('month-year', label, onLabelClick)}
@@ -161,7 +155,7 @@ function CalendarHeader({
         {header === 'plain' && <span data-part="CalendarHeader.label">{label}</span>}
       </div>
       <button type="button" aria-label="Next month" data-part="CalendarHeader.nav" onClick={onNextMonth} className="inline-flex shrink-0 cursor-pointer items-center justify-center bg-transparent p-0 outline-none">
-        <span data-part="CalendarHeader.navIcon" className="inline-flex"><CaretGlyph d={CARET_RIGHT} /></span>
+        <span data-part="CalendarHeader.navIcon" className="inline-flex">{glyph('caret-right', { className: 'size-full' })}</span>
       </button>
     </div>
   )
