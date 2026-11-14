@@ -25,7 +25,7 @@ Legend: `- [ ]` todo · `- [x]` done (append commit hash) · `- [!]` blocked (ap
 
 ## Phase C — parity gaps
 - [x] C1 Rebuild Sidebar from the Figma contract (Sidebar, SidebarGroup, SidebarGroupLabel, SidebarMenuButton with `collapsed`, `trend`, Badge in `trailing`, SidebarBrand). Button radius `radius.control`, padding through roles. Stories for each part. (89772e5)
-- [ ] C2 Add the missing RadioGroup story.
+- [x] C2 Add the missing RadioGroup story. (f7c453d)
 - [ ] C3 Command: render shortcuts with `Kbd`, not a local `kbd`.
 
 ## Phase D — legacy and guardrails
