@@ -17,7 +17,7 @@
 import { c, NONE, type SlotMap, type SlotProps } from './helpers.js'
 
 export const LIST_ITEM_SIZES = ['sm', 'default', 'lg'] as const
-export const LIST_ITEM_STATES = ['Default', 'Focused', 'Selected', 'Disabled'] as const
+export const LIST_ITEM_STATES = ['Default', 'Hover', 'Focused', 'Selected', 'Disabled'] as const
 export const LIST_ITEM_VARIANTS = ['default', 'destructive'] as const
 
 export interface ListItemMetrics {
@@ -58,6 +58,9 @@ export function listItemHighlightFill(variant: string = 'default'): SlotProps {
 export function listItemRootPaint(state: string, variant: string = 'default', metrics?: ListItemMetrics): SlotProps {
   const h = highlight(variant)
   switch (state) {
+    case 'Hover':
+      // The fill alone: a pointer over a row never draws the ring.
+      return { fill: h.fill }
     case 'Focused':
       return metrics?.edge
         ? { fill: h.fill, stroke: h.focus, halo: h.ring }

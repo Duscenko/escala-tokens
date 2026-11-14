@@ -217,7 +217,7 @@ export const OVERVIEWS: Record<string, Overview> = {
   ],
   ComboboxPopover: [each('Content', ['list', 'grouped', 'empty'], {}, 280)],
   ComboboxItem: [
-    each('State', ['Default', 'Focused', 'Selected', 'Disabled'], {}, 256),
+    each('State', ['Default', 'Hover', 'Focused', 'Selected', 'Disabled'], {}, 256),
     each('Size', ['sm', 'default', 'lg'], { State: 'Selected' }, 256),
   ],
   ComboboxGroupLabel: [each('Size', ['sm', 'default', 'lg'], {}, 256)],
@@ -394,7 +394,7 @@ export const OVERVIEWS: Record<string, Overview> = {
   PopoverFooter: [each('Layout', ['inline', 'stacked'], {}, 256), each('Size', ['default', 'sm', 'lg'], {}, 256)],
   DropdownMenu: [each('Size', ['default', 'sm', 'lg'], {}, 256)],
   DropdownMenuLabel: [each('Size', ['default', 'sm', 'lg'], {}, 256)],
-  DropdownMenuItem: [each('State', ['Default', 'Focused', 'Selected', 'Disabled'], {}, 256), each('State', ['Default', 'Focused', 'Disabled'], { Variant: 'destructive' }, 256), each('Size', ['default', 'sm', 'lg'], {}, 256)],
+  DropdownMenuItem: [each('State', ['Default', 'Hover', 'Focused', 'Selected', 'Disabled'], {}, 256), each('State', ['Default', 'Hover', 'Focused', 'Disabled'], { Variant: 'destructive' }, 256), each('Size', ['default', 'sm', 'lg'], {}, 256)],
   DropdownMenuFooter: [each('Layout', ['inline', 'stacked'], {}, 256), each('Size', ['default', 'sm', 'lg'], {}, 256)],
   TabMenu: [each('Variant', ['horizontal-line', 'horizontal-button'], {}, 360), each('Variant', ['vertical-line', 'vertical-button'], {}, 240), each('Size', ['default', 'sm', 'lg'], {}, 360)],
   TabMenuItem: [each('State', ['Default', 'Hover', 'Focused', 'Selected', 'Disabled']), each('Size', ['default', 'sm', 'lg'])],

@@ -4660,7 +4660,7 @@ var init_componentCatalogue = __esm({
         usage: "Used by Combobox and ComboboxPopover. Keep labels short; put detail in the description.",
         axes: [
           { name: "Size", values: ["sm", "default", "lg"] },
-          { name: "State", values: ["Default", "Focused", "Selected", "Disabled"] }
+          { name: "State", values: ["Default", "Hover", "Focused", "Selected", "Disabled"] }
         ],
         figmaSets: ["ComboboxItem"],
         props: [
@@ -6467,7 +6467,7 @@ var init_componentCatalogue = __esm({
         usage: "One command per row. Put irreversible commands last as a destructive variant.",
         axes: [
           { name: "Size", values: ["default", "sm", "lg"] },
-          { name: "State", values: ["Default", "Focused", "Selected", "Disabled"] },
+          { name: "State", values: ["Default", "Hover", "Focused", "Selected", "Disabled"] },
           { name: "Variant", values: ["default", "destructive"] }
         ],
         figmaSets: ["DropdownMenuItem"],
@@ -9966,6 +9966,8 @@ function listItemHighlightFill(variant = "default") {
 function listItemRootPaint(state2, variant = "default", metrics) {
   const h = highlight(variant);
   switch (state2) {
+    case "Hover":
+      return { fill: h.fill };
     case "Focused":
       return metrics?.edge ? { fill: h.fill, stroke: h.focus, halo: h.ring } : { fill: h.fill, focus: h.focus, ring: h.ring };
     case "Selected":
@@ -10661,7 +10663,7 @@ var init_forms = __esm({
     COMBOBOX_SIZES = ["sm", "default", "lg"];
     COMBOBOX_STATES = ["Default", "Hover", "Focused", "Open", "Invalid", "Disabled", "Loading"];
     COMBOBOX_SHAPES = ["rounded", "pill"];
-    COMBOBOX_ITEM_STATES = ["Default", "Focused", "Selected", "Disabled"];
+    COMBOBOX_ITEM_STATES = ["Default", "Hover", "Focused", "Selected", "Disabled"];
     COMBO_TRIGGER = {
       sm: { h: "size.compact", padX: "spacing.gap-control", gap: "spacing.1_5", icon: "spacing.3+spacing.0_5", font: "type.caption" },
       default: { h: "size.control", padX: "spacing.2_5", gap: "spacing.1_5", icon: "icon.small", font: "type.body-sm" },
@@ -12183,7 +12185,7 @@ var init_navigation = __esm({
       ]
     };
     DROPDOWN_SIZES = ["default", "sm", "lg"];
-    DROPDOWN_ITEM_STATES = ["Default", "Focused", "Selected", "Disabled"];
+    DROPDOWN_ITEM_STATES = ["Default", "Hover", "Focused", "Selected", "Disabled"];
     DROPDOWN_ITEM_VARIANTS = ["default", "destructive"];
     DROPDOWN_MENU = {
       key: "DropdownMenu",
@@ -12353,13 +12355,9 @@ var init_navigation = __esm({
       parts: [
         // Paint and geometry: the shared list row. Hover is the highlight fill; Current is the Selected paint.
         part({ Size: SIDEBAR_SIZES, State: SIDEBAR_MENU_BUTTON_STATES }, (size, state2) => {
-          const base = listItemRecipe(size, state2 === "Current" ? "Selected" : state2 === "Hover" ? "Default" : state2, "default");
+          const base = listItemRecipe(size, state2 === "Current" ? "Selected" : state2, "default");
           const g = LIST_ITEM_METRICS[size];
-          return {
-            ...base,
-            root: state2 === "Hover" ? { ...base.root, ...listItemHighlightFill() } : base.root,
-            iconTrailing: { text: c("content.secondary"), width: g.icon, height: g.icon }
-          };
+          return { ...base, iconTrailing: { text: c("content.secondary"), width: g.icon, height: g.icon } };
         }),
         // Collapsed: a square of the row's height, no side padding (the icon centres).
         part({ Size: SIDEBAR_SIZES, Collapsed: SIDEBAR_COLLAPSED }, (size, collapsed) => ({

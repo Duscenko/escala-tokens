@@ -764,7 +764,7 @@ export const COMPONENTS: ComponentDef[] = [
     usage: 'Used by Combobox and ComboboxPopover. Keep labels short; put detail in the description.',
     axes: [
       { name: 'Size', values: ['sm', 'default', 'lg'] },
-      { name: 'State', values: ['Default', 'Focused', 'Selected', 'Disabled'] },
+      { name: 'State', values: ['Default', 'Hover', 'Focused', 'Selected', 'Disabled'] },
     ],
     figmaSets: ['ComboboxItem'],
     props: [
@@ -2572,7 +2572,7 @@ export const COMPONENTS: ComponentDef[] = [
     usage: 'One command per row. Put irreversible commands last as a destructive variant.',
     axes: [
       { name: 'Size', values: ['default', 'sm', 'lg'] },
-      { name: 'State', values: ['Default', 'Focused', 'Selected', 'Disabled'] },
+      { name: 'State', values: ['Default', 'Hover', 'Focused', 'Selected', 'Disabled'] },
       { name: 'Variant', values: ['default', 'destructive'] },
     ],
     figmaSets: ['DropdownMenuItem'],

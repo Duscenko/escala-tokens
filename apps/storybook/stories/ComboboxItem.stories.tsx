@@ -4,7 +4,7 @@ import { PreviewIcon } from '../../../src/components/configurator/docs/specimens
 import type { ComponentIconName } from '../../../src/lib/iconLibraries'
 import { iconSwapArg } from './iconSwap'
 
-const STATES: ComboboxItemState[] = ['Default', 'Focused', 'Selected', 'Disabled']
+const STATES: ComboboxItemState[] = ['Default', 'Hover', 'Focused', 'Selected', 'Disabled']
 const GLYPH_PX: Record<ComboboxSize, number> = { sm: 14, default: 16, lg: 18 }
 
 /** Story args = the Figma `ComboboxItem` set (406:140), in the panel's order and with its

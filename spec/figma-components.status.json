@@ -19,10 +19,6 @@
       "status": "part",
       "of": "RadioGroup"
     },
-    "SidebarMenuButton": {
-      "status": "part",
-      "of": "Sidebar"
-    },
     "AuthAccountLocked": {
       "status": "block",
       "page": "Auth"

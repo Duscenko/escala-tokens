@@ -417,7 +417,7 @@ export const STEPPER_ICON: ComponentRecipe = {
 // the Content (padding 4: labels, items, separators) and an optional footer. Size cascades to every label and item.
 
 export const DROPDOWN_SIZES = ['default', 'sm', 'lg'] as const
-export const DROPDOWN_ITEM_STATES = ['Default', 'Focused', 'Selected', 'Disabled'] as const
+export const DROPDOWN_ITEM_STATES = ['Default', 'Hover', 'Focused', 'Selected', 'Disabled'] as const
 export const DROPDOWN_ITEM_VARIANTS = ['default', 'destructive'] as const
 export const DROPDOWN_FOOTER_LAYOUTS = ['inline', 'stacked'] as const
 
@@ -598,13 +598,9 @@ export const SIDEBAR_MENU_BUTTON: ComponentRecipe = {
   parts: [
     // Paint and geometry: the shared list row. Hover is the highlight fill; Current is the Selected paint.
     part({ Size: SIDEBAR_SIZES, State: SIDEBAR_MENU_BUTTON_STATES }, (size, state) => {
-      const base = listItemRecipe(size, state === 'Current' ? 'Selected' : state === 'Hover' ? 'Default' : state, 'default')
+      const base = listItemRecipe(size, state === 'Current' ? 'Selected' : state, 'default')
       const g = LIST_ITEM_METRICS[size]
-      return {
-        ...base,
-        root: state === 'Hover' ? { ...base.root, ...listItemHighlightFill() } : base.root,
-        iconTrailing: { text: c('content.secondary'), width: g.icon, height: g.icon },
-      }
+      return { ...base, iconTrailing: { text: c('content.secondary'), width: g.icon, height: g.icon } }
     }),
     // Collapsed: a square of the row's height, no side padding (the icon centres).
     part({ Size: SIDEBAR_SIZES, Collapsed: SIDEBAR_COLLAPSED }, (size, collapsed) => ({

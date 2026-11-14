@@ -569,7 +569,7 @@ describe('recipe lint', () => {
     const paintOf = (slots: Record<string, Record<string, string | undefined>>) =>
       ['fill', 'stroke', 'focus', 'ring', 'halo'].map((k) => `${k}=${slots.root?.[k] ?? ''}`).join('|')
     for (const size of ['sm', 'default', 'lg']) {
-      for (const state of ['Default', 'Focused', 'Selected', 'Disabled']) {
+      for (const state of ['Default', 'Hover', 'Focused', 'Selected', 'Disabled']) {
         const expected = paintOf(listItemRecipe(size, state, 'default') as never)
         expect(paintOf(resolveRecipe(COMPONENT_RECIPES.DropdownMenuItem, { Size: size, State: state, Variant: 'default' }) as never), `DropdownMenuItem ${size} ${state}`).toBe(expected)
         const combo = paintOf(listItemRecipe(size, state, 'default', { metrics: { [size]: { ...LIST_ITEM_METRICS[size], edge: 'stroke.control' } } }) as never)

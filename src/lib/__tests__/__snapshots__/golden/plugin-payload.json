@@ -12253,6 +12253,39 @@
                 "fill": "color.surface.muted"
               }
             },
+            "sm|Hover": {
+              "root": {
+                "minHeight": "spacing.6+spacing.1",
+                "radius": "radius.control",
+                "gap": "spacing.1_5",
+                "paddingX": "spacing.gap-control",
+                "paddingY": "spacing.gap-tight",
+                "fill": "color.surface.muted",
+                "strokeWidth": "stroke.none"
+              },
+              "icon": {
+                "text": "color.content.primary",
+                "width": "spacing.3+spacing.0_5",
+                "height": "spacing.3+spacing.0_5"
+              },
+              "label": {
+                "text": "color.content.primary",
+                "font": "type.caption"
+              },
+              "description": {
+                "text": "color.content.secondary",
+                "font": "type.caption"
+              },
+              "trailing": {
+                "text": "color.content.secondary",
+                "font": "type.caption"
+              },
+              "indicator": {
+                "text": "color.content.accent",
+                "width": "spacing.3+spacing.0_5",
+                "height": "spacing.3+spacing.0_5"
+              }
+            },
             "sm|Focused": {
               "root": {
                 "minHeight": "spacing.6+spacing.1",
@@ -12390,6 +12423,39 @@
                 "fill": "color.surface.muted"
               }
             },
+            "default|Hover": {
+              "root": {
+                "minHeight": "size.compact",
+                "radius": "radius.control",
+                "gap": "spacing.gap-control",
+                "paddingX": "spacing.gap-control",
+                "paddingY": "spacing.gap-tight",
+                "fill": "color.surface.muted",
+                "strokeWidth": "stroke.none"
+              },
+              "icon": {
+                "text": "color.content.primary",
+                "width": "icon.small",
+                "height": "icon.small"
+              },
+              "label": {
+                "text": "color.content.primary",
+                "font": "type.body-sm"
+              },
+              "description": {
+                "text": "color.content.secondary",
+                "font": "type.caption"
+              },
+              "trailing": {
+                "text": "color.content.secondary",
+                "font": "type.caption"
+              },
+              "indicator": {
+                "text": "color.content.accent",
+                "width": "icon.small",
+                "height": "icon.small"
+              }
+            },
             "default|Focused": {
               "root": {
                 "minHeight": "size.compact",
@@ -12525,6 +12591,39 @@
               },
               "root[data-highlighted]": {
                 "fill": "color.surface.muted"
+              }
+            },
+            "lg|Hover": {
+              "root": {
+                "minHeight": "spacing.8+spacing.1",
+                "radius": "radius.control",
+                "gap": "spacing.gap-control",
+                "paddingX": "spacing.2_5",
+                "paddingY": "spacing.gap-tight",
+                "fill": "color.surface.muted",
+                "strokeWidth": "stroke.none"
+              },
+              "icon": {
+                "text": "color.content.primary",
+                "width": "spacing.4+spacing.0_5",
+                "height": "spacing.4+spacing.0_5"
+              },
+              "label": {
+                "text": "color.content.primary",
+                "font": "type.body-md"
+              },
+              "description": {
+                "text": "color.content.secondary",
+                "font": "type.caption"
+              },
+              "trailing": {
+                "text": "color.content.secondary",
+                "font": "type.caption"
+              },
+              "indicator": {
+                "text": "color.content.accent",
+                "width": "spacing.4+spacing.0_5",
+                "height": "spacing.4+spacing.0_5"
               }
             },
             "lg|Focused": {
@@ -27882,6 +27981,43 @@
                 "height": "icon.small"
               }
             },
+            "default|default|Hover": {
+              "root": {
+                "minHeight": "size.sm",
+                "radius": "radius.control",
+                "gap": "spacing.gap-control",
+                "paddingX": "spacing.gap-control",
+                "paddingY": "spacing.gap-tight",
+                "fill": "color.surface.muted"
+              },
+              "iconLeading": {
+                "text": "color.content.primary",
+                "width": "icon.small",
+                "height": "icon.small"
+              },
+              "label": {
+                "text": "color.content.primary",
+                "font": "type.body-sm"
+              },
+              "description": {
+                "text": "color.content.secondary",
+                "font": "type.caption"
+              },
+              "trailing": {
+                "text": "color.content.secondary",
+                "font": "type.caption"
+              },
+              "indicator": {
+                "text": "color.content.accent",
+                "width": "icon.small",
+                "height": "icon.small"
+              },
+              "iconTrailing": {
+                "text": "color.content.secondary",
+                "width": "icon.small",
+                "height": "icon.small"
+              }
+            },
             "default|default|Focused": {
               "root": {
                 "minHeight": "size.sm",
@@ -28028,6 +28164,43 @@
               },
               "root[data-highlighted]": {
                 "fill": "color.status.critical.surface"
+              },
+              "iconTrailing": {
+                "text": "color.content.secondary",
+                "width": "icon.small",
+                "height": "icon.small"
+              }
+            },
+            "default|destructive|Hover": {
+              "root": {
+                "minHeight": "size.sm",
+                "radius": "radius.control",
+                "gap": "spacing.gap-control",
+                "paddingX": "spacing.gap-control",
+                "paddingY": "spacing.gap-tight",
+                "fill": "color.status.critical.surface"
+              },
+              "iconLeading": {
+                "text": "color.status.critical.content",
+                "width": "icon.small",
+                "height": "icon.small"
+              },
+              "label": {
+                "text": "color.status.critical.content",
+                "font": "type.body-sm"
+              },
+              "description": {
+                "text": "color.content.secondary",
+                "font": "type.caption"
+              },
+              "trailing": {
+                "text": "color.content.secondary",
+                "font": "type.caption"
+              },
+              "indicator": {
+                "text": "color.content.accent",
+                "width": "icon.small",
+                "height": "icon.small"
               },
               "iconTrailing": {
                 "text": "color.content.secondary",
@@ -28188,6 +28361,43 @@
                 "height": "icon.small"
               }
             },
+            "sm|default|Hover": {
+              "root": {
+                "minHeight": "size.xs",
+                "radius": "radius.control",
+                "gap": "spacing.gap-tight",
+                "paddingX": "spacing.gap-control",
+                "paddingY": "spacing.gap-tight",
+                "fill": "color.surface.muted"
+              },
+              "iconLeading": {
+                "text": "color.content.primary",
+                "width": "icon.small",
+                "height": "icon.small"
+              },
+              "label": {
+                "text": "color.content.primary",
+                "font": "type.caption"
+              },
+              "description": {
+                "text": "color.content.secondary",
+                "font": "type.caption"
+              },
+              "trailing": {
+                "text": "color.content.secondary",
+                "font": "type.caption"
+              },
+              "indicator": {
+                "text": "color.content.accent",
+                "width": "icon.small",
+                "height": "icon.small"
+              },
+              "iconTrailing": {
+                "text": "color.content.secondary",
+                "width": "icon.small",
+                "height": "icon.small"
+              }
+            },
             "sm|default|Focused": {
               "root": {
                 "minHeight": "size.xs",
@@ -28334,6 +28544,43 @@
               },
               "root[data-highlighted]": {
                 "fill": "color.status.critical.surface"
+              },
+              "iconTrailing": {
+                "text": "color.content.secondary",
+                "width": "icon.small",
+                "height": "icon.small"
+              }
+            },
+            "sm|destructive|Hover": {
+              "root": {
+                "minHeight": "size.xs",
+                "radius": "radius.control",
+                "gap": "spacing.gap-tight",
+                "paddingX": "spacing.gap-control",
+                "paddingY": "spacing.gap-tight",
+                "fill": "color.status.critical.surface"
+              },
+              "iconLeading": {
+                "text": "color.status.critical.content",
+                "width": "icon.small",
+                "height": "icon.small"
+              },
+              "label": {
+                "text": "color.status.critical.content",
+                "font": "type.caption"
+              },
+              "description": {
+                "text": "color.content.secondary",
+                "font": "type.caption"
+              },
+              "trailing": {
+                "text": "color.content.secondary",
+                "font": "type.caption"
+              },
+              "indicator": {
+                "text": "color.content.accent",
+                "width": "icon.small",
+                "height": "icon.small"
               },
               "iconTrailing": {
                 "text": "color.content.secondary",
@@ -28494,6 +28741,43 @@
                 "height": "icon.medium"
               }
             },
+            "lg|default|Hover": {
+              "root": {
+                "minHeight": "size.md",
+                "radius": "radius.control",
+                "gap": "spacing.gap-control",
+                "paddingX": "spacing.inset-control",
+                "paddingY": "spacing.gap-tight",
+                "fill": "color.surface.muted"
+              },
+              "iconLeading": {
+                "text": "color.content.primary",
+                "width": "icon.medium",
+                "height": "icon.medium"
+              },
+              "label": {
+                "text": "color.content.primary",
+                "font": "type.body-md"
+              },
+              "description": {
+                "text": "color.content.secondary",
+                "font": "type.caption"
+              },
+              "trailing": {
+                "text": "color.content.secondary",
+                "font": "type.caption"
+              },
+              "indicator": {
+                "text": "color.content.accent",
+                "width": "icon.medium",
+                "height": "icon.medium"
+              },
+              "iconTrailing": {
+                "text": "color.content.secondary",
+                "width": "icon.medium",
+                "height": "icon.medium"
+              }
+            },
             "lg|default|Focused": {
               "root": {
                 "minHeight": "size.md",
@@ -28640,6 +28924,43 @@
               },
               "root[data-highlighted]": {
                 "fill": "color.status.critical.surface"
+              },
+              "iconTrailing": {
+                "text": "color.content.secondary",
+                "width": "icon.medium",
+                "height": "icon.medium"
+              }
+            },
+            "lg|destructive|Hover": {
+              "root": {
+                "minHeight": "size.md",
+                "radius": "radius.control",
+                "gap": "spacing.gap-control",
+                "paddingX": "spacing.inset-control",
+                "paddingY": "spacing.gap-tight",
+                "fill": "color.status.critical.surface"
+              },
+              "iconLeading": {
+                "text": "color.status.critical.content",
+                "width": "icon.medium",
+                "height": "icon.medium"
+              },
+              "label": {
+                "text": "color.status.critical.content",
+                "font": "type.body-md"
+              },
+              "description": {
+                "text": "color.content.secondary",
+                "font": "type.caption"
+              },
+              "trailing": {
+                "text": "color.content.secondary",
+                "font": "type.caption"
+              },
+              "indicator": {
+                "text": "color.content.accent",
+                "width": "icon.medium",
+                "height": "icon.medium"
               },
               "iconTrailing": {
                 "text": "color.content.secondary",
@@ -29186,9 +29507,6 @@
                 "width": "icon.small",
                 "height": "icon.small"
               },
-              "root[data-highlighted]": {
-                "fill": "color.surface.muted"
-              },
               "iconTrailing": {
                 "text": "color.content.secondary",
                 "width": "icon.small",
@@ -29379,9 +29697,6 @@
                 "width": "icon.small",
                 "height": "icon.small"
               },
-              "root[data-highlighted]": {
-                "fill": "color.surface.muted"
-              },
               "iconTrailing": {
                 "text": "color.content.secondary",
                 "width": "icon.small",
@@ -29571,9 +29886,6 @@
                 "text": "color.content.accent",
                 "width": "icon.medium",
                 "height": "icon.medium"
-              },
-              "root[data-highlighted]": {
-                "fill": "color.surface.muted"
               },
               "iconTrailing": {
                 "text": "color.content.secondary",

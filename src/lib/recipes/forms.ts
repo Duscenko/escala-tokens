@@ -704,7 +704,7 @@ export const INPUT_TAG_OPTION: ComponentRecipe = {
 export const COMBOBOX_SIZES = ['sm', 'default', 'lg'] as const
 export const COMBOBOX_STATES = ['Default', 'Hover', 'Focused', 'Open', 'Invalid', 'Disabled', 'Loading'] as const
 export const COMBOBOX_SHAPES = ['rounded', 'pill'] as const
-export const COMBOBOX_ITEM_STATES = ['Default', 'Focused', 'Selected', 'Disabled'] as const
+export const COMBOBOX_ITEM_STATES = ['Default', 'Hover', 'Focused', 'Selected', 'Disabled'] as const
 export const COMBOBOX_POPOVER_CONTENTS = ['list', 'grouped', 'empty'] as const
 
 /** Per Size: box height · padding X · gap · glyph · type (unbound numbers as sums of steps). */

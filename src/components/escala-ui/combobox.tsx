@@ -11,7 +11,7 @@
 //    aligned to its start, and closes on Escape.
 //  · ComboboxPopover (415:489): the panel — `content` list · grouped · empty, `size`, an
 //    optional footer (FooterVisible / FooterText) and EmptyText.
-//  · ComboboxItem (406:140): an option row — `size`, State Default · Focused · Selected ·
+//  · ComboboxItem (406:140): an option row — `size`, State Default · Hover · Focused · Selected ·
 //    Disabled, optional leading icon, description, trailing text and the check indicator.
 //  · ComboboxGroupLabel (406:147): the heading of a group of options.
 // Paint: the Combobox, ComboboxPopover, ComboboxItem and ComboboxGroupLabel recipes.
@@ -28,7 +28,7 @@ export type ComboboxVariant = (typeof COMBOBOX_VARIANTS)[number]
 export type ComboboxShape = (typeof COMBOBOX_SHAPES)[number]
 export type ComboboxPopoverContent = (typeof COMBOBOX_POPOVER_CONTENTS)[number]
 export type ComboboxState = 'Default' | 'Hover' | 'Focused' | 'Open' | 'Invalid' | 'Disabled' | 'Loading'
-export type ComboboxItemState = 'Default' | 'Focused' | 'Selected' | 'Disabled'
+export type ComboboxItemState = 'Default' | 'Hover' | 'Focused' | 'Selected' | 'Disabled'
 
 /** A glyph box sized by its recipe; the svg fills it. */
 const iconBox = 'inline-flex shrink-0 items-center justify-center [&>svg]:size-full'

@@ -12,7 +12,7 @@ import { usePortalContainer } from './portal-scope'
 
 export const DROPDOWN_MENU_SIZES = ['default', 'sm', 'lg'] as const
 export type DropdownMenuSize = (typeof DROPDOWN_MENU_SIZES)[number]
-export const DROPDOWN_MENU_ITEM_STATES = ['Default', 'Focused', 'Selected', 'Disabled'] as const
+export const DROPDOWN_MENU_ITEM_STATES = ['Default', 'Hover', 'Focused', 'Selected', 'Disabled'] as const
 export type DropdownMenuItemState = (typeof DROPDOWN_MENU_ITEM_STATES)[number]
 export const DROPDOWN_MENU_ITEM_VARIANTS = ['default', 'destructive'] as const
 export type DropdownMenuItemVariant = (typeof DROPDOWN_MENU_ITEM_VARIANTS)[number]
