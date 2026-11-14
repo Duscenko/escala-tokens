@@ -194,7 +194,6 @@
     "Chart",
     "Collapsible",
     "Command",
-    "ContextMenu",
     "Drawer",
     "Empty",
     "FileFormat",
@@ -203,19 +202,14 @@
     "InputGroup",
     "Item",
     "Label",
-    "Menubar",
     "Message",
-    "NativeSelect",
     "Navbar",
     "NavigationMenu",
     "Resizable",
-    "Select",
     "Sheet",
     "Skeleton",
     "Spinner",
     "StatusBadge",
-    "Tabs",
-    "Toggle",
-    "ToggleGroup"
+    "Toggle"
   ]
 }

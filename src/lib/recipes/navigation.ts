@@ -7,37 +7,6 @@ import { groupLabelRecipe } from './groupLabel.js'
 import { listItemRecipe, listItemHighlightFill, listItemRootPaint, LIST_ITEM_METRICS } from './listItem.js'
 import { c, NONE, part, PANEL_RADIUS, PANEL_ROW_RADIUS, type ComponentRecipe, type SlotMap, type SlotProps, FOCUS } from './helpers.js'
 
-// ── Tabs (underline) ───────────────────────────────────────────────────────
-
-// shadcn's TabsList variants: `default` is a muted track whose active trigger
-// is raised on the page colour; `line` is an underline under the active one.
-// The track is concentric with its trigger: `radius.action` (8) minus the
-// `spacing.1` inset (4) is exactly `radius.control` (4) — a 2px inset left the
-// trigger's corners visibly squarer than the track around them.
-export const TABS: ComponentRecipe = {
-  key: 'Tabs',
-  slots: ['root', 'trigger'],
-  defaults: { Variant: 'default' },
-  parts: [
-    part({}, () => ({
-      trigger: { text: c('content.secondary'), font: 'type.button', paddingX: 'spacing.2', paddingY: 'spacing.1', gap: 'spacing.1_5' },
-      'trigger:hover': { text: c('content.primary') },
-      'trigger:focus-visible': FOCUS,
-    })),
-    part({ Variant: ['default', 'line'] as const }, (variant) => variant === 'line'
-      ? {
-          root: { fill: NONE, gap: 'spacing.1' },
-          trigger: { stroke: NONE, strokeBottomWidth: 'stroke.md' },
-          'trigger[data-state="active"]': { text: c('content.primary'), stroke: c('content.primary') },
-        }
-      : {
-          root: { fill: c('surface.layer-2'), radius: 'radius.action', paddingX: 'spacing.1', paddingY: 'spacing.1', gap: 'spacing.0_5' },
-          trigger: { radius: 'radius.control' },
-          'trigger[data-state="active"]': { fill: c('surface.page'), text: c('content.primary'), shadow: 'shadow.xs' },
-        }),
-  ],
-}
-
 // ── TabMenu, TabMenuItem and TabMenuLineItem ───────────────────────────────
 // The Figma sets TabMenu (984:1830), TabMenuItem (984:939) and TabMenuLineItem (984:1156)
 // (design-plans/tab-menu-contract.md). Four layouts (Variant): a line variant draws a 1px
@@ -442,33 +411,6 @@ export const STEPPER_ICON: ComponentRecipe = {
   ],
 }
 
-// ── Menus ──────────────────────────────────────────────────────────────────
-
-// A menu panel is a box: `radius.container` (Boxes), with a `spacing.1` inset.
-// Its rows take the panel's radius minus that inset, so the highlighted row is
-// concentric with the panel at any Boxes value (16 − 4 = 12). A fixed
-// `radius.control` row read as a square tag inside a round panel.
-export const MENU_PANEL_RADIUS = PANEL_RADIUS
-
-function menu(key: string): ComponentRecipe {
-  const slots: SlotMap = {
-    root: {
-      fill: c('surface.layer-2'), stroke: c('border.subtle'), strokeWidth: 'stroke.control', radius: MENU_PANEL_RADIUS,
-      shadow: 'shadow.lg', paddingX: 'spacing.1', paddingY: 'spacing.1',
-    },
-    item: {
-      text: c('content.primary'), font: 'type.body-sm', radius: PANEL_ROW_RADIUS, paddingX: 'spacing.2_5', paddingY: 'spacing.1_5', gap: 'spacing.2_5',
-    },
-    'item[data-highlighted]': { fill: c('action.ghost.hover') },
-    'item:hover': { fill: c('action.ghost.hover') },
-    'item[data-variant="destructive"]': { text: c('status.critical.content') },
-    'item[data-disabled]': { text: c('content.disabled') },
-    separator: { fill: c('border.subtle'), height: 'stroke.divider' },
-    shortcut: { text: c('content.subtle'), font: 'type.caption' },
-  }
-  return { key, slots: ['root', 'item', 'separator', 'shortcut'], defaults: {}, parts: [part({}, () => slots)] }
-}
-
 // ── DropdownMenu, DropdownMenuLabel, DropdownMenuItem, DropdownMenuFooter ──
 // The Figma sets (design-plans/dropdown-menu-contract.md; 947:299, 947:169, 947:161, 949:3290). A 256 wide panel (Radius/overlay,
 // Surface/layer-2, a 1px Border/default edge, Shadow/md with ring and spreads) holding an optional header (a search Input),
@@ -534,7 +476,6 @@ export const DROPDOWN_MENU_FOOTER: ComponentRecipe = {
     })),
   ],
 }
-export const CONTEXT_MENU = menu('ContextMenu')
 
 // ── Command ────────────────────────────────────────────────────────────────
 
@@ -668,41 +609,6 @@ export const SIDEBAR_MENU_BUTTON: ComponentRecipe = {
     // Collapsed: a square of the row's height, no side padding (the icon centres).
     part({ Size: SIDEBAR_SIZES, Collapsed: SIDEBAR_COLLAPSED }, (size, collapsed) => ({
       root: collapsed === 'true' ? { width: LIST_ITEM_METRICS[size].minHeight, paddingX: 'spacing.none' } : {},
-    })),
-  ],
-}
-
-// ── Menubar ────────────────────────────────────────────────────────────────
-// shadcn's Menubar: a bordered bar of triggers; each menu is the Dropdown
-// panel. The panel portals, so its parts are matched on their own.
-
-export const MENUBAR: ComponentRecipe = {
-  key: 'Menubar',
-  slots: ['root', 'trigger', 'content', 'item', 'separator', 'shortcut'],
-  detachedSlots: ['content', 'item', 'separator', 'shortcut'],
-  defaults: {},
-  parts: [
-    part({}, () => ({
-      root: {
-        fill: c('surface.layer-1'), stroke: c('border.default'), strokeWidth: 'stroke.control', radius: PANEL_RADIUS,
-        height: 'size.compact', paddingX: 'spacing.1', paddingY: 'spacing.1', gap: 'spacing.0_5',
-      },
-      trigger: { text: c('content.primary'), font: 'type.label', radius: PANEL_ROW_RADIUS, paddingX: 'spacing.2', paddingY: 'spacing.0_5' },
-      'trigger:hover': { fill: c('action.ghost.hover') },
-      'trigger[data-state="open"]': { fill: c('action.ghost.hover') },
-      'trigger[data-active="true"]': { fill: c('action.ghost.hover') },
-      content: {
-        fill: c('surface.layer-2'), stroke: c('border.subtle'), strokeWidth: 'stroke.control', radius: MENU_PANEL_RADIUS,
-        shadow: 'shadow.lg', paddingX: 'spacing.1', paddingY: 'spacing.1',
-      },
-      item: {
-        text: c('content.primary'), font: 'type.body-sm', radius: PANEL_ROW_RADIUS, paddingX: 'spacing.2_5', paddingY: 'spacing.1_5', gap: 'spacing.2_5',
-      },
-      'item[data-highlighted]': { fill: c('action.ghost.hover') },
-      'item:hover': { fill: c('action.ghost.hover') },
-      'item[data-variant="destructive"]': { text: c('status.critical.content') },
-      separator: { fill: c('border.subtle'), height: 'stroke.divider' },
-      shortcut: { text: c('content.subtle'), font: 'type.caption' },
     })),
   ],
 }

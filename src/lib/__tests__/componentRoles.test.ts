@@ -69,7 +69,7 @@ describe('every catalogue component is described by a recipe', () => {
   })
 
   it('a text field can name its focus ring', () => {
-    for (const key of ['Input', 'Select', 'Textarea']) {
+    for (const key of ['Input', 'Combobox', 'Textarea']) {
       expect(rolesForComponent(key), key).toContain('border.focus')
     }
   })

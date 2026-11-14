@@ -1,7 +1,7 @@
 import { useId, useState } from 'react'
 import type { SpecimenProps } from '../specimens'
 import { ICON_SLOTS, INPUT_HTML_TYPE, INPUT_META, PhosphorWeightProvider, PreviewIcon, inputSeed } from '../specimens'
-import { iconForControl, iconOf, selectorRoleOf, sizeRoleOf } from '../../../../lib/previewTokens'
+import { iconForControl, selectorRoleOf, sizeRoleOf } from '../../../../lib/previewTokens'
 import { useI18n } from '../../../../lib/i18n'
 import { useAutoplayStep } from '../../../preview/artefacts/boardAutoplay'
 import { EDITORS_PLAY, EMAIL_PLAY, TAGS_PLAY, UPLOAD_PLAY } from '../../../preview/artefacts/boardScripts'
@@ -11,7 +11,6 @@ import { DatePickerTrigger as SkDatePickerTrigger, type DatePickerTriggerSize, t
 import { InputGroup as SkInputGroup, InputGroupAddon as SkAddon, InputGroupInput as SkGroupInput, InputGroupText as SkGroupText, InputGroupButton as SkGroupButton, InputGroupSeparator as SkGroupSeparator } from '../../../escala-ui/input-group'
 import { NumberInput as SkNumberInput, type NumberInputSize, type NumberInputState } from '../../../escala-ui/number-input'
 import { InputTag as SkInputTag, InputTagChip as SkInputTagChip, InputTagOption as SkInputTagOption, type InputTagChipSize, type InputTagChipState, type InputTagChipVariant, type InputTagLayout, type InputTagOptionState, type InputTagOptionType, type InputTagSize, type InputTagState } from '../../../escala-ui/input-tag'
-import { Select as SkSelect, SelectContent as SkSelectContent, SelectItem as SkSelectItem, SelectTrigger as SkSelectTrigger, SelectValue as SkSelectValue } from '../../../escala-ui/_skeleton/select'
 import { Combobox as SkCombobox, ComboboxGroup as SkComboboxGroup, ComboboxGroupLabel as SkComboboxGroupLabel, ComboboxItem as SkComboboxItem, ComboboxPopover as SkComboboxPopover, ComboboxSeparator as SkComboboxSeparator, type ComboboxItemState, type ComboboxPopoverContent, type ComboboxShape, type ComboboxSize, type ComboboxState, type ComboboxVariant } from '../../../escala-ui/combobox'
 import { InputOTP as SkInputOTP, InputOTPSlot as SkInputOTPSlot, type InputOTPLength, type InputOTPSize, type InputOTPSlotState, type InputOTPState, type InputOTPVariant } from '../../../escala-ui/input-otp'
 import { CheckboxGroup as SkCheckboxGroup, type CheckboxGroupState, CheckboxItem as SkCheckboxItem, type CheckboxItemState, type CheckboxItemPlacement, Checkbox as SkCheckbox, type CheckboxChecked, type CheckboxSize, type CheckboxState, type CheckboxVariant } from '../../../escala-ui/checkbox'
@@ -28,7 +27,6 @@ import { FileUploadItem as SkFileUploadItem, type FileUploadItemSize, type FileU
 import { Button as SkButton } from '../../../escala-ui/button'
 import { TextLink as SkTextLink } from '../../../escala-ui/text-link'
 import { RecipeScope } from './scope'
-import { NativeSelect as SkNativeSelect, NativeSelectOption as SkNativeSelectOption, type NativeSelectSize } from '../../../escala-ui/_skeleton/native-select'
 
 /**
  * shadcn's Input. On its own page the bare control; given `v.Type` (an opt-in
@@ -252,28 +250,6 @@ export function SkeletonInputTagOptionSpecimen({ t, v }: SpecimenProps) {
           {type === 'create' ? 'Create “Design”' : 'Design'}
         </SkInputTagOption>
       </div>
-    </RecipeScope>
-  )
-}
-
-export function SkeletonSelectSpecimen({ t, v, w }: SpecimenProps) {
-  return (
-    <RecipeScope t={t}>
-      <SkSelect>
-        <SkSelectTrigger
-          size={(v.Size ?? 'default') as 'default'}
-          forceState={(v.State ?? 'Default') as 'Default'}
-          icon={<PreviewIcon concept="chevron" size={iconOf(12)} />}
-          style={{ width: w ?? 240 }}
-        >
-          <SkSelectValue placeholder="Select an option" />
-        </SkSelectTrigger>
-        <SkSelectContent>
-          <SkSelectItem value="design">Design</SkSelectItem>
-          <SkSelectItem value="engineering">Engineering</SkSelectItem>
-          <SkSelectItem value="product">Product</SkSelectItem>
-        </SkSelectContent>
-      </SkSelect>
     </RecipeScope>
   )
 }
@@ -680,23 +656,3 @@ export function SkeletonFileUploadItemSpecimen({ t, v, w }: SpecimenProps) {
   )
 }
 
-export function SkeletonNativeSelectSpecimen({ t, v, w }: SpecimenProps) {
-  const state = (v.State ?? 'Default') as 'Default'
-  return (
-    <RecipeScope t={t}>
-      <SkNativeSelect
-        size={(v.Size ?? 'default') as NativeSelectSize}
-        forceState={state}
-        disabled={state === ('Disabled' as string)}
-        icon={<PreviewIcon concept="chevron" size={iconOf(12)} />}
-        defaultValue="design"
-        aria-label="Team"
-        style={{ width: w ?? 240 }}
-      >
-        <SkNativeSelectOption value="design">Design</SkNativeSelectOption>
-        <SkNativeSelectOption value="engineering">Engineering</SkNativeSelectOption>
-        <SkNativeSelectOption value="product">Product</SkNativeSelectOption>
-      </SkNativeSelect>
-    </RecipeScope>
-  )
-}

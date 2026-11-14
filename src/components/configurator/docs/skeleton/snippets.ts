@@ -14,8 +14,6 @@ const low = (s?: string) => (s ?? '').toLowerCase().replace(/\s+/g, '-')
 const sizeProp = (v: AxisValues) => (v.Size && v.Size !== 'default' ? ` size="${v.Size}"` : '')
 
 export const SKELETON_SNIPPETS: Record<string, Snippet> = {
-  Tabs: (v) =>
-    `import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"\n\n<Tabs defaultValue="overview">\n  <TabsList${v.Variant === 'line' ? ' variant="line"' : ''}>\n    <TabsTrigger value="overview">Overview</TabsTrigger>\n    <TabsTrigger value="tokens">Tokens</TabsTrigger>\n  </TabsList>\n  <TabsContent value="overview">…</TabsContent>\n</Tabs>`,
   TabMenu: (v) =>
     `import { TabMenu, TabMenuItem, TabMenuLineItem } from "@/components/ui/tab-menu"\n\n<TabMenu defaultValue="overview"${v.Variant && v.Variant !== 'horizontal-line' ? ` variant="${v.Variant}"` : ''}${v.Size && v.Size !== 'default' ? ` size="${v.Size}"` : ''}>\n  <${(v.Variant ?? 'horizontal-line').endsWith('button') ? 'TabMenuItem' : 'TabMenuLineItem'} value="overview">Overview</${(v.Variant ?? 'horizontal-line').endsWith('button') ? 'TabMenuItem' : 'TabMenuLineItem'}>\n  <${(v.Variant ?? 'horizontal-line').endsWith('button') ? 'TabMenuItem' : 'TabMenuLineItem'} value="activity">Activity</${(v.Variant ?? 'horizontal-line').endsWith('button') ? 'TabMenuItem' : 'TabMenuLineItem'}>\n</TabMenu>`,
   TabMenuItem: (v) =>
@@ -61,8 +59,7 @@ export const SKELETON_SNIPPETS: Record<string, Snippet> = {
   DropdownMenuItem: (v) =>
     `import { DropdownMenuItem } from "@/components/ui/dropdown-menu"\n\n<DropdownMenuItem${v.Variant === 'destructive' ? ' variant="destructive"' : ''}${v.Size && v.Size !== 'default' ? ` size="${v.Size}"` : ''}${v.State === 'Selected' ? ' checked' : ''}${v.State === 'Disabled' ? ' disabled' : ''} iconLeading={<House />} trailing="⌘K">Option</DropdownMenuItem>`,
   DropdownMenuFooter: (v) =>
-    `import { DropdownMenuFooter } from "@/components/ui/dropdown-menu"\n\n<DropdownMenuFooter${v.Size && v.Size !== 'default' ? ` size="${v.Size}"` : ''}${v.Layout === 'stacked' ? ' layout="stacked"' : ''} leading="12 of 40 selected">\n  <Button variant="secondary">Clear</Button>\n  <Button>Apply</Button>\n</DropdownMenuFooter>`,  ContextMenu: () =>
-    `import {\n  ContextMenu, ContextMenuTrigger, ContextMenuContent, ContextMenuItem, ContextMenuShortcut,\n} from "@/components/ui/context-menu"\n\n<ContextMenu>\n  <ContextMenuTrigger>Right-click here</ContextMenuTrigger>\n  <ContextMenuContent>\n    <ContextMenuItem>Copy <ContextMenuShortcut>⌘C</ContextMenuShortcut></ContextMenuItem>\n  </ContextMenuContent>\n</ContextMenu>`,
+    `import { DropdownMenuFooter } from "@/components/ui/dropdown-menu"\n\n<DropdownMenuFooter${v.Size && v.Size !== 'default' ? ` size="${v.Size}"` : ''}${v.Layout === 'stacked' ? ' layout="stacked"' : ''} leading="12 of 40 selected">\n  <Button variant="secondary">Clear</Button>\n  <Button>Apply</Button>\n</DropdownMenuFooter>`,
   Command: () =>
     `import {\n  Command, CommandInput, CommandList, CommandGroup, CommandItem,\n} from "@/components/ui/command"\n\n<Command>\n  <CommandInput placeholder="Type a command…" />\n  <CommandList>\n    <CommandGroup heading="Actions">\n      <CommandItem onSelect={openColor}>Open Color foundation</CommandItem>\n    </CommandGroup>\n  </CommandList>\n</Command>`,
   Navbar: () =>
@@ -83,10 +80,6 @@ export const SKELETON_SNIPPETS: Record<string, Snippet> = {
   Toast: (v) =>
     `import { Toaster, showToast } from "@/components/ui/toast"\n\n// once, at the root of your app\n<Toaster />\n\n// anywhere\nshowToast({ ${v.Variant && v.Variant !== 'default' ? `variant: "${v.Variant}", ` : ''}${v.Appearance && v.Appearance !== 'filled' ? `appearance: "${v.Appearance}", ` : ''}title: "Changes saved", description: "Your tokens are up to date." })`,
 
-  ToggleGroup: (v) =>
-    `import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group"\n\n<ToggleGroup type="multiple"${v.Variant === 'outline' ? ' variant="outline"' : ''}${sizeProp(v)}>\n  <ToggleGroupItem value="bold" aria-label="Bold"><Bold /></ToggleGroupItem>\n  <ToggleGroupItem value="italic" aria-label="Italic"><Italic /></ToggleGroupItem>\n  <ToggleGroupItem value="underline" aria-label="Underline"><Underline /></ToggleGroupItem>\n</ToggleGroup>`,
-  NativeSelect: (v) =>
-    `import { NativeSelect, NativeSelectOption } from "@/components/ui/native-select"\n\n<NativeSelect${sizeProp(v)}${v.State === 'Disabled' ? ' disabled' : ''} aria-label="Team">\n  <NativeSelectOption value="design">Design</NativeSelectOption>\n  <NativeSelectOption value="engineering">Engineering</NativeSelectOption>\n</NativeSelect>`,
   Kbd: (v) => {
     const size = v.Size && v.Size !== 'default' ? ` size="${v.Size}"` : ''
     return `import { Kbd, KbdGroup } from "@/components/ui/kbd"\n\n<KbdGroup>\n  <Kbd${size}>⌘</Kbd>\n  <Kbd${size}>K</Kbd>\n</KbdGroup>`
@@ -129,8 +122,6 @@ export const SKELETON_SNIPPETS: Record<string, Snippet> = {
     const mark = kind === 'Bar' ? `<Bar dataKey="desktop" fill="var(--color-desktop)" radius={4} />` : `<${kind} dataKey="desktop" type="monotone" stroke="var(--color-desktop)"${kind === 'Area' ? ' fill="var(--color-desktop)" fillOpacity={0.4}' : ''} />`
     return `import { ${kind}, ${kind}Chart, CartesianGrid, XAxis } from "recharts"\nimport { ChartContainer, ChartTooltip, ChartTooltipContent, type ChartConfig } from "@/components/ui/chart"\n\nconst config = { desktop: { label: "Desktop", color: "var(--chart-1)" } } satisfies ChartConfig\n\n<ChartContainer config={config}>\n  <${kind}Chart accessibilityLayer data={data}>\n    <CartesianGrid vertical={false} />\n    <XAxis dataKey="month" tickLine={false} axisLine={false} />\n    <ChartTooltip content={<ChartTooltipContent />} />\n    ${mark}\n  </${kind}Chart>\n</ChartContainer>`
   },
-  Menubar: () =>
-    `import {\n  Menubar, MenubarMenu, MenubarTrigger, MenubarContent, MenubarItem, MenubarSeparator, MenubarShortcut,\n} from "@/components/ui/menubar"\n\n<Menubar>\n  <MenubarMenu>\n    <MenubarTrigger>File</MenubarTrigger>\n    <MenubarContent>\n      <MenubarItem>New tab <MenubarShortcut>⌘T</MenubarShortcut></MenubarItem>\n      <MenubarSeparator />\n      <MenubarItem variant="destructive">Close all</MenubarItem>\n    </MenubarContent>\n  </MenubarMenu>\n</Menubar>`,
   NavigationMenu: () =>
     `import {\n  NavigationMenu, NavigationMenuList, NavigationMenuItem, NavigationMenuTrigger,\n  NavigationMenuContent, NavigationMenuLink,\n} from "@/components/ui/navigation-menu"\n\n<NavigationMenu>\n  <NavigationMenuList>\n    <NavigationMenuItem>\n      <NavigationMenuTrigger>Getting started</NavigationMenuTrigger>\n      <NavigationMenuContent>\n        <NavigationMenuLink href="/docs">Introduction</NavigationMenuLink>\n      </NavigationMenuContent>\n    </NavigationMenuItem>\n  </NavigationMenuList>\n</NavigationMenu>`,
 
@@ -275,8 +266,6 @@ export const SKELETON_SNIPPETS: Record<string, Snippet> = {
   },
   InputTagOption: (v) =>
     `import { InputTagOption } from "@/components/ui/input-tag"\n\n<InputTagOption${v.Type === 'create' ? ' type="create"' : ' meta="12"'}${v.State === 'Disabled' ? ' disabled' : ''}>${v.Type === 'create' ? 'Create “Design”' : 'Design'}</InputTagOption>`,
-  Select: (v) =>
-    `import {\n  Select, SelectTrigger, SelectValue, SelectContent, SelectItem,\n} from "@/components/ui/select"\n\n<Select>\n  <SelectTrigger${v.Size === 'sm' ? ' size="sm"' : ''}${v.State === 'Disabled' ? ' disabled' : ''}>\n    <SelectValue placeholder="Select an option" />\n  </SelectTrigger>\n  <SelectContent>\n    <SelectItem value="design">Design</SelectItem>\n    <SelectItem value="engineering">Engineering</SelectItem>\n  </SelectContent>\n</Select>`,
   Combobox: (v) => {
     const attrs = [v.Size && v.Size !== 'default' ? ` size="${v.Size}"` : '', v.Variant === 'compact' ? ' variant="compact"' : '', v.Shape === 'pill' ? ' shape="pill"' : '', v.State === 'Invalid' ? ' aria-invalid' : '', v.State === 'Disabled' ? ' disabled' : '', v.State === 'Loading' ? ' loading' : ''].join('')
     return `import { Combobox } from "@/components/ui/combobox"\n\n<Combobox\n  aria-label="Framework"${attrs}\n  options={[{ label: "Next.js", value: "next" }, { label: "Remix", value: "remix" }, { label: "Astro", value: "astro" }]}\n  placeholder="Search framework..."\n  value={framework}\n  onValueChange={setFramework}\n/>`

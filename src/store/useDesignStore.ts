@@ -2058,7 +2058,7 @@ export const useDesignStore = create<DesignStore>()(
     }),
     {
       name: 'scalable-designs-store',
-      version: 149,
+      version: 150,
       migrate: (persisted: any, version: number) => {
         if (persisted) {
           // v1→v2: remove styleDirection, rename selectedAtoms → selectedComponents
@@ -4432,6 +4432,24 @@ export const useDesignStore = create<DesignStore>()(
           add(persisted)
           if (Array.isArray(persisted.savedSystems)) {
             for (const sys of persisted.savedSystems) add(sys?.snapshot)
+          }
+        }
+        if (version < 150) {
+          // v149→v150: six shadcn components are retired for their Figma twins: Tabs → TabMenu, Select → Combobox; ToggleGroup,
+          // ContextMenu, Menubar and NativeSelect leave the selection (SegmentedControl and DropdownMenu are already in the catalogue).
+          const TWIN: Record<string, string | null> = { Tabs: 'TabMenu', Select: 'Combobox', ToggleGroup: null, ContextMenu: null, Menubar: null, NativeSelect: null }
+          const swap = (state: any) => {
+            if (!Array.isArray(state?.selectedComponents)) return
+            const out: string[] = []
+            for (const k of state.selectedComponents as string[]) {
+              const next = k in TWIN ? TWIN[k] : k
+              if (next && !out.includes(next)) out.push(next)
+            }
+            state.selectedComponents = out
+          }
+          swap(persisted)
+          if (Array.isArray(persisted.savedSystems)) {
+            for (const sys of persisted.savedSystems) swap(sys?.snapshot)
           }
         }
         return persisted

@@ -186,7 +186,9 @@ describe.skipIf(!existsSync(pluginFile))('plugin ↔ web recipe parity', () => {
     // FileUploadDropzone (WEB_ONLY above).
     // Rating → RatingGroup (2026-11-12): the file's name for the rating row.
     // AspectRatio → Image (2026-11-12): the file's name for the cropped media box.
-    const RENAMED_ON_WEB = new Set(['InputStepper', 'Dropzone', 'Rating', 'AspectRatio', 'Progress', 'Sonner', 'Dialog', 'Tooltip'])
+        // Tabs · ToggleGroup · ContextMenu · Menubar · Select · NativeSelect (2026-11-14): shadcn components retired on the web for
+    // their Figma twins (TabMenu, SegmentedControl, DropdownMenu, Combobox); the frozen plugin still builds them.
+    const RENAMED_ON_WEB = new Set(['InputStepper', 'Dropzone', 'Rating', 'AspectRatio', 'Progress', 'Sonner', 'Dialog', 'Tooltip', 'Tabs', 'ToggleGroup', 'ContextMenu', 'Menubar', 'Select', 'NativeSelect'])
     expect(Object.keys(plugin.RECIPE_BUILDERS).filter((k) => !RENAMED_ON_WEB.has(k)).sort()).toEqual(webAndPlugin.sort())
     // Parts a recipe gained from the Figma file after the freeze: the plugin's
     // builder predates them, so they are web + Storybook only (a decision).

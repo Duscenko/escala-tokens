@@ -3,7 +3,6 @@ import { useState } from 'react'
 import type { SpecimenProps } from '../specimens'
 import { PreviewIcon } from '../specimens'
 import { iconOf } from '../../../../lib/previewTokens'
-import { Tabs as SkTabs, TabsList as SkTabsList, TabsTrigger as SkTabsTrigger, type TabsListVariant } from '../../../escala-ui/_skeleton/tabs'
 import { TabMenu as SkTabMenu, TabMenuItem as SkTabMenuItem, TabMenuLineItem as SkTabMenuLineItem, type TabMenuIndicator, type TabMenuItemState, type TabMenuSize, type TabMenuVariant } from '../../../escala-ui/tab-menu'
 import { Badge as SkBadge } from '../../../escala-ui/badge'
 import { NavItem as SkNavItem, type NavItemSize, type NavItemState } from '../../../escala-ui/nav-item'
@@ -15,7 +14,6 @@ import { Pagination as SkPagination, PaginationScope as SkPaginationScope, Pagin
 import { useAutoplayStep } from '../../../preview/artefacts/boardAutoplay'
 import { Stepper as SkStepper, StepperIcon as SkStepperIcon, StepperIndicator as SkStepperIndicator, StepperItem as SkStepperItem, type StepperOrientation, type StepperSize, type StepperStatus } from '../../../escala-ui/stepper'
 import { DropdownMenu as SkDropdownMenu, DropdownMenuContent as SkDropdownMenuContent, DropdownMenuItem as SkDropdownMenuItem, DropdownMenuLabel as SkDropdownMenuLabel, DropdownMenuFooter as SkDropdownMenuFooter, DropdownMenuSeparator as SkDropdownMenuSeparator, type DropdownMenuSize, type DropdownMenuItemState, type DropdownMenuItemVariant, type DropdownMenuFooterLayout } from '../../../escala-ui/dropdown-menu'
-import { ContextMenu as SkContextMenu, ContextMenuContent as SkContextMenuContent, ContextMenuItem as SkContextMenuItem, ContextMenuSeparator as SkContextMenuSeparator, ContextMenuShortcut as SkContextMenuShortcut } from '../../../escala-ui/_skeleton/context-menu'
 import { Command as SkCommand, CommandGroup as SkCommandGroup, CommandInput as SkCommandInput, CommandItem as SkCommandItem, CommandList as SkCommandList } from '../../../escala-ui/_skeleton/command'
 import { Navbar as SkNavbar } from '../../../escala-ui/_skeleton/navbar'
 import {
@@ -27,20 +25,7 @@ import {
 import { Avatar as SkAvatar } from '../../../escala-ui/avatar'
 import { Button as SkButton } from '../../../escala-ui/button'
 import { RecipeScope } from './scope'
-import { Menubar as SkMenubar, MenubarContent as SkMenubarContent, MenubarItem as SkMenubarItem, MenubarMenu as SkMenubarMenu, MenubarSeparator as SkMenubarSeparator, MenubarShortcut as SkMenubarShortcut, MenubarTrigger as SkMenubarTrigger } from '../../../escala-ui/_skeleton/menubar'
 import { NavigationMenu as SkNavigationMenu, NavigationMenuContent as SkNavigationMenuContent, NavigationMenuItem as SkNavigationMenuItem, NavigationMenuLink as SkNavigationMenuLink, NavigationMenuList as SkNavigationMenuList, NavigationMenuTrigger as SkNavigationMenuTrigger } from '../../../escala-ui/_skeleton/navigation-menu'
-
-export function SkeletonTabsSpecimen({ t, v }: SpecimenProps) {
-  return (
-    <RecipeScope t={t}>
-      <SkTabs defaultValue="overview">
-        <SkTabsList variant={(v.Variant ?? 'default') as TabsListVariant}>
-          {['Overview', 'Tokens', 'Usage'].map((tab) => <SkTabsTrigger key={tab} value={tab.toLowerCase()}>{tab}</SkTabsTrigger>)}
-        </SkTabsList>
-      </SkTabs>
-    </RecipeScope>
-  )
-}
 
 /** The Figma TabMenu (984:1830) in place: Overview selected, Activity, Members with its count and Settings. */
 export function SkeletonTabMenuSpecimen({ t, v, w }: SpecimenProps) {
@@ -328,22 +313,6 @@ export function SkeletonDropdownMenuFooterSpecimen({ t, v }: SpecimenProps) {
   )
 }
 
-export function SkeletonContextMenuSpecimen({ t, w, elev }: SpecimenProps) {
-  return (
-    <RecipeScope t={t}>
-      <SkContextMenu>
-        <SkContextMenuContent inline style={{ width: w ?? 210, boxShadow: elev === false ? 'none' : undefined }}>
-          <SkContextMenuItem highlighted>Copy<SkContextMenuShortcut>⌘C</SkContextMenuShortcut></SkContextMenuItem>
-          <SkContextMenuItem>Paste<SkContextMenuShortcut>⌘V</SkContextMenuShortcut></SkContextMenuItem>
-          <SkContextMenuItem>Select all<SkContextMenuShortcut>⌘A</SkContextMenuShortcut></SkContextMenuItem>
-          <SkContextMenuSeparator />
-          <SkContextMenuItem>Inspect tokens</SkContextMenuItem>
-        </SkContextMenuContent>
-      </SkContextMenu>
-    </RecipeScope>
-  )
-}
-
 export function SkeletonCommandSpecimen({ t }: SpecimenProps) {
   return (
     <RecipeScope t={t}>
@@ -476,28 +445,6 @@ export function SkeletonSidebarBrandSpecimen({ t, v }: SpecimenProps) {
       <SkSidebar collapsed={v.Collapsed === 'true'} className="!h-auto !w-auto !border-0 !bg-transparent">
         <SkSidebarBrand logo={<SkAvatar type="initials" size="sm" shape="rounded" variant="default" appearance="solid">E</SkAvatar>} title="Escala" subtitle="Design system" />
       </SkSidebar>
-    </RecipeScope>
-  )
-}
-
-/** The bar with File open: its panel drawn in place under the trigger. */
-export function SkeletonMenubarSpecimen({ t }: SpecimenProps) {
-  return (
-    <RecipeScope t={t}>
-      <div className="flex flex-col items-start" style={{ gap: 'var(--spacing-1_5)' }}>
-        <SkMenubar>
-          {['File', 'Edit', 'View'].map((m, i) => (
-            <SkMenubarMenu key={m}><SkMenubarTrigger active={i === 0}>{m}</SkMenubarTrigger></SkMenubarMenu>
-          ))}
-        </SkMenubar>
-        <SkMenubarContent inline style={{ width: 220 }}>
-          <SkMenubarItem highlighted>New tab<SkMenubarShortcut>⌘T</SkMenubarShortcut></SkMenubarItem>
-          <SkMenubarItem>New window<SkMenubarShortcut>⌘N</SkMenubarShortcut></SkMenubarItem>
-          <SkMenubarSeparator />
-          <SkMenubarItem>Share</SkMenubarItem>
-          <SkMenubarItem variant="destructive">Close all</SkMenubarItem>
-        </SkMenubarContent>
-      </div>
     </RecipeScope>
   )
 }

@@ -119,10 +119,6 @@ export const OVERVIEWS: Record<string, Overview> = {
     each('Variant', ['default', 'secondary', 'outline', 'inverse']),
     each('Orientation', ['horizontal', 'vertical']),
   ],
-  ToggleGroup: [
-    each('Variant', ['default', 'outline']),
-    each('Size', ['sm', 'default', 'lg'], { Variant: 'outline' }),
-  ],
   Toggle: [
     [
       { v: { Variant: 'default', Pressed: 'False' } },
@@ -208,11 +204,6 @@ export const OVERVIEWS: Record<string, Overview> = {
     each('State', ['Default', 'Hover', 'Focused', 'Disabled'], {}, 240),
     each('Type', ['option', 'create'], {}, 240),
   ],
-  Select: [
-    each('State', ['Default', 'Focused'], {}, 220),
-    each('State', ['Error', 'Disabled'], {}, 220),
-  ],
-  NativeSelect: [each('State', ['Default', 'Focused', 'Disabled'], {}, 200)],
   Calendar: [
     ...stack('Mode', ['single', 'multiple', 'range'], { Size: 'default', Header: 'single' }),
     ...stack('Header', ['multiple', 'plain'], { Size: 'default', Mode: 'single' }),
@@ -460,7 +451,6 @@ export const OVERVIEWS: Record<string, Overview> = {
   Empty: [each('Media', ['default', 'icon'])],
 
   // ── Navigation ─────────────────────────────────────────────────────────────
-  Tabs: stack('Variant', ['default', 'line']),
   SegmentedControl: stack('Size', ['default', 'sm', 'lg']),
   SegmentedControlItem: [
     each('Checked', ['false', 'true']),

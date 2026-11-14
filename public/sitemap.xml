@@ -18,7 +18,6 @@
   <url><loc>https://www.escalatokens.com/components/ButtonGroup</loc></url>
   <url><loc>https://www.escalatokens.com/components/ButtonGroupItem</loc></url>
   <url><loc>https://www.escalatokens.com/components/ButtonGroupDivider</loc></url>
-  <url><loc>https://www.escalatokens.com/components/ToggleGroup</loc></url>
   <url><loc>https://www.escalatokens.com/components/Toggle</loc></url>
   <url><loc>https://www.escalatokens.com/components/SocialLoginButton</loc></url>
   <url><loc>https://www.escalatokens.com/components/AppStoreBadge</loc></url>
@@ -31,8 +30,6 @@
   <url><loc>https://www.escalatokens.com/components/InputTag</loc></url>
   <url><loc>https://www.escalatokens.com/components/InputTagChip</loc></url>
   <url><loc>https://www.escalatokens.com/components/InputTagOption</loc></url>
-  <url><loc>https://www.escalatokens.com/components/Select</loc></url>
-  <url><loc>https://www.escalatokens.com/components/NativeSelect</loc></url>
   <url><loc>https://www.escalatokens.com/components/DatePickerTrigger</loc></url>
   <url><loc>https://www.escalatokens.com/components/DatePickerPopover</loc></url>
   <url><loc>https://www.escalatokens.com/components/CalendarDay</loc></url>
@@ -120,7 +117,6 @@
   <url><loc>https://www.escalatokens.com/components/Alert</loc></url>
   <url><loc>https://www.escalatokens.com/components/Skeleton</loc></url>
   <url><loc>https://www.escalatokens.com/components/Empty</loc></url>
-  <url><loc>https://www.escalatokens.com/components/Tabs</loc></url>
   <url><loc>https://www.escalatokens.com/components/TabMenu</loc></url>
   <url><loc>https://www.escalatokens.com/components/TabMenuItem</loc></url>
   <url><loc>https://www.escalatokens.com/components/TabMenuLineItem</loc></url>
@@ -144,9 +140,7 @@
   <url><loc>https://www.escalatokens.com/components/DropdownMenuLabel</loc></url>
   <url><loc>https://www.escalatokens.com/components/DropdownMenuItem</loc></url>
   <url><loc>https://www.escalatokens.com/components/DropdownMenuFooter</loc></url>
-  <url><loc>https://www.escalatokens.com/components/Menubar</loc></url>
   <url><loc>https://www.escalatokens.com/components/NavigationMenu</loc></url>
-  <url><loc>https://www.escalatokens.com/components/ContextMenu</loc></url>
   <url><loc>https://www.escalatokens.com/components/Command</loc></url>
   <url><loc>https://www.escalatokens.com/components/Navbar</loc></url>
   <url><loc>https://www.escalatokens.com/components/Sidebar</loc></url>

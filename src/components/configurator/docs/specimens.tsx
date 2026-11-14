@@ -19,7 +19,7 @@ import { PHOSPHOR_CORE, PHOSPHOR_CORE_COMPONENT, type IconConcept } from '../../
 import { PHOSPHOR_CORE_BODIES, loadPhosphorWeight, peekPhosphorWeight, phosphorCoreBody, phosphorIconMaskUrl, type PhosphorWeight } from '../../../lib/phosphorIcons'
 import {
   SkeletonButtonSpecimen, SkeletonIconButtonSpecimen, SkeletonCloseButtonSpecimen, SkeletonTextLinkSpecimen, SkeletonFABButtonSpecimen, SkeletonFABGroupSpecimen, SkeletonButtonGroupSpecimen, SkeletonButtonGroupItemSpecimen, SkeletonButtonGroupDividerSpecimen,
-  SkeletonSocialLoginButtonSpecimen, SkeletonAppStoreBadgeSpecimen, SkeletonToggleGroupSpecimen, SkeletonToggleSpecimen,
+  SkeletonSocialLoginButtonSpecimen, SkeletonAppStoreBadgeSpecimen, SkeletonToggleSpecimen,
 } from './skeleton/actions'
 import {
   SkeletonBadgeSpecimen, SkeletonStatusBadgeSpecimen, SkeletonChipSpecimen, SkeletonProgressLineSpecimen, SkeletonProgressCircleSpecimen,
@@ -27,20 +27,20 @@ import {
   SkeletonKbdSpecimen,
 } from './skeleton/indicators'
 import {
-  SkeletonTabsSpecimen, SkeletonTabMenuSpecimen, SkeletonTabMenuItemSpecimen, SkeletonTabMenuLineItemSpecimen, SkeletonNavItemSpecimen, SkeletonBrandSpecimen, SkeletonAccountMenuTriggerSpecimen, SkeletonSegmentedControlSpecimen, SkeletonSegmentedControlItemSpecimen, SkeletonBreadcrumbSpecimen, SkeletonBreadcrumbItemSpecimen, SkeletonBreadcrumbEllipsisSpecimen, SkeletonBreadcrumbSeparatorSpecimen,
-  SkeletonPaginationSpecimen, SkeletonPaginationLinkSpecimen, SkeletonPaginationEllipsisSpecimen, SkeletonStepperSpecimen, SkeletonStepperItemSpecimen, SkeletonStepperIndicatorSpecimen, SkeletonStepperIconSpecimen, SkeletonDropdownMenuSpecimen, SkeletonDropdownMenuLabelSpecimen, SkeletonDropdownMenuItemSpecimen, SkeletonDropdownMenuFooterSpecimen, SkeletonContextMenuSpecimen,
+  SkeletonTabMenuSpecimen, SkeletonTabMenuItemSpecimen, SkeletonTabMenuLineItemSpecimen, SkeletonNavItemSpecimen, SkeletonBrandSpecimen, SkeletonAccountMenuTriggerSpecimen, SkeletonSegmentedControlSpecimen, SkeletonSegmentedControlItemSpecimen, SkeletonBreadcrumbSpecimen, SkeletonBreadcrumbItemSpecimen, SkeletonBreadcrumbEllipsisSpecimen, SkeletonBreadcrumbSeparatorSpecimen,
+  SkeletonPaginationSpecimen, SkeletonPaginationLinkSpecimen, SkeletonPaginationEllipsisSpecimen, SkeletonStepperSpecimen, SkeletonStepperItemSpecimen, SkeletonStepperIndicatorSpecimen, SkeletonStepperIconSpecimen, SkeletonDropdownMenuSpecimen, SkeletonDropdownMenuLabelSpecimen, SkeletonDropdownMenuItemSpecimen, SkeletonDropdownMenuFooterSpecimen, 
   SkeletonCommandSpecimen, SkeletonNavbarSpecimen, SkeletonSidebarSpecimen, SkeletonSidebarMenuButtonSpecimen, SkeletonSidebarGroupSpecimen, SkeletonSidebarGroupLabelSpecimen, SkeletonSidebarBrandSpecimen,
-  SkeletonMenubarSpecimen, SkeletonNavigationMenuSpecimen,
+  SkeletonNavigationMenuSpecimen,
 } from './skeleton/navigation'
 import { SKELETON_SNIPPETS } from './skeleton/snippets'
 import {
   SkeletonDatePickerTriggerSpecimen,
   SkeletonInputSpecimen, SkeletonTextareaSpecimen, SkeletonInputGroupSpecimen, SkeletonNumberInputSpecimen,
-  SkeletonInputTagSpecimen, SkeletonInputTagChipSpecimen, SkeletonInputTagOptionSpecimen, SkeletonSelectSpecimen, SkeletonComboboxSpecimen, SkeletonComboboxPopoverSpecimen, SkeletonComboboxItemSpecimen, SkeletonComboboxGroupLabelSpecimen, SkeletonInputOTPSpecimen, SkeletonInputOTPSlotSpecimen,
+  SkeletonInputTagSpecimen, SkeletonInputTagChipSpecimen, SkeletonInputTagOptionSpecimen, SkeletonComboboxSpecimen, SkeletonComboboxPopoverSpecimen, SkeletonComboboxItemSpecimen, SkeletonComboboxGroupLabelSpecimen, SkeletonInputOTPSpecimen, SkeletonInputOTPSlotSpecimen,
   SkeletonCheckboxSpecimen, SkeletonCheckboxItemSpecimen, SkeletonCheckboxGroupSpecimen, SkeletonRadioGroupSpecimen,
   SkeletonSwitchSpecimen, SkeletonSwitchGroupSpecimen, SkeletonSliderSpecimen, SkeletonSliderThumbSpecimen, SkeletonFileUploadSpecimen,
   SkeletonFileUploadDropzoneSpecimen, SkeletonFileUploadItemSpecimen, SkeletonFieldSpecimen, SkeletonLabelSpecimen, SkeletonPasswordStrengthSpecimen, SkeletonPasswordStrengthMeterSpecimen, SkeletonPasswordStrengthRuleSpecimen,
-  SkeletonNativeSelectSpecimen,
+  
 } from './skeleton/forms'
 import {
   SkeletonCardSpecimen, SkeletonModalSpecimen, SkeletonModalHeaderSpecimen, SkeletonModalFooterSpecimen, SkeletonSeparatorSpecimen, SkeletonAccordionSpecimen, SkeletonAccordionItemSpecimen, SkeletonTableCellSpecimen, SkeletonTableHeadSpecimen, SkeletonTableMediaCellSpecimen, SkeletonTableTrendCellSpecimen, SkeletonTableResizerSpecimen, SkeletonTableRowSpecimen, SkeletonTableHeaderSpecimen, SkeletonTableFooterSpecimen, SkeletonTableCaptionSpecimen, SkeletonTableDropIndicatorSpecimen, SkeletonTableEmptySpecimen, SkeletonTableLoadingSpecimen, SkeletonTableLoadMoreSpecimen,
@@ -373,7 +373,6 @@ export const SPECIMENS: Record<string, (p: SpecimenProps) => ReactNode> = {
   ButtonGroup: SkeletonButtonGroupSpecimen,
   ButtonGroupItem: SkeletonButtonGroupItemSpecimen,
   ButtonGroupDivider: SkeletonButtonGroupDividerSpecimen,
-  ToggleGroup: SkeletonToggleGroupSpecimen,
   Toggle: SkeletonToggleSpecimen,
   SocialLoginButton: SkeletonSocialLoginButtonSpecimen,
   AppStoreBadge: SkeletonAppStoreBadgeSpecimen,
@@ -389,8 +388,6 @@ export const SPECIMENS: Record<string, (p: SpecimenProps) => ReactNode> = {
   InputTag: SkeletonInputTagSpecimen,
   InputTagChip: SkeletonInputTagChipSpecimen,
   InputTagOption: SkeletonInputTagOptionSpecimen,
-  Select: SkeletonSelectSpecimen,
-  NativeSelect: SkeletonNativeSelectSpecimen,
   Calendar: lazySpecimen('SkeletonCalendarSpecimen'),
   CalendarDay: lazySpecimen('SkeletonCalendarDaySpecimen'),
   CalendarHeader: lazySpecimen('SkeletonCalendarHeaderSpecimen'),
@@ -480,7 +477,6 @@ export const SPECIMENS: Record<string, (p: SpecimenProps) => ReactNode> = {
   Skeleton: SkeletonSkeletonSpecimen,
   Empty: SkeletonEmptySpecimen,
   // Navigation
-  Tabs: SkeletonTabsSpecimen,
   TabMenu: SkeletonTabMenuSpecimen,
   TabMenuItem: SkeletonTabMenuItemSpecimen,
   TabMenuLineItem: SkeletonTabMenuLineItemSpecimen,
@@ -504,9 +500,7 @@ export const SPECIMENS: Record<string, (p: SpecimenProps) => ReactNode> = {
   DropdownMenuLabel: SkeletonDropdownMenuLabelSpecimen,
   DropdownMenuItem: SkeletonDropdownMenuItemSpecimen,
   DropdownMenuFooter: SkeletonDropdownMenuFooterSpecimen,
-  ContextMenu: SkeletonContextMenuSpecimen,
   Command: SkeletonCommandSpecimen,
-  Menubar: SkeletonMenubarSpecimen,
   NavigationMenu: SkeletonNavigationMenuSpecimen,
   Navbar: SkeletonNavbarSpecimen,
   Sidebar: SkeletonSidebarSpecimen,

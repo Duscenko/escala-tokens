@@ -678,43 +678,6 @@ export const INPUT_TAG_OPTION: ComponentRecipe = {
 
 // ── Select ─────────────────────────────────────────────────────────────────
 
-// shadcn's trigger sizes: default (control 40) · sm (compact 32).
-const SELECT_GEOMETRY: Record<string, string> = { default: 'size.control', sm: 'size.compact' }
-const MENU_ITEM: SlotMap = {
-  item: { text: c('content.primary'), font: 'type.body-sm', radius: PANEL_ROW_RADIUS, paddingX: 'spacing.2_5', paddingY: 'spacing.1_5', gap: 'spacing.2' },
-  'item[data-highlighted]': { fill: c('action.ghost.hover') },
-  'item[data-state="checked"]': { fill: c('surface.selected'), text: c('content.accent') },
-  'item[data-disabled]': { text: c('content.disabled') },
-}
-// The list panel is a box (`radius.container`) with a `spacing.1` inset: its
-// rows take its radius minus that inset (the menus' rule, `navigation.ts`).
-const MENU_CONTENT: SlotProps = {
-  fill: c('surface.layer-2'), stroke: c('border.subtle'), strokeWidth: 'stroke.control',
-  radius: PANEL_RADIUS, shadow: 'shadow.lg', paddingX: 'spacing.1', paddingY: 'spacing.1',
-}
-
-export const SELECT: ComponentRecipe = {
-  key: 'Select',
-  slots: ['root', 'icon', 'content', 'item'],
-  // Radix portals the list: it is a sibling of the trigger, not inside it.
-  detachedSlots: ['content', 'item'],
-  defaults: { Size: 'default', State: 'Default' },
-  parts: [
-    part({}, () => ({
-      root: { ...FIELD_FIXED, font: 'type.placeholder', text: c('content.primary') },
-      'root[data-placeholder]': { text: c('content.subtle') },
-      icon: { text: c('content.secondary') },
-      content: MENU_CONTENT,
-      ...MENU_ITEM,
-    })),
-    part({ Size: ['default', 'sm'] as const }, (size) => ({ root: { height: SELECT_GEOMETRY[size] } })),
-    part({ State: ['Default', 'Hover', 'Focused', 'Error', 'Disabled'] as const }, (state) => ({
-      root: { ...fieldBox(state), ...(state === 'Disabled' ? { text: c('content.disabled') } : {}) },
-      icon: { text: c(state === 'Disabled' ? 'content.disabled' : 'content.secondary') },
-    })),
-  ],
-}
-
 // ── Combobox · ComboboxPopover · ComboboxItem · ComboboxGroupLabel ─────────
 // The Figma `Combobox` page (design-plans/combobox-contract.md), four sets:
 //  · Combobox (413:1478, Size × State × Variant × Shape × Value, 168 variants): the
@@ -1498,32 +1461,6 @@ export const FILE_UPLOAD_ITEM: ComponentRecipe = {
         icon: { text: c(error ? 'status.critical.content' : 'content.secondary') },
         statusIcon: { text: c(ink) },
         label: { text: c(ink) },
-      }
-    }),
-  ],
-}
-
-// ── NativeSelect ───────────────────────────────────────────────────────────
-// shadcn's NativeSelect: a real <select> drawn as the field box, `size` default
-// | sm (the Select heights). The wrapper is the root, so the State axis reads
-// off it like every other field.
-
-const NATIVE_SELECT_STATES = ['Default', 'Hover', 'Focused', 'Disabled'] as const
-
-export const NATIVE_SELECT: ComponentRecipe = {
-  key: 'NativeSelect',
-  slots: ['root', 'select', 'icon'],
-  defaults: { Size: 'default', State: 'Default' },
-  parts: [
-    part({}, () => ({
-      select: { ...FIELD_FIXED, font: 'type.placeholder' },
-    })),
-    part({ Size: ['default', 'sm'] as const }, (size) => ({ select: { height: SELECT_GEOMETRY[size] } })),
-    part({ State: NATIVE_SELECT_STATES }, (state) => {
-      const disabled = state === 'Disabled'
-      return {
-        select: { ...fieldBox(state), text: c(disabled ? 'content.disabled' : 'content.primary') },
-        icon: { text: c(disabled ? 'content.disabled' : 'content.secondary') },
       }
     }),
   ],

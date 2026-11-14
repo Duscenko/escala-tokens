@@ -275,14 +275,14 @@ function motionChoreographies(settings) {
     },
     "popover-enter": {
       pattern: "coordinated",
-      components: ["Popover", "DatePickerPopover", "TooltipContent", "HoverCard", "DropdownMenu", "ContextMenu", "Select", "Menubar"],
+      components: ["Popover", "DatePickerPopover", "TooltipContent", "HoverCard", "DropdownMenu"],
       intent: { usage: ["popovers", "tooltips", "menus"], direction: "A floating layer grows out of its trigger: a short pop on the disclosure role." },
       tracks: [{ keyframes: s.pop < 1 ? "pop" : "fade-in", motion: r("use-disclosure-in"), delay: 0 }],
       reducedMotion: { collapseTo: "coordinated", pattern: "coordinated", tracks: [{ keyframes: "fade-in", motion: FADE_IN, delay: 0 }] }
     },
     "popover-exit": {
       pattern: "coordinated",
-      components: ["Popover", "DatePickerPopover", "TooltipContent", "HoverCard", "DropdownMenu", "ContextMenu", "Select", "Menubar"],
+      components: ["Popover", "DatePickerPopover", "TooltipContent", "HoverCard", "DropdownMenu"],
       intent: { usage: ["popovers", "tooltips", "menus"], direction: "Gets out of the way, faster than it came." },
       tracks: [{ keyframes: s.shrink < 1 ? "shrink" : "fade-out", motion: r("use-disclosure-out"), delay: 0 }],
       reducedMotion: { collapseTo: "coordinated", pattern: "coordinated", tracks: [{ keyframes: "fade-out", motion: FADE_OUT, delay: 0 }] }
@@ -4174,26 +4174,6 @@ var init_componentCatalogue = __esm({
         accessibility: "Decorative: aria-hidden."
       },
       {
-        key: "ToggleGroup",
-        label: "Toggle Group",
-        category: "Button & Actions",
-        description: "shadcn/ui Toggle Group: a set of two-state buttons \u2014 one or several pressed at a time.",
-        usage: "Use for formatting toggles (bold \xB7 italic \xB7 underline) or a view filter that can combine. For one exclusive choice among views prefer Segmented Control or Tabs.",
-        axes: [
-          { name: "Variant", values: ["default", "outline"] },
-          { name: "Size", values: ["default", "sm", "lg"] }
-        ],
-        figmaSets: ["Toggle Group"],
-        props: [
-          { name: "type", type: '"single" | "multiple"', description: "One pressed item, or any number." },
-          { name: "variant", type: '"default" | "outline"', description: "shadcn's toggle variants: no edge, or the control boundary." },
-          { name: "size", type: '"default" | "sm" | "lg"', description: "Item height \u2014 the Button heights." },
-          { name: "value / defaultValue / onValueChange", type: "string | string[]", description: "The pressed item(s)." },
-          { name: "ToggleGroupItem value", type: "component", description: 'One toggle; Radix writes data-state="on" when pressed.' }
-        ],
-        accessibility: 'Radix ToggleGroup: arrow keys move between items (roving tabindex); each item exposes aria-pressed (multiple) or role="radio" (single).'
-      },
-      {
         key: "Toggle",
         label: "Toggle",
         category: "Button & Actions",
@@ -4445,43 +4425,6 @@ var init_componentCatalogue = __esm({
           { name: "selected / disabled", type: "boolean", description: "aria-selected; State Disabled." }
         ],
         accessibility: 'role="option" with aria-selected; the list that holds it is a listbox with arrow-key navigation.'
-      },
-      {
-        key: "Select",
-        label: "Select",
-        category: "Form Controls",
-        description: "Dropdown trigger that shares the input tokens, with full state coverage for forms and filters.",
-        usage: "Use when options exceed 4 items. For fewer options, prefer Radio or ButtonGroup.",
-        axes: [
-          { name: "Size", values: ["default", "sm"] },
-          { name: "State", values: ["Default", "Hover", "Focused", "Error", "Disabled"] }
-        ],
-        figmaSets: ["Select"],
-        props: [
-          { name: "Select", type: "component", description: "Radix Select root: value, defaultValue, onValueChange, disabled." },
-          { name: "SelectTrigger size", type: '"md" | "sm" | "lg"', description: "Field height \u2014 follows the Sizes foundation." },
-          { name: "SelectValue placeholder", type: "string", description: "Shown until an option is chosen." },
-          { name: "SelectContent / SelectItem", type: "component", description: "The list; it portals into the theme scope." }
-        ],
-        accessibility: 'Built on Radix Select. Keyboard navigable. Options have role="option".'
-      },
-      {
-        key: "NativeSelect",
-        label: "Native Select",
-        category: "Form Controls",
-        description: "shadcn/ui Native Select: the browser's own <select>, drawn as the field box with a chevron.",
-        usage: "Use where the platform picker is the better experience (mobile, long lists, forms that must work without JavaScript). For a styled list with search or rich items use Select or Combobox.",
-        axes: [
-          { name: "Size", values: ["default", "sm"] },
-          { name: "State", values: ["Default", "Hover", "Focused", "Disabled"] }
-        ],
-        figmaSets: ["Select"],
-        props: [
-          { name: "size", type: '"default" | "sm"', description: "The Select heights." },
-          { name: "NativeSelectOption / NativeSelectOptGroup", type: "component", description: "The options, as <option> / <optgroup>." },
-          { name: "\u2026select attributes", type: 'React.ComponentProps<"select">', description: "value, onChange, disabled, name \u2014 a real <select>." }
-        ],
-        accessibility: "A native <select>: keyboard, screen readers and the platform picker come for free. Pair it with a Label (Field)."
       },
       {
         key: "DatePickerTrigger",
@@ -6144,22 +6087,6 @@ var init_componentCatalogue = __esm({
       },
       // ── Navigation ──────────────────────────────────────────────────────────────
       {
-        key: "Tabs",
-        label: "Tabs",
-        category: "Navigation",
-        description: "Tab bar for switchable panels: a muted track (default) or an underline (line).",
-        usage: "Use when content is parallel, not sequential. Limit to 2\u20137 tabs visible at once.",
-        axes: [{ name: "Variant", values: ["default", "line"] }],
-        figmaSets: ["Tabs"],
-        props: [
-          { name: "Tabs value / defaultValue", type: "string", description: "The open tab." },
-          { name: "TabsList variant", type: '"default" | "line"', description: "A muted track with a raised active tab, or an underline strip." },
-          { name: "TabsTrigger", type: "component", description: "One tab (arrow keys move between them)." },
-          { name: "TabsContent value", type: "string", description: "The panel for a tab." }
-        ],
-        accessibility: 'ARIA tabs pattern: role="tablist", role="tab", role="tabpanel". Arrow key navigation.'
-      },
-      {
         key: "TabMenu",
         label: "Tab Menu",
         category: "Navigation",
@@ -6570,22 +6497,6 @@ var init_componentCatalogue = __esm({
         accessibility: "Keep it outside role menu; its controls are reachable with Tab after the list."
       },
       {
-        key: "Menubar",
-        label: "Menubar",
-        category: "Navigation",
-        description: "shadcn/ui Menubar: a persistent bar of menus, as in desktop apps (File \xB7 Edit \xB7 View).",
-        usage: "Use in app-like tools with many commands grouped by menu. For a few actions behind one button use Dropdown Menu.",
-        axes: [],
-        figmaSets: ["Menubar"],
-        props: [
-          { name: "MenubarMenu / MenubarTrigger / MenubarContent", type: "component", description: "One menu." },
-          { name: "MenubarItem variant", type: '"default" | "destructive"', description: "A command." },
-          { name: "MenubarSeparator / MenubarShortcut / MenubarLabel", type: "component", description: "Grouping and key hints." },
-          { name: "MenubarSub / MenubarCheckboxItem / MenubarRadioItem", type: "component", description: "Submenus and toggles." }
-        ],
-        accessibility: "Radix Menubar: arrow keys move between menus and items, Esc closes, type-ahead finds items."
-      },
-      {
         key: "NavigationMenu",
         label: "Navigation Menu",
         category: "Navigation",
@@ -6600,21 +6511,6 @@ var init_componentCatalogue = __esm({
           { name: "viewport", type: "boolean", description: "Panels share one animated viewport (default true)." }
         ],
         accessibility: "Radix NavigationMenu: a nav landmark; triggers expose aria-expanded and arrow keys move between them."
-      },
-      {
-        key: "ContextMenu",
-        label: "Context Menu",
-        category: "Navigation",
-        description: "Right-click menu with shortcut hints \u2014 the pointer-positioned sibling of Dropdown Menu.",
-        usage: "Every context-menu action must also exist somewhere visible \u2014 right-click is a shortcut.",
-        axes: [],
-        figmaSets: ["Context Menu"],
-        props: [
-          { name: "ContextMenu", type: "component", description: "Radix root." },
-          { name: "ContextMenuTrigger", type: "component", description: "The area that opens it on right-click." },
-          { name: "ContextMenuContent / Item / Separator / Shortcut", type: "component", description: "The panel and its rows." }
-        ],
-        accessibility: "Same ARIA menu pattern; also opened via the keyboard Menu key / Shift+F10."
       },
       {
         key: "Command",
@@ -6730,7 +6626,7 @@ var init_componentCatalogue = __esm({
       "Button",
       "IconButton",
       "Input",
-      "Select",
+      "Combobox",
       "Checkbox",
       "Switch",
       "Badge",
@@ -6740,7 +6636,7 @@ var init_componentCatalogue = __esm({
       "TooltipContent",
       "Separator",
       "Toast",
-      "Tabs"
+      "TabMenu"
     ];
   }
 });
@@ -9533,7 +9429,7 @@ function part(axes, build) {
   for (const combo of combos(axes)) values[combo.join("|")] = build(...combo);
   return { axes: Object.keys(axes), values };
 }
-var c, NONE, FOCUS, TALL_FIELD_RADIUS, PANEL_RADIUS, PANEL_ROW_RADIUS;
+var c, NONE, FOCUS, TALL_FIELD_RADIUS, PANEL_RADIUS;
 var init_helpers = __esm({
   "src/lib/recipes/helpers.ts"() {
     c = (role) => `color.${role}`;
@@ -9541,7 +9437,6 @@ var init_helpers = __esm({
     FOCUS = { focus: "color.border.focus", ring: "color.border.ring.default" };
     TALL_FIELD_RADIUS = "min(radius.action,radius.2xl)";
     PANEL_RADIUS = "radius.container";
-    PANEL_ROW_RADIUS = "sub(radius.container,spacing.1)";
   }
 });
 
@@ -9673,7 +9568,7 @@ function buttonGroupItemPaint(variant, active, state2) {
   const k = ITEM_SOLID[variant];
   return { root: { fill: k.fill[step], text: k.ink, focus: state2 === "Focused" ? k.focus : NONE } };
 }
-var BUTTON_VARIANTS, BUTTON_APPEARANCES, BUTTON_SIZES, BUTTON_STATES, SOLID, QUIET, LINK, strokeOf, BUTTON_HEIGHT, BUTTON_GAP, BUTTON, ICON_BUTTON_GLYPH, ICON_BUTTON, CLOSE_BUTTON_APPEARANCES, CLOSE_BUTTON_SHAPES, CLOSE_BUTTON_SIZES, CLOSE_BUTTON_VARIANTS, CLOSE_STATES, same3, NO_OVER, MUTED, CLOSE, CLOSE_SIZE, CLOSE_RADIUS, CLOSE_BUTTON, TEXT_LINK_VARIANTS, TEXT_LINK_SIZES, TEXT_LINK_STATES, LINK_INK, LINK_FOCUS, LINK_FONT, LINK_ICON, LINK_GAP, TEXT_LINK, FAB_APPEARANCES, FAB_SHAPES, FAB_SIZES, FAB_VARIANTS, FAB_STATES, FAB_MUTED, FAB, FAB_SIZE, FAB_BUTTON, FAB_GROUP_LAYOUTS, FAB_GROUP, BUTTON_GROUP_VARIANTS, BUTTON_GROUP_SHAPES, BUTTON_GROUP_ORIENTATIONS, BUTTON_GROUP_ITEM_SIZES, BUTTON_GROUP_ITEM_STATES, GROUP_RADIUS, BUTTON_GROUP, ITEM_SOLID, MUTED_INV, ITEM_GEOMETRY, BUTTON_GROUP_ITEM, DIVIDER_FILL, BUTTON_GROUP_DIVIDER, SOCIAL_GEOMETRY, SOCIAL_LOGIN_BUTTON, APP_STORE_BADGE, TOGGLE_GROUP_VARIANTS, TOGGLE_GROUP_SIZES, TOGGLE_HEIGHT, TOGGLE_GROUP, TOGGLE;
+var BUTTON_VARIANTS, BUTTON_APPEARANCES, BUTTON_SIZES, BUTTON_STATES, SOLID, QUIET, LINK, strokeOf, BUTTON_HEIGHT, BUTTON_GAP, BUTTON, ICON_BUTTON_GLYPH, ICON_BUTTON, CLOSE_BUTTON_APPEARANCES, CLOSE_BUTTON_SHAPES, CLOSE_BUTTON_SIZES, CLOSE_BUTTON_VARIANTS, CLOSE_STATES, same3, NO_OVER, MUTED, CLOSE, CLOSE_SIZE, CLOSE_RADIUS, CLOSE_BUTTON, TEXT_LINK_VARIANTS, TEXT_LINK_SIZES, TEXT_LINK_STATES, LINK_INK, LINK_FOCUS, LINK_FONT, LINK_ICON, LINK_GAP, TEXT_LINK, FAB_APPEARANCES, FAB_SHAPES, FAB_SIZES, FAB_VARIANTS, FAB_STATES, FAB_MUTED, FAB, FAB_SIZE, FAB_BUTTON, FAB_GROUP_LAYOUTS, FAB_GROUP, BUTTON_GROUP_VARIANTS, BUTTON_GROUP_SHAPES, BUTTON_GROUP_ORIENTATIONS, BUTTON_GROUP_ITEM_SIZES, BUTTON_GROUP_ITEM_STATES, GROUP_RADIUS, BUTTON_GROUP, ITEM_SOLID, MUTED_INV, ITEM_GEOMETRY, BUTTON_GROUP_ITEM, DIVIDER_FILL, BUTTON_GROUP_DIVIDER, SOCIAL_GEOMETRY, SOCIAL_LOGIN_BUTTON, APP_STORE_BADGE, TOGGLE_GROUP_VARIANTS, TOGGLE_GROUP_SIZES, TOGGLE_HEIGHT, TOGGLE;
 var init_actions = __esm({
   "src/lib/recipes/actions.ts"() {
     init_helpers();
@@ -10024,33 +9919,6 @@ var init_actions = __esm({
     TOGGLE_GROUP_VARIANTS = ["default", "outline"];
     TOGGLE_GROUP_SIZES = ["default", "sm", "lg"];
     TOGGLE_HEIGHT = { sm: "size.compact", default: "size.control", lg: "size.touch" };
-    TOGGLE_GROUP = {
-      key: "ToggleGroup",
-      slots: ["root", "item"],
-      defaults: { Variant: "default", Size: "default" },
-      parts: [
-        part({}, () => ({
-          root: { gap: "spacing.1" },
-          "item:focus-visible": FOCUS
-        })),
-        part({ Variant: TOGGLE_GROUP_VARIANTS }, (variant) => ({
-          item: variant === "outline" ? {
-            fill: NONE,
-            stroke: c("border.control"),
-            strokeWidth: "stroke.control",
-            text: c("content.secondary"),
-            font: "type.button",
-            radius: "radius.action",
-            gap: "spacing.1"
-          } : { fill: NONE, text: c("content.secondary"), font: "type.button", radius: "radius.action", gap: "spacing.1" },
-          "item:hover": { fill: c("action.ghost.hover"), text: c("content.primary") },
-          'item[data-state="on"]': { fill: c("surface.layer-2"), text: c("content.primary") }
-        })),
-        part({ Size: TOGGLE_GROUP_SIZES }, (size) => ({
-          item: { height: TOGGLE_HEIGHT[size], paddingX: "spacing.2_5" }
-        }))
-      ]
-    };
     TOGGLE = {
       key: "Toggle",
       slots: ["root"],
@@ -10399,18 +10267,12 @@ function fileUploadDropzonePaint(state2) {
     description: ink("content.secondary")
   };
 }
-var FIELD_FIXED, INPUT_STATES, INPUT_SIZES, INPUT_TYPES, INPUT_GEOMETRY, INPUT_GLYPH, INPUT_STROKE_IN_LAYOUT, INPUT, TEXTAREA_SIZES, TEXTAREA_STATES, TEXTAREA_HEIGHT, TEXTAREA_PAD, TEXTAREA_FONT, TEXTAREA_GLYPH, TEXTAREA, DATE_PICKER_TRIGGER_SIZES, DATE_PICKER_TRIGGER_STATES, DPT_GEOMETRY, DATE_PICKER_TRIGGER, DATE_PICKER_POPOVER, CALENDAR_DAY_SIZES, CALENDAR_DAY_STATES, CALENDAR_DAY_VARIANTS, CALENDAR_DAY_GEOMETRY, CALENDAR_DAY, CALENDAR_HEADER_SIZES, CALENDAR_HEADER_GEOMETRY, SEVEN, CALENDAR_HEADER, CALENDAR_MONTH, CALENDAR_PRESETS_SIZES, CALENDAR_PRESETS_VARIANTS, CALENDAR_PRESETS_GEOMETRY, CALENDAR_PRESETS, CALENDAR_FOOTER_SIZES, CALENDAR_FOOTER_GEOMETRY, CALENDAR_FOOTER, GROUP_LIVE, GROUP_CONTROL, INPUT_GROUP, NUMBER_INPUT_SIZES, NUMBER_INPUT_STATES, NUMBER_BOX, NUMBER_INPUT, INPUT_TAG_LAYOUTS, INPUT_TAG_SIZES, INPUT_TAG_STATES, TAG_BOX, INPUT_TAG, INPUT_TAG_CHIP_SIZES, INPUT_TAG_CHIP_STATES, INPUT_TAG_CHIP_VARIANTS, CHIP_GEOMETRY, INPUT_TAG_CHIP, INPUT_TAG_OPTION_STATES, INPUT_TAG_OPTION, SELECT_GEOMETRY, MENU_ITEM, MENU_CONTENT, SELECT, COMBOBOX_SIZES, COMBOBOX_STATES, COMBOBOX_SHAPES, COMBOBOX_ITEM_STATES, COMBO_TRIGGER, COMBOBOX, POPOVER_SIZE, COMBOBOX_POPOVER, COMBO_ITEM, COMBOBOX_ITEM, COMBOBOX_GROUP_LABEL, INPUT_OTP_SIZES, INPUT_OTP_VARIANTS, INPUT_OTP_STATES, INPUT_OTP_SLOT_STATES, INPUT_OTP, OTP_SLOT_BOX, OTP_SLOT_FONT, OTP_CARET, INPUT_OTP_SLOT, CHECKBOX_SIZES, CHECKBOX_CHECKED, CHECKBOX_STATES, CHECKBOX_VARIANTS, CHECKBOX_ON, CHECKBOX, CHECKBOX_ITEM_SIZES, CHECKBOX_ITEM_STATES, CHECKBOX_ITEM_TYPE, CHECKBOX_ITEM, CHECKBOX_GROUP_STATES, CHECKBOX_GROUP, RADIO_GROUP, SWITCH_SIZES, SWITCH_STATES, SWITCH_CHECKED, SWITCH_THUMBS, SWITCH_GEOMETRY, SWITCH, SWITCH_GROUP_SIZES, SWITCH_GROUP_STATES, SWITCH_GROUP_TYPE, SWITCH_GROUP, SLIDER_SIZES, SLIDER_THUMB_STATES, SLIDER_STATES, SLIDER_VARIANTS, SLIDER_THUMB_PX, SLIDER_THUMB_EDGE, SLIDER_THUMB, SLIDER_CONTROL, SLIDER, FIELD_STATES, FIELD, LABEL, PASSWORD_STRENGTH_SIZES, PASSWORD_STRENGTHS, STRENGTH_SEGMENT, STRENGTH_LEVEL, PASSWORD_STRENGTH, METER_HEIGHT, PASSWORD_STRENGTH_METER, RULE_ICON, RULE_MARKER, RULE_FONT, PASSWORD_STRENGTH_RULE, FILE_UPLOAD_SIZES, FILE_UPLOAD, FILE_UPLOAD_DROPZONE_SIZES, FILE_UPLOAD_DROPZONE_STATES, FUD_GEOMETRY, FILE_UPLOAD_DROPZONE, FILE_UPLOAD_ITEM_SIZES, FILE_UPLOAD_ITEM_STATUSES, FILE_UPLOAD_ITEM, NATIVE_SELECT_STATES, NATIVE_SELECT, CALENDAR_SIZES, CALENDAR;
+var INPUT_STATES, INPUT_SIZES, INPUT_TYPES, INPUT_GEOMETRY, INPUT_GLYPH, INPUT_STROKE_IN_LAYOUT, INPUT, TEXTAREA_SIZES, TEXTAREA_STATES, TEXTAREA_HEIGHT, TEXTAREA_PAD, TEXTAREA_FONT, TEXTAREA_GLYPH, TEXTAREA, DATE_PICKER_TRIGGER_SIZES, DATE_PICKER_TRIGGER_STATES, DPT_GEOMETRY, DATE_PICKER_TRIGGER, DATE_PICKER_POPOVER, CALENDAR_DAY_SIZES, CALENDAR_DAY_STATES, CALENDAR_DAY_VARIANTS, CALENDAR_DAY_GEOMETRY, CALENDAR_DAY, CALENDAR_HEADER_SIZES, CALENDAR_HEADER_GEOMETRY, SEVEN, CALENDAR_HEADER, CALENDAR_MONTH, CALENDAR_PRESETS_SIZES, CALENDAR_PRESETS_VARIANTS, CALENDAR_PRESETS_GEOMETRY, CALENDAR_PRESETS, CALENDAR_FOOTER_SIZES, CALENDAR_FOOTER_GEOMETRY, CALENDAR_FOOTER, GROUP_LIVE, GROUP_CONTROL, INPUT_GROUP, NUMBER_INPUT_SIZES, NUMBER_INPUT_STATES, NUMBER_BOX, NUMBER_INPUT, INPUT_TAG_LAYOUTS, INPUT_TAG_SIZES, INPUT_TAG_STATES, TAG_BOX, INPUT_TAG, INPUT_TAG_CHIP_SIZES, INPUT_TAG_CHIP_STATES, INPUT_TAG_CHIP_VARIANTS, CHIP_GEOMETRY, INPUT_TAG_CHIP, INPUT_TAG_OPTION_STATES, INPUT_TAG_OPTION, COMBOBOX_SIZES, COMBOBOX_STATES, COMBOBOX_SHAPES, COMBOBOX_ITEM_STATES, COMBO_TRIGGER, COMBOBOX, POPOVER_SIZE, COMBOBOX_POPOVER, COMBO_ITEM, COMBOBOX_ITEM, COMBOBOX_GROUP_LABEL, INPUT_OTP_SIZES, INPUT_OTP_VARIANTS, INPUT_OTP_STATES, INPUT_OTP_SLOT_STATES, INPUT_OTP, OTP_SLOT_BOX, OTP_SLOT_FONT, OTP_CARET, INPUT_OTP_SLOT, CHECKBOX_SIZES, CHECKBOX_CHECKED, CHECKBOX_STATES, CHECKBOX_VARIANTS, CHECKBOX_ON, CHECKBOX, CHECKBOX_ITEM_SIZES, CHECKBOX_ITEM_STATES, CHECKBOX_ITEM_TYPE, CHECKBOX_ITEM, CHECKBOX_GROUP_STATES, CHECKBOX_GROUP, RADIO_GROUP, SWITCH_SIZES, SWITCH_STATES, SWITCH_CHECKED, SWITCH_THUMBS, SWITCH_GEOMETRY, SWITCH, SWITCH_GROUP_SIZES, SWITCH_GROUP_STATES, SWITCH_GROUP_TYPE, SWITCH_GROUP, SLIDER_SIZES, SLIDER_THUMB_STATES, SLIDER_STATES, SLIDER_VARIANTS, SLIDER_THUMB_PX, SLIDER_THUMB_EDGE, SLIDER_THUMB, SLIDER_CONTROL, SLIDER, FIELD_STATES, FIELD, LABEL, PASSWORD_STRENGTH_SIZES, PASSWORD_STRENGTHS, STRENGTH_SEGMENT, STRENGTH_LEVEL, PASSWORD_STRENGTH, METER_HEIGHT, PASSWORD_STRENGTH_METER, RULE_ICON, RULE_MARKER, RULE_FONT, PASSWORD_STRENGTH_RULE, FILE_UPLOAD_SIZES, FILE_UPLOAD, FILE_UPLOAD_DROPZONE_SIZES, FILE_UPLOAD_DROPZONE_STATES, FUD_GEOMETRY, FILE_UPLOAD_DROPZONE, FILE_UPLOAD_ITEM_SIZES, FILE_UPLOAD_ITEM_STATUSES, FILE_UPLOAD_ITEM, CALENDAR_SIZES, CALENDAR;
 var init_forms = __esm({
   "src/lib/recipes/forms.ts"() {
     init_groupLabel();
     init_listItem();
     init_helpers();
-    FIELD_FIXED = {
-      radius: "radius.action",
-      strokeWidth: "stroke.control",
-      paddingX: "spacing.inset-control",
-      gap: "spacing.gap-control"
-    };
     INPUT_STATES = ["Default", "Hover", "Focused", "Invalid", "Disabled"];
     INPUT_SIZES = ["default", "sm", "lg"];
     INPUT_TYPES = [
@@ -10794,43 +10656,6 @@ var init_forms = __esm({
           meta: { font: "type.caption" }
         })),
         part({ State: INPUT_TAG_OPTION_STATES }, (state2) => optionPaint(state2))
-      ]
-    };
-    SELECT_GEOMETRY = { default: "size.control", sm: "size.compact" };
-    MENU_ITEM = {
-      item: { text: c("content.primary"), font: "type.body-sm", radius: PANEL_ROW_RADIUS, paddingX: "spacing.2_5", paddingY: "spacing.1_5", gap: "spacing.2" },
-      "item[data-highlighted]": { fill: c("action.ghost.hover") },
-      'item[data-state="checked"]': { fill: c("surface.selected"), text: c("content.accent") },
-      "item[data-disabled]": { text: c("content.disabled") }
-    };
-    MENU_CONTENT = {
-      fill: c("surface.layer-2"),
-      stroke: c("border.subtle"),
-      strokeWidth: "stroke.control",
-      radius: PANEL_RADIUS,
-      shadow: "shadow.lg",
-      paddingX: "spacing.1",
-      paddingY: "spacing.1"
-    };
-    SELECT = {
-      key: "Select",
-      slots: ["root", "icon", "content", "item"],
-      // Radix portals the list: it is a sibling of the trigger, not inside it.
-      detachedSlots: ["content", "item"],
-      defaults: { Size: "default", State: "Default" },
-      parts: [
-        part({}, () => ({
-          root: { ...FIELD_FIXED, font: "type.placeholder", text: c("content.primary") },
-          "root[data-placeholder]": { text: c("content.subtle") },
-          icon: { text: c("content.secondary") },
-          content: MENU_CONTENT,
-          ...MENU_ITEM
-        })),
-        part({ Size: ["default", "sm"] }, (size) => ({ root: { height: SELECT_GEOMETRY[size] } })),
-        part({ State: ["Default", "Hover", "Focused", "Error", "Disabled"] }, (state2) => ({
-          root: { ...fieldBox(state2), ...state2 === "Disabled" ? { text: c("content.disabled") } : {} },
-          icon: { text: c(state2 === "Disabled" ? "content.disabled" : "content.secondary") }
-        }))
       ]
     };
     COMBOBOX_SIZES = ["sm", "default", "lg"];
@@ -11362,25 +11187,6 @@ var init_forms = __esm({
             icon: { text: c(error ? "status.critical.content" : "content.secondary") },
             statusIcon: { text: c(ink) },
             label: { text: c(ink) }
-          };
-        })
-      ]
-    };
-    NATIVE_SELECT_STATES = ["Default", "Hover", "Focused", "Disabled"];
-    NATIVE_SELECT = {
-      key: "NativeSelect",
-      slots: ["root", "select", "icon"],
-      defaults: { Size: "default", State: "Default" },
-      parts: [
-        part({}, () => ({
-          select: { ...FIELD_FIXED, font: "type.placeholder" }
-        })),
-        part({ Size: ["default", "sm"] }, (size) => ({ select: { height: SELECT_GEOMETRY[size] } })),
-        part({ State: NATIVE_SELECT_STATES }, (state2) => {
-          const disabled = state2 === "Disabled";
-          return {
-            select: { ...fieldBox(state2), text: c(disabled ? "content.disabled" : "content.primary") },
-            icon: { text: c(disabled ? "content.disabled" : "content.secondary") }
           };
         })
       ]
@@ -12047,61 +11853,12 @@ function breadcrumbPaint(variant, appearance, state2) {
   }
   return root;
 }
-function menu(key2) {
-  const slots = {
-    root: {
-      fill: c("surface.layer-2"),
-      stroke: c("border.subtle"),
-      strokeWidth: "stroke.control",
-      radius: MENU_PANEL_RADIUS,
-      shadow: "shadow.lg",
-      paddingX: "spacing.1",
-      paddingY: "spacing.1"
-    },
-    item: {
-      text: c("content.primary"),
-      font: "type.body-sm",
-      radius: PANEL_ROW_RADIUS,
-      paddingX: "spacing.2_5",
-      paddingY: "spacing.1_5",
-      gap: "spacing.2_5"
-    },
-    "item[data-highlighted]": { fill: c("action.ghost.hover") },
-    "item:hover": { fill: c("action.ghost.hover") },
-    'item[data-variant="destructive"]': { text: c("status.critical.content") },
-    "item[data-disabled]": { text: c("content.disabled") },
-    separator: { fill: c("border.subtle"), height: "stroke.divider" },
-    shortcut: { text: c("content.subtle"), font: "type.caption" }
-  };
-  return { key: key2, slots: ["root", "item", "separator", "shortcut"], defaults: {}, parts: [part({}, () => slots)] };
-}
-var TABS, TAB_MENU_SIZES, TAB_MENU_VARIANTS, TAB_MENU_ITEM_STATES, TAB_MENU_INDICATORS, TAB_MENU, tabMenuSizeSlots, TAB_MENU_ITEM, TAB_MENU_LINE_ITEM, NAV_ITEM_SIZES, NAV_ITEM_STATES, NAV_ITEM, BRAND_SIZES, BRAND, ACCOUNT_MENU_TRIGGER_SIZES, ACCOUNT_MENU_TRIGGER_STATES, ACCOUNT_MENU_TRIGGER, SEGMENTED_CONTROL_SIZES, SEGMENTED_CONTROL, SEGMENTED_CONTROL_ITEM_STATES, SEGMENT_ITEM, SEGMENTED_CONTROL_ITEM, BREADCRUMB_SIZES, BREADCRUMB_APPEARANCES, BREADCRUMB_SEPARATORS, BREADCRUMB_VARIANTS, BREADCRUMB_ITEM_STATES, BREADCRUMB_ELLIPSIS_STATES, BREADCRUMB, BREADCRUMB_ITEM, BREADCRUMB_ELLIPSIS, BREADCRUMB_SEPARATOR, PAGINATION_SIZES, PAGINATION_VARIANTS, PAGINATION_LINK_STATES, PAGINATION_LINK_ACTIVE, paginationBox, paginationIcon, PAGINATION, PAGINATION_LINK, PAGINATION_ELLIPSIS, STEPPER_SIZES, STEPPER_ORIENTATIONS, STEPPER_STATUSES, STEPPER_STATES, stepperBox, STEPPER, STEPPER_ITEM, STEPPER_INDICATOR, STEPPER_ICON, MENU_PANEL_RADIUS, DROPDOWN_SIZES, DROPDOWN_ITEM_STATES, DROPDOWN_ITEM_VARIANTS, DROPDOWN_MENU, DROPDOWN_MENU_LABEL, DROPDOWN_MENU_ITEM, DROPDOWN_MENU_FOOTER, CONTEXT_MENU, COMMAND, NAVBAR, SIDEBAR_COLLAPSED, SIDEBAR_SIZES, SIDEBAR_MENU_BUTTON_STATES, SIDEBAR, SIDEBAR_BRAND, SIDEBAR_GROUP, SIDEBAR_GROUP_LABEL, SIDEBAR_MENU_BUTTON, MENUBAR, NAVIGATION_MENU;
+var TAB_MENU_SIZES, TAB_MENU_VARIANTS, TAB_MENU_ITEM_STATES, TAB_MENU_INDICATORS, TAB_MENU, tabMenuSizeSlots, TAB_MENU_ITEM, TAB_MENU_LINE_ITEM, NAV_ITEM_SIZES, NAV_ITEM_STATES, NAV_ITEM, BRAND_SIZES, BRAND, ACCOUNT_MENU_TRIGGER_SIZES, ACCOUNT_MENU_TRIGGER_STATES, ACCOUNT_MENU_TRIGGER, SEGMENTED_CONTROL_SIZES, SEGMENTED_CONTROL, SEGMENTED_CONTROL_ITEM_STATES, SEGMENT_ITEM, SEGMENTED_CONTROL_ITEM, BREADCRUMB_SIZES, BREADCRUMB_APPEARANCES, BREADCRUMB_SEPARATORS, BREADCRUMB_VARIANTS, BREADCRUMB_ITEM_STATES, BREADCRUMB_ELLIPSIS_STATES, BREADCRUMB, BREADCRUMB_ITEM, BREADCRUMB_ELLIPSIS, BREADCRUMB_SEPARATOR, PAGINATION_SIZES, PAGINATION_VARIANTS, PAGINATION_LINK_STATES, PAGINATION_LINK_ACTIVE, paginationBox, paginationIcon, PAGINATION, PAGINATION_LINK, PAGINATION_ELLIPSIS, STEPPER_SIZES, STEPPER_ORIENTATIONS, STEPPER_STATUSES, STEPPER_STATES, stepperBox, STEPPER, STEPPER_ITEM, STEPPER_INDICATOR, STEPPER_ICON, DROPDOWN_SIZES, DROPDOWN_ITEM_STATES, DROPDOWN_ITEM_VARIANTS, DROPDOWN_MENU, DROPDOWN_MENU_LABEL, DROPDOWN_MENU_ITEM, DROPDOWN_MENU_FOOTER, COMMAND, NAVBAR, SIDEBAR_COLLAPSED, SIDEBAR_SIZES, SIDEBAR_MENU_BUTTON_STATES, SIDEBAR, SIDEBAR_BRAND, SIDEBAR_GROUP, SIDEBAR_GROUP_LABEL, SIDEBAR_MENU_BUTTON, NAVIGATION_MENU;
 var init_navigation = __esm({
   "src/lib/recipes/navigation.ts"() {
     init_groupLabel();
     init_listItem();
     init_helpers();
-    TABS = {
-      key: "Tabs",
-      slots: ["root", "trigger"],
-      defaults: { Variant: "default" },
-      parts: [
-        part({}, () => ({
-          trigger: { text: c("content.secondary"), font: "type.button", paddingX: "spacing.2", paddingY: "spacing.1", gap: "spacing.1_5" },
-          "trigger:hover": { text: c("content.primary") },
-          "trigger:focus-visible": FOCUS
-        })),
-        part({ Variant: ["default", "line"] }, (variant) => variant === "line" ? {
-          root: { fill: NONE, gap: "spacing.1" },
-          trigger: { stroke: NONE, strokeBottomWidth: "stroke.md" },
-          'trigger[data-state="active"]': { text: c("content.primary"), stroke: c("content.primary") }
-        } : {
-          root: { fill: c("surface.layer-2"), radius: "radius.action", paddingX: "spacing.1", paddingY: "spacing.1", gap: "spacing.0_5" },
-          trigger: { radius: "radius.control" },
-          'trigger[data-state="active"]': { fill: c("surface.page"), text: c("content.primary"), shadow: "shadow.xs" }
-        })
-      ]
-    };
     TAB_MENU_SIZES = ["default", "sm", "lg"];
     TAB_MENU_VARIANTS = ["horizontal-line", "horizontal-button", "vertical-line", "vertical-button"];
     TAB_MENU_ITEM_STATES = ["Default", "Hover", "Focused", "Selected", "Disabled"];
@@ -12425,7 +12182,6 @@ var init_navigation = __esm({
         })
       ]
     };
-    MENU_PANEL_RADIUS = PANEL_RADIUS;
     DROPDOWN_SIZES = ["default", "sm", "lg"];
     DROPDOWN_ITEM_STATES = ["Default", "Focused", "Selected", "Disabled"];
     DROPDOWN_ITEM_VARIANTS = ["default", "destructive"];
@@ -12488,7 +12244,6 @@ var init_navigation = __esm({
         }))
       ]
     };
-    CONTEXT_MENU = menu("ContextMenu");
     COMMAND = {
       key: "Command",
       slots: ["root", "search", "icon", "input", "list", "heading", "item"],
@@ -12609,52 +12364,6 @@ var init_navigation = __esm({
         // Collapsed: a square of the row's height, no side padding (the icon centres).
         part({ Size: SIDEBAR_SIZES, Collapsed: SIDEBAR_COLLAPSED }, (size, collapsed) => ({
           root: collapsed === "true" ? { width: LIST_ITEM_METRICS[size].minHeight, paddingX: "spacing.none" } : {}
-        }))
-      ]
-    };
-    MENUBAR = {
-      key: "Menubar",
-      slots: ["root", "trigger", "content", "item", "separator", "shortcut"],
-      detachedSlots: ["content", "item", "separator", "shortcut"],
-      defaults: {},
-      parts: [
-        part({}, () => ({
-          root: {
-            fill: c("surface.layer-1"),
-            stroke: c("border.default"),
-            strokeWidth: "stroke.control",
-            radius: PANEL_RADIUS,
-            height: "size.compact",
-            paddingX: "spacing.1",
-            paddingY: "spacing.1",
-            gap: "spacing.0_5"
-          },
-          trigger: { text: c("content.primary"), font: "type.label", radius: PANEL_ROW_RADIUS, paddingX: "spacing.2", paddingY: "spacing.0_5" },
-          "trigger:hover": { fill: c("action.ghost.hover") },
-          'trigger[data-state="open"]': { fill: c("action.ghost.hover") },
-          'trigger[data-active="true"]': { fill: c("action.ghost.hover") },
-          content: {
-            fill: c("surface.layer-2"),
-            stroke: c("border.subtle"),
-            strokeWidth: "stroke.control",
-            radius: MENU_PANEL_RADIUS,
-            shadow: "shadow.lg",
-            paddingX: "spacing.1",
-            paddingY: "spacing.1"
-          },
-          item: {
-            text: c("content.primary"),
-            font: "type.body-sm",
-            radius: PANEL_ROW_RADIUS,
-            paddingX: "spacing.2_5",
-            paddingY: "spacing.1_5",
-            gap: "spacing.2_5"
-          },
-          "item[data-highlighted]": { fill: c("action.ghost.hover") },
-          "item:hover": { fill: c("action.ghost.hover") },
-          'item[data-variant="destructive"]': { text: c("status.critical.content") },
-          separator: { fill: c("border.subtle"), height: "stroke.divider" },
-          shortcut: { text: c("content.subtle"), font: "type.caption" }
         }))
       ]
     };
@@ -13567,7 +13276,6 @@ var init_motion2 = __esm({
       Badge: { transitions: { root: states("background-color", "color", "border-color") } },
       Chip: { transitions: { root: states("background-color", "border-color", "color") } },
       Toggle: { transitions: { root: FILL } },
-      ToggleGroup: { transitions: { item: FILL } },
       Item: { transitions: { root: FILL } },
       PaginationLink: { transitions: { root: FILL } },
       TabMenuItem: { transitions: { root: FILL } },
@@ -13576,7 +13284,6 @@ var init_motion2 = __esm({
       AccountMenuTrigger: { transitions: { root: FILL } },
       SegmentedControlItem: { transitions: { root: FILL } },
       SidebarMenuButton: { transitions: { root: FILL } },
-      Tabs: { transitions: { trigger: states("color", "background-color", "border-color", "box-shadow") } },
       TableRow: { transitions: { root: states("background-color") } },
       TableHead: { transitions: { root: states("background-color") } },
       TableResizer: { transitions: { handle: states("background-color") } },
@@ -13590,8 +13297,6 @@ var init_motion2 = __esm({
       InputTagChip: { transitions: { root: FIELD2 } },
       InputTagOption: { transitions: { root: FIELD2 } },
       InputOTPSlot: { transitions: { root: FIELD2 } },
-      Select: { transitions: { root: FIELD2 }, ...popover("--radix-select-content-transform-origin", "content") },
-      NativeSelect: { transitions: { select: FIELD2 } },
       Combobox: { transitions: { root: FIELD2 } },
       ComboboxItem: { transitions: { root: states("background-color", "border-color", "box-shadow") } },
       Checkbox: { transitions: { root: states("background-color", "border-color", "box-shadow") } },
@@ -13610,9 +13315,7 @@ var init_motion2 = __esm({
       Popover: popover("--radix-popover-content-transform-origin"),
       TooltipContent: popover("--radix-tooltip-content-transform-origin"),
       HoverCard: popover("--radix-hover-card-content-transform-origin"),
-      DropdownMenu: popover("--radix-dropdown-menu-content-transform-origin"),
-      ContextMenu: popover("--radix-context-menu-content-transform-origin"),
-      Menubar: popover("--radix-menubar-content-transform-origin", "content")
+      DropdownMenu: popover("--radix-dropdown-menu-content-transform-origin")
     };
   }
 });
@@ -13661,7 +13364,6 @@ var init_componentRecipes = __esm({
       InputTag: INPUT_TAG,
       InputTagChip: INPUT_TAG_CHIP,
       InputTagOption: INPUT_TAG_OPTION,
-      Select: SELECT,
       Combobox: COMBOBOX,
       ComboboxPopover: COMBOBOX_POPOVER,
       ComboboxItem: COMBOBOX_ITEM,
@@ -13714,8 +13416,6 @@ var init_componentRecipes = __esm({
       TableEmpty: TABLE_EMPTY,
       TableLoading: TABLE_LOADING,
       TableLoadMore: TABLE_LOAD_MORE,
-      ToggleGroup: TOGGLE_GROUP,
-      NativeSelect: NATIVE_SELECT,
       Kbd: KBD,
       Skeleton: SKELETON,
       Empty: EMPTY,
@@ -13732,7 +13432,6 @@ var init_componentRecipes = __esm({
       Resizable: RESIZABLE,
       Carousel: CAROUSEL,
       Chart: CHART,
-      Menubar: MENUBAR,
       NavigationMenu: NAVIGATION_MENU,
       Accordion: ACCORDION,
       AccordionItem: ACCORDION_ITEM,
@@ -13745,7 +13444,6 @@ var init_componentRecipes = __esm({
       ScrollBar: SCROLL_BAR,
       Alert: ALERT,
       Toast: TOAST,
-      Tabs: TABS,
       TabMenu: TAB_MENU,
       TabMenuItem: TAB_MENU_ITEM,
       TabMenuLineItem: TAB_MENU_LINE_ITEM,
@@ -13769,7 +13467,6 @@ var init_componentRecipes = __esm({
       DropdownMenuLabel: DROPDOWN_MENU_LABEL,
       DropdownMenuItem: DROPDOWN_MENU_ITEM,
       DropdownMenuFooter: DROPDOWN_MENU_FOOTER,
-      ContextMenu: CONTEXT_MENU,
       Command: COMMAND,
       Navbar: NAVBAR,
       Sidebar: SIDEBAR,
@@ -16593,7 +16290,7 @@ var init_useDesignStore = __esm({
         }),
         {
           name: "scalable-designs-store",
-          version: 149,
+          version: 150,
           migrate: (persisted, version) => {
             if (persisted) {
               delete persisted.styleDirection;
@@ -18440,6 +18137,22 @@ var init_useDesignStore = __esm({
               add2(persisted);
               if (Array.isArray(persisted.savedSystems)) {
                 for (const sys of persisted.savedSystems) add2(sys?.snapshot);
+              }
+            }
+            if (version < 150) {
+              const TWIN = { Tabs: "TabMenu", Select: "Combobox", ToggleGroup: null, ContextMenu: null, Menubar: null, NativeSelect: null };
+              const swap = (state2) => {
+                if (!Array.isArray(state2?.selectedComponents)) return;
+                const out = [];
+                for (const k of state2.selectedComponents) {
+                  const next = k in TWIN ? TWIN[k] : k;
+                  if (next && !out.includes(next)) out.push(next);
+                }
+                state2.selectedComponents = out;
+              };
+              swap(persisted);
+              if (Array.isArray(persisted.savedSystems)) {
+                for (const sys of persisted.savedSystems) swap(sys?.snapshot);
               }
             }
             return persisted;

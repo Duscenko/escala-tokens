@@ -1,7 +1,8 @@
 # escala-ui — upstream
 
-> `_skeleton/` holds the shadcn skeletons that have no Storybook story yet (tabs, toggle, toggle-group, context-menu,
-> menubar, command, select, native-select, alert-dialog, sheet, drawer, hover-card, navbar, navigation-menu). They are
+> `_skeleton/` holds the shadcn skeletons that have no Storybook story yet (toggle, command, alert-dialog, sheet, drawer,
+> hover-card, navbar, navigation-menu). Tabs, toggle-group, context-menu, menubar, select and native-select were retired
+> (2026-11-14) for their Figma twins TabMenu, SegmentedControl, DropdownMenu and Combobox. They are
 > still served by the registry, flat; only `src/components/configurator` may import them (ESLint). A skeleton leaves the
 > folder when it gets a story and a Figma twin. The rows below that name one of them live there now.
 
@@ -27,11 +28,8 @@ MIT — see `LICENSE-shadcn.md`. Source: the `ui-main` archive downloaded
 | `card.tsx` | `bases/radix/ui/card.tsx` | `cn-card-*` → `data-part="Card.*"`; `size` default · sm as `data-size` |
 | `dialog.tsx` | `bases/radix/ui/dialog.tsx` | `cn-dialog-*` → `data-part="Dialog.*"`; close = `DialogClose asChild` + ghost icon-sm Button (as shadcn); `inline` renders in place (docs/previews, no portal, no focus steal); close icon is a prop |
 | `separator.tsx` | `bases/radix/ui/separator.tsx` | Radix Separator, verbatim shape; `data-escala="Separator"` |
-| `tabs.tsx` | `bases/radix/ui/tabs.tsx` | TabsList `variant` default · line as `data-variant` |
 | `sidebar.tsx` | `bases/radix/ui/sidebar.tsx` | the parts and their props (`variant`/`side`, MenuButton `isActive`/`variant`/`size`); no SidebarProvider/collapsible/mobile sheet yet |
-| `dropdown-menu.tsx` · `context-menu.tsx` | `bases/radix/ui/dropdown-menu.tsx` · `context-menu.tsx` | item `variant` default · destructive |
-| `toggle-group.tsx` | `bases/radix/ui/toggle-group.tsx` (+ `toggle.tsx`'s variants) | `variant` default · outline, `size` default · sm · lg on the group as `data-variant` / `data-size`; no `spacing` prop yet |
-| `native-select.tsx` | `bases/radix/ui/native-select.tsx` | the wrapper is the recipe root (State axis); chevron is a prop; adds `forceState` |
+| `dropdown-menu.tsx` | `bases/radix/ui/dropdown-menu.tsx` | item `variant` default · destructive |
 | `kbd.tsx` | `bases/radix/ui/kbd.tsx` | verbatim shape; KbdGroup spaces only |
 | `skeleton.tsx` | `bases/radix/ui/skeleton.tsx` | verbatim shape |
 | `empty.tsx` | `bases/radix/ui/empty.tsx` | all parts; EmptyMedia `variant` as `data-variant` on the media part; the dash is inline |
@@ -41,7 +39,7 @@ MIT — see `LICENSE-shadcn.md`. Source: the `ui-main` archive downloaded
 | `calendar.tsx` | — (was `bases/radix/ui/calendar.tsx`) | Rebuilt from the Figma file 2026-11-12: Calendar + CalendarDay / Header / Month / Presets / Footer, no react-day-picker |
 | `alert-dialog.tsx` · `sheet.tsx` · `hover-card.tsx` | `bases/radix/ui/…` | portal into the theme scope; `inline` draws in place |
 | `drawer.tsx` | `bases/radix/ui/drawer.tsx` | vaul; `direction` prop on the content; `inline` with plain title/description |
-| `menubar.tsx` · `navigation-menu.tsx` | `bases/radix/ui/…` | Menubar `inline` panel + trigger `active`; nav trigger chevron is a prop |
+| `navigation-menu.tsx` | `bases/radix/ui/…` | nav trigger chevron is a prop |
 | `item.tsx` · `attachment.tsx` · `message.tsx` · `bubble.tsx` | `bases/radix/ui/…` | all parts and variants; Attachment state also on media / description |
 | `resizable.tsx` · `carousel.tsx` · `chart.tsx` | `bases/radix/ui/…` | react-resizable-panels v4 · Embla · Recharts v3; chart frame tints with `currentColor` |
 

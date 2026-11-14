@@ -278,26 +278,6 @@ export const COMPONENTS: ComponentDef[] = [
     accessibility: 'Decorative: aria-hidden.',
   },
   {
-    key: 'ToggleGroup',
-    label: 'Toggle Group',
-    category: 'Button & Actions',
-    description: 'shadcn/ui Toggle Group: a set of two-state buttons — one or several pressed at a time.',
-    usage: 'Use for formatting toggles (bold · italic · underline) or a view filter that can combine. For one exclusive choice among views prefer Segmented Control or Tabs.',
-    axes: [
-      { name: 'Variant', values: ['default', 'outline'] },
-      { name: 'Size', values: ['default', 'sm', 'lg'] },
-    ],
-    figmaSets: ['Toggle Group'],
-    props: [
-      { name: 'type', type: '"single" | "multiple"', description: 'One pressed item, or any number.' },
-      { name: 'variant', type: '"default" | "outline"', description: 'shadcn\'s toggle variants: no edge, or the control boundary.' },
-      { name: 'size', type: '"default" | "sm" | "lg"', description: 'Item height — the Button heights.' },
-      { name: 'value / defaultValue / onValueChange', type: 'string | string[]', description: 'The pressed item(s).' },
-      { name: 'ToggleGroupItem value', type: 'component', description: 'One toggle; Radix writes data-state="on" when pressed.' },
-    ],
-    accessibility: 'Radix ToggleGroup: arrow keys move between items (roving tabindex); each item exposes aria-pressed (multiple) or role="radio" (single).',
-  },
-  {
     key: 'Toggle',
     label: 'Toggle',
     category: 'Button & Actions',
@@ -549,43 +529,6 @@ export const COMPONENTS: ComponentDef[] = [
       { name: 'selected / disabled', type: 'boolean', description: 'aria-selected; State Disabled.' },
     ],
     accessibility: 'role="option" with aria-selected; the list that holds it is a listbox with arrow-key navigation.',
-  },
-  {
-    key: 'Select',
-    label: 'Select',
-    category: 'Form Controls',
-    description: 'Dropdown trigger that shares the input tokens, with full state coverage for forms and filters.',
-    usage: 'Use when options exceed 4 items. For fewer options, prefer Radio or ButtonGroup.',
-    axes: [
-      { name: 'Size', values: ['default', 'sm'] },
-      { name: 'State', values: ['Default', 'Hover', 'Focused', 'Error', 'Disabled'] },
-    ],
-    figmaSets: ['Select'],
-    props: [
-      { name: 'Select', type: 'component', description: 'Radix Select root: value, defaultValue, onValueChange, disabled.' },
-      { name: 'SelectTrigger size', type: '"md" | "sm" | "lg"', description: 'Field height — follows the Sizes foundation.' },
-      { name: 'SelectValue placeholder', type: 'string', description: 'Shown until an option is chosen.' },
-      { name: 'SelectContent / SelectItem', type: 'component', description: 'The list; it portals into the theme scope.' },
-    ],
-    accessibility: 'Built on Radix Select. Keyboard navigable. Options have role="option".',
-  },
-  {
-    key: 'NativeSelect',
-    label: 'Native Select',
-    category: 'Form Controls',
-    description: 'shadcn/ui Native Select: the browser\'s own <select>, drawn as the field box with a chevron.',
-    usage: 'Use where the platform picker is the better experience (mobile, long lists, forms that must work without JavaScript). For a styled list with search or rich items use Select or Combobox.',
-    axes: [
-      { name: 'Size', values: ['default', 'sm'] },
-      { name: 'State', values: ['Default', 'Hover', 'Focused', 'Disabled'] },
-    ],
-    figmaSets: ['Select'],
-    props: [
-      { name: 'size', type: '"default" | "sm"', description: 'The Select heights.' },
-      { name: 'NativeSelectOption / NativeSelectOptGroup', type: 'component', description: 'The options, as <option> / <optgroup>.' },
-      { name: '…select attributes', type: 'React.ComponentProps<"select">', description: 'value, onChange, disabled, name — a real <select>.' },
-    ],
-    accessibility: 'A native <select>: keyboard, screen readers and the platform picker come for free. Pair it with a Label (Field).',
   },
   {
     key: 'DatePickerTrigger',
@@ -2249,22 +2192,6 @@ export const COMPONENTS: ComponentDef[] = [
   },
   // ── Navigation ──────────────────────────────────────────────────────────────
   {
-    key: 'Tabs',
-    label: 'Tabs',
-    category: 'Navigation',
-    description: 'Tab bar for switchable panels: a muted track (default) or an underline (line).',
-    usage: 'Use when content is parallel, not sequential. Limit to 2–7 tabs visible at once.',
-    axes: [{ name: 'Variant', values: ['default', 'line'] }],
-    figmaSets: ['Tabs'],
-    props: [
-      { name: 'Tabs value / defaultValue', type: 'string', description: 'The open tab.' },
-      { name: 'TabsList variant', type: '"default" | "line"', description: 'A muted track with a raised active tab, or an underline strip.' },
-      { name: 'TabsTrigger', type: 'component', description: 'One tab (arrow keys move between them).' },
-      { name: 'TabsContent value', type: 'string', description: 'The panel for a tab.' },
-    ],
-    accessibility: 'ARIA tabs pattern: role="tablist", role="tab", role="tabpanel". Arrow key navigation.',
-  },
-  {
     key: 'TabMenu',
     label: 'Tab Menu',
     category: 'Navigation',
@@ -2675,22 +2602,6 @@ export const COMPONENTS: ComponentDef[] = [
     accessibility: 'Keep it outside role menu; its controls are reachable with Tab after the list.',
   },
   {
-    key: 'Menubar',
-    label: 'Menubar',
-    category: 'Navigation',
-    description: 'shadcn/ui Menubar: a persistent bar of menus, as in desktop apps (File · Edit · View).',
-    usage: 'Use in app-like tools with many commands grouped by menu. For a few actions behind one button use Dropdown Menu.',
-    axes: [],
-    figmaSets: ['Menubar'],
-    props: [
-      { name: 'MenubarMenu / MenubarTrigger / MenubarContent', type: 'component', description: 'One menu.' },
-      { name: 'MenubarItem variant', type: '"default" | "destructive"', description: 'A command.' },
-      { name: 'MenubarSeparator / MenubarShortcut / MenubarLabel', type: 'component', description: 'Grouping and key hints.' },
-      { name: 'MenubarSub / MenubarCheckboxItem / MenubarRadioItem', type: 'component', description: 'Submenus and toggles.' },
-    ],
-    accessibility: 'Radix Menubar: arrow keys move between menus and items, Esc closes, type-ahead finds items.',
-  },
-  {
     key: 'NavigationMenu',
     label: 'Navigation Menu',
     category: 'Navigation',
@@ -2705,21 +2616,6 @@ export const COMPONENTS: ComponentDef[] = [
       { name: 'viewport', type: 'boolean', description: 'Panels share one animated viewport (default true).' },
     ],
     accessibility: 'Radix NavigationMenu: a nav landmark; triggers expose aria-expanded and arrow keys move between them.',
-  },
-  {
-    key: 'ContextMenu',
-    label: 'Context Menu',
-    category: 'Navigation',
-    description: 'Right-click menu with shortcut hints — the pointer-positioned sibling of Dropdown Menu.',
-    usage: 'Every context-menu action must also exist somewhere visible — right-click is a shortcut.',
-    axes: [],
-    figmaSets: ['Context Menu'],
-    props: [
-      { name: 'ContextMenu', type: 'component', description: 'Radix root.' },
-      { name: 'ContextMenuTrigger', type: 'component', description: 'The area that opens it on right-click.' },
-      { name: 'ContextMenuContent / Item / Separator / Shortcut', type: 'component', description: 'The panel and its rows.' },
-    ],
-    accessibility: 'Same ARIA menu pattern; also opened via the keyboard Menu key / Shift+F10.',
   },
   {
     key: 'Command',
@@ -2872,16 +2768,16 @@ export const COMPONENT_KEYS = COMPONENTS.map((c) => c.key)
 // only changes what a system starts with.
 //
 // Deliberately NOT exhaustive — no variants (CloseButton, StatusBadge…), no
-// navigation beyond Tabs, no advanced form controls (Combobox, Slider…). Add
+// navigation beyond TabMenu, no advanced form controls (Slider…). Add
 // to this list only when it's genuinely a "day one" need for most systems;
 // everything else belongs in the full catalogue, selected on purpose.
 export const ESSENTIAL_COMPONENT_KEYS = [
   'Button', 'IconButton',
-  'Input', 'Select', 'Checkbox', 'Switch',
+  'Input', 'Combobox', 'Checkbox', 'Switch',
   'Badge',
   'Card', 'Avatar', 'Modal', 'TooltipContent', 'Separator',
   'Toast',
-  'Tabs',
+  'TabMenu',
 ] as const
 
 /** The components a system SELECTED (`atoms` / `selectedComponents`), known to
