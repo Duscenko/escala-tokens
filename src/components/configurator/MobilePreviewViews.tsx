@@ -25,7 +25,6 @@ import { Alert, AlertDescription, AlertTitle } from '../escala-ui/alert'
 import { Chip } from '../escala-ui/chip'
 import { ProgressLine as Progress } from '../escala-ui/progress-line'
 import { SegmentedControl } from '../escala-ui/segmented-control'
-import { ToggleGroup, ToggleGroupItem } from '../escala-ui/_skeleton/toggle-group'
 import { Switch } from '../escala-ui/switch'
 import { Checkbox } from '../escala-ui/checkbox'
 import { RadioGroup, RadioGroupItem } from '../escala-ui/radio-group'
@@ -229,11 +228,7 @@ function SelectionTile({ t }: { t: T }) {
     <Tile wide label={t('Selection')}>
       <Row layout="stack">
         <SegmentedControl options={[t('Day'), t('Week'), t('Month')]} value={t('Week')} />
-        <ToggleGroup type="single" variant="outline" value="grid">
-          <ToggleGroupItem value="list">{t('List')}</ToggleGroupItem>
-          <ToggleGroupItem value="grid">{t('Grid')}</ToggleGroupItem>
-          <ToggleGroupItem value="board">{t('Board')}</ToggleGroupItem>
-        </ToggleGroup>
+        <SegmentedControl options={[t('List'), t('Grid'), t('Board')]} value={t('Grid')} />
       </Row>
     </Tile>
   )
