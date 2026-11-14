@@ -3,6 +3,7 @@
  * Stepper, DropdownMenu, ContextMenu, Command, Navbar, Sidebar.
  * Rules as in `componentRecipes.ts`.
  */
+import { groupLabelRecipe } from './groupLabel.js'
 import { listItemRecipe, listItemHighlightFill, listItemRootPaint, LIST_ITEM_METRICS } from './listItem.js'
 import { c, NONE, part, PANEL_RADIUS, PANEL_ROW_RADIUS, type ComponentRecipe, type SlotMap, type SlotProps, FOCUS } from './helpers.js'
 
@@ -501,12 +502,7 @@ export const DROPDOWN_MENU_LABEL: ComponentRecipe = {
   slots: ['root'],
   defaults: { Size: 'default' },
   parts: [
-    part({ Size: DROPDOWN_SIZES }, (size) => ({
-      root: {
-        paddingX: size === 'lg' ? 'spacing.inset-control' : 'spacing.gap-control', paddingY: 'spacing.gap-tight',
-        text: c('content.secondary'), font: 'type.caption',
-      },
-    })),
+    part({ Size: DROPDOWN_SIZES }, (size) => ({ root: groupLabelRecipe(size) })),
   ],
 }
 
@@ -602,7 +598,7 @@ export const SIDEBAR: ComponentRecipe = {
     part({}, () => ({
       root: { fill: c('surface.layer-1'), text: c('content.primary'), paddingX: 'spacing.2', paddingY: 'spacing.2', gap: 'spacing.2' },
       group: { gap: 'spacing.1' },
-      label: { text: c('content.secondary'), font: 'type.caption', height: 'size.compact', paddingX: 'spacing.2' },
+      label: groupLabelRecipe('default'),
       menu: { gap: 'spacing.1' },
       button: {
         text: c('content.primary'), font: 'type.body-sm', radius: 'radius.action',

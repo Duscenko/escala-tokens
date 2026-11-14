@@ -12822,7 +12822,7 @@
           "values": {
             "sm": {
               "root": {
-                "minHeight": "size.hit",
+                "minHeight": "size.xs",
                 "paddingX": "spacing.gap-control",
                 "paddingY": "spacing.gap-tight",
                 "font": "type.caption",
@@ -12831,19 +12831,19 @@
             },
             "default": {
               "root": {
-                "minHeight": "spacing.6+spacing.1",
+                "minHeight": "size.xs",
                 "paddingX": "spacing.gap-control",
                 "paddingY": "spacing.gap-tight",
-                "font": "type.label",
+                "font": "type.caption",
                 "text": "color.content.secondary"
               }
             },
             "lg": {
               "root": {
-                "minHeight": "spacing.6+spacing.1",
-                "paddingX": "spacing.2_5",
+                "minHeight": "size.xs",
+                "paddingX": "spacing.inset-control",
                 "paddingY": "spacing.gap-tight",
-                "font": "type.label",
+                "font": "type.caption",
                 "text": "color.content.secondary"
               }
             }
@@ -28337,26 +28337,29 @@
           "values": {
             "default": {
               "root": {
+                "minHeight": "size.xs",
                 "paddingX": "spacing.gap-control",
                 "paddingY": "spacing.gap-tight",
-                "text": "color.content.secondary",
-                "font": "type.caption"
+                "font": "type.caption",
+                "text": "color.content.secondary"
               }
             },
             "sm": {
               "root": {
+                "minHeight": "size.xs",
                 "paddingX": "spacing.gap-control",
                 "paddingY": "spacing.gap-tight",
-                "text": "color.content.secondary",
-                "font": "type.caption"
+                "font": "type.caption",
+                "text": "color.content.secondary"
               }
             },
             "lg": {
               "root": {
+                "minHeight": "size.xs",
                 "paddingX": "spacing.inset-control",
                 "paddingY": "spacing.gap-tight",
-                "text": "color.content.secondary",
-                "font": "type.caption"
+                "font": "type.caption",
+                "text": "color.content.secondary"
               }
             }
           }
@@ -29573,10 +29576,11 @@
                 "gap": "spacing.1"
               },
               "label": {
-                "text": "color.content.secondary",
+                "minHeight": "size.xs",
+                "paddingX": "spacing.gap-control",
+                "paddingY": "spacing.gap-tight",
                 "font": "type.caption",
-                "height": "size.compact",
-                "paddingX": "spacing.2"
+                "text": "color.content.secondary"
               },
               "menu": {
                 "gap": "spacing.1"

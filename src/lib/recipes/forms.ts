@@ -5,6 +5,7 @@
  *
  * Refs may SUM dimensions (`selector.control+spacing.1`) — `calc()` in CSS.
  */
+import { groupLabelRecipe } from './groupLabel.js'
 import { listItemRecipe, type ListItemMetrics } from './listItem.js'
 import { c, NONE, part, PANEL_RADIUS, PANEL_ROW_RADIUS, type ComponentRecipe, type SlotMap, type SlotProps, FOCUS } from './helpers.js'
 
@@ -735,8 +736,8 @@ export const SELECT: ComponentRecipe = {
 //    padding gap-tight × 8 · 8 · 10, gap 6 · 8 · 8. Focused: Surface/muted + a 1px
 //    Border/focus edge the file lays out + a 2px halo outside; Selected: Surface/selected and
 //    the Content/accent check; Disabled: every ink Content/disabled.
-//  · ComboboxGroupLabel (406:147, Size, 3): 24 · 28 · 28 min, Type/caption · label ·
-//    label, Content/secondary.
+//  · ComboboxGroupLabel (406:147, Size, 3): `groupLabelRecipe` — 24 min, Type/caption,
+//    Content/secondary (the file drew 28 and Type/label at default and lg; B2 unifies).
 export const COMBOBOX_SIZES = ['sm', 'default', 'lg'] as const
 export const COMBOBOX_STATES = ['Default', 'Hover', 'Focused', 'Open', 'Invalid', 'Disabled', 'Loading'] as const
 export const COMBOBOX_SHAPES = ['rounded', 'pill'] as const
@@ -835,21 +836,12 @@ export const COMBOBOX_ITEM: ComponentRecipe = {
   ],
 }
 
-const GROUP_LABEL: Record<string, { minH: string; padX: string; font: string }> = {
-  sm: { minH: 'size.hit', padX: 'spacing.gap-control', font: 'type.caption' },
-  default: { minH: 'spacing.6+spacing.1', padX: 'spacing.gap-control', font: 'type.label' },
-  lg: { minH: 'spacing.6+spacing.1', padX: 'spacing.2_5', font: 'type.label' },
-}
-
 export const COMBOBOX_GROUP_LABEL: ComponentRecipe = {
   key: 'ComboboxGroupLabel',
   slots: ['root'],
   defaults: { Size: 'default' },
   parts: [
-    part({ Size: COMBOBOX_SIZES }, (size) => {
-      const g = GROUP_LABEL[size]
-      return { root: { minHeight: g.minH, paddingX: g.padX, paddingY: 'spacing.gap-tight', font: g.font, text: c('content.secondary') } }
-    }),
+    part({ Size: COMBOBOX_SIZES }, (size) => ({ root: groupLabelRecipe(size) })),
   ],
 }
 
