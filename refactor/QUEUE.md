@@ -1,0 +1,42 @@
+# Escala refactor queue — Storybook + web (from Figma v0.11.0 / v0.11.1)
+
+Source of truth: the Figma file `Escala Design System (Real)` (7j5zukN5HpihGVJMmyjA20).
+Every touched component set carries a **Development** annotation with a "Refactor in code" line.
+Plan: "Escala Reuse & Composition Audit — Nov 2026".
+
+Legend: `- [ ]` todo · `- [x]` done (append commit hash) · `- [!]` blocked (append reason; the loop stops)
+
+## Project commands (filled in by the first iteration, do not guess)
+- lint: 
+- typecheck: 
+- test: 
+- storybook build: 
+- web build: 
+
+## Phase A — shared foundations (code twins of Figma decisions)
+- [ ] A1 Create `src/lib/icons.ts`: one module that exports every glyph used by `escala-ui` (Phosphor, same names as Figma `icon/*`, loading = `SpinnerGap`). Replace the check path inlined in checkbox, combobox, dropdown-menu, password-strength, stepper, switch.
+- [ ] A2 Replace the remaining inline `<svg>` glyphs in `src/components/escala-ui` with imports from `src/lib/icons.ts` (≤ 8 files per iteration; re-add this task with the files left if not finished).
+- [ ] A3 State order: in the `state` union types and Storybook `argTypes.state.options`, use Default · Hover · Focused · Current|Selected · Disabled for NavItem, TabMenuItem, TabMenuLineItem, DropdownMenuItem, ComboboxItem, SidebarMenuButton (`isActive` → `Current`).
+
+## Phase B — one anatomy, one recipe
+- [ ] B1 `listItemRecipe(size, state, variant)` in `src/lib/recipes`, used by DropdownMenuItem, ComboboxItem and SidebarMenuButton. Delete `comboboxItemPaint`. Fill on `[data-highlighted]`, ring (`border.focus` + `border.ring.default`) only on `:focus-visible`. Trailing ink `content.secondary`. Story: hover a row → no ring.
+- [ ] B2 `groupLabelRecipe(size)` used by DropdownMenuLabel, SidebarGroupLabel, ComboboxGroupLabel: `type.caption`, 24 px row, `content.secondary`, lg padding `spacing.inset-control`. Remove `spacing.6+spacing.1`.
+- [ ] B3 `optionPaint` (InputTagOption): hover/focused `surface.muted`, label `type.body-sm`.
+
+## Phase C — parity gaps
+- [ ] C1 Rebuild Sidebar from the Figma contract (Sidebar, SidebarGroup, SidebarGroupLabel, SidebarMenuButton with `collapsed`, `trend`, Badge in `trailing`, SidebarBrand). Button radius `radius.control`, padding through roles. Stories for each part.
+- [ ] C2 Add the missing RadioGroup story.
+- [ ] C3 Command: render shortcuts with `Kbd`, not a local `kbd`.
+
+## Phase D — legacy and guardrails
+- [ ] D1 Move the shadcn skeletons with no story to `src/components/escala-ui/_skeleton/` (sidebar old version, tabs, toggle-group, toggle, context-menu, menubar, command, select, native-select, alert-dialog, sheet, drawer, hover-card, navbar, navigation-menu, label). Add an ESLint `no-restricted-imports` rule: `_skeleton/` may only be imported from the configurator.
+- [ ] D2 Recipe lint (extend the recipe test): fail on `spacing.<number>` in `paddingX`, `paddingY`, `gap` when a role exists, and on a second paint function for a shape `listItemRecipe` or `groupLabelRecipe` already covers.
+- [ ] D3 Parity check (GitHub Action on PRs to `main`): every `data-escala` name under `escala-ui` (excluding `_skeleton/`) has a story; list names with no story as a failing check.
+
+## Phase E — web (configurator / platform)
+- [ ] E1 Inventory every import of `_skeleton/` in the configurator and previews; write the list into this file under E2–E5 as one task per component.
+- [ ] E2 Tabs → TabMenu
+- [ ] E3 ToggleGroup → SegmentedControl
+- [ ] E4 ContextMenu / Menubar → DropdownMenu
+- [ ] E5 Select / NativeSelect → Combobox
+- [ ] E6 Delete each skeleton that has no importer left; final parity check passes.
