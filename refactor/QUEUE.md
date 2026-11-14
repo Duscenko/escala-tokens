@@ -19,7 +19,7 @@ Legend: `- [ ]` todo · `- [x]` done (append commit hash) · `- [!]` blocked (ap
 - [x] A3 State order: in the `state` union types and Storybook `argTypes.state.options`, use Default · Hover · Focused · Current|Selected · Disabled for NavItem, TabMenuItem, TabMenuLineItem, DropdownMenuItem, ComboboxItem, SidebarMenuButton (`isActive` → `Current`). (3ea4008; Sidebar full rebuild is C1)
 
 ## Phase B — one anatomy, one recipe
-- [ ] B1 `listItemRecipe(size, state, variant)` in `src/lib/recipes`, used by DropdownMenuItem, ComboboxItem and SidebarMenuButton. Delete `comboboxItemPaint`. Fill on `[data-highlighted]`, ring (`border.focus` + `border.ring.default`) only on `:focus-visible`. Trailing ink `content.secondary`. Story: hover a row → no ring.
+- [x] B1 `listItemRecipe(size, state, variant)` in `src/lib/recipes`, used by DropdownMenuItem, ComboboxItem and SidebarMenuButton. Delete `comboboxItemPaint`. Fill on `[data-highlighted]`, ring (`border.focus` + `border.ring.default`) only on `:focus-visible`. Trailing ink `content.secondary`. Story: hover a row → no ring. (62e3370)
 - [ ] B2 `groupLabelRecipe(size)` used by DropdownMenuLabel, SidebarGroupLabel, ComboboxGroupLabel: `type.caption`, 24 px row, `content.secondary`, lg padding `spacing.inset-control`. Remove `spacing.6+spacing.1`.
 - [ ] B3 `optionPaint` (InputTagOption): hover/focused `surface.muted`, label `type.body-sm`.
 
