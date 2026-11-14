@@ -3,6 +3,28 @@
 // filter and no dependency. Appearance: recipe (Command).
 import * as React from 'react'
 import { cn } from '../../lib/utils'
+import { Kbd, KbdGroup } from './kbd'
+
+/** `⌘K` → `⌘` `K`; `Ctrl K` → `Ctrl` `K`; `Esc` → `Esc`: one key cap per key, never a whole shortcut in one. */
+export function shortcutKeys(shortcut: string): string[] {
+  const words = shortcut.trim().split(/\s+/).filter(Boolean)
+  if (words.length > 1) return words
+  const chars = [...(words[0] ?? '')]
+  let i = 0
+  while (i < chars.length - 1 && '⌘⌥⇧⌃'.includes(chars[i])) i++
+  return [...chars.slice(0, i), chars.slice(i).join('')].filter(Boolean)
+}
+
+/** A shortcut drawn with the Figma Kbd, one cap per key. A node is rendered as given. */
+function CommandShortcut({ children, size = 'xs', className, ...props }: Omit<React.ComponentProps<'span'>, 'children'> & { children: React.ReactNode; size?: 'xs' | 'sm' | 'default' }) {
+  return (
+    <span data-slot="command-shortcut" className={cn('ml-auto inline-flex shrink-0', className)} {...props}>
+      {typeof children === 'string'
+        ? <KbdGroup>{shortcutKeys(children).map((k, i) => <Kbd key={`${k}-${i}`} size={size}>{k}</Kbd>)}</KbdGroup>
+        : children}
+    </span>
+  )
+}
 
 const QueryContext = React.createContext<{ query: string; setQuery: (q: string) => void }>({ query: '', setQuery: () => undefined })
 
@@ -29,7 +51,7 @@ function CommandInput({
         className={cn('min-w-0 flex-1 border-0 bg-transparent p-0 outline-none', className)}
         {...props}
       />
-      {shortcut != null && <span data-part="Command.kbd">{shortcut}</span>}
+      {shortcut != null && <CommandShortcut className="ml-0">{shortcut}</CommandShortcut>}
     </div>
   )
 }
@@ -69,4 +91,4 @@ function CommandItem({
   )
 }
 
-export { Command, CommandGroup, CommandInput, CommandItem, CommandList }
+export { Command, CommandGroup, CommandInput, CommandItem, CommandList, CommandShortcut }

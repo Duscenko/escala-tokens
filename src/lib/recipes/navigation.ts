@@ -540,7 +540,7 @@ export const CONTEXT_MENU = menu('ContextMenu')
 
 export const COMMAND: ComponentRecipe = {
   key: 'Command',
-  slots: ['root', 'search', 'icon', 'input', 'kbd', 'list', 'heading', 'item'],
+  slots: ['root', 'search', 'icon', 'input', 'list', 'heading', 'item'],
   defaults: {},
   parts: [
     part({}, () => ({
@@ -550,7 +550,6 @@ export const COMMAND: ComponentRecipe = {
       search: { stroke: c('border.subtle'), strokeBottomWidth: 'stroke.control', paddingX: 'spacing.3', paddingY: 'spacing.2_5', gap: 'spacing.gap-control' },
       icon: { text: c('content.secondary') },
       input: { text: c('content.primary'), font: 'type.placeholder' },
-      kbd: { text: c('content.subtle'), font: 'type.caption', stroke: c('border.subtle'), strokeWidth: 'stroke.control', radius: 'radius.control', paddingX: 'spacing.1_5' },
       list: { paddingX: 'spacing.1_5', paddingY: 'spacing.1_5' },
       heading: { text: c('content.subtle'), font: 'type.caption', paddingX: 'spacing.2_5', paddingY: 'spacing.1' },
       item: { text: c('content.primary'), font: 'type.body-sm', radius: 'sub(radius.container,spacing.1_5)', paddingX: 'spacing.2_5', paddingY: 'spacing.1_5' },

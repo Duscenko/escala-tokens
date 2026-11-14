@@ -29423,7 +29423,6 @@
         "search",
         "icon",
         "input",
-        "kbd",
         "list",
         "heading",
         "item"
@@ -29454,14 +29453,6 @@
               "input": {
                 "text": "color.content.primary",
                 "font": "type.placeholder"
-              },
-              "kbd": {
-                "text": "color.content.subtle",
-                "font": "type.caption",
-                "stroke": "color.border.subtle",
-                "strokeWidth": "stroke.control",
-                "radius": "radius.control",
-                "paddingX": "spacing.1_5"
               },
               "list": {
                 "paddingX": "spacing.1_5",
