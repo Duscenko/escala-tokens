@@ -29,7 +29,7 @@ import { Switch } from '../escala-ui/switch'
 import { Checkbox } from '../escala-ui/checkbox'
 import { RadioGroup, RadioGroupItem } from '../escala-ui/radio-group'
 import { Slider } from '../escala-ui/slider'
-import { NativeSelect, NativeSelectOption } from '../escala-ui/_skeleton/native-select'
+import { Combobox } from '../escala-ui/combobox'
 import { InputOTP, InputOTPGroup, InputOTPSeparator, InputOTPSlot } from '../escala-ui/input-otp'
 import { Separator } from '../escala-ui/separator'
 import { TabMenu } from '../escala-ui/tab-menu'
@@ -483,10 +483,13 @@ function FormTile({ t }: { t: T }) {
       <Slider label={t('Volume')} value={60} format={(v) => `${v}%`} />
       <div className="flex flex-col" style={{ gap: 'var(--spacing-1_5)' }}>
         <Label>{t('Role')}</Label>
-        <NativeSelect value="designer" onChange={() => {}}>
-          <NativeSelectOption value="designer">{t('Designer')}</NativeSelectOption>
-          <NativeSelectOption value="engineer">{t('Engineer')}</NativeSelectOption>
-        </NativeSelect>
+        <Combobox
+          aria-label={t('Role')}
+          options={[{ label: t('Designer'), value: 'designer' }, { label: t('Engineer'), value: 'engineer' }]}
+          defaultValue="designer"
+          leading={null}
+          placeholder={t('Role')}
+        />
       </div>
     </Tile>
   )
