@@ -6,6 +6,7 @@
 import * as React from 'react'
 import { Slot } from 'radix-ui'
 import { cn } from '../../lib/utils'
+import { glyph } from '../../lib/icons'
 
 export const BREADCRUMB_SIZES = ['xs', 'sm', 'default'] as const
 export type BreadcrumbSize = (typeof BREADCRUMB_SIZES)[number]
@@ -25,15 +26,6 @@ const BreadcrumbContext = React.createContext<{ size: BreadcrumbSize; appearance
 })
 
 // Phosphor regular glyphs the file draws (house, caret-down, dots-three, caret-right, dot).
-const HOUSE = 'M219.31,108.68l-80-80a16,16,0,0,0-22.62,0l-80,80A15.87,15.87,0,0,0,32,120v96a8,8,0,0,0,8,8h64a8,8,0,0,0,8-8V160h32v56a8,8,0,0,0,8,8h64a8,8,0,0,0,8-8V120A15.87,15.87,0,0,0,219.31,108.68ZM208,208H160V152a8,8,0,0,0-8-8H104a8,8,0,0,0-8,8v56H48V120l80-80,80,80Z'
-const CARET_DOWN = 'M213.66,101.66l-80,80a8,8,0,0,1-11.32,0l-80-80A8,8,0,0,1,53.66,90.34L128,164.69l74.34-74.35a8,8,0,0,1,11.32,11.32Z'
-const DOTS_THREE = 'M140,128a12,12,0,1,1-12-12A12,12,0,0,1,140,128Zm56-12a12,12,0,1,0,12,12A12,12,0,0,0,196,116ZM60,116a12,12,0,1,0,12,12A12,12,0,0,0,60,116Z'
-const CARET_RIGHT = 'M181.66,133.66l-80,80a8,8,0,0,1-11.32-11.32L164.69,128,90.34,53.66a8,8,0,0,1,11.32-11.32l80,80A8,8,0,0,1,181.66,133.66Z'
-const DOT = 'M140,128a12,12,0,1,1-12-12A12,12,0,0,1,140,128Z'
-
-function Glyph({ d }: { d: string }) {
-  return <svg viewBox="0 0 256 256" fill="currentColor" focusable="false" aria-hidden className="size-full"><path d={d} /></svg>
-}
 
 export interface BreadcrumbProps extends React.ComponentProps<'nav'> {
   /** Figma Appearance: ghost · outline · solid, for every item and the ellipsis. */
@@ -141,7 +133,7 @@ function BreadcrumbEllipsis({ variant = 'default', appearance, size, forceState,
         className={cn('inline-flex shrink-0 cursor-pointer items-center justify-center outline-none disabled:cursor-not-allowed', className)}
         {...props}
       >
-        <span data-part="BreadcrumbEllipsis.icon" aria-hidden className="inline-flex items-center justify-center"><Glyph d={DOTS_THREE} /></span>
+        <span data-part="BreadcrumbEllipsis.icon" aria-hidden className="inline-flex items-center justify-center">{glyph('dots-three', { className: 'size-full' })}</span>
       </button>
     </li>
   )
@@ -170,15 +162,15 @@ function BreadcrumbSeparator({ variant, size, children, className, ...props }: B
       className={cn('inline-flex shrink-0 items-center justify-center', className)}
       {...props}
     >
-      {children ?? (kind === 'slash' ? '/' : <span data-part="BreadcrumbSeparator.icon" className="inline-flex items-center justify-center"><Glyph d={kind === 'dot' ? DOT : CARET_RIGHT} /></span>)}
+      {children ?? (kind === 'slash' ? '/' : <span data-part="BreadcrumbSeparator.icon" className="inline-flex items-center justify-center">{glyph(kind === 'dot' ? 'dot' : 'caret-right', { className: 'size-full' })}</span>)}
     </li>
   )
 }
 
 /** Figma's default glyphs, for stories and specimens. */
 export const BREADCRUMB_GLYPHS = {
-  house: <Glyph d={HOUSE} />,
-  caretDown: <Glyph d={CARET_DOWN} />,
+  house: glyph('house', { className: 'size-full' }),
+  caretDown: glyph('chevron-down', { className: 'size-full' }),
 }
 
 export { Breadcrumb, BreadcrumbEllipsis, BreadcrumbItem, BreadcrumbList, BreadcrumbSeparator }
