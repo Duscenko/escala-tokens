@@ -637,9 +637,9 @@ export const INPUT_TAG_CHIP: ComponentRecipe = {
 }
 
 // InputTagOption: a suggestion row of the dropdown (Type option · create). One size: 32 tall
-// (Size/control-sm), padding and gap gap-control, Radius/control, Type/body-md. At rest it
-// wears the FIELD's fill and edge (Surface/input + Border/control); Hover drops the edge,
-// Focused takes Border/focus with the 2px halo. The option's `badge` is an 8px dot
+// (Size/control-sm), padding and gap gap-control, Radius/control, Type/body-sm (B3). At rest it
+// wears the FIELD's fill and edge (Surface/input + Border/control); Hover drops the edge and fills Surface/muted,
+// Focused the same fill, Border/focus and the 2px halo. The option's `badge` is an 8px dot
 // (Status/success/content), `meta` a Type/caption count, `icon` the 14px plus of create.
 export const INPUT_TAG_OPTION_TYPES = ['option', 'create'] as const
 export const INPUT_TAG_OPTION_STATES = ['Default', 'Hover', 'Focused', 'Disabled'] as const
@@ -654,8 +654,8 @@ function optionPaint(state: string): SlotMap {
   }
   const ink = c('content.primary')
   const rest = { label: { text: ink }, meta: { text: c('content.subtle') }, icon: { text: ink }, badge: { fill: c('status.success.content') } }
-  if (state === 'Hover') return { ...rest, root: { fill: c('surface.muted-hover'), strokeWidth: 'stroke.none', halo: NONE, text: ink } }
-  if (state === 'Focused') return { ...rest, root: { fill: c('surface.muted-hover'), stroke: c('border.focus'), strokeWidth: 'stroke.control', halo: c('border.ring.default'), text: ink } }
+  if (state === 'Hover') return { ...rest, root: { fill: c('surface.muted'), strokeWidth: 'stroke.none', halo: NONE, text: ink } }
+  if (state === 'Focused') return { ...rest, root: { fill: c('surface.muted'), stroke: c('border.focus'), strokeWidth: 'stroke.control', halo: c('border.ring.default'), text: ink } }
   return { ...rest, root: { fill: c('surface.input'), stroke: c('border.control'), strokeWidth: 'stroke.control', halo: NONE, text: ink } }
 }
 
@@ -666,7 +666,7 @@ export const INPUT_TAG_OPTION: ComponentRecipe = {
   parts: [
     part({}, () => ({
       root: {
-        height: 'size.compact', radius: 'radius.control', paddingX: 'spacing.gap-control', gap: 'spacing.gap-control', font: 'type.body-md',
+        height: 'size.compact', radius: 'radius.control', paddingX: 'spacing.gap-control', gap: 'spacing.gap-control', font: 'type.body-sm',
       },
       badge: { width: 'spacing.2', height: 'spacing.2', radius: 'radius.pill' },
       icon: { width: 'spacing.3+spacing.0_5', height: 'spacing.3+spacing.0_5' },
