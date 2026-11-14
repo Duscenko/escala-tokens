@@ -19,21 +19,6 @@
       "status": "part",
       "of": "RadioGroup"
     },
-    "Sidebar": {
-      "status": "rebuild"
-    },
-    "SidebarBrand": {
-      "status": "part",
-      "of": "Sidebar"
-    },
-    "SidebarGroup": {
-      "status": "part",
-      "of": "Sidebar"
-    },
-    "SidebarGroupLabel": {
-      "status": "part",
-      "of": "Sidebar"
-    },
     "SidebarMenuButton": {
       "status": "part",
       "of": "Sidebar"

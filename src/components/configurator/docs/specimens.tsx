@@ -29,7 +29,7 @@ import {
 import {
   SkeletonTabsSpecimen, SkeletonTabMenuSpecimen, SkeletonTabMenuItemSpecimen, SkeletonTabMenuLineItemSpecimen, SkeletonNavItemSpecimen, SkeletonBrandSpecimen, SkeletonAccountMenuTriggerSpecimen, SkeletonSegmentedControlSpecimen, SkeletonSegmentedControlItemSpecimen, SkeletonBreadcrumbSpecimen, SkeletonBreadcrumbItemSpecimen, SkeletonBreadcrumbEllipsisSpecimen, SkeletonBreadcrumbSeparatorSpecimen,
   SkeletonPaginationSpecimen, SkeletonPaginationLinkSpecimen, SkeletonPaginationEllipsisSpecimen, SkeletonStepperSpecimen, SkeletonStepperItemSpecimen, SkeletonStepperIndicatorSpecimen, SkeletonStepperIconSpecimen, SkeletonDropdownMenuSpecimen, SkeletonDropdownMenuLabelSpecimen, SkeletonDropdownMenuItemSpecimen, SkeletonDropdownMenuFooterSpecimen, SkeletonContextMenuSpecimen,
-  SkeletonCommandSpecimen, SkeletonNavbarSpecimen, SkeletonSidebarSpecimen,
+  SkeletonCommandSpecimen, SkeletonNavbarSpecimen, SkeletonSidebarSpecimen, SkeletonSidebarMenuButtonSpecimen, SkeletonSidebarGroupSpecimen, SkeletonSidebarGroupLabelSpecimen, SkeletonSidebarBrandSpecimen,
   SkeletonMenubarSpecimen, SkeletonNavigationMenuSpecimen,
 } from './skeleton/navigation'
 import { SKELETON_SNIPPETS } from './skeleton/snippets'
@@ -510,6 +510,10 @@ export const SPECIMENS: Record<string, (p: SpecimenProps) => ReactNode> = {
   NavigationMenu: SkeletonNavigationMenuSpecimen,
   Navbar: SkeletonNavbarSpecimen,
   Sidebar: SkeletonSidebarSpecimen,
+  SidebarMenuButton: SkeletonSidebarMenuButtonSpecimen,
+  SidebarGroup: SkeletonSidebarGroupSpecimen,
+  SidebarGroupLabel: SkeletonSidebarGroupLabelSpecimen,
+  SidebarBrand: SkeletonSidebarBrandSpecimen,
 }
 
 // Components whose specimen renders on the "panel" role (surface-1) — the

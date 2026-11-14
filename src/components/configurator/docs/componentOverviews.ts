@@ -467,7 +467,11 @@ export const OVERVIEWS: Record<string, Overview> = {
     each('State', ['Default', 'Hover', 'Pressed', 'Focused', 'Disabled'], { Checked: 'false' }),
     each('Size', ['default', 'sm', 'lg'], { Checked: 'true' }),
   ],
-  Sidebar: [each('Variant', ['sidebar', 'floating', 'inset'])],
+  Sidebar: [each('Collapsed', ['false', 'true'])],
+  SidebarMenuButton: [each('State', ['Default', 'Hover', 'Focused', 'Current', 'Disabled'], {}, 256), each('Size', ['default', 'sm', 'lg'], {}, 256), each('Collapsed', ['false', 'true'])],
+  SidebarGroup: [each('Size', ['default', 'sm', 'lg'], {}, 256), each('Collapsed', ['false', 'true'])],
+  SidebarGroupLabel: [each('Size', ['default', 'sm', 'lg'], {}, 256)],
+  SidebarBrand: [each('Collapsed', ['false', 'true'])],
 }
 
 export const OVERVIEW_VALUE = 'Overview'

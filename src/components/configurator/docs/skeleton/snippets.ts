@@ -68,7 +68,15 @@ export const SKELETON_SNIPPETS: Record<string, Snippet> = {
   Navbar: () =>
     `import { Navbar } from "@/components/ui/navbar"\n\n<Navbar\n  links={[{ label: "Home", current: true }, { label: "Tokens" }, { label: "Docs" }]}\n  trailing="MD"\n/>`,
   Sidebar: (v) =>
-    `import {\n  Sidebar, SidebarContent, SidebarGroup, SidebarGroupLabel,\n  SidebarMenu, SidebarMenuItem, SidebarMenuButton,\n} from "@/components/ui/sidebar"\n\n<Sidebar${v.Variant && v.Variant !== 'sidebar' ? ` variant="${v.Variant}"` : ''}>\n  <SidebarContent>\n    <SidebarGroup>\n      <SidebarGroupLabel>Workspace</SidebarGroupLabel>\n      <SidebarMenu>\n        <SidebarMenuItem>\n          <SidebarMenuButton isActive><Palette /><span>Tokens</span></SidebarMenuButton>\n        </SidebarMenuItem>\n      </SidebarMenu>\n    </SidebarGroup>\n  </SidebarContent>\n</Sidebar>`,
+    `import {\n  Sidebar, SidebarHeader, SidebarBrand, SidebarTrigger, SidebarContent, SidebarGroup, SidebarGroupLabel,\n  SidebarMenu, SidebarMenuItem, SidebarMenuButton,\n} from "@/components/ui/sidebar"\n\n<Sidebar${v.Collapsed === 'true' ? ' collapsed' : ''}>\n  <SidebarHeader>\n    <SidebarBrand logo={<Avatar type="initials">E</Avatar>} title="Escala" subtitle="Design system" />\n    <SidebarTrigger />\n  </SidebarHeader>\n  <SidebarContent>\n    <SidebarGroup>\n      <SidebarGroupLabel>Platform</SidebarGroupLabel>\n      <SidebarMenu>\n        <SidebarMenuItem>\n          <SidebarMenuButton icon={<Palette />} state="Current">Tokens</SidebarMenuButton>\n        </SidebarMenuItem>\n      </SidebarMenu>\n    </SidebarGroup>\n  </SidebarContent>\n</Sidebar>`,
+  SidebarMenuButton: (v) =>
+    `import { SidebarMenuButton } from "@/components/ui/sidebar"\n\n<SidebarMenuButton${v.Size && v.Size !== 'default' ? ` size="${v.Size}"` : ''}${v.State && v.State !== 'Default' ? ` state="${v.State}"` : ''} icon={<House />} trailing="12" trend="up">Dashboard</SidebarMenuButton>`,
+  SidebarGroup: (v) =>
+    `import { SidebarGroup, SidebarGroupLabel, SidebarMenu } from "@/components/ui/sidebar"\n\n<SidebarGroup${v.Size && v.Size !== 'default' ? ` size="${v.Size}"` : ''} aria-labelledby="platform">\n  <SidebarGroupLabel id="platform">Platform</SidebarGroupLabel>\n  <SidebarMenu>{/* SidebarMenuItem rows */}</SidebarMenu>\n</SidebarGroup>`,
+  SidebarGroupLabel: (v) =>
+    `import { SidebarGroupLabel } from "@/components/ui/sidebar"\n\n<SidebarGroupLabel${v.Size && v.Size !== 'default' ? ` size="${v.Size}"` : ''}>Platform</SidebarGroupLabel>`,
+  SidebarBrand: () =>
+    `import { SidebarBrand } from "@/components/ui/sidebar"\n\n<SidebarBrand logo={<Avatar type="initials">E</Avatar>} title="Escala" subtitle="Design system" />`,
 
   Alert: (v) =>
     `import { Alert } from "@/components/ui/alert"\n\n<Alert${v.Variant && v.Variant !== 'default' ? ` variant="${v.Variant}"` : ''}${v.Appearance && v.Appearance !== 'outline' ? ` appearance="${v.Appearance}"` : ''}${v.Layout === 'vertical' ? ' layout="vertical"' : ''}${v.Size === 'sm' ? ' size="sm"' : ''} description="Your plan renews tomorrow." onClose={dismiss} />`,

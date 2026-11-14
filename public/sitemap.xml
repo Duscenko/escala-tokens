@@ -150,6 +150,10 @@
   <url><loc>https://www.escalatokens.com/components/Command</loc></url>
   <url><loc>https://www.escalatokens.com/components/Navbar</loc></url>
   <url><loc>https://www.escalatokens.com/components/Sidebar</loc></url>
+  <url><loc>https://www.escalatokens.com/components/SidebarMenuButton</loc></url>
+  <url><loc>https://www.escalatokens.com/components/SidebarGroup</loc></url>
+  <url><loc>https://www.escalatokens.com/components/SidebarGroupLabel</loc></url>
+  <url><loc>https://www.escalatokens.com/components/SidebarBrand</loc></url>
   <url><loc>https://www.escalatokens.com/docs</loc></url>
   <url><loc>https://www.escalatokens.com/docs/figma</loc></url>
   <url><loc>https://www.escalatokens.com/docs/changelog</loc></url>

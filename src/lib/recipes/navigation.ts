@@ -582,44 +582,93 @@ export const NAVBAR: ComponentRecipe = {
   ],
 }
 
-// ── Sidebar ────────────────────────────────────────────────────────────────
+// ── Sidebar · SidebarBrand · SidebarGroup · SidebarGroupLabel · SidebarMenuButton ──
+// The Figma sets (page Sidebar, 931:87050; Sidebar 982:1003, SidebarMenuButton 980:368, SidebarGroup 982:292,
+// SidebarGroupLabel 980:390, SidebarBrand 980:419), 1:1:
+//  · Sidebar (Collapsed): Surface/layer-1, a 1px Border/default edge on the RIGHT only, 272 wide (48 collapsed).
+//    header (padding and gap gap-control: SidebarBrand + a ghost IconButton trigger), Content (padding gap-control,
+//    gap gap-group) and Footer (padding gap-control, gap gap-tight, a 1px Border/default rule on top).
+//  · SidebarGroup (Size × Collapsed): SidebarGroupLabel over the menu (gap gap-tight). Size cascades to the rows.
+//  · SidebarGroupLabel (Size): `groupLabelRecipe`.
+//  · SidebarMenuButton (Size × State × Collapsed): `listItemRecipe` — the twin of DropdownMenuItem and ComboboxItem
+//    (24 · 32 · 40, Radius/control, Surface/muted on hover, Surface/selected for Current). Collapsed is a square of
+//    the row height with no side padding.
+//  · SidebarBrand (Collapsed): a 32 logo, a Type/label title over a Type/caption subtitle, gap gap-control.
 
-// shadcn's Sidebar: `sidebar` sits flush with a hairline, `floating` is a
-// rounded raised panel, `inset` drops the edge (the page content is inset
-// beside it). A menu button is the ghost hover; the active one keeps it.
-// Escala draws the sidebar as a panel, so `sidebar` is rounded too, and the
-// buttons are concentric with it: `radius.container` minus the `spacing.2`
-// inset lands on `radius.action` (16 − 8 = 8).
+export const SIDEBAR_COLLAPSED = ['false', 'true'] as const
+export const SIDEBAR_SIZES = ['default', 'sm', 'lg'] as const
+export const SIDEBAR_MENU_BUTTON_STATES = ['Default', 'Hover', 'Focused', 'Current', 'Disabled'] as const
+
 export const SIDEBAR: ComponentRecipe = {
   key: 'Sidebar',
-  slots: ['root', 'group', 'label', 'menu', 'button'],
-  defaults: { Variant: 'sidebar' },
+  slots: ['root', 'header', 'content', 'footer'],
+  defaults: { Collapsed: 'false' },
   parts: [
     part({}, () => ({
-      root: { fill: c('surface.layer-1'), text: c('content.primary'), paddingX: 'spacing.2', paddingY: 'spacing.2', gap: 'spacing.2' },
-      group: { gap: 'spacing.1' },
-      label: groupLabelRecipe('default'),
-      menu: { gap: 'spacing.1' },
-      button: {
-        text: c('content.primary'), font: 'type.body-sm', radius: 'radius.action',
-        height: 'size.compact', paddingX: 'spacing.2', gap: 'spacing.2',
+      root: { fill: c('surface.layer-1'), text: c('content.primary'), stroke: c('border.default'), strokeRightWidth: 'stroke.divider' },
+      header: { paddingX: 'spacing.gap-control', paddingY: 'spacing.gap-control', gap: 'spacing.gap-control' },
+      content: { paddingX: 'spacing.gap-control', paddingY: 'spacing.gap-control', gap: 'spacing.gap-group' },
+      footer: {
+        paddingX: 'spacing.gap-control', paddingY: 'spacing.gap-control', gap: 'spacing.gap-tight',
+        stroke: c('border.default'), strokeTopWidth: 'stroke.divider',
       },
-      // The paint of a pointed-at list row is `listItemRecipe`'s: fill on hover, ring on keyboard focus only.
-      'button:hover': listItemHighlightFill(),
-      'button:focus-visible': { ...listItemHighlightFill(), ...FOCUS },
-      'button[data-active="true"]': { ...listItemRootPaint('Selected'), font: 'type.label' },
-      'button:disabled': { text: c('content.disabled'), fill: NONE },
-      // No fill, as Button's outline: the page colour would patch the sidebar's own surface.
-      'button[data-variant="outline"]': { fill: NONE, stroke: c('border.default'), strokeWidth: 'stroke.control' },
-      'button[data-size="sm"]': { height: 'size.hit', font: 'type.caption' },
-      'button[data-size="lg"]': { height: 'size.touch' },
     })),
-    part({ Variant: ['sidebar', 'floating', 'inset'] as const }, (variant) => ({
-      root: variant === 'floating'
-        ? { stroke: c('border.default'), strokeWidth: 'stroke.control', radius: 'radius.container', shadow: 'shadow.sm' }
-        : variant === 'sidebar'
-          ? { stroke: c('border.default'), strokeWidth: 'stroke.control', radius: 'radius.container' }
-          : { stroke: NONE },
+    part({ Collapsed: SIDEBAR_COLLAPSED }, (collapsed) => ({
+      root: { width: collapsed === 'true' ? 'size.lg' : 'spacing.32+spacing.32+spacing.4' },
+    })),
+  ],
+}
+
+export const SIDEBAR_BRAND: ComponentRecipe = {
+  key: 'SidebarBrand',
+  slots: ['root', 'logo', 'text', 'title', 'subtitle'],
+  defaults: { Collapsed: 'false' },
+  parts: [
+    part({}, () => ({
+      root: { gap: 'spacing.gap-control' },
+      logo: { width: 'size.sm', height: 'size.sm' },
+      title: { text: c('content.primary'), font: 'type.label' },
+      subtitle: { text: c('content.secondary'), font: 'type.caption' },
+    })),
+  ],
+}
+
+export const SIDEBAR_GROUP: ComponentRecipe = {
+  key: 'SidebarGroup',
+  slots: ['root', 'label', 'content'],
+  defaults: { Size: 'default', Collapsed: 'false' },
+  parts: [
+    part({}, () => ({ content: { gap: 'spacing.gap-tight' } })),
+  ],
+}
+
+export const SIDEBAR_GROUP_LABEL: ComponentRecipe = {
+  key: 'SidebarGroupLabel',
+  slots: ['root'],
+  defaults: { Size: 'default' },
+  parts: [
+    part({ Size: SIDEBAR_SIZES }, (size) => ({ root: groupLabelRecipe(size) })),
+  ],
+}
+
+export const SIDEBAR_MENU_BUTTON: ComponentRecipe = {
+  key: 'SidebarMenuButton',
+  slots: ['root', 'icon', 'text', 'label', 'description', 'trailing', 'trend', 'iconTrailing', 'indicator'],
+  defaults: { Size: 'default', State: 'Default', Collapsed: 'false' },
+  parts: [
+    // Paint and geometry: the shared list row. Hover is the highlight fill; Current is the Selected paint.
+    part({ Size: SIDEBAR_SIZES, State: SIDEBAR_MENU_BUTTON_STATES }, (size, state) => {
+      const base = listItemRecipe(size, state === 'Current' ? 'Selected' : state === 'Hover' ? 'Default' : state, 'default')
+      const g = LIST_ITEM_METRICS[size]
+      return {
+        ...base,
+        root: state === 'Hover' ? { ...base.root, ...listItemHighlightFill() } : base.root,
+        iconTrailing: { text: c('content.secondary'), width: g.icon, height: g.icon },
+      }
+    }),
+    // Collapsed: a square of the row's height, no side padding (the icon centres).
+    part({ Size: SIDEBAR_SIZES, Collapsed: SIDEBAR_COLLAPSED }, (size, collapsed) => ({
+      root: collapsed === 'true' ? { width: LIST_ITEM_METRICS[size].minHeight, paddingX: 'spacing.none' } : {},
     })),
   ],
 }

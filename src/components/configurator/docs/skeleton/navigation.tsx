@@ -19,9 +19,12 @@ import { ContextMenu as SkContextMenu, ContextMenuContent as SkContextMenuConten
 import { Command as SkCommand, CommandGroup as SkCommandGroup, CommandInput as SkCommandInput, CommandItem as SkCommandItem, CommandList as SkCommandList } from '../../../escala-ui/command'
 import { Navbar as SkNavbar } from '../../../escala-ui/navbar'
 import {
-  Sidebar as SkSidebar, SidebarContent as SkSidebarContent, SidebarGroup as SkSidebarGroup, SidebarGroupLabel as SkSidebarGroupLabel,
-  SidebarMenu as SkSidebarMenu, SidebarMenuButton as SkSidebarMenuButton, SidebarMenuItem as SkSidebarMenuItem, type SidebarVariant,
+  Sidebar as SkSidebar, SidebarBrand as SkSidebarBrand, SidebarContent as SkSidebarContent, SidebarFooter as SkSidebarFooter,
+  SidebarGroup as SkSidebarGroup, SidebarGroupLabel as SkSidebarGroupLabel, SidebarHeader as SkSidebarHeader,
+  SidebarMenu as SkSidebarMenu, SidebarMenuButton as SkSidebarMenuButton, SidebarMenuItem as SkSidebarMenuItem, SidebarTrigger as SkSidebarTrigger,
+  type SidebarMenuButtonState, type SidebarSize,
 } from '../../../escala-ui/sidebar'
+import { Avatar as SkAvatar } from '../../../escala-ui/avatar'
 import { Button as SkButton } from '../../../escala-ui/button'
 import { RecipeScope } from './scope'
 import { Menubar as SkMenubar, MenubarContent as SkMenubarContent, MenubarItem as SkMenubarItem, MenubarMenu as SkMenubarMenu, MenubarSeparator as SkMenubarSeparator, MenubarShortcut as SkMenubarShortcut, MenubarTrigger as SkMenubarTrigger } from '../../../escala-ui/menubar'
@@ -363,36 +366,115 @@ export function SkeletonNavbarSpecimen({ t }: SpecimenProps) {
   return <RecipeScope t={t}><SkNavbar links={links} trailing="MD" style={{ width: 420 }} /></RecipeScope>
 }
 
-export function SkeletonSidebarSpecimen({ t, v, w }: SpecimenProps) {
-  const items = [
-    { label: 'Overview', icon: <PreviewIcon concept="home" size={iconOf(15)} /> },
-    { label: 'Tokens', icon: <PreviewIcon concept="palette" size={iconOf(15)} /> },
-    { label: 'Components', icon: <PreviewIcon concept="box" size={iconOf(15)} /> },
-    { label: 'Settings', icon: <PreviewIcon concept="settings" size={iconOf(15)} /> },
-  ]
-  return <SidebarDemo t={t} items={items} variant={(v.Variant ?? 'sidebar') as SidebarVariant} w={w} />
-}
+const SIDEBAR_ITEMS = [
+  { label: 'Overview', concept: 'home' as const },
+  { label: 'Tokens', concept: 'palette' as const },
+  { label: 'Components', concept: 'box' as const },
+  { label: 'Settings', concept: 'settings' as const },
+]
+const sidebarIconPx = (size: SidebarSize) => (size === 'lg' ? 20 : 16)
 
-function SidebarDemo({ t, items, variant, w }: { t: SpecimenProps['t']; items: { label: string; icon: React.ReactNode }[]; variant: SidebarVariant; w?: number | string }) {
+/** The Figma Sidebar (982:1003): brand + trigger, two groups, a footer. `Collapsed` is the 48px rail. */
+export function SkeletonSidebarSpecimen({ t, v, w }: SpecimenProps) {
+  const collapsed = v.Collapsed === 'true'
   const [active, setActive] = useState('Tokens')
   return (
     <RecipeScope t={t}>
-      <SkSidebar variant={variant} style={{ width: w ?? 220 }}>
+      <SkSidebar collapsed={collapsed} style={{ height: 420, ...(w != null && !collapsed ? { width: w } : null) }}>
+        <SkSidebarHeader>
+          <SkSidebarBrand logo={<SkAvatar type="initials" size="sm" shape="rounded" variant="default" appearance="solid">E</SkAvatar>} title="Escala" subtitle="Design system" />
+          <SkSidebarTrigger />
+        </SkSidebarHeader>
         <SkSidebarContent>
           <SkSidebarGroup>
-            <SkSidebarGroupLabel>Workspace</SkSidebarGroupLabel>
+            <SkSidebarGroupLabel>Platform</SkSidebarGroupLabel>
             <SkSidebarMenu>
-              {items.map((item) => (
+              {SIDEBAR_ITEMS.map((item) => (
                 <SkSidebarMenuItem key={item.label}>
-                  <SkSidebarMenuButton isActive={item.label === active} onClick={() => setActive(item.label)}>
-                    {item.icon}
-                    <span>{item.label}</span>
+                  <SkSidebarMenuButton
+                    icon={<PreviewIcon concept={item.concept} size={16} />}
+                    state={item.label === active ? 'Current' : undefined}
+                    onClick={() => setActive(item.label)}
+                  >
+                    {item.label}
                   </SkSidebarMenuButton>
                 </SkSidebarMenuItem>
               ))}
             </SkSidebarMenu>
           </SkSidebarGroup>
         </SkSidebarContent>
+        <SkSidebarFooter>
+          <SkSidebarMenuButton icon={<PreviewIcon concept="settings" size={16} />}>Settings</SkSidebarMenuButton>
+        </SkSidebarFooter>
+      </SkSidebar>
+    </RecipeScope>
+  )
+}
+
+/** The Figma SidebarMenuButton (980:368) on its own: 256 wide, 32 when collapsed. */
+export function SkeletonSidebarMenuButtonSpecimen({ t, v }: SpecimenProps) {
+  const size = (v.Size ?? 'default') as SidebarSize
+  const collapsed = v.Collapsed === 'true'
+  return (
+    <RecipeScope t={t}>
+      <SkSidebar collapsed={collapsed} className="!h-auto !w-auto !border-0 !bg-transparent">
+        <SkSidebarGroup size={size}>
+          <SkSidebarMenu>
+            <SkSidebarMenuItem style={{ width: collapsed ? undefined : 256 }}>
+              <SkSidebarMenuButton
+                state={(v.State ?? 'Default') as SidebarMenuButtonState}
+                icon={<PreviewIcon concept="home" size={sidebarIconPx(size)} />}
+              >
+                Dashboard
+              </SkSidebarMenuButton>
+            </SkSidebarMenuItem>
+          </SkSidebarMenu>
+        </SkSidebarGroup>
+      </SkSidebar>
+    </RecipeScope>
+  )
+}
+
+/** The Figma SidebarGroup (982:292): the label over four rows; Size cascades. */
+export function SkeletonSidebarGroupSpecimen({ t, v }: SpecimenProps) {
+  const size = (v.Size ?? 'default') as SidebarSize
+  const collapsed = v.Collapsed === 'true'
+  return (
+    <RecipeScope t={t}>
+      <SkSidebar collapsed={collapsed} className="!h-auto !w-auto !border-0 !bg-transparent">
+        <SkSidebarGroup size={size} style={{ width: collapsed ? undefined : 256 }}>
+          <SkSidebarGroupLabel>Platform</SkSidebarGroupLabel>
+          <SkSidebarMenu>
+            {SIDEBAR_ITEMS.map((item, i) => (
+              <SkSidebarMenuItem key={item.label}>
+                <SkSidebarMenuButton icon={<PreviewIcon concept={item.concept} size={sidebarIconPx(size)} />} state={i === 0 ? 'Current' : undefined}>
+                  {item.label}
+                </SkSidebarMenuButton>
+              </SkSidebarMenuItem>
+            ))}
+          </SkSidebarMenu>
+        </SkSidebarGroup>
+      </SkSidebar>
+    </RecipeScope>
+  )
+}
+
+/** The Figma SidebarGroupLabel (980:390) on its own, 256 wide. */
+export function SkeletonSidebarGroupLabelSpecimen({ t, v }: SpecimenProps) {
+  const size = (v.Size ?? 'default') as SidebarSize
+  return (
+    <RecipeScope t={t}>
+      <div style={{ width: 256 }}><SkSidebarGroupLabel size={size}>Platform</SkSidebarGroupLabel></div>
+    </RecipeScope>
+  )
+}
+
+/** The Figma SidebarBrand (980:419); Collapsed shows the logo only. */
+export function SkeletonSidebarBrandSpecimen({ t, v }: SpecimenProps) {
+  return (
+    <RecipeScope t={t}>
+      <SkSidebar collapsed={v.Collapsed === 'true'} className="!h-auto !w-auto !border-0 !bg-transparent">
+        <SkSidebarBrand logo={<SkAvatar type="initials" size="sm" shape="rounded" variant="default" appearance="solid">E</SkAvatar>} title="Escala" subtitle="Design system" />
       </SkSidebar>
     </RecipeScope>
   )

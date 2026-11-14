@@ -79,7 +79,9 @@ export const BUDGETS = {
   // 135k → 140k (2026-11-13): Combobox's four components, the date picker and Calendar's
   // parts joined the Table / Avatar / Checkbox work in one branch, each with its own
   // design-skill file.
-  contextAllTokens: 140_000,
+  // 140k → 145k (2026-11-14): the Sidebar became five Figma components (Sidebar, SidebarMenuButton with 30
+  // variants, SidebarGroup, SidebarGroupLabel, SidebarBrand), each with its own design-skill file.
+  contextAllTokens: 145_000,
   contextFoundationTokens: 12_000,
 }
 
