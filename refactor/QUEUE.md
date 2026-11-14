@@ -26,7 +26,7 @@ Legend: `- [ ]` todo · `- [x]` done (append commit hash) · `- [!]` blocked (ap
 ## Phase C — parity gaps
 - [x] C1 Rebuild Sidebar from the Figma contract (Sidebar, SidebarGroup, SidebarGroupLabel, SidebarMenuButton with `collapsed`, `trend`, Badge in `trailing`, SidebarBrand). Button radius `radius.control`, padding through roles. Stories for each part. (89772e5)
 - [x] C2 Add the missing RadioGroup story. (f7c453d)
-- [ ] C3 Command: render shortcuts with `Kbd`, not a local `kbd`.
+- [x] C3 Command: render shortcuts with `Kbd`, not a local `kbd`. (977cf34)
 
 ## Phase D — legacy and guardrails
 - [ ] D1 Move the shadcn skeletons with no story to `src/components/escala-ui/_skeleton/` (sidebar old version, tabs, toggle-group, toggle, context-menu, menubar, command, select, native-select, alert-dialog, sheet, drawer, hover-card, navbar, navigation-menu, label). Add an ESLint `no-restricted-imports` rule: `_skeleton/` may only be imported from the configurator.
