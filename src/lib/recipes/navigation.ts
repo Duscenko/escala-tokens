@@ -43,7 +43,7 @@ export const TABS: ComponentRecipe = {
 // touch; a button variant spaces them `Spacing/gap-tight` apart and fills the selected one.
 export const TAB_MENU_SIZES = ['default', 'sm', 'lg'] as const
 export const TAB_MENU_VARIANTS = ['horizontal-line', 'horizontal-button', 'vertical-line', 'vertical-button'] as const
-export const TAB_MENU_ITEM_STATES = ['Default', 'Hover', 'Selected', 'Focused', 'Disabled'] as const
+export const TAB_MENU_ITEM_STATES = ['Default', 'Hover', 'Focused', 'Selected', 'Disabled'] as const
 export const TAB_MENU_INDICATORS = ['bottom', 'left'] as const
 
 export const TAB_MENU: ComponentRecipe = {
@@ -108,7 +108,7 @@ export const TAB_MENU_LINE_ITEM: ComponentRecipe = {
 // The Figma sets NavItem (1095:19644), Brand (1098:42) and AccountMenuTrigger (1098:119)
 // (design-plans/nav-header-contract.md). NavItem is a TabMenuItem whose selected state is `Current`.
 export const NAV_ITEM_SIZES = TAB_MENU_SIZES
-export const NAV_ITEM_STATES = ['Default', 'Hover', 'Current', 'Focused', 'Disabled'] as const
+export const NAV_ITEM_STATES = ['Default', 'Hover', 'Focused', 'Current', 'Disabled'] as const
 
 export const NAV_ITEM: ComponentRecipe = {
   key: 'NavItem',

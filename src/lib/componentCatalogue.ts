@@ -2291,7 +2291,7 @@ export const COMPONENTS: ComponentDef[] = [
     usage: 'Inside a button-variant TabMenu.',
     axes: [
       { name: 'Size', values: ['default', 'sm', 'lg'] },
-      { name: 'State', values: ['Default', 'Hover', 'Selected', 'Focused', 'Disabled'] },
+      { name: 'State', values: ['Default', 'Hover', 'Focused', 'Selected', 'Disabled'] },
     ],
     figmaSets: ['TabMenuItem'],
     props: [
@@ -2308,7 +2308,7 @@ export const COMPONENTS: ComponentDef[] = [
     usage: 'Inside a line-variant TabMenu.',
     axes: [
       { name: 'Size', values: ['default', 'sm', 'lg'] },
-      { name: 'State', values: ['Default', 'Hover', 'Selected', 'Focused', 'Disabled'] },
+      { name: 'State', values: ['Default', 'Hover', 'Focused', 'Selected', 'Disabled'] },
       { name: 'Indicator', values: ['bottom', 'left'] },
     ],
     figmaSets: ['TabMenuLineItem'],
@@ -2326,7 +2326,7 @@ export const COMPONENTS: ComponentDef[] = [
     usage: 'In a header or navbar. Current marks the page you are on; with a trailing caret it opens a NavigationMenu. Tabs inside a view use TabMenuItem.',
     axes: [
       { name: 'Size', values: ['default', 'sm', 'lg'] },
-      { name: 'State', values: ['Default', 'Hover', 'Current', 'Focused', 'Disabled'] },
+      { name: 'State', values: ['Default', 'Hover', 'Focused', 'Current', 'Disabled'] },
     ],
     figmaSets: ['NavItem'],
     props: [

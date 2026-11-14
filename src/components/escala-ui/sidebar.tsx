@@ -65,12 +65,22 @@ function SidebarMenuItem({ className, ...props }: React.ComponentProps<'li'>) {
   return <li data-slot="sidebar-menu-item" className={cn('group/menu-item relative', className)} {...props} />
 }
 
+/** Figma State order: Default · Hover · Focused · Current · Disabled. */
+export const SIDEBAR_MENU_BUTTON_STATES = ['Default', 'Hover', 'Focused', 'Current', 'Disabled'] as const
+export type SidebarMenuButtonState = (typeof SIDEBAR_MENU_BUTTON_STATES)[number]
+
 function SidebarMenuButton({
-  asChild = false, isActive = false, variant = 'default', size = 'default', className, ...props
+  asChild = false, state, isActive: isActiveProp = false, variant = 'default', size = 'default', className, ...props
 }: React.ComponentProps<'button'> & {
-  asChild?: boolean; isActive?: boolean; variant?: 'default' | 'outline'; size?: 'default' | 'sm' | 'lg'
+  asChild?: boolean
+  /** The pinned state (docs). `Current` is the page you are on; `isActive` is its older name and still works. */
+  state?: SidebarMenuButtonState
+  /** @deprecated Use `state="Current"`. */
+  isActive?: boolean
+  variant?: 'default' | 'outline'; size?: 'default' | 'sm' | 'lg'
 }) {
   const Comp = asChild ? Slot.Root : 'button'
+  const isActive = isActiveProp || state === 'Current'
   return (
     <Comp
       data-slot="sidebar-menu-button"

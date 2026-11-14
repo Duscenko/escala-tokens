@@ -26251,18 +26251,18 @@
                 "fill": "color.action.ghost.hover"
               }
             },
-            "Selected": {
-              "root": {
-                "text": "color.content.accent",
-                "fill": "color.surface.selected"
-              }
-            },
             "Focused": {
               "root": {
                 "text": "color.content.secondary",
                 "fill": "none",
                 "focus": "color.border.focus",
                 "ring": "color.border.ring.default"
+              }
+            },
+            "Selected": {
+              "root": {
+                "text": "color.content.accent",
+                "fill": "color.surface.selected"
               }
             },
             "Disabled": {
@@ -26377,18 +26377,18 @@
                 "fill": "none"
               }
             },
-            "Selected": {
-              "root": {
-                "text": "color.content.accent",
-                "fill": "none"
-              }
-            },
             "Focused": {
               "root": {
                 "text": "color.content.secondary",
                 "fill": "none",
                 "focus": "color.border.focus",
                 "ring": "color.border.ring.default"
+              }
+            },
+            "Selected": {
+              "root": {
+                "text": "color.content.accent",
+                "fill": "none"
               }
             },
             "Disabled": {
@@ -26520,18 +26520,18 @@
                 "fill": "color.action.ghost.hover"
               }
             },
-            "Current": {
-              "root": {
-                "text": "color.content.accent",
-                "fill": "color.surface.selected"
-              }
-            },
             "Focused": {
               "root": {
                 "text": "color.content.secondary",
                 "fill": "none",
                 "focus": "color.border.focus",
                 "ring": "color.border.ring.default"
+              }
+            },
+            "Current": {
+              "root": {
+                "text": "color.content.accent",
+                "fill": "color.surface.selected"
               }
             },
             "Disabled": {

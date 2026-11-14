@@ -8,7 +8,7 @@ import { cn } from '../../lib/utils'
 
 export const NAV_ITEM_SIZES = ['default', 'sm', 'lg'] as const
 export type NavItemSize = (typeof NAV_ITEM_SIZES)[number]
-export const NAV_ITEM_STATES = ['Default', 'Hover', 'Current', 'Focused', 'Disabled'] as const
+export const NAV_ITEM_STATES = ['Default', 'Hover', 'Focused', 'Current', 'Disabled'] as const
 export type NavItemState = (typeof NAV_ITEM_STATES)[number]
 
 export interface NavItemProps extends Omit<React.ComponentProps<'a'>, 'children'> {
