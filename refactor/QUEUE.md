@@ -30,7 +30,7 @@ Legend: `- [ ]` todo · `- [x]` done (append commit hash) · `- [!]` blocked (ap
 
 ## Phase D — legacy and guardrails
 - [x] D1 Move the shadcn skeletons with no story to `src/components/escala-ui/_skeleton/` (sidebar old version, tabs, toggle-group, toggle, context-menu, menubar, command, select, native-select, alert-dialog, sheet, drawer, hover-card, navbar, navigation-menu, label). Add an ESLint `no-restricted-imports` rule: `_skeleton/` may only be imported from the configurator. (bfcbc6d; `label` left in place: field.tsx imports it)
-- [ ] D2 Recipe lint (extend the recipe test): fail on `spacing.<number>` in `paddingX`, `paddingY`, `gap` when a role exists, and on a second paint function for a shape `listItemRecipe` or `groupLabelRecipe` already covers.
+- [x] D2 Recipe lint (extend the recipe test): fail on `spacing.<number>` in `paddingX`, `paddingY`, `gap` when a role exists, and on a second paint function for a shape `listItemRecipe` or `groupLabelRecipe` already covers. (5085986; ratchet over a 108-entry ledger)
 - [ ] D3 Parity check (GitHub Action on PRs to `main`): every `data-escala` name under `escala-ui` (excluding `_skeleton/`) has a story; list names with no story as a failing check.
 
 ## Phase E — web (configurator / platform)
