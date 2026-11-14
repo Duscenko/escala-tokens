@@ -1,0 +1,25 @@
+name: Story parity
+
+# Every component the library draws (`data-escala` under src/components/escala-ui, `_skeleton/` excluded)
+# must have a Storybook story. The check lists the names that do not and fails.
+on:
+  pull_request:
+    branches: [main]
+
+concurrency:
+  group: story-parity-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  story-parity:
+    name: story parity
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: node scripts/check-story-parity.mjs
