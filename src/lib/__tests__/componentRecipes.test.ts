@@ -1,4 +1,9 @@
+import { readdirSync, readFileSync } from 'node:fs'
+import { join } from 'node:path'
 import { describe, expect, it } from 'vitest'
+import { SPACING_ROLES, SPACING_STANDARD, roleValuePx } from '../layoutTokens'
+import { groupLabelRecipe } from '../recipes/groupLabel'
+import { LIST_ITEM_METRICS, listItemRecipe } from '../recipes/listItem'
 import {
   COMPONENT_RECIPES, cssVarOf, recipeColorRoles, recipeTokenRefs, resolveRecipe, serializeRecipes,
 } from '../componentRecipes'
@@ -514,5 +519,76 @@ describe('FABGroup (Figma)', () => {
     expect(at('fan-center').root.gap).toBeUndefined()
     expect(at('fan-left').root.gap).toBeUndefined()
     expect(at('fan-right').root.gap).toBeUndefined()
+  })
+})
+
+// ── Recipe lint (refactor D2) ───────────────────────────────────────────────
+// A padding or gap that is `spacing.<step>` while a spacing ROLE carries that very length is a value that should read the
+// role (and so step down on Tablet / Mobile with the role). New ones fail; the ones that exist today are a ledger
+// (`recipeSpacingDebt.json`) that only shrinks: a listed entry that no longer exists must be removed from it.
+
+describe('recipe lint', () => {
+  const PROPS = ['paddingX', 'paddingY', 'paddingBottom', 'paddingRight', 'gap', 'rowGap'] as const
+  const rolePx = new Map(
+    SPACING_ROLES.filter((r) => r.key !== 'none' && !r.key.startsWith('overlap')).map((r) => [roleValuePx(r.primitive, SPACING_STANDARD), r.key]),
+  )
+
+  function stepOffenders(): string[] {
+    const out = new Set<string>()
+    for (const recipe of Object.values(COMPONENT_RECIPES)) {
+      for (const part of recipe.parts) {
+        for (const slots of Object.values(part.values)) {
+          for (const [slot, props] of Object.entries(slots)) {
+            for (const prop of PROPS) {
+              const value = (props as Record<string, string | undefined>)[prop]
+              const m = value ? /^spacing\.(\d+(?:_\d+)?)$/.exec(value) : null
+              if (!m) continue
+              const px = roleValuePx(m[1], SPACING_STANDARD)
+              if (px != null && rolePx.has(px)) out.add(`${recipe.key}.${slot}.${prop}=${value} (${rolePx.get(px)})`)
+            }
+          }
+        }
+      }
+    }
+    return [...out].sort()
+  }
+
+  const debt = new Set<string>(JSON.parse(readFileSync(join(__dirname, 'recipeSpacingDebt.json'), 'utf8')))
+
+  it('no NEW paddingX / paddingY / gap on a spacing step when a role carries that length', () => {
+    const fresh = stepOffenders().filter((o) => !debt.has(o))
+    expect(fresh, 'read the role in parentheses instead of the step').toEqual([])
+  })
+
+  it('the spacing ledger holds no entry that was already fixed', () => {
+    const now = new Set(stepOffenders())
+    expect([...debt].filter((d) => !now.has(d)), 'remove them from recipeSpacingDebt.json').toEqual([])
+  })
+
+  it('DropdownMenuItem, ComboboxItem and SidebarMenuButton paint their rows with listItemRecipe', () => {
+    const paintOf = (slots: Record<string, Record<string, string | undefined>>) =>
+      ['fill', 'stroke', 'focus', 'ring', 'halo'].map((k) => `${k}=${slots.root?.[k] ?? ''}`).join('|')
+    for (const size of ['sm', 'default', 'lg']) {
+      for (const state of ['Default', 'Focused', 'Selected', 'Disabled']) {
+        const expected = paintOf(listItemRecipe(size, state, 'default') as never)
+        expect(paintOf(resolveRecipe(COMPONENT_RECIPES.DropdownMenuItem, { Size: size, State: state, Variant: 'default' }) as never), `DropdownMenuItem ${size} ${state}`).toBe(expected)
+        const combo = paintOf(listItemRecipe(size, state, 'default', { metrics: { [size]: { ...LIST_ITEM_METRICS[size], edge: 'stroke.control' } } }) as never)
+        expect(paintOf(resolveRecipe(COMPONENT_RECIPES.ComboboxItem, { Size: size, State: state }) as never), `ComboboxItem ${size} ${state}`).toBe(combo)
+      }
+      const label = resolveRecipe(COMPONENT_RECIPES.SidebarGroupLabel, { Size: size }).root
+      expect(label, `SidebarGroupLabel ${size}`).toEqual(groupLabelRecipe(size))
+      expect(resolveRecipe(COMPONENT_RECIPES.DropdownMenuLabel, { Size: size }).root, `DropdownMenuLabel ${size}`).toEqual(groupLabelRecipe(size))
+      expect(resolveRecipe(COMPONENT_RECIPES.ComboboxGroupLabel, { Size: size }).root, `ComboboxGroupLabel ${size}`).toEqual(groupLabelRecipe(size))
+    }
+  })
+
+  it('no second paint function for a list row or a group label (listItemRecipe / groupLabelRecipe cover them)', () => {
+    const dir = join(__dirname, '../recipes')
+    const SECOND_PAINT = /\bfunction\s+((?:dropdown|combobox|sidebar|menu|list|command)\w*(?:Item|Option|Row)\w*Paint|\w*GroupLabel\w*Paint|\w*MenuLabel\w*Paint)\s*\(/g
+    const found: string[] = []
+    for (const file of readdirSync(dir).filter((f) => f.endsWith('.ts') && f !== 'listItem.ts' && f !== 'groupLabel.ts')) {
+      for (const m of readFileSync(join(dir, file), 'utf8').matchAll(SECOND_PAINT)) found.push(`${file}: ${m[1]}`)
+    }
+    expect(found, 'extend listItemRecipe / groupLabelRecipe instead of painting the shape twice').toEqual([])
   })
 })
