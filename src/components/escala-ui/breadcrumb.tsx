@@ -47,15 +47,17 @@ function Breadcrumb({ appearance = 'ghost', separator = 'chevron', size = 'defau
         data-appearance={appearance}
         data-separator={separator}
         data-size={size}
-        className={cn('flex items-center', className)}
+        className={cn('inline-flex items-center', className)}
         {...props}
       />
     </BreadcrumbContext.Provider>
   )
 }
 
+// Figma's Breadcrumb is one row that never wraps (layoutWrap NO_WRAP): a wrapping list collapses to one item per line in
+// any shrink-to-fit parent (a centered Storybook canvas, a toolbar), because its min-content is its widest item.
 function BreadcrumbList({ className, ...props }: React.ComponentProps<'ol'>) {
-  return <ol data-slot="breadcrumb-list" className={cn('m-0 flex list-none flex-wrap items-center p-0', className)} style={{ gap: 'inherit' }} {...props} />
+  return <ol data-slot="breadcrumb-list" className={cn('m-0 flex list-none flex-nowrap items-center p-0', className)} style={{ gap: 'inherit' }} {...props} />
 }
 
 export interface BreadcrumbItemProps extends Omit<React.ComponentProps<'a'>, 'children'> {

@@ -123,7 +123,9 @@ function StepperIndicator({ size, status = 'active', orientation, disabled = fal
       {...props}
     >
       <StepperIcon size={size} status={status} disabled={disabled} label={label} icon={icon} />
-      {lineVisible && <span aria-hidden role="presentation" data-part="StepperIndicator.line" className="min-h-0 min-w-0 flex-1 self-stretch" style={{ flexBasis: 0 }} />}
+      {/* Figma centres the line on the marker (counter axis CENTER: x 19.5 under a 40 marker, y 19.5 beside it) and grows it along the main
+          axis. `self-stretch` with a 1px thickness pinned it to the start edge instead. */}
+      {lineVisible && <span aria-hidden role="presentation" data-part="StepperIndicator.line" className="min-h-0 min-w-0 flex-1 self-center" style={{ flexBasis: 0 }} />}
     </div>
   )
 }
