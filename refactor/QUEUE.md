@@ -52,7 +52,7 @@ Legend: `- [ ]` todo · `- [x]` done (append commit hash) · `- [!]` blocked (ap
   Note for E6: every catalogue-docs importer is a catalogue component with a recipe, a registry item, an overview and a ledger entry;
   deleting a skeleton means retiring that catalogue component, which is a product decision, not a refactor step.
 - [x] E2 Tabs → TabMenu: MobilePreviewViews Tabs block (~l.460) renders TabMenu (+ its own panel by value). Docs `Tabs` specimen stays until E6. (c8476f3)
-- [ ] E3 ToggleGroup → SegmentedControl: MobilePreviewViews ToggleGroup (~l.232) renders SegmentedControl. Docs `ToggleGroup` / `Toggle` specimens stay until E6.
+- [x] E3 ToggleGroup → SegmentedControl: MobilePreviewViews ToggleGroup (~l.232) renders SegmentedControl. Docs `ToggleGroup` / `Toggle` specimens stay until E6. (1e7b39c)
 - [ ] E4 ContextMenu / Menubar → DropdownMenu: no app-UI importer (docs specimens only), nothing to migrate; record the finding and close.
 - [ ] E5 Select / NativeSelect → Combobox: MobilePreviewViews NativeSelect (~l.496) renders Combobox. Select has no app-UI importer. Docs specimens stay until E6.
 - [ ] E6 Delete each skeleton that has no importer left; final parity check passes. (Skeletons with only a catalogue-docs importer need the product decision above; do not delete a catalogue component on your own.)
