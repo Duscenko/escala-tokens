@@ -33,7 +33,7 @@ import { Slider } from '../escala-ui/slider'
 import { NativeSelect, NativeSelectOption } from '../escala-ui/_skeleton/native-select'
 import { InputOTP, InputOTPGroup, InputOTPSeparator, InputOTPSlot } from '../escala-ui/input-otp'
 import { Separator } from '../escala-ui/separator'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '../escala-ui/_skeleton/tabs'
+import { TabMenu } from '../escala-ui/tab-menu'
 import { Stepper } from '../escala-ui/stepper'
 import { Pagination } from '../escala-ui/pagination'
 import { cn } from '../../lib/utils'
@@ -457,16 +457,11 @@ function ChecklistTile({ t }: { t: T }) {
 function TabsTile({ t }: { t: T }) {
   return (
     <Tile wide label={t('Tabs')}>
-      <Tabs value="overview" className="w-full">
-        <TabsList className="w-full">
-          <TabsTrigger value="overview">{t('Overview')}</TabsTrigger>
-          <TabsTrigger value="activity">{t('Activity')}</TabsTrigger>
-          <TabsTrigger value="settings">{t('Settings')}</TabsTrigger>
-        </TabsList>
-        <TabsContent value="overview" style={{ paddingTop: 'var(--spacing-3)', ...ty('body-sm'), color: INK.secondary }}>
-          {t('Every token your product reads, in one place.')}
-        </TabsContent>
-      </Tabs>
+      {/* TabMenu is the bar only (Figma TabMenu); the panel under it is this screen's own. */}
+      <TabMenu variant="horizontal-button" fill items={[t('Overview'), t('Activity'), t('Settings')]} value={t('Overview')} aria-label={t('Tabs')} />
+      <div style={{ paddingTop: 'var(--spacing-3)', ...ty('body-sm'), color: INK.secondary }}>
+        {t('Every token your product reads, in one place.')}
+      </div>
     </Tile>
   )
 }
