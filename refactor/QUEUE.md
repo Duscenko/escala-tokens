@@ -16,7 +16,7 @@ Legend: `- [ ]` todo · `- [x]` done (append commit hash) · `- [!]` blocked (ap
 ## Phase A — shared foundations (code twins of Figma decisions)
 - [x] A1 Create `src/lib/icons.ts`: one module that exports every glyph used by `escala-ui` (Phosphor, same names as Figma `icon/*`, loading = `SpinnerGap`). Replace the check path inlined in checkbox, combobox, dropdown-menu, password-strength, stepper, switch. (10cf4c0)
 - [x] A2 Replace the remaining inline `<svg>` glyphs in `src/components/escala-ui` with imports from `src/lib/icons.ts` (≤ 8 files per iteration; re-add this task with the files left if not finished). (f13ee92; geometry svgs left inline: arrows, spinners, grips, brand art)
-- [ ] A3 State order: in the `state` union types and Storybook `argTypes.state.options`, use Default · Hover · Focused · Current|Selected · Disabled for NavItem, TabMenuItem, TabMenuLineItem, DropdownMenuItem, ComboboxItem, SidebarMenuButton (`isActive` → `Current`).
+- [x] A3 State order: in the `state` union types and Storybook `argTypes.state.options`, use Default · Hover · Focused · Current|Selected · Disabled for NavItem, TabMenuItem, TabMenuLineItem, DropdownMenuItem, ComboboxItem, SidebarMenuButton (`isActive` → `Current`). (3ea4008; Sidebar full rebuild is C1)
 
 ## Phase B — one anatomy, one recipe
 - [ ] B1 `listItemRecipe(size, state, variant)` in `src/lib/recipes`, used by DropdownMenuItem, ComboboxItem and SidebarMenuButton. Delete `comboboxItemPaint`. Fill on `[data-highlighted]`, ring (`border.focus` + `border.ring.default`) only on `:focus-visible`. Trailing ink `content.secondary`. Story: hover a row → no ring.
