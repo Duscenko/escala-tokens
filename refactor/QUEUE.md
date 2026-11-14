@@ -24,7 +24,7 @@ Legend: `- [ ]` todo · `- [x]` done (append commit hash) · `- [!]` blocked (ap
 - [x] B3 `optionPaint` (InputTagOption): hover/focused `surface.muted`, label `type.body-sm`. (ac1cbc6)
 
 ## Phase C — parity gaps
-- [ ] C1 Rebuild Sidebar from the Figma contract (Sidebar, SidebarGroup, SidebarGroupLabel, SidebarMenuButton with `collapsed`, `trend`, Badge in `trailing`, SidebarBrand). Button radius `radius.control`, padding through roles. Stories for each part.
+- [x] C1 Rebuild Sidebar from the Figma contract (Sidebar, SidebarGroup, SidebarGroupLabel, SidebarMenuButton with `collapsed`, `trend`, Badge in `trailing`, SidebarBrand). Button radius `radius.control`, padding through roles. Stories for each part. (89772e5)
 - [ ] C2 Add the missing RadioGroup story.
 - [ ] C3 Command: render shortcuts with `Kbd`, not a local `kbd`.
 
