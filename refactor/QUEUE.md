@@ -21,7 +21,7 @@ Legend: `- [ ]` todo · `- [x]` done (append commit hash) · `- [!]` blocked (ap
 ## Phase B — one anatomy, one recipe
 - [x] B1 `listItemRecipe(size, state, variant)` in `src/lib/recipes`, used by DropdownMenuItem, ComboboxItem and SidebarMenuButton. Delete `comboboxItemPaint`. Fill on `[data-highlighted]`, ring (`border.focus` + `border.ring.default`) only on `:focus-visible`. Trailing ink `content.secondary`. Story: hover a row → no ring. (62e3370)
 - [x] B2 `groupLabelRecipe(size)` used by DropdownMenuLabel, SidebarGroupLabel, ComboboxGroupLabel: `type.caption`, 24 px row, `content.secondary`, lg padding `spacing.inset-control`. Remove `spacing.6+spacing.1`. (a96143b)
-- [ ] B3 `optionPaint` (InputTagOption): hover/focused `surface.muted`, label `type.body-sm`.
+- [x] B3 `optionPaint` (InputTagOption): hover/focused `surface.muted`, label `type.body-sm`. (ac1cbc6)
 
 ## Phase C — parity gaps
 - [ ] C1 Rebuild Sidebar from the Figma contract (Sidebar, SidebarGroup, SidebarGroupLabel, SidebarMenuButton with `collapsed`, `trend`, Badge in `trailing`, SidebarBrand). Button radius `radius.control`, padding through roles. Stories for each part.
