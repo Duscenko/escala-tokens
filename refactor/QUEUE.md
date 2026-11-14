@@ -35,8 +35,24 @@ Legend: `- [ ]` todo · `- [x]` done (append commit hash) · `- [!]` blocked (ap
 
 ## Phase E — web (configurator / platform)
 - [ ] E1 Inventory every import of `_skeleton/` in the configurator and previews; write the list into this file under E2–E5 as one task per component.
-- [ ] E2 Tabs → TabMenu
-- [ ] E3 ToggleGroup → SegmentedControl
-- [ ] E4 ContextMenu / Menubar → DropdownMenu
-- [ ] E5 Select / NativeSelect → Combobox
-- [ ] E6 Delete each skeleton that has no importer left; final parity check passes.
+  Inventory (2026-11-14, `grep escala-ui/_skeleton`). Two kinds of importer, and they are not the same work:
+  **app UI** (the phone generator, `src/components/configurator/MobilePreviewViews.tsx`) — a product screen that should use the Figma twin;
+  **catalogue docs** (`src/components/configurator/docs/skeleton/*.tsx`) — the specimen that IS the catalogue page of that component.
+  | Skeleton | App UI | Catalogue docs (specimen) | Figma twin |
+  |---|---|---|---|
+  | tabs | MobilePreviewViews:36 (`Tabs`, `TabsList`, `TabsTrigger`, `TabsContent`, ~l.460) | navigation.tsx:6 `SkeletonTabsSpecimen` | TabMenu |
+  | toggle-group | MobilePreviewViews:28 (`ToggleGroup`, ~l.232) | actions.tsx:20 `SkeletonToggleGroupSpecimen` | SegmentedControl |
+  | toggle | — | actions.tsx:19 `SkeletonToggleSpecimen` | none (Figma has no Toggle) |
+  | context-menu | — | navigation.tsx:18 `SkeletonContextMenuSpecimen` | DropdownMenu |
+  | menubar | — | navigation.tsx:30 `SkeletonMenubarSpecimen` | DropdownMenu |
+  | select | — | forms.tsx:14 `SkeletonSelectSpecimen` | Combobox |
+  | native-select | MobilePreviewViews:33 (`NativeSelect`, ~l.496) | forms.tsx:31 `SkeletonNativeSelectSpecimen` | Combobox |
+  | command · navbar · navigation-menu · alert-dialog · sheet · drawer · hover-card | — | navigation.tsx / surfaces.tsx specimens only | none yet (stay skeletons) |
+  | label | — (not moved: `escala-ui/field.tsx` imports it) | forms.tsx | — |
+  Note for E6: every catalogue-docs importer is a catalogue component with a recipe, a registry item, an overview and a ledger entry;
+  deleting a skeleton means retiring that catalogue component, which is a product decision, not a refactor step.
+- [ ] E2 Tabs → TabMenu: MobilePreviewViews Tabs block (~l.460) renders TabMenu (+ its own panel by value). Docs `Tabs` specimen stays until E6.
+- [ ] E3 ToggleGroup → SegmentedControl: MobilePreviewViews ToggleGroup (~l.232) renders SegmentedControl. Docs `ToggleGroup` / `Toggle` specimens stay until E6.
+- [ ] E4 ContextMenu / Menubar → DropdownMenu: no app-UI importer (docs specimens only), nothing to migrate; record the finding and close.
+- [ ] E5 Select / NativeSelect → Combobox: MobilePreviewViews NativeSelect (~l.496) renders Combobox. Select has no app-UI importer. Docs specimens stay until E6.
+- [ ] E6 Delete each skeleton that has no importer left; final parity check passes. (Skeletons with only a catalogue-docs importer need the product decision above; do not delete a catalogue component on your own.)
