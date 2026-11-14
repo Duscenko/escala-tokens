@@ -34,7 +34,7 @@ Legend: `- [ ]` todo · `- [x]` done (append commit hash) · `- [!]` blocked (ap
 - [x] D3 Parity check (GitHub Action on PRs to `main`): every `data-escala` name under `escala-ui` (excluding `_skeleton/`) has a story; list names with no story as a failing check. (819ec4e; red today by design: 23 names without a story)
 
 ## Phase E — web (configurator / platform)
-- [ ] E1 Inventory every import of `_skeleton/` in the configurator and previews; write the list into this file under E2–E5 as one task per component.
+- [x] E1 Inventory every import of `_skeleton/` in the configurator and previews; write the list into this file under E2–E5 as one task per component. (7927cc3)
   Inventory (2026-11-14, `grep escala-ui/_skeleton`). Two kinds of importer, and they are not the same work:
   **app UI** (the phone generator, `src/components/configurator/MobilePreviewViews.tsx`) — a product screen that should use the Figma twin;
   **catalogue docs** (`src/components/configurator/docs/skeleton/*.tsx`) — the specimen that IS the catalogue page of that component.
