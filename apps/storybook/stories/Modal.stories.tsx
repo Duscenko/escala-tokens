@@ -25,7 +25,7 @@ function modal({ size, closeVisible, contentVisible, content, footerVisible }: M
         inline
         size={size}
         showCloseButton={closeVisible}
-        header={<ModalHeader title="System notification" description="Review the details and take action." icon={<PreviewIcon concept="info" size={20} />} />}
+        header={<ModalHeader title="System notification" description="Review the details and take action." icon={<PreviewIcon concept="zap" size={24} />} />}
         footer={footerVisible ? (
           <ModalFooter>
             <Button variant="secondary" appearance="solid" size={size === 'lg' ? 'lg' : 'default'}>Cancel</Button>

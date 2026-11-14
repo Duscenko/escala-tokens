@@ -6,7 +6,7 @@ import * as React from 'react'
 import { Dialog as DialogPrimitive } from 'radix-ui'
 import { cn } from '../../lib/utils'
 import { CloseButton } from './close-button'
-import { FeaturedIcon } from './featured-icon'
+import { FeaturedIcon, type FeaturedIconVariant } from './featured-icon'
 
 export const MODAL_SIZES = ['default', 'lg'] as const
 export type ModalSize = (typeof MODAL_SIZES)[number]
@@ -136,6 +136,11 @@ export interface ModalHeaderProps extends Omit<React.ComponentProps<'div'>, 'tit
   /** Figma IconVisible + the glyph: a FeaturedIcon (soft, circle), 40 · 48 like the header. */
   iconVisible?: boolean
   icon?: React.ReactNode
+  /**
+   * The FeaturedIcon's Variant. The ModalHeader set draws `default` (the accent tint); the Modal set nests its header with
+   * `secondary` (Surface/muted + Content/secondary, enough contrast on the card), so inside a Modal that is the default.
+   */
+  iconVariant?: FeaturedIconVariant
   /** Figma TrailingVisible / Trailing (Reset, Clear all, a Badge). Not in vertical headers. */
   trailingVisible?: boolean
   trailing?: React.ReactNode
@@ -145,7 +150,7 @@ export interface ModalHeaderProps extends Omit<React.ComponentProps<'div'>, 'tit
 
 /** Figma ModalHeader. Inside a Modal the title / description are the dialog's accessible name and description. */
 function ModalHeader({
-  size, align = 'horizontal', title, descriptionVisible = true, description, iconVisible = true, icon, trailingVisible = false, trailing,
+  size, align = 'horizontal', title, descriptionVisible = true, description, iconVisible = true, icon, iconVariant, trailingVisible = false, trailing,
   closeClearance, className, children, ...props
 }: ModalHeaderProps) {
   const ctx = React.useContext(ModalContext)
@@ -169,7 +174,7 @@ function ModalHeader({
       )}
       {...props}
     >
-      {iconVisible && icon !== null && <FeaturedIcon size={sz} variant="default" appearance="soft" shape="circle" icon={icon} />}
+      {iconVisible && icon !== null && <FeaturedIcon size={sz} variant={iconVariant ?? (inDialog ? 'secondary' : 'default')} appearance="soft" shape="circle" icon={icon} />}
       <div
         data-part="ModalHeader.content"
         className={cn('flex min-w-0 flex-1 flex-col', align === 'vertical-center' && 'items-center text-center', !horizontal && 'self-stretch')}

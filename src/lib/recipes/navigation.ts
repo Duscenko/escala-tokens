@@ -113,7 +113,7 @@ export const ACCOUNT_MENU_TRIGGER: ComponentRecipe = {
   parts: [
     part({ Size: ACCOUNT_MENU_TRIGGER_SIZES }, (size) => ({
       root: {
-        height: size === 'sm' ? 'size.sm' : 'size.md', radius: 'radius.action', paddingX: 'spacing.inset-control', paddingRight: 'spacing.gap-tight', paddingY: 'spacing.none',
+        height: size === 'sm' ? 'size.sm' : 'size.md', radius: 'radius.action', paddingX: 'spacing.gap-tight', paddingRight: 'spacing.inset-control', paddingY: 'spacing.none',
         gap: 'spacing.gap-control', text: c('content.primary'), font: 'type.button',
       },
       iconTrailing: size === 'sm' ? { width: 'icon.small', height: 'icon.small' } : { width: 'icon.medium', height: 'icon.medium' },

@@ -31,7 +31,7 @@ export const Sizes: Story = {
   ),
 }
 
-/** As it goes in a header: wrapped in a link with an accessible name. */
+/** As it goes in a header: wrapped in a link with an accessible name. The link is `inline-flex`, so it takes the Brand's own height (an inline `<a>` is one line tall and the Brand spills out of it). */
 export const AsLink: Story = {
-  render: (args) => <a href="#" aria-label={`${args.name}${args.versionVisible ? ' v1.1' : ''} home`} onClick={(e) => e.preventDefault()} style={{ textDecoration: 'none' }}><Brand size={args.size} name={args.name} versionVisible={args.versionVisible} /></a>,
+  render: (args) => <a href="#" aria-label={`${args.name}${args.versionVisible ? ' v1.1' : ''} home`} onClick={(e) => e.preventDefault()} style={{ display: 'inline-flex', textDecoration: 'none' }}><Brand size={args.size} name={args.name} versionVisible={args.versionVisible} /></a>,
 }

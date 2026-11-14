@@ -11947,8 +11947,8 @@ var init_navigation = __esm({
           root: {
             height: size === "sm" ? "size.sm" : "size.md",
             radius: "radius.action",
-            paddingX: "spacing.inset-control",
-            paddingRight: "spacing.gap-tight",
+            paddingX: "spacing.gap-tight",
+            paddingRight: "spacing.inset-control",
             paddingY: "spacing.none",
             gap: "spacing.gap-control",
             text: c("content.primary"),

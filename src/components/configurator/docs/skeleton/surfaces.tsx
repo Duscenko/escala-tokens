@@ -76,7 +76,7 @@ export function SkeletonModalSpecimen({ t, v }: SpecimenProps) {
           inline
           size={size}
           closeIcon={<PreviewIcon concept="close" size={16} />}
-          header={<SkModalHeader title="System notification" description="Review the details and take action." icon={<PreviewIcon concept="info" size={20} />} />}
+          header={<SkModalHeader title="System notification" description="Review the details and take action." icon={<PreviewIcon concept="zap" size={24} />} />}
           footer={<SkModalFooter>{modalActions('inline', size)}</SkModalFooter>}
         >
           {MODAL_BODY}
