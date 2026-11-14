@@ -4,9 +4,9 @@
 // Appearance: recipe (Sheet, Button).
 import * as React from 'react'
 import { Dialog as SheetPrimitive } from 'radix-ui'
-import { cn } from '../../lib/utils'
-import { Button } from './button'
-import { usePortalContainer } from './portal-scope'
+import { cn } from '../../../lib/utils'
+import { Button } from '../button'
+import { usePortalContainer } from '../portal-scope'
 
 function Sheet(props: React.ComponentProps<typeof SheetPrimitive.Root>) {
   return <SheetPrimitive.Root data-slot="sheet" {...props} />

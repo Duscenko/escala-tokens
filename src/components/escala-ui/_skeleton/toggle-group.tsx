@@ -5,7 +5,7 @@
 // Appearance: recipe (ToggleGroup).
 import * as React from 'react'
 import { ToggleGroup as ToggleGroupPrimitive } from 'radix-ui'
-import { cn } from '../../lib/utils'
+import { cn } from '../../../lib/utils'
 
 export const TOGGLE_GROUP_VARIANTS = ['default', 'outline'] as const
 export const TOGGLE_GROUP_SIZES = ['default', 'sm', 'lg'] as const

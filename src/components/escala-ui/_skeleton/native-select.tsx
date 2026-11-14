@@ -3,7 +3,7 @@
 // wrapper carries the recipe root so the State axis (hover, focus, disabled)
 // reads off it. Appearance: recipe (NativeSelect).
 import * as React from 'react'
-import { cn } from '../../lib/utils'
+import { cn } from '../../../lib/utils'
 
 export type NativeSelectSize = 'default' | 'sm'
 

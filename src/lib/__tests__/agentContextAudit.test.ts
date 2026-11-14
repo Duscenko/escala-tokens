@@ -550,7 +550,8 @@ describe('component-build (React) ↔ recipes, escala-ui and variables.css', () 
         expect(painted || note.includes(UNPAINTED), `${key}: ${slot} ${selector}`).toBe(true)
         if (slot === recipe.slots[0]) expect(painted, `${key}: root`).toBe(true)
       }
-      const src = existsSync(join(uiDir, `${componentFileName(key)}.tsx`)) ? readFileSync(join(uiDir, `${componentFileName(key)}.tsx`), 'utf8') : ''
+      const file = [join(uiDir, `${componentFileName(key)}.tsx`), join(uiDir, '_skeleton', `${componentFileName(key)}.tsx`)].find((f) => existsSync(f))
+      const src = file ? readFileSync(file, 'utf8') : ''
       for (const [attr] of tableRows(md!, 'Attribute')) {
         const name = attr.replace(/=.*$/, '')
         if (name === 'data-force-state' || name === 'data-escala') continue

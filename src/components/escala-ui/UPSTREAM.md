@@ -1,5 +1,10 @@
 # escala-ui — upstream
 
+> `_skeleton/` holds the shadcn skeletons that have no Storybook story yet (tabs, toggle, toggle-group, context-menu,
+> menubar, command, select, native-select, alert-dialog, sheet, drawer, hover-card, navbar, navigation-menu). They are
+> still served by the registry, flat; only `src/components/configurator` may import them (ESLint). A skeleton leaves the
+> folder when it gets a story and a Figma twin. The rows below that name one of them live there now.
+
 Skeletons vendored from **shadcn/ui** (`apps/v4/registry/bases/radix/ui/`),
 MIT — see `LICENSE-shadcn.md`. Source: the `ui-main` archive downloaded
 2026-10-18 (no commit hash in the archive; record one on the next sync).

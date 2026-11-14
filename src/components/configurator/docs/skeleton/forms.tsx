@@ -11,7 +11,7 @@ import { DatePickerTrigger as SkDatePickerTrigger, type DatePickerTriggerSize, t
 import { InputGroup as SkInputGroup, InputGroupAddon as SkAddon, InputGroupInput as SkGroupInput, InputGroupText as SkGroupText, InputGroupButton as SkGroupButton, InputGroupSeparator as SkGroupSeparator } from '../../../escala-ui/input-group'
 import { NumberInput as SkNumberInput, type NumberInputSize, type NumberInputState } from '../../../escala-ui/number-input'
 import { InputTag as SkInputTag, InputTagChip as SkInputTagChip, InputTagOption as SkInputTagOption, type InputTagChipSize, type InputTagChipState, type InputTagChipVariant, type InputTagLayout, type InputTagOptionState, type InputTagOptionType, type InputTagSize, type InputTagState } from '../../../escala-ui/input-tag'
-import { Select as SkSelect, SelectContent as SkSelectContent, SelectItem as SkSelectItem, SelectTrigger as SkSelectTrigger, SelectValue as SkSelectValue } from '../../../escala-ui/select'
+import { Select as SkSelect, SelectContent as SkSelectContent, SelectItem as SkSelectItem, SelectTrigger as SkSelectTrigger, SelectValue as SkSelectValue } from '../../../escala-ui/_skeleton/select'
 import { Combobox as SkCombobox, ComboboxGroup as SkComboboxGroup, ComboboxGroupLabel as SkComboboxGroupLabel, ComboboxItem as SkComboboxItem, ComboboxPopover as SkComboboxPopover, ComboboxSeparator as SkComboboxSeparator, type ComboboxItemState, type ComboboxPopoverContent, type ComboboxShape, type ComboboxSize, type ComboboxState, type ComboboxVariant } from '../../../escala-ui/combobox'
 import { InputOTP as SkInputOTP, InputOTPSlot as SkInputOTPSlot, type InputOTPLength, type InputOTPSize, type InputOTPSlotState, type InputOTPState, type InputOTPVariant } from '../../../escala-ui/input-otp'
 import { CheckboxGroup as SkCheckboxGroup, type CheckboxGroupState, CheckboxItem as SkCheckboxItem, type CheckboxItemState, type CheckboxItemPlacement, Checkbox as SkCheckbox, type CheckboxChecked, type CheckboxSize, type CheckboxState, type CheckboxVariant } from '../../../escala-ui/checkbox'
@@ -28,7 +28,7 @@ import { FileUploadItem as SkFileUploadItem, type FileUploadItemSize, type FileU
 import { Button as SkButton } from '../../../escala-ui/button'
 import { TextLink as SkTextLink } from '../../../escala-ui/text-link'
 import { RecipeScope } from './scope'
-import { NativeSelect as SkNativeSelect, NativeSelectOption as SkNativeSelectOption, type NativeSelectSize } from '../../../escala-ui/native-select'
+import { NativeSelect as SkNativeSelect, NativeSelectOption as SkNativeSelectOption, type NativeSelectSize } from '../../../escala-ui/_skeleton/native-select'
 
 /**
  * shadcn's Input. On its own page the bare control; given `v.Type` (an opt-in

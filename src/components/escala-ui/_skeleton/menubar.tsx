@@ -5,8 +5,8 @@
 // DropdownMenu. Appearance: recipe (Menubar).
 import * as React from 'react'
 import { Menubar as MenubarPrimitive } from 'radix-ui'
-import { cn } from '../../lib/utils'
-import { usePortalContainer } from './portal-scope'
+import { cn } from '../../../lib/utils'
+import { usePortalContainer } from '../portal-scope'
 
 const Inline = React.createContext(false)
 

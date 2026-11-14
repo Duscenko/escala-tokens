@@ -5,9 +5,9 @@
 // (AlertDialog, Button).
 import * as React from 'react'
 import { AlertDialog as AlertDialogPrimitive } from 'radix-ui'
-import { cn } from '../../lib/utils'
-import { Button, type ButtonSize, type ButtonVariant } from './button'
-import { usePortalContainer } from './portal-scope'
+import { cn } from '../../../lib/utils'
+import { Button, type ButtonSize, type ButtonVariant } from '../button'
+import { usePortalContainer } from '../portal-scope'
 
 // Radix AlertDialog is ALWAYS modal (its Root hardcodes `modal: true`): an
 // open one locks `body` pointer events and aria-hides the rest of the page.

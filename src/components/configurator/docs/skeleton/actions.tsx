@@ -16,8 +16,8 @@ import {
 import { SocialLoginButton as SkSocialLoginButton, type SocialProvider, PROVIDER_NAME } from '../../../escala-ui/social-login-button'
 import { AppStoreBadge as SkAppStoreBadge, type Store } from '../../../escala-ui/app-store-badge'
 import { RecipeScope } from './scope'
-import { Toggle as SkToggle, type ToggleSize, type ToggleVariant } from '../../../escala-ui/toggle'
-import { ToggleGroup as SkToggleGroup, ToggleGroupItem as SkToggleGroupItem, type ToggleGroupSize, type ToggleGroupVariant } from '../../../escala-ui/toggle-group'
+import { Toggle as SkToggle, type ToggleSize, type ToggleVariant } from '../../../escala-ui/_skeleton/toggle'
+import { ToggleGroup as SkToggleGroup, ToggleGroupItem as SkToggleGroupItem, type ToggleGroupSize, type ToggleGroupVariant } from '../../../escala-ui/_skeleton/toggle-group'
 
 /** Button size → the control step its icon is sized from (xs · sm · md · lg). */
 const ICON_STEP: Record<string, string> = { xs: 'xs', sm: 'sm', default: 'md', lg: 'lg' }

@@ -2,11 +2,11 @@
 // CommandInput, CommandList, CommandGroup, CommandItem) with a small built-in
 // filter and no dependency. Appearance: recipe (Command).
 import * as React from 'react'
-import { cn } from '../../lib/utils'
-import { Kbd, KbdGroup } from './kbd'
+import { cn } from '../../../lib/utils'
+import { Kbd, KbdGroup } from '../kbd'
 
 /** `⌘K` → `⌘` `K`; `Ctrl K` → `Ctrl` `K`; `Esc` → `Esc`: one key cap per key, never a whole shortcut in one. */
-export function shortcutKeys(shortcut: string): string[] {
+function shortcutKeys(shortcut: string): string[] {
   const words = shortcut.trim().split(/\s+/).filter(Boolean)
   if (words.length > 1) return words
   const chars = [...(words[0] ?? '')]

@@ -3,8 +3,8 @@
 // a preview paints with the previewed theme. Appearance: recipe.
 import * as React from 'react'
 import { Select as SelectPrimitive } from 'radix-ui'
-import { cn } from '../../lib/utils'
-import { usePortalContainer } from './portal-scope'
+import { cn } from '../../../lib/utils'
+import { usePortalContainer } from '../portal-scope'
 
 const Select = SelectPrimitive.Root
 const SelectGroup = SelectPrimitive.Group

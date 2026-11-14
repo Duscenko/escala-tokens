@@ -1,7 +1,7 @@
 // Escala component (shadcn's `navigation-menu` in a header): logo, links, avatar.
 // Appearance: recipe (Navbar).
 import * as React from 'react'
-import { cn } from '../../lib/utils'
+import { cn } from '../../../lib/utils'
 
 export interface NavbarLink { label: string; href?: string; current?: boolean }
 

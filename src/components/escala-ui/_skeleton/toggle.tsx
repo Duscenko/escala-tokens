@@ -4,7 +4,7 @@
 // Pressed axis, a Figma property). Appearance: recipe (Toggle).
 import * as React from 'react'
 import { Toggle as TogglePrimitive } from 'radix-ui'
-import { cn } from '../../lib/utils'
+import { cn } from '../../../lib/utils'
 
 export const TOGGLE_VARIANTS = ['default', 'outline'] as const
 export const TOGGLE_SIZES = ['default', 'sm', 'lg'] as const

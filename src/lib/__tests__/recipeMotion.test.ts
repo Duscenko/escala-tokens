@@ -114,7 +114,8 @@ describe('escala-ui hardcodes no motion', () => {
   const LOOPS = /animate-(spin|pulse)/
   it('no Tailwind duration / ease / transition-* utility in any component file', () => {
     const offenders: string[] = []
-    for (const file of readdirSync(dir).filter((f) => f.endsWith('.tsx'))) {
+    const files = [...readdirSync(dir).filter((f) => f.endsWith('.tsx')), ...readdirSync(join(dir, '_skeleton')).filter((f) => f.endsWith('.tsx')).map((f) => `_skeleton/${f}`)]
+    for (const file of files) {
       const src = readFileSync(join(dir, file), 'utf8')
       for (const m of src.matchAll(/\b(duration-\d+|ease-(in|out|in-out|linear)|transition-(all|colors|transform|opacity|shadow|\[[^\]]*\]))\b/g)) {
         if (!LOOPS.test(m[0])) offenders.push(`${file}: ${m[0]}`)

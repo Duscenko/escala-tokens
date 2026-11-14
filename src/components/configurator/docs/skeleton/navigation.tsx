@@ -3,7 +3,7 @@ import { useState } from 'react'
 import type { SpecimenProps } from '../specimens'
 import { PreviewIcon } from '../specimens'
 import { iconOf } from '../../../../lib/previewTokens'
-import { Tabs as SkTabs, TabsList as SkTabsList, TabsTrigger as SkTabsTrigger, type TabsListVariant } from '../../../escala-ui/tabs'
+import { Tabs as SkTabs, TabsList as SkTabsList, TabsTrigger as SkTabsTrigger, type TabsListVariant } from '../../../escala-ui/_skeleton/tabs'
 import { TabMenu as SkTabMenu, TabMenuItem as SkTabMenuItem, TabMenuLineItem as SkTabMenuLineItem, type TabMenuIndicator, type TabMenuItemState, type TabMenuSize, type TabMenuVariant } from '../../../escala-ui/tab-menu'
 import { Badge as SkBadge } from '../../../escala-ui/badge'
 import { NavItem as SkNavItem, type NavItemSize, type NavItemState } from '../../../escala-ui/nav-item'
@@ -15,9 +15,9 @@ import { Pagination as SkPagination, PaginationScope as SkPaginationScope, Pagin
 import { useAutoplayStep } from '../../../preview/artefacts/boardAutoplay'
 import { Stepper as SkStepper, StepperIcon as SkStepperIcon, StepperIndicator as SkStepperIndicator, StepperItem as SkStepperItem, type StepperOrientation, type StepperSize, type StepperStatus } from '../../../escala-ui/stepper'
 import { DropdownMenu as SkDropdownMenu, DropdownMenuContent as SkDropdownMenuContent, DropdownMenuItem as SkDropdownMenuItem, DropdownMenuLabel as SkDropdownMenuLabel, DropdownMenuFooter as SkDropdownMenuFooter, DropdownMenuSeparator as SkDropdownMenuSeparator, type DropdownMenuSize, type DropdownMenuItemState, type DropdownMenuItemVariant, type DropdownMenuFooterLayout } from '../../../escala-ui/dropdown-menu'
-import { ContextMenu as SkContextMenu, ContextMenuContent as SkContextMenuContent, ContextMenuItem as SkContextMenuItem, ContextMenuSeparator as SkContextMenuSeparator, ContextMenuShortcut as SkContextMenuShortcut } from '../../../escala-ui/context-menu'
-import { Command as SkCommand, CommandGroup as SkCommandGroup, CommandInput as SkCommandInput, CommandItem as SkCommandItem, CommandList as SkCommandList } from '../../../escala-ui/command'
-import { Navbar as SkNavbar } from '../../../escala-ui/navbar'
+import { ContextMenu as SkContextMenu, ContextMenuContent as SkContextMenuContent, ContextMenuItem as SkContextMenuItem, ContextMenuSeparator as SkContextMenuSeparator, ContextMenuShortcut as SkContextMenuShortcut } from '../../../escala-ui/_skeleton/context-menu'
+import { Command as SkCommand, CommandGroup as SkCommandGroup, CommandInput as SkCommandInput, CommandItem as SkCommandItem, CommandList as SkCommandList } from '../../../escala-ui/_skeleton/command'
+import { Navbar as SkNavbar } from '../../../escala-ui/_skeleton/navbar'
 import {
   Sidebar as SkSidebar, SidebarBrand as SkSidebarBrand, SidebarContent as SkSidebarContent, SidebarFooter as SkSidebarFooter,
   SidebarGroup as SkSidebarGroup, SidebarGroupLabel as SkSidebarGroupLabel, SidebarHeader as SkSidebarHeader,
@@ -27,8 +27,8 @@ import {
 import { Avatar as SkAvatar } from '../../../escala-ui/avatar'
 import { Button as SkButton } from '../../../escala-ui/button'
 import { RecipeScope } from './scope'
-import { Menubar as SkMenubar, MenubarContent as SkMenubarContent, MenubarItem as SkMenubarItem, MenubarMenu as SkMenubarMenu, MenubarSeparator as SkMenubarSeparator, MenubarShortcut as SkMenubarShortcut, MenubarTrigger as SkMenubarTrigger } from '../../../escala-ui/menubar'
-import { NavigationMenu as SkNavigationMenu, NavigationMenuContent as SkNavigationMenuContent, NavigationMenuItem as SkNavigationMenuItem, NavigationMenuLink as SkNavigationMenuLink, NavigationMenuList as SkNavigationMenuList, NavigationMenuTrigger as SkNavigationMenuTrigger } from '../../../escala-ui/navigation-menu'
+import { Menubar as SkMenubar, MenubarContent as SkMenubarContent, MenubarItem as SkMenubarItem, MenubarMenu as SkMenubarMenu, MenubarSeparator as SkMenubarSeparator, MenubarShortcut as SkMenubarShortcut, MenubarTrigger as SkMenubarTrigger } from '../../../escala-ui/_skeleton/menubar'
+import { NavigationMenu as SkNavigationMenu, NavigationMenuContent as SkNavigationMenuContent, NavigationMenuItem as SkNavigationMenuItem, NavigationMenuLink as SkNavigationMenuLink, NavigationMenuList as SkNavigationMenuList, NavigationMenuTrigger as SkNavigationMenuTrigger } from '../../../escala-ui/_skeleton/navigation-menu'
 
 export function SkeletonTabsSpecimen({ t, v }: SpecimenProps) {
   return (

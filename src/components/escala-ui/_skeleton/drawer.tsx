@@ -4,8 +4,8 @@
 // open, with no vaul state (docs, previews). Appearance: recipe (Drawer).
 import * as React from 'react'
 import { Drawer as DrawerPrimitive } from 'vaul'
-import { cn } from '../../lib/utils'
-import { usePortalContainer } from './portal-scope'
+import { cn } from '../../../lib/utils'
+import { usePortalContainer } from '../portal-scope'
 
 export type DrawerDirection = 'bottom' | 'top' | 'left' | 'right'
 

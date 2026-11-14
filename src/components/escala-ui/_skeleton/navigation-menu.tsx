@@ -3,7 +3,7 @@
 // viewport. Appearance: recipe (NavigationMenu).
 import * as React from 'react'
 import { NavigationMenu as NavigationMenuPrimitive } from 'radix-ui'
-import { cn } from '../../lib/utils'
+import { cn } from '../../../lib/utils'
 
 function NavigationMenu({
   className, children, viewport = true, ...props

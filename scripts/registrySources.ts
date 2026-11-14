@@ -3,7 +3,7 @@
  * Node-only (fs): used by `gen-registry-sources.ts` and the sync test,
  * never by the app or the API (they read the committed generated module).
  */
-import { readdirSync, readFileSync } from 'node:fs'
+import { existsSync, readdirSync, readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { anatomyIconPx } from '../src/lib/iconSizing'
 import { transformEscalaUi, type RegistrySource } from '../src/lib/registry/escalaUiTransform'
@@ -14,10 +14,24 @@ export function readEscalaUiSources(root: string): RegistrySource[] {
   const dir = join(root, 'src/components/escala-ui')
   const iconsSource = readFileSync(join(root, 'src/components/ui/icons.tsx'), 'utf8')
   const iconsLibSource = readFileSync(join(root, 'src/lib/icons.ts'), 'utf8')
-  return readdirSync(dir)
-    .filter((f) => /\.(tsx|ts)$/.test(f))
-    .sort()
-    .map((f) => transformEscalaUi(f, readFileSync(join(dir, f), 'utf8'), { iconsSource, iconsLibSource, iconOf: anatomyIconPx }))
+  const flat = readdirSync(dir).filter((f) => /\.(tsx|ts)$/.test(f)).map((f) => ({ f, text: readFileSync(join(dir, f), 'utf8') }))
+  // `_skeleton/` holds the shadcn skeletons with no story yet. They are still part of the system and the registry
+  // ships them, flat like every other file: a user's project has no `_skeleton` folder, so the two extra levels of
+  // relative path go back to the flat shape before the transform runs.
+  const skeleton = existsSync(join(dir, '_skeleton'))
+    ? readdirSync(join(dir, '_skeleton')).filter((f) => /\.(tsx|ts)$/.test(f)).map((f) => ({ f, text: flattenSkeleton(readFileSync(join(dir, '_skeleton', f), 'utf8')) }))
+    : []
+  return [...flat, ...skeleton]
+    .sort((a, b) => a.f.localeCompare(b.f))
+    .map(({ f, text }) => transformEscalaUi(f, text, { iconsSource, iconsLibSource, iconOf: anatomyIconPx }))
+}
+
+/** `../../../lib/x` → `../../lib/x`, `../../ui/icons` → `../ui/icons`, `../button` → `./button` (a sibling that stayed in escala-ui). */
+function flattenSkeleton(text: string): string {
+  return text
+    .replace(/from '\.\.\/\.\.\/\.\.\/lib\//g, "from '../../lib/")
+    .replace(/from '\.\.\/\.\.\/ui\//g, "from '../ui/")
+    .replace(/from '\.\.\/([a-z][a-z-]*)'/g, "from './$1'")
 }
 
 export function renderGeneratedModule(sources: RegistrySource[]): string {
