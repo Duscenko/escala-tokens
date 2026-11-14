@@ -106,3 +106,18 @@ export const Sizes: Story = {
     </div>
   ),
 }
+
+/** A row under the pointer or the arrow keys (`highlighted`) takes the fill only; the ring is keyboard focus, shown by the pinned Focused row beside it. */
+export const HighlightedHasNoRing: Story = {
+  render: (args) => (
+    <div style={{ width: 256 }}>
+      <DropdownMenu>
+        <DropdownMenuContent inline size={args.size}>
+          <DropdownMenuItem highlighted>Highlighted: fill, no ring</DropdownMenuItem>
+          <DropdownMenuItem forceState="Focused">Focused: fill + ring</DropdownMenuItem>
+          <DropdownMenuItem>Default</DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
+    </div>
+  ),
+}

@@ -66,11 +66,11 @@ function ComboboxGroup({ label, size = 'default', children, ...props }: React.Co
 
 export interface ComboboxItemProps extends React.ComponentProps<'div'> {
   size?: ComboboxSize
-  /** Pin a state (docs, Storybook, Figma parity). Live: `highlighted` → Focused, `selected` → Selected. */
+  /** Pin a state (docs, Storybook, Figma parity). Live: `selected` → Selected; `highlighted` only fills the row (the ring is keyboard focus or a pinned Focused). */
   forceState?: ComboboxItemState
   /** The listbox's `aria-selected` (Figma State Selected). */
   selected?: boolean
-  /** The keyboard / pointer highlight (`aria-activedescendant`; Figma State Focused). */
+  /** The keyboard / pointer highlight (`aria-activedescendant`): fills the row, draws no ring. */
   highlighted?: boolean
   disabled?: boolean
   /** Figma IconLeadingVisible + IconLeadingIcon. */
@@ -91,7 +91,7 @@ function ComboboxItem({
   const isSelected = forceState ? forceState === 'Selected' : !!selected
   const state: ComboboxItemState | undefined = forceState && forceState !== 'Default'
     ? forceState
-    : isDisabled ? 'Disabled' : highlighted ? 'Focused' : isSelected ? 'Selected' : undefined
+    : isDisabled ? 'Disabled' : isSelected ? 'Selected' : undefined
   return (
     <div
       role="option"

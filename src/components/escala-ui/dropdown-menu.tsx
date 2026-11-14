@@ -120,7 +120,7 @@ export interface DropdownMenuItemProps extends Omit<React.ComponentProps<typeof 
   indicatorVisible?: boolean
   /** The check glyph (Phosphor Check by default). */
   indicator?: React.ReactNode
-  /** Inline only: draw the row as Focused (a live menu gets it from hover and the arrow keys). */
+  /** Inline only: draw the row highlighted (fill, no ring; a live menu gets it from hover and the arrow keys). */
   highlighted?: boolean
 }
 
@@ -131,7 +131,7 @@ function DropdownMenuItem({
   highlighted, disabled, onCheckedChange, className, ...props
 }: DropdownMenuItemProps) {
   const ctx = React.useContext(MenuContext)
-  const state: DropdownMenuItemState | undefined = disabled ? 'Disabled' : forceState && forceState !== 'Default' ? forceState : checked ? 'Selected' : highlighted ? 'Focused' : undefined
+  const state: DropdownMenuItemState | undefined = disabled ? 'Disabled' : forceState && forceState !== 'Default' ? forceState : checked ? 'Selected' : undefined
   const selected = checked || state === 'Selected'
   const body = (
     <>

@@ -5,6 +5,7 @@
  *
  * Refs may SUM dimensions (`selector.control+spacing.1`) — `calc()` in CSS.
  */
+import { listItemRecipe, type ListItemMetrics } from './listItem.js'
 import { c, NONE, part, PANEL_RADIUS, PANEL_ROW_RADIUS, type ComponentRecipe, type SlotMap, type SlotProps, FOCUS } from './helpers.js'
 
 // ── Shared field chrome ────────────────────────────────────────────────────
@@ -818,35 +819,11 @@ export const COMBOBOX_POPOVER: ComponentRecipe = {
   ],
 }
 
-/** Per Size: min height · padding X · gap · glyph · label type. */
-const COMBO_ITEM: Record<string, { minH: string; padX: string; gap: string; icon: string; font: string }> = {
-  sm: { minH: 'spacing.6+spacing.1', padX: 'spacing.gap-control', gap: 'spacing.1_5', icon: 'spacing.3+spacing.0_5', font: 'type.caption' },
-  default: { minH: 'size.compact', padX: 'spacing.gap-control', gap: 'spacing.gap-control', icon: 'icon.small', font: 'type.body-sm' },
-  lg: { minH: 'spacing.8+spacing.1', padX: 'spacing.2_5', gap: 'spacing.gap-control', icon: 'spacing.4+spacing.0_5', font: 'type.body-md' },
-}
-
-function comboboxItemPaint(size: string, state: string): SlotMap {
-  const g = COMBO_ITEM[size]
-  // Only Focused draws an edge, and the file lays it out: its content starts 1px further in.
-  const edge = state === 'Focused'
-  const root: SlotProps = {
-    minHeight: g.minH, radius: 'radius.control', gap: g.gap, font: g.font,
-    paddingX: edge ? `${g.padX}+stroke.control` : g.padX,
-    paddingY: edge ? 'spacing.gap-tight+stroke.control' : 'spacing.gap-tight',
-    strokeWidth: edge ? 'stroke.control' : 'stroke.none',
-  }
-  if (edge) { root.fill = c('surface.muted'); root.stroke = c('border.focus'); root.halo = c('border.ring.default') }
-  else if (state === 'Selected') root.fill = c('surface.selected')
-  const disabled = state === 'Disabled'
-  const ink = (role: string) => ({ text: c(disabled ? 'content.disabled' : role) })
-  return {
-    root,
-    icon: { ...ink('content.primary'), width: g.icon, height: g.icon },
-    label: ink('content.primary'),
-    description: { ...ink('content.secondary'), font: 'type.caption' },
-    trailing: { ...ink('content.subtle'), font: 'type.caption' },
-    indicator: { text: c('content.accent'), width: g.icon, height: g.icon },
-  }
+/** The Combobox file's row geometry (28 · 32 · 36, a 1px focus edge it lays out); the paint is `listItemRecipe`. */
+const COMBO_ITEM: Record<string, ListItemMetrics> = {
+  sm: { minHeight: 'spacing.6+spacing.1', paddingX: 'spacing.gap-control', paddingY: 'spacing.gap-tight', gap: 'spacing.1_5', icon: 'spacing.3+spacing.0_5', label: 'type.caption', edge: 'stroke.control' },
+  default: { minHeight: 'size.compact', paddingX: 'spacing.gap-control', paddingY: 'spacing.gap-tight', gap: 'spacing.gap-control', icon: 'icon.small', label: 'type.body-sm', edge: 'stroke.control' },
+  lg: { minHeight: 'spacing.8+spacing.1', paddingX: 'spacing.2_5', paddingY: 'spacing.gap-tight', gap: 'spacing.gap-control', icon: 'spacing.4+spacing.0_5', label: 'type.body-md', edge: 'stroke.control' },
 }
 
 export const COMBOBOX_ITEM: ComponentRecipe = {
@@ -854,7 +831,7 @@ export const COMBOBOX_ITEM: ComponentRecipe = {
   slots: ['root', 'icon', 'text', 'label', 'description', 'trailing', 'indicator'],
   defaults: { Size: 'default', State: 'Default' },
   parts: [
-    part({ Size: COMBOBOX_SIZES, State: COMBOBOX_ITEM_STATES }, (size, state) => comboboxItemPaint(size, state)),
+    part({ Size: COMBOBOX_SIZES, State: COMBOBOX_ITEM_STATES }, (size, state) => listItemRecipe(size, state, 'default', { metrics: COMBO_ITEM })),
   ],
 }
 

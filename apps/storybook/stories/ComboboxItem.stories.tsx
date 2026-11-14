@@ -75,3 +75,14 @@ export const AllCombinations: Story = {
     </div>
   ),
 }
+
+/** A row under the pointer or the arrow keys (`highlighted`) takes the fill only; the ring is keyboard focus, shown by the pinned Focused row beside it. */
+export const HighlightedHasNoRing: Story = {
+  render: (args) => (
+    <div role="listbox" aria-label="Options" style={{ width: 256 }}>
+      <ComboboxItem size={args.size} highlighted>Highlighted: fill, no ring</ComboboxItem>
+      <ComboboxItem size={args.size} forceState="Focused">Focused: fill + ring</ComboboxItem>
+      <ComboboxItem size={args.size}>Default</ComboboxItem>
+    </div>
+  ),
+}

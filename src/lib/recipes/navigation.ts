@@ -3,6 +3,7 @@
  * Stepper, DropdownMenu, ContextMenu, Command, Navbar, Sidebar.
  * Rules as in `componentRecipes.ts`.
  */
+import { listItemRecipe, listItemHighlightFill, listItemRootPaint, LIST_ITEM_METRICS } from './listItem.js'
 import { c, NONE, part, PANEL_RADIUS, PANEL_ROW_RADIUS, type ComponentRecipe, type SlotMap, type SlotProps, FOCUS } from './helpers.js'
 
 // ── Tabs (underline) ───────────────────────────────────────────────────────
@@ -509,55 +510,16 @@ export const DROPDOWN_MENU_LABEL: ComponentRecipe = {
   ],
 }
 
-function dropdownItemPaint(variant: string, state: string): SlotProps {
-  const destructive = variant === 'destructive'
-  switch (state) {
-    case 'Focused':
-      return destructive
-        ? { fill: c('status.critical.surface'), focus: c('status.critical.border-strong'), ring: c('status.critical.border') }
-        : { fill: c('surface.muted'), focus: c('border.focus'), ring: c('border.ring.default') }
-    case 'Selected':
-      return { fill: c('surface.selected') }
-    case 'Disabled':
-      return { fill: NONE }
-    default:
-      return { fill: NONE }
-  }
-}
-
 export const DROPDOWN_MENU_ITEM: ComponentRecipe = {
   key: 'DropdownMenuItem',
   slots: ['root', 'iconLeading', 'media', 'text', 'label', 'description', 'trailing', 'control', 'iconTrailing', 'indicator'],
   defaults: { Size: 'default', State: 'Default', Variant: 'default' },
   parts: [
-    part({ Size: DROPDOWN_SIZES }, (size) => ({
-      root: {
-        minHeight: size === 'sm' ? 'size.xs' : size === 'lg' ? 'size.md' : 'size.sm', radius: 'radius.control',
-        paddingX: size === 'lg' ? 'spacing.inset-control' : 'spacing.gap-control', paddingY: 'spacing.gap-tight',
-        gap: size === 'sm' ? 'spacing.gap-tight' : 'spacing.gap-control',
-      },
-      iconLeading: size === 'lg' ? { width: 'icon.medium', height: 'icon.medium' } : { width: 'icon.small', height: 'icon.small' },
-      iconTrailing: size === 'lg' ? { width: 'icon.medium', height: 'icon.medium' } : { width: 'icon.small', height: 'icon.small' },
-      indicator: size === 'lg' ? { width: 'icon.medium', height: 'icon.medium' } : { width: 'icon.small', height: 'icon.small' },
-      label: { font: size === 'sm' ? 'type.caption' : size === 'lg' ? 'type.body-md' : 'type.body-sm' },
-      description: { font: 'type.caption' },
-      trailing: { font: 'type.caption' },
+    // Geometry per Size (the Dropdown file's); the paint is the shared `listItemRecipe`.
+    part({ Size: DROPDOWN_SIZES, Variant: DROPDOWN_ITEM_VARIANTS, State: DROPDOWN_ITEM_STATES }, (size, variant, state) => ({
+      ...listItemRecipe(size, state, variant, { iconSlot: 'iconLeading' }),
+      iconTrailing: { text: c('content.secondary'), width: LIST_ITEM_METRICS[size].icon, height: LIST_ITEM_METRICS[size].icon },
     })),
-    part({ Variant: DROPDOWN_ITEM_VARIANTS, State: DROPDOWN_ITEM_STATES }, (variant, state) => {
-      const disabled = state === 'Disabled'
-      const ink = disabled ? c('content.disabled') : variant === 'destructive' ? c('status.critical.content') : c('content.primary')
-      return {
-        root: dropdownItemPaint(variant, state),
-        label: { text: ink },
-        description: { text: disabled ? c('content.disabled') : c('content.secondary') },
-        trailing: { text: disabled ? c('content.disabled') : c('content.secondary') },
-        iconLeading: { text: disabled ? c('content.disabled') : variant === 'destructive' ? c('status.critical.content') : c('content.primary') },
-        iconTrailing: { text: c('content.secondary') },
-        indicator: { text: c('content.accent') },
-        // A live menu highlights a row on hover or arrow keys: the file's Focused look.
-        ...(state === 'Default' ? { 'root[data-highlighted]': dropdownItemPaint(variant, 'Focused') } : {}),
-      }
-    }),
   ],
 }
 
@@ -646,8 +608,11 @@ export const SIDEBAR: ComponentRecipe = {
         text: c('content.primary'), font: 'type.body-sm', radius: 'radius.action',
         height: 'size.compact', paddingX: 'spacing.2', gap: 'spacing.2',
       },
-      'button:hover': { fill: c('action.ghost.hover') },
-      'button[data-active="true"]': { fill: c('action.ghost.hover'), font: 'type.label' },
+      // The paint of a pointed-at list row is `listItemRecipe`'s: fill on hover, ring on keyboard focus only.
+      'button:hover': listItemHighlightFill(),
+      'button:focus-visible': { ...listItemHighlightFill(), ...FOCUS },
+      'button[data-active="true"]': { ...listItemRootPaint('Selected'), font: 'type.label' },
+      'button:disabled': { text: c('content.disabled'), fill: NONE },
       // No fill, as Button's outline: the page colour would patch the sidebar's own surface.
       'button[data-variant="outline"]': { fill: NONE, stroke: c('border.default'), strokeWidth: 'stroke.control' },
       'button[data-size="sm"]': { height: 'size.hit', font: 'type.caption' },
