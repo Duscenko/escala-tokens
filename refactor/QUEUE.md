@@ -53,7 +53,7 @@ Legend: `- [ ]` todo · `- [x]` done (append commit hash) · `- [!]` blocked (ap
   deleting a skeleton means retiring that catalogue component, which is a product decision, not a refactor step.
 - [x] E2 Tabs → TabMenu: MobilePreviewViews Tabs block (~l.460) renders TabMenu (+ its own panel by value). Docs `Tabs` specimen stays until E6. (c8476f3)
 - [x] E3 ToggleGroup → SegmentedControl: MobilePreviewViews ToggleGroup (~l.232) renders SegmentedControl. Docs `ToggleGroup` / `Toggle` specimens stay until E6. (1e7b39c)
-- [ ] E4 ContextMenu / Menubar → DropdownMenu: no app-UI importer (docs specimens only), nothing to migrate; record the finding and close.
+- [x] E4 ContextMenu / Menubar → DropdownMenu: no app-UI importer (docs specimens only), nothing to migrate; record the finding and close. (3474b44)
   Finding (2026-11-14): confirmed. `grep` finds ContextMenu / Menubar only in `docs/specimens.tsx` (registry keys) and `docs/skeleton/navigation.tsx` (their specimens); `ColorField.tsx` only has a DOM `onContextMenu`. Nothing in the app UI to migrate; the two catalogue components stay until the E6 decision.
 - [ ] E5 Select / NativeSelect → Combobox: MobilePreviewViews NativeSelect (~l.496) renders Combobox. Select has no app-UI importer. Docs specimens stay until E6.
 - [ ] E6 Delete each skeleton that has no importer left; final parity check passes. (Skeletons with only a catalogue-docs importer need the product decision above; do not delete a catalogue component on your own.)
