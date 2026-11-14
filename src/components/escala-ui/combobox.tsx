@@ -17,6 +17,7 @@
 // Paint: the Combobox, ComboboxPopover, ComboboxItem and ComboboxGroupLabel recipes.
 import * as React from 'react'
 import { cn } from '../../lib/utils'
+import { glyph } from '../../lib/icons'
 
 export const COMBOBOX_SIZES = ['sm', 'default', 'lg'] as const
 export const COMBOBOX_VARIANTS = ['default', 'compact'] as const
@@ -28,23 +29,6 @@ export type ComboboxShape = (typeof COMBOBOX_SHAPES)[number]
 export type ComboboxPopoverContent = (typeof COMBOBOX_POPOVER_CONTENTS)[number]
 export type ComboboxState = 'Default' | 'Hover' | 'Focused' | 'Open' | 'Invalid' | 'Disabled' | 'Loading'
 export type ComboboxItemState = 'Default' | 'Focused' | 'Selected' | 'Disabled'
-
-/** Phosphor regular bodies, as the file's glyphs draw them. */
-const GLYPHS = {
-  search: 'M229.66,218.34l-50.07-50.06a88.11,88.11,0,1,0-11.31,11.31l50.06,50.07a8,8,0,0,0,11.32-11.32ZM40,112a72,72,0,1,1,72,72A72.08,72.08,0,0,1,40,112Z',
-  close: 'M205.66,194.34a8,8,0,0,1-11.32,11.32L128,139.31,61.66,205.66a8,8,0,0,1-11.32-11.32L116.69,128,50.34,61.66A8,8,0,0,1,61.66,50.34L128,116.69l66.34-66.35a8,8,0,0,1,11.32,11.32L139.31,128Z',
-  chevron: 'M213.66,101.66l-80,80a8,8,0,0,1-11.32,0l-80-80A8,8,0,0,1,53.66,90.34L128,164.69l74.34-74.35a8,8,0,0,1,11.32,11.32Z',
-  check: 'M229.66,77.66l-128,128a8,8,0,0,1-11.32,0l-56-56a8,8,0,0,1,11.32-11.32L96,188.69,218.34,66.34a8,8,0,0,1,11.32,11.32Z',
-  notch: 'M232,128a104,104,0,0,1-208,0c0-41,23.81-78.36,60.66-95.27a8,8,0,0,1,6.68,14.54C60.15,61.59,40,93.27,40,128a88,88,0,0,0,176,0c0-34.73-20.15-66.41-51.34-80.73a8,8,0,0,1,6.68-14.54C208.19,49.64,232,87,232,128Z',
-} as const
-
-function Glyph({ d, className }: { d: string; className?: string }) {
-  return (
-    <svg viewBox="0 0 256 256" fill="currentColor" aria-hidden focusable="false" className={className}>
-      <path d={d} />
-    </svg>
-  )
-}
 
 /** A glyph box sized by its recipe; the svg fills it. */
 const iconBox = 'inline-flex shrink-0 items-center justify-center [&>svg]:size-full'
@@ -128,7 +112,7 @@ function ComboboxItem({
       </span>
       {trailing != null && <span data-part="ComboboxItem.trailing" className="shrink-0 whitespace-nowrap">{trailing}</span>}
       {isSelected && indicator && (
-        <span data-part="ComboboxItem.indicator" aria-hidden className={iconBox}><Glyph d={GLYPHS.check} /></span>
+        <span data-part="ComboboxItem.indicator" aria-hidden className={iconBox}>{glyph('check')}</span>
       )}
     </div>
   )
@@ -320,7 +304,7 @@ function Combobox({
     })
   } else shown.forEach((o, i) => rows.push(item(o, i)))
 
-  const leadingGlyph = leading === undefined ? <Glyph d={GLYPHS.search} /> : leading
+  const leadingGlyph = leading === undefined ? glyph('search') : leading
   return (
     <div
       data-slot="combobox-wrap"
@@ -401,15 +385,15 @@ function Combobox({
             className={cn(iconBox, 'cursor-pointer border-0 bg-transparent p-0 outline-none disabled:cursor-not-allowed')}
             onMouseDown={(e) => { e.preventDefault(); e.stopPropagation(); commit(undefined); setTyping(false); setQuery('') }}
           >
-            <Glyph d={GLYPHS.close} />
+            {glyph('close')}
           </button>
         )}
         {isLoading ? (
           <span data-part="Combobox.icon" aria-hidden className={iconBox}>
-            <Glyph d={GLYPHS.notch} className="animate-spin motion-reduce:animate-none" />
+            {glyph('loading', { className: 'animate-spin motion-reduce:animate-none' })}
           </span>
         ) : chevron ? (
-          <span data-part="Combobox.icon" aria-hidden className={iconBox}><Glyph d={GLYPHS.chevron} /></span>
+          <span data-part="Combobox.icon" aria-hidden className={iconBox}>{glyph('chevron-down')}</span>
         ) : null}
       </div>
       {open && (

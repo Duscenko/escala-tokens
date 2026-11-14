@@ -6,6 +6,7 @@
 // Appearance: recipes Stepper, StepperItem, StepperIndicator, StepperIcon (lib/componentRecipes.ts).
 import * as React from 'react'
 import { cn } from '../../lib/utils'
+import { glyph } from '../../lib/icons'
 
 export const STEPPER_SIZES = ['default', 'xs', 'sm', 'lg'] as const
 export type StepperSize = (typeof STEPPER_SIZES)[number]
@@ -20,9 +21,6 @@ const StepperContext = React.createContext<{ size: StepperSize; orientation: Ste
 const IndexContext = React.createContext(1)
 
 // Phosphor regular `check` and `warning`: the markers of completed and error steps.
-const CHECK = 'M229.66,77.66l-128,128a8,8,0,0,1-11.32,0l-56-56a8,8,0,0,1,11.32-11.32L96,188.69,218.34,66.34a8,8,0,0,1,11.32,11.32Z'
-const WARNING = 'M236.8,188.09,149.35,36.22h0a24.76,24.76,0,0,0-42.7,0L19.2,188.09a23.51,23.51,0,0,0,0,23.72A24.35,24.35,0,0,0,40.55,224h174.9a24.35,24.35,0,0,0,21.33-12.19A23.51,23.51,0,0,0,236.8,188.09ZM222.93,203.8a8.5,8.5,0,0,1-7.48,4.2H40.55a8.5,8.5,0,0,1-7.48-4.2,7.59,7.59,0,0,1,0-7.72L120.52,44.21a8.75,8.75,0,0,1,15,0l87.45,151.87A7.59,7.59,0,0,1,222.93,203.8ZM120,144V104a8,8,0,0,1,16,0v40a8,8,0,0,1-16,0Zm20,36a12,12,0,1,1-12-12A12,12,0,0,1,140,180Z'
-const glyph = (d: string) => <svg viewBox="0 0 256 256" fill="currentColor" aria-hidden focusable="false" className="size-full"><path d={d} /></svg>
 
 export interface StepperProps extends Omit<React.ComponentProps<'ol'>, 'children'> {
   /** Figma Size: marker 40 · 24 · 32 · 48 (cascades). */
@@ -79,7 +77,7 @@ export interface StepperIconProps extends Omit<React.ComponentProps<'span'>, 'ch
 /** Figma StepperIcon: the round marker of a step. */
 function StepperIcon({ size, status = 'active', disabled = false, label = '1', labelVisible = true, icon, className, ...props }: StepperIconProps) {
   const ctx = React.useContext(StepperContext)
-  const auto = status === 'completed' ? glyph(CHECK) : status === 'error' ? glyph(WARNING) : null
+  const auto = status === 'completed' ? glyph('check', { className: 'size-full' }) : status === 'error' ? glyph('warning', { className: 'size-full' }) : null
   const glyphNode = icon ?? auto
   return (
     <span

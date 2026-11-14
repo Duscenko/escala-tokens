@@ -7,6 +7,7 @@
 import * as React from 'react'
 import { DropdownMenu as DropdownMenuPrimitive } from 'radix-ui'
 import { cn } from '../../lib/utils'
+import { glyph } from '../../lib/icons'
 import { usePortalContainer } from './portal-scope'
 
 export const DROPDOWN_MENU_SIZES = ['default', 'sm', 'lg'] as const
@@ -123,7 +124,6 @@ export interface DropdownMenuItemProps extends Omit<React.ComponentProps<typeof 
   highlighted?: boolean
 }
 
-const CHECK = 'M229.66,77.66l-128,128a8,8,0,0,1-11.32,0l-56-56a8,8,0,0,1,11.32-11.32L96,188.69,218.34,66.34a8,8,0,0,1,11.32,11.32Z'
 
 /** Figma DropdownMenuItem. */
 function DropdownMenuItem({
@@ -146,7 +146,7 @@ function DropdownMenuItem({
       {iconTrailing != null && <span data-part="DropdownMenuItem.iconTrailing" aria-hidden className="inline-flex shrink-0 items-center justify-center [&>svg]:size-full">{iconTrailing}</span>}
       {selected && indicatorVisible && (
         <span data-part="DropdownMenuItem.indicator" aria-hidden className="inline-flex shrink-0 items-center justify-center [&>svg]:size-full">
-          {indicator ?? <svg viewBox="0 0 256 256" fill="currentColor" focusable="false"><path d={CHECK} /></svg>}
+          {indicator ?? glyph('check', { decorative: false })}
         </span>
       )}
     </>

@@ -6,6 +6,7 @@
 import * as React from 'react'
 import { Checkbox as CheckboxPrimitive } from 'radix-ui'
 import { cn } from '../../lib/utils'
+import { glyph } from '../../lib/icons'
 
 export const CHECKBOX_SIZES = ['xs', 'sm', 'default'] as const
 export type CheckboxSize = (typeof CHECKBOX_SIZES)[number]
@@ -15,8 +16,6 @@ export const CHECKBOX_VARIANTS = ['default', 'secondary', 'critical', 'success',
 export type CheckboxVariant = (typeof CHECKBOX_VARIANTS)[number]
 export type CheckboxChecked = boolean | 'indeterminate'
 
-const CHECK = 'M229.66,77.66l-128,128a8,8,0,0,1-11.32,0l-56-56a8,8,0,0,1,11.32-11.32L96,188.69,218.34,66.34a8,8,0,0,1,11.32,11.32Z'
-const MINUS = 'M224,128a8,8,0,0,1-8,8H40a8,8,0,0,1,0-16H216A8,8,0,0,1,224,128Z'
 
 export interface CheckboxProps extends React.ComponentProps<typeof CheckboxPrimitive.Root> {
   /** Figma Size: box 16 · 16 · 20 (Size/selector-sm · sm · md). */
@@ -57,9 +56,7 @@ function Checkbox({
       {...props}
     >
       <CheckboxPrimitive.Indicator data-slot="checkbox-indicator" data-part="Checkbox.indicator" className="inline-flex text-current transition-none [&>svg]:size-full">
-        {icon ?? (
-          <svg viewBox="0 0 256 256" fill="currentColor" aria-hidden focusable="false"><path d={on === 'indeterminate' ? MINUS : CHECK} /></svg>
-        )}
+        {icon ?? glyph(on === 'indeterminate' ? 'minus' : 'check')}
       </CheckboxPrimitive.Indicator>
     </CheckboxPrimitive.Root>
   )

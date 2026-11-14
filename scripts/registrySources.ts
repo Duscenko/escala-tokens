@@ -13,10 +13,11 @@ export const GENERATED_PATH = 'src/lib/registry/escalaUiSources.generated.ts'
 export function readEscalaUiSources(root: string): RegistrySource[] {
   const dir = join(root, 'src/components/escala-ui')
   const iconsSource = readFileSync(join(root, 'src/components/ui/icons.tsx'), 'utf8')
+  const iconsLibSource = readFileSync(join(root, 'src/lib/icons.ts'), 'utf8')
   return readdirSync(dir)
     .filter((f) => /\.(tsx|ts)$/.test(f))
     .sort()
-    .map((f) => transformEscalaUi(f, readFileSync(join(dir, f), 'utf8'), { iconsSource, iconOf: anatomyIconPx }))
+    .map((f) => transformEscalaUi(f, readFileSync(join(dir, f), 'utf8'), { iconsSource, iconsLibSource, iconOf: anatomyIconPx }))
 }
 
 export function renderGeneratedModule(sources: RegistrySource[]): string {
