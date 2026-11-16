@@ -15,7 +15,6 @@ import { Image as SkImage, type ImageRatio, type ImageShape } from '../../../esc
 import { Popover as SkPopover, PopoverContent as SkPopoverContent, PopoverFooter as SkPopoverFooter, type PopoverSize, type PopoverSide, type PopoverFooterLayout } from '../../../escala-ui/popover'
 import { Tooltip as SkTooltip, TooltipContent as SkTooltipContent, TooltipInfoTrigger as SkTooltipInfoTrigger, TooltipProvider as SkTooltipProvider, type TooltipSize, type TooltipSide, type TooltipAlign, type TooltipVariant, type TooltipTriggerState } from '../../../escala-ui/tooltip'
 import { ScrollArea as SkScrollArea, type ScrollAppearance, type ScrollAreaOrientation, type ScrollAreaSize } from '../../../escala-ui/scroll-area'
-import { iconOf, spaceOf } from '../../../../lib/previewTokens'
 import { Alert as SkAlert, AlertDescription as SkAlertDescription, AlertIcon as SkAlertIcon, AlertTitle as SkAlertTitle, type AlertVariant } from '../../../escala-ui/alert'
 import { Toast as SkToast, type ToastAppearance, type ToastVariant } from '../../../escala-ui/toast'
 import { Spinner as SkSpinner } from '../../../escala-ui/spinner'

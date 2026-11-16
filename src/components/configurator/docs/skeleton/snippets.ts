@@ -10,8 +10,6 @@ import { ICON_COMPONENT, ICON_SLOTS, INPUT_META, buttonLeadingConcept } from '..
 type Snippet = (v: AxisValues, icons?: IconOpts) => string
 
 const low = (s?: string) => (s ?? '').toLowerCase().replace(/\s+/g, '-')
-/** ` size="…"` only for a non-default size — keeps snippets lean. */
-const sizeProp = (v: AxisValues) => (v.Size && v.Size !== 'default' ? ` size="${v.Size}"` : '')
 
 export const SKELETON_SNIPPETS: Record<string, Snippet> = {
   TabMenu: (v) =>

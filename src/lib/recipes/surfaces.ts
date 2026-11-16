@@ -1,4 +1,4 @@
-import { c, NONE, part, PANEL_RADIUS, TALL_FIELD_RADIUS, type ComponentRecipe, type SlotProps, FOCUS } from './helpers.js'
+import { c, NONE, part, type ComponentRecipe, type SlotProps} from './helpers.js'
 
 // ── Card ───────────────────────────────────────────────────────────────────
 
@@ -29,11 +29,6 @@ export const CARD: ComponentRecipe = {
   ],
 }
 
-// An overlay's title (Dialog, AlertDialog, Sheet, Drawer, Popover) is the
-// smallest heading — shadcn's `text-lg` — so it leads the body copy by one
-// rung instead of three. `heading-sm` (24 over 14) read as a page headline
-// squeezed into a 320px panel.
-const OVERLAY_TITLE = 'type.heading-2xs'
 
 // ── Modal, ModalHeader, ModalFooter ────────────────────────────────────────
 // The Figma sets (design-plans/modal-contract.md; Modal 967:102 · ModalHeader 965:81 · ModalFooter 966:114). The Modal is a
@@ -445,18 +440,6 @@ export const SHEET: ComponentRecipe = {
 
 export const ITEM_VARIANTS = ['default', 'outline', 'muted'] as const
 export const ITEM_SIZES = ['default', 'sm', 'xs'] as const
-// shadcn: default `p-4 gap-4`, sm `px-4 py-3 gap-2.5`, xs one step tighter.
-// The three used to share two geometries, so `sm` was `default`.
-const ITEM_GEOMETRY: Record<string, SlotProps> = {
-  default: { paddingX: 'spacing.4', paddingY: 'spacing.4', gap: 'spacing.4' },
-  sm: { paddingX: 'spacing.4', paddingY: 'spacing.3', gap: 'spacing.2_5' },
-  xs: { paddingX: 'spacing.3', paddingY: 'spacing.2', gap: 'spacing.2' },
-}
-// The description steps down with the row, so the title always leads it:
-// at sm / xs a body-sized description matched the title's size and wrapped.
-const ITEM_DESCRIPTION: Record<string, string> = { default: 'type.body-sm', sm: 'type.caption', xs: 'type.caption' }
-const ITEM_CONTENT_GAP: Record<string, string> = { default: 'spacing.1', sm: 'spacing.0_5', xs: 'spacing.0_5' }
-const ITEM_MEDIA: Record<string, string> = { default: 'size.control', sm: 'size.compact', xs: 'size.xs' }
 
 
 // ── Attachment ─────────────────────────────────────────────────────────────
@@ -465,12 +448,6 @@ const ITEM_MEDIA: Record<string, string> = { default: 'size.control', sm: 'size.
 // the description in the critical roles (the state rides on those parts).
 
 export const ATTACHMENT_SIZES = ['default', 'sm', 'xs'] as const
-const ATTACHMENT_GEOMETRY: Record<string, SlotProps> = {
-  default: { paddingX: 'spacing.2', paddingY: 'spacing.2', gap: 'spacing.2_5' },
-  sm: { paddingX: 'spacing.1_5', paddingY: 'spacing.1_5', gap: 'spacing.2' },
-  xs: { paddingX: 'spacing.1', paddingY: 'spacing.1', gap: 'spacing.1_5' },
-}
-const ATTACHMENT_MEDIA: Record<string, string> = { default: 'size.control', sm: 'size.compact', xs: 'size.xs' }
 
 
 // ── Message ────────────────────────────────────────────────────────────────
@@ -483,15 +460,6 @@ const ATTACHMENT_MEDIA: Record<string, string> = { default: 'size.control', sm: 
 // outline, ghost (no box) and destructive (the critical tint).
 
 export const BUBBLE_VARIANTS = ['default', 'secondary', 'muted', 'tinted', 'outline', 'ghost', 'destructive'] as const
-const BUBBLE_PAINT: Record<string, SlotProps> = {
-  default: { fill: c('action.primary.default'), stroke: NONE, text: c('content.on-action') },
-  secondary: { fill: c('surface.muted'), stroke: NONE, text: c('content.accent') },
-  muted: { fill: c('surface.layer-2'), stroke: NONE, text: c('content.primary') },
-  tinted: { fill: c('surface.accent'), stroke: NONE, text: c('content.accent') },
-  outline: { fill: c('surface.page'), stroke: c('border.default'), text: c('content.primary') },
-  ghost: { fill: NONE, stroke: NONE, text: c('content.primary'), paddingX: 'spacing.0', paddingY: 'spacing.0' },
-  destructive: { fill: c('status.critical.surface'), stroke: NONE, text: c('status.critical.content') },
-}
 
 
 // ── Resizable ──────────────────────────────────────────────────────────────

@@ -448,13 +448,6 @@ export const CALENDAR_FOOTER: ComponentRecipe = {
 
 // ── InputGroup ─────────────────────────────────────────────────────────────
 
-// The group IS the field box, so it paints what the bare Input paints in each
-// state — shadcn moves the control's focus / invalid styling onto the group
-// with `has-[…]`. Selectors, not a State axis: the catalogue (= the plugin's
-// Figma set) ships Input Group with no variants. Same specificity ladder as the
-// recipe's own state suffixes, emitted in order Hover < Focused < Error < Disabled.
-const GROUP_LIVE = ':not([data-force-state]):not([aria-disabled="true"]):not(:has(:disabled))'
-const GROUP_CONTROL = '[data-slot="input-group-control"]'
 
 
 // ── NumberInput ────────────────────────────────────────────────────────────

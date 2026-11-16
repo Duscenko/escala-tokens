@@ -4,7 +4,7 @@
  *
  * `slot:hover` / `slot[attr]` keys give one PART its own state.
  */
-import { c, NONE, part, type ComponentRecipe, type SlotMap, type SlotProps, FOCUS } from './helpers.js'
+import { c, NONE, part, type ComponentRecipe, type SlotMap, type SlotProps } from './helpers.js'
 
 // ── Button · IconButton ────────────────────────────────────────────────────
 // The Figma file is the source (design-plans/button-contract.md): `Variant` is the
@@ -635,10 +635,3 @@ export const SOCIAL_LOGIN_BUTTON: ComponentRecipe = {
 
 export const TOGGLE_GROUP_VARIANTS = ['default', 'outline'] as const
 export const TOGGLE_GROUP_SIZES = ['default', 'sm', 'lg'] as const
-const TOGGLE_HEIGHT: Record<string, string> = { sm: 'size.compact', default: 'size.control', lg: 'size.touch' }
-
-// ── Toggle ─────────────────────────────────────────────────────────────────
-// shadcn's Toggle: the ToggleGroup item on its own. Pressed (Radix
-// `data-state="on"`, mirrored as `data-pressed` True/False — a Figma property)
-// takes the muted surface.
-

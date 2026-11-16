@@ -5,7 +5,7 @@
  */
 import { groupLabelRecipe } from './groupLabel.js'
 import { listItemRecipe, listItemHighlightFill, listItemRootPaint, LIST_ITEM_METRICS } from './listItem.js'
-import { c, NONE, part, PANEL_RADIUS, PANEL_ROW_RADIUS, type ComponentRecipe, type SlotMap, type SlotProps, FOCUS } from './helpers.js'
+import { c, NONE, part, PANEL_ROW_RADIUS, type ComponentRecipe, type SlotMap, type SlotProps, FOCUS } from './helpers.js'
 
 // ── TabMenu, TabMenuItem and TabMenuLineItem ───────────────────────────────
 // The Figma sets TabMenu (984:1830), TabMenuItem (984:939) and TabMenuLineItem (984:1156)

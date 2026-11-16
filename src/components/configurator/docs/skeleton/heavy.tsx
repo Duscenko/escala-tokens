@@ -4,14 +4,9 @@
  * lands in the bundle until one of these pages is opened.
  */
 import { useState } from 'react'
-import { Bar, BarChart, Line, LineChart, Area, AreaChart, CartesianGrid, XAxis } from 'recharts'
 import type { SpecimenProps } from '../specimens'
-import { PreviewIcon } from '../specimens'
-import { iconOf } from '../../../../lib/previewTokens'
-import { chartPalette } from '../../../../lib/chartPalette'
 import { Calendar as SkCalendar, type CalendarHeaderKind, type CalendarMode, type CalendarSize, type CalendarValue, CalendarDay as SkCalendarDay, CalendarHeader as SkCalendarHeader, CalendarMonth as SkCalendarMonth, CalendarPresets as SkCalendarPresets, CalendarFooter as SkCalendarFooter, type CalendarFooterSize, type CalendarPresetsSize, type CalendarPresetsVariant, type CalendarMonthMode, type CalendarMonthSize, type CalendarMonthVariant, type CalendarHeaderHeader, type CalendarHeaderSize, type CalendarDaySize, type CalendarDayState, type CalendarDayVariant } from '../../../escala-ui/calendar'
 import { DatePickerPopover as SkDatePickerPopover, type DatePickerPopoverMode, type DatePickerPopoverSize } from '../../../escala-ui/date-picker'
-import { Card as SkCard, CardContent as SkCardContent } from '../../../escala-ui/card'
 import { RecipeScope } from './scope'
 import { useAutoplayStep } from '../../../preview/artefacts/boardAutoplay'
 import { CALENDAR_PLAY } from '../../../preview/artefacts/boardScripts'
@@ -108,13 +103,5 @@ export function SkeletonDatePickerPopoverSpecimen({ t, v }: SpecimenProps) {
   )
 }
 
-const CHART_DATA = [
-  { month: 'May', desktop: 186, mobile: 80 },
-  { month: 'Jun', desktop: 305, mobile: 200 },
-  { month: 'Jul', desktop: 237, mobile: 120 },
-  { month: 'Aug', desktop: 273, mobile: 190 },
-  { month: 'Sep', desktop: 209, mobile: 130 },
-  { month: 'Oct', desktop: 264, mobile: 140 },
-]
 
 

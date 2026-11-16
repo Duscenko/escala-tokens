@@ -91,13 +91,6 @@ export const BADGE: ComponentRecipe = {
 
 // ── StatusBadge ────────────────────────────────────────────────────────────
 
-const PRESENCE_DOT: Record<string, string> = {
-  online: 'status.success.surface-solid',
-  away: 'status.warning.surface-solid',
-  busy: 'status.critical.surface-solid',
-  // The absence of a signal reads as muted ink.
-  offline: 'content.subtle',
-}
 
 
 // ── Chip ───────────────────────────────────────────────────────────────────
@@ -228,7 +221,6 @@ export const SPINNER: ComponentRecipe = {
 
 // ── Icon ───────────────────────────────────────────────────────────────────
 
-const ICON_ROLE: Record<string, string> = { sm: 'icon.small', default: 'icon.medium', lg: 'icon.large' }
 
 
 // ── RatingGroup + RatingGroupItem ──────────────────────────────────────────
@@ -285,12 +277,6 @@ export const RATING_GROUP_ITEM: ComponentRecipe = {
 
 // ── FileFormat ─────────────────────────────────────────────────────────────
 
-const FORMAT_TONE: Record<string, { fill: string; on: string }> = {
-  pdf: { fill: 'status.critical.surface-solid', on: 'status.critical.on-solid' },
-  png: { fill: 'status.info.surface-solid', on: 'status.info.on-solid' },
-  svg: { fill: 'action.primary.default', on: 'content.on-action' },
-  zip: { fill: 'status.warning.surface-solid', on: 'status.warning.on-solid' },
-}
 
 
 // ── Avatar · AvatarStatus · AvatarGroup ────────────────────────────────────
