@@ -459,5 +459,16 @@
     "lastAudit": "2026-11-16",
     "lastSyncSha": null,
     "codeConnect": null
+  },
+  "Button": {
+    "kind": "component",
+    "stage": "storybook",
+    "version": null,
+    "workshopPage": null,
+    "story": "buttons-button--playground",
+    "figmaNode": "4:5066",
+    "lastAudit": "2026-11-16",
+    "lastSyncSha": null,
+    "codeConnect": null
   }
 }
