@@ -36,14 +36,13 @@ Resolve in Figma UI / reply `✅ Resolved …` only after merge + sync. None res
 ## Queue C
 | Piece | Status | Branch / PR |
 |---|---|---|
-| SocialLoginButton (prerequisite, rebuilt) | done | `loop/2026-11-16-social-login-button` · PR #19 |
-| Auth (12 blocks) | done, awaiting-approval | `loop/2026-11-16-sync-and-auth` · PR #20 (stacked) |
-| Overlay (15 sets, page `1027:146815`) | todo | next |
-| HeaderNavigation (5, `1059:2`) | todo | |
-| SidebarNavigation (2, `1064:2`) | todo | |
-| Marketing (6, `1066:2`) | todo | |
-Queue A PR: #18 (`loop/2026-11-16-a-tokens-recipes`, base `refactor/escala-v0.11`). Stack: #18 ← #19 ← #20; each next piece branches from the previous one.
-Block recipe used for Auth (reuse it): read the page with `use_figma` (instances, props, texts, padding bindings), write `blocks/<page>.tsx` (shell + blocks, CSS role vars via `cssVarOf`, `liftShadow` for card elevation), `blocks/<page>.contract.json`, `__tests__/<page>Blocks.test.ts`, stories `apps/storybook/stories/blocks/<Page><Name>.stories.tsx` (tag `stage:storybook`, Playground · Containers · States · Motion), registry entries. Measure motion in Storybook with a real click (programmatic `.click()` inside the iframe did not fire React).
+| SocialLoginButton (prerequisite, rebuilt) | done | `loop/2026-11-16-social-login-button` · #19 |
+| Auth (12 blocks) | done, awaiting-approval | `loop/2026-11-16-sync-and-auth` · #20 |
+| Overlay (15) | done, awaiting-approval | `loop/2026-11-16-overlay` · #21 |
+| HeaderNavigation (5) + SidebarNavigation (2) | done, awaiting-approval | `loop/2026-11-16-navigation` · #22 |
+| Marketing (6) | done, awaiting-approval | `loop/2026-11-16-marketing` · #23 |
+Queue A PR: #18. Stack: #18 ← #19 ← #20 ← #21 ← #22 ← #23 (each branched from the previous one). Merge in that order.
+Block recipe (reuse): read the page with `use_figma`, write `blocks/<page>.tsx` (CSS role vars via `cssVarOf`), `blocks/<page>.contract.json`, `__tests__/<page>Blocks.test.ts`, stories `apps/storybook/stories/blocks/<Page><Name>.stories.tsx` (tag `stage:storybook`), registry entries. Reveal helpers use a timer, not requestAnimationFrame (a hidden tab never ticks a frame); in the in-app browser a transition only advances when a frame is rendered (take a screenshot before reading computed opacity).
 
 ## Open findings / issues
 #12 COL-002 · #13 COL-003 · #17 board comment · SNP-001 snapshot stale (`ahead` ledger) · CMP-005 InputTagChip radius (8→4, unverified vs Figma)
@@ -51,8 +50,9 @@ Block recipe used for Auth (reuse it): read the page with `use_figma` (instances
 ## Not yet verified
 `npm run build` and `npm run build-storybook` not run; Dark screenshots of the Auth blocks not taken; Figma node for each Auth block icon not read.
 
-## Next step
-Overlay: read page `1027:146815` (15 single-variant sets: CartDrawer, ConfirmDialog, CookieConsent, DestructiveConfirm, ErrorModal, FeedbackRating, FilterDrawer, FilterModal, FormModal, QuickEditDialog, ReleaseModal, SessionTimeoutWarning, ShareModal, SuccessModal, WarningDialog), branch `loop/2026-11-16-overlay` from `loop/2026-11-16-sync-and-auth`.
+## Next step (the loop's own work is done: every item is done or blocked)
+Waiting for the owner: review the PR stack #18 to #23, decide #12 (COL-002), #13, #17; then the post-merge steps: sync agent (lock, Figma writes for the blocks and the FeaturedIcon docs A11), reply and resolve the four Figma comments, Code Connect (CC-001), refresh `spec/figma-components.json`.
+Older note: Overlay: read page `1027:146815` (15 single-variant sets: CartDrawer, ConfirmDialog, CookieConsent, DestructiveConfirm, ErrorModal, FeedbackRating, FilterDrawer, FilterModal, FormModal, QuickEditDialog, ReleaseModal, SessionTimeoutWarning, ShareModal, SuccessModal, WarningDialog), branch `loop/2026-11-16-overlay` from `loop/2026-11-16-sync-and-auth`.
 Also pending: Queue A A11 (FeaturedIcon doc boards, Figma write), Queue B replies/resolution after merge+sync, Code Connect (CC-001).
 
 Resume prompt: Continue the Escala loop: read governance/runs/loop-state.md and escala-loop-prompt.md, then resume from the next step.

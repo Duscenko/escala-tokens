@@ -1,0 +1,229 @@
+{
+  "$comment": "Contract of the Marketing blocks. Reveals run once (never on every scroll); Layout desktop · mobile is a viewport and is never animated.",
+  "figma": {
+    "file": "7j5zukN5HpihGVJMmyjA20",
+    "page": "Marketing",
+    "pageId": "1066:2"
+  },
+  "blocks": [
+    {
+      "name": "HeroHeader",
+      "figmaSet": "1066:99",
+      "axes": {
+        "Layout": "desktop|mobile"
+      },
+      "variants": 2,
+      "nests": [
+        "Badge",
+        "Input",
+        "Button",
+        "Image"
+      ],
+      "slots": [
+        "Media"
+      ],
+      "props": [
+        "layout",
+        "style"
+      ],
+      "a11y": [
+        "Landmarks: section / footer / article; headings in order",
+        "Forms use Field; icon-only buttons carry an aria-label"
+      ],
+      "motion": [
+        {
+          "moment": "headline on first view",
+          "mechanism": "opacity + transform transition, once",
+          "role": "use-reveal",
+          "reduced": "fade kept, travel neutralised"
+        },
+        {
+          "moment": "Layout desktop ↔ mobile",
+          "mechanism": "none (a viewport, not an interaction)",
+          "role": "none",
+          "reduced": "n/a"
+        }
+      ]
+    },
+    {
+      "name": "FAQSection",
+      "figmaSet": "1066:422",
+      "axes": {
+        "Layout": "desktop|mobile",
+        "Style": "split|centered"
+      },
+      "variants": 4,
+      "nests": [
+        "Badge",
+        "Accordion"
+      ],
+      "slots": [],
+      "props": [
+        "layout",
+        "style"
+      ],
+      "a11y": [
+        "Landmarks: section / footer / article; headings in order",
+        "Forms use Field; icon-only buttons carry an aria-label"
+      ],
+      "motion": [
+        {
+          "moment": "on load",
+          "mechanism": "none",
+          "role": "none",
+          "reduced": "n/a"
+        },
+        {
+          "moment": "Layout desktop ↔ mobile",
+          "mechanism": "none (a viewport, not an interaction)",
+          "role": "none",
+          "reduced": "n/a"
+        }
+      ]
+    },
+    {
+      "name": "PricingCard",
+      "figmaSet": "1068:208",
+      "axes": {},
+      "variants": 1,
+      "nests": [
+        "FeaturedIcon",
+        "Button"
+      ],
+      "slots": [],
+      "props": [
+        "layout",
+        "style"
+      ],
+      "a11y": [
+        "Landmarks: section / footer / article; headings in order",
+        "Forms use Field; icon-only buttons carry an aria-label"
+      ],
+      "motion": [
+        {
+          "moment": "on load",
+          "mechanism": "none",
+          "role": "none",
+          "reduced": "n/a"
+        }
+      ]
+    },
+    {
+      "name": "PricingSection",
+      "figmaSet": "1068:533",
+      "axes": {
+        "Layout": "desktop|mobile"
+      },
+      "variants": 2,
+      "nests": [
+        "PricingCard"
+      ],
+      "slots": [],
+      "props": [
+        "layout",
+        "style"
+      ],
+      "a11y": [
+        "Landmarks: section / footer / article; headings in order",
+        "Forms use Field; icon-only buttons carry an aria-label"
+      ],
+      "motion": [
+        {
+          "moment": "plan cards revealed together",
+          "mechanism": "staggered opacity + transform, once",
+          "role": "use-stagger-in",
+          "reduced": "stagger 0, fade kept"
+        },
+        {
+          "moment": "Layout desktop ↔ mobile",
+          "mechanism": "none (a viewport, not an interaction)",
+          "role": "none",
+          "reduced": "n/a"
+        }
+      ]
+    },
+    {
+      "name": "ContactSection",
+      "figmaSet": "1069:849",
+      "axes": {
+        "Layout": "desktop|mobile"
+      },
+      "variants": 2,
+      "nests": [
+        "Image",
+        "TextLink",
+        "Field",
+        "Input",
+        "Textarea",
+        "CheckboxItem",
+        "Button"
+      ],
+      "slots": [
+        "Media"
+      ],
+      "props": [
+        "layout",
+        "style"
+      ],
+      "a11y": [
+        "Landmarks: section / footer / article; headings in order",
+        "Forms use Field; icon-only buttons carry an aria-label"
+      ],
+      "motion": [
+        {
+          "moment": "on load",
+          "mechanism": "none",
+          "role": "none",
+          "reduced": "n/a"
+        },
+        {
+          "moment": "Layout desktop ↔ mobile",
+          "mechanism": "none (a viewport, not an interaction)",
+          "role": "none",
+          "reduced": "n/a"
+        }
+      ]
+    },
+    {
+      "name": "Footer",
+      "figmaSet": "1129:3971",
+      "axes": {
+        "Layout": "desktop|mobile"
+      },
+      "variants": 2,
+      "nests": [
+        "Brand",
+        "IconButton",
+        "TextLink",
+        "Input",
+        "Button",
+        "Separator"
+      ],
+      "slots": [
+        "Links"
+      ],
+      "props": [
+        "layout",
+        "style"
+      ],
+      "a11y": [
+        "Landmarks: section / footer / article; headings in order",
+        "Forms use Field; icon-only buttons carry an aria-label"
+      ],
+      "motion": [
+        {
+          "moment": "on load",
+          "mechanism": "none",
+          "role": "none",
+          "reduced": "n/a"
+        },
+        {
+          "moment": "Layout desktop ↔ mobile",
+          "mechanism": "none (a viewport, not an interaction)",
+          "role": "none",
+          "reduced": "n/a"
+        }
+      ]
+    }
+  ]
+}

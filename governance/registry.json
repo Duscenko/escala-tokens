@@ -393,5 +393,71 @@
     "lastAudit": "2026-11-16",
     "lastSyncSha": null,
     "codeConnect": null
+  },
+  "HeroHeader": {
+    "kind": "block",
+    "stage": "storybook",
+    "version": null,
+    "workshopPage": null,
+    "story": "blocks-marketing-heroheader--playground",
+    "figmaNode": "1066:99",
+    "lastAudit": "2026-11-16",
+    "lastSyncSha": null,
+    "codeConnect": null
+  },
+  "FAQSection": {
+    "kind": "block",
+    "stage": "storybook",
+    "version": null,
+    "workshopPage": null,
+    "story": "blocks-marketing-faqsection--playground",
+    "figmaNode": "1066:422",
+    "lastAudit": "2026-11-16",
+    "lastSyncSha": null,
+    "codeConnect": null
+  },
+  "PricingCard": {
+    "kind": "block",
+    "stage": "storybook",
+    "version": null,
+    "workshopPage": null,
+    "story": "blocks-marketing-pricingcard--playground",
+    "figmaNode": "1068:208",
+    "lastAudit": "2026-11-16",
+    "lastSyncSha": null,
+    "codeConnect": null
+  },
+  "PricingSection": {
+    "kind": "block",
+    "stage": "storybook",
+    "version": null,
+    "workshopPage": null,
+    "story": "blocks-marketing-pricingsection--playground",
+    "figmaNode": "1068:533",
+    "lastAudit": "2026-11-16",
+    "lastSyncSha": null,
+    "codeConnect": null
+  },
+  "ContactSection": {
+    "kind": "block",
+    "stage": "storybook",
+    "version": null,
+    "workshopPage": null,
+    "story": "blocks-marketing-contactsection--playground",
+    "figmaNode": "1069:849",
+    "lastAudit": "2026-11-16",
+    "lastSyncSha": null,
+    "codeConnect": null
+  },
+  "Footer": {
+    "kind": "block",
+    "stage": "storybook",
+    "version": null,
+    "workshopPage": null,
+    "story": "blocks-marketing-footer--playground",
+    "figmaNode": "1129:3971",
+    "lastAudit": "2026-11-16",
+    "lastSyncSha": null,
+    "codeConnect": null
   }
 }

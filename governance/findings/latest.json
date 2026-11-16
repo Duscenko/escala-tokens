@@ -147,6 +147,19 @@
       "firstSeen": "2026-11-16",
       "lastSeen": "2026-11-16",
       "regression": false
+    },
+    {
+      "id": "CMP-010:Marketing-copy-assumed",
+      "rule": "CMP-002",
+      "severity": "info",
+      "side": "both",
+      "entity": "Marketing",
+      "evidence": "Footer bottom row, FAQ answers, plan features beyond the first card and hero media are plausible copy; the Figma page was read for structure, not every string.",
+      "status": "Open",
+      "resolution": null,
+      "firstSeen": "2026-11-16",
+      "lastSeen": "2026-11-16",
+      "regression": false
     }
   ]
 }

@@ -43,7 +43,8 @@ const motion = (role: string) => `var(--motion-${role}-duration) var(--motion-${
 /** Mounts transparent and low, then settles on a motion role: a content swap, a disclosure or a success moment. */
 function Appear({ role, children, style }: { role: 'use-page-transition' | 'use-disclosure-in' | 'use-celebration'; children: React.ReactNode; style?: React.CSSProperties }) {
   const [on, setOn] = React.useState(false)
-  React.useEffect(() => { const id = requestAnimationFrame(() => setOn(true)); return () => cancelAnimationFrame(id) }, [])
+  // A timer, not requestAnimationFrame: a hidden tab never ticks a frame and the content would stay transparent.
+  React.useEffect(() => { const id = setTimeout(() => setOn(true), 16); return () => clearTimeout(id) }, [])
   return (
     <div style={{ opacity: on ? 1 : 0, transform: on ? 'none' : 'var(--motion-transform-enter, none)', transition: `opacity ${motion(role)}, transform ${motion(role)}`, ...style }}>
       {children}
