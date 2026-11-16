@@ -18,7 +18,7 @@ import { boxedGlyph } from './shared'
 import { Input } from '../input'
 import { InputOTP } from '../input-otp'
 import { ModalHeader } from '../modal'
-import { PasswordStrength, PasswordStrengthMeter } from '../password-strength'
+import { PasswordStrength, PasswordStrengthMeter, scorePassword } from '../password-strength'
 import { SegmentedControl, SegmentedControlItem } from '../segmented-control'
 import { Separator } from '../separator'
 import { SocialLoginButton, type SocialBrand } from '../social-login-button'
@@ -126,6 +126,9 @@ function AuthFooter({ text, linkLabel, onLink, href = '#' }: { text: string; lin
   )
 }
 
+/** A code's slots sit in the middle of the body, under the centred header (the Figma body centres them). */
+const Centered = ({ children }: { children: React.ReactNode }) => <div data-part="code" style={{ display: 'flex', justifyContent: 'center' }}>{children}</div>
+
 const OrRule = ({ label = 'OR' }: { label?: string }) => <Separator align="center" tone="default">{label}</Separator>
 
 interface BlockProps extends Omit<React.ComponentProps<'section'>, 'title' | 'onSubmit'> {
@@ -163,13 +166,15 @@ export function AuthSignIn({ container, status = 'idle', error = 'The email or p
 
 /** Figma `AuthSignUp`. */
 export function AuthSignUp({ container, status = 'idle', error = 'That email already has an account.', onSubmit, onNavigate, ...props }: BlockProps) {
+  // The meter scores what is typed, live (the number of the five rules met).
+  const [password, setPassword] = React.useState('')
   return (
     <AuthShell block="AuthSignUp" container={container} icon={glyph('user-bold')} title="Get started now" description="Create your account in less than a minute." {...props}>
       <Notice open={status === 'invalid'}><Alert variant="critical" appearance="soft" size="sm" description={error} /></Notice>
       <Field label="Full name"><Input placeholder="Ada Lovelace" /></Field>
       <Field label="Email address" state={invalid(status)} error={error}><Input type="email" placeholder="you@company.com" /></Field>
-      <Field label="Password"><Input type="password" placeholder="Create a password" /></Field>
-      <PasswordStrengthMeter size="sm" strength={0} />
+      <Field label="Password"><Input type="password" autoComplete="new-password" placeholder="Create a password" value={password} onChange={(e) => setPassword(e.target.value)} /></Field>
+      <PasswordStrengthMeter size="sm" strength={scorePassword(password)} />
       <div data-part="consent" style={{ display: 'flex', alignItems: 'center', gap: v('spacing.gap-control') }}>
         <Checkbox size="sm" aria-label="I agree to the Terms of Service and Privacy Policy" />
         <span style={{ display: 'flex', flexWrap: 'wrap', gap: v('spacing.gap-tight'), color: v('color.content.secondary'), ...type('body-sm') }}>
@@ -199,7 +204,7 @@ export function AuthSignInPhone({ container, status = 'idle', error = 'Enter a v
 export function AuthOTPVerification({ container, status = 'idle', onSubmit, onNavigate, ...props }: BlockProps) {
   return (
     <AuthShell block="AuthOTPVerification" container={container} icon={glyph('lock')} title="Enter your code" description="We sent a 4-digit code to +49 171 39200 12." {...props}>
-      <InputOTP length={4} variant="outline" aria-label="One-time code" aria-invalid={status === 'invalid' || undefined} />
+      <Centered><InputOTP length={4} variant="outline" aria-label="One-time code" aria-invalid={status === 'invalid' || undefined} /></Centered>
       <Notice open={status === 'invalid'}><Alert variant="critical" appearance="soft" size="sm" description="That code is not right. Try again." /></Notice>
       <Button loading={busy(status)} onClick={onSubmit}>Verify and continue</Button>
       <Button variant="secondary" disabled>Resend code in 00:23</Button>
@@ -215,7 +220,7 @@ export function AuthTwoFactor({ container, status = 'idle', onSubmit, onNavigate
       <div data-part="code-timer" style={{ display: 'flex', justifyContent: 'space-between', color: v('color.content.secondary'), ...type('body-sm') }}>
         <span>Code refreshes in</span><span>00:18</span>
       </div>
-      <InputOTP length={6} variant="outline" aria-label="Authenticator code" aria-invalid={status === 'invalid' || undefined} />
+      <Centered><InputOTP length={6} variant="outline" aria-label="Authenticator code" aria-invalid={status === 'invalid' || undefined} /></Centered>
       <Notice open={status === 'invalid'}><Alert variant="critical" appearance="soft" size="sm" description="That code is not right. Try again." /></Notice>
       <CheckboxItem size="sm" label="Trust this device for 30 days" />
       <Button loading={busy(status)} onClick={onSubmit}>Verify</Button>
@@ -244,10 +249,11 @@ export function AuthForgotPassword({ container, method = 'email', status = 'idle
 
 /** Figma `AuthNewPassword`. */
 export function AuthNewPassword({ container, status = 'idle', error = 'The passwords do not match.', onSubmit, ...props }: BlockProps) {
+  const [password, setPassword] = React.useState('')
   return (
     <AuthShell block="AuthNewPassword" container={container} icon={glyph('lock')} title="Set a new password" description="Your new password must be different from the last one you used." {...props}>
-      <Field label="New password"><Input type="password" placeholder="Create a password" /></Field>
-      <PasswordStrength size="sm" strength={1} rulesVisible />
+      <Field label="New password"><Input type="password" autoComplete="new-password" placeholder="Create a password" value={password} onChange={(e) => setPassword(e.target.value)} /></Field>
+      <PasswordStrength size="sm" value={password} rulesVisible />
       <Field label="Confirm password" state={invalid(status)} error={error}><Input type="password" placeholder="Repeat the password" /></Field>
       <Button loading={busy(status)} onClick={onSubmit}>Update password</Button>
     </AuthShell>
