@@ -21,6 +21,12 @@ describe('custom fonts — rules', () => {
     expect(checkFontStylesheetUrl('not a url')).toEqual({ ok: false, reason: 'invalid' })
   })
 
+  it('refuses an absurdly long stylesheet URL, here and in stored data', () => {
+    const long = `https://use.typekit.net/${'a'.repeat(700)}.css`
+    expect(checkFontStylesheetUrl(long)).toEqual({ ok: false, reason: 'long' })
+    expect(cleanFontSources([{ family: 'Big', kind: 'css', url: long, category: 'Sans-serif' }])).toEqual([])
+  })
+
   it('keeps family names safe to write into CSS', () => {
     expect(normalizeFamilyName('  Space   Grotesk ')).toBe('Space Grotesk')
     expect(normalizeFamilyName("Inter'; } body { color: red")).toBeNull()

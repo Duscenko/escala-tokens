@@ -38,6 +38,7 @@ const URL_ERRORS: Record<string, string> = {
   invalid: 'That is not a URL.',
   https: 'The stylesheet must load over https.',
   credentials: 'Remove the user name or password from the URL.',
+  long: 'That URL is too long for a font stylesheet.',
   host: 'Only stylesheets from Google Fonts, Adobe Fonts, Fontshare and Bunny Fonts can be added.',
 }
 

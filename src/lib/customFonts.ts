@@ -50,9 +50,14 @@ export function normalizeFamilyName(raw: string): string | null {
 
 export type UrlCheck =
   | { ok: true; url: string; provider: string }
-  | { ok: false; reason: 'invalid' | 'https' | 'host' | 'credentials' }
+  | { ok: false; reason: 'invalid' | 'https' | 'host' | 'credentials' | 'long' }
+
+/** A kit URL is ~100–200 characters. The URL is stored in the system, the
+ *  account record (1 MB cap) and every export, so an absurd one is refused. */
+export const MAX_FONT_URL_LENGTH = 600
 
 export function checkFontStylesheetUrl(raw: string): UrlCheck {
+  if (raw.trim().length > MAX_FONT_URL_LENGTH) return { ok: false, reason: 'long' }
   let parsed: URL
   try { parsed = new URL(raw.trim()) } catch { return { ok: false, reason: 'invalid' } }
   if (parsed.protocol !== 'https:') return { ok: false, reason: 'https' }
