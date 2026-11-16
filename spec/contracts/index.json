@@ -6,7 +6,7 @@
     "file": "spec/contracts/Button.json",
     "figmaSet": "Button",
     "story": "buttons-button--playground",
-    "tokens": 39
+    "tokens": 42
   },
   {
     "key": "IconButton",
@@ -383,7 +383,7 @@
     "category": "Form Controls",
     "file": "spec/contracts/Label.json",
     "figmaSet": null,
-    "story": null,
+    "story": "forms-label--playground",
     "tokens": 2
   },
   {
@@ -455,7 +455,7 @@
     "category": "Indicators",
     "file": "spec/contracts/Spinner.json",
     "figmaSet": null,
-    "story": null,
+    "story": "feedback-spinner--playground",
     "tokens": 1
   },
   {
@@ -527,7 +527,7 @@
     "category": "Content & Surfaces",
     "file": "spec/contracts/Card.json",
     "figmaSet": null,
-    "story": null,
+    "story": "content-surfaces-card--playground",
     "tokens": 14
   },
   {

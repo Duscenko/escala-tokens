@@ -84,10 +84,18 @@ export function liftShadow(name: keyof typeof LIFT): string {
   return LIFT[name](v('color.elevation.shadow-key'), v('color.elevation.shadow-ambient'), v('color.elevation.shadow-ring')).join(', ')
 }
 
-/** The surface effects a slot carries: its lift, then the top highlight. */
+/** A stroke drawn OUTSIDE the frame: a 0-blur spread, so the box does not grow. */
+const outerStrokeShadow = (props: SlotProps, v: (ref: string) => string) =>
+  `0 0 0 ${props.outerStrokeWidth && props.outerStrokeWidth !== 'none' ? v(props.outerStrokeWidth) : '1px'} ${v(props.outerStroke!)}`
+
+/** The surface effects a slot carries: its lift, the top highlight, then an outside stroke. */
 function surfaceShadows(props: SlotProps, v: (ref: string) => string): string[] {
   const lift = props.lift && LIFT[props.lift] ? LIFT[props.lift](v('color.elevation.shadow-key'), v('color.elevation.shadow-ambient'), v('color.elevation.shadow-ring')) : []
-  return [...lift, ...(props.highlight && props.highlight !== 'none' ? [highlightShadow(v(props.highlight))] : [])]
+  return [
+    ...lift,
+    ...(props.highlight && props.highlight !== 'none' ? [highlightShadow(v(props.highlight))] : []),
+    ...(props.outerStroke && props.outerStroke !== 'none' ? [outerStrokeShadow(props, v)] : []),
+  ]
 }
 
 /** The element's own border width, for its padding to give back. Registered
@@ -123,7 +131,14 @@ function declarations(props: SlotProps): string[] {
       case 'opacity': out.push(`opacity: ${ref}`); break
       // An unbound text style (Avatar initials): literal px, Medium, line height 100%.
       case 'hairline': out.push(`border-width: ${ref}px`, 'border-style: solid', `${STROKE_WIDTH_VAR}: ${ref}px`); break
-      case 'outerStroke': out.push(`box-shadow: 0 0 0 ${props.outerStrokeWidth && props.outerStrokeWidth !== 'none' ? v(props.outerStrokeWidth) : '1px'} ${color(ref)}`); break
+      // Alone (AvatarStatus) it is the box-shadow; beside a highlight, lift, focus or halo it is
+      // composed into theirs by `surfaceShadows` (a solid Button's rim under its top highlight).
+      case 'outerStroke': {
+        if ('highlight' in props || props.lift || (props.focus && props.focus !== 'none') || (props.halo && props.halo !== 'none')) break
+        if (ref === 'none') break
+        out.push(`box-shadow: ${outerStrokeShadow(props, v)}`)
+        break
+      }
       case 'fontLiteral': out.push(`font-size: ${ref}px`, 'line-height: 100%', 'font-weight: 500', 'letter-spacing: 0'); break
       // A halo fully outside the control (no edge): Figma's `focus-ring` frame,
       // `stroke.focus` wide, stroked OUTSIDE. The transparent outline is what

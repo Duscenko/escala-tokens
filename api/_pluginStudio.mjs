@@ -5258,7 +5258,7 @@ var init_componentCatalogue = __esm({
         axes: [{ name: "Size", values: ["default", "sm"] }],
         figmaSets: ["Card"],
         props: [
-          { name: "size", type: '"default" | "sm"', description: "shadcn's sizes: sm tightens the padding and the gap between parts." },
+          { name: "size", type: '"default" | "sm"', description: "sm tightens the padding and the gap between parts." },
           { name: "CardHeader / CardTitle / CardDescription", type: "component", description: "Heading block." },
           { name: "CardAction", type: "component", description: "An action pinned to the header's top-right corner." },
           { name: "CardContent / CardFooter", type: "component", description: 'Body and the actions row (a link is <Button variant="link">).' }
@@ -9126,15 +9126,13 @@ var init_helpers = __esm({
 });
 
 // src/lib/recipes/actions.ts
-function focusPair(variant, appearance, iconOnly) {
-  if (iconOnly && appearance === "solid") {
-    if (variant === "secondary") return ["border.strong", "border.subtle"];
-    if (variant === "critical") return ["status.critical.border-strong", "status.critical.border"];
-  }
+function focusPair(variant) {
+  if (variant === "secondary") return ["border.strong", "border.subtle"];
+  if (variant === "critical") return ["status.critical.border-strong", "status.critical.border"];
   return ["border.focus", "border.ring.default"];
 }
-function buttonPaint(variant, appearance, state2, iconOnly = false) {
-  const [focusEdge, focusRing] = focusPair(variant, appearance, iconOnly);
+function buttonPaint(variant, appearance, state2) {
+  const [focusEdge, focusRing] = focusPair(variant);
   const ring = state2 === "Focused" ? c(focusRing) : NONE;
   if (state2 === "Disabled") {
     return {
@@ -9153,7 +9151,8 @@ function buttonPaint(variant, appearance, state2, iconOnly = false) {
   const focused = state2 === "Focused";
   if (appearance === "solid") {
     const k2 = SOLID[variant];
-    return { root: { fill: c(k2.fill[step]), stroke: NONE, text: c(k2.ink), focus: focused ? c(focusEdge) : NONE, ring, highlight: c("elevation.highlight"), strokeWidth: strokeOf(appearance) } };
+    const rim = focused ? NONE : c(k2.fill[2]);
+    return { root: { fill: c(k2.fill[step]), stroke: NONE, text: c(k2.ink), focus: focused ? c(focusEdge) : NONE, ring, highlight: c("elevation.highlight"), strokeWidth: strokeOf(appearance), outerStroke: rim, outerStrokeWidth: focused ? "stroke.none" : "stroke.control" } };
   }
   if (appearance === "link") {
     const [rest, over] = LINK[variant];
@@ -9330,7 +9329,7 @@ var init_actions = __esm({
           // The file's icon frame: Size/icon-sm at xs and sm, icon-md at default, icon-lg at lg.
           icon: { width: ICON_BUTTON_GLYPH[size], height: ICON_BUTTON_GLYPH[size] }
         })),
-        part({ Variant: BUTTON_VARIANTS, Appearance: BUTTON_APPEARANCES, State: BUTTON_STATES }, (v, a2, s) => buttonPaint(v, a2, s, true))
+        part({ Variant: BUTTON_VARIANTS, Appearance: BUTTON_APPEARANCES, State: BUTTON_STATES }, (v, a2, s) => buttonPaint(v, a2, s))
       ]
     };
     CLOSE_BUTTON_APPEARANCES = ["solid", "outline", "soft", "ghost"];
@@ -10896,7 +10895,7 @@ function tooltipTriggerInk(variant, state2) {
       return hot ? "action.primary.hover" : "action.primary.default";
   }
 }
-var CARD, MODAL_SIZES, MODAL, MODAL_HEADER, MODAL_FOOTER, SEPARATOR_ORIENTATIONS, SEPARATOR_TONES, SEPARATOR, ACCORDION_VARIANTS, ACCORDION_ITEM_STATES, ACCORDION, ACCORDION_ITEM, IMAGE_RATIOS, IMAGE_SHAPES, IMAGE, POPOVER_SIZES, POPOVER, POPOVER_FOOTER, TOOLTIP_SIZES, TOOLTIP_VARIANTS, TOOLTIP_TRIGGER_STATES, TOOLTIP_TONE, TOOLTIP_CONTENT, TOOLTIP_INFO_TRIGGER, SCROLL_AREA_SIZES, SCROLL_BAR_ORIENTATIONS, SCROLL_APPEARANCES, SCROLL_AREA, SCROLL_BAR_THICKNESS, SCROLL_BAR, SHEET_SIDES, SHEET, BUBBLE_PAINT;
+var CARD, MODAL_SIZES, MODAL, MODAL_HEADER, MODAL_FOOTER, SEPARATOR_ORIENTATIONS, SEPARATOR_TONES, SEPARATOR, ACCORDION_VARIANTS, ACCORDION_ITEM_STATES, ACCORDION, ACCORDION_ITEM, IMAGE_RATIOS, IMAGE_SHAPES, IMAGE, POPOVER_SIZES, POPOVER, POPOVER_FOOTER, TOOLTIP_SIZES, TOOLTIP_VARIANTS, TOOLTIP_TRIGGER_STATES, TOOLTIP_TONE, TOOLTIP_CONTENT, TOOLTIP_INFO_TRIGGER, SCROLL_AREA_SIZES, SCROLL_BAR_ORIENTATIONS, SCROLL_APPEARANCES, SCROLL_AREA, SCROLL_BAR_THICKNESS, SCROLL_BAR, SHEET_SIDES, SHEET;
 var init_surfaces = __esm({
   "src/lib/recipes/surfaces.ts"() {
     init_helpers();
@@ -11203,15 +11202,6 @@ var init_surfaces = __esm({
           return { content: { strokeTopWidth: "stroke.divider", radiusTop: "radius.overlay" } };
         })
       ]
-    };
-    BUBBLE_PAINT = {
-      default: { fill: c("action.primary.default"), stroke: NONE, text: c("content.on-action") },
-      secondary: { fill: c("surface.muted"), stroke: NONE, text: c("content.accent") },
-      muted: { fill: c("surface.layer-2"), stroke: NONE, text: c("content.primary") },
-      tinted: { fill: c("surface.accent"), stroke: NONE, text: c("content.accent") },
-      outline: { fill: c("surface.page"), stroke: c("border.default"), text: c("content.primary") },
-      ghost: { fill: NONE, stroke: NONE, text: c("content.primary"), paddingX: "spacing.0", paddingY: "spacing.0" },
-      destructive: { fill: c("status.critical.surface"), stroke: NONE, text: c("status.critical.content") }
     };
   }
 });

@@ -28,14 +28,13 @@ const SOLID: Record<string, { fill: [string, string, string]; ink: string }> = {
   critical: { fill: ['status.critical.surface-solid', 'status.critical.surface-solid-hover', 'status.critical.surface-solid-pressed'], ink: 'status.critical.on-solid' },
 }
 
-/** The focus edge and ring, read per set from the Figma file (2026-11-12):
- *  Button focuses every combination on Border/focus + Border/ring/default;
- *  IconButton keeps its own on two solid fills. Figma is the rule here. */
-function focusPair(variant: string, appearance: string, iconOnly: boolean): [string, string] {
-  if (iconOnly && appearance === 'solid') {
-    if (variant === 'secondary') return ['border.strong', 'border.subtle']
-    if (variant === 'critical') return ['status.critical.border-strong', 'status.critical.border']
-  }
+/** The focus edge and ring, read per set from the Figma file (re-read 2026-11-16, Button 4:5066 and
+ *  IconButton 614:785): each Variant has its own pair, in every Appearance. The file also sets a paint
+ *  opacity on some of these (secondary edge 50 %, halos 5 · 31 · 42 %); a state never reads opacity
+ *  (hard rule 1), so the roles are copied and the opacity is a finding for the owner (TOK-004). */
+function focusPair(variant: string): [string, string] {
+  if (variant === 'secondary') return ['border.strong', 'border.subtle']
+  if (variant === 'critical') return ['status.critical.border-strong', 'status.critical.border']
   return ['border.focus', 'border.ring.default']
 }
 /** Outline / ghost: the intent's ink and the outline's edge. */
@@ -51,13 +50,14 @@ const LINK: Record<string, [string, string]> = {
   critical: ['status.critical.content', 'status.critical.content'],
 }
 
-/** Only `outline` has a stroke in the Figma file; solid, ghost and link have
- *  none (a transparent CSS border would push the top highlight 1px down).
- *  Focused draws its 2px edge as an inset on top, so nothing shifts. */
+/** Only `outline` has an INSIDE stroke in the Figma file; ghost and link have
+ *  none (a transparent CSS border would push the top highlight 1px down). A solid
+ *  has a 1px stroke OUTSIDE (`outerStroke`, its pressed fill) at rest, hover,
+ *  pressed and loading. Focused draws its 2px edge as an inset on top, so nothing shifts. */
 const strokeOf = (appearance: string) => (appearance === 'outline' ? 'stroke.control' : 'stroke.none')
 
-function buttonPaint(variant: string, appearance: string, state: string, iconOnly = false): SlotMap {
-  const [focusEdge, focusRing] = focusPair(variant, appearance, iconOnly)
+function buttonPaint(variant: string, appearance: string, state: string): SlotMap {
+  const [focusEdge, focusRing] = focusPair(variant)
   const ring = state === 'Focused' ? c(focusRing) : NONE
   if (state === 'Disabled') {
     return {
@@ -79,7 +79,9 @@ function buttonPaint(variant: string, appearance: string, state: string, iconOnl
     // Every solid state but Disabled carries Figma's top highlight. (Its
     // DROP_SHADOW 0 0 0 spread 1 paints nothing: Figma applies spread only to
     // a frame that clips content — measured on the file's own render.)
-    return { root: { fill: c(k.fill[step]), stroke: NONE, text: c(k.ink), focus: focused ? c(focusEdge) : NONE, ring, highlight: c('elevation.highlight'), strokeWidth: strokeOf(appearance) } }
+    // The rim: Figma's 1px OUTSIDE stroke (Stroke/control) in the intent's pressed fill; Focused swaps it for the focus edge.
+    const rim = focused ? NONE : c(k.fill[2])
+    return { root: { fill: c(k.fill[step]), stroke: NONE, text: c(k.ink), focus: focused ? c(focusEdge) : NONE, ring, highlight: c('elevation.highlight'), strokeWidth: strokeOf(appearance), outerStroke: rim, outerStrokeWidth: focused ? 'stroke.none' : 'stroke.control' } }
   }
   if (appearance === 'link') {
     const [rest, over] = LINK[variant]
@@ -138,7 +140,7 @@ export const ICON_BUTTON: ComponentRecipe = {
       // The file's icon frame: Size/icon-sm at xs and sm, icon-md at default, icon-lg at lg.
       icon: { width: ICON_BUTTON_GLYPH[size], height: ICON_BUTTON_GLYPH[size] },
     })),
-    part({ Variant: BUTTON_VARIANTS, Appearance: BUTTON_APPEARANCES, State: BUTTON_STATES }, (v, a, s) => buttonPaint(v, a, s, true)),
+    part({ Variant: BUTTON_VARIANTS, Appearance: BUTTON_APPEARANCES, State: BUTTON_STATES }, (v, a, s) => buttonPaint(v, a, s)),
   ],
 }
 

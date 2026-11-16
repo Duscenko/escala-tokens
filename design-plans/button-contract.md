@@ -43,26 +43,36 @@ Figma usa `inset-control` en los cuatro tamaños. El gap de xs era `spacing.1`; 
 
 ## Color por combinación y estado
 
+Releído en vivo el 16-11-2026 (Button `4:5066`, IconButton `614:785`), igual en los dos sets:
+
+- **Foco:** un par por Variant, el mismo en los cuatro Appearance (la tabla).
+- **Borde exterior de las sólidas:** 1 px por FUERA (`Stroke/control`) en el `pressed` de su intención
+  (`action.primary.pressed` · `action.secondary.pressed` · `status.critical.surface-solid-pressed`) en
+  Default · Hover · Pressed · Loading; Focused lo cambia por el borde de foco, Disabled no lleva. Código:
+  `outerStroke`, compuesto bajo el brillo superior en un solo `box-shadow`.
+- **Raro en el archivo (no se copia):** opacidad de pintura sobre roles — borde de foco secondary al 50 %,
+  halos al 5 · 31 · 42 %, borde outline secondary de IconButton al 15 %. Un estado nunca lee opacidad
+  (regla 1): se copian los roles y queda como hallazgo `TOK-004` para el dueño.
+
 Ink = texto e iconos (comparten `currentColor`). Disabled: relleno `action.disabled.default`
 en las sólidas, borde `border.control` en las outline, ink `content.disabled`.
 
-| Variant · Appearance | Default | Hover | Pressed | Foco (borde) |
+| Variant · Appearance | Default | Hover | Pressed | Foco (borde + halo) |
 |---|---|---|---|---|
-| default · solid | fill `action.primary.default` · ink `content.on-action` | `action.primary.hover` | `action.primary.pressed` | `border.focus` |
-| default · outline | stroke `border.accent` · ink `content.accent` | + fill `action.ghost.hover` | + `action.ghost.pressed` | `border.focus` |
-| default · ghost | ink `content.accent` | fill `action.ghost.hover` | `action.ghost.pressed` | `border.focus` |
-| default · link | ink `content.link.default` | ink `content.link.hover` | ink `content.link.hover` | `border.focus` |
-| secondary · solid | fill `action.secondary.default` · ink `content.on-secondary` | `.hover` | `.pressed` | Button `border.focus` · IconButton **`border.strong`** + halo `border.subtle` |
-| secondary · outline | stroke `border.control` · ink `content.primary` | + fill `action.ghost.hover` | + `action.ghost.pressed` | `border.focus` |
-| secondary · ghost | ink `content.primary` | fill `action.ghost.hover` | `action.ghost.pressed` | `border.focus` |
-| secondary · link | ink `content.secondary` | ink `content.primary` | ink `content.primary` | `border.focus` |
-| critical · solid | fill `status.critical.surface-solid` · ink `status.critical.on-solid` | `-hover` | `-pressed` | Button `border.focus` · IconButton **`status.critical.border-strong`** + halo `status.critical.border` |
-| critical · outline | stroke `status.critical.border-strong` · ink `status.critical.content` | + fill `action.ghost.hover` | + `action.ghost.pressed` | `border.focus` |
-| critical · ghost | ink `status.critical.content` | fill `action.ghost.hover` | `action.ghost.pressed` | `border.focus` |
-| critical · link | ink `status.critical.content` | + subrayado | + subrayado | `border.focus` |
+| default · solid | fill `action.primary.default` · ink `content.on-action` | `action.primary.hover` | `action.primary.pressed` | `border.focus` + halo `border.ring.default` |
+| default · outline | stroke `border.accent` · ink `content.accent` | + fill `action.ghost.hover` | + `action.ghost.pressed` | `border.focus` + halo `border.ring.default` |
+| default · ghost | ink `content.accent` | fill `action.ghost.hover` | `action.ghost.pressed` | `border.focus` + halo `border.ring.default` |
+| default · link | ink `content.link.default` | ink `content.link.hover` | ink `content.link.hover` | `border.focus` + halo `border.ring.default` |
+| secondary · solid | fill `action.secondary.default` · ink `content.on-secondary` | `.hover` | `.pressed` | `border.strong` + halo `border.subtle` |
+| secondary · outline | stroke `border.control` · ink `content.primary` | + fill `action.ghost.hover` | + `action.ghost.pressed` | `border.strong` + halo `border.subtle` |
+| secondary · ghost | ink `content.primary` | fill `action.ghost.hover` | `action.ghost.pressed` | `border.strong` + halo `border.subtle` |
+| secondary · link | ink `content.secondary` | ink `content.primary` | ink `content.primary` | `border.strong` + halo `border.subtle` |
+| critical · solid | fill `status.critical.surface-solid` · ink `status.critical.on-solid` | `-hover` | `-pressed` | `status.critical.border-strong` + halo `status.critical.border` |
+| critical · outline | stroke `status.critical.border-strong` · ink `status.critical.content` | + fill `action.ghost.hover` | + `action.ghost.pressed` | `status.critical.border-strong` + halo `status.critical.border` |
+| critical · ghost | ink `status.critical.content` | fill `action.ghost.hover` | `action.ghost.pressed` | `status.critical.border-strong` + halo `status.critical.border` |
+| critical · link | ink `status.critical.content` | + subrayado | + subrayado | `status.critical.border-strong` + halo `status.critical.border` |
 
-Todas las variantes en foco añaden el halo `border.ring.default` fuera del borde, salvo las
-dos de IconButton marcadas arriba. Así está en el archivo (2026-11-12) y así lo copia el código.
+El halo va siempre fuera del borde (2 px). Button e IconButton enfocan igual (archivo, 16-11-2026).
 Loading = Default con spinner en lugar del icono inicial.
 
 **Regla:** el código copia el archivo tal cual; Figma no se edita para hacerlo coherente.

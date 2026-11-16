@@ -5328,7 +5328,9 @@
                 "focus": "none",
                 "ring": "none",
                 "highlight": "color.elevation.highlight",
-                "strokeWidth": "stroke.none"
+                "strokeWidth": "stroke.none",
+                "outerStroke": "color.action.primary.pressed",
+                "outerStrokeWidth": "stroke.control"
               }
             },
             "default|solid|Hover": {
@@ -5339,7 +5341,9 @@
                 "focus": "none",
                 "ring": "none",
                 "highlight": "color.elevation.highlight",
-                "strokeWidth": "stroke.none"
+                "strokeWidth": "stroke.none",
+                "outerStroke": "color.action.primary.pressed",
+                "outerStrokeWidth": "stroke.control"
               }
             },
             "default|solid|Pressed": {
@@ -5350,7 +5354,9 @@
                 "focus": "none",
                 "ring": "none",
                 "highlight": "color.elevation.highlight",
-                "strokeWidth": "stroke.none"
+                "strokeWidth": "stroke.none",
+                "outerStroke": "color.action.primary.pressed",
+                "outerStrokeWidth": "stroke.control"
               }
             },
             "default|solid|Focused": {
@@ -5361,7 +5367,9 @@
                 "focus": "color.border.focus",
                 "ring": "color.border.ring.default",
                 "highlight": "color.elevation.highlight",
-                "strokeWidth": "stroke.none"
+                "strokeWidth": "stroke.none",
+                "outerStroke": "none",
+                "outerStrokeWidth": "stroke.none"
               }
             },
             "default|solid|Loading": {
@@ -5372,7 +5380,9 @@
                 "focus": "none",
                 "ring": "none",
                 "highlight": "color.elevation.highlight",
-                "strokeWidth": "stroke.none"
+                "strokeWidth": "stroke.none",
+                "outerStroke": "color.action.primary.pressed",
+                "outerStrokeWidth": "stroke.control"
               }
             },
             "default|solid|Disabled": {
@@ -5592,7 +5602,9 @@
                 "focus": "none",
                 "ring": "none",
                 "highlight": "color.elevation.highlight",
-                "strokeWidth": "stroke.none"
+                "strokeWidth": "stroke.none",
+                "outerStroke": "color.action.secondary.pressed",
+                "outerStrokeWidth": "stroke.control"
               }
             },
             "secondary|solid|Hover": {
@@ -5603,7 +5615,9 @@
                 "focus": "none",
                 "ring": "none",
                 "highlight": "color.elevation.highlight",
-                "strokeWidth": "stroke.none"
+                "strokeWidth": "stroke.none",
+                "outerStroke": "color.action.secondary.pressed",
+                "outerStrokeWidth": "stroke.control"
               }
             },
             "secondary|solid|Pressed": {
@@ -5614,7 +5628,9 @@
                 "focus": "none",
                 "ring": "none",
                 "highlight": "color.elevation.highlight",
-                "strokeWidth": "stroke.none"
+                "strokeWidth": "stroke.none",
+                "outerStroke": "color.action.secondary.pressed",
+                "outerStrokeWidth": "stroke.control"
               }
             },
             "secondary|solid|Focused": {
@@ -5622,10 +5638,12 @@
                 "fill": "color.action.secondary.default",
                 "stroke": "none",
                 "text": "color.content.on-secondary",
-                "focus": "color.border.focus",
-                "ring": "color.border.ring.default",
+                "focus": "color.border.strong",
+                "ring": "color.border.subtle",
                 "highlight": "color.elevation.highlight",
-                "strokeWidth": "stroke.none"
+                "strokeWidth": "stroke.none",
+                "outerStroke": "none",
+                "outerStrokeWidth": "stroke.none"
               }
             },
             "secondary|solid|Loading": {
@@ -5636,7 +5654,9 @@
                 "focus": "none",
                 "ring": "none",
                 "highlight": "color.elevation.highlight",
-                "strokeWidth": "stroke.none"
+                "strokeWidth": "stroke.none",
+                "outerStroke": "color.action.secondary.pressed",
+                "outerStrokeWidth": "stroke.control"
               }
             },
             "secondary|solid|Disabled": {
@@ -5688,8 +5708,8 @@
                 "fill": "none",
                 "stroke": "color.border.control",
                 "text": "color.content.primary",
-                "focus": "color.border.focus",
-                "ring": "color.border.ring.default",
+                "focus": "color.border.strong",
+                "ring": "color.border.subtle",
                 "highlight": "none",
                 "strokeWidth": "stroke.control"
               }
@@ -5754,8 +5774,8 @@
                 "fill": "none",
                 "stroke": "none",
                 "text": "color.content.primary",
-                "focus": "color.border.focus",
-                "ring": "color.border.ring.default",
+                "focus": "color.border.strong",
+                "ring": "color.border.subtle",
                 "highlight": "none",
                 "strokeWidth": "stroke.none"
               }
@@ -5820,8 +5840,8 @@
                 "fill": "none",
                 "stroke": "none",
                 "text": "color.content.secondary",
-                "focus": "color.border.focus",
-                "ring": "color.border.ring.default",
+                "focus": "color.border.strong",
+                "ring": "color.border.subtle",
                 "highlight": "none",
                 "strokeWidth": "stroke.none"
               }
@@ -5856,7 +5876,9 @@
                 "focus": "none",
                 "ring": "none",
                 "highlight": "color.elevation.highlight",
-                "strokeWidth": "stroke.none"
+                "strokeWidth": "stroke.none",
+                "outerStroke": "color.status.critical.surface-solid-pressed",
+                "outerStrokeWidth": "stroke.control"
               }
             },
             "critical|solid|Hover": {
@@ -5867,7 +5889,9 @@
                 "focus": "none",
                 "ring": "none",
                 "highlight": "color.elevation.highlight",
-                "strokeWidth": "stroke.none"
+                "strokeWidth": "stroke.none",
+                "outerStroke": "color.status.critical.surface-solid-pressed",
+                "outerStrokeWidth": "stroke.control"
               }
             },
             "critical|solid|Pressed": {
@@ -5878,7 +5902,9 @@
                 "focus": "none",
                 "ring": "none",
                 "highlight": "color.elevation.highlight",
-                "strokeWidth": "stroke.none"
+                "strokeWidth": "stroke.none",
+                "outerStroke": "color.status.critical.surface-solid-pressed",
+                "outerStrokeWidth": "stroke.control"
               }
             },
             "critical|solid|Focused": {
@@ -5886,10 +5912,12 @@
                 "fill": "color.status.critical.surface-solid",
                 "stroke": "none",
                 "text": "color.status.critical.on-solid",
-                "focus": "color.border.focus",
-                "ring": "color.border.ring.default",
+                "focus": "color.status.critical.border-strong",
+                "ring": "color.status.critical.border",
                 "highlight": "color.elevation.highlight",
-                "strokeWidth": "stroke.none"
+                "strokeWidth": "stroke.none",
+                "outerStroke": "none",
+                "outerStrokeWidth": "stroke.none"
               }
             },
             "critical|solid|Loading": {
@@ -5900,7 +5928,9 @@
                 "focus": "none",
                 "ring": "none",
                 "highlight": "color.elevation.highlight",
-                "strokeWidth": "stroke.none"
+                "strokeWidth": "stroke.none",
+                "outerStroke": "color.status.critical.surface-solid-pressed",
+                "outerStrokeWidth": "stroke.control"
               }
             },
             "critical|solid|Disabled": {
@@ -5952,8 +5982,8 @@
                 "fill": "none",
                 "stroke": "color.status.critical.border-strong",
                 "text": "color.status.critical.content",
-                "focus": "color.border.focus",
-                "ring": "color.border.ring.default",
+                "focus": "color.status.critical.border-strong",
+                "ring": "color.status.critical.border",
                 "highlight": "none",
                 "strokeWidth": "stroke.control"
               }
@@ -6018,8 +6048,8 @@
                 "fill": "none",
                 "stroke": "none",
                 "text": "color.status.critical.content",
-                "focus": "color.border.focus",
-                "ring": "color.border.ring.default",
+                "focus": "color.status.critical.border-strong",
+                "ring": "color.status.critical.border",
                 "highlight": "none",
                 "strokeWidth": "stroke.none"
               }
@@ -6084,8 +6114,8 @@
                 "fill": "none",
                 "stroke": "none",
                 "text": "color.status.critical.content",
-                "focus": "color.border.focus",
-                "ring": "color.border.ring.default",
+                "focus": "color.status.critical.border-strong",
+                "ring": "color.status.critical.border",
                 "highlight": "none",
                 "strokeWidth": "stroke.none"
               }
@@ -6216,7 +6246,9 @@
                 "focus": "none",
                 "ring": "none",
                 "highlight": "color.elevation.highlight",
-                "strokeWidth": "stroke.none"
+                "strokeWidth": "stroke.none",
+                "outerStroke": "color.action.primary.pressed",
+                "outerStrokeWidth": "stroke.control"
               }
             },
             "default|solid|Hover": {
@@ -6227,7 +6259,9 @@
                 "focus": "none",
                 "ring": "none",
                 "highlight": "color.elevation.highlight",
-                "strokeWidth": "stroke.none"
+                "strokeWidth": "stroke.none",
+                "outerStroke": "color.action.primary.pressed",
+                "outerStrokeWidth": "stroke.control"
               }
             },
             "default|solid|Pressed": {
@@ -6238,7 +6272,9 @@
                 "focus": "none",
                 "ring": "none",
                 "highlight": "color.elevation.highlight",
-                "strokeWidth": "stroke.none"
+                "strokeWidth": "stroke.none",
+                "outerStroke": "color.action.primary.pressed",
+                "outerStrokeWidth": "stroke.control"
               }
             },
             "default|solid|Focused": {
@@ -6249,7 +6285,9 @@
                 "focus": "color.border.focus",
                 "ring": "color.border.ring.default",
                 "highlight": "color.elevation.highlight",
-                "strokeWidth": "stroke.none"
+                "strokeWidth": "stroke.none",
+                "outerStroke": "none",
+                "outerStrokeWidth": "stroke.none"
               }
             },
             "default|solid|Loading": {
@@ -6260,7 +6298,9 @@
                 "focus": "none",
                 "ring": "none",
                 "highlight": "color.elevation.highlight",
-                "strokeWidth": "stroke.none"
+                "strokeWidth": "stroke.none",
+                "outerStroke": "color.action.primary.pressed",
+                "outerStrokeWidth": "stroke.control"
               }
             },
             "default|solid|Disabled": {
@@ -6480,7 +6520,9 @@
                 "focus": "none",
                 "ring": "none",
                 "highlight": "color.elevation.highlight",
-                "strokeWidth": "stroke.none"
+                "strokeWidth": "stroke.none",
+                "outerStroke": "color.action.secondary.pressed",
+                "outerStrokeWidth": "stroke.control"
               }
             },
             "secondary|solid|Hover": {
@@ -6491,7 +6533,9 @@
                 "focus": "none",
                 "ring": "none",
                 "highlight": "color.elevation.highlight",
-                "strokeWidth": "stroke.none"
+                "strokeWidth": "stroke.none",
+                "outerStroke": "color.action.secondary.pressed",
+                "outerStrokeWidth": "stroke.control"
               }
             },
             "secondary|solid|Pressed": {
@@ -6502,7 +6546,9 @@
                 "focus": "none",
                 "ring": "none",
                 "highlight": "color.elevation.highlight",
-                "strokeWidth": "stroke.none"
+                "strokeWidth": "stroke.none",
+                "outerStroke": "color.action.secondary.pressed",
+                "outerStrokeWidth": "stroke.control"
               }
             },
             "secondary|solid|Focused": {
@@ -6513,7 +6559,9 @@
                 "focus": "color.border.strong",
                 "ring": "color.border.subtle",
                 "highlight": "color.elevation.highlight",
-                "strokeWidth": "stroke.none"
+                "strokeWidth": "stroke.none",
+                "outerStroke": "none",
+                "outerStrokeWidth": "stroke.none"
               }
             },
             "secondary|solid|Loading": {
@@ -6524,7 +6572,9 @@
                 "focus": "none",
                 "ring": "none",
                 "highlight": "color.elevation.highlight",
-                "strokeWidth": "stroke.none"
+                "strokeWidth": "stroke.none",
+                "outerStroke": "color.action.secondary.pressed",
+                "outerStrokeWidth": "stroke.control"
               }
             },
             "secondary|solid|Disabled": {
@@ -6576,8 +6626,8 @@
                 "fill": "none",
                 "stroke": "color.border.control",
                 "text": "color.content.primary",
-                "focus": "color.border.focus",
-                "ring": "color.border.ring.default",
+                "focus": "color.border.strong",
+                "ring": "color.border.subtle",
                 "highlight": "none",
                 "strokeWidth": "stroke.control"
               }
@@ -6642,8 +6692,8 @@
                 "fill": "none",
                 "stroke": "none",
                 "text": "color.content.primary",
-                "focus": "color.border.focus",
-                "ring": "color.border.ring.default",
+                "focus": "color.border.strong",
+                "ring": "color.border.subtle",
                 "highlight": "none",
                 "strokeWidth": "stroke.none"
               }
@@ -6708,8 +6758,8 @@
                 "fill": "none",
                 "stroke": "none",
                 "text": "color.content.secondary",
-                "focus": "color.border.focus",
-                "ring": "color.border.ring.default",
+                "focus": "color.border.strong",
+                "ring": "color.border.subtle",
                 "highlight": "none",
                 "strokeWidth": "stroke.none"
               }
@@ -6744,7 +6794,9 @@
                 "focus": "none",
                 "ring": "none",
                 "highlight": "color.elevation.highlight",
-                "strokeWidth": "stroke.none"
+                "strokeWidth": "stroke.none",
+                "outerStroke": "color.status.critical.surface-solid-pressed",
+                "outerStrokeWidth": "stroke.control"
               }
             },
             "critical|solid|Hover": {
@@ -6755,7 +6807,9 @@
                 "focus": "none",
                 "ring": "none",
                 "highlight": "color.elevation.highlight",
-                "strokeWidth": "stroke.none"
+                "strokeWidth": "stroke.none",
+                "outerStroke": "color.status.critical.surface-solid-pressed",
+                "outerStrokeWidth": "stroke.control"
               }
             },
             "critical|solid|Pressed": {
@@ -6766,7 +6820,9 @@
                 "focus": "none",
                 "ring": "none",
                 "highlight": "color.elevation.highlight",
-                "strokeWidth": "stroke.none"
+                "strokeWidth": "stroke.none",
+                "outerStroke": "color.status.critical.surface-solid-pressed",
+                "outerStrokeWidth": "stroke.control"
               }
             },
             "critical|solid|Focused": {
@@ -6777,7 +6833,9 @@
                 "focus": "color.status.critical.border-strong",
                 "ring": "color.status.critical.border",
                 "highlight": "color.elevation.highlight",
-                "strokeWidth": "stroke.none"
+                "strokeWidth": "stroke.none",
+                "outerStroke": "none",
+                "outerStrokeWidth": "stroke.none"
               }
             },
             "critical|solid|Loading": {
@@ -6788,7 +6846,9 @@
                 "focus": "none",
                 "ring": "none",
                 "highlight": "color.elevation.highlight",
-                "strokeWidth": "stroke.none"
+                "strokeWidth": "stroke.none",
+                "outerStroke": "color.status.critical.surface-solid-pressed",
+                "outerStrokeWidth": "stroke.control"
               }
             },
             "critical|solid|Disabled": {
@@ -6840,8 +6900,8 @@
                 "fill": "none",
                 "stroke": "color.status.critical.border-strong",
                 "text": "color.status.critical.content",
-                "focus": "color.border.focus",
-                "ring": "color.border.ring.default",
+                "focus": "color.status.critical.border-strong",
+                "ring": "color.status.critical.border",
                 "highlight": "none",
                 "strokeWidth": "stroke.control"
               }
@@ -6906,8 +6966,8 @@
                 "fill": "none",
                 "stroke": "none",
                 "text": "color.status.critical.content",
-                "focus": "color.border.focus",
-                "ring": "color.border.ring.default",
+                "focus": "color.status.critical.border-strong",
+                "ring": "color.status.critical.border",
                 "highlight": "none",
                 "strokeWidth": "stroke.none"
               }
@@ -6972,8 +7032,8 @@
                 "fill": "none",
                 "stroke": "none",
                 "text": "color.status.critical.content",
-                "focus": "color.border.focus",
-                "ring": "color.border.ring.default",
+                "focus": "color.status.critical.border-strong",
+                "ring": "color.status.critical.border",
                 "highlight": "none",
                 "strokeWidth": "stroke.none"
               }
