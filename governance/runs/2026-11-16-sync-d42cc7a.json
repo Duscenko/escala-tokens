@@ -1,0 +1,10 @@
+{
+  "run": "2026-11-16 sync d42cc7a",
+  "figmaFile": "7j5zukN5HpihGVJMmyjA20",
+  "namedVersion": "NOT SAVED: figma.saveVersionHistoryAsync is not available through use_figma. Substitute: the rule-based revert below.",
+  "writes": [
+    { "what": "Avatar + AvatarGroup, Shape=rounded: every own layer bound to Radius/control → Radius/action", "nodes": 278 },
+    { "what": "Chip, Shape=rounded sizes xs · sm · default: own layers (no nested instances) bound to Radius/control → Radius/action", "nodes": 168 }
+  ],
+  "revert": "In the same sets, Shape=rounded: rebind own-layer radii of Avatar / AvatarGroup / Chip xs·sm·default from Radius/action back to Radius/control."
+}

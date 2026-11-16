@@ -1,1 +1,87 @@
-{ "generated": "2026-11-16", "findings": [] }
+{
+  "generated": "2026-11-16",
+  "findings": [
+    {
+      "id": "COL-002:Border/control",
+      "rule": "COL-002",
+      "severity": "error",
+      "side": "both",
+      "entity": "Border/control",
+      "evidence": "Black/White Alpha 03 ≈ 1.4:1, floor 3:1 (07/06)",
+      "status": "Open",
+      "resolution": null,
+      "firstSeen": "2026-11-16",
+      "lastSeen": "2026-11-16",
+      "regression": false,
+      "ticket": 12
+    },
+    {
+      "id": "COL-003:FeaturedIcon/gradient/dark/warning,info",
+      "rule": "COL-003",
+      "severity": "warn",
+      "side": "both",
+      "entity": "FeaturedIcon",
+      "evidence": "Dark warning/info gradient stops converge on pale tones",
+      "status": "Open",
+      "resolution": null,
+      "firstSeen": "2026-11-16",
+      "lastSeen": "2026-11-16",
+      "regression": false,
+      "ticket": 13
+    },
+    {
+      "id": "FIG-001:critical-solids-pinned-vs-solved",
+      "rule": "DEPARTURE",
+      "severity": "info",
+      "side": "code",
+      "entity": "status.critical",
+      "evidence": "Owner keeps Error/09 (Light) and Error Dark/08 (Dark); the code SOLVES the same steps for the default system and keeps the contrast guarantee for custom error seeds. Not pinned.",
+      "status": "Accepted",
+      "resolution": {
+        "ref": "DEC-2026-11-16-003"
+      },
+      "firstSeen": "2026-11-16",
+      "lastSeen": "2026-11-16",
+      "regression": false
+    },
+    {
+      "id": "SNP-001:spec/figma-components.json-stale",
+      "rule": "DEPARTURE",
+      "severity": "warn",
+      "side": "code",
+      "entity": "spec/figma-components.json",
+      "evidence": "Snapshot predates FeaturedIcon gradient; re-export needs a Figma run (live checksum d06cd1d9). Ledger key `ahead` carries it.",
+      "status": "Open",
+      "resolution": null,
+      "firstSeen": "2026-11-16",
+      "lastSeen": "2026-11-16",
+      "regression": false
+    },
+    {
+      "id": "CMP-005:InputTagChip-radius",
+      "rule": "CMP-002",
+      "severity": "info",
+      "side": "both",
+      "entity": "InputTagChip",
+      "evidence": "Radius moved 8 → 4 with radius.control (not in A3). Check against Figma.",
+      "status": "Open",
+      "resolution": null,
+      "firstSeen": "2026-11-16",
+      "lastSeen": "2026-11-16",
+      "regression": false
+    },
+    {
+      "id": "FIG-Q-B:comments-4",
+      "rule": "figma-comment",
+      "severity": "info",
+      "side": "figma",
+      "entity": "owner comments",
+      "evidence": "4 owner threads, issues #14-#17",
+      "status": "Open",
+      "resolution": null,
+      "firstSeen": "2026-11-16",
+      "lastSeen": "2026-11-16",
+      "regression": false
+    }
+  ]
+}
