@@ -6077,3 +6077,48 @@ npm run bundle:plugin  # → public/escala-figma-plugin.zip + src/lib/pluginVers
 > **Shadows (Storybook only, like the palette):** `applyFigmaFileShadows` (`figmaFilePalette.ts`) pins the file's `Shadow/*` recipe
 > on the brand as its own Light and Dark `--shadow-*` ramp (ring · key · ambient in the Elevation role colours); the web's default
 > `Soft` ramp is untouched. Not compared: gradients (no story paints them), dimensions, type, motion, layer bindings.
+
+
+## Notes added after the archive (consolidated 2026-11-17)
+
+> **UPDATE (2026-11-16, owner's call): the platform's Components and Blocks ARE the Storybook's.** The owner wants
+> a curated set of Escala's own components on the platform, never the shadcn-era leftovers.
+> - **Components** lists the 51 Storybook families (`lib/platformCatalogue.ts`, read from
+>   `spec/storybook-families.json`, the manifest the Storybook sidebar is written from), in its six folders, named as
+>   Figma names them (`IconButton`, `DatePicker`). A family's parts open from the **Anatomy** section of its page, never
+>   as directory rows. `COMPONENTS` keeps the 25 shadcn-era entries (Card, Drawer, Command, Chart…) because export, agent
+>   context and the plugin read it, but the directory, the index, the board's covers, Related, prev/next, public
+>   `/components/*` and the sitemap do not show them, and `selectComponent` sends one to the index.
+>   `platformCatalogue.test.ts` holds the list equal to the manifest and names the hidden 25.
+> - **Blocks** is a new tab (top bar About · Generator · Components · **Blocks** · Docs, and the workspace rail), the
+>   same canvas as Components: `BlocksView` + `BlocksRail`, `?section=blocks/<Group>/<Name>`. `blocks/blockRegistry.tsx`
+>   renders the real `escala-ui/blocks` with the controls their stories expose and reads each `*.contract.json` (built
+>   from, accessibility, motion). An Overlay block opens as the real dialog. `platformBlocks.test.ts` holds it equal to
+>   `apps/storybook/stories/blocks`. **A new block story needs an entry there.**
+> - Found on the way: `Modal` portaled to `<body>` and ignored `usePortalContainer` (Sheet already used it), so a dialog
+>   opened from a themed preview lost its brand. And the blocks' `type()` helper hand-wrote `--text-<role>-*`, which
+>   does not exist for a scale STEP (`display-lg`, `display-sm`): every hero and section title fell to 18px, in Storybook
+>   too. It is `blockType()` now (`blocks/shared.tsx`, names from `cssVarOf`), the steps are in `BLOCK_ONLY_REFS`, and
+>   `blockRefsProvided.test.ts` checks `type('…')` as well as `v('…')`.
+
+> **UPDATE (2026-11-16): the Board's tiles all end on the column edges, and a narrow canvas SLIDES.**
+> Reported as the Calendar having more air at its sides than the other tiles. Measured: its slot was
+> 375px, the panel 357.6px, centred — 8.7px short on each side. Cause: the column is
+> `max(frame.source, blocks)`; with the default theme the OTP's six cells (322px) set it, not the
+> blocks, so the slot is wider than the file's panel.
+> - **The Calendar FILLS its slot** (`SpecimenProps.w` on the Calendar specimen, `heavy.tsx`): beside a
+>   presets rail the RAIL takes the spare width; with no rail (the phone tile) the weeks spread their
+>   seven cells. Day cells never grow. The board reads the panel's own width with the fill taken away
+>   for a moment (`width: max-content` inside the layout effect), as `ScaledModule` reads a stretched
+>   tile's natural height. A new block placed in a derived slot must fill it or be the one measured.
+> - **One scale, exactly:** `photo()` rounds only the painted width (rounding the source too gave
+>   0.7542 · 0.7545 · 0.7547 on one board), and `CollageFrameContext.source` is `unit`, not
+>   `frame.source` (a theme whose blocks set the column photographed its tiles larger than the blocks).
+> - **`BOARD_MIN_COLUMN` = 160 (half size). Below four columns at that width the board SLIDES sideways**
+>   in its own scrollport (`data-board-slides`): it bleeds through the canvas inset, snaps on the bento
+>   columns, and the canvas never scrolls sideways. Before it hung 17–40px past the canvas. Tablet /
+>   Mobile were already a sideways strip of phones.
+> - The board's FileUpload is the default size: sm puts name · status · meta · actions on one line and
+>   left the file name 0px wide in a tile.
+> Measured after: 7 shifts on load, CLS 0.027, zero at rest (see the `ScaledModule` note above).
+

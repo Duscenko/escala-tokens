@@ -126,7 +126,6 @@ function collageFrame(t: PreviewTokens, copy: {
   const button = fontPx(t, 'button', 14)
   const heading = fontPx(t, 'heading-sm', 16)
   const helper = fontPx(t, 'helper', 12)
-  const body = fontPx(t, 'body-sm', 14)
   const gapC = px(spacingRoleOf(t, 'gap-control', '8px')) || 8
   // SM button: pad 14, icon 14, gap 6 — the specimen's own chrome, not a token.
   const pairCell = 14 * 2 + 14 + 6 + labelPx(button, copy.pair)
@@ -148,8 +147,16 @@ function collageFrame(t: PreviewTokens, copy: {
 }
 /** Columns of the desktop board. The top row's two style cards span two each. */
 const BOARD_COLUMNS = 4
-/** Floor for a board column — below it the photographs stop being legible. */
-const BOARD_MIN_COLUMN = 140
+/**
+ * Floor for a board column: half the true size of a tile. Below it the
+ * photographs stop being legible, so a canvas too narrow for four columns at
+ * this width does not shrink the board further — the board SLIDES sideways
+ * (see `slides` in `SystemCollage`).
+ */
+const BOARD_MIN_COLUMN = 160
+/** The canvas's own side inset (`CANVAS_INSET`, px-5): a sliding board bleeds
+ *  through it, so its tiles are cut by the canvas edge, not by an inner box. */
+const BOARD_SLIDE_BLEED = 20
 
 /**
  * COLOR STYLE — the palette at a glance: the accent as a 12-step ramp
@@ -796,8 +803,16 @@ export function SystemCollage({
   const display = phones ? phoneInner : boardDisplay
   const scale = display / unit
   const boardSpan = BOARD_COLUMNS * display + (BOARD_COLUMNS - 1) * gutterPx
-  /** A photo `frameWidth` wide at the board's scale. */
-  const photo = (frameWidth: number) => ({ frameWidth: Math.round(frameWidth), sourceWidth: Math.round(frameWidth / scale) })
+  // The canvas cannot hold four columns at the floor: the board keeps the floor
+  // and slides sideways inside its own scrollport, column by column.
+  const slides = !phones && boardWidth > 0 && boardSpan > boardWidth + 0.5
+  /** A photo `frameWidth` wide at the board's scale. Only the painted width is
+   *  a whole pixel: rounding the source too gave each width its own scale
+   *  (0.7542 · 0.7545 · 0.7547 on one board). */
+  const photo = (frameWidth: number) => {
+    const painted = Math.round(frameWidth)
+    return { frameWidth: painted, sourceWidth: painted / scale }
+  }
   const widePhoto = photo(display * 2 + gutterPx)
   const signInPhoto = photo(blockWidths.signIn * scale)
   // The Calendar's slot takes whatever SignIn and the last column leave, so
@@ -815,9 +830,20 @@ export function SystemCollage({
     const auth = root.querySelector<HTMLElement>('[data-board-block="signIn"] [data-block="AuthSignIn"]')
     const cal = root.querySelector<HTMLElement>('[data-board-block="calendar"] [data-slot="calendar"]')
     const share = root.querySelector<HTMLElement>('[data-board-block="share"] [data-block="ShareModal"]')
+    // The Calendar fills its slot, so its rendered width is the slot's. The
+    // width the file draws it at is read with the fill taken away for a moment
+    // (same task, nothing paints in between) — as `ScaledModule` reads a
+    // stretched tile's natural height.
+    let calendar = blockWidths.calendar
+    if (cal) {
+      const kept = cal.style.width
+      cal.style.width = 'max-content'
+      calendar = cal.offsetWidth || calendar
+      cal.style.width = kept
+    }
     const next = {
       signIn: auth ? parseFloat(getComputedStyle(auth).maxWidth) || blockWidths.signIn : blockWidths.signIn,
-      calendar: cal?.offsetWidth || blockWidths.calendar,
+      calendar,
       share: share?.offsetWidth || blockWidths.share,
     }
     if (Math.abs(next.signIn - blockWidths.signIn) > 1 || Math.abs(next.calendar - blockWidths.calendar) > 1 || Math.abs(next.share - blockWidths.share) > 1) {
@@ -1022,12 +1048,12 @@ export function SystemCollage({
     // the selected day's event sits under the month (the Calendar's children).
     calendar: (
         <ScaledModule key="calendar" t={tile(9)} appearance={appearanceAt(9)} chrome={false} elev="sm">
-          {/* The file's Calendar is seven cells wide: the sm one is the tile. */}
-          <div className="flex w-full justify-center">
-          <Calendar t={tile(9)} v={{ Size: 'sm', Mode: 'single' }}>
+          {/* As wide as the tiles around it: the weeks spread their seven cells
+              (`w`), so the tile keeps the column's edges instead of floating
+              narrower in the middle of it. */}
+          <Calendar t={tile(9)} v={{ Size: 'sm', Mode: 'single' }} w="100%">
             <CalendarEvent t={tile(9)} muted={muted(9)} />
           </Calendar>
-          </div>
         </ScaledModule>
     ),
     inputTag: (
@@ -1092,11 +1118,12 @@ export function SystemCollage({
   // one month in range mode and the footer — it needs two columns.
   const calendarPanel = (
     <ScaledModule key="calendarPanel" t={tile(9)} appearance={appearanceAt(9)} chrome={false} elev={false} {...calendarPhoto}>
-      <div data-board-block="calendar" className="flex w-full justify-center">
-        {/* `w-max`: the panel at its intrinsic width, which is what the board measures. */}
-        <div className="w-max">
-          <Calendar t={tile(9)} v={{ Size: 'default', Mode: 'range', PresetsVisible: 'True', FooterVisible: 'True' }} />
-        </div>
+      {/* The panel fills its slot (`w`): when the column is set by a tile wider
+          than the blocks need (the OTP's six cells), the slot is wider than the
+          file's panel, and the presets rail takes the difference. Centred at its
+          own width, the panel sat 8.7px short of the tile under it on each side. */}
+      <div data-board-block="calendar" className="flex w-full">
+        <Calendar t={tile(9)} v={{ Size: 'default', Mode: 'range', PresetsVisible: 'True', FooterVisible: 'True' }} w="100%" />
       </div>
     </ScaledModule>
   )
@@ -1196,7 +1223,10 @@ export function SystemCollage({
 
   return (
     <PhosphorWeightProvider weight={tokensByAppearance.light.iconWeight}>
-    <CollageFrameContext.Provider value={{ source: frame.source, display }}>
+    {/* `unit`, not `frame.source`: when the blocks set the column (a compact
+        theme), a tile laid out at `frame.source` was photographed at a larger
+        scale than the blocks beside it. */}
+    <CollageFrameContext.Provider value={{ source: unit, display }}>
     <BoardRevealContext.Provider value={reveal}>
     <BoardAutoplayContext.Provider value={playing}>
     <div ref={stageRef} className="contents">
@@ -1219,7 +1249,25 @@ export function SystemCollage({
     // box left — the board measured 20px narrow and hugged the left edge
     // (22.5px inset left, 42.5px right). Growing the box by its own padding
     // keeps the content box exactly the canvas's, so the board centres.
-    <div ref={boardRef} style={{ width: 'calc(100% + 20px)', padding: 10, margin: -10 }}>
+    //
+    // A canvas too narrow for the board at its floor scale (`slides`) turns
+    // this box into the board's own sideways scrollport: it bleeds through the
+    // canvas inset so the tiles are cut by the canvas edge — which is what says
+    // there is more — and stops on the bento's columns. Before, the board
+    // simply hung 17–40px past the canvas on the right.
+    <div
+      ref={boardRef}
+      data-board-slides={slides || undefined}
+      style={slides ? {
+        width: `calc(100% + ${BOARD_SLIDE_BLEED * 2}px)`,
+        padding: `10px ${BOARD_SLIDE_BLEED}px`,
+        margin: `-10px -${BOARD_SLIDE_BLEED}px`,
+        overflowX: 'auto',
+        overscrollBehaviorX: 'contain',
+        scrollSnapType: 'x proximity',
+        scrollPaddingInline: BOARD_SLIDE_BLEED,
+      } : { width: 'calc(100% + 20px)', padding: 10, margin: -10 }}
+    >
       <div className="mx-auto flex flex-col" style={{ width: boardSpan, gap: gutter }}>
         <div className="flex items-stretch" style={{ gap: gutter }}>
           {place(colorStyle(true, true), 0)}
@@ -1234,7 +1282,7 @@ export function SystemCollage({
         </div>
         <div className="flex items-stretch" style={{ gap: gutter }}>
           {boardColumns.map((column, i) => (
-            <div key={i} className="flex flex-col" style={{ width: display, gap: gutter }}>
+            <div key={i} className="flex flex-col" style={{ width: display, gap: gutter, scrollSnapAlign: slides ? 'start' : undefined }}>
               {fillLast(column).map((el, r) => place(el, 3 + i + r))}
             </div>
           ))}

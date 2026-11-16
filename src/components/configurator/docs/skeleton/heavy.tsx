@@ -15,24 +15,34 @@ const BOARD_MONTH = new Date(2026, 9, 1)
 
 /** The Figma Calendar: Size × Mode × Header over the file's November 2026 sample. On the Board
  *  (`children` = the selected day's event) it shows October and its selection hops through the
- *  board script's days. */
-export function SkeletonCalendarSpecimen({ t, v, children }: SpecimenProps) {
+ *  board script's days.
+ *
+ *  `w` makes the Calendar fill a slot wider than the file draws it (a Board tile, a phone
+ *  column). The day cells never grow: beside a presets rail the RAIL takes the spare width;
+ *  with no rail the weeks spread their seven cells across it. Omitted, the Calendar keeps the
+ *  file's own width. */
+const CALENDAR_FILL = '!flex [&>[data-slot=calendar-presets]]:grow'
+const CALENDAR_FILL_WEEKS = "!flex [&>[data-part='Calendar.column']]:min-w-0 [&>[data-part='Calendar.column']]:flex-1 [&_[data-slot=calendar-header]]:w-full! [&_[data-slot=calendar-month]]:w-full! [&_[data-part='CalendarMonth.weekdays']]:justify-between [&_[data-part='CalendarMonth.week']]:justify-between"
+
+export function SkeletonCalendarSpecimen({ t, v, w, children }: SpecimenProps) {
   const size = (v.Size ?? 'default') as CalendarSize
   const mode = (v.Mode ?? 'single') as CalendarMode
   const header = (v.Header ?? 'single') as CalendarHeaderKind
   const [picked, setPicked] = useState<CalendarValue>(new Date(2026, 9, 14))
   const step = useAutoplayStep(CALENDAR_PLAY.days.length, CALENDAR_PLAY.ms)
+  const presets = v.PresetsVisible === 'True'
+  const fill = w == null ? undefined : { className: presets ? CALENDAR_FILL : CALENDAR_FILL_WEEKS, style: { width: w } }
   if (children == null) {
     return (
       <RecipeScope t={t}>
-        <SkCalendar key={mode} size={size} mode={mode} header={header} presets={v.PresetsVisible === 'True'} footer={v.FooterVisible === 'True'} />
+        <SkCalendar key={mode} size={size} mode={mode} header={header} presets={presets} footer={v.FooterVisible === 'True'} {...fill} />
       </RecipeScope>
     )
   }
   const value = step == null ? picked : new Date(2026, 9, CALENDAR_PLAY.days[step].day)
   return (
     <RecipeScope t={t}>
-      <SkCalendar size={size} mode="single" header={header} defaultMonth={BOARD_MONTH} today={new Date(2026, 9, 12)} value={value} onValueChange={setPicked}>
+      <SkCalendar size={size} mode="single" header={header} defaultMonth={BOARD_MONTH} today={new Date(2026, 9, 12)} value={value} onValueChange={setPicked} {...fill}>
         {children}
       </SkCalendar>
     </RecipeScope>
