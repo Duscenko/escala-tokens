@@ -1002,6 +1002,26 @@ explicitly out of scope. Individual components still adapt between `md` and `xl`
 > `globals: { dimensions: 'mobile' }`. A Playground renders as a stage (centred, min height; `EscalaScope stage`), and the
 > family Documentation opens on it.
 
+> **UPDATE (2026-11-16, owner's call): the platform's Components and Blocks ARE the Storybook's.** The owner wants
+> a curated set of Escala's own components on the platform, never the shadcn-era leftovers.
+> - **Components** lists the 51 Storybook families (`lib/platformCatalogue.ts`, read from
+>   `spec/storybook-families.json`, the manifest the Storybook sidebar is written from), in its six folders, named as
+>   Figma names them (`IconButton`, `DatePicker`). A family's parts open from the **Anatomy** section of its page, never
+>   as directory rows. `COMPONENTS` keeps the 25 shadcn-era entries (Card, Drawer, Command, Chart…) because export, agent
+>   context and the plugin read it, but the directory, the index, the board's covers, Related, prev/next, public
+>   `/components/*` and the sitemap do not show them, and `selectComponent` sends one to the index.
+>   `platformCatalogue.test.ts` holds the list equal to the manifest and names the hidden 25.
+> - **Blocks** is a new tab (top bar About · Generator · Components · **Blocks** · Docs, and the workspace rail), the
+>   same canvas as Components: `BlocksView` + `BlocksRail`, `?section=blocks/<Group>/<Name>`. `blocks/blockRegistry.tsx`
+>   renders the real `escala-ui/blocks` with the controls their stories expose and reads each `*.contract.json` (built
+>   from, accessibility, motion). An Overlay block opens as the real dialog. `platformBlocks.test.ts` holds it equal to
+>   `apps/storybook/stories/blocks`. **A new block story needs an entry there.**
+> - Found on the way: `Modal` portaled to `<body>` and ignored `usePortalContainer` (Sheet already used it), so a dialog
+>   opened from a themed preview lost its brand. And the blocks' `type()` helper hand-wrote `--text-<role>-*`, which
+>   does not exist for a scale STEP (`display-lg`, `display-sm`): every hero and section title fell to 18px, in Storybook
+>   too. It is `blockType()` now (`blocks/shared.tsx`, names from `cssVarOf`), the steps are in `BLOCK_ONLY_REFS`, and
+>   `blockRefsProvided.test.ts` checks `type('…')` as well as `v('…')`.
+
 > **UPDATE (2026-11-12, owner's call): the Figma file's PALETTE wins over the generator.**
 > `Escala Design System (Real)` is curated and tested; for its accent (`#874fff`) the generator
 > differs on 99 of 120 solid steps and most alpha twins, so no rule reproduces it. The file's

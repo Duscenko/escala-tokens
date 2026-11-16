@@ -23,16 +23,13 @@ import { SegmentedControl, SegmentedControlItem } from '../segmented-control'
 import { Separator } from '../separator'
 import { Sidebar, SidebarBrand, SidebarContent, SidebarFooter, SidebarGroup, SidebarGroupContent, SidebarGroupLabel, SidebarHeader, SidebarMenu, SidebarMenuButton, SidebarMenuItem } from '../sidebar'
 import { TextLink } from '../text-link'
-import { boxedGlyph } from './shared'
+import { boxedGlyph, blockType } from './shared'
 
 export const NAV_LAYOUTS = ['desktop', 'mobile'] as const
 export type NavLayout = (typeof NAV_LAYOUTS)[number]
 
 const v = (ref: string) => `var(${cssVarOf(ref)})`
-const type = (role: string): React.CSSProperties => ({
-  fontFamily: `var(--text-${role}-font-family)`, fontSize: `var(--text-${role}-font-size)`, lineHeight: `var(--text-${role}-line-height)`,
-  fontWeight: `var(--text-${role}-font-weight)`, letterSpacing: `var(--text-${role}-letter-spacing)`,
-})
+const type = blockType
 const spacer: React.CSSProperties = { flex: 1 }
 const NAV = ['Product', 'Solutions', 'Pricing', 'Blog', 'Contact']
 

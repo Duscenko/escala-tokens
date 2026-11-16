@@ -1,6 +1,7 @@
 import { useMemo, useState, type ComponentType, type CSSProperties } from 'react'
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
-import { COMPONENTS, CATEGORIES, type ComponentDef } from '../../lib/componentCatalogue'
+import type { ComponentDef } from '../../lib/componentCatalogue'
+import { PLATFORM_FOLDERS, PLATFORM_FAMILIES, FOLDER_CATEGORY, familiesIn, familyLabel, familyOf } from '../../lib/platformCatalogue'
 import { useI18n } from '../../lib/i18n'
 import FoundationSwitchStrip from './FoundationSwitchStrip'
 import { WorkspaceSaveBar } from './ThemeSaveBar'
@@ -12,13 +13,8 @@ const ROW_ACTIVE = 'border-line-strong bg-app text-fg font-medium shadow-[0_2px_
 const ROW_IDLE = 'border-transparent text-fg-muted hover:bg-elevated hover:text-fg'
 
 /** The strip's selected step opens to its name; these fit the 288px column. */
-const CATEGORY_SHORT: Record<string, string> = {
-  'Button & Actions': 'Buttons',
-  'Form Controls': 'Forms',
-  'Indicators': 'Indicators',
+const FOLDER_SHORT: Record<string, string> = {
   'Content & Surfaces': 'Surfaces',
-  'Feedback': 'Feedback',
-  'Navigation': 'Navigation',
 }
 
 function Chevron({ open }: { open: boolean }) {
@@ -63,19 +59,23 @@ export default function ComponentsRail({
 }) {
   const { t } = useI18n()
   const reduce = useReducedMotion() ?? false
-  const activeKey = active?.key ?? null
-  // On the index no category is selected; the strip shows none lit.
-  const activeCategory = active?.category ?? ''
+  // A part's page lights its family's row: the directory lists families
+  // (Storybook's sidebar), a part opens from inside its family's page.
+  const activeFamily = active ? familyOf(active.key) : null
+  // On the index no folder is selected; the strip shows none lit.
+  const activeCategory = activeFamily?.folder ?? ''
 
   const q = search.trim().toLowerCase()
   const groups = useMemo(
     () =>
-      CATEGORIES.map((cat) => ({
+      PLATFORM_FOLDERS.map((cat) => ({
         cat,
-        items: COMPONENTS.filter(
-          (c) =>
-            c.category === cat &&
-            (!q || c.label.toLowerCase().includes(q) || c.key.toLowerCase().includes(q)),
+        // A search matches a family by its name or by any of its parts.
+        items: familiesIn(cat).filter(
+          (f) =>
+            !q ||
+            [f.id, familyLabel(f), ...[f.lead, ...f.parts].flatMap((c) => [c.label, c.key])]
+              .some((s) => s.toLowerCase().includes(q)),
         ),
       })).filter((g) => g.items.length > 0),
     [q],
@@ -92,8 +92,8 @@ export default function ComponentsRail({
     })
 
   const selectCategory = (cat: string) => {
-    const first = COMPONENTS.find((c) => c.category === cat)
-    if (first) onSelect(first)
+    const first = familiesIn(cat)[0]
+    if (first) onSelect(first.lead)
     // Picking from the strip reads as "take me there": fold the rest away.
     setOpen(new Set())
   }
@@ -112,11 +112,11 @@ export default function ComponentsRail({
       >
         <FoundationSwitchStrip
           ariaLabel={t('Component categories')}
-          items={CATEGORIES.map((cat) => {
-            const Icon = icons[cat]
+          items={PLATFORM_FOLDERS.map((cat) => {
+            const Icon = icons[FOLDER_CATEGORY[cat] ?? cat]
             return {
               key: cat,
-              label: t(CATEGORY_SHORT[cat] ?? cat),
+              label: t(FOLDER_SHORT[cat] ?? cat),
               icon: Icon ? <Icon /> : undefined,
             }
           })}
@@ -171,7 +171,7 @@ export default function ComponentsRail({
               <rect x="9" y="9" width="5" height="5" rx="1.2" />
             </svg>
             <span className="min-w-0 flex-1 truncate">{t('All components')}</span>
-            <span className="text-caption text-fg-faint">{COMPONENTS.length}</span>
+            <span className="text-caption text-fg-faint">{PLATFORM_FAMILIES.length}</span>
           </button>
         )}
 
@@ -182,7 +182,7 @@ export default function ComponentsRail({
         )}
 
         {groups.map(({ cat, items }) => {
-          const Icon = icons[cat]
+          const Icon = icons[FOLDER_CATEGORY[cat] ?? cat]
           const categoryActive = activeCategory === cat
           // A search shows every match; otherwise the accordion decides.
           const expanded = Boolean(q) || categoryActive || open.has(cat)
@@ -223,19 +223,19 @@ export default function ComponentsRail({
                     className="overflow-hidden"
                   >
                     <div className="ml-4 flex flex-col gap-0.5 border-l border-line pb-1.5 pl-1.5">
-                      {items.map((comp) => {
-                        const isActive = comp.key === activeKey
+                      {items.map((fam) => {
+                        const isActive = fam === activeFamily
                         return (
                           <button
-                            key={comp.key}
+                            key={fam.id}
                             type="button"
                             aria-current={isActive ? 'page' : undefined}
-                            onClick={() => onSelect(comp)}
+                            onClick={() => onSelect(fam.lead)}
                             className={`flex w-full items-center rounded-lg border px-2.5 py-1.5 text-left text-body transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50 ${
                               isActive ? ROW_ACTIVE : ROW_IDLE
                             }`}
                           >
-                            <span className="min-w-0 truncate">{comp.label}</span>
+                            <span className="min-w-0 truncate">{familyLabel(fam)}</span>
                           </button>
                         )
                       })}
