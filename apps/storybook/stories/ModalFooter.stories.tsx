@@ -28,7 +28,8 @@ function footer({ size, layout, leadingVisible, leading, actionsVisible }: Modal
 }
 
 const meta: Meta<ModalFooterStoryArgs> = {
-  title: 'Content & Surfaces/ModalFooter',
+  title: 'Content & Surfaces/Modal',
+  tags: ['!autodocs', 'part'],
   render: footer,
   args: { size: 'default', layout: 'inline', leadingVisible: false, leading: 'Step 1 of 3', actionsVisible: true },
   argTypes: {
@@ -42,9 +43,10 @@ const meta: Meta<ModalFooterStoryArgs> = {
 export default meta
 type Story = StoryObj<ModalFooterStoryArgs>
 
-export const Playground: Story = {}
+export const ModalFooterPlayground: Story = { name: 'ModalFooter · Playground' }
 
-export const AllCombinations: Story = {
+export const ModalFooterAllCombinations: Story = {
+  name: 'ModalFooter · All Combinations',
   render: (args) => (
     <div style={{ display: 'flex', flexWrap: 'wrap', gap: 24 }}>
       {MODAL_SIZES.flatMap((size) => MODAL_FOOTER_LAYOUTS.map((layout) => <div key={size + layout}>{footer({ ...args, size, layout })}</div>))}

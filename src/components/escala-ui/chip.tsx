@@ -5,6 +5,7 @@
 // interactive control): the label toggles, the close removes. Appearance: recipe (Chip).
 import * as React from 'react'
 import { cn } from '../../lib/utils'
+import { glyph } from '../../lib/icons'
 
 export const CHIP_VARIANTS = ['info', 'success', 'default', 'critical'] as const
 export type ChipVariant = (typeof CHIP_VARIANTS)[number]
@@ -18,9 +19,6 @@ export const CHIP_SHAPES = ['rounded', 'pill'] as const
 export type ChipShape = (typeof CHIP_SHAPES)[number]
 
 // Phosphor regular glyphs: the file's default swaps (Plus leading, X close).
-const PLUS = 'M224,128a8,8,0,0,1-8,8H136v80a8,8,0,0,1-16,0V136H40a8,8,0,0,1,0-16h80V40a8,8,0,0,1,16,0v80h80A8,8,0,0,1,224,128Z'
-const X = 'M205.66,194.34a8,8,0,0,1-11.32,11.32L128,139.31,61.66,205.66a8,8,0,0,1-11.32-11.32L116.69,128,50.34,61.66A8,8,0,0,1,61.66,50.34L128,116.69l66.34-66.35a8,8,0,0,1,11.32,11.32L139.31,128Z'
-const glyph = (d: string) => <svg viewBox="0 0 256 256" fill="currentColor" aria-hidden focusable="false"><path d={d} /></svg>
 
 export interface ChipProps extends Omit<React.ComponentProps<'span'>, 'onChange'> {
   /** Figma Variant. */
@@ -79,7 +77,7 @@ function Chip({
       >
         {iconLeading !== undefined && iconLeading !== false && (
           <span data-part="Chip.leading" aria-hidden className="inline-flex shrink-0 items-center justify-center [&>svg]:size-full">
-            {iconLeading === true ? glyph(PLUS) : iconLeading}
+            {iconLeading === true ? glyph('plus') : iconLeading}
           </span>
         )}
         <span data-part="Chip.label">{children ?? 'Chip'}</span>
@@ -93,7 +91,7 @@ function Chip({
           className="inline-flex shrink-0 cursor-[inherit] items-center justify-center border-0 bg-transparent p-0 text-inherit outline-none [&>svg]:size-full"
           onClick={(e) => { e.stopPropagation(); onRemove?.() }}
         >
-          {glyph(X)}
+          {glyph('close')}
         </button>
       )}
     </span>

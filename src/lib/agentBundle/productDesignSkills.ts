@@ -21,6 +21,7 @@ import {
 import { figmaPrimitiveName, figmaSemanticName, webCodeSyntax } from './names'
 import { inkPairings, intentFloors } from './productSkills'
 import type { AgentBundleFile, TokenJSON } from './types'
+import { SOCIAL_BRANDS } from '../socialBrands.js'
 
 const F = figmaSemanticName
 
@@ -68,6 +69,12 @@ export function buildDesignSkillFiles(json: TokenJSON): AgentBundleFile[] {
 
 /** `Bind to` and `Collection` cells for one reference, in the same order. */
 function bindCells(ref: string, json: TokenJSON, roles: Set<string>): [string, string, string] {
+  // A third-party brand role: `social.google.action.default` → `Google/Action/default` in `Social Media Brands`.
+  if (ref.startsWith('social.')) {
+    const [, id, group, ...rest] = ref.split('.')
+    const brand = SOCIAL_BRANDS[id]
+    if (brand) return [`\`${brand.label}/${group[0].toUpperCase()}${group.slice(1)}/${rest.join('.')}\``, 'Social Media Brands', `\`${cssVarOf(ref)}\``]
+  }
   const refs: FigmaRef[] | null = figmaRefsFor(ref, json, roles)
   const f = refFn(ref)
   const css = f ? `\`${refFnCss(f, (r) => cssVarOf(r))}\`` : ref.split('+').map((r) => `\`${cssVarOf(r, 'font-size').replace(/-font-size$/, '-*')}\``).join(' + ')

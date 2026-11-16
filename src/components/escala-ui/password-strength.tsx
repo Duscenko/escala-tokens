@@ -8,6 +8,7 @@
 // Paint: the three recipes.
 import * as React from 'react'
 import { cn } from '../../lib/utils'
+import { glyph } from '../../lib/icons'
 
 export const PASSWORD_STRENGTH_SIZES = ['xs', 'sm', 'default'] as const
 export type PasswordStrengthSize = (typeof PASSWORD_STRENGTH_SIZES)[number]
@@ -32,15 +33,6 @@ export function scorePassword(password: string, rules: PasswordRule[] = PASSWORD
   return Math.min(5, rules.filter((r) => r.test(password)).length) as Strength
 }
 
-/** Phosphor `check` (regular), the file's icon/check. */
-function CheckGlyph() {
-  return (
-    <svg viewBox="0 0 256 256" fill="currentColor" aria-hidden focusable="false">
-      <path d="M229.66,77.66l-128,128a8,8,0,0,1-11.32,0l-56-56a8,8,0,0,1,11.32-11.32L96,188.69,218.34,66.34a8,8,0,0,1,11.32,11.32Z" />
-    </svg>
-  )
-}
-
 export interface PasswordStrengthRuleProps extends React.ComponentProps<'div'> {
   size?: PasswordStrengthSize
   /** Figma Met. */
@@ -60,7 +52,7 @@ function PasswordStrengthRule({ size = 'default', met = true, label = 'At least 
       {...props}
     >
       {met ? (
-        <span data-part="PasswordStrengthRule.icon" className="inline-flex shrink-0 [&>svg]:size-full"><CheckGlyph /></span>
+        <span data-part="PasswordStrengthRule.icon" className="inline-flex shrink-0 [&>svg]:size-full">{glyph('check')}</span>
       ) : (
         <span data-part="PasswordStrengthRule.marker" aria-hidden className="shrink-0" />
       )}

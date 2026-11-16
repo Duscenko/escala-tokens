@@ -16,8 +16,7 @@ import {
 import { SocialLoginButton as SkSocialLoginButton, type SocialProvider, PROVIDER_NAME } from '../../../escala-ui/social-login-button'
 import { AppStoreBadge as SkAppStoreBadge, type Store } from '../../../escala-ui/app-store-badge'
 import { RecipeScope } from './scope'
-import { Toggle as SkToggle, type ToggleSize, type ToggleVariant } from '../../../escala-ui/toggle'
-import { ToggleGroup as SkToggleGroup, ToggleGroupItem as SkToggleGroupItem, type ToggleGroupSize, type ToggleGroupVariant } from '../../../escala-ui/toggle-group'
+import { Toggle as SkToggle, type ToggleSize, type ToggleVariant } from '../../../escala-ui/_skeleton/toggle'
 
 /** Button size → the control step its icon is sized from (xs · sm · md · lg). */
 const ICON_STEP: Record<string, string> = { xs: 'xs', sm: 'sm', default: 'md', lg: 'lg' }
@@ -248,25 +247,6 @@ export function SkeletonAppStoreBadgeSpecimen({ t, v }: SpecimenProps) {
   return (
     <RecipeScope t={t}>
       <SkAppStoreBadge store={(v.Store ?? 'app-store') as Store} href="#store" onClick={(e) => e.preventDefault()} />
-    </RecipeScope>
-  )
-}
-
-/** shadcn's demo: text formatting toggles, several pressed at once. */
-export function SkeletonToggleGroupSpecimen({ t, v }: SpecimenProps) {
-  return (
-    <RecipeScope t={t}>
-      <SkToggleGroup
-        type="multiple"
-        defaultValue={['bold']}
-        variant={(v.Variant ?? 'default') as ToggleGroupVariant}
-        size={(v.Size ?? 'default') as ToggleGroupSize}
-        aria-label="Text formatting"
-      >
-        <SkToggleGroupItem value="bold" aria-label="Bold"><b>B</b></SkToggleGroupItem>
-        <SkToggleGroupItem value="italic" aria-label="Italic"><i>I</i></SkToggleGroupItem>
-        <SkToggleGroupItem value="underline" aria-label="Underline"><u>U</u></SkToggleGroupItem>
-      </SkToggleGroup>
     </RecipeScope>
   )
 }

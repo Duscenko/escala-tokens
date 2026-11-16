@@ -15,11 +15,10 @@ Variantes: `Size` default · sm; `Logo` (slot), `Name` «Escala», `VersionVisib
 (Phosphor), nombre `Type/heading-sm` `Content/primary`, versión = Badge (soft · rounded · xs · default · secondary, «v1.1», 26×16). sm 122×26: Avatar xs 24, nombre `Type/heading-xs`.
 
 ## AccountMenuTrigger
-Variantes: `Size` default · sm · `State` Default · Hover · Pressed · Focused; `Name` «Ayla», `NameVisible` true. Botón HORIZONTAL centro, alto 40 / 32, radio `Radius/action`, padding izquierdo y derecho `Spacing/inset-control` (12) salvo el
-derecho `Spacing/gap-tight` (4), gap `Spacing/gap-control` (8); Avatar (image · sm 32 / xs 24), nombre `Type/button` `Content/primary`, caret 20 / 16. 109×40 y 97×32 con «Ayla». Hover relleno `Action/ghost/hover`, Pressed
+Variantes: `Size` default · sm · `State` Default · Hover · Pressed · Focused; `Name` «Ayla», `NameVisible` true. Botón HORIZONTAL centro, alto 40 / 32, radio `Radius/action`, padding izquierdo `Spacing/gap-tight` (4) y derecho `Spacing/inset-control` (12) (Figma: pad 0/12/0/4 = top/right/bottom/left), gap `Spacing/gap-control` (8); Avatar (image · sm 32 / xs 24), nombre `Type/button` `Content/primary`, caret 20 / 16. 109×40 y 97×32 con «Ayla». Hover relleno `Action/ghost/hover`, Pressed
 `Action/ghost/pressed`, Focused trazo `Border/focus` 2 INSIDE + ring 2 OUTSIDE.
 
 ## Raro (se copia igual)
 - El avatar del AccountMenuTrigger es CÍRCULO en Default y cuadrado redondeado (`Radius/control`) en Hover · Pressed · Focused.
-- El padding derecho del AccountMenuTrigger es 4 y el izquierdo 12.
+- El padding izquierdo del AccountMenuTrigger es 4 y el derecho 12 (el avatar queda a 4 del borde).
 - El foco de los tres lleva trazo de 2px dentro y halo fuera sin crecer la caja (box-shadow), como los demás controles.

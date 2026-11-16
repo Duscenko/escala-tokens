@@ -4,7 +4,7 @@ import { PreviewIcon } from '../../../src/components/configurator/docs/specimens
 import type { ComponentIconName } from '../../../src/lib/iconLibraries'
 import { iconSwapArg } from './iconSwap'
 
-const STATES: ComboboxItemState[] = ['Default', 'Focused', 'Selected', 'Disabled']
+const STATES: ComboboxItemState[] = ['Default', 'Hover', 'Focused', 'Selected', 'Disabled']
 const GLYPH_PX: Record<ComboboxSize, number> = { sm: 14, default: 16, lg: 18 }
 
 /** Story args = the Figma `ComboboxItem` set (406:140), in the panel's order and with its
@@ -41,7 +41,8 @@ function render(a: ComboboxItemStoryArgs) {
 }
 
 const meta: Meta<ComboboxItemStoryArgs> = {
-  title: 'Forms/ComboboxItem',
+  title: 'Forms/Combobox',
+  tags: ['!autodocs', 'part'],
   render,
   args: {
     size: 'default', forceState: 'Default', label: 'Option', descriptionVisible: false, description: 'Secondary text',
@@ -63,15 +64,28 @@ const meta: Meta<ComboboxItemStoryArgs> = {
 export default meta
 type Story = StoryObj<ComboboxItemStoryArgs>
 
-export const Playground: Story = {}
+export const ComboboxItemPlayground: Story = { name: 'ComboboxItem · Playground' }
 
 /** Every Size × State, as the file's 12 variants. */
-export const AllCombinations: Story = {
+export const ComboboxItemAllCombinations: Story = {
+  name: 'ComboboxItem · All Combinations',
   render: (args) => (
     <div style={{ display: 'flex', flexWrap: 'wrap', gap: 16 }}>
       {COMBOBOX_SIZES.flatMap((size) => STATES.map((forceState) => (
         <div key={`${size}-${forceState}`}>{render({ ...args, size, forceState })}</div>
       )))}
+    </div>
+  ),
+}
+
+/** A row under the pointer or the arrow keys (`highlighted`) takes the fill only; the ring is keyboard focus, shown by the pinned Focused row beside it. */
+export const ComboboxItemHighlightedHasNoRing: Story = {
+  name: 'ComboboxItem · Highlighted Has No Ring',
+  render: (args) => (
+    <div role="listbox" aria-label="Options" style={{ width: 256 }}>
+      <ComboboxItem size={args.size} highlighted>Highlighted: fill, no ring</ComboboxItem>
+      <ComboboxItem size={args.size} forceState="Focused">Focused: fill + ring</ComboboxItem>
+      <ComboboxItem size={args.size}>Default</ComboboxItem>
     </div>
   ),
 }

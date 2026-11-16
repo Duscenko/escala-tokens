@@ -21,6 +21,7 @@
  *
  * A reference is `<namespace>.<name>`:
  *   color.<categorical role id>  → `--color-<id with dashes>`  · Figma `Action/primary/default`
+ *   social.<brand>.<role>        → `--social-<brand>-<role>`    · Figma `Google/Action/default` (Social Media Brands)
  *   size.<role|step>             → `--size-<name>`; a role takes its Figma name (`size.hit` → `--size-control-xs`)
  *   selector.<role|step>         → `--size-selector-md|sm` (roles) · `--selector-<step>`
  *   icon.<role>                  → `--size-icon-sm|md|lg`
@@ -32,15 +33,15 @@
  *   none                         → nothing painted
  */
 
-import { BUTTON, ICON_BUTTON, CLOSE_BUTTON, TEXT_LINK, FAB_BUTTON, FAB_GROUP, BUTTON_GROUP, BUTTON_GROUP_ITEM, BUTTON_GROUP_DIVIDER, SOCIAL_LOGIN_BUTTON, APP_STORE_BADGE, TOGGLE_GROUP, TOGGLE } from './recipes/actions.js'
+import { BUTTON, ICON_BUTTON, CLOSE_BUTTON, TEXT_LINK, FAB_BUTTON, FAB_GROUP, BUTTON_GROUP, BUTTON_GROUP_ITEM, BUTTON_GROUP_DIVIDER, SOCIAL_LOGIN_BUTTON, APP_STORE_BADGE, TOGGLE } from './recipes/actions.js'
 import {
-  INPUT, TEXTAREA, DATE_PICKER_TRIGGER, DATE_PICKER_POPOVER, CALENDAR_DAY, CALENDAR_HEADER, CALENDAR_MONTH, CALENDAR_PRESETS, CALENDAR_FOOTER, INPUT_GROUP, NUMBER_INPUT, INPUT_TAG, INPUT_TAG_CHIP, INPUT_TAG_OPTION, SELECT, COMBOBOX, COMBOBOX_POPOVER, COMBOBOX_ITEM, COMBOBOX_GROUP_LABEL, INPUT_OTP, INPUT_OTP_SLOT,
-  CHECKBOX, CHECKBOX_ITEM, CHECKBOX_GROUP, RADIO_GROUP, SWITCH, SWITCH_GROUP, SLIDER, SLIDER_THUMB, FIELD, LABEL, PASSWORD_STRENGTH, PASSWORD_STRENGTH_METER, PASSWORD_STRENGTH_RULE, FILE_UPLOAD, FILE_UPLOAD_DROPZONE, FILE_UPLOAD_ITEM, NATIVE_SELECT, CALENDAR,
+  INPUT, TEXTAREA, DATE_PICKER_TRIGGER, DATE_PICKER_POPOVER, CALENDAR_DAY, CALENDAR_HEADER, CALENDAR_MONTH, CALENDAR_PRESETS, CALENDAR_FOOTER, INPUT_GROUP, NUMBER_INPUT, INPUT_TAG, INPUT_TAG_CHIP, INPUT_TAG_OPTION, COMBOBOX, COMBOBOX_POPOVER, COMBOBOX_ITEM, COMBOBOX_GROUP_LABEL, INPUT_OTP, INPUT_OTP_SLOT,
+  CHECKBOX, CHECKBOX_ITEM, CHECKBOX_GROUP, RADIO_GROUP, SWITCH, SWITCH_GROUP, SLIDER, SLIDER_THUMB, FIELD, LABEL, PASSWORD_STRENGTH, PASSWORD_STRENGTH_METER, PASSWORD_STRENGTH_RULE, FILE_UPLOAD, FILE_UPLOAD_DROPZONE, FILE_UPLOAD_ITEM, CALENDAR,
 } from './recipes/forms.js'
 import { CARD, MODAL, MODAL_HEADER, MODAL_FOOTER, SEPARATOR, ACCORDION, ACCORDION_ITEM, IMAGE, POPOVER, POPOVER_FOOTER, TOOLTIP_CONTENT, TOOLTIP_INFO_TRIGGER, SCROLL_AREA, SCROLL_BAR, COLLAPSIBLE, ALERT_DIALOG, SHEET, DRAWER, HOVER_CARD, ITEM, ATTACHMENT, MESSAGE, BUBBLE, RESIZABLE, CAROUSEL, CHART,
 } from './recipes/surfaces.js'
 import {
-  TABS, TAB_MENU, TAB_MENU_ITEM, TAB_MENU_LINE_ITEM, NAV_ITEM, BRAND, ACCOUNT_MENU_TRIGGER, SEGMENTED_CONTROL, SEGMENTED_CONTROL_ITEM, BREADCRUMB, BREADCRUMB_ITEM, BREADCRUMB_ELLIPSIS, BREADCRUMB_SEPARATOR, PAGINATION, PAGINATION_LINK, PAGINATION_ELLIPSIS, STEPPER, STEPPER_ITEM, STEPPER_INDICATOR, STEPPER_ICON, DROPDOWN_MENU, DROPDOWN_MENU_LABEL, DROPDOWN_MENU_ITEM, DROPDOWN_MENU_FOOTER, CONTEXT_MENU, COMMAND, NAVBAR, SIDEBAR, MENUBAR, NAVIGATION_MENU,
+  TAB_MENU, TAB_MENU_ITEM, TAB_MENU_LINE_ITEM, NAV_ITEM, BRAND, ACCOUNT_MENU_TRIGGER, SEGMENTED_CONTROL, SEGMENTED_CONTROL_ITEM, BREADCRUMB, BREADCRUMB_ITEM, BREADCRUMB_ELLIPSIS, BREADCRUMB_SEPARATOR, PAGINATION, PAGINATION_LINK, PAGINATION_ELLIPSIS, STEPPER, STEPPER_ITEM, STEPPER_INDICATOR, STEPPER_ICON, DROPDOWN_MENU, DROPDOWN_MENU_LABEL, DROPDOWN_MENU_ITEM, DROPDOWN_MENU_FOOTER, COMMAND, NAVBAR, SIDEBAR, SIDEBAR_BRAND, SIDEBAR_GROUP, SIDEBAR_GROUP_LABEL, SIDEBAR_MENU_BUTTON, NAVIGATION_MENU,
 } from './recipes/navigation.js'
 import { ALERT, TOAST, SKELETON, EMPTY } from './recipes/feedback.js'
 import { BADGE, STATUS_BADGE, CHIP, PROGRESS_LINE, PROGRESS_CIRCLE, SPINNER, ICON, RATING_GROUP, RATING_GROUP_ITEM, FILE_FORMAT, AVATAR, AVATAR_STATUS, AVATAR_GROUP, FEATURED_ICON, KBD } from './recipes/indicators.js'
@@ -79,7 +80,6 @@ export const COMPONENT_RECIPES: Record<string, ComponentRecipe> = {
   InputTag: INPUT_TAG,
   InputTagChip: INPUT_TAG_CHIP,
   InputTagOption: INPUT_TAG_OPTION,
-  Select: SELECT,
   Combobox: COMBOBOX,
   ComboboxPopover: COMBOBOX_POPOVER,
   ComboboxItem: COMBOBOX_ITEM,
@@ -132,8 +132,6 @@ export const COMPONENT_RECIPES: Record<string, ComponentRecipe> = {
   TableEmpty: TABLE_EMPTY,
   TableLoading: TABLE_LOADING,
   TableLoadMore: TABLE_LOAD_MORE,
-  ToggleGroup: TOGGLE_GROUP,
-  NativeSelect: NATIVE_SELECT,
   Kbd: KBD,
   Skeleton: SKELETON,
   Empty: EMPTY,
@@ -150,7 +148,6 @@ export const COMPONENT_RECIPES: Record<string, ComponentRecipe> = {
   Resizable: RESIZABLE,
   Carousel: CAROUSEL,
   Chart: CHART,
-  Menubar: MENUBAR,
   NavigationMenu: NAVIGATION_MENU,
   Accordion: ACCORDION,
   AccordionItem: ACCORDION_ITEM,
@@ -163,7 +160,6 @@ export const COMPONENT_RECIPES: Record<string, ComponentRecipe> = {
   ScrollBar: SCROLL_BAR,
   Alert: ALERT,
   Toast: TOAST,
-  Tabs: TABS,
   TabMenu: TAB_MENU,
   TabMenuItem: TAB_MENU_ITEM,
   TabMenuLineItem: TAB_MENU_LINE_ITEM,
@@ -187,10 +183,13 @@ export const COMPONENT_RECIPES: Record<string, ComponentRecipe> = {
   DropdownMenuLabel: DROPDOWN_MENU_LABEL,
   DropdownMenuItem: DROPDOWN_MENU_ITEM,
   DropdownMenuFooter: DROPDOWN_MENU_FOOTER,
-  ContextMenu: CONTEXT_MENU,
   Command: COMMAND,
   Navbar: NAVBAR,
   Sidebar: SIDEBAR,
+  SidebarBrand: SIDEBAR_BRAND,
+  SidebarGroup: SIDEBAR_GROUP,
+  SidebarGroupLabel: SIDEBAR_GROUP_LABEL,
+  SidebarMenuButton: SIDEBAR_MENU_BUTTON,
   Card: CARD,
   Modal: MODAL,
   ModalHeader: MODAL_HEADER,
@@ -308,6 +307,8 @@ const TYPE_STEP = /^(text|display)-(xs|sm|md|lg|xl|2xl)$/
 export function cssVarOf(ref: TokenRef, facet = 'font-size'): string {
   const [ns, name] = splitRef(ref)
   if (ns === 'color') return `--color-${name.replace(/\./g, '-')}`
+  // A third-party brand role (`social.google.action.default` → `--social-google-action-default`): the Social Media Brands collection.
+  if (ns === 'social') return `--social-${name.replace(/\./g, '-')}`
   if (ns === 'type') {
     // A scale step (`type.text-xl`) reads the scale primitives, as a Figma text
     // style bound to them does; a role reads its own `--text-<role>-*` alias.

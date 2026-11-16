@@ -6,6 +6,7 @@
 // Appearance: recipes (table.ts).
 import * as React from 'react'
 import { cn } from '../../lib/utils'
+import { glyph } from '../../lib/icons'
 import { Button } from './button'
 import { Checkbox } from './checkbox'
 import { IconButton } from './icon-button'
@@ -20,18 +21,15 @@ export type TableRowState = 'Default' | 'Hover' | 'Selected' | 'Focused' | 'Disa
 
 // Phosphor regular glyphs (the file's icons).
 const G = {
-  spinner: 'M136,32V64a8,8,0,0,1-16,0V32a8,8,0,0,1,16,0Zm88,88H192a8,8,0,0,0,0,16h32a8,8,0,0,0,0-16Zm-45.09,47.6a8,8,0,0,0-11.31,11.31l22.62,22.63a8,8,0,0,0,11.32-11.32ZM128,184a8,8,0,0,0-8,8v32a8,8,0,0,0,16,0V192A8,8,0,0,0,128,184ZM77.09,167.6,54.46,190.22a8,8,0,0,0,11.32,11.32L88.4,178.91A8,8,0,0,0,77.09,167.6ZM72,128a8,8,0,0,0-8-8H32a8,8,0,0,0,0,16H64A8,8,0,0,0,72,128ZM65.78,54.46A8,8,0,0,0,54.46,65.78L77.09,88.4A8,8,0,0,0,88.4,77.09Z',
-  tray: 'M208,32H48A16,16,0,0,0,32,48V208a16,16,0,0,0,16,16H208a16,16,0,0,0,16-16V48A16,16,0,0,0,208,32Zm0,16V152h-28.7A15.86,15.86,0,0,0,168,156.69L148.69,176H107.31L88,156.69A15.86,15.86,0,0,0,76.69,152H48V48Zm0,160H48V168H76.69L96,187.31A15.86,15.86,0,0,0,107.31,192h41.38A15.86,15.86,0,0,0,160,187.31L179.31,168H208v40Z',
-  up: 'M205.66,117.66a8,8,0,0,1-11.32,0L136,59.31V216a8,8,0,0,1-16,0V59.31L61.66,117.66a8,8,0,0,1-11.32-11.32l72-72a8,8,0,0,1,11.32,0l72,72A8,8,0,0,1,205.66,117.66Z',
-  down: 'M205.66,149.66l-72,72a8,8,0,0,1-11.32,0l-72-72a8,8,0,0,1,11.32-11.32L120,196.69V40a8,8,0,0,1,16,0V196.69l58.34-58.35a8,8,0,0,1,11.32,11.32Z',
-  trendUp: 'M240,56v64a8,8,0,0,1-16,0V75.31l-82.34,82.35a8,8,0,0,1-11.32,0L96,123.31,29.66,189.66a8,8,0,0,1-11.32-11.32l72-72a8,8,0,0,1,11.32,0L136,140.69,212.69,64H168a8,8,0,0,1,0-16h64A8,8,0,0,1,240,56Z',
-  trendDown: 'M240,128v64a8,8,0,0,1-8,8H168a8,8,0,0,1,0-16h44.69L136,107.31l-34.34,34.35a8,8,0,0,1-11.32,0l-72-72A8,8,0,0,1,29.66,58.34L96,124.69l34.34-34.35a8,8,0,0,1,11.32,0L224,172.69V128a8,8,0,0,1,16,0Z',
-  minus: 'M224,128a8,8,0,0,1-8,8H40a8,8,0,0,1,0-16H216A8,8,0,0,1,224,128Z',
-  dots: 'M140,128a12,12,0,1,1-12-12A12,12,0,0,1,140,128Zm56-12a12,12,0,1,0,12,12A12,12,0,0,0,196,116ZM60,116a12,12,0,1,0,12,12A12,12,0,0,0,60,116Z',
-}
-const glyph = (d: string, spin?: boolean) => (
-  <svg viewBox="0 0 256 256" fill="currentColor" aria-hidden focusable="false" className={spin ? 'animate-spin motion-reduce:animate-none' : undefined}><path d={d} /></svg>
-)
+  spinner: 'loading',
+  tray: 'tray',
+  up: 'arrow-up',
+  down: 'arrow-down',
+  trendUp: 'trend-up',
+  trendDown: 'trend-down',
+  minus: 'minus',
+  dots: 'dots-three',
+} as const
 const ICON = '[&>svg]:size-full inline-flex shrink-0 items-center justify-center'
 
 interface Ctx { size?: TableSize; dividers?: TableDividers; footer?: boolean; disabled?: boolean }
@@ -543,7 +541,7 @@ export interface TableLoadingProps extends Omit<React.ComponentProps<'div'>, 'ch
 function TableLoading({ label = 'Loading data…', className, ...props }: TableLoadingProps) {
   return (
     <div role="status" aria-live="polite" data-slot="table-loading" data-escala="TableLoading" className={cn('flex w-full items-center justify-center', className)} {...props}>
-      <span data-part="TableLoading.spinner" aria-hidden className={ICON}>{glyph(G.spinner, true)}</span>
+      <span data-part="TableLoading.spinner" aria-hidden className={ICON}>{glyph(G.spinner, { className: 'animate-spin motion-reduce:animate-none' })}</span>
       <span data-part="TableLoading.label">{label}</span>
     </div>
   )

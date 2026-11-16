@@ -39,7 +39,8 @@ function item({ size, forceState, indicator, label, iconLeadingVisible, iconLead
 }
 
 const meta: Meta<LineStoryArgs> = {
-  title: 'Navigation/TabMenuLineItem',
+  title: 'Navigation/TabMenu',
+  tags: ['!autodocs', 'part'],
   render: (args) => <TabMenu variant={args.indicator === 'left' ? 'vertical-line' : 'horizontal-line'} size={args.size} aria-label="Line item" style={args.indicator === 'left' ? { width: 120 } : undefined}>{item(args)}</TabMenu>,
   args: { size: 'default', forceState: 'Default', indicator: 'bottom', label: 'Overview', iconLeadingVisible: false, iconLeadingIcon: 'home', trailingVisible: false, iconTrailingVisible: false, iconTrailingIcon: 'chevron-down' },
   argTypes: {
@@ -57,9 +58,10 @@ const meta: Meta<LineStoryArgs> = {
 export default meta
 type Story = StoryObj<LineStoryArgs>
 
-export const Playground: Story = {}
+export const TabMenuLineItemPlayground: Story = { name: 'TabMenuLineItem · Playground' }
 
-export const States: Story = {
+export const TabMenuLineItemStates: Story = {
+  name: 'TabMenuLineItem · States',
   render: (args) => (
     <TabMenu variant={args.indicator === 'left' ? 'vertical-line' : 'horizontal-line'} size={args.size} aria-label="States" style={args.indicator === 'left' ? { width: 160 } : undefined}>
       {TAB_MENU_ITEM_STATES.map((s) => item({ ...args, forceState: s, label: s }, s))}
@@ -67,7 +69,8 @@ export const States: Story = {
   ),
 }
 
-export const Sizes: Story = {
+export const TabMenuLineItemSizes: Story = {
+  name: 'TabMenuLineItem · Sizes',
   render: (args) => (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 12, alignItems: 'flex-start' }}>
       {TAB_MENU_SIZES.map((size) => <TabMenu key={size} size={size} aria-label={`Size ${size}`}>{item({ ...args, size, forceState: 'Selected', indicator: 'bottom' }, size)}</TabMenu>)}
@@ -75,7 +78,8 @@ export const Sizes: Story = {
   ),
 }
 
-export const AllCombinations: Story = {
+export const TabMenuLineItemAllCombinations: Story = {
+  name: 'TabMenuLineItem · All Combinations',
   render: (args) => (
     <div style={{ display: 'flex', flexWrap: 'wrap', gap: 24, alignItems: 'flex-start' }}>
       {TAB_MENU_INDICATORS.map((indicator) => (

@@ -25,6 +25,7 @@ import { CLI_PUBLISHED } from '../featureFlags'
 import type { TokenJSON } from '../agentBundle/types'
 import { figmaSemanticName } from '../agentBundle/names'
 import { roleIdFromName } from '../roleNames'
+import { SOCIAL_BRANDS } from '../socialBrands'
 
 let brand = ''
 
@@ -277,7 +278,7 @@ describe('field outline is border.control', () => {
 
   it('every field-like recipe paints its resting edge with border.control, never border.strong', async () => {
     const { COMPONENT_RECIPES, recipeColorRoles } = await import('../componentRecipes')
-    for (const key of ['Input', 'Textarea', 'Select', 'RadioGroup', 'InputOTPSlot', 'Chip']) {
+    for (const key of ['Input', 'Textarea', 'Combobox', 'RadioGroup', 'InputOTPSlot', 'Chip']) {
       const roles = recipeColorRoles(COMPONENT_RECIPES[key])
       expect(roles, key).toContain('border.control')
       // Chip (the Figma file, 2026-11-12): its RESTING edge is border.control; border.strong is the
@@ -434,6 +435,7 @@ describe('design skills cite only names the system ships', () => {
           else if (col === 'Dimension Primitives') expect(json.dimensions?.[name], `${f.path}: ${name}`).toBeDefined()
           else if (col === 'Text style') expect(json.typography.roles?.[name.replace(/^Type\//, '')], `${f.path}: ${name}`).toBeDefined()
           else if (col === 'Typography') expect(json.typography.sizes?.[name.replace(/^size\//, '')], `${f.path}: ${name}`).toBeDefined()
+          else if (col === 'Social Media Brands') expect(Object.keys(SOCIAL_BRANDS).includes(name.split('/')[0].toLowerCase()), `${f.path}: ${name}`).toBe(true)
           else if (col === 'Effect style') expect(json.shadows?.[name.replace(/^Shadow\//, '')], `${f.path}: ${name}`).toBeDefined()
           else {
             const [family, role] = roleOf(name)
@@ -550,7 +552,8 @@ describe('component-build (React) ↔ recipes, escala-ui and variables.css', () 
         expect(painted || note.includes(UNPAINTED), `${key}: ${slot} ${selector}`).toBe(true)
         if (slot === recipe.slots[0]) expect(painted, `${key}: root`).toBe(true)
       }
-      const src = existsSync(join(uiDir, `${componentFileName(key)}.tsx`)) ? readFileSync(join(uiDir, `${componentFileName(key)}.tsx`), 'utf8') : ''
+      const file = [join(uiDir, `${componentFileName(key)}.tsx`), join(uiDir, '_skeleton', `${componentFileName(key)}.tsx`)].find((f) => existsSync(f))
+      const src = file ? readFileSync(file, 'utf8') : ''
       for (const [attr] of tableRows(md!, 'Attribute')) {
         const name = attr.replace(/=.*$/, '')
         if (name === 'data-force-state' || name === 'data-escala') continue

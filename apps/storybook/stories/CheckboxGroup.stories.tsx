@@ -31,7 +31,8 @@ function render(a: CheckboxGroupStoryArgs) {
 }
 
 const meta: Meta<CheckboxGroupStoryArgs> = {
-  title: 'Forms/CheckboxGroup',
+  title: 'Forms/Checkbox',
+  tags: ['!autodocs', 'part'],
   render,
   args: {
     size: 'default', placement: 'left', forceState: 'Default', variant: 'default',
@@ -50,10 +51,11 @@ const meta: Meta<CheckboxGroupStoryArgs> = {
 export default meta
 type Story = StoryObj<CheckboxGroupStoryArgs>
 
-export const Playground: Story = {}
+export const CheckboxGroupPlayground: Story = { name: 'CheckboxGroup · Playground' }
 
 /** Size × State, with the footer (Placement and Variant pass straight to the rows). */
-export const AllCombinations: Story = {
+export const CheckboxGroupAllCombinations: Story = {
+  name: 'CheckboxGroup · All Combinations',
   render: (args) => (
     <div style={{ display: 'flex', flexWrap: 'wrap', gap: 32, alignItems: 'flex-start' }}>
       {CHECKBOX_SIZES.flatMap((size) => CHECKBOX_GROUP_STATES.map((forceState) => (
@@ -63,7 +65,8 @@ export const AllCombinations: Story = {
   ),
 }
 
-export const Placements: Story = {
+export const CheckboxGroupPlacements: Story = {
+  name: 'CheckboxGroup · Placements',
   render: (args) => (
     <div style={{ display: 'flex', flexWrap: 'wrap', gap: 32, alignItems: 'flex-start' }}>
       {CHECKBOX_ITEM_PLACEMENTS.map((placement) => <div key={placement}>{render({ ...args, placement })}</div>)}

@@ -25,15 +25,14 @@ import { Alert, AlertDescription, AlertTitle } from '../escala-ui/alert'
 import { Chip } from '../escala-ui/chip'
 import { ProgressLine as Progress } from '../escala-ui/progress-line'
 import { SegmentedControl } from '../escala-ui/segmented-control'
-import { ToggleGroup, ToggleGroupItem } from '../escala-ui/toggle-group'
 import { Switch } from '../escala-ui/switch'
 import { Checkbox } from '../escala-ui/checkbox'
 import { RadioGroup, RadioGroupItem } from '../escala-ui/radio-group'
 import { Slider } from '../escala-ui/slider'
-import { NativeSelect, NativeSelectOption } from '../escala-ui/native-select'
+import { Combobox } from '../escala-ui/combobox'
 import { InputOTP, InputOTPGroup, InputOTPSeparator, InputOTPSlot } from '../escala-ui/input-otp'
 import { Separator } from '../escala-ui/separator'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '../escala-ui/tabs'
+import { TabMenu } from '../escala-ui/tab-menu'
 import { Stepper } from '../escala-ui/stepper'
 import { Pagination } from '../escala-ui/pagination'
 import { cn } from '../../lib/utils'
@@ -229,11 +228,7 @@ function SelectionTile({ t }: { t: T }) {
     <Tile wide label={t('Selection')}>
       <Row layout="stack">
         <SegmentedControl options={[t('Day'), t('Week'), t('Month')]} value={t('Week')} />
-        <ToggleGroup type="single" variant="outline" value="grid">
-          <ToggleGroupItem value="list">{t('List')}</ToggleGroupItem>
-          <ToggleGroupItem value="grid">{t('Grid')}</ToggleGroupItem>
-          <ToggleGroupItem value="board">{t('Board')}</ToggleGroupItem>
-        </ToggleGroup>
+        <SegmentedControl options={[t('List'), t('Grid'), t('Board')]} value={t('Grid')} />
       </Row>
     </Tile>
   )
@@ -457,16 +452,11 @@ function ChecklistTile({ t }: { t: T }) {
 function TabsTile({ t }: { t: T }) {
   return (
     <Tile wide label={t('Tabs')}>
-      <Tabs value="overview" className="w-full">
-        <TabsList className="w-full">
-          <TabsTrigger value="overview">{t('Overview')}</TabsTrigger>
-          <TabsTrigger value="activity">{t('Activity')}</TabsTrigger>
-          <TabsTrigger value="settings">{t('Settings')}</TabsTrigger>
-        </TabsList>
-        <TabsContent value="overview" style={{ paddingTop: 'var(--spacing-3)', ...ty('body-sm'), color: INK.secondary }}>
-          {t('Every token your product reads, in one place.')}
-        </TabsContent>
-      </Tabs>
+      {/* TabMenu is the bar only (Figma TabMenu); the panel under it is this screen's own. */}
+      <TabMenu variant="horizontal-button" fill items={[t('Overview'), t('Activity'), t('Settings')]} value={t('Overview')} aria-label={t('Tabs')} />
+      <div style={{ paddingTop: 'var(--spacing-3)', ...ty('body-sm'), color: INK.secondary }}>
+        {t('Every token your product reads, in one place.')}
+      </div>
     </Tile>
   )
 }
@@ -493,10 +483,13 @@ function FormTile({ t }: { t: T }) {
       <Slider label={t('Volume')} value={60} format={(v) => `${v}%`} />
       <div className="flex flex-col" style={{ gap: 'var(--spacing-1_5)' }}>
         <Label>{t('Role')}</Label>
-        <NativeSelect value="designer" onChange={() => {}}>
-          <NativeSelectOption value="designer">{t('Designer')}</NativeSelectOption>
-          <NativeSelectOption value="engineer">{t('Engineer')}</NativeSelectOption>
-        </NativeSelect>
+        <Combobox
+          aria-label={t('Role')}
+          options={[{ label: t('Designer'), value: 'designer' }, { label: t('Engineer'), value: 'engineer' }]}
+          defaultValue="designer"
+          leading={null}
+          placeholder={t('Role')}
+        />
       </div>
     </Tile>
   )

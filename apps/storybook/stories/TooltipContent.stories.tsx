@@ -31,7 +31,8 @@ function bubble({ size, side, align, variant, text, title, titleVisible, arrowVi
 }
 
 const meta: Meta<TooltipContentStoryArgs> = {
-  title: 'Content & Surfaces/TooltipContent',
+  title: 'Content & Surfaces/Tooltip',
+  tags: ['!autodocs', 'part'],
   render: bubble,
   args: { size: 'default', side: 'top', align: 'start', variant: 'default', text: 'Used on invoices and receipts. Format: 12-3456789.', title: 'Tax ID', titleVisible: false, arrowVisible: true },
   argTypes: {
@@ -48,9 +49,10 @@ const meta: Meta<TooltipContentStoryArgs> = {
 export default meta
 type Story = StoryObj<TooltipContentStoryArgs>
 
-export const Playground: Story = {}
+export const TooltipContentPlayground: Story = { name: 'TooltipContent · Playground' }
 
-export const Variants: Story = {
+export const TooltipContentVariants: Story = {
+  name: 'TooltipContent · Variants',
   render: (args) => (
     <div style={{ display: 'flex', flexWrap: 'wrap', gap: 24, alignItems: 'flex-start' }}>
       {TOOLTIP_VARIANTS.map((variant) => <div key={variant}>{bubble({ ...args, variant })}</div>)}
@@ -58,7 +60,8 @@ export const Variants: Story = {
   ),
 }
 
-export const SidesAndAligns: Story = {
+export const TooltipContentSidesAndAligns: Story = {
+  name: 'TooltipContent · Sides And Aligns',
   render: (args) => (
     <div style={{ display: 'flex', flexWrap: 'wrap', gap: 24, alignItems: 'flex-start' }}>
       {TOOLTIP_SIDES.flatMap((side) => TOOLTIP_ALIGNS.map((align) => <div key={side + align}>{bubble({ ...args, side, align })}</div>))}
@@ -66,7 +69,8 @@ export const SidesAndAligns: Story = {
   ),
 }
 
-export const Sizes: Story = {
+export const TooltipContentSizes: Story = {
+  name: 'TooltipContent · Sizes',
   render: (args) => (
     <div style={{ display: 'flex', flexWrap: 'wrap', gap: 24, alignItems: 'flex-start' }}>
       {TOOLTIP_SIZES.map((size) => <div key={size}>{bubble({ ...args, size, titleVisible: true })}</div>)}
@@ -75,7 +79,8 @@ export const Sizes: Story = {
 }
 
 /** The real thing: hover or focus the button. */
-export const WithTrigger: Story = {
+export const TooltipContentWithTrigger: Story = {
+  name: 'TooltipContent · With Trigger',
   render: (args) => (
     <TooltipProvider>
       <div style={{ padding: 80 }}>

@@ -5,7 +5,8 @@ import { AvatarStatus, AVATAR_STATUSES, AVATAR_STATUS_SIZES, type AvatarStatusVa
 interface StatusStoryArgs { status: AvatarStatusValue; size: AvatarStatusSize }
 
 const meta: Meta<StatusStoryArgs> = {
-  title: 'Content & Surfaces/AvatarStatus',
+  title: 'Content & Surfaces/Avatar',
+  tags: ['!autodocs', 'part'],
   render: ({ status, size }) => <AvatarStatus status={status} size={size} />,
   args: { status: 'online', size: 'default' },
   argTypes: {
@@ -16,9 +17,10 @@ const meta: Meta<StatusStoryArgs> = {
 export default meta
 type Story = StoryObj<StatusStoryArgs>
 
-export const Playground: Story = {}
+export const AvatarStatusPlayground: Story = { name: 'AvatarStatus · Playground' }
 
-export const AllCombinations: Story = {
+export const AvatarStatusAllCombinations: Story = {
+  name: 'AvatarStatus · All Combinations',
   render: () => (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
       {AVATAR_STATUS_SIZES.map((size) => (

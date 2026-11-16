@@ -10,7 +10,8 @@ interface SeparatorStoryArgs {
 const list = { margin: 0, padding: 0, listStyle: 'none', display: 'flex', alignItems: 'center', gap: 16 } as const
 
 const meta: Meta<SeparatorStoryArgs> = {
-  title: 'Navigation/BreadcrumbSeparator',
+  title: 'Navigation/Breadcrumb',
+  tags: ['!autodocs', 'part'],
   render: ({ variant, size }) => <ol style={list}><BreadcrumbSeparator variant={variant} size={size} /></ol>,
   args: { variant: 'chevron', size: 'default' },
   argTypes: {
@@ -21,9 +22,10 @@ const meta: Meta<SeparatorStoryArgs> = {
 export default meta
 type Story = StoryObj<SeparatorStoryArgs>
 
-export const Playground: Story = {}
+export const BreadcrumbSeparatorPlayground: Story = { name: 'BreadcrumbSeparator · Playground' }
 
-export const AllCombinations: Story = {
+export const BreadcrumbSeparatorAllCombinations: Story = {
+  name: 'BreadcrumbSeparator · All Combinations',
   render: () => (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
       {BREADCRUMB_SEPARATORS.map((variant) => (

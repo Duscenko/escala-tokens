@@ -14,7 +14,8 @@ function Frame({ children, width = 200 }: { children: React.ReactNode; width?: n
 interface Args { label: string; labelVisible: boolean; description: string; descriptionVisible: boolean; size: TableSize; ratio: 'square' | 'wide'; state: 'Default' | 'Disabled' }
 const Photo = () => <div style={{ width: '100%', height: '100%', background: 'linear-gradient(135deg, var(--color-action-primary-default), var(--color-surface-muted))' }} />
 const meta: Meta<Args> = {
-  title: 'Content & Surfaces/TableMediaCell',
+  title: 'Content & Surfaces/Table',
+  tags: ['!autodocs', 'part'],
   render: (a) => <Frame><TableMediaCell {...a} image={<Photo />} /></Frame>,
   args: { label: 'Studio portrait', labelVisible: true, description: 'media/photo-11', descriptionVisible: false, size: 'default', ratio: 'square', state: 'Default' },
   argTypes: {
@@ -27,8 +28,9 @@ const meta: Meta<Args> = {
 }
 export default meta
 type Story = StoryObj<Args>
-export const Playground: Story = {}
-export const Sizes: Story = {
+export const TableMediaCellPlayground: Story = { name: 'TableMediaCell · Playground' }
+export const TableMediaCellSizes: Story = {
+  name: 'TableMediaCell · Sizes',
   render: (a) => (
     <div style={{ display: 'flex', flexWrap: 'wrap', gap: 16 }}>
       {(['default', 'xs', 'sm', 'lg'] as TableSize[]).flatMap((size) => (['square', 'wide'] as const).map((ratio) => <Frame key={size + ratio}><TableMediaCell {...a} size={size} ratio={ratio} image={<Photo />} /></Frame>))}

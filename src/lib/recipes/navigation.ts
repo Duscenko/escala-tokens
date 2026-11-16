@@ -3,38 +3,9 @@
  * Stepper, DropdownMenu, ContextMenu, Command, Navbar, Sidebar.
  * Rules as in `componentRecipes.ts`.
  */
+import { groupLabelRecipe } from './groupLabel.js'
+import { listItemRecipe, listItemHighlightFill, listItemRootPaint, LIST_ITEM_METRICS } from './listItem.js'
 import { c, NONE, part, PANEL_RADIUS, PANEL_ROW_RADIUS, type ComponentRecipe, type SlotMap, type SlotProps, FOCUS } from './helpers.js'
-
-// ── Tabs (underline) ───────────────────────────────────────────────────────
-
-// shadcn's TabsList variants: `default` is a muted track whose active trigger
-// is raised on the page colour; `line` is an underline under the active one.
-// The track is concentric with its trigger: `radius.action` (8) minus the
-// `spacing.1` inset (4) is exactly `radius.control` (4) — a 2px inset left the
-// trigger's corners visibly squarer than the track around them.
-export const TABS: ComponentRecipe = {
-  key: 'Tabs',
-  slots: ['root', 'trigger'],
-  defaults: { Variant: 'default' },
-  parts: [
-    part({}, () => ({
-      trigger: { text: c('content.secondary'), font: 'type.button', paddingX: 'spacing.2', paddingY: 'spacing.1', gap: 'spacing.1_5' },
-      'trigger:hover': { text: c('content.primary') },
-      'trigger:focus-visible': FOCUS,
-    })),
-    part({ Variant: ['default', 'line'] as const }, (variant) => variant === 'line'
-      ? {
-          root: { fill: NONE, gap: 'spacing.1' },
-          trigger: { stroke: NONE, strokeBottomWidth: 'stroke.md' },
-          'trigger[data-state="active"]': { text: c('content.primary'), stroke: c('content.primary') },
-        }
-      : {
-          root: { fill: c('surface.layer-2'), radius: 'radius.action', paddingX: 'spacing.1', paddingY: 'spacing.1', gap: 'spacing.0_5' },
-          trigger: { radius: 'radius.control' },
-          'trigger[data-state="active"]': { fill: c('surface.page'), text: c('content.primary'), shadow: 'shadow.xs' },
-        }),
-  ],
-}
 
 // ── TabMenu, TabMenuItem and TabMenuLineItem ───────────────────────────────
 // The Figma sets TabMenu (984:1830), TabMenuItem (984:939) and TabMenuLineItem (984:1156)
@@ -43,7 +14,7 @@ export const TABS: ComponentRecipe = {
 // touch; a button variant spaces them `Spacing/gap-tight` apart and fills the selected one.
 export const TAB_MENU_SIZES = ['default', 'sm', 'lg'] as const
 export const TAB_MENU_VARIANTS = ['horizontal-line', 'horizontal-button', 'vertical-line', 'vertical-button'] as const
-export const TAB_MENU_ITEM_STATES = ['Default', 'Hover', 'Selected', 'Focused', 'Disabled'] as const
+export const TAB_MENU_ITEM_STATES = ['Default', 'Hover', 'Focused', 'Selected', 'Disabled'] as const
 export const TAB_MENU_INDICATORS = ['bottom', 'left'] as const
 
 export const TAB_MENU: ComponentRecipe = {
@@ -108,7 +79,7 @@ export const TAB_MENU_LINE_ITEM: ComponentRecipe = {
 // The Figma sets NavItem (1095:19644), Brand (1098:42) and AccountMenuTrigger (1098:119)
 // (design-plans/nav-header-contract.md). NavItem is a TabMenuItem whose selected state is `Current`.
 export const NAV_ITEM_SIZES = TAB_MENU_SIZES
-export const NAV_ITEM_STATES = ['Default', 'Hover', 'Current', 'Focused', 'Disabled'] as const
+export const NAV_ITEM_STATES = ['Default', 'Hover', 'Focused', 'Current', 'Disabled'] as const
 
 export const NAV_ITEM: ComponentRecipe = {
   key: 'NavItem',
@@ -142,7 +113,7 @@ export const ACCOUNT_MENU_TRIGGER: ComponentRecipe = {
   parts: [
     part({ Size: ACCOUNT_MENU_TRIGGER_SIZES }, (size) => ({
       root: {
-        height: size === 'sm' ? 'size.sm' : 'size.md', radius: 'radius.action', paddingX: 'spacing.inset-control', paddingRight: 'spacing.gap-tight', paddingY: 'spacing.none',
+        height: size === 'sm' ? 'size.sm' : 'size.md', radius: 'radius.action', paddingX: 'spacing.gap-tight', paddingRight: 'spacing.inset-control', paddingY: 'spacing.none',
         gap: 'spacing.gap-control', text: c('content.primary'), font: 'type.button',
       },
       iconTrailing: size === 'sm' ? { width: 'icon.small', height: 'icon.small' } : { width: 'icon.medium', height: 'icon.medium' },
@@ -161,8 +132,9 @@ export const ACCOUNT_MENU_TRIGGER: ComponentRecipe = {
 // Size default · sm · lg) and its `SegmentedControlItem` (1102:5087, 30 variants: Size × Checked ×
 // State Default · Hover · Pressed · Focused · Disabled). The track is a Surface/muted pill (Radius/
 // action) with gap-tight of padding around a `Content` slot of items 4 apart; every item is 8 less than
-// the track in height (Size/control-sm 32 · control-xs 24 · control-md 40). A checked item is the raised
-// thumb (Surface/input, Shadow/xs, Radius/control); the others are ghost fills on hover / press. Focused:
+// the track in height (Size/control-sm 32 · control-xs 24 · control-md 40). Every item, checked or not, is
+// Radius/item: track 12 − gap-tight 4 = 8, concentric (DEC-2026-11-16-001). A checked item is the raised
+// thumb (Surface/input, Shadow/xs, Radius/item); the others are ghost fills on hover / press. Focused:
 // a 2px edge inside (not in the layout) + a 2px halo outside.
 export const SEGMENTED_CONTROL_SIZES = ['default', 'sm', 'lg'] as const
 export const SEGMENTED_CONTROL: ComponentRecipe = {
@@ -187,12 +159,12 @@ const SEGMENT_ITEM: Record<string, { box: string; gap: string; icon: string }> =
 function segmentPaint(checked: string, state: string): SlotMap {
   const on = checked === 'true'
   // A disabled raised segment keeps the fill but loses Shadow/xs (the file draws no effect on it).
-  if (state === 'Disabled') return { root: { fill: on ? c('surface.input') : NONE, text: c('content.disabled'), radius: on ? 'radius.control' : 'radius.action', ...(on ? { highlight: NONE } : {}) } }
+  if (state === 'Disabled') return { root: { fill: on ? c('surface.input') : NONE, text: c('content.disabled'), radius: 'radius.item', ...(on ? { highlight: NONE } : {}) } }
   // A `focus` of none would clear the box-shadow the raised segment carries, so only Focused sets it.
   const focus = state === 'Focused' ? { focus: c('border.focus'), ring: c('border.ring.default') } : {}
-  if (on) return { root: { fill: c('surface.input'), text: c('content.primary'), radius: 'radius.control', shadow: 'shadow.xs', ...focus } }
+  if (on) return { root: { fill: c('surface.input'), text: c('content.primary'), radius: 'radius.item', shadow: 'shadow.xs', ...focus } }
   const fill = state === 'Hover' ? c('action.ghost.hover') : state === 'Pressed' ? c('action.ghost.pressed') : NONE
-  return { root: { fill, text: c(state === 'Hover' || state === 'Pressed' ? 'content.primary' : 'content.secondary'), radius: 'radius.action', ...focus } }
+  return { root: { fill, text: c(state === 'Hover' || state === 'Pressed' ? 'content.primary' : 'content.secondary'), radius: 'radius.item', ...focus } }
 }
 
 export const SEGMENTED_CONTROL_ITEM: ComponentRecipe = {
@@ -440,40 +412,13 @@ export const STEPPER_ICON: ComponentRecipe = {
   ],
 }
 
-// ── Menus ──────────────────────────────────────────────────────────────────
-
-// A menu panel is a box: `radius.container` (Boxes), with a `spacing.1` inset.
-// Its rows take the panel's radius minus that inset, so the highlighted row is
-// concentric with the panel at any Boxes value (16 − 4 = 12). A fixed
-// `radius.control` row read as a square tag inside a round panel.
-export const MENU_PANEL_RADIUS = PANEL_RADIUS
-
-function menu(key: string): ComponentRecipe {
-  const slots: SlotMap = {
-    root: {
-      fill: c('surface.layer-2'), stroke: c('border.subtle'), strokeWidth: 'stroke.control', radius: MENU_PANEL_RADIUS,
-      shadow: 'shadow.lg', paddingX: 'spacing.1', paddingY: 'spacing.1',
-    },
-    item: {
-      text: c('content.primary'), font: 'type.body-sm', radius: PANEL_ROW_RADIUS, paddingX: 'spacing.2_5', paddingY: 'spacing.1_5', gap: 'spacing.2_5',
-    },
-    'item[data-highlighted]': { fill: c('action.ghost.hover') },
-    'item:hover': { fill: c('action.ghost.hover') },
-    'item[data-variant="destructive"]': { text: c('status.critical.content') },
-    'item[data-disabled]': { text: c('content.disabled') },
-    separator: { fill: c('border.subtle'), height: 'stroke.divider' },
-    shortcut: { text: c('content.subtle'), font: 'type.caption' },
-  }
-  return { key, slots: ['root', 'item', 'separator', 'shortcut'], defaults: {}, parts: [part({}, () => slots)] }
-}
-
 // ── DropdownMenu, DropdownMenuLabel, DropdownMenuItem, DropdownMenuFooter ──
 // The Figma sets (design-plans/dropdown-menu-contract.md; 947:299, 947:169, 947:161, 949:3290). A 256 wide panel (Radius/overlay,
 // Surface/layer-2, a 1px Border/default edge, Shadow/md with ring and spreads) holding an optional header (a search Input),
 // the Content (padding 4: labels, items, separators) and an optional footer. Size cascades to every label and item.
 
 export const DROPDOWN_SIZES = ['default', 'sm', 'lg'] as const
-export const DROPDOWN_ITEM_STATES = ['Default', 'Focused', 'Selected', 'Disabled'] as const
+export const DROPDOWN_ITEM_STATES = ['Default', 'Hover', 'Focused', 'Selected', 'Disabled'] as const
 export const DROPDOWN_ITEM_VARIANTS = ['default', 'destructive'] as const
 export const DROPDOWN_FOOTER_LAYOUTS = ['inline', 'stacked'] as const
 
@@ -487,8 +432,10 @@ export const DROPDOWN_MENU: ComponentRecipe = {
         fill: c('surface.layer-2'), stroke: c('border.default'), strokeWidth: 'stroke.divider', radius: 'radius.overlay',
         lift: 'popover-md', width: 'spacing.32+spacing.32',
       },
-      header: { paddingX: 'spacing.gap-tight', paddingY: 'spacing.gap-tight' },
-      content: { paddingX: 'spacing.gap-tight', paddingY: 'spacing.gap-tight' },
+      // Concentric with the overlay: 24 − inset-control 12 = Radius/action 12 for the rows (DEC-2026-11-16-001).
+      // The header sits on the content, so its bottom padding is none.
+      header: { paddingX: 'spacing.inset-control', paddingY: 'spacing.inset-control', paddingBottom: 'spacing.none' },
+      content: { paddingX: 'spacing.inset-control', paddingY: 'spacing.inset-control' },
       // A separator row: 4px above and below a 1px subtle rule.
       separator: { fill: c('border.subtle'), height: 'stroke.divider' },
     })),
@@ -500,64 +447,21 @@ export const DROPDOWN_MENU_LABEL: ComponentRecipe = {
   slots: ['root'],
   defaults: { Size: 'default' },
   parts: [
-    part({ Size: DROPDOWN_SIZES }, (size) => ({
-      root: {
-        paddingX: size === 'lg' ? 'spacing.inset-control' : 'spacing.gap-control', paddingY: 'spacing.gap-tight',
-        text: c('content.secondary'), font: 'type.caption',
-      },
-    })),
+    part({ Size: DROPDOWN_SIZES }, (size) => ({ root: groupLabelRecipe(size) })),
   ],
-}
-
-function dropdownItemPaint(variant: string, state: string): SlotProps {
-  const destructive = variant === 'destructive'
-  switch (state) {
-    case 'Focused':
-      return destructive
-        ? { fill: c('status.critical.surface'), focus: c('status.critical.border-strong'), ring: c('status.critical.border') }
-        : { fill: c('surface.muted'), focus: c('border.focus'), ring: c('border.ring.default') }
-    case 'Selected':
-      return { fill: c('surface.selected') }
-    case 'Disabled':
-      return { fill: NONE }
-    default:
-      return { fill: NONE }
-  }
 }
 
 export const DROPDOWN_MENU_ITEM: ComponentRecipe = {
   key: 'DropdownMenuItem',
+  hover: 'highlight',
   slots: ['root', 'iconLeading', 'media', 'text', 'label', 'description', 'trailing', 'control', 'iconTrailing', 'indicator'],
   defaults: { Size: 'default', State: 'Default', Variant: 'default' },
   parts: [
-    part({ Size: DROPDOWN_SIZES }, (size) => ({
-      root: {
-        minHeight: size === 'sm' ? 'size.xs' : size === 'lg' ? 'size.md' : 'size.sm', radius: 'radius.control',
-        paddingX: size === 'lg' ? 'spacing.inset-control' : 'spacing.gap-control', paddingY: 'spacing.gap-tight',
-        gap: size === 'sm' ? 'spacing.gap-tight' : 'spacing.gap-control',
-      },
-      iconLeading: size === 'lg' ? { width: 'icon.medium', height: 'icon.medium' } : { width: 'icon.small', height: 'icon.small' },
-      iconTrailing: size === 'lg' ? { width: 'icon.medium', height: 'icon.medium' } : { width: 'icon.small', height: 'icon.small' },
-      indicator: size === 'lg' ? { width: 'icon.medium', height: 'icon.medium' } : { width: 'icon.small', height: 'icon.small' },
-      label: { font: size === 'sm' ? 'type.caption' : size === 'lg' ? 'type.body-md' : 'type.body-sm' },
-      description: { font: 'type.caption' },
-      trailing: { font: 'type.caption' },
+    // Geometry per Size (the Dropdown file's); the paint is the shared `listItemRecipe`.
+    part({ Size: DROPDOWN_SIZES, Variant: DROPDOWN_ITEM_VARIANTS, State: DROPDOWN_ITEM_STATES }, (size, variant, state) => ({
+      ...listItemRecipe(size, state, variant, { iconSlot: 'iconLeading' }),
+      iconTrailing: { text: c('content.secondary'), width: LIST_ITEM_METRICS[size].icon, height: LIST_ITEM_METRICS[size].icon },
     })),
-    part({ Variant: DROPDOWN_ITEM_VARIANTS, State: DROPDOWN_ITEM_STATES }, (variant, state) => {
-      const disabled = state === 'Disabled'
-      const ink = disabled ? c('content.disabled') : variant === 'destructive' ? c('status.critical.content') : c('content.primary')
-      return {
-        root: dropdownItemPaint(variant, state),
-        label: { text: ink },
-        description: { text: disabled ? c('content.disabled') : c('content.secondary') },
-        trailing: { text: disabled ? c('content.disabled') : c('content.secondary') },
-        iconLeading: { text: disabled ? c('content.disabled') : variant === 'destructive' ? c('status.critical.content') : c('content.primary') },
-        iconTrailing: { text: c('content.secondary') },
-        indicator: { text: c('content.accent') },
-        // A live menu highlights a row on hover or arrow keys: the file's Focused look.
-        ...(state === 'Default' ? { 'root[data-highlighted]': dropdownItemPaint(variant, 'Focused') } : {}),
-      }
-    }),
   ],
 }
 
@@ -568,7 +472,7 @@ export const DROPDOWN_MENU_FOOTER: ComponentRecipe = {
   parts: [
     part({}, () => ({
       root: {
-        paddingX: 'spacing.gap-control', paddingY: 'spacing.gap-control', gap: 'spacing.gap-control',
+        paddingX: 'spacing.inset-control', paddingY: 'spacing.inset-control', gap: 'spacing.gap-control',
         stroke: c('border.subtle'), strokeTopWidth: 'stroke.divider',
       },
       leading: { gap: 'spacing.gap-tight', text: c('content.secondary'), font: 'type.caption' },
@@ -576,13 +480,12 @@ export const DROPDOWN_MENU_FOOTER: ComponentRecipe = {
     })),
   ],
 }
-export const CONTEXT_MENU = menu('ContextMenu')
 
 // ── Command ────────────────────────────────────────────────────────────────
 
 export const COMMAND: ComponentRecipe = {
   key: 'Command',
-  slots: ['root', 'search', 'icon', 'input', 'kbd', 'list', 'heading', 'item'],
+  slots: ['root', 'search', 'icon', 'input', 'list', 'heading', 'item'],
   defaults: {},
   parts: [
     part({}, () => ({
@@ -592,7 +495,6 @@ export const COMMAND: ComponentRecipe = {
       search: { stroke: c('border.subtle'), strokeBottomWidth: 'stroke.control', paddingX: 'spacing.3', paddingY: 'spacing.2_5', gap: 'spacing.gap-control' },
       icon: { text: c('content.secondary') },
       input: { text: c('content.primary'), font: 'type.placeholder' },
-      kbd: { text: c('content.subtle'), font: 'type.caption', stroke: c('border.subtle'), strokeWidth: 'stroke.control', radius: 'radius.control', paddingX: 'spacing.1_5' },
       list: { paddingX: 'spacing.1_5', paddingY: 'spacing.1_5' },
       heading: { text: c('content.subtle'), font: 'type.caption', paddingX: 'spacing.2_5', paddingY: 'spacing.1' },
       item: { text: c('content.primary'), font: 'type.body-sm', radius: 'sub(radius.container,spacing.1_5)', paddingX: 'spacing.2_5', paddingY: 'spacing.1_5' },
@@ -624,76 +526,90 @@ export const NAVBAR: ComponentRecipe = {
   ],
 }
 
-// ── Sidebar ────────────────────────────────────────────────────────────────
+// ── Sidebar · SidebarBrand · SidebarGroup · SidebarGroupLabel · SidebarMenuButton ──
+// The Figma sets (page Sidebar, 931:87050; Sidebar 982:1003, SidebarMenuButton 980:368, SidebarGroup 982:292,
+// SidebarGroupLabel 980:390, SidebarBrand 980:419), 1:1:
+//  · Sidebar (Collapsed): Surface/layer-1, a 1px Border/default edge on the RIGHT only, 272 wide (48 collapsed).
+//    header (padding and gap gap-control: SidebarBrand + a ghost IconButton trigger), Content (padding gap-control,
+//    gap gap-group) and Footer (padding gap-control, gap gap-tight, a 1px Border/default rule on top).
+//  · SidebarGroup (Size × Collapsed): SidebarGroupLabel over the menu (gap gap-tight). Size cascades to the rows.
+//  · SidebarGroupLabel (Size): `groupLabelRecipe`.
+//  · SidebarMenuButton (Size × State × Collapsed): `listItemRecipe` — the twin of DropdownMenuItem and ComboboxItem
+//    (24 · 32 · 40, Radius/control, Surface/muted on hover, Surface/selected for Current). Collapsed is a square of
+//    the row height with no side padding.
+//  · SidebarBrand (Collapsed): a 32 logo, a Type/label title over a Type/caption subtitle, gap gap-control.
 
-// shadcn's Sidebar: `sidebar` sits flush with a hairline, `floating` is a
-// rounded raised panel, `inset` drops the edge (the page content is inset
-// beside it). A menu button is the ghost hover; the active one keeps it.
-// Escala draws the sidebar as a panel, so `sidebar` is rounded too, and the
-// buttons are concentric with it: `radius.container` minus the `spacing.2`
-// inset lands on `radius.action` (16 − 8 = 8).
+export const SIDEBAR_COLLAPSED = ['false', 'true'] as const
+export const SIDEBAR_SIZES = ['default', 'sm', 'lg'] as const
+export const SIDEBAR_MENU_BUTTON_STATES = ['Default', 'Hover', 'Focused', 'Current', 'Disabled'] as const
+
 export const SIDEBAR: ComponentRecipe = {
   key: 'Sidebar',
-  slots: ['root', 'group', 'label', 'menu', 'button'],
-  defaults: { Variant: 'sidebar' },
+  slots: ['root', 'header', 'content', 'footer'],
+  defaults: { Collapsed: 'false' },
   parts: [
     part({}, () => ({
-      root: { fill: c('surface.layer-1'), text: c('content.primary'), paddingX: 'spacing.2', paddingY: 'spacing.2', gap: 'spacing.2' },
-      group: { gap: 'spacing.1' },
-      label: { text: c('content.secondary'), font: 'type.caption', height: 'size.compact', paddingX: 'spacing.2' },
-      menu: { gap: 'spacing.1' },
-      button: {
-        text: c('content.primary'), font: 'type.body-sm', radius: 'radius.action',
-        height: 'size.compact', paddingX: 'spacing.2', gap: 'spacing.2',
+      root: { fill: c('surface.layer-1'), text: c('content.primary'), stroke: c('border.default'), strokeRightWidth: 'stroke.divider' },
+      header: { paddingX: 'spacing.gap-control', paddingY: 'spacing.gap-control', gap: 'spacing.gap-control' },
+      content: { paddingX: 'spacing.gap-control', paddingY: 'spacing.gap-control', gap: 'spacing.gap-group' },
+      footer: {
+        paddingX: 'spacing.gap-control', paddingY: 'spacing.gap-control', gap: 'spacing.gap-tight',
+        stroke: c('border.default'), strokeTopWidth: 'stroke.divider',
       },
-      'button:hover': { fill: c('action.ghost.hover') },
-      'button[data-active="true"]': { fill: c('action.ghost.hover'), font: 'type.label' },
-      // No fill, as Button's outline: the page colour would patch the sidebar's own surface.
-      'button[data-variant="outline"]': { fill: NONE, stroke: c('border.default'), strokeWidth: 'stroke.control' },
-      'button[data-size="sm"]': { height: 'size.hit', font: 'type.caption' },
-      'button[data-size="lg"]': { height: 'size.touch' },
     })),
-    part({ Variant: ['sidebar', 'floating', 'inset'] as const }, (variant) => ({
-      root: variant === 'floating'
-        ? { stroke: c('border.default'), strokeWidth: 'stroke.control', radius: 'radius.container', shadow: 'shadow.sm' }
-        : variant === 'sidebar'
-          ? { stroke: c('border.default'), strokeWidth: 'stroke.control', radius: 'radius.container' }
-          : { stroke: NONE },
+    part({ Collapsed: SIDEBAR_COLLAPSED }, (collapsed) => ({
+      root: { width: collapsed === 'true' ? 'size.lg' : 'spacing.32+spacing.32+spacing.4' },
     })),
   ],
 }
 
-// ── Menubar ────────────────────────────────────────────────────────────────
-// shadcn's Menubar: a bordered bar of triggers; each menu is the Dropdown
-// panel. The panel portals, so its parts are matched on their own.
-
-export const MENUBAR: ComponentRecipe = {
-  key: 'Menubar',
-  slots: ['root', 'trigger', 'content', 'item', 'separator', 'shortcut'],
-  detachedSlots: ['content', 'item', 'separator', 'shortcut'],
-  defaults: {},
+export const SIDEBAR_BRAND: ComponentRecipe = {
+  key: 'SidebarBrand',
+  slots: ['root', 'logo', 'text', 'title', 'subtitle'],
+  defaults: { Collapsed: 'false' },
   parts: [
     part({}, () => ({
-      root: {
-        fill: c('surface.layer-1'), stroke: c('border.default'), strokeWidth: 'stroke.control', radius: PANEL_RADIUS,
-        height: 'size.compact', paddingX: 'spacing.1', paddingY: 'spacing.1', gap: 'spacing.0_5',
-      },
-      trigger: { text: c('content.primary'), font: 'type.label', radius: PANEL_ROW_RADIUS, paddingX: 'spacing.2', paddingY: 'spacing.0_5' },
-      'trigger:hover': { fill: c('action.ghost.hover') },
-      'trigger[data-state="open"]': { fill: c('action.ghost.hover') },
-      'trigger[data-active="true"]': { fill: c('action.ghost.hover') },
-      content: {
-        fill: c('surface.layer-2'), stroke: c('border.subtle'), strokeWidth: 'stroke.control', radius: MENU_PANEL_RADIUS,
-        shadow: 'shadow.lg', paddingX: 'spacing.1', paddingY: 'spacing.1',
-      },
-      item: {
-        text: c('content.primary'), font: 'type.body-sm', radius: PANEL_ROW_RADIUS, paddingX: 'spacing.2_5', paddingY: 'spacing.1_5', gap: 'spacing.2_5',
-      },
-      'item[data-highlighted]': { fill: c('action.ghost.hover') },
-      'item:hover': { fill: c('action.ghost.hover') },
-      'item[data-variant="destructive"]': { text: c('status.critical.content') },
-      separator: { fill: c('border.subtle'), height: 'stroke.divider' },
-      shortcut: { text: c('content.subtle'), font: 'type.caption' },
+      root: { gap: 'spacing.gap-control' },
+      logo: { width: 'size.sm', height: 'size.sm' },
+      title: { text: c('content.primary'), font: 'type.label' },
+      subtitle: { text: c('content.secondary'), font: 'type.caption' },
+    })),
+  ],
+}
+
+export const SIDEBAR_GROUP: ComponentRecipe = {
+  key: 'SidebarGroup',
+  slots: ['root', 'label', 'content'],
+  defaults: { Size: 'default', Collapsed: 'false' },
+  parts: [
+    part({}, () => ({ content: { gap: 'spacing.gap-tight' } })),
+  ],
+}
+
+export const SIDEBAR_GROUP_LABEL: ComponentRecipe = {
+  key: 'SidebarGroupLabel',
+  slots: ['root'],
+  defaults: { Size: 'default' },
+  parts: [
+    part({ Size: SIDEBAR_SIZES }, (size) => ({ root: groupLabelRecipe(size) })),
+  ],
+}
+
+export const SIDEBAR_MENU_BUTTON: ComponentRecipe = {
+  key: 'SidebarMenuButton',
+  slots: ['root', 'icon', 'text', 'label', 'description', 'trailing', 'trend', 'iconTrailing', 'indicator'],
+  defaults: { Size: 'default', State: 'Default', Collapsed: 'false' },
+  parts: [
+    // Paint and geometry: the shared list row. Hover is the highlight fill; Current is the Selected paint.
+    part({ Size: SIDEBAR_SIZES, State: SIDEBAR_MENU_BUTTON_STATES }, (size, state) => {
+      // A button in a flush list, not a row in an overlay: `radius.item` (DEC-2026-11-16-001).
+      const base = listItemRecipe(size, state === 'Current' ? 'Selected' : state, 'default', { radius: 'radius.item' })
+      const g = LIST_ITEM_METRICS[size]
+      return { ...base, iconTrailing: { text: c('content.secondary'), width: g.icon, height: g.icon } }
+    }),
+    // Collapsed: a square of the row's height, no side padding (the icon centres).
+    part({ Size: SIDEBAR_SIZES, Collapsed: SIDEBAR_COLLAPSED }, (size, collapsed) => ({
+      root: collapsed === 'true' ? { width: LIST_ITEM_METRICS[size].minHeight, paddingX: 'spacing.none' } : {},
     })),
   ],
 }

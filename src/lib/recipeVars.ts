@@ -11,12 +11,16 @@ import type { CSSProperties } from 'react'
 import type { PreviewTokens } from '../components/preview/ButtonPreview'
 import { COMPONENT_RECIPES, recipeTokenRefs, splitRef, cssVarOf } from './componentRecipes'
 import { motionCssVars, normalizeMotionSettings } from './motion'
+import { socialCssVars } from './socialBrands'
 import {
   iconRoleOf, radiusRoleOf, selectorRoleOf, shadowOf, sizeRoleOf, spacingRoleOf, strokeRoleOf, typeStyleOf,
 } from './previewTokens'
 
+/** Roles a BLOCK reads that no recipe does: a section's own vertical padding. (blockRefsProvided.test.ts fails on any other.) */
+export const BLOCK_ONLY_REFS = ['spacing.inset-section']
+
 const REFS: string[] = [
-  ...new Set(Object.values(COMPONENT_RECIPES).flatMap(recipeTokenRefs)),
+  ...new Set([...Object.values(COMPONENT_RECIPES).flatMap(recipeTokenRefs), ...BLOCK_ONLY_REFS]),
 ]
 
 function px(v: unknown): string | undefined {
@@ -69,10 +73,12 @@ export function recipeVarStyle(t: PreviewTokens, opts: { reducedMotion?: boolean
   const vars: Record<string, string> = {}
   for (const [id, value] of Object.entries(t.archTokens)) vars[cssVarOf(`color.${id}`)] = value
   for (const ref of REFS) {
-    if (ref.startsWith('color.')) continue
+    if (ref.startsWith('color.') || ref.startsWith('social.')) continue
     Object.assign(vars, previewDimension(t, ref))
   }
   vars['--stroke-focus'] = strokeRoleOf(t, 'focus', '2px')
+  // The Social Media Brands roles: the same for every system (a Google button is Google's red).
+  for (const line of socialCssVars()) { const [name, value] = line.replace(/;$/, '').split(': '); vars[name] = value }
   // The system's motion: durations, easings, roles and choreography tracks the
   // sheet's transitions and animations read. Reduced motion is the viewer's
   // preference, so the caller passes it (an inline style cannot media-query).

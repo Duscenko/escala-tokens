@@ -8,8 +8,16 @@
 // trigger (Appearance=solid, Shape=pill, Size=lg, Variant=default) and every item
 // (Appearance=soft, Shape=pill, Size=default, Variant=default) is fixed, exactly as the
 // Figma set has it — there is no per-trigger or per-item styling axis to expose.
+//
+// Motion (no role of its own): the items open as the system's `list-reveal` and close as its `list-dismiss` — each item
+// is one child of a stagger: `use-stagger-in` forward at the `--motion-stagger` step, `use-stagger-out` last item first at
+// 0.6 of it. A `stack` item rises (`--motion-transform-enter`); a fan item leaves the trigger's centre and settles on its arc
+// (`--motion-transform-pop`). Closed items stay mounted, hidden (`visibility`), so the exit plays; reduced motion (the
+// scope's `--motion-stagger: 0` and neutral transforms) leaves the fade, and the fan does not travel.
 import * as React from 'react'
+import { useReducedMotion } from 'framer-motion'
 import { cn } from '../../lib/utils'
+import { glyph } from '../../lib/icons'
 import { FABButton } from './fab-button'
 
 export const FAB_GROUP_LAYOUTS = ['stack', 'fan-center', 'fan-left', 'fan-right'] as const
@@ -43,18 +51,14 @@ export interface FABGroupProps extends Omit<React.HTMLAttributes<HTMLDivElement>
 /** Phosphor `plus` (regular) — the trigger's closed glyph. */
 function PlusGlyph() {
   return (
-    <svg viewBox="0 0 256 256" fill="currentColor" aria-hidden focusable="false">
-      <path d="M224,128a8,8,0,0,1-8,8H136v80a8,8,0,0,1-16,0V136H40a8,8,0,0,1,0-16h80V40a8,8,0,0,1,16,0v80h80A8,8,0,0,1,224,128Z" />
-    </svg>
+    glyph('plus')
   )
 }
 
 /** Phosphor `x` (regular) — the trigger's open glyph. */
 function XGlyph() {
   return (
-    <svg viewBox="0 0 256 256" fill="currentColor" aria-hidden focusable="false">
-      <path d="M205.66,194.34a8,8,0,0,1-11.32,11.32L128,139.31,61.66,205.66a8,8,0,0,1-11.32-11.32L116.69,128,50.34,61.66A8,8,0,0,1,61.66,50.34L128,116.69l66.34-66.35a8,8,0,0,1,11.32,11.32L139.31,128Z" />
-    </svg>
+    glyph('close')
   )
 }
 
@@ -102,8 +106,10 @@ function Trigger({
  *  file; `labelled` decides whether its Label is shown (`stack`) or stays the aria-label
  *  (every fan Layout — icon-only, per the measured `LabelVisible` table). */
 function Item({
-  item, labelled, index, disabled,
-}: { item: FABGroupItem; labelled: boolean; index: number; disabled?: boolean }) {
+  item, labelled, index, count, open, from, disabled,
+}: { item: FABGroupItem; labelled: boolean; index: number; count: number; open: boolean; from: string; disabled?: boolean }) {
+  const role = open ? 'var(--motion-use-stagger-in)' : 'var(--motion-use-stagger-out)'
+  const step = open ? index : count - 1 - index
   return (
     <FABButton
       appearance="soft"
@@ -114,8 +120,17 @@ function Item({
       disabled={disabled}
       icon={item.icon}
       onClick={item.onSelect}
-      className="[transition:opacity_var(--motion-use-stagger-in,180ms_cubic-bezier(0,0,0.2,1)),transform_var(--motion-use-stagger-in,180ms_cubic-bezier(0,0,0.2,1))]"
-      style={{ transitionDelay: `calc(${index} * 30ms)` }}
+      data-part="FABGroup.item"
+      data-open={open ? 'true' : 'false'}
+      style={{
+        opacity: open ? 1 : 0,
+        transform: open ? 'none' : from,
+        visibility: open ? 'visible' : 'hidden',
+        pointerEvents: open ? undefined : 'none',
+        transition: `opacity ${role}, transform ${role}, visibility ${role}`,
+        // The dismissal runs at 0.6 of the reveal's step, from the last item to the first (the `list-dismiss` choreography).
+        transitionDelay: `calc(${step} * var(--motion-stagger, 0ms) * ${open ? 1 : 0.6})`,
+      }}
     >
       {labelled ? item.label : undefined}
     </FABButton>
@@ -148,6 +163,7 @@ function FABGroup({
     [openProp, onOpenChange],
   )
   const toggle = React.useCallback(() => setOpen(!open), [open, setOpen])
+  const reduced = useReducedMotion() ?? false
 
   const trigger = (
     <Trigger
@@ -178,8 +194,9 @@ function FABGroup({
         {...props}
       >
         {trigger}
-        {open &&
-          items.map((item, i) => <Item key={i} item={item} labelled index={i} disabled={disabled} />)}
+        {items.map((item, i) => (
+          <Item key={i} item={item} labelled index={i} count={items.length} open={open} from="translateY(var(--motion-transform-enter))" disabled={disabled} />
+        ))}
       </div>
     )
   }
@@ -197,19 +214,19 @@ function FABGroup({
     >
       <div className="relative inline-flex">
         {trigger}
-        {open &&
-          items.map((item, i) => {
-            const { x, y } = fanOffset(layout, i, items.length)
-            return (
-              <div
-                key={i}
-                className="absolute top-1/2 left-1/2"
-                style={{ transform: `translate(-50%, -50%) translate(${x}px, ${y}px)` }}
-              >
-                <Item item={item} labelled={false} index={i} disabled={disabled} />
-              </div>
-            )
-          })}
+        {items.map((item, i) => {
+          const { x, y } = fanOffset(layout, i, items.length)
+          return (
+            <div
+              key={i}
+              className="absolute top-1/2 left-1/2"
+              style={{ transform: `translate(-50%, -50%) translate(${x}px, ${y}px)` }}
+            >
+              {/* From the trigger's centre (back along the offset), small; reduced motion does not travel. */}
+              <Item item={item} labelled={false} index={i} count={items.length} open={open} from={reduced ? 'none' : `translate(${-x}px, ${-y}px) scale(var(--motion-transform-pop))`} disabled={disabled} />
+            </div>
+          )
+        })}
       </div>
     </div>
   )

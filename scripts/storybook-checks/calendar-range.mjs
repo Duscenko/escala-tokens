@@ -1,0 +1,37 @@
+// Calendar range mode, end to end in headless Chromium (the story's play function, as a gate): start, hover preview, end, restart, keyboard,
+// and the same range through the DatePicker (the trigger shows "from – to").
+// Run with Storybook up: node scripts/storybook-checks/calendar-range.mjs
+import { BASE, checker, launch, sleep, story } from './lib.mjs'
+
+const { check, done } = checker('calendar range')
+const browser = await launch()
+const page = await (await browser.newContext({ viewport: { width: 900, height: 900 } })).newPage()
+await page.goto(`${BASE}/iframe.html?id=forms-calendar--range-selection&viewMode=story`); await sleep(2500)
+const st = (n) => page.evaluate((n) => [...document.querySelectorAll('[data-escala=CalendarDay]')].find((d) => d.textContent === String(n) && d.getAttribute('data-force-state') !== 'Outside')?.getAttribute('data-force-state'), n)
+const day = (n) => page.getByRole('button', { name: new RegExp(`November ${n}, 2026`) })
+await day(10).click()
+check(await st(10) === 'Selected', 'first click: the start day is selected', await st(10))
+await day(14).hover()
+check((await Promise.all([11, 12, 13].map(st))).join() === 'RangeMiddle,RangeMiddle,RangeMiddle', 'hover: the span previews to the day under the pointer')
+check(await st(10) === 'RangeStart' && await st(14) === 'RangeEnd', 'hover: start and end caps')
+await day(6).hover()
+check(await st(8) === 'RangeMiddle' && await st(6) === 'RangeStart', 'hover before the start previews backwards')
+await day(14).click(); await page.mouse.move(5, 5)
+check((await Promise.all([10, 11, 12, 13, 14].map(st))).join() === 'RangeStart,RangeMiddle,RangeMiddle,RangeMiddle,RangeEnd', 'second click: the range is set')
+await day(20).click()
+check(await st(20) === 'Selected' && await st(12) !== 'RangeMiddle', 'third click starts over')
+await day(20).focus(); await page.keyboard.press('ArrowRight'); await page.keyboard.press('ArrowRight'); await page.keyboard.press('Enter')
+check((await Promise.all([20, 21, 22].map(st))).join() === 'RangeStart,RangeMiddle,RangeEnd', 'keyboard: arrows + Enter end the range')
+
+await page.goto(story('forms-datepicker--playground')); await sleep(1200)
+const sample = await page.evaluate(() => document.querySelector('[data-escala=DatePickerTrigger]').innerText)
+check(/Nov 12, 2026/.test(sample), 'DatePickerPopover story still opens on a day', sample)
+await page.goto(story('forms-datepicker--date-picker-trigger-pick-a-range')); await sleep(1500)
+await page.locator('[data-escala=DatePickerTrigger]').click()
+await page.getByRole('button', { name: / 10, \d{4}$/ }).click()
+await page.getByRole('button', { name: / 18, \d{4}$/ }).click()
+await page.getByRole('button', { name: 'Apply' }).click(); await sleep(700)
+const text = await page.locator('[data-escala=DatePickerTrigger]').innerText()
+check(/10, \d{4} – .* 18, \d{4}/.test(text), 'DatePicker range: the trigger shows "from – to"', text)
+await browser.close()
+done()

@@ -71,6 +71,22 @@
       ],
       "port": 6006,
       "autoPort": false
+    },
+    {
+      "name": "Storybook (port 6016)",
+      "runtimeExecutable": "npx",
+      "runtimeArgs": [
+        "storybook",
+        "dev",
+        "-p",
+        "6016",
+        "-c",
+        "apps/storybook/.storybook",
+        "--no-open",
+        "--ci"
+      ],
+      "port": 6016,
+      "autoPort": false
     }
   ]
 }

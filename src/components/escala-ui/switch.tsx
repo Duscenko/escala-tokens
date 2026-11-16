@@ -6,6 +6,7 @@
 import * as React from 'react'
 import { Switch as SwitchPrimitive } from 'radix-ui'
 import { cn } from '../../lib/utils'
+import { glyph } from '../../lib/icons'
 import { Spinner } from './spinner'
 
 export const SWITCH_SIZES = ['xs', 'sm', 'default'] as const
@@ -15,8 +16,6 @@ export type SwitchState = (typeof SWITCH_STATES)[number]
 export const SWITCH_THUMBS = ['short', 'long'] as const
 export type SwitchThumb = (typeof SWITCH_THUMBS)[number]
 
-const CHECK = 'M229.66,77.66l-128,128a8,8,0,0,1-11.32,0l-56-56a8,8,0,0,1,11.32-11.32L96,188.69,218.34,66.34a8,8,0,0,1,11.32,11.32Z'
-const CLOSE = 'M205.66,194.34a8,8,0,0,1-11.32,11.32L128,139.31,61.66,205.66a8,8,0,0,1-11.32-11.32L116.69,128,50.34,61.66A8,8,0,0,1,61.66,50.34L128,116.69l66.34-66.35a8,8,0,0,1,11.32,11.32L139.31,128Z'
 
 // The I / O marks sit at absolute positions the file hand-sets per Size · Thumb · Checked (x, y in the
 // track; no variable): a ring 6 · 6 · 8 (off) or a bar 2 wide, 8 · 8 · 10 tall (on).
@@ -73,7 +72,7 @@ function Switch({
       >
         {thumbIconVisible && (
           <span data-part="Switch.thumbIcon" className="inline-flex" aria-hidden>
-            <svg viewBox="0 0 256 256" fill="currentColor" className="size-full" focusable="false"><path d={on ? CHECK : CLOSE} /></svg>
+            {glyph(on ? 'check' : 'close', { className: 'size-full' })}
           </span>
         )}
       </SwitchPrimitive.Thumb>

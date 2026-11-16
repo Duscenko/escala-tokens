@@ -94,10 +94,18 @@ const PROP_LABEL: Record<RecipeProp, string> = {
   strokeTopWidth: 'Top border width',
   strokeBottomWidth: 'Bottom border width',
   strokeRightWidth: 'Right border width',
+  strokeLeftWidth: 'Left border width',
+  radiusTop: 'Radius (top corners)',
+  radiusLeft: 'Radius (left corners)',
+  radiusRight: 'Radius (right corners)',
+  maxWidth: 'Max width',
+  paddingTop: 'Padding top',
   font: 'Typography',
   shadow: 'Shadow',
   hit: 'Target size',
   highlight: 'Top highlight',
+  fillMid: 'Background (gradient, middle stop)',
+  fillEnd: 'Background (gradient, last stop)',
   overlay: 'Overlay',
   overlay2: 'Overlay (second layer)',
   halo: 'Focus halo',
@@ -112,9 +120,9 @@ const PROP_LABEL: Record<RecipeProp, string> = {
 
 /** Display order inside a slot: paint first, then box, then type. */
 const PROP_ORDER: RecipeProp[] = [
-  'fill', 'overlay', 'overlay2', 'text', 'stroke', 'outerStroke', 'strokeTop', 'focus', 'ring', 'halo', 'highlight', 'paint',
-  'radius', 'paddingX', 'paddingY', 'paddingBottom', 'paddingRight', 'gap', 'rowGap', 'overlap', 'height', 'minHeight', 'minWidth', 'width', 'travel',
-  'strokeWidth', 'outerStrokeWidth', 'strokeTopWidth', 'strokeBottomWidth', 'strokeRightWidth', 'shadow', 'font', 'hit',
+  'fill', 'fillMid', 'fillEnd', 'overlay', 'overlay2', 'text', 'stroke', 'outerStroke', 'strokeTop', 'focus', 'ring', 'halo', 'highlight', 'paint',
+  'radius', 'radiusTop', 'radiusLeft', 'radiusRight', 'paddingX', 'paddingY', 'paddingTop', 'paddingBottom', 'paddingRight', 'gap', 'rowGap', 'overlap', 'height', 'minHeight', 'minWidth', 'maxWidth', 'width', 'travel',
+  'strokeWidth', 'outerStrokeWidth', 'strokeTopWidth', 'strokeBottomWidth', 'strokeRightWidth', 'strokeLeftWidth', 'shadow', 'font', 'hit',
 ]
 
 function kindOf(ref: string): TraceKind {

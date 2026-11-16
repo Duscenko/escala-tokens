@@ -194,7 +194,7 @@ describe('the categorical catalogue is complete', () => {
     // border.subtle is on the fixed alpha ladder now (audit F4) — white-a in
     // dark, black-a in light. The dark-step assertions for it live in the
     // "decorative ladder" test above.
-    expect(label('border', 'subtle')).toBe('white-a.2')
+    expect(label('border', 'subtle')).toBe('white-a.1')
     // All three severities share step 11 in dark. Critical read 10 until it was
     // measured at |Lc| ~42.7 against its own tone-3 tint, ~17 short of the
     // large-text floor — see the note in semanticArchitectures.ts.
@@ -245,10 +245,11 @@ describe('the categorical catalogue is complete', () => {
     // Figma file, 2026-11-11): 3:1 on the page, black-a.7 / white-a.6. The
     // 2026-10-21 hairline (1.4:1, black-a.3) did not let a field read without
     // a fill.
-    expect(label('control')?.light.label).toBe('black-a.7')
-    expect(label('control')?.dark.label).toBe('white-a.6')
-    expect(label('control-hover')?.light.label).toBe('black-a.8')
-    expect(label('control-hover')?.dark.label).toBe('white-a.7')
+    // DEC-2026-11-16-004: the Figma file is the rule, so the field outline is the soft hairline again (Alpha/03, hover /04).
+    expect(label('control')?.light.label).toBe('black-a.3')
+    expect(label('control')?.dark.label).toBe('white-a.3')
+    expect(label('control-hover')?.light.label).toBe('black-a.4')
+    expect(label('control-hover')?.dark.label).toBe('white-a.4')
     // Emphasis keeps the stricter ui-component solve.
     expect(label('strong')?.light.label).toBe('black-a.7')
     expect(label('strong')?.dark.label).toBe('white-a.8')
@@ -260,10 +261,10 @@ describe('the categorical catalogue is complete', () => {
   it('gives the decorative ladder two distinct rungs, both lighter than the strong boundary', () => {
     const label = (key: string) =>
       view.categories.find((c) => c.key === 'border')?.tokens.find((t) => t.key === key)?.modes
-    expect(label('subtle')?.light.label).toBe('black-a.2')
-    expect(label('default')?.light.label).toBe('black-a.3')
-    expect(label('subtle')?.dark.label).toBe('white-a.2')
-    expect(label('default')?.dark.label).toBe('white-a.3')
+    expect(label('subtle')?.light.label).toBe('black-a.1')
+    expect(label('default')?.light.label).toBe('black-a.2')
+    expect(label('subtle')?.dark.label).toBe('white-a.1')
+    expect(label('default')?.dark.label).toBe('white-a.2')
     // And every decorative rung stays lighter (lower alpha step) than the
     // control boundary — a decorative stroke that outweighs the boundary is
     // the bug this split was made to remove, just pointing the other way.

@@ -8,6 +8,7 @@
 // content and never goes below the height, so a FAB with no label is a square.
 import * as React from 'react'
 import { cn } from '../../lib/utils'
+import { glyph } from '../../lib/icons'
 
 export const FAB_APPEARANCES = ['solid', 'soft'] as const
 export const FAB_SHAPES = ['rounded', 'pill'] as const
@@ -34,9 +35,7 @@ export interface FABButtonProps extends React.ComponentProps<'button'> {
 /** Phosphor `plus` (regular) — the glyph the Figma file's FAB swaps in by default. */
 function PlusGlyph() {
   return (
-    <svg viewBox="0 0 256 256" fill="currentColor" aria-hidden focusable="false">
-      <path d="M224,128a8,8,0,0,1-8,8H136v80a8,8,0,0,1-16,0V136H40a8,8,0,0,1,0-16h80V40a8,8,0,0,1,16,0v80h80A8,8,0,0,1,224,128Z" />
-    </svg>
+    glyph('plus')
   )
 }
 

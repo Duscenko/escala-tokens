@@ -32,8 +32,19 @@ export interface RegistrySource {
 export interface TransformHelpers {
   /** Source of `components/ui/icons.tsx`, to inline named glyphs from. */
   iconsSource: string
+  /** Source of `lib/icons.ts`: its glyph table and `glyph()` are inlined into each file that imports it. */
+  iconsLibSource?: string
   /** The app's `iconOf` (anatomy snap), evaluated at generation time. */
   iconOf: (px: number) => number
+}
+
+/** `lib/icons.ts` without its imports and comments, `export` dropped: the table and `glyph()` a file draws with. */
+function inlineIconsLib(source: string): string {
+  return source
+    .replace(/^import .*\n/gm, '')
+    .replace(/^\/\/.*\n/gm, '')
+    .replace(/^export /gm, '')
+    .trim()
 }
 
 const IMPORT_RE = /^import\s+([\s\S]*?)\s+from\s+'([^']+)'\s*;?\s*$/gm
@@ -70,6 +81,11 @@ export function transformEscalaUi(file: string, input: string, helpers: Transfor
     }
     if (spec === '../ui/icons') {
       for (const fn of namedImports(clause)) inlined.push(extractFunction(helpers.iconsSource, fn))
+      return ''
+    }
+    if (spec === '../../lib/icons') {
+      if (!helpers.iconsLibSource) throw new Error(`escala-ui transform: ${file} imports lib/icons but no source was given`)
+      inlined.push(inlineIconsLib(helpers.iconsLibSource))
       return ''
     }
     if (spec === '../../lib/previewTokens') {

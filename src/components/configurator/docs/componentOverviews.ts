@@ -119,10 +119,6 @@ export const OVERVIEWS: Record<string, Overview> = {
     each('Variant', ['default', 'secondary', 'outline', 'inverse']),
     each('Orientation', ['horizontal', 'vertical']),
   ],
-  ToggleGroup: [
-    each('Variant', ['default', 'outline']),
-    each('Size', ['sm', 'default', 'lg'], { Variant: 'outline' }),
-  ],
   Toggle: [
     [
       { v: { Variant: 'default', Pressed: 'False' } },
@@ -133,8 +129,8 @@ export const OVERVIEWS: Record<string, Overview> = {
     each('Size', ['sm', 'default', 'lg'], { Variant: 'outline', Pressed: 'True' }),
   ],
   SocialLoginButton: [
-    each('Provider', ['google', 'apple'], {}, 260),
-    each('Provider', ['github', 'figma'], {}, 260),
+    each('Brand', ['Google', 'Apple', 'Discord'], { Appearance: 'white' }, 260),
+    each('Brand', ['Google', 'GitHub', 'X'], { Appearance: 'brand' }, 260),
   ],
   AppStoreBadge: [each('Store', ['app-store', 'google-play'])],
 
@@ -208,11 +204,6 @@ export const OVERVIEWS: Record<string, Overview> = {
     each('State', ['Default', 'Hover', 'Focused', 'Disabled'], {}, 240),
     each('Type', ['option', 'create'], {}, 240),
   ],
-  Select: [
-    each('State', ['Default', 'Focused'], {}, 220),
-    each('State', ['Error', 'Disabled'], {}, 220),
-  ],
-  NativeSelect: [each('State', ['Default', 'Focused', 'Disabled'], {}, 200)],
   Calendar: [
     ...stack('Mode', ['single', 'multiple', 'range'], { Size: 'default', Header: 'single' }),
     ...stack('Header', ['multiple', 'plain'], { Size: 'default', Mode: 'single' }),
@@ -226,7 +217,7 @@ export const OVERVIEWS: Record<string, Overview> = {
   ],
   ComboboxPopover: [each('Content', ['list', 'grouped', 'empty'], {}, 280)],
   ComboboxItem: [
-    each('State', ['Default', 'Focused', 'Selected', 'Disabled'], {}, 256),
+    each('State', ['Default', 'Hover', 'Focused', 'Selected', 'Disabled'], {}, 256),
     each('Size', ['sm', 'default', 'lg'], { State: 'Selected' }, 256),
   ],
   ComboboxGroupLabel: [each('Size', ['sm', 'default', 'lg'], {}, 256)],
@@ -403,12 +394,12 @@ export const OVERVIEWS: Record<string, Overview> = {
   PopoverFooter: [each('Layout', ['inline', 'stacked'], {}, 256), each('Size', ['default', 'sm', 'lg'], {}, 256)],
   DropdownMenu: [each('Size', ['default', 'sm', 'lg'], {}, 256)],
   DropdownMenuLabel: [each('Size', ['default', 'sm', 'lg'], {}, 256)],
-  DropdownMenuItem: [each('State', ['Default', 'Focused', 'Selected', 'Disabled'], {}, 256), each('State', ['Default', 'Focused', 'Disabled'], { Variant: 'destructive' }, 256), each('Size', ['default', 'sm', 'lg'], {}, 256)],
+  DropdownMenuItem: [each('State', ['Default', 'Hover', 'Focused', 'Selected', 'Disabled'], {}, 256), each('State', ['Default', 'Hover', 'Focused', 'Disabled'], { Variant: 'destructive' }, 256), each('Size', ['default', 'sm', 'lg'], {}, 256)],
   DropdownMenuFooter: [each('Layout', ['inline', 'stacked'], {}, 256), each('Size', ['default', 'sm', 'lg'], {}, 256)],
   TabMenu: [each('Variant', ['horizontal-line', 'horizontal-button'], {}, 360), each('Variant', ['vertical-line', 'vertical-button'], {}, 240), each('Size', ['default', 'sm', 'lg'], {}, 360)],
-  TabMenuItem: [each('State', ['Default', 'Hover', 'Selected', 'Focused', 'Disabled']), each('Size', ['default', 'sm', 'lg'])],
-  TabMenuLineItem: [each('State', ['Default', 'Hover', 'Selected', 'Focused', 'Disabled']), each('Indicator', ['bottom', 'left']), each('Size', ['default', 'sm', 'lg'])],
-  NavItem: [each('State', ['Default', 'Hover', 'Current', 'Focused', 'Disabled']), each('Size', ['default', 'sm', 'lg'])],
+  TabMenuItem: [each('State', ['Default', 'Hover', 'Focused', 'Selected', 'Disabled']), each('Size', ['default', 'sm', 'lg'])],
+  TabMenuLineItem: [each('State', ['Default', 'Hover', 'Focused', 'Selected', 'Disabled']), each('Indicator', ['bottom', 'left']), each('Size', ['default', 'sm', 'lg'])],
+  NavItem: [each('State', ['Default', 'Hover', 'Focused', 'Current', 'Disabled']), each('Size', ['default', 'sm', 'lg'])],
   Brand: [each('Size', ['default', 'sm'])],
   AccountMenuTrigger: [each('State', ['Default', 'Hover', 'Pressed', 'Focused']), each('Size', ['default', 'sm'])],
   Pagination: [each('Variant', ['compact-grouped', 'compact'], {}, 380), each('Size', ['default', 'xs', 'sm', 'lg'], {}, 380)],
@@ -431,7 +422,7 @@ export const OVERVIEWS: Record<string, Overview> = {
   ModalFooter: [each('Layout', ['inline', 'stacked'], {}, 480), each('Size', ['default', 'lg'], {}, 640)],
   AlertDialog: [each('Size', ['default', 'sm'])],
   // Drawn inline, left/right and top/bottom look alike: one of each shape.
-  Sheet: [each('Side', ['right', 'bottom'])],
+  Sheet: [each('Side', ['right', 'left', 'bottom'])],
   Drawer: [each('Direction', ['bottom', 'right'])],
   Item: [
     ...stack('Variant', ['default', 'outline', 'muted'], {}, 360),
@@ -460,14 +451,17 @@ export const OVERVIEWS: Record<string, Overview> = {
   Empty: [each('Media', ['default', 'icon'])],
 
   // ── Navigation ─────────────────────────────────────────────────────────────
-  Tabs: stack('Variant', ['default', 'line']),
   SegmentedControl: stack('Size', ['default', 'sm', 'lg']),
   SegmentedControlItem: [
     each('Checked', ['false', 'true']),
     each('State', ['Default', 'Hover', 'Pressed', 'Focused', 'Disabled'], { Checked: 'false' }),
     each('Size', ['default', 'sm', 'lg'], { Checked: 'true' }),
   ],
-  Sidebar: [each('Variant', ['sidebar', 'floating', 'inset'])],
+  Sidebar: [each('Collapsed', ['false', 'true'])],
+  SidebarMenuButton: [each('State', ['Default', 'Hover', 'Focused', 'Current', 'Disabled'], {}, 256), each('Size', ['default', 'sm', 'lg'], {}, 256), each('Collapsed', ['false', 'true'])],
+  SidebarGroup: [each('Size', ['default', 'sm', 'lg'], {}, 256), each('Collapsed', ['false', 'true'])],
+  SidebarGroupLabel: [each('Size', ['default', 'sm', 'lg'], {}, 256)],
+  SidebarBrand: [each('Collapsed', ['false', 'true'])],
 }
 
 export const OVERVIEW_VALUE = 'Overview'

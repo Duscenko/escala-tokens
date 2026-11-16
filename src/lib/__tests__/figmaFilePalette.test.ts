@@ -20,6 +20,28 @@ const INVENTORY = join(dirname(fileURLToPath(import.meta.url)), '../../../../esc
 const MODULE = join(dirname(fileURLToPath(import.meta.url)), '../figmaFilePalette.generated.ts')
 const hasInventory = existsSync(INVENTORY)
 
+/**
+ * The owner changed these Color Semantics roles in the Figma file on 2026-11-16
+ * (DEC-2026-11-16-003), after the inventory above was last saved. Until the plugin
+ * repo's `figma-variables.txt` is regenerated, they override its lines so the
+ * test holds the code to the file as it IS. Delete an entry the day the inventory
+ * carries it.
+ */
+const SINCE_INVENTORY: Record<string, string> = {
+  'Border/default': '{CP:Neutrals/Black Alpha/02} ; {CP:Neutrals/White Alpha/02}',
+  'Border/subtle': '{CP:Neutrals/Black Alpha/01} ; {CP:Neutrals/White Alpha/01}',
+  'Border/control': '{CP:Neutrals/Black Alpha/03} ; {CP:Neutrals/White Alpha/03}',
+  'Border/control-hover': '{CP:Neutrals/Black Alpha/04} ; {CP:Neutrals/White Alpha/04}',
+  'Status/critical/surface': '{CP:States/EscalaDS/Error/Alpha/03} ; {CP:States/EscalaDS/Error Dark/Alpha/03}',
+}
+function inventoryText(): string {
+  return readFileSync(INVENTORY, 'utf8').split('\n').map((line) => {
+    const [name, ...rest] = line.split(' | ')
+    const values = SINCE_INVENTORY[name]
+    return values && rest.length ? [name, ...rest.slice(0, -1), values].join(' | ') : line
+  }).join('\n')
+}
+
 /** Builds the file's system the way Storybook does; returns the brand key. */
 function buildFileSystem(): string {
   const built = buildStudioTokens({ accent: FIGMA_FILE_PALETTE.accent, name: 'Escala' }, 'pro')
@@ -41,7 +63,7 @@ describe.skipIf(!hasInventory)('every Color Semantics role resolves to the Figma
   beforeAll(() => { brand = buildFileSystem() })
 
   it('in Escala Light and Escala Dark', () => {
-    const text = readFileSync(INVENTORY, 'utf8')
+    const text = inventoryText()
     const groups = parsePrimitiveGroups(text)
     const s = useDesignStore.getState()
     const tokens = {

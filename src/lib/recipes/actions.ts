@@ -559,27 +559,65 @@ export const BUTTON_GROUP_DIVIDER: ComponentRecipe = {
 }
 
 // ── SocialLoginButton ──────────────────────────────────────────────────────
+// The Figma set (364:20, 360 variants: Brand × Appearance white · brand × Size default · lg × State Default · Hover ·
+// Pressed · Focused · Disabled × IconOnly). `white` is a bordered control (Surface/page, Border/control; Hover
+// Surface/layer-1 + Border/control-hover; Focused Border/focus; Disabled Action/disabled/default + Border/subtle).
+// `brand` is the provider's own fill from the Social Media Brands collection (`<Brand>/Action/default|hover|pressed`,
+// `Content/on-action`, `Border/focus`) with a 1px edge in its pressed step and the solid-control highlight; Disabled
+// drops to Action/disabled/default with no edge. Radius/action, Size/control-md (40) · control-lg (48), padding
+// inset-control, gap gap-control, Type/button, a 20px mark. IconOnly is a square of the Size and no label.
+// The provider mark is third-party artwork (brand-artwork.tsx), painted in the label's ink.
+
+export const SOCIAL_BRAND_NAMES = ['Google', 'Apple', 'Discord', 'Dribbble', 'Facebook', 'GitHub', 'LinkedIn', 'Slack', 'X'] as const
+export const SOCIAL_APPEARANCES = ['white', 'brand'] as const
+export const SOCIAL_SIZES = ['lg', 'default'] as const
+export const SOCIAL_STATES = ['Default', 'Hover', 'Pressed', 'Focused', 'Disabled'] as const
 
 const SOCIAL_GEOMETRY: Record<string, SlotProps> = {
-  default: { height: 'size.control', paddingX: 'spacing.4', gap: 'spacing.2_5' },
-  lg: { height: 'size.touch', paddingX: 'spacing.5', gap: 'spacing.2_5' },
+  default: { height: 'size.control' },
+  lg: { height: 'size.touch' },
+}
+
+function socialPaint(appearance: string, brand: string, state: string): SlotMap {
+  const id = brand.toLowerCase()
+  if (state === 'Disabled') {
+    return {
+      root: { fill: c('action.disabled.default'), text: c('content.disabled'), ...(appearance === 'white' ? { stroke: c('border.subtle') } : { stroke: NONE }) },
+      label: { text: c('content.disabled') },
+    }
+  }
+  if (appearance === 'white') {
+    const root: SlotProps = state === 'Hover' || state === 'Pressed'
+      ? { fill: c(state === 'Hover' ? 'surface.layer-1' : 'surface.muted'), stroke: c('border.control-hover') }
+      : state === 'Focused' ? { fill: c('surface.page'), stroke: c('border.focus'), ring: c('border.ring.default') }
+      : { fill: c('surface.page'), stroke: c('border.control') }
+    return { root: { ...root, text: c('content.primary') }, label: { text: c('content.primary') } }
+  }
+  const fill = state === 'Hover' ? `social.${id}.action.hover` : state === 'Pressed' ? `social.${id}.action.pressed` : `social.${id}.action.default`
+  const root: SlotProps = {
+    // `social.*` refs are not Categorical roles: written whole, never through `c()`.
+    fill, text: `social.${id}.content.on-action`, highlight: c('elevation.highlight'),
+    stroke: state === 'Focused' ? `social.${id}.border.focus` : `social.${id}.action.pressed`,
+    ...(state === 'Focused' ? { ring: c('border.ring.default') } : {}),
+  }
+  return { root, label: { text: `social.${id}.content.on-action` } }
 }
 
 export const SOCIAL_LOGIN_BUTTON: ComponentRecipe = {
   key: 'SocialLoginButton',
   slots: ['root', 'label', 'icon'],
-  defaults: { Provider: 'google', Size: 'default' },
+  defaults: { Brand: 'Google', Appearance: 'white', Size: 'default', State: 'Default', IconOnly: 'false' },
   parts: [
     part({}, () => ({
-      root: {
-        fill: c('surface.layer-1'), stroke: c('border.control'), strokeWidth: 'stroke.control',
-        text: c('content.primary'), radius: 'radius.action', font: 'type.button',
-      },
-      'root:hover': { fill: c('action.ghost.hover') },
-      'root:active': { fill: c('action.ghost.pressed') },
-      'root:focus-visible': FOCUS,
+      root: { radius: 'radius.action', strokeWidth: 'stroke.control', font: 'type.button', gap: 'spacing.gap-control' },
+      icon: { width: 'icon.medium', height: 'icon.medium' },
     })),
-    part({ Size: ['default', 'lg'] as const }, (size) => ({ root: SOCIAL_GEOMETRY[size] })),
+    part({ Size: SOCIAL_SIZES, IconOnly: ['false', 'true'] as const }, (size, iconOnly) => ({
+      root: iconOnly === 'true'
+        ? { ...SOCIAL_GEOMETRY[size], width: SOCIAL_GEOMETRY[size].height, paddingX: 'spacing.none' }
+        : { ...SOCIAL_GEOMETRY[size], paddingX: 'spacing.inset-control' },
+    })),
+    part({ Appearance: SOCIAL_APPEARANCES, Brand: SOCIAL_BRAND_NAMES, State: SOCIAL_STATES }, socialPaint),
   ],
 }
 
@@ -600,8 +638,8 @@ export const APP_STORE_BADGE: ComponentRecipe = {
   ],
 }
 
-// ── ToggleGroup ────────────────────────────────────────────────────────────
-// shadcn's ToggleGroup over its Toggle: `variant` default (no edge) | outline
+// ── Toggle variants (shared by Toggle) ─────────────────────────────────────
+// `variant` default (no edge) | outline
 // (the control boundary) × `size` default | sm | lg, the Button heights. A
 // pressed item (`data-state="on"`) takes the muted surface, as shadcn's
 // `data-[state=on]:bg-muted`. The hover and on rules ride in the variant part,
@@ -610,31 +648,6 @@ export const APP_STORE_BADGE: ComponentRecipe = {
 export const TOGGLE_GROUP_VARIANTS = ['default', 'outline'] as const
 export const TOGGLE_GROUP_SIZES = ['default', 'sm', 'lg'] as const
 const TOGGLE_HEIGHT: Record<string, string> = { sm: 'size.compact', default: 'size.control', lg: 'size.touch' }
-
-export const TOGGLE_GROUP: ComponentRecipe = {
-  key: 'ToggleGroup',
-  slots: ['root', 'item'],
-  defaults: { Variant: 'default', Size: 'default' },
-  parts: [
-    part({}, () => ({
-      root: { gap: 'spacing.1' },
-      'item:focus-visible': FOCUS,
-    })),
-    part({ Variant: TOGGLE_GROUP_VARIANTS }, (variant) => ({
-      item: variant === 'outline'
-        ? {
-            fill: NONE, stroke: c('border.control'), strokeWidth: 'stroke.control', text: c('content.secondary'),
-            font: 'type.button', radius: 'radius.action', gap: 'spacing.1',
-          }
-        : { fill: NONE, text: c('content.secondary'), font: 'type.button', radius: 'radius.action', gap: 'spacing.1' },
-      'item:hover': { fill: c('action.ghost.hover'), text: c('content.primary') },
-      'item[data-state="on"]': { fill: c('surface.layer-2'), text: c('content.primary') },
-    })),
-    part({ Size: TOGGLE_GROUP_SIZES }, (size) => ({
-      item: { height: TOGGLE_HEIGHT[size], paddingX: 'spacing.2_5' },
-    })),
-  ],
-}
 
 // ── Toggle ─────────────────────────────────────────────────────────────────
 // shadcn's Toggle: the ToggleGroup item on its own. Pressed (Radix

@@ -32,6 +32,18 @@ export default defineConfig([
       parserOptions: { tsconfigRootDir: import.meta.dirname },
     },
   },
+  // `escala-ui/_skeleton/` holds the shadcn skeletons that have no Storybook story yet: they are not part of the
+  // documented library, so only the configurator (docs specimens, previews) may import them. Nothing else —
+  // not another escala-ui file, not a lib, not an app — may depend on one.
+  {
+    files: ['**/*.{ts,tsx}'],
+    ignores: ['src/components/configurator/**', 'src/components/escala-ui/_skeleton/**'],
+    rules: {
+      'no-restricted-imports': ['error', {
+        patterns: [{ group: ['**/_skeleton', '**/_skeleton/*'], message: 'escala-ui/_skeleton/ may only be imported from src/components/configurator. Give the component a story and move it out first.' }],
+      }],
+    },
+  },
   {
     files: ['src/cli/**/*.ts', 'scripts/**/*.{ts,mjs}'],
     languageOptions: {

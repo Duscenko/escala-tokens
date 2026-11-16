@@ -13,7 +13,8 @@ function render({ size }: CalendarFooterStoryArgs) {
 }
 
 const meta: Meta<CalendarFooterStoryArgs> = {
-  title: 'Forms/CalendarFooter',
+  title: 'Forms/Calendar',
+  tags: ['!autodocs', 'part'],
   render,
   args: { size: 'default' },
   argTypes: {
@@ -23,10 +24,11 @@ const meta: Meta<CalendarFooterStoryArgs> = {
 export default meta
 type Story = StoryObj<CalendarFooterStoryArgs>
 
-export const Playground: Story = {}
+export const CalendarFooterPlayground: Story = { name: 'CalendarFooter · Playground' }
 
 /** The two variants of the file. */
-export const Sizes: Story = {
+export const CalendarFooterSizes: Story = {
+  name: 'CalendarFooter · Sizes',
   render: (args) => (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
       {SIZES.map((size) => <div key={size}>{render({ ...args, size })}</div>)}

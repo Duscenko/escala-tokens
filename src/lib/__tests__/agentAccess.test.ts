@@ -279,8 +279,10 @@ describe('resolve_token matches the current payload', () => {
     expect(hit.kind).toBe('foundation')
     expect(hit.css).toBe('var(--radius-container)')
     expect(hit.figma).toBe('Radius/container')
-    expect(hit.values[theme]).toBe(json.radius[desktopStep])
-    expect(hit.viewports?.[theme]?.tablet ?? hit.values[theme]).toBe(json.radius[desktopStep])
+    // `container` pins the Dimension primitive 20 (DEC-2026-11-16-002), which is not a ramp step.
+    const desktopPx = json.radius[desktopStep] ?? `${parseFloat(desktopStep.replace('dimension-', ''))}px`
+    expect(hit.values[theme]).toBe(desktopPx)
+    expect(hit.viewports?.[theme]?.tablet ?? hit.values[theme]).toBe(desktopPx)
     expect(hit.aliases?.[theme]).toMatch(/^dimension\./)
 
     expect(resolveToken(json, 'Radius/role/container').id).toBe('radius.container')

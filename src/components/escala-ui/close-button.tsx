@@ -7,6 +7,7 @@
 // `data-shape`, `data-size` and `data-variant`. No colour here.
 import * as React from 'react'
 import { cn } from '../../lib/utils'
+import { glyph } from '../../lib/icons'
 
 export const CLOSE_BUTTON_APPEARANCES = ['solid', 'outline', 'soft', 'ghost'] as const
 export const CLOSE_BUTTON_SHAPES = ['rounded', 'pill', 'square'] as const
@@ -27,15 +28,6 @@ export interface CloseButtonProps extends Omit<React.ComponentProps<'button'>, '
   forceState?: CloseButtonState
   /** Another glyph, for a system on a different icon library. Defaults to Phosphor's X. */
   icon?: React.ReactNode
-}
-
-/** Phosphor `x` (regular) — the glyph the Figma file's `icon/X` draws. */
-function CloseGlyph() {
-  return (
-    <svg viewBox="0 0 256 256" fill="currentColor" aria-hidden focusable="false">
-      <path d="M205.66,194.34a8,8,0,0,1-11.32,11.32L128,139.31,61.66,205.66a8,8,0,0,1-11.32-11.32L116.69,128,50.34,61.66A8,8,0,0,1,61.66,50.34L128,116.69l66.34-66.35a8,8,0,0,1,11.32,11.32L139.31,128Z" />
-    </svg>
-  )
 }
 
 function CloseButton({
@@ -74,7 +66,7 @@ function CloseButton({
       {...props}
     >
       <span data-part="CloseButton.icon" className="inline-flex items-center justify-center [&>svg]:size-full">
-        {icon ?? <CloseGlyph />}
+        {icon ?? glyph('close')}
       </span>
     </button>
   )

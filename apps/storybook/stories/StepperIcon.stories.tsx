@@ -21,7 +21,8 @@ const marker = (a: IconStoryArgs, key?: string) => (
 )
 
 const meta: Meta<IconStoryArgs> = {
-  title: 'Navigation/StepperIcon',
+  title: 'Navigation/Stepper',
+  tags: ['!autodocs', 'part'],
   render: (a) => marker(a),
   args: { size: 'default', status: 'active', state: 'Default', label: '1', labelVisible: true, iconVisible: false, icon: 'home' },
   argTypes: {
@@ -37,9 +38,10 @@ const meta: Meta<IconStoryArgs> = {
 export default meta
 type Story = StoryObj<IconStoryArgs>
 
-export const Playground: Story = {}
+export const StepperIconPlayground: Story = { name: 'StepperIcon · Playground' }
 
-export const AllCombinations: Story = {
+export const StepperIconAllCombinations: Story = {
+  name: 'StepperIcon · All Combinations',
   render: (a) => (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
       {STEPPER_STATES.map((state) => (
@@ -49,6 +51,7 @@ export const AllCombinations: Story = {
   ),
 }
 
-export const Sizes: Story = {
+export const StepperIconSizes: Story = {
+  name: 'StepperIcon · Sizes',
   render: (a) => <div style={{ display: 'flex', gap: 16, alignItems: 'center' }}>{STEPPER_SIZES.map((size) => marker({ ...a, size }, size))}</div>,
 }

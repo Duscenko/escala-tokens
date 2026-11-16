@@ -6,6 +6,7 @@
 import * as React from 'react'
 import { Accordion as AccordionPrimitive } from 'radix-ui'
 import { cn } from '../../lib/utils'
+import { glyph } from '../../lib/icons'
 
 export const ACCORDION_VARIANTS = ['ghost-default', 'ghost-underline', 'ghost-rounded', 'outline-rounded', 'outline-sharp', 'filled-rounded'] as const
 export type AccordionVariant = (typeof ACCORDION_VARIANTS)[number]
@@ -13,9 +14,6 @@ export const ACCORDION_ITEM_STATES = ['Closed', 'Open', 'Disabled'] as const
 export type AccordionItemState = (typeof ACCORDION_ITEM_STATES)[number]
 
 // Phosphor regular glyphs: the file's defaults (House icon, CaretDown chevron).
-const HOUSE = 'M219.31,108.68l-80-80a16,16,0,0,0-22.62,0l-80,80A15.87,15.87,0,0,0,32,120v96a8,8,0,0,0,8,8h64a8,8,0,0,0,8-8V160h32v56a8,8,0,0,0,8,8h64a8,8,0,0,0,8-8V120A15.87,15.87,0,0,0,219.31,108.68ZM208,208H160V152a8,8,0,0,0-8-8H104a8,8,0,0,0-8,8v56H48V120l80-80,80,80Z'
-const CARET = 'M213.66,101.66l-80,80a8,8,0,0,1-11.32,0l-80-80A8,8,0,0,1,53.66,90.34L128,164.69l74.34-74.35a8,8,0,0,1,11.32,11.32Z'
-const glyph = (d: string) => <svg viewBox="0 0 256 256" fill="currentColor" aria-hidden focusable="false"><path d={d} /></svg>
 
 const Context = React.createContext<{ variant: AccordionVariant; open: string[] } | null>(null)
 
@@ -96,9 +94,9 @@ function AccordionItem({
             '[&[data-state=open]_[data-part="AccordionItem.chevron"]]:rotate-180',
           )}
         >
-          {iconVisible && <span data-part="AccordionItem.icon" aria-hidden className="inline-flex shrink-0 items-center justify-center [&>svg]:size-full">{icon ?? glyph(HOUSE)}</span>}
+          {iconVisible && <span data-part="AccordionItem.icon" aria-hidden className="inline-flex shrink-0 items-center justify-center [&>svg]:size-full">{icon ?? glyph('house')}</span>}
           <span data-part="AccordionItem.label" className="min-w-0 flex-1">{label}</span>
-          <span data-part="AccordionItem.chevron" aria-hidden className="inline-flex shrink-0 items-center justify-center [&>svg]:size-full">{glyph(CARET)}</span>
+          <span data-part="AccordionItem.chevron" aria-hidden className="inline-flex shrink-0 items-center justify-center [&>svg]:size-full">{glyph('chevron-down')}</span>
         </AccordionPrimitive.Trigger>
       </AccordionPrimitive.Header>
       <AccordionPrimitive.Content data-part="AccordionItem.content" className="overflow-hidden">

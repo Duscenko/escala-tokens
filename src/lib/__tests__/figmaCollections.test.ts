@@ -61,8 +61,9 @@ describe('W3C = the Figma collections', () => {
     expect(doc['Color Semantics'].Light.Action.primary.default.$value).toMatch(/^\{Color Primitives\.Default\.Accents\.Accent\./)
     // The Escala Figma file: no `role/` segment, selectors and icons are sizes.
     expect(Object.keys(doc['Dimension Semantics'].Desktop)).toEqual(['Spacing', 'Radius', 'Stroke', 'Size', 'Grid'])
-    expect(doc['Dimension Semantics'].Desktop.Radius.container.$value).toBe('{Dimension Primitives.Default.16}')
-    expect(doc['Dimension Semantics'].Mobile.Radius.container.$value).toBe('{Dimension Primitives.Default.16}')
+    expect(doc['Dimension Semantics'].Desktop.Radius.container.$value).toBe('{Dimension Primitives.Default.20}')
+    expect(doc['Dimension Semantics'].Mobile.Radius.container.$value).toBe('{Dimension Primitives.Default.20}')
+    expect(doc['Dimension Semantics'].Desktop.Radius.item.$value).toBe('{Dimension Primitives.Default.8}')
     expect(doc['Dimension Semantics'].Desktop.Radius.full.$value).toBe('{Dimension Primitives.Default.9999}')
     expect(Object.keys(doc['Dimension Semantics'].Desktop.Size)).toEqual(expect.arrayContaining(['control-xs', 'control-md', 'target-min', 'selector-md', 'selector-sm', 'icon-sm']))
     expect(doc['Dimension Semantics'].Mobile.Size['target-min'].$value).toBe('{Dimension Primitives.Default.44}')

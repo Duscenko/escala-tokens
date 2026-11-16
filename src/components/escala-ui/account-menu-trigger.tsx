@@ -5,6 +5,7 @@
 // Appearance: recipe AccountMenuTrigger (lib/componentRecipes.ts).
 import * as React from 'react'
 import { cn } from '../../lib/utils'
+import { glyph } from '../../lib/icons'
 import { Avatar } from './avatar'
 
 export const ACCOUNT_MENU_TRIGGER_SIZES = ['default', 'sm'] as const
@@ -13,7 +14,6 @@ export const ACCOUNT_MENU_TRIGGER_STATES = ['Default', 'Hover', 'Pressed', 'Focu
 export type AccountMenuTriggerState = (typeof ACCOUNT_MENU_TRIGGER_STATES)[number]
 
 // Phosphor regular `caret-down`.
-const CARET_DOWN = 'M213.66,101.66l-80,80a8,8,0,0,1-11.32,0l-80-80A8,8,0,0,1,53.66,90.34L128,164.69l74.34-74.35a8,8,0,0,1,11.32,11.32Z'
 
 export interface AccountMenuTriggerProps extends Omit<React.ComponentProps<'button'>, 'children'> {
   /** Figma Size: height 40 · 32 (avatar 32 · 24, caret 20 · 16). */
@@ -48,7 +48,7 @@ function AccountMenuTrigger({
       onPointerLeave={(e) => { setLive((s) => ({ ...s, hover: false, pressed: false })); onPointerLeave?.(e) }}
       onPointerDown={(e) => { setLive((s) => ({ ...s, pressed: true })); onPointerDown?.(e) }}
       onPointerUp={(e) => { setLive((s) => ({ ...s, pressed: false })); onPointerUp?.(e) }}
-      onFocus={(e) => { setLive((s) => ({ ...s, focus: e.currentTarget.matches(':focus-visible') })); onFocus?.(e) }}
+      onFocus={(e) => { const visible = e.currentTarget.matches(':focus-visible'); setLive((s) => ({ ...s, focus: visible })); onFocus?.(e) }}
       onBlur={(e) => { setLive((s) => ({ ...s, focus: false })); onBlur?.(e) }}
       {...props}
     >
@@ -57,7 +57,7 @@ function AccountMenuTrigger({
       </span>
       {nameVisible && <span data-part="AccountMenuTrigger.name">{name}</span>}
       <span data-part="AccountMenuTrigger.iconTrailing" aria-hidden className="inline-flex shrink-0 items-center justify-center">
-        <svg viewBox="0 0 256 256" fill="currentColor" focusable="false" className="size-full"><path d={CARET_DOWN} /></svg>
+        {glyph('chevron-down', { className: 'size-full' })}
       </span>
     </button>
   )

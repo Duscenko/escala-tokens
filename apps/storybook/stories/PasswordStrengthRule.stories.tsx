@@ -7,7 +7,8 @@ interface RuleArgs { met: boolean; size: PasswordStrengthSize; label: string }
 const render = ({ met, size, label }: RuleArgs) => <PasswordStrengthRule met={met} size={size} label={label} />
 
 const meta: Meta<RuleArgs> = {
-  title: 'Forms/PasswordStrengthRule',
+  title: 'Forms/PasswordStrength',
+  tags: ['!autodocs', 'part'],
   render,
   args: { met: true, size: 'default', label: 'At least 8 characters' },
   argTypes: {
@@ -19,10 +20,11 @@ const meta: Meta<RuleArgs> = {
 export default meta
 type Story = StoryObj<RuleArgs>
 
-export const Playground: Story = {}
+export const PasswordStrengthRulePlayground: Story = { name: 'PasswordStrengthRule · Playground' }
 
 /** Every Met × Size, as the file's 6 variants. */
-export const AllCombinations: Story = {
+export const PasswordStrengthRuleAllCombinations: Story = {
+  name: 'PasswordStrengthRule · All Combinations',
   render: (args) => (
     <div style={{ display: 'flex', flexWrap: 'wrap', gap: 32 }}>
       {[true, false].map((met) => (

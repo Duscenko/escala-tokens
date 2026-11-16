@@ -142,3 +142,21 @@ describe('component icon set', () => {
     for (const icon of COMPONENT_ICONS) expect(COMPONENT_ICON_BODIES.regular[icon.slug]).toBe(phosphorCoreBody(icon.slug))
   })
 })
+
+describe('lib/icons.ts (the glyphs escala-ui draws inline)', () => {
+  // Escala name → Phosphor slug where they differ. Every path must be the package's REGULAR weight: a glyph of another weight
+  // (a bold user in a sidebar of regular ones) breaks the set.
+  const SLUG: Record<string, string> = { close: 'x', 'chevron-down': 'caret-down', search: 'magnifying-glass', loading: 'spinner-gap', 'star-fill': 'star' }
+  it('every inline glyph is Phosphor regular', async () => {
+    const { ICON_PATHS } = await import('../icons')
+    const { readFileSync } = await import('node:fs')
+    const bad: string[] = []
+    for (const [name, d] of Object.entries(ICON_PATHS)) {
+      if (name === 'star-fill') continue // the one deliberate fill: the filled rating star
+      const file = `node_modules/@phosphor-icons/core/assets/regular/${SLUG[name] ?? name}.svg`
+      const ds = [...readFileSync(file, 'utf8').matchAll(/ d="([^"]+)"/g)].map((m) => m[1])
+      if (ds.length !== 1 || ds[0] !== d) bad.push(name)
+    }
+    expect(bad).toEqual([])
+  })
+})

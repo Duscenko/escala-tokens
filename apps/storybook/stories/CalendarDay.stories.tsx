@@ -35,7 +35,8 @@ function render({ size, forceState, variant, day, indicatorVisible, shape }: Cal
 }
 
 const meta: Meta<CalendarDayStoryArgs> = {
-  title: 'Forms/CalendarDay',
+  title: 'Forms/Calendar',
+  tags: ['!autodocs', 'part'],
   render,
   args: { size: 'default', forceState: 'Default', variant: 'default', day: '15', indicatorVisible: false, shape: 'rounded' },
   argTypes: {
@@ -50,10 +51,11 @@ const meta: Meta<CalendarDayStoryArgs> = {
 export default meta
 type Story = StoryObj<CalendarDayStoryArgs>
 
-export const Playground: Story = {}
+export const CalendarDayPlayground: Story = { name: 'CalendarDay · Playground' }
 
 /** Every Size × State × Variant, as the file's 44 variants. */
-export const AllCombinations: Story = {
+export const CalendarDayAllCombinations: Story = {
+  name: 'CalendarDay · All Combinations',
   render: (args) => (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
       {VARIANTS.flatMap((variant) => SIZES.map((size) => (
@@ -65,7 +67,8 @@ export const AllCombinations: Story = {
   ),
 }
 
-export const Sizes: Story = {
+export const CalendarDaySizes: Story = {
+  name: 'CalendarDay · Sizes',
   render: (args) => (
     <div style={{ display: 'flex', gap: 24, alignItems: 'center' }}>
       {SIZES.map((size) => <div key={size}>{render({ ...args, size, forceState: 'Selected' })}</div>)}
@@ -73,7 +76,8 @@ export const Sizes: Story = {
   ),
 }
 
-export const States: Story = {
+export const CalendarDayStates: Story = {
+  name: 'CalendarDay · States',
   render: (args) => (
     <div style={{ display: 'flex', flexWrap: 'wrap', gap: 12 }}>
       {STATES.map((forceState) => <div key={forceState}>{render({ ...args, forceState })}</div>)}
@@ -82,7 +86,8 @@ export const States: Story = {
 }
 
 /** A week with a range laid across it, as the Calendar will draw it: RangeStart · RangeMiddle · RangeEnd. */
-export const Range: Story = {
+export const CalendarDayRange: Story = {
+  name: 'CalendarDay · Range',
   render: (args) => (
     <div style={{ display: 'flex' }}>
       {(['Outside', 'RangeStart', 'RangeMiddle', 'RangeMiddle', 'RangeEnd', 'Default', 'Today'] as CalendarDayState[]).map((forceState, i) => (

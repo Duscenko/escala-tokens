@@ -1,0 +1,471 @@
+{
+  "$comment": "Storybook families (design-plans/storybook-families.md). One family = one Figma page = one sidebar entry and one Documentation page. `root` is the set a designer places (null = the family has none in Figma: its root story is composed from the parts). `parts` are anatomy sets: they keep their own playground, merged into the family's sidebar entry and hidden by the `part` tag. `noStory` lists sets with no story yet, with the reason. `page: null` = not in spec/figma-components.json yet. Story titles and tags are WRITTEN by scripts/storybook/apply-families.mjs and checked by storybookFamilies.test.ts: edit this file, then run the script.",
+  "folders": [
+    "Buttons",
+    "Forms",
+    "Indicators",
+    "Content & Surfaces",
+    "Feedback",
+    "Navigation"
+  ],
+  "families": [
+    {
+      "id": "Button",
+      "page": "Button (✓)  (D)",
+      "folder": "Buttons",
+      "root": "Button",
+      "parts": []
+    },
+    {
+      "id": "IconButton",
+      "page": "IconButton (✓) (D)",
+      "folder": "Buttons",
+      "root": "IconButton",
+      "parts": []
+    },
+    {
+      "id": "CloseButton",
+      "page": "CloseButton (✓) (D)",
+      "folder": "Buttons",
+      "root": "CloseButton",
+      "parts": []
+    },
+    {
+      "id": "TextLink",
+      "page": "TextLink (✓) (D)",
+      "folder": "Buttons",
+      "root": "TextLink",
+      "parts": []
+    },
+    {
+      "id": "SocialLoginButton",
+      "page": "SocialLoginButton",
+      "folder": "Buttons",
+      "root": "SocialLoginButton",
+      "parts": []
+    },
+    {
+      "id": "FABButton",
+      "page": "FABButton & FABGroup (✓) (D)",
+      "folder": "Buttons",
+      "root": "FABButton",
+      "parts": [
+        "FABGroup"
+      ]
+    },
+    {
+      "id": "ButtonGroup",
+      "page": "ButtonGroup (✓) (D) ",
+      "folder": "Buttons",
+      "root": "ButtonGroup",
+      "parts": [
+        "ButtonGroupDivider",
+        "ButtonGroupItem"
+      ]
+    },
+    {
+      "id": "Field",
+      "page": "Field (✓) (D) ",
+      "folder": "Forms",
+      "root": "Field",
+      "parts": []
+    },
+    {
+      "id": "Input",
+      "page": "Input (✓) (D) ",
+      "folder": "Forms",
+      "root": "Input",
+      "parts": []
+    },
+    {
+      "id": "NumberInput",
+      "page": "NumberInput (✓) (D)",
+      "folder": "Forms",
+      "root": "NumberInput",
+      "parts": []
+    },
+    {
+      "id": "Textarea",
+      "page": "Textarea (✓) (D)",
+      "folder": "Forms",
+      "root": "Textarea",
+      "parts": []
+    },
+    {
+      "id": "InputOTP",
+      "page": "InputOTP (✓) (D)",
+      "folder": "Forms",
+      "root": "InputOTP",
+      "parts": [
+        "InputOTPSlot"
+      ]
+    },
+    {
+      "id": "PasswordStrength",
+      "page": "PasswordStrength (✓) (D)",
+      "folder": "Forms",
+      "root": "PasswordStrength",
+      "parts": [
+        "PasswordStrengthMeter",
+        "PasswordStrengthRule"
+      ]
+    },
+    {
+      "id": "InputTag",
+      "page": "InputTag (✓)  (D)",
+      "folder": "Forms",
+      "root": "InputTag",
+      "parts": [
+        "InputTagChip",
+        "InputTagOption"
+      ]
+    },
+    {
+      "id": "Combobox",
+      "page": "Combobox (✓) (D)",
+      "folder": "Forms",
+      "root": "Combobox",
+      "parts": [
+        "ComboboxGroupLabel",
+        "ComboboxItem",
+        "ComboboxPopover"
+      ]
+    },
+    {
+      "id": "DatePicker",
+      "page": "DatePicker (✓) (D)",
+      "folder": "Forms",
+      "root": null,
+      "parts": [
+        "DatePickerPopover",
+        "DatePickerTrigger"
+      ]
+    },
+    {
+      "id": "Calendar",
+      "page": "Calendar (✓) (D)",
+      "folder": "Forms",
+      "root": "Calendar",
+      "parts": [
+        "CalendarDay",
+        "CalendarFooter",
+        "CalendarHeader",
+        "CalendarMonth",
+        "CalendarPresets"
+      ]
+    },
+    {
+      "id": "FileUpload",
+      "page": "FileUpload (✓)  WIP",
+      "folder": "Forms",
+      "root": "FileUpload",
+      "parts": [
+        "FileUploadDropzone",
+        "FileUploadItem"
+      ]
+    },
+    {
+      "id": "Checkbox",
+      "page": "Checkbox (✓) (D)",
+      "folder": "Forms",
+      "root": "Checkbox",
+      "parts": [
+        "CheckboxGroup",
+        "CheckboxItem"
+      ]
+    },
+    {
+      "id": "RadioGroup",
+      "page": "RadioGroup (✓) (D)",
+      "folder": "Forms",
+      "root": "RadioGroup",
+      "parts": [
+        "Radio",
+        "RadioCard",
+        "RadioItem"
+      ]
+    },
+    {
+      "id": "Switch",
+      "page": "Switch & SwitchGroup (✓)  (D)",
+      "folder": "Forms",
+      "root": "Switch",
+      "parts": [
+        "SwitchGroup"
+      ]
+    },
+    {
+      "id": "SegmentedControl",
+      "page": "SegmentedControl (✓)  (D)",
+      "folder": "Navigation",
+      "root": "SegmentedControl",
+      "parts": [
+        "SegmentedControlItem"
+      ]
+    },
+    {
+      "id": "Slider",
+      "page": "Slider (✓)  (D)",
+      "folder": "Forms",
+      "root": "Slider",
+      "parts": [
+        "SliderThumb"
+      ]
+    },
+    {
+      "id": "RatingGroup",
+      "page": "RatingGroup (✓) (D)",
+      "folder": "Indicators",
+      "root": "RatingGroup",
+      "parts": [
+        "RatingGroupItem"
+      ]
+    },
+    {
+      "id": "Avatar",
+      "page": "Avatar (✓) (D) (P)",
+      "folder": "Content & Surfaces",
+      "root": "Avatar",
+      "parts": [
+        "AvatarGroup",
+        "AvatarStatus"
+      ]
+    },
+    {
+      "id": "FeaturedIcon",
+      "page": "FeaturedIcon (✓) (D)",
+      "folder": "Indicators",
+      "root": "FeaturedIcon",
+      "parts": []
+    },
+    {
+      "id": "Image",
+      "page": "Image (✓) (D)",
+      "folder": "Content & Surfaces",
+      "root": "Image",
+      "parts": []
+    },
+    {
+      "id": "Badge",
+      "page": "Badge (✓) (D)",
+      "folder": "Indicators",
+      "root": "Badge",
+      "parts": []
+    },
+    {
+      "id": "Chip",
+      "page": "Chip (✓) (D)",
+      "folder": "Indicators",
+      "root": "Chip",
+      "parts": []
+    },
+    {
+      "id": "Kbd",
+      "page": "Kbd (✓) (D)",
+      "folder": "Indicators",
+      "root": "Kbd",
+      "parts": []
+    },
+    {
+      "id": "Accordion",
+      "page": "Accordion (✓) (P)",
+      "folder": "Content & Surfaces",
+      "root": "Accordion",
+      "parts": [
+        "AccordionItem"
+      ]
+    },
+    {
+      "id": "Table",
+      "page": "Table",
+      "folder": "Content & Surfaces",
+      "root": "Table",
+      "parts": [
+        "TableCaption",
+        "TableCell",
+        "TableDropIndicator",
+        "TableEmpty",
+        "TableFooter",
+        "TableHead",
+        "TableHeader",
+        "TableLoadMore",
+        "TableLoading",
+        "TableMediaCell",
+        "TableResizer",
+        "TableRow",
+        "TableTrendCell"
+      ]
+    },
+    {
+      "id": "Alert",
+      "page": "Alert (✓) (D)",
+      "folder": "Feedback",
+      "root": "Alert",
+      "parts": []
+    },
+    {
+      "id": "Toast",
+      "page": "Toast (✓) (D)",
+      "folder": "Feedback",
+      "root": "Toast",
+      "parts": []
+    },
+    {
+      "id": "ProgressLine",
+      "page": "ProgressLine & ProgressCircle (✓) (D)",
+      "folder": "Indicators",
+      "root": "ProgressLine",
+      "parts": []
+    },
+    {
+      "id": "ProgressCircle",
+      "page": "ProgressLine & ProgressCircle (✓) (D)",
+      "folder": "Indicators",
+      "root": "ProgressCircle",
+      "parts": []
+    },
+    {
+      "id": "Modal",
+      "page": "Modal (✓) (D)",
+      "folder": "Content & Surfaces",
+      "root": "Modal",
+      "parts": [
+        "ModalFooter",
+        "ModalHeader"
+      ]
+    },
+    {
+      "id": "Popover",
+      "page": "Popover (✓) (D)",
+      "folder": "Content & Surfaces",
+      "root": "Popover",
+      "parts": [
+        "PopoverFooter"
+      ]
+    },
+    {
+      "id": "DropdownMenu",
+      "page": "DropdownMenu (✓) (D)",
+      "folder": "Navigation",
+      "root": "DropdownMenu",
+      "parts": [
+        "DropdownMenuFooter",
+        "DropdownMenuItem",
+        "DropdownMenuLabel"
+      ]
+    },
+    {
+      "id": "Tooltip",
+      "page": "Tooltip (✓) (D)",
+      "folder": "Content & Surfaces",
+      "root": null,
+      "parts": [
+        "TooltipContent",
+        "TooltipInfoTrigger"
+      ]
+    },
+    {
+      "id": "Breadcrumb",
+      "page": "Breadcrumb (✓) WIP",
+      "folder": "Navigation",
+      "root": "Breadcrumb",
+      "parts": [
+        "BreadcrumbEllipsis",
+        "BreadcrumbItem",
+        "BreadcrumbSeparator"
+      ]
+    },
+    {
+      "id": "TabMenu",
+      "page": "TabMenu (✓) WIP",
+      "folder": "Navigation",
+      "root": "TabMenu",
+      "parts": [
+        "TabMenuItem",
+        "TabMenuLineItem"
+      ]
+    },
+    {
+      "id": "NavItem",
+      "page": "NavItem (✓) WIP",
+      "folder": "Navigation",
+      "root": "NavItem",
+      "parts": []
+    },
+    {
+      "id": "Brand",
+      "page": "Brand (✓) WIP",
+      "folder": "Navigation",
+      "root": "Brand",
+      "parts": []
+    },
+    {
+      "id": "AccountMenuTrigger",
+      "page": "AccountMenuTrigger (✓) WIP",
+      "folder": "Navigation",
+      "root": "AccountMenuTrigger",
+      "parts": []
+    },
+    {
+      "id": "Sidebar",
+      "page": "Sidebar (✓) --",
+      "folder": "Navigation",
+      "root": "Sidebar",
+      "parts": [
+        "SidebarBrand",
+        "SidebarGroup",
+        "SidebarGroupLabel",
+        "SidebarMenuButton"
+      ]
+    },
+    {
+      "id": "Pagination",
+      "page": "Pagination (✓) WIP",
+      "folder": "Navigation",
+      "root": "Pagination",
+      "parts": [
+        "PaginationEllipsis",
+        "PaginationLink"
+      ]
+    },
+    {
+      "id": "Stepper",
+      "page": "Stepper (✓) WIP",
+      "folder": "Navigation",
+      "root": "Stepper",
+      "parts": [
+        "StepperIcon",
+        "StepperIndicator",
+        "StepperItem"
+      ]
+    },
+    {
+      "id": "Separator",
+      "page": "Separator (✓) WIP",
+      "folder": "Content & Surfaces",
+      "root": "Separator",
+      "parts": []
+    },
+    {
+      "id": "ScrollArea",
+      "page": "ScrollArea (✓) WIP",
+      "folder": "Content & Surfaces",
+      "root": "ScrollArea",
+      "parts": [
+        "ScrollBar"
+      ]
+    },
+    {
+      "id": "Sheet",
+      "page": null,
+      "folder": "Content & Surfaces",
+      "root": "Sheet",
+      "parts": []
+    }
+  ],
+  "noStory": {
+    "Radio": "pending rebuild (spec/figma-components.status.json)",
+    "RadioCard": "pending rebuild (spec/figma-components.status.json)",
+    "RadioItem": "pending rebuild (spec/figma-components.status.json)"
+  }
+}

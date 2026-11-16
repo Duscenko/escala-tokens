@@ -46,7 +46,8 @@ function render({ content, size, footerVisible, footerText, emptyText }: Combobo
 }
 
 const meta: Meta<ComboboxPopoverStoryArgs> = {
-  title: 'Forms/ComboboxPopover',
+  title: 'Forms/Combobox',
+  tags: ['!autodocs', 'part'],
   render,
   args: { content: 'list', size: 'default', footerVisible: false, footerText: '3 results', emptyText: 'No match' },
   argTypes: {
@@ -61,10 +62,11 @@ const meta: Meta<ComboboxPopoverStoryArgs> = {
 export default meta
 type Story = StoryObj<ComboboxPopoverStoryArgs>
 
-export const Playground: Story = {}
+export const ComboboxPopoverPlayground: Story = { name: 'ComboboxPopover · Playground' }
 
 /** Every Content × Size, as the file's 9 variants. */
-export const AllCombinations: Story = {
+export const ComboboxPopoverAllCombinations: Story = {
+  name: 'ComboboxPopover · All Combinations',
   render: (args) => (
     <div style={{ display: 'flex', flexWrap: 'wrap', gap: 24, alignItems: 'flex-start' }}>
       {COMBOBOX_POPOVER_CONTENTS.flatMap((content) => COMBOBOX_SIZES.map((size) => (

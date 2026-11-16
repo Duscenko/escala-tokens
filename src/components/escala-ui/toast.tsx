@@ -7,6 +7,7 @@
 import * as React from 'react'
 import { Toaster as Sonner, toast, type ToasterProps } from 'sonner'
 import { cn } from '../../lib/utils'
+import { glyph, type IconName } from '../../lib/icons'
 import { CloseButton } from './close-button'
 
 export const TOAST_APPEARANCES = ['solid', 'soft', 'filled', 'outline'] as const
@@ -15,13 +16,13 @@ export const TOAST_VARIANTS = ['default', 'secondary', 'success', 'info', 'warni
 export type ToastVariant = (typeof TOAST_VARIANTS)[number]
 
 // Phosphor regular glyphs (the file's icon/Sparkle, Info, CheckCircle, Warning, WarningCircle).
-const GLYPH: Record<ToastVariant, string> = {
-  default: 'M197.58,129.06,146,110l-19-51.62a15.92,15.92,0,0,0-29.88,0L78,110l-51.62,19a15.92,15.92,0,0,0,0,29.88L78,178l19,51.62a15.92,15.92,0,0,0,29.88,0L146,178l51.62-19a15.92,15.92,0,0,0,0-29.88ZM137,164.22a8,8,0,0,0-4.74,4.74L112,223.85,91.78,169A8,8,0,0,0,87,164.22L32.15,144,87,123.78A8,8,0,0,0,91.78,119L112,64.15,132.22,119a8,8,0,0,0,4.74,4.74L191.85,144ZM144,40a8,8,0,0,1,8-8h16V16a8,8,0,0,1,16,0V32h16a8,8,0,0,1,0,16H184V64a8,8,0,0,1-16,0V48H152A8,8,0,0,1,144,40ZM248,88a8,8,0,0,1-8,8h-8v8a8,8,0,0,1-16,0V96h-8a8,8,0,0,1,0-16h8V72a8,8,0,0,1,16,0v8h8A8,8,0,0,1,248,88Z',
-  secondary: 'M128,24A104,104,0,1,0,232,128,104.11,104.11,0,0,0,128,24Zm0,192a88,88,0,1,1,88-88A88.1,88.1,0,0,1,128,216Zm16-40a8,8,0,0,1-8,8,16,16,0,0,1-16-16V128a8,8,0,0,1,0-16,16,16,0,0,1,16,16v40A8,8,0,0,1,144,176ZM112,84a12,12,0,1,1,12,12A12,12,0,0,1,112,84Z',
-  success: 'M173.66,98.34a8,8,0,0,1,0,11.32l-56,56a8,8,0,0,1-11.32,0l-24-24a8,8,0,0,1,11.32-11.32L112,148.69l50.34-50.35A8,8,0,0,1,173.66,98.34ZM232,128A104,104,0,1,1,128,24,104.11,104.11,0,0,1,232,128Zm-16,0a88,88,0,1,0-88,88A88.1,88.1,0,0,0,216,128Z',
-  info: 'M128,24A104,104,0,1,0,232,128,104.11,104.11,0,0,0,128,24Zm0,192a88,88,0,1,1,88-88A88.1,88.1,0,0,1,128,216Zm16-40a8,8,0,0,1-8,8,16,16,0,0,1-16-16V128a8,8,0,0,1,0-16,16,16,0,0,1,16,16v40A8,8,0,0,1,144,176ZM112,84a12,12,0,1,1,12,12A12,12,0,0,1,112,84Z',
-  warning: 'M236.8,188.09,149.35,36.22h0a24.76,24.76,0,0,0-42.7,0L19.2,188.09a23.51,23.51,0,0,0,0,23.72A24.35,24.35,0,0,0,40.55,224h174.9a24.35,24.35,0,0,0,21.33-12.19A23.51,23.51,0,0,0,236.8,188.09ZM222.93,203.8a8.5,8.5,0,0,1-7.48,4.2H40.55a8.5,8.5,0,0,1-7.48-4.2,7.59,7.59,0,0,1,0-7.72L120.52,44.21a8.75,8.75,0,0,1,15,0l87.45,151.87A7.59,7.59,0,0,1,222.93,203.8ZM120,144V104a8,8,0,0,1,16,0v40a8,8,0,0,1-16,0Zm20,36a12,12,0,1,1-12-12A12,12,0,0,1,140,180Z',
-  critical: 'M128,24A104,104,0,1,0,232,128,104.11,104.11,0,0,0,128,24Zm0,192a88,88,0,1,1,88-88A88.1,88.1,0,0,1,128,216Zm-8-80V80a8,8,0,0,1,16,0v56a8,8,0,0,1-16,0Zm20,36a12,12,0,1,1-12-12A12,12,0,0,1,140,172Z',
+const GLYPH: Record<ToastVariant, IconName> = {
+  default: 'sparkle',
+  secondary: 'info',
+  success: 'check-circle',
+  info: 'info',
+  warning: 'warning',
+  critical: 'warning-circle',
 }
 
 export interface ToastProps extends Omit<React.ComponentProps<'div'>, 'title'> {
@@ -68,7 +69,7 @@ function Toast({
     >
       {iconVisible && (
         <span data-part="Toast.icon" aria-hidden className="inline-flex shrink-0 items-center justify-center [&>svg]:size-full">
-          {icon ?? <svg viewBox="0 0 256 256" fill="currentColor" focusable="false"><path d={GLYPH[variant]} /></svg>}
+          {icon ?? glyph(GLYPH[variant], { decorative: false })}
         </span>
       )}
       <div data-part="Toast.content" className="flex min-w-0 flex-1 flex-col">

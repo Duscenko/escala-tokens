@@ -28,3 +28,11 @@ Descripción: lista ordenada de pasos (`ol` con nombre accesible); un solo item 
 - El marcador de un paso locked lleva el número sobre `Surface/muted`, no un candado.
 - El padding inferior de 24 del contenido vertical se mantiene también en el último item (el Stepper vertical mide 4 × 62).
 - Las tres variantes con Disabled pierden el color de estado (completed y error se ven iguales).
+
+## Corrección 2026-11-14 (medida en Storybook contra Figma)
+- **La línea conectora estaba pegada al borde del indicador** (x 0 en vertical, y 0 en horizontal) en vez de centrada bajo / junto al marcador:
+  llevaba `self-stretch` con un grosor fijo de 1px. Figma: `counterAxisAlignItems CENTER` → x 19,5 (vertical, marcador 40) e y 19,5 (horizontal).
+  Ahora `self-center`; crece en el eje principal (`grow 1`).
+- Medido después, las 8 variantes del Stepper igual que Figma: vertical 320×248 (items 62), línea @19,5 · 11,5 · 15,5 · 23,5 (default · xs · sm · lg),
+  contenido @48 · 32 · 40 · 56; horizontal 880 × 86 · 70 · 78 · 94, items 217 a 0 · 221 · 442 · 663, línea @44,19,5 de 173 (default),
+  contenido @0,48; glifo 20 · 16 · 16 · 24 centrado.

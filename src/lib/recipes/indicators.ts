@@ -129,11 +129,11 @@ export const CHIP_STATES = ['Default', 'Hover', 'Focused', 'Selected', 'Disabled
 export const CHIP_SHAPES = ['rounded', 'pill'] as const
 
 const CHIP_GEOMETRY: Record<string, { h: string; pad: string; gap: string; font: string; icon: string; radius: string }> = {
-  xs: { h: 'size.xs', pad: 'spacing.gap-control', gap: 'spacing.gap-tight', font: 'type.caption', icon: 'icon.small', radius: 'radius.control' },
-  sm: { h: 'size.sm', pad: 'spacing.gap-control', gap: 'spacing.gap-tight', font: 'type.label', icon: 'icon.small', radius: 'radius.control' },
-  default: { h: 'size.md', pad: 'spacing.inset-control', gap: 'spacing.gap-tight', font: 'type.label', icon: 'icon.medium', radius: 'radius.control' },
+  xs: { h: 'size.xs', pad: 'spacing.gap-control', gap: 'spacing.gap-tight', font: 'type.caption', icon: 'icon.small', radius: 'radius.action' },
+  sm: { h: 'size.sm', pad: 'spacing.gap-control', gap: 'spacing.gap-tight', font: 'type.label', icon: 'icon.small', radius: 'radius.action' },
+  default: { h: 'size.md', pad: 'spacing.inset-control', gap: 'spacing.gap-tight', font: 'type.label', icon: 'icon.medium', radius: 'radius.action' },
   lg: { h: 'size.lg', pad: 'spacing.inset-control', gap: 'spacing.gap-control', font: 'type.body-md', icon: 'icon.medium', radius: 'radius.action' },
-  xl: { h: 'size.xl', pad: 'spacing.gap-group', gap: 'spacing.gap-control', font: 'type.body-lg', icon: 'icon.large', radius: 'radius.container' },
+  xl: { h: 'size.xl', pad: 'spacing.gap-group', gap: 'spacing.gap-control', font: 'type.body-lg', icon: 'icon.large', radius: 'radius.action' },
 }
 
 function chipPaint(variant: string, appearance: string, state: string): SlotProps {
@@ -381,7 +381,8 @@ export const AVATAR: ComponentRecipe = {
       ring: { stroke: c('border.accent'), strokeWidth: 'stroke.md' },
     })),
     part({ Shape: AVATAR_SHAPES }, (shape) => {
-      const radius = shape === 'circle' ? 'radius.pill' : 'radius.control'
+      // A square avatar keeps Radius/action (12), never a circle (DEC-2026-11-16-002).
+      const radius = shape === 'circle' ? 'radius.pill' : 'radius.action'
       return { root: { radius }, image: { radius }, stroke: { radius }, ring: { radius } }
     }),
     part({ Size: AVATAR_SIZES }, (size) => {
@@ -466,7 +467,7 @@ export const AVATAR_GROUP: ComponentRecipe = {
       }
     }),
     part({ Shape: AVATAR_SHAPES }, (shape) => {
-      const radius = shape === 'circle' ? 'radius.pill' : 'radius.control'
+      const radius = shape === 'circle' ? 'radius.pill' : 'radius.action'
       return { item: { radius }, action: { radius } }
     }),
   ],
@@ -476,6 +477,7 @@ export const AVATAR_GROUP: ComponentRecipe = {
 // The Figma set (design-plans/featured-icon-contract.md, 1119:10857, 96 variants): Size sm · default · lg ·
 // xl (32 · 40 · 48 · 56) × Variant × Appearance soft · solid × Shape circle (Radius/full) · rounded
 // (Radius/action), a glyph centred in it: 20 on sm, 24 from default up. Same tones as an Avatar.
+export const FEATURED_ICON_APPEARANCES = ['soft', 'solid', 'gradient'] as const
 export const FEATURED_ICON_SIZES = ['default', 'sm', 'lg', 'xl'] as const
 export const FEATURED_ICON_VARIANTS = ['default', 'secondary', 'critical', 'success', 'warning', 'info'] as const
 const FEATURED_ICON_GEOMETRY: Record<string, { box: string; icon: string }> = {
@@ -483,6 +485,16 @@ const FEATURED_ICON_GEOMETRY: Record<string, { box: string; icon: string }> = {
   default: { box: 'size.md', icon: 'icon.large' },
   lg: { box: 'size.lg', icon: 'icon.large' },
   xl: { box: 'size.xl', icon: 'icon.large' },
+}
+
+/** `Appearance=gradient` (Figma, 2026-11-16): the variant's solid fill roles, rest · hover · pressed. */
+const FEATURED_ICON_GRADIENT: Record<string, { stops: [string, string, string]; ink: string }> = {
+  default: { stops: ['action.primary.default', 'action.primary.hover', 'action.primary.pressed'], ink: 'content.on-action' },
+  secondary: { stops: ['action.secondary.default', 'action.secondary.hover', 'action.secondary.pressed'], ink: 'content.on-secondary' },
+  critical: { stops: ['status.critical.surface-solid', 'status.critical.surface-solid-hover', 'status.critical.surface-solid-pressed'], ink: 'status.critical.on-solid' },
+  success: { stops: ['status.success.surface-solid', 'status.success.surface-solid-hover', 'status.success.surface-solid-pressed'], ink: 'status.success.on-solid' },
+  warning: { stops: ['status.warning.surface-solid', 'status.warning.surface-solid-hover', 'status.warning.surface-solid-pressed'], ink: 'status.warning.on-solid' },
+  info: { stops: ['status.info.surface-solid', 'status.info.surface-solid-hover', 'status.info.surface-solid-pressed'], ink: 'status.info.on-solid' },
 }
 
 export const FEATURED_ICON: ComponentRecipe = {
@@ -495,7 +507,13 @@ export const FEATURED_ICON: ComponentRecipe = {
       icon: { width: FEATURED_ICON_GEOMETRY[size].icon, height: FEATURED_ICON_GEOMETRY[size].icon },
     })),
     part({ Shape: AVATAR_SHAPES }, (shape) => ({ root: { radius: shape === 'circle' ? 'radius.pill' : 'radius.action' } })),
-    part({ Variant: FEATURED_ICON_VARIANTS, Appearance: AVATAR_APPEARANCES }, (variant, appearance) => {
+    part({ Variant: FEATURED_ICON_VARIANTS, Appearance: FEATURED_ICON_APPEARANCES }, (variant, appearance) => {
+      if (appearance === 'gradient') {
+        // Three stops, all roles of the variant's SOLID: rest → hover → pressed, 135deg, with the solid-control
+        // highlight (Figma: an inner shadow 0 · 2 · 0 on `Elevation/highlight`). Ink = the solid's ink.
+        const g = FEATURED_ICON_GRADIENT[variant]
+        return { root: { fill: c(g.stops[0]), fillMid: c(g.stops[1]), fillEnd: c(g.stops[2]), text: c(g.ink), highlight: c('elevation.highlight') } }
+      }
       const [fill, ink] = AVATAR_TONE[variant][appearance as 'soft' | 'solid']
       return { root: { fill: c(fill), text: c(ink) } }
     }),

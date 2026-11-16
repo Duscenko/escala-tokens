@@ -4,8 +4,8 @@
     "key": "7j5zukN5HpihGVJMmyjA20",
     "name": "Escala Design System (Real)"
   },
-  "exportedAt": "2026-11-12",
-  "checksum": "32cf9e13",
+  "exportedAt": "2026-11-14",
+  "checksum": "48a399a2",
   "pages": [
     {
       "page": "Button (✓)  (D)",
@@ -196,8 +196,8 @@
       ]
     },
     {
-      "page": "NumberInput",
-      "stable": true,
+      "page": "NumberInput (✓) (D)",
+      "stable": false,
       "id": "1107:2",
       "sets": [
         {
@@ -212,8 +212,8 @@
       ]
     },
     {
-      "page": "Textarea",
-      "stable": true,
+      "page": "Textarea (✓) (D)",
+      "stable": false,
       "id": "89:9",
       "sets": [
         {
@@ -229,8 +229,8 @@
       ]
     },
     {
-      "page": "InputOTP",
-      "stable": true,
+      "page": "InputOTP (✓) (D)",
+      "stable": false,
       "id": "89:6",
       "sets": [
         {
@@ -256,8 +256,8 @@
       ]
     },
     {
-      "page": "PasswordStrength",
-      "stable": true,
+      "page": "PasswordStrength (✓) (D)",
+      "stable": false,
       "id": "89:14",
       "sets": [
         {
@@ -289,8 +289,8 @@
       ]
     },
     {
-      "page": "InputTag",
-      "stable": true,
+      "page": "InputTag (✓)  (D)",
+      "stable": false,
       "id": "89:8",
       "sets": [
         {
@@ -326,8 +326,8 @@
       ]
     },
     {
-      "page": "Combobox",
-      "stable": true,
+      "page": "Combobox (✓) (D)",
+      "stable": false,
       "id": "89:3",
       "sets": [
         {
@@ -352,10 +352,10 @@
         },
         {
           "name": "ComboboxItem",
-          "variants": 12,
+          "variants": 15,
           "axes": {
             "Size": "sm|default|lg",
-            "State": "Default|Focused|Selected|Disabled"
+            "State": "Default|Hover|Focused|Selected|Disabled"
           },
           "props": "Description:TEXT,DescriptionVisible:BOOLEAN,IconLeadingIcon:INSTANCE_SWAP,IconLeadingVisible:BOOLEAN,IndicatorVisible:BOOLEAN,Label:TEXT,Trailing:TEXT,TrailingVisible:BOOLEAN"
         },
@@ -371,8 +371,8 @@
       ]
     },
     {
-      "page": "DatePicker",
-      "stable": true,
+      "page": "DatePicker (✓) (D)",
+      "stable": false,
       "id": "425:2",
       "sets": [
         {
@@ -396,8 +396,8 @@
       ]
     },
     {
-      "page": "Calendar",
-      "stable": true,
+      "page": "Calendar (✓) (D)",
+      "stable": false,
       "id": "89:13",
       "sets": [
         {
@@ -456,8 +456,8 @@
       ]
     },
     {
-      "page": "FileUpload",
-      "stable": true,
+      "page": "FileUpload (✓)  WIP",
+      "stable": false,
       "id": "931:88585",
       "sets": [
         {
@@ -490,8 +490,8 @@
       ]
     },
     {
-      "page": "Checkbox",
-      "stable": true,
+      "page": "Checkbox (✓) (D)",
+      "stable": false,
       "id": "1012:113047",
       "sets": [
         {
@@ -530,8 +530,8 @@
       ]
     },
     {
-      "page": "RadioGroup",
-      "stable": true,
+      "page": "RadioGroup (✓) (D)",
+      "stable": false,
       "id": "89:15",
       "sets": [
         {
@@ -582,8 +582,8 @@
       ]
     },
     {
-      "page": "Switch & SwitchGroup",
-      "stable": true,
+      "page": "Switch & SwitchGroup (✓)  (D)",
+      "stable": false,
       "id": "89:19",
       "sets": [
         {
@@ -610,8 +610,8 @@
       ]
     },
     {
-      "page": "SegmentedControl",
-      "stable": true,
+      "page": "SegmentedControl (✓)  (D)",
+      "stable": false,
       "id": "1102:4960",
       "sets": [
         {
@@ -635,8 +635,8 @@
       ]
     },
     {
-      "page": "Slider",
-      "stable": true,
+      "page": "Slider (✓)  (D)",
+      "stable": false,
       "id": "89:18",
       "sets": [
         {
@@ -662,8 +662,8 @@
       ]
     },
     {
-      "page": "RatingGroup",
-      "stable": true,
+      "page": "RatingGroup (✓) (D)",
+      "stable": false,
       "id": "1122:2",
       "sets": [
         {
@@ -689,8 +689,8 @@
       ]
     },
     {
-      "page": "Avatar",
-      "stable": true,
+      "page": "Avatar (✓) (D) (P)",
+      "stable": false,
       "id": "89:21",
       "sets": [
         {
@@ -724,8 +724,8 @@
       ]
     },
     {
-      "page": "FeaturedIcon",
-      "stable": true,
+      "page": "FeaturedIcon (✓) (D)",
+      "stable": false,
       "id": "1119:10568",
       "sets": [
         {
@@ -742,8 +742,8 @@
       ]
     },
     {
-      "page": "Image",
-      "stable": true,
+      "page": "Image (✓) (D)",
+      "stable": false,
       "id": "1126:2",
       "sets": [
         {
@@ -758,8 +758,8 @@
       ]
     },
     {
-      "page": "Badge",
-      "stable": true,
+      "page": "Badge (✓) (D)",
+      "stable": false,
       "id": "90:3",
       "sets": [
         {
@@ -777,8 +777,8 @@
       ]
     },
     {
-      "page": "Chip",
-      "stable": true,
+      "page": "Chip (✓) (D)",
+      "stable": false,
       "id": "90:4",
       "sets": [
         {
@@ -796,8 +796,8 @@
       ]
     },
     {
-      "page": "Kbd",
-      "stable": true,
+      "page": "Kbd (✓) (D)",
+      "stable": false,
       "id": "949:965",
       "sets": [
         {
@@ -811,8 +811,8 @@
       ]
     },
     {
-      "page": "Accordion",
-      "stable": true,
+      "page": "Accordion (✓) (P)",
+      "stable": false,
       "id": "89:25",
       "sets": [
         {
@@ -956,8 +956,8 @@
       ]
     },
     {
-      "page": "Alert",
-      "stable": true,
+      "page": "Alert (✓) (D)",
+      "stable": false,
       "id": "89:42",
       "sets": [
         {
@@ -974,8 +974,8 @@
       ]
     },
     {
-      "page": "Toast",
-      "stable": true,
+      "page": "Toast (✓) (D)",
+      "stable": false,
       "id": "1117:2",
       "sets": [
         {
@@ -990,8 +990,8 @@
       ]
     },
     {
-      "page": "ProgressLine & ProgressCircle",
-      "stable": true,
+      "page": "ProgressLine & ProgressCircle (✓) (D)",
+      "stable": false,
       "id": "90:6",
       "sets": [
         {
@@ -1016,8 +1016,8 @@
       ]
     },
     {
-      "page": "Modal",
-      "stable": true,
+      "page": "Modal (✓) (D)",
+      "stable": false,
       "id": "931:87046",
       "sets": [
         {
@@ -1049,8 +1049,8 @@
       ]
     },
     {
-      "page": "Popover",
-      "stable": true,
+      "page": "Popover (✓) (D)",
+      "stable": false,
       "id": "931:87047",
       "sets": [
         {
@@ -1074,8 +1074,8 @@
       ]
     },
     {
-      "page": "DropdownMenu",
-      "stable": true,
+      "page": "DropdownMenu (✓) (D)",
+      "stable": false,
       "id": "912:77794",
       "sets": [
         {
@@ -1097,10 +1097,10 @@
         },
         {
           "name": "DropdownMenuItem",
-          "variants": 21,
+          "variants": 27,
           "axes": {
             "Size": "sm|default|lg",
-            "State": "Default|Focused|Selected|Disabled",
+            "State": "Default|Hover|Focused|Selected|Disabled",
             "Variant": "default|destructive"
           },
           "props": "Control:SLOT,ControlVisible:BOOLEAN,Description:TEXT,DescriptionVisible:BOOLEAN,IconLeadingIcon:INSTANCE_SWAP,IconLeadingVisible:BOOLEAN,IconTrailingIcon:INSTANCE_SWAP,IconTrailingVisible:BOOLEAN,IndicatorVisible:BOOLEAN,Label:TEXT,Media:SLOT,MediaVisible:BOOLEAN,Trailing:TEXT,TrailingVisible:BOOLEAN"
@@ -1116,8 +1116,8 @@
       ]
     },
     {
-      "page": "Tooltip",
-      "stable": true,
+      "page": "Tooltip (✓) (D)",
+      "stable": false,
       "id": "89:41",
       "sets": [
         {
@@ -1143,8 +1143,8 @@
       ]
     },
     {
-      "page": "Breadcrumb",
-      "stable": true,
+      "page": "Breadcrumb (✓) WIP",
+      "stable": false,
       "id": "89:46",
       "sets": [
         {
@@ -1189,8 +1189,8 @@
       ]
     },
     {
-      "page": "TabMenu",
-      "stable": true,
+      "page": "TabMenu (✓) WIP",
+      "stable": false,
       "id": "931:87049",
       "sets": [
         {
@@ -1207,7 +1207,7 @@
           "variants": 15,
           "axes": {
             "Size": "default|sm|lg",
-            "State": "Default|Hover|Selected|Focused|Disabled"
+            "State": "Default|Hover|Focused|Selected|Disabled"
           },
           "props": "IconLeadingIcon:INSTANCE_SWAP,IconLeadingVisible:BOOLEAN,IconTrailingIcon:INSTANCE_SWAP,IconTrailingVisible:BOOLEAN,Label:TEXT,TrailingVisible:BOOLEAN"
         },
@@ -1217,15 +1217,15 @@
           "axes": {
             "Indicator": "bottom|left",
             "Size": "default|sm|lg",
-            "State": "Default|Hover|Selected|Focused|Disabled"
+            "State": "Default|Hover|Focused|Selected|Disabled"
           },
           "props": "IconLeadingIcon:INSTANCE_SWAP,IconLeadingVisible:BOOLEAN,IconTrailingIcon:INSTANCE_SWAP,IconTrailingVisible:BOOLEAN,Label:TEXT,TrailingVisible:BOOLEAN"
         }
       ]
     },
     {
-      "page": "NavItem",
-      "stable": true,
+      "page": "NavItem (✓) WIP",
+      "stable": false,
       "id": "1095:19642",
       "sets": [
         {
@@ -1233,15 +1233,15 @@
           "variants": 15,
           "axes": {
             "Size": "default|sm|lg",
-            "State": "Default|Hover|Current|Focused|Disabled"
+            "State": "Default|Hover|Focused|Current|Disabled"
           },
           "props": "IconLeadingIcon:INSTANCE_SWAP,IconLeadingVisible:BOOLEAN,IconTrailingIcon:INSTANCE_SWAP,IconTrailingVisible:BOOLEAN,Label:TEXT,TrailingVisible:BOOLEAN"
         }
       ]
     },
     {
-      "page": "Brand",
-      "stable": true,
+      "page": "Brand (✓) WIP",
+      "stable": false,
       "id": "1098:2",
       "sets": [
         {
@@ -1255,8 +1255,8 @@
       ]
     },
     {
-      "page": "AccountMenuTrigger",
-      "stable": true,
+      "page": "AccountMenuTrigger (✓) WIP",
+      "stable": false,
       "id": "1098:43",
       "sets": [
         {
@@ -1271,8 +1271,8 @@
       ]
     },
     {
-      "page": "Sidebar",
-      "stable": true,
+      "page": "Sidebar (✓) --",
+      "stable": false,
       "id": "931:87050",
       "sets": [
         {
@@ -1314,15 +1314,15 @@
           "axes": {
             "Collapsed": "false|true",
             "Size": "default|sm|lg",
-            "State": "Default|Hover|Focused|Selected|Disabled"
+            "State": "Default|Hover|Focused|Current|Disabled"
           },
           "props": "IconLeadingIcon:INSTANCE_SWAP,IconLeadingVisible:BOOLEAN,IconTrailingIcon:INSTANCE_SWAP,IconTrailingVisible:BOOLEAN,Label:TEXT,Trailing:TEXT,TrailingVisible:BOOLEAN,TrendVisible:BOOLEAN"
         }
       ]
     },
     {
-      "page": "Pagination",
-      "stable": true,
+      "page": "Pagination (✓) WIP",
+      "stable": false,
       "id": "931:87052",
       "sets": [
         {
@@ -1354,8 +1354,8 @@
       ]
     },
     {
-      "page": "Stepper",
-      "stable": true,
+      "page": "Stepper (✓) WIP",
+      "stable": false,
       "id": "931:87054",
       "sets": [
         {
@@ -1402,8 +1402,8 @@
       ]
     },
     {
-      "page": "Separator",
-      "stable": true,
+      "page": "Separator (✓) WIP",
+      "stable": false,
       "id": "89:24",
       "sets": [
         {
@@ -1420,8 +1420,8 @@
       ]
     },
     {
-      "page": "ScrollArea",
-      "stable": true,
+      "page": "ScrollArea (✓) WIP",
+      "stable": false,
       "id": "931:87048",
       "sets": [
         {

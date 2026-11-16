@@ -18,7 +18,8 @@ function render({ variant, orientation }: DividerArgs) {
 }
 
 const meta: Meta<DividerArgs> = {
-  title: 'Buttons/ButtonGroupDivider',
+  title: 'Buttons/ButtonGroup',
+  tags: ['!autodocs', 'part'],
   render,
   args: { variant: 'default', orientation: 'horizontal' },
   argTypes: {
@@ -29,9 +30,10 @@ const meta: Meta<DividerArgs> = {
 export default meta
 type Story = StoryObj<DividerArgs>
 
-export const Playground: Story = {}
+export const ButtonGroupDividerPlayground: Story = { name: 'ButtonGroupDivider · Playground' }
 
-export const AllCombinations: Story = {
+export const ButtonGroupDividerAllCombinations: Story = {
+  name: 'ButtonGroupDivider · All Combinations',
   render: () => (
     <div style={{ display: 'flex', gap: 24, alignItems: 'start' }}>
       {BUTTON_GROUP_ORIENTATIONS.flatMap((orientation) => BUTTON_GROUP_VARIANTS.map((variant) => <div key={`${variant}-${orientation}`}>{render({ variant, orientation })}</div>))}

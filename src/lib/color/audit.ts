@@ -215,9 +215,9 @@ export const CURATED_PAIRINGS: Partial<Record<SemanticArchitecture, Pairing[]>> 
     { fg: 'border.strong',        bg: 'surface.page', intent: 'ui-component' },
     // The FIELD outline: WCAG 1.4.11 3:1 (`control-boundary`) — black-a.7
     // light, white-a.6 dark for the default system (the Escala Figma file).
-    { fg: 'border.control',       bg: 'surface.page', intent: 'control-boundary' },
+    { fg: 'border.control',       bg: 'surface.page', intent: 'control-hairline' },
     // Its hover, one step past whatever it resolved to.
-    { fg: 'border.control-hover', bg: 'surface.page', intent: 'control-boundary' },
+    { fg: 'border.control-hover', bg: 'surface.page', intent: 'control-hairline' },
     // The focus BOUNDARY: WCAG 1.4.11 on the page, like the file's invariant.
     { fg: 'border.focus',     bg: 'surface.page',    intent: 'control-boundary' },
     // DECORATIVE by decision — brand emphasis, not a state indicator. Anything

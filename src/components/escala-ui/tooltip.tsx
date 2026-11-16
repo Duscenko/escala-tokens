@@ -6,6 +6,7 @@
 import * as React from 'react'
 import { Tooltip as TooltipPrimitive } from 'radix-ui'
 import { cn } from '../../lib/utils'
+import { glyph } from '../../lib/icons'
 import { usePortalContainer } from './portal-scope'
 
 export const TOOLTIP_SIZES = ['default', 'sm', 'lg'] as const
@@ -121,7 +122,6 @@ export interface TooltipInfoTriggerProps extends Omit<React.ComponentProps<'butt
   icon?: React.ReactNode
 }
 
-const INFO = 'M128,24A104,104,0,1,0,232,128,104.11,104.11,0,0,0,128,24Zm0,192a88,88,0,1,1,88-88A88.1,88.1,0,0,1,128,216Zm16-40a8,8,0,0,1-8,8,16,16,0,0,1-16-16V128a8,8,0,0,1,0-16,16,16,0,0,1,16,16v40A8,8,0,0,1,144,176ZM112,84a12,12,0,1,1,12,12A12,12,0,0,1,112,84Z'
 
 /** Figma TooltipInfoTrigger: the info-circle button that opens a tooltip. It needs an accessible name (`aria-label`). */
 function TooltipInfoTrigger({
@@ -140,7 +140,7 @@ function TooltipInfoTrigger({
       {...props}
     >
       <span data-part="TooltipInfoTrigger.icon" data-open={(props as Record<string, unknown>)['data-state'] === 'open' ? '' : undefined} aria-hidden className="inline-flex items-center justify-center [&>svg]:size-full">
-        {icon ?? <svg viewBox="0 0 256 256" fill="currentColor" focusable="false"><path d={INFO} /></svg>}
+        {icon ?? glyph('info')}
       </span>
     </button>
   )

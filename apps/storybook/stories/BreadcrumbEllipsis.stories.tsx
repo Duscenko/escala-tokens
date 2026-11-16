@@ -15,7 +15,8 @@ interface EllipsisStoryArgs {
 const list = { margin: 0, padding: 0, listStyle: 'none', display: 'flex', flexWrap: 'wrap', gap: 12 } as const
 
 const meta: Meta<EllipsisStoryArgs> = {
-  title: 'Navigation/BreadcrumbEllipsis',
+  title: 'Navigation/Breadcrumb',
+  tags: ['!autodocs', 'part'],
   render: ({ variant, appearance, size, forceState }) => (
     <ol style={list}><BreadcrumbEllipsis variant={variant} appearance={appearance} size={size} forceState={forceState} disabled={forceState === 'Disabled'} /></ol>
   ),
@@ -30,9 +31,10 @@ const meta: Meta<EllipsisStoryArgs> = {
 export default meta
 type Story = StoryObj<EllipsisStoryArgs>
 
-export const Playground: Story = {}
+export const BreadcrumbEllipsisPlayground: Story = { name: 'BreadcrumbEllipsis · Playground' }
 
-export const AllCombinations: Story = {
+export const BreadcrumbEllipsisAllCombinations: Story = {
+  name: 'BreadcrumbEllipsis · All Combinations',
   render: (args) => (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
       {BREADCRUMB_VARIANTS.flatMap((variant) => BREADCRUMB_APPEARANCES.map((appearance) => (
@@ -46,7 +48,8 @@ export const AllCombinations: Story = {
   ),
 }
 
-export const Sizes: Story = {
+export const BreadcrumbEllipsisSizes: Story = {
+  name: 'BreadcrumbEllipsis · Sizes',
   render: (args) => (
     <ol style={{ ...list, alignItems: 'center' }}>
       {BREADCRUMB_SIZES.map((size) => <BreadcrumbEllipsis key={size} variant={args.variant} appearance={args.appearance} size={size} />)}
@@ -54,7 +57,8 @@ export const Sizes: Story = {
   ),
 }
 
-export const States: Story = {
+export const BreadcrumbEllipsisStates: Story = {
+  name: 'BreadcrumbEllipsis · States',
   render: (args) => (
     <ol style={list}>
       {BREADCRUMB_ELLIPSIS_STATES.map((state) => <BreadcrumbEllipsis key={state} variant={args.variant} appearance={args.appearance} size={args.size} forceState={state} disabled={state === 'Disabled'} />)}

@@ -5,6 +5,8 @@
  *
  * Refs may SUM dimensions (`selector.control+spacing.1`) — `calc()` in CSS.
  */
+import { groupLabelRecipe } from './groupLabel.js'
+import { listItemRecipe, type ListItemMetrics } from './listItem.js'
 import { c, NONE, part, PANEL_RADIUS, PANEL_ROW_RADIUS, type ComponentRecipe, type SlotMap, type SlotProps, FOCUS } from './helpers.js'
 
 // ── Shared field chrome ────────────────────────────────────────────────────
@@ -635,9 +637,9 @@ export const INPUT_TAG_CHIP: ComponentRecipe = {
 }
 
 // InputTagOption: a suggestion row of the dropdown (Type option · create). One size: 32 tall
-// (Size/control-sm), padding and gap gap-control, Radius/control, Type/body-md. At rest it
-// wears the FIELD's fill and edge (Surface/input + Border/control); Hover drops the edge,
-// Focused takes Border/focus with the 2px halo. The option's `badge` is an 8px dot
+// (Size/control-sm), padding and gap gap-control, Radius/control, Type/body-sm (B3). At rest it
+// wears the FIELD's fill and edge (Surface/input + Border/control); Hover drops the edge and fills Surface/muted,
+// Focused the same fill, Border/focus and the 2px halo. The option's `badge` is an 8px dot
 // (Status/success/content), `meta` a Type/caption count, `icon` the 14px plus of create.
 export const INPUT_TAG_OPTION_TYPES = ['option', 'create'] as const
 export const INPUT_TAG_OPTION_STATES = ['Default', 'Hover', 'Focused', 'Disabled'] as const
@@ -652,8 +654,8 @@ function optionPaint(state: string): SlotMap {
   }
   const ink = c('content.primary')
   const rest = { label: { text: ink }, meta: { text: c('content.subtle') }, icon: { text: ink }, badge: { fill: c('status.success.content') } }
-  if (state === 'Hover') return { ...rest, root: { fill: c('surface.muted-hover'), strokeWidth: 'stroke.none', halo: NONE, text: ink } }
-  if (state === 'Focused') return { ...rest, root: { fill: c('surface.muted-hover'), stroke: c('border.focus'), strokeWidth: 'stroke.control', halo: c('border.ring.default'), text: ink } }
+  if (state === 'Hover') return { ...rest, root: { fill: c('surface.muted'), strokeWidth: 'stroke.none', halo: NONE, text: ink } }
+  if (state === 'Focused') return { ...rest, root: { fill: c('surface.muted'), stroke: c('border.focus'), strokeWidth: 'stroke.control', halo: c('border.ring.default'), text: ink } }
   return { ...rest, root: { fill: c('surface.input'), stroke: c('border.control'), strokeWidth: 'stroke.control', halo: NONE, text: ink } }
 }
 
@@ -664,7 +666,7 @@ export const INPUT_TAG_OPTION: ComponentRecipe = {
   parts: [
     part({}, () => ({
       root: {
-        height: 'size.compact', radius: 'radius.control', paddingX: 'spacing.gap-control', gap: 'spacing.gap-control', font: 'type.body-md',
+        height: 'size.compact', radius: 'radius.action', paddingX: 'spacing.gap-control', gap: 'spacing.gap-control', font: 'type.body-sm',
       },
       badge: { width: 'spacing.2', height: 'spacing.2', radius: 'radius.pill' },
       icon: { width: 'spacing.3+spacing.0_5', height: 'spacing.3+spacing.0_5' },
@@ -675,43 +677,6 @@ export const INPUT_TAG_OPTION: ComponentRecipe = {
 }
 
 // ── Select ─────────────────────────────────────────────────────────────────
-
-// shadcn's trigger sizes: default (control 40) · sm (compact 32).
-const SELECT_GEOMETRY: Record<string, string> = { default: 'size.control', sm: 'size.compact' }
-const MENU_ITEM: SlotMap = {
-  item: { text: c('content.primary'), font: 'type.body-sm', radius: PANEL_ROW_RADIUS, paddingX: 'spacing.2_5', paddingY: 'spacing.1_5', gap: 'spacing.2' },
-  'item[data-highlighted]': { fill: c('action.ghost.hover') },
-  'item[data-state="checked"]': { fill: c('surface.selected'), text: c('content.accent') },
-  'item[data-disabled]': { text: c('content.disabled') },
-}
-// The list panel is a box (`radius.container`) with a `spacing.1` inset: its
-// rows take its radius minus that inset (the menus' rule, `navigation.ts`).
-const MENU_CONTENT: SlotProps = {
-  fill: c('surface.layer-2'), stroke: c('border.subtle'), strokeWidth: 'stroke.control',
-  radius: PANEL_RADIUS, shadow: 'shadow.lg', paddingX: 'spacing.1', paddingY: 'spacing.1',
-}
-
-export const SELECT: ComponentRecipe = {
-  key: 'Select',
-  slots: ['root', 'icon', 'content', 'item'],
-  // Radix portals the list: it is a sibling of the trigger, not inside it.
-  detachedSlots: ['content', 'item'],
-  defaults: { Size: 'default', State: 'Default' },
-  parts: [
-    part({}, () => ({
-      root: { ...FIELD_FIXED, font: 'type.placeholder', text: c('content.primary') },
-      'root[data-placeholder]': { text: c('content.subtle') },
-      icon: { text: c('content.secondary') },
-      content: MENU_CONTENT,
-      ...MENU_ITEM,
-    })),
-    part({ Size: ['default', 'sm'] as const }, (size) => ({ root: { height: SELECT_GEOMETRY[size] } })),
-    part({ State: ['Default', 'Hover', 'Focused', 'Error', 'Disabled'] as const }, (state) => ({
-      root: { ...fieldBox(state), ...(state === 'Disabled' ? { text: c('content.disabled') } : {}) },
-      icon: { text: c(state === 'Disabled' ? 'content.disabled' : 'content.secondary') },
-    })),
-  ],
-}
 
 // ── Combobox · ComboboxPopover · ComboboxItem · ComboboxGroupLabel ─────────
 // The Figma `Combobox` page (design-plans/combobox-contract.md), four sets:
@@ -734,12 +699,12 @@ export const SELECT: ComponentRecipe = {
 //    padding gap-tight × 8 · 8 · 10, gap 6 · 8 · 8. Focused: Surface/muted + a 1px
 //    Border/focus edge the file lays out + a 2px halo outside; Selected: Surface/selected and
 //    the Content/accent check; Disabled: every ink Content/disabled.
-//  · ComboboxGroupLabel (406:147, Size, 3): 24 · 28 · 28 min, Type/caption · label ·
-//    label, Content/secondary.
+//  · ComboboxGroupLabel (406:147, Size, 3): `groupLabelRecipe` — 24 min, Type/caption,
+//    Content/secondary (the file drew 28 and Type/label at default and lg; B2 unifies).
 export const COMBOBOX_SIZES = ['sm', 'default', 'lg'] as const
 export const COMBOBOX_STATES = ['Default', 'Hover', 'Focused', 'Open', 'Invalid', 'Disabled', 'Loading'] as const
 export const COMBOBOX_SHAPES = ['rounded', 'pill'] as const
-export const COMBOBOX_ITEM_STATES = ['Default', 'Focused', 'Selected', 'Disabled'] as const
+export const COMBOBOX_ITEM_STATES = ['Default', 'Hover', 'Focused', 'Selected', 'Disabled'] as const
 export const COMBOBOX_POPOVER_CONTENTS = ['list', 'grouped', 'empty'] as const
 
 /** Per Size: box height · padding X · gap · glyph · type (unbound numbers as sums of steps). */
@@ -787,9 +752,9 @@ export const COMBOBOX: ComponentRecipe = {
 
 /** Per Size: the empty line's type and the footer's padding X. */
 const POPOVER_SIZE: Record<string, { padX: string; empty: string }> = {
-  sm: { padX: 'spacing.gap-control', empty: 'type.caption' },
-  default: { padX: 'spacing.gap-control', empty: 'type.body-sm' },
-  lg: { padX: 'spacing.2_5', empty: 'type.body-sm' },
+  sm: { padX: 'spacing.inset-control', empty: 'type.caption' },
+  default: { padX: 'spacing.inset-control', empty: 'type.body-sm' },
+  lg: { padX: 'spacing.inset-control', empty: 'type.body-sm' },
 }
 
 export const COMBOBOX_POPOVER: ComponentRecipe = {
@@ -802,7 +767,10 @@ export const COMBOBOX_POPOVER: ComponentRecipe = {
         fill: c('surface.layer-2'), stroke: c('border.default'), strokeWidth: 'stroke.divider',
         radius: 'radius.overlay', shadow: 'shadow.md', text: c('content.primary'),
       },
-      list: { paddingX: 'spacing.gap-tight', paddingY: 'spacing.gap-tight' },
+      // Concentric with the overlay: 24 − inset-control 12 = Radius/action 12 for the rows (DEC-2026-11-16-001).
+      list: { paddingX: 'spacing.inset-control', paddingY: 'spacing.inset-control' },
+      // Under a search header the list starts gap-tight below it (the file's country picker: search, 4, rows).
+      'list[data-after-header]': { paddingTop: 'spacing.gap-tight' },
       separator: { paddingY: 'spacing.gap-tight' },
       line: { height: 'stroke.divider', fill: c('border.subtle') },
       empty: { paddingX: 'spacing.inset-control', paddingY: 'spacing.inset-control', text: c('content.secondary') },
@@ -818,50 +786,21 @@ export const COMBOBOX_POPOVER: ComponentRecipe = {
   ],
 }
 
-/** Per Size: min height · padding X · gap · glyph · label type. */
-const COMBO_ITEM: Record<string, { minH: string; padX: string; gap: string; icon: string; font: string }> = {
-  sm: { minH: 'spacing.6+spacing.1', padX: 'spacing.gap-control', gap: 'spacing.1_5', icon: 'spacing.3+spacing.0_5', font: 'type.caption' },
-  default: { minH: 'size.compact', padX: 'spacing.gap-control', gap: 'spacing.gap-control', icon: 'icon.small', font: 'type.body-sm' },
-  lg: { minH: 'spacing.8+spacing.1', padX: 'spacing.2_5', gap: 'spacing.gap-control', icon: 'spacing.4+spacing.0_5', font: 'type.body-md' },
-}
-
-function comboboxItemPaint(size: string, state: string): SlotMap {
-  const g = COMBO_ITEM[size]
-  // Only Focused draws an edge, and the file lays it out: its content starts 1px further in.
-  const edge = state === 'Focused'
-  const root: SlotProps = {
-    minHeight: g.minH, radius: 'radius.control', gap: g.gap, font: g.font,
-    paddingX: edge ? `${g.padX}+stroke.control` : g.padX,
-    paddingY: edge ? 'spacing.gap-tight+stroke.control' : 'spacing.gap-tight',
-    strokeWidth: edge ? 'stroke.control' : 'stroke.none',
-  }
-  if (edge) { root.fill = c('surface.muted'); root.stroke = c('border.focus'); root.halo = c('border.ring.default') }
-  else if (state === 'Selected') root.fill = c('surface.selected')
-  const disabled = state === 'Disabled'
-  const ink = (role: string) => ({ text: c(disabled ? 'content.disabled' : role) })
-  return {
-    root,
-    icon: { ...ink('content.primary'), width: g.icon, height: g.icon },
-    label: ink('content.primary'),
-    description: { ...ink('content.secondary'), font: 'type.caption' },
-    trailing: { ...ink('content.subtle'), font: 'type.caption' },
-    indicator: { text: c('content.accent'), width: g.icon, height: g.icon },
-  }
+/** The Combobox file's row geometry (28 · 32 · 36, a 1px focus edge it lays out); the paint is `listItemRecipe`. */
+const COMBO_ITEM: Record<string, ListItemMetrics> = {
+  sm: { minHeight: 'spacing.6+spacing.1', paddingX: 'spacing.gap-control', paddingY: 'spacing.gap-tight', gap: 'spacing.1_5', icon: 'spacing.3+spacing.0_5', label: 'type.caption', edge: 'stroke.control' },
+  default: { minHeight: 'size.compact', paddingX: 'spacing.gap-control', paddingY: 'spacing.gap-tight', gap: 'spacing.gap-control', icon: 'icon.small', label: 'type.body-sm', edge: 'stroke.control' },
+  lg: { minHeight: 'spacing.8+spacing.1', paddingX: 'spacing.inset-control', paddingY: 'spacing.gap-tight', gap: 'spacing.gap-control', icon: 'spacing.4+spacing.0_5', label: 'type.body-md', edge: 'stroke.control' },
 }
 
 export const COMBOBOX_ITEM: ComponentRecipe = {
   key: 'ComboboxItem',
+  hover: 'highlight',
   slots: ['root', 'icon', 'text', 'label', 'description', 'trailing', 'indicator'],
   defaults: { Size: 'default', State: 'Default' },
   parts: [
-    part({ Size: COMBOBOX_SIZES, State: COMBOBOX_ITEM_STATES }, (size, state) => comboboxItemPaint(size, state)),
+    part({ Size: COMBOBOX_SIZES, State: COMBOBOX_ITEM_STATES }, (size, state) => listItemRecipe(size, state, 'default', { metrics: COMBO_ITEM })),
   ],
-}
-
-const GROUP_LABEL: Record<string, { minH: string; padX: string; font: string }> = {
-  sm: { minH: 'size.hit', padX: 'spacing.gap-control', font: 'type.caption' },
-  default: { minH: 'spacing.6+spacing.1', padX: 'spacing.gap-control', font: 'type.label' },
-  lg: { minH: 'spacing.6+spacing.1', padX: 'spacing.2_5', font: 'type.label' },
 }
 
 export const COMBOBOX_GROUP_LABEL: ComponentRecipe = {
@@ -869,10 +808,7 @@ export const COMBOBOX_GROUP_LABEL: ComponentRecipe = {
   slots: ['root'],
   defaults: { Size: 'default' },
   parts: [
-    part({ Size: COMBOBOX_SIZES }, (size) => {
-      const g = GROUP_LABEL[size]
-      return { root: { minHeight: g.minH, paddingX: g.padX, paddingY: 'spacing.gap-tight', font: g.font, text: c('content.secondary') } }
-    }),
+    part({ Size: COMBOBOX_SIZES }, (size) => ({ root: groupLabelRecipe(size) })),
   ],
 }
 
@@ -1129,11 +1065,12 @@ function switchPaint(checked: string, state: string): SlotMap {
     : (hover ? 'surface.muted-hover' : 'surface.muted')
   return {
     root: { fill: c(track), focus: focused ? c('border.focus') : NONE, ring: focused ? c('border.ring.default') : NONE },
-    thumb: { fill: c(on && !disabled ? 'content.on-action' : 'surface.input') },
-    // The I / O marks: a ring (off) or a bar (on), drawn in the thumb's opposite half.
-    io: { text: c(on ? (disabled ? 'surface.input' : 'content.on-action') : disabled ? 'content.disabled' : 'content.subtle') },
-    // The glyph on the thumb (not drawn in any variant of the file, which hides it).
-    thumbIcon: { text: c(disabled ? 'content.disabled' : on ? 'action.primary.default' : 'content.subtle') },
+    // Thumb (DEC-2026-11-16-003): on = ink of the solid track; off = `content.secondary` (the old
+    // `surface.input` thumb read 1.28:1 on the muted track); disabled, on or off = `content.disabled`.
+    thumb: { fill: c(disabled ? 'content.disabled' : on ? 'content.on-action' : 'content.secondary') },
+    // The I / O marks and the glyph on the thumb take the TRACK's role, so they read as a cut-out of the thumb.
+    io: { text: c(track) },
+    thumbIcon: { text: c(track) },
   }
 }
 
@@ -1302,7 +1239,7 @@ export const FIELD_STATES = ['Default', 'Invalid', 'Disabled'] as const
 
 export const FIELD: ComponentRecipe = {
   key: 'Field',
-  slots: ['root', 'labelRow', 'label', 'required', 'description', 'error', 'legend'],
+  slots: ['root', 'labelRow', 'label', 'required', 'description', 'errorRegion', 'error', 'legend'],
   defaults: { Size: 'default', State: 'Default' },
   parts: [
     part({}, () => ({
@@ -1529,32 +1466,6 @@ export const FILE_UPLOAD_ITEM: ComponentRecipe = {
         icon: { text: c(error ? 'status.critical.content' : 'content.secondary') },
         statusIcon: { text: c(ink) },
         label: { text: c(ink) },
-      }
-    }),
-  ],
-}
-
-// ── NativeSelect ───────────────────────────────────────────────────────────
-// shadcn's NativeSelect: a real <select> drawn as the field box, `size` default
-// | sm (the Select heights). The wrapper is the root, so the State axis reads
-// off it like every other field.
-
-const NATIVE_SELECT_STATES = ['Default', 'Hover', 'Focused', 'Disabled'] as const
-
-export const NATIVE_SELECT: ComponentRecipe = {
-  key: 'NativeSelect',
-  slots: ['root', 'select', 'icon'],
-  defaults: { Size: 'default', State: 'Default' },
-  parts: [
-    part({}, () => ({
-      select: { ...FIELD_FIXED, font: 'type.placeholder' },
-    })),
-    part({ Size: ['default', 'sm'] as const }, (size) => ({ select: { height: SELECT_GEOMETRY[size] } })),
-    part({ State: NATIVE_SELECT_STATES }, (state) => {
-      const disabled = state === 'Disabled'
-      return {
-        select: { ...fieldBox(state), text: c(disabled ? 'content.disabled' : 'content.primary') },
-        icon: { text: c(disabled ? 'content.disabled' : 'content.secondary') },
       }
     }),
   ],

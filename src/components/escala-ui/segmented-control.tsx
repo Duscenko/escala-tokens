@@ -13,6 +13,7 @@ export type SegmentedControlItemState = (typeof SEGMENTED_CONTROL_ITEM_STATES)[n
 
 const GroupContext = React.createContext<{
   size: SegmentedControlSize
+  fullWidth: boolean
   value: string | undefined
   select: (value: string) => void
 } | null>(null)
@@ -25,12 +26,15 @@ export interface SegmentedControlProps extends Omit<React.ComponentProps<'div'>,
   onValueChange?: (value: string) => void
   /** Shortcut for plain text segments (each option is its own value). */
   options?: string[]
+  /** Fill the container and share it equally between the segments — a Figma instance set to Fill container, whose
+   *  Content and items fill too (the Auth blocks' method switch). Default: the track hugs its segments. */
+  fullWidth?: boolean
   /** Figma Content slot: SegmentedControlItem segments. Omitted → the file's Day · Week · Month. */
   children?: React.ReactNode
 }
 
 function SegmentedControl({
-  size = 'default', value, defaultValue, onValueChange, options, children, className, onKeyDown, ...props
+  size = 'default', value, defaultValue, onValueChange, options, fullWidth = false, children, className, onKeyDown, ...props
 }: SegmentedControlProps) {
   const fallback = options ? options[0] : 'Day'
   const [inner, setInner] = React.useState(defaultValue ?? fallback)
@@ -52,17 +56,18 @@ function SegmentedControl({
     radios[next].click()
   }
   return (
-    <GroupContext.Provider value={{ size, value: active, select }}>
+    <GroupContext.Provider value={{ size, fullWidth, value: active, select }}>
       <div
         role="radiogroup"
         data-slot="segmented-control"
         data-escala="SegmentedControl"
         data-size={size}
-        className={cn('relative inline-flex', className)}
+        data-full-width={fullWidth ? '' : undefined}
+        className={cn('relative', fullWidth ? 'flex w-full' : 'inline-flex', className)}
         onKeyDown={handleKeyDown}
         {...props}
       >
-        <div data-part="SegmentedControl.content" className="flex">{content}</div>
+        <div data-part="SegmentedControl.content" className={cn('flex', fullWidth && 'min-w-0 flex-1')}>{content}</div>
       </div>
     </GroupContext.Provider>
   )
@@ -101,6 +106,8 @@ function SegmentedControlItem({
       role="radio"
       aria-checked={checked}
       tabIndex={group ? (checked ? 0 : -1) : undefined}
+      // An icon-only item (LabelVisible off) is still named by its label.
+      aria-label={labelVisible || typeof label !== 'string' ? undefined : label}
       data-slot="segmented-control-item"
       data-escala="SegmentedControlItem"
       data-size={size}
@@ -109,7 +116,7 @@ function SegmentedControlItem({
       aria-disabled={isDisabled || undefined}
       disabled={disabled}
       onClick={(e) => { onClick?.(e); if (!e.defaultPrevented && !isDisabled && group && own !== undefined) group.select(own) }}
-      className={cn('relative inline-flex shrink-0 items-center justify-center whitespace-nowrap border-0 outline-none select-none aria-disabled:cursor-not-allowed', !isDisabled && 'cursor-pointer', className)}
+      className={cn('relative inline-flex shrink-0 items-center justify-center whitespace-nowrap border-0 outline-none select-none aria-disabled:cursor-not-allowed', group?.fullWidth && 'min-w-0 flex-1', !isDisabled && 'cursor-pointer', className)}
       {...props}
     >
       {iconLeadingVisible && iconLeading ? (

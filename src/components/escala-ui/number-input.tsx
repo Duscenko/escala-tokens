@@ -9,6 +9,7 @@
 // (the box and the value) and the IconButton recipe (the buttons).
 import * as React from 'react'
 import { cn } from '../../lib/utils'
+import { glyph } from '../../lib/icons'
 import { IconButton } from './icon-button'
 import type { ButtonSizeStep } from './button'
 
@@ -43,17 +44,13 @@ export interface NumberInputProps extends Omit<React.ComponentProps<'input'>, 's
 /** Phosphor `minus` (regular). */
 function MinusGlyph() {
   return (
-    <svg viewBox="0 0 256 256" fill="currentColor" aria-hidden focusable="false">
-      <path d="M224,128a8,8,0,0,1-8,8H40a8,8,0,0,1,0-16H216A8,8,0,0,1,224,128Z" />
-    </svg>
+    glyph('minus')
   )
 }
 /** Phosphor `plus` (regular). */
 function PlusGlyph() {
   return (
-    <svg viewBox="0 0 256 256" fill="currentColor" aria-hidden focusable="false">
-      <path d="M224,128a8,8,0,0,1-8,8H136v80a8,8,0,0,1-16,0V136H40a8,8,0,0,1,0-16h80V40a8,8,0,0,1,16,0v80h80A8,8,0,0,1,224,128Z" />
-    </svg>
+    glyph('plus')
   )
 }
 

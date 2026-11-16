@@ -70,9 +70,10 @@ describe('the default Escala system — contrast invariants (WCAG 2.x)', () => {
         }
       })
 
-      it('boundaries: focus and the control outline clear WCAG 1.4.11', () => {
+      it('boundaries: focus clears WCAG 1.4.11; the control outline is the owner\'s soft hairline (DEC-2026-11-16-004, below 3:1 on purpose)', () => {
         expect(ratio('border.focus', 'surface.page', theme)).toBeGreaterThanOrEqual(3)
-        expect(ratio('border.control', 'surface.page', theme)).toBeGreaterThanOrEqual(3)
+        expect(ratio('border.control', 'surface.page', theme)).toBeGreaterThanOrEqual(1.4)
+        expect(ratio('border.control', 'surface.page', theme)).toBeLessThan(3)
       })
 
       it('every severity: label on its solids, content on the page and on its tint', () => {
@@ -132,20 +133,25 @@ describe('the default Escala system — roles picked by job', () => {
       expect(role(`status.${sev}.on-solid`, LIGHT), sev).toBe(prim(accent, 1))
       // Critical stays light-inked in Dark; the others carry the dark page.
       expect(role(`status.${sev}.on-solid`, DARK), sev).toBe(sev === 'critical' ? prim(gray, 1) : prim(accent, 1, true))
-      expect(role(`status.${sev}.surface`, DARK), sev).toBe(alpha(fam, 4, true))
+      // Critical's tint is Alpha/03 in Dark (owner's choice, 2026-11-16); the other three keep 04.
+      expect(role(`status.${sev}.surface`, DARK), sev).toBe(alpha(fam, sev === 'critical' ? 3 : 4, true))
       expect(role(`status.${sev}.surface-pressed`, LIGHT), sev).toBe(alpha(fam, 4))
     }
   })
 
-  it('the control outline sits on the alpha ladder at 3:1 (Black α 07 / White α 06)', () => {
-    expect([role('border.control', LIGHT), role('border.control-hover', LIGHT)]).toEqual([t.colors.primitiveAlpha['black-a-7'], t.colors.primitiveAlpha['black-a-8']])
-    expect([role('border.control', DARK), role('border.control-hover', DARK)]).toEqual([t.colors.primitiveAlpha['white-a-6'], t.colors.primitiveAlpha['white-a-7']])
+  it('the control outline sits on the alpha ladder at Alpha/03, hover /04 (the Figma file, DEC-2026-11-16-004)', () => {
+    expect([role('border.control', LIGHT), role('border.control-hover', LIGHT)]).toEqual([t.colors.primitiveAlpha['black-a-3'], t.colors.primitiveAlpha['black-a-4']])
+    expect([role('border.control', DARK), role('border.control-hover', DARK)]).toEqual([t.colors.primitiveAlpha['white-a-3'], t.colors.primitiveAlpha['white-a-4']])
   })
 })
 
 describe('the default Escala system — dimensions and type', () => {
   const px = (v: string | undefined) => parseFloat(v ?? '')
-  const radius = (role: string, vp?: 'tablet' | 'mobile') => px(t.radius[vp ? t.radiusRoleViewports[vp][role] : t.radiusRoles[role]])
+  // A role holds a ramp step or a pinned Dimension primitive (`dimension-20`).
+  const radius = (role: string, vp?: 'tablet' | 'mobile') => {
+    const ref = vp ? t.radiusRoleViewports[vp][role] : t.radiusRoles[role]
+    return ref.startsWith('dimension-') ? px(ref.slice('dimension-'.length)) : px(t.radius[ref])
+  }
 
   it('type scale ×0.875', () => {
     expect(Object.values(t.typography.sizes).map(px)).toEqual([11, 12, 14, 16, 18, 21, 26, 32, 42, 53, 63])
@@ -153,9 +159,9 @@ describe('the default Escala system — dimensions and type', () => {
     expect(Object.values(t.typography.letterSpacings).map(px)).toEqual([0, 0, 0, 0, -0.2, -0.3, -0.5, -0.6, -0.8, -1.1, -1.3])
   })
 
-  it('radius: control 8 · action 12 · container 16 · overlay 16 · full, the same on every viewport', () => {
+  it('radius: control 4 · item 8 · action 12 · container 20 · overlay 24 · full, the same on every viewport', () => {
     for (const vp of [undefined, 'tablet', 'mobile'] as const) {
-      expect(['control', 'action', 'container', 'overlay', 'pill'].map((r) => radius(r, vp)), vp ?? 'desktop').toEqual([8, 12, 16, 16, 9999])
+      expect(['control', 'item', 'action', 'container', 'overlay', 'pill'].map((r) => radius(r, vp)), vp ?? 'desktop').toEqual([4, 8, 12, 20, 24, 9999])
     }
   })
 

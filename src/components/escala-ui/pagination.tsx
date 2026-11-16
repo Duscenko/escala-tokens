@@ -6,6 +6,7 @@
 // the grouped variant is painted by ButtonGroup / ButtonGroupItem and the compact arrows by IconButton.
 import * as React from 'react'
 import { cn } from '../../lib/utils'
+import { glyph, type IconName } from '../../lib/icons'
 import { ButtonGroup, ButtonGroupItem } from './button-group'
 import { IconButton } from './icon-button'
 
@@ -20,15 +21,14 @@ const PaginationContext = React.createContext<{ size: PaginationSize; variant: P
 
 // Phosphor regular glyphs the file draws: caret-double-left · caret-left · caret-right · caret-double-right · dots-three.
 const PATHS = {
-  first: 'M205.66,202.34a8,8,0,0,1-11.32,11.32l-80-80a8,8,0,0,1,0-11.32l80-80a8,8,0,0,1,11.32,11.32L131.31,128ZM51.31,128l74.35-74.34a8,8,0,0,0-11.32-11.32l-80,80a8,8,0,0,0,0,11.32l80,80a8,8,0,0,0,11.32-11.32Z',
-  prev: 'M165.66,202.34a8,8,0,0,1-11.32,11.32l-80-80a8,8,0,0,1,0-11.32l80-80a8,8,0,0,1,11.32,11.32L91.31,128Z',
-  next: 'M181.66,133.66l-80,80a8,8,0,0,1-11.32-11.32L164.69,128,90.34,53.66a8,8,0,0,1,11.32-11.32l80,80A8,8,0,0,1,181.66,133.66Z',
-  last: 'M141.66,133.66l-80,80a8,8,0,0,1-11.32-11.32L124.69,128,50.34,53.66A8,8,0,0,1,61.66,42.34l80,80A8,8,0,0,1,141.66,133.66Zm80-11.32-80-80a8,8,0,0,0-11.32,11.32L204.69,128l-74.35,74.34a8,8,0,0,0,11.32,11.32l80-80A8,8,0,0,0,221.66,122.34Z',
-  dots: 'M140,128a12,12,0,1,1-12-12A12,12,0,0,1,140,128Zm56-12a12,12,0,1,0,12,12A12,12,0,0,0,196,116ZM60,116a12,12,0,1,0,12,12A12,12,0,0,0,60,116Z',
-}
-const glyph = (d: string) => <svg viewBox="0 0 256 256" fill="currentColor" aria-hidden focusable="false" className="size-full"><path d={d} /></svg>
+  first: 'caret-double-left',
+  prev: 'caret-left',
+  next: 'caret-right',
+  last: 'caret-double-right',
+  dots: 'dots-three',
+} as const
 const ICON_PX: Record<PaginationSize, number> = { xs: 16, sm: 16, default: 20, lg: 24 }
-const sized = (d: string, size: PaginationSize) => <span className="inline-flex" style={{ width: ICON_PX[size], height: ICON_PX[size] }}>{glyph(d)}</span>
+const sized = (d: IconName, size: PaginationSize) => <span className="inline-flex" style={{ width: ICON_PX[size], height: ICON_PX[size] }}>{glyph(d)}</span>
 
 export interface PaginationProps extends Omit<React.ComponentProps<'nav'>, 'onChange'> {
   /** Figma Size: items 40 · 24 · 32 · 48 high. */

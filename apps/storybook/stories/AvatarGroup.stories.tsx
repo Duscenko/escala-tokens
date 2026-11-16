@@ -29,7 +29,8 @@ function render({ size, shape, fill }: GroupStoryArgs) {
 }
 
 const meta: Meta<GroupStoryArgs> = {
-  title: 'Content & Surfaces/AvatarGroup',
+  title: 'Content & Surfaces/Avatar',
+  tags: ['!autodocs', 'part'],
   render,
   args: { size: 'default', shape: 'circle', fill: 'gradient' },
   argTypes: {
@@ -41,9 +42,10 @@ const meta: Meta<GroupStoryArgs> = {
 export default meta
 type Story = StoryObj<GroupStoryArgs>
 
-export const Playground: Story = {}
+export const AvatarGroupPlayground: Story = { name: 'AvatarGroup · Playground' }
 
-export const Sizes: Story = {
+export const AvatarGroupSizes: Story = {
+  name: 'AvatarGroup · Sizes',
   render: (args) => (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
       {AVATAR_SIZES.map((size) => <div key={size}>{render({ ...args, size })}</div>)}
@@ -51,7 +53,8 @@ export const Sizes: Story = {
   ),
 }
 
-export const Shapes: Story = {
+export const AvatarGroupShapes: Story = {
+  name: 'AvatarGroup · Shapes',
   render: (args) => (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
       {AVATAR_SHAPES.map((shape) => <div key={shape}>{render({ ...args, shape })}</div>)}
@@ -60,7 +63,8 @@ export const Shapes: Story = {
 }
 
 /** Every Size × Shape, for each fill: gradient (the default), soft and solid initials, all overlapped. */
-export const AllCombinations: Story = {
+export const AvatarGroupAllCombinations: Story = {
+  name: 'AvatarGroup · All Combinations',
   render: () => (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
       {(['gradient', 'soft', 'solid'] as Fill[]).map((fill) => (

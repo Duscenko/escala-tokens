@@ -1,0 +1,659 @@
+{
+  "$comment": "Contract of the Overlay blocks. Each block is the system's Modal (Modal · ModalHeader · Content slot · ModalFooter · CloseButton) filled with escala-ui components; the two drawers (CartDrawer, FilterDrawer) are the system's Sheet instead. Motion: the Modal's own choreography (the Sheet's sheet-enter / sheet-exit for the drawers); a block adds none.",
+  "figma": {
+    "file": "7j5zukN5HpihGVJMmyjA20",
+    "page": "Overlay",
+    "pageId": "1027:146815"
+  },
+  "blocks": [
+    {
+      "name": "ConfirmDialog",
+      "figmaSet": "1054:6187",
+      "axes": {},
+      "variants": 1,
+      "anatomy": [
+        "Modal (Size default)",
+        "ModalHeader",
+        "Content slot",
+        "ModalFooter",
+        "CloseButton"
+      ],
+      "nests": [
+        "ModalHeader",
+        "ModalFooter",
+        "Button"
+      ],
+      "slots": [
+        "Content",
+        "Actions"
+      ],
+      "props": [
+        "inline",
+        "open",
+        "onOpenChange",
+        "onConfirm"
+      ],
+      "a11y": [
+        "Rendered as the Modal: dialog role, focus trap and Escape when not inline",
+        "The header's title names the dialog",
+        "Destructive and warning actions stay disabled until the user confirms the risk"
+      ],
+      "motion": [
+        {
+          "moment": "open / close",
+          "mechanism": "the Modal's own choreography (dialog-enter / exit)",
+          "role": "none",
+          "reduced": "from the tokens"
+        }
+      ]
+    },
+    {
+      "name": "DestructiveConfirm",
+      "figmaSet": "1054:6209",
+      "axes": {},
+      "variants": 1,
+      "anatomy": [
+        "Modal (Size default)",
+        "ModalHeader",
+        "Content slot",
+        "ModalFooter",
+        "CloseButton"
+      ],
+      "nests": [
+        "ModalHeader",
+        "ModalFooter",
+        "Field",
+        "Input",
+        "Button"
+      ],
+      "slots": [
+        "Content",
+        "Actions"
+      ],
+      "props": [
+        "inline",
+        "open",
+        "onOpenChange",
+        "onConfirm"
+      ],
+      "a11y": [
+        "Rendered as the Modal: dialog role, focus trap and Escape when not inline",
+        "The header's title names the dialog",
+        "Destructive and warning actions stay disabled until the user confirms the risk"
+      ],
+      "motion": [
+        {
+          "moment": "open / close",
+          "mechanism": "the Modal's own choreography (dialog-enter / exit)",
+          "role": "none",
+          "reduced": "from the tokens"
+        }
+      ]
+    },
+    {
+      "name": "FormModal",
+      "figmaSet": "1055:99",
+      "axes": {},
+      "variants": 1,
+      "anatomy": [
+        "Modal (Size default)",
+        "ModalHeader",
+        "Content slot",
+        "ModalFooter",
+        "CloseButton"
+      ],
+      "nests": [
+        "ModalHeader",
+        "ModalFooter",
+        "Field",
+        "Input",
+        "Textarea",
+        "RadioGroup",
+        "Button"
+      ],
+      "slots": [
+        "Content",
+        "Actions"
+      ],
+      "props": [
+        "inline",
+        "open",
+        "onOpenChange",
+        "onConfirm"
+      ],
+      "a11y": [
+        "Rendered as the Modal: dialog role, focus trap and Escape when not inline",
+        "The header's title names the dialog",
+        "Destructive and warning actions stay disabled until the user confirms the risk"
+      ],
+      "motion": [
+        {
+          "moment": "open / close",
+          "mechanism": "the Modal's own choreography (dialog-enter / exit)",
+          "role": "none",
+          "reduced": "from the tokens"
+        }
+      ]
+    },
+    {
+      "name": "SuccessModal",
+      "figmaSet": "1055:265",
+      "axes": {},
+      "variants": 1,
+      "anatomy": [
+        "Modal (Size default)",
+        "ModalHeader",
+        "Content slot",
+        "ModalFooter",
+        "CloseButton"
+      ],
+      "nests": [
+        "ModalHeader",
+        "ModalFooter",
+        "Button"
+      ],
+      "slots": [
+        "Content",
+        "Actions"
+      ],
+      "props": [
+        "inline",
+        "open",
+        "onOpenChange",
+        "onConfirm"
+      ],
+      "a11y": [
+        "Rendered as the Modal: dialog role, focus trap and Escape when not inline",
+        "The header's title names the dialog",
+        "Destructive and warning actions stay disabled until the user confirms the risk"
+      ],
+      "motion": [
+        {
+          "moment": "open / close",
+          "mechanism": "the Modal's own choreography (dialog-enter / exit)",
+          "role": "none",
+          "reduced": "from the tokens"
+        }
+      ]
+    },
+    {
+      "name": "ErrorModal",
+      "figmaSet": "1055:346",
+      "axes": {},
+      "variants": 1,
+      "anatomy": [
+        "Modal (Size default)",
+        "ModalHeader",
+        "Content slot",
+        "ModalFooter",
+        "CloseButton"
+      ],
+      "nests": [
+        "ModalHeader",
+        "ModalFooter",
+        "Button"
+      ],
+      "slots": [
+        "Content",
+        "Actions"
+      ],
+      "props": [
+        "inline",
+        "open",
+        "onOpenChange",
+        "onConfirm"
+      ],
+      "a11y": [
+        "Rendered as the Modal: dialog role, focus trap and Escape when not inline",
+        "The header's title names the dialog",
+        "Destructive and warning actions stay disabled until the user confirms the risk"
+      ],
+      "motion": [
+        {
+          "moment": "open / close",
+          "mechanism": "the Modal's own choreography (dialog-enter / exit)",
+          "role": "none",
+          "reduced": "from the tokens"
+        }
+      ]
+    },
+    {
+      "name": "FeedbackRating",
+      "figmaSet": "1055:404",
+      "axes": {},
+      "variants": 1,
+      "anatomy": [
+        "Modal (Size default)",
+        "ModalHeader",
+        "Content slot",
+        "ModalFooter",
+        "CloseButton"
+      ],
+      "nests": [
+        "ModalHeader",
+        "ModalFooter",
+        "RatingGroup",
+        "Field",
+        "Textarea",
+        "CheckboxItem",
+        "Button"
+      ],
+      "slots": [
+        "Content",
+        "Actions"
+      ],
+      "props": [
+        "inline",
+        "open",
+        "onOpenChange",
+        "onConfirm"
+      ],
+      "a11y": [
+        "Rendered as the Modal: dialog role, focus trap and Escape when not inline",
+        "The header's title names the dialog",
+        "Destructive and warning actions stay disabled until the user confirms the risk"
+      ],
+      "motion": [
+        {
+          "moment": "open / close",
+          "mechanism": "the Modal's own choreography (dialog-enter / exit)",
+          "role": "none",
+          "reduced": "from the tokens"
+        }
+      ]
+    },
+    {
+      "name": "WarningDialog",
+      "figmaSet": "1055:548",
+      "axes": {},
+      "variants": 1,
+      "anatomy": [
+        "Modal (Size default)",
+        "ModalHeader",
+        "Content slot",
+        "ModalFooter",
+        "CloseButton"
+      ],
+      "nests": [
+        "ModalHeader",
+        "ModalFooter",
+        "CheckboxItem",
+        "Button"
+      ],
+      "slots": [
+        "Content",
+        "Actions"
+      ],
+      "props": [
+        "inline",
+        "open",
+        "onOpenChange",
+        "onConfirm"
+      ],
+      "a11y": [
+        "Rendered as the Modal: dialog role, focus trap and Escape when not inline",
+        "The header's title names the dialog",
+        "Destructive and warning actions stay disabled until the user confirms the risk"
+      ],
+      "motion": [
+        {
+          "moment": "open / close",
+          "mechanism": "the Modal's own choreography (dialog-enter / exit)",
+          "role": "none",
+          "reduced": "from the tokens"
+        }
+      ]
+    },
+    {
+      "name": "ShareModal",
+      "figmaSet": "1055:613",
+      "axes": {},
+      "variants": 1,
+      "anatomy": [
+        "Modal (Size default)",
+        "ModalHeader",
+        "Content slot",
+        "ModalFooter",
+        "CloseButton"
+      ],
+      "nests": [
+        "ModalHeader",
+        "Input",
+        "Button",
+        "Avatar",
+        "Separator",
+        "IconButton"
+      ],
+      "slots": [
+        "Content",
+        "Actions"
+      ],
+      "props": [
+        "inline",
+        "open",
+        "onOpenChange",
+        "onConfirm"
+      ],
+      "a11y": [
+        "Rendered as the Modal: dialog role, focus trap and Escape when not inline",
+        "The header's title names the dialog",
+        "Destructive and warning actions stay disabled until the user confirms the risk"
+      ],
+      "motion": [
+        {
+          "moment": "open / close",
+          "mechanism": "the Modal's own choreography (dialog-enter / exit)",
+          "role": "none",
+          "reduced": "from the tokens"
+        }
+      ]
+    },
+    {
+      "name": "SessionTimeoutWarning",
+      "figmaSet": "1055:793",
+      "axes": {},
+      "variants": 1,
+      "anatomy": [
+        "Modal (Size default)",
+        "ModalHeader",
+        "Content slot",
+        "ModalFooter",
+        "CloseButton"
+      ],
+      "nests": [
+        "ModalHeader",
+        "ModalFooter",
+        "Button"
+      ],
+      "slots": [
+        "Content",
+        "Actions"
+      ],
+      "props": [
+        "inline",
+        "open",
+        "onOpenChange",
+        "onConfirm"
+      ],
+      "a11y": [
+        "Rendered as the Modal: dialog role, focus trap and Escape when not inline",
+        "The header's title names the dialog",
+        "Destructive and warning actions stay disabled until the user confirms the risk"
+      ],
+      "motion": [
+        {
+          "moment": "open / close",
+          "mechanism": "the Modal's own choreography (dialog-enter / exit)",
+          "role": "none",
+          "reduced": "from the tokens"
+        }
+      ]
+    },
+    {
+      "name": "CartDrawer",
+      "figmaSet": "1074:2954",
+      "axes": {},
+      "variants": 1,
+      "anatomy": [
+        "Sheet (Side right on desktop · bottom on a phone)",
+        "ModalHeader (SheetHeader)",
+        "Content slot",
+        "ModalFooter (SheetFooter)",
+        "CloseButton"
+      ],
+      "nests": [
+        "Sheet",
+        "ModalHeader",
+        "ModalFooter",
+        "Badge",
+        "Avatar",
+        "NumberInput",
+        "IconButton",
+        "Separator",
+        "Button"
+      ],
+      "slots": [
+        "Content",
+        "Actions"
+      ],
+      "props": [
+        "side",
+        "inline",
+        "open",
+        "onOpenChange",
+        "onConfirm"
+      ],
+      "a11y": [
+        "Rendered as the Sheet: dialog role, focus trap and Escape when not inline",
+        "The header's title names the dialog",
+        "The bottom side is capped by the visual viewport and keeps the safe area under the footer"
+      ],
+      "motion": [
+        {
+          "moment": "open / close",
+          "mechanism": "the Sheet's own choreography (sheet-enter / sheet-exit, from its edge); the block adds none",
+          "role": "none",
+          "reduced": "from the tokens"
+        }
+      ]
+    },
+    {
+      "name": "QuickEditDialog",
+      "figmaSet": "1074:3374",
+      "axes": {},
+      "variants": 1,
+      "anatomy": [
+        "Modal (Size default)",
+        "ModalHeader",
+        "Content slot",
+        "ModalFooter",
+        "CloseButton"
+      ],
+      "nests": [
+        "ModalHeader",
+        "ModalFooter",
+        "Field",
+        "Input",
+        "Button"
+      ],
+      "slots": [
+        "Content",
+        "Actions"
+      ],
+      "props": [
+        "inline",
+        "open",
+        "onOpenChange",
+        "onConfirm"
+      ],
+      "a11y": [
+        "Rendered as the Modal: dialog role, focus trap and Escape when not inline",
+        "The header's title names the dialog",
+        "Destructive and warning actions stay disabled until the user confirms the risk"
+      ],
+      "motion": [
+        {
+          "moment": "open / close",
+          "mechanism": "the Modal's own choreography (dialog-enter / exit)",
+          "role": "none",
+          "reduced": "from the tokens"
+        }
+      ]
+    },
+    {
+      "name": "FilterDrawer",
+      "figmaSet": "1074:3445",
+      "axes": {},
+      "variants": 1,
+      "anatomy": [
+        "Sheet (Side right on desktop · bottom on a phone)",
+        "ModalHeader (SheetHeader)",
+        "Content slot",
+        "ModalFooter (SheetFooter)",
+        "CloseButton"
+      ],
+      "nests": [
+        "Sheet",
+        "ModalHeader",
+        "ModalFooter",
+        "Slider",
+        "CheckboxItem",
+        "SwitchGroup",
+        "Button"
+      ],
+      "slots": [
+        "Content",
+        "Actions"
+      ],
+      "props": [
+        "side",
+        "inline",
+        "open",
+        "onOpenChange",
+        "onConfirm"
+      ],
+      "a11y": [
+        "Rendered as the Sheet: dialog role, focus trap and Escape when not inline",
+        "The header's title names the dialog",
+        "The bottom side is capped by the visual viewport and keeps the safe area under the footer"
+      ],
+      "motion": [
+        {
+          "moment": "open / close",
+          "mechanism": "the Sheet's own choreography (sheet-enter / sheet-exit, from its edge); the block adds none",
+          "role": "none",
+          "reduced": "from the tokens"
+        }
+      ]
+    },
+    {
+      "name": "FilterModal",
+      "figmaSet": "1074:3596",
+      "axes": {},
+      "variants": 1,
+      "anatomy": [
+        "Modal (Size default)",
+        "ModalHeader",
+        "Content slot",
+        "ModalFooter",
+        "CloseButton"
+      ],
+      "nests": [
+        "ModalHeader",
+        "ModalFooter",
+        "Chip",
+        "SegmentedControl",
+        "Button"
+      ],
+      "slots": [
+        "Content",
+        "Actions"
+      ],
+      "props": [
+        "inline",
+        "open",
+        "onOpenChange",
+        "onConfirm"
+      ],
+      "a11y": [
+        "Rendered as the Modal: dialog role, focus trap and Escape when not inline",
+        "The header's title names the dialog",
+        "Destructive and warning actions stay disabled until the user confirms the risk"
+      ],
+      "motion": [
+        {
+          "moment": "open / close",
+          "mechanism": "the Modal's own choreography (dialog-enter / exit)",
+          "role": "none",
+          "reduced": "from the tokens"
+        }
+      ]
+    },
+    {
+      "name": "ReleaseModal",
+      "figmaSet": "1074:3824",
+      "axes": {},
+      "variants": 1,
+      "anatomy": [
+        "Modal (Size default)",
+        "ModalHeader",
+        "Content slot",
+        "ModalFooter",
+        "CloseButton"
+      ],
+      "nests": [
+        "ModalHeader",
+        "ModalFooter",
+        "FeaturedIcon",
+        "Badge",
+        "Button"
+      ],
+      "slots": [
+        "Content",
+        "Actions"
+      ],
+      "props": [
+        "inline",
+        "open",
+        "onOpenChange",
+        "onConfirm"
+      ],
+      "a11y": [
+        "Rendered as the Modal: dialog role, focus trap and Escape when not inline",
+        "The header's title names the dialog",
+        "Destructive and warning actions stay disabled until the user confirms the risk"
+      ],
+      "motion": [
+        {
+          "moment": "open / close",
+          "mechanism": "the Modal's own choreography (dialog-enter / exit)",
+          "role": "none",
+          "reduced": "from the tokens"
+        }
+      ]
+    },
+    {
+      "name": "CookieConsent",
+      "figmaSet": "1074:3929",
+      "axes": {},
+      "variants": 1,
+      "anatomy": [
+        "Modal (Size default)",
+        "ModalHeader",
+        "Content slot",
+        "ModalFooter",
+        "CloseButton"
+      ],
+      "nests": [
+        "ModalHeader",
+        "ModalFooter",
+        "SwitchGroup",
+        "Separator",
+        "Button"
+      ],
+      "slots": [
+        "Content",
+        "Actions"
+      ],
+      "props": [
+        "inline",
+        "open",
+        "onOpenChange",
+        "onConfirm"
+      ],
+      "a11y": [
+        "Rendered as the Modal: dialog role, focus trap and Escape when not inline",
+        "The header's title names the dialog",
+        "Destructive and warning actions stay disabled until the user confirms the risk"
+      ],
+      "motion": [
+        {
+          "moment": "open / close",
+          "mechanism": "the Modal's own choreography (dialog-enter / exit)",
+          "role": "none",
+          "reduced": "from the tokens"
+        }
+      ]
+    }
+  ]
+}

@@ -22,7 +22,8 @@ function render({ size, header, label, month, year }: CalendarHeaderStoryArgs) {
 }
 
 const meta: Meta<CalendarHeaderStoryArgs> = {
-  title: 'Forms/CalendarHeader',
+  title: 'Forms/Calendar',
+  tags: ['!autodocs', 'part'],
   render,
   args: { size: 'default', header: 'single', label: 'November 2026', month: 'November', year: '2026' },
   argTypes: {
@@ -36,10 +37,11 @@ const meta: Meta<CalendarHeaderStoryArgs> = {
 export default meta
 type Story = StoryObj<CalendarHeaderStoryArgs>
 
-export const Playground: Story = {}
+export const CalendarHeaderPlayground: Story = { name: 'CalendarHeader · Playground' }
 
 /** The six variants of the file: Size × Header. */
-export const AllCombinations: Story = {
+export const CalendarHeaderAllCombinations: Story = {
+  name: 'CalendarHeader · All Combinations',
   render: (args) => (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
       {SIZES.flatMap((size) => HEADERS.map((header) => <div key={`${size}-${header}`}>{render({ ...args, size, header })}</div>))}
@@ -47,7 +49,8 @@ export const AllCombinations: Story = {
   ),
 }
 
-export const Sizes: Story = {
+export const CalendarHeaderSizes: Story = {
+  name: 'CalendarHeader · Sizes',
   render: (args) => (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
       {SIZES.map((size) => <div key={size}>{render({ ...args, size })}</div>)}
@@ -55,7 +58,8 @@ export const Sizes: Story = {
   ),
 }
 
-export const Headers: Story = {
+export const CalendarHeaderHeaders: Story = {
+  name: 'CalendarHeader · Headers',
   render: (args) => (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
       {HEADERS.map((header) => <div key={header}>{render({ ...args, header })}</div>)}

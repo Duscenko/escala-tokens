@@ -96,7 +96,7 @@ describe('registry item (shadcn CLI format)', () => {
   })
 
   it('internal imports become registry dependencies on this registry, for the same system', () => {
-    const select = buildRegistryItem('select', json, { ...OPTS, brand: 'core' })!
+    const select = buildRegistryItem('dropdown-menu', json, { ...OPTS, brand: 'core' })!
     expect(select.registryDependencies).toContain('https://escalatokens.com/r/portal-scope.json?project=esc_test&brand=core')
     expect(select.files![0].content).toContain("from '@/components/ui/portal-scope'")
   })

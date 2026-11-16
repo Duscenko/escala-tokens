@@ -525,8 +525,8 @@ export function sourceState(sentAt: string | null, changedAt: string | null): So
  *  the values match no preset: the card says Custom. */
 export interface FoundationFacts {
   fonts: { body: string; heading: string }
-  /** Resolved Desktop px of the three radius axes. */
-  radius: { boxes: number; fields: number; selectors: number }
+  /** Resolved Desktop px of the four radius axes. */
+  radius: { boxes: number; fields: number; items: number; selectors: number }
   /** A `SPACING_MODES` label. */
   spacing: string | null
   /** The standard control height (`size-md`). */
@@ -544,7 +544,7 @@ export function foundationFacts(store: StoreState, brand: string): FoundationFac
   const mode = matchSpacingMode(f.sizes, f.spacingRoles, f.stroke)
   return {
     fonts: { body: f.typography.fontFamily, heading: f.typography.headingFontFamily || f.typography.fontFamily },
-    radius: { boxes: px('container'), fields: px('action'), selectors: px('control') },
+    radius: { boxes: px('container'), fields: px('action'), items: px('item'), selectors: px('control') },
     spacing: SPACING_MODES.find((m) => m.id === mode)?.label ?? null,
     fieldHeight: f.sizes.md ?? '',
     shadow: matchShadowPreset(f.shadows),

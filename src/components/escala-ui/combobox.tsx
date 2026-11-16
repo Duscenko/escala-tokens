@@ -11,12 +11,13 @@
 //    aligned to its start, and closes on Escape.
 //  · ComboboxPopover (415:489): the panel — `content` list · grouped · empty, `size`, an
 //    optional footer (FooterVisible / FooterText) and EmptyText.
-//  · ComboboxItem (406:140): an option row — `size`, State Default · Focused · Selected ·
+//  · ComboboxItem (406:140): an option row — `size`, State Default · Hover · Focused · Selected ·
 //    Disabled, optional leading icon, description, trailing text and the check indicator.
 //  · ComboboxGroupLabel (406:147): the heading of a group of options.
 // Paint: the Combobox, ComboboxPopover, ComboboxItem and ComboboxGroupLabel recipes.
 import * as React from 'react'
 import { cn } from '../../lib/utils'
+import { glyph } from '../../lib/icons'
 
 export const COMBOBOX_SIZES = ['sm', 'default', 'lg'] as const
 export const COMBOBOX_VARIANTS = ['default', 'compact'] as const
@@ -27,24 +28,7 @@ export type ComboboxVariant = (typeof COMBOBOX_VARIANTS)[number]
 export type ComboboxShape = (typeof COMBOBOX_SHAPES)[number]
 export type ComboboxPopoverContent = (typeof COMBOBOX_POPOVER_CONTENTS)[number]
 export type ComboboxState = 'Default' | 'Hover' | 'Focused' | 'Open' | 'Invalid' | 'Disabled' | 'Loading'
-export type ComboboxItemState = 'Default' | 'Focused' | 'Selected' | 'Disabled'
-
-/** Phosphor regular bodies, as the file's glyphs draw them. */
-const GLYPHS = {
-  search: 'M229.66,218.34l-50.07-50.06a88.11,88.11,0,1,0-11.31,11.31l50.06,50.07a8,8,0,0,0,11.32-11.32ZM40,112a72,72,0,1,1,72,72A72.08,72.08,0,0,1,40,112Z',
-  close: 'M205.66,194.34a8,8,0,0,1-11.32,11.32L128,139.31,61.66,205.66a8,8,0,0,1-11.32-11.32L116.69,128,50.34,61.66A8,8,0,0,1,61.66,50.34L128,116.69l66.34-66.35a8,8,0,0,1,11.32,11.32L139.31,128Z',
-  chevron: 'M213.66,101.66l-80,80a8,8,0,0,1-11.32,0l-80-80A8,8,0,0,1,53.66,90.34L128,164.69l74.34-74.35a8,8,0,0,1,11.32,11.32Z',
-  check: 'M229.66,77.66l-128,128a8,8,0,0,1-11.32,0l-56-56a8,8,0,0,1,11.32-11.32L96,188.69,218.34,66.34a8,8,0,0,1,11.32,11.32Z',
-  notch: 'M232,128a104,104,0,0,1-208,0c0-41,23.81-78.36,60.66-95.27a8,8,0,0,1,6.68,14.54C60.15,61.59,40,93.27,40,128a88,88,0,0,0,176,0c0-34.73-20.15-66.41-51.34-80.73a8,8,0,0,1,6.68-14.54C208.19,49.64,232,87,232,128Z',
-} as const
-
-function Glyph({ d, className }: { d: string; className?: string }) {
-  return (
-    <svg viewBox="0 0 256 256" fill="currentColor" aria-hidden focusable="false" className={className}>
-      <path d={d} />
-    </svg>
-  )
-}
+export type ComboboxItemState = 'Default' | 'Hover' | 'Focused' | 'Selected' | 'Disabled'
 
 /** A glyph box sized by its recipe; the svg fills it. */
 const iconBox = 'inline-flex shrink-0 items-center justify-center [&>svg]:size-full'
@@ -82,11 +66,11 @@ function ComboboxGroup({ label, size = 'default', children, ...props }: React.Co
 
 export interface ComboboxItemProps extends React.ComponentProps<'div'> {
   size?: ComboboxSize
-  /** Pin a state (docs, Storybook, Figma parity). Live: `highlighted` → Focused, `selected` → Selected. */
+  /** Pin a state (docs, Storybook, Figma parity). Live: `selected` → Selected; `highlighted` only fills the row (the ring is keyboard focus or a pinned Focused). */
   forceState?: ComboboxItemState
   /** The listbox's `aria-selected` (Figma State Selected). */
   selected?: boolean
-  /** The keyboard / pointer highlight (`aria-activedescendant`; Figma State Focused). */
+  /** The keyboard / pointer highlight (`aria-activedescendant`): fills the row, draws no ring. */
   highlighted?: boolean
   disabled?: boolean
   /** Figma IconLeadingVisible + IconLeadingIcon. */
@@ -107,7 +91,7 @@ function ComboboxItem({
   const isSelected = forceState ? forceState === 'Selected' : !!selected
   const state: ComboboxItemState | undefined = forceState && forceState !== 'Default'
     ? forceState
-    : isDisabled ? 'Disabled' : highlighted ? 'Focused' : isSelected ? 'Selected' : undefined
+    : isDisabled ? 'Disabled' : isSelected ? 'Selected' : undefined
   return (
     <div
       role="option"
@@ -128,7 +112,7 @@ function ComboboxItem({
       </span>
       {trailing != null && <span data-part="ComboboxItem.trailing" className="shrink-0 whitespace-nowrap">{trailing}</span>}
       {isSelected && indicator && (
-        <span data-part="ComboboxItem.indicator" aria-hidden className={iconBox}><Glyph d={GLYPHS.check} /></span>
+        <span data-part="ComboboxItem.indicator" aria-hidden className={iconBox}>{glyph('check')}</span>
       )}
     </div>
   )
@@ -144,16 +128,23 @@ export interface ComboboxPopoverProps extends React.ComponentProps<'div'> {
   emptyText?: React.ReactNode
   /** Figma FooterVisible + FooterText. */
   footer?: React.ReactNode
+  /** A search field above the list (the DropdownMenu's HeaderVisible pattern), outside the listbox. */
+  header?: React.ReactNode
+  /** The list scrolls past this height (the popover keeps its header and footer in view). */
+  maxListHeight?: string
   /** The listbox's id (the trigger's `aria-controls`). */
   listId?: string
   /** The listbox's accessible name (default "Options"); the Combobox passes its own. */
   listLabel?: string
   listLabelledBy?: string
+  /** The scrolling list element, and its scroll (a long list that draws only the rows in view). */
+  listRef?: React.Ref<HTMLDivElement>
+  onListScroll?: React.UIEventHandler<HTMLDivElement>
   width?: number | string
 }
 
 function ComboboxPopover({
-  size = 'default', content = 'list', emptyText = 'No match', footer, listId, listLabel, listLabelledBy, width, children, className, style, ...props
+  size = 'default', content = 'list', emptyText = 'No match', footer, header, maxListHeight, listId, listLabel, listLabelledBy, listRef, onListScroll, width, children, className, style, ...props
 }: ComboboxPopoverProps) {
   return (
     <div
@@ -165,13 +156,20 @@ function ComboboxPopover({
       style={{ width, ...style }}
       {...props}
     >
+      {header != null && (
+        <div data-part="ComboboxPopover.header" className="flex shrink-0 flex-col px-[var(--spacing-inset-control)] pt-[var(--spacing-inset-control)]">{header}</div>
+      )}
       <div
         id={listId}
+        ref={listRef}
+        onScroll={onListScroll}
+        data-after-header={header != null ? '' : undefined}
         role={content === 'empty' ? undefined : 'listbox'}
         aria-label={content === 'empty' || listLabelledBy ? undefined : listLabel ?? 'Options'}
         aria-labelledby={content === 'empty' ? undefined : listLabelledBy}
         data-part="ComboboxPopover.list"
-        className="flex flex-col"
+        className={cn('flex flex-col', maxListHeight && 'min-h-0 overflow-y-auto')}
+        style={maxListHeight ? { maxHeight: maxListHeight } : undefined}
       >
         {content === 'empty'
           ? <div data-part="ComboboxPopover.empty" role="status" className="text-center">{emptyText}</div>
@@ -320,7 +318,7 @@ function Combobox({
     })
   } else shown.forEach((o, i) => rows.push(item(o, i)))
 
-  const leadingGlyph = leading === undefined ? <Glyph d={GLYPHS.search} /> : leading
+  const leadingGlyph = leading === undefined ? glyph('search') : leading
   return (
     <div
       data-slot="combobox-wrap"
@@ -401,15 +399,15 @@ function Combobox({
             className={cn(iconBox, 'cursor-pointer border-0 bg-transparent p-0 outline-none disabled:cursor-not-allowed')}
             onMouseDown={(e) => { e.preventDefault(); e.stopPropagation(); commit(undefined); setTyping(false); setQuery('') }}
           >
-            <Glyph d={GLYPHS.close} />
+            {glyph('close')}
           </button>
         )}
         {isLoading ? (
           <span data-part="Combobox.icon" aria-hidden className={iconBox}>
-            <Glyph d={GLYPHS.notch} className="animate-spin motion-reduce:animate-none" />
+            {glyph('loading', { className: 'animate-spin motion-reduce:animate-none' })}
           </span>
         ) : chevron ? (
-          <span data-part="Combobox.icon" aria-hidden className={iconBox}><Glyph d={GLYPHS.chevron} /></span>
+          <span data-part="Combobox.icon" aria-hidden className={iconBox}>{glyph('chevron-down')}</span>
         ) : null}
       </div>
       {open && (

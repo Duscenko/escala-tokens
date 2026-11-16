@@ -38,6 +38,7 @@
 // (default · sm, the only axis). Labels and handlers are code. Paint: the CalendarFooter recipe + Button.
 import * as React from 'react'
 import { cn } from '../../lib/utils'
+import { glyph } from '../../lib/icons'
 import { Button } from './button'
 
 export const CALENDAR_DAY_SIZES = ['default', 'sm'] as const
@@ -107,13 +108,6 @@ export type CalendarHeaderSize = (typeof CALENDAR_HEADER_SIZES)[number]
 export const CALENDAR_HEADER_HEADERS = ['single', 'multiple', 'plain'] as const
 export type CalendarHeaderHeader = (typeof CALENDAR_HEADER_HEADERS)[number]
 
-function CaretGlyph({ d }: { d: string }) {
-  return <svg viewBox="0 0 256 256" fill="currentColor" aria-hidden focusable="false" className="size-full"><path d={d} /></svg>
-}
-// Phosphor caret-left · caret-right · caret-down (regular), the file's icon/chevron-*.
-const CARET_LEFT = 'M165.66,202.34a8,8,0,0,1-11.32,11.32l-80-80a8,8,0,0,1,0-11.32l80-80a8,8,0,0,1,11.32,11.32L91.31,128Z'
-const CARET_RIGHT = 'M181.66,133.66l-80,80a8,8,0,0,1-11.32-11.32L164.69,128,90.34,53.66a8,8,0,0,1,11.32-11.32l80,80A8,8,0,0,1,181.66,133.66Z'
-const CARET_DOWN = 'M213.66,101.66l-80,80a8,8,0,0,1-11.32,0l-80-80A8,8,0,0,1,53.66,90.34L128,164.69l74.34-74.35a8,8,0,0,1,11.32,11.32Z'
 
 export interface CalendarHeaderProps extends Omit<React.ComponentProps<'div'>, 'children'> {
   size?: CalendarHeaderSize
@@ -140,7 +134,7 @@ function CalendarHeader({
   const chip = (name: string, text: React.ReactNode, onClick?: () => void) => (
     <button type="button" data-part="CalendarHeader.chip" data-chip={name} onClick={onClick} className="inline-flex cursor-pointer items-center border-0 bg-transparent outline-none">
       <span data-part="CalendarHeader.label">{text}</span>
-      <span data-part="CalendarHeader.chevron" aria-hidden className="inline-flex shrink-0"><CaretGlyph d={CARET_DOWN} /></span>
+      <span data-part="CalendarHeader.chevron" aria-hidden className="inline-flex shrink-0">{glyph('chevron-down', { className: 'size-full' })}</span>
     </button>
   )
   return (
@@ -153,7 +147,7 @@ function CalendarHeader({
       {...props}
     >
       <button type="button" aria-label="Previous month" data-part="CalendarHeader.nav" onClick={onPreviousMonth} className="inline-flex shrink-0 cursor-pointer items-center justify-center bg-transparent p-0 outline-none">
-        <span data-part="CalendarHeader.navIcon" className="inline-flex"><CaretGlyph d={CARET_LEFT} /></span>
+        <span data-part="CalendarHeader.navIcon" className="inline-flex">{glyph('caret-left', { className: 'size-full' })}</span>
       </button>
       <div data-part="CalendarHeader.title" className="flex items-center">
         {header === 'single' && chip('month-year', label, onLabelClick)}
@@ -161,7 +155,7 @@ function CalendarHeader({
         {header === 'plain' && <span data-part="CalendarHeader.label">{label}</span>}
       </div>
       <button type="button" aria-label="Next month" data-part="CalendarHeader.nav" onClick={onNextMonth} className="inline-flex shrink-0 cursor-pointer items-center justify-center bg-transparent p-0 outline-none">
-        <span data-part="CalendarHeader.navIcon" className="inline-flex"><CaretGlyph d={CARET_RIGHT} /></span>
+        <span data-part="CalendarHeader.navIcon" className="inline-flex">{glyph('caret-right', { className: 'size-full' })}</span>
       </button>
     </div>
   )
@@ -197,10 +191,14 @@ export interface CalendarMonthProps extends Omit<React.ComponentProps<'div'>, 'c
   unavailableDays?: Date[]
   /** A day was pressed. */
   onDayClick?: (date: Date) => void
+  /** Range mode with only a first day picked: the day the pointer or focus is on previews the span from it. */
+  hoverDay?: Date | null
+  /** The pointer or focus entered a day (null: left the month). */
+  onDayHover?: (date: Date | null) => void
 }
 
 function CalendarMonth({
-  size = 'default', mode = 'single', variant = 'default', month, today, selected, range, disabledDays, unavailableDays, onDayClick, className, ...props
+  size = 'default', mode = 'single', variant = 'default', month, today, selected, range, disabledDays, unavailableDays, onDayClick, hoverDay, onDayHover, className, ...props
 }: CalendarMonthProps) {
   // Without a month it shows the file's sample (November 2026); with one, only the data it is given.
   const sample = !month
@@ -213,7 +211,10 @@ function CalendarMonth({
   const weeks = Math.ceil((lead + count) / 7)
   const todayKey = dayKey(today ?? (sample ? day0(y, m, 7) : new Date()))
   const picked = new Set((selected ?? (sample ? (mode === 'multiple' ? [4, 12, 19, 30] : [12]).map((d) => day0(y, m, d)) : [])).map(dayKey))
-  const span = mode === 'range' ? (range === undefined ? (sample ? { from: day0(y, m, 10), to: day0(y, m, 18) } : null) : range) : null
+  const ownSpan = mode === 'range' ? (range === undefined ? (sample ? { from: day0(y, m, 10), to: day0(y, m, 18) } : null) : range) : null
+  // A first day without a second: the hovered day previews the span, whichever side of the first it is.
+  const preview = ownSpan && !ownSpan.to && hoverDay && hoverDay.getTime() !== ownSpan.from.getTime()
+  const span = preview ? (hoverDay! < ownSpan!.from ? { from: hoverDay!, to: ownSpan!.from } : { from: ownSpan!.from, to: hoverDay! }) : ownSpan
   const from = span ? dayKey(span.from) : ''
   const to = span?.to ? dayKey(span.to) : ''
   const between = (d: Date) => !!span?.to && d.getTime() > span.from.getTime() && d.getTime() < span.to.getTime()
@@ -264,6 +265,8 @@ function CalendarMonth({
       data-variant={variant}
       className={cn('flex flex-col', className)}
       onKeyDown={onKeyDown}
+      onPointerLeave={onDayHover ? () => onDayHover(null) : undefined}
+      onBlur={onDayHover ? (e) => { if (!e.currentTarget.contains(e.relatedTarget as Node | null)) onDayHover(null) } : undefined}
       {...props}
     >
       <div data-part="CalendarMonth.weekdays" className="flex">
@@ -287,6 +290,8 @@ function CalendarMonth({
                 aria-label={fullDate(d)}
                 aria-pressed={st === 'Selected' || st === 'RangeStart' || st === 'RangeEnd' || st === 'RangeMiddle'}
                 onClick={onDayClick ? () => onDayClick(d) : undefined}
+                onPointerEnter={onDayHover ? () => onDayHover(d) : undefined}
+                onFocus={onDayHover ? () => onDayHover(d) : undefined}
               >
                 {d.getDate()}
               </CalendarDay>
@@ -453,6 +458,7 @@ function Calendar({
     : mode === 'range' ? { from: day0(2026, 10, 10), to: day0(2026, 10, 18) } : day0(2026, 10, 12)
   const [ownMonth, setOwnMonth] = React.useState<Date>(() => defaultMonth ?? (sample ? day0(2026, 10, 1) : new Date()))
   const [ownValue, setOwnValue] = React.useState<CalendarValue>(() => (sample ? sampleValue : defaultValue))
+  const [hoverDay, setHoverDay] = React.useState<Date | null>(null)
   const shown = month ?? ownMonth
   const current = value !== undefined ? value : ownValue
   const now = today ?? (sample ? day0(2026, 10, 7) : new Date())
@@ -522,6 +528,8 @@ function Calendar({
             disabledDays={off}
             unavailableDays={gone}
             onDayClick={pick}
+            hoverDay={hoverDay}
+            onDayHover={mode === 'range' ? setHoverDay : undefined}
           />
           {children}
         </div>

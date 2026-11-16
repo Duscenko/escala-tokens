@@ -20,7 +20,8 @@ const render = ({ size, forceState, variant, digit }: SlotStoryArgs) => (
 )
 
 const meta: Meta<SlotStoryArgs> = {
-  title: 'Forms/InputOTPSlot',
+  title: 'Forms/InputOTP',
+  tags: ['!autodocs', 'part'],
   render,
   args: { size: 'default', forceState: 'Default', variant: 'outline', digit: '7' },
   argTypes: {
@@ -33,10 +34,11 @@ const meta: Meta<SlotStoryArgs> = {
 export default meta
 type Story = StoryObj<SlotStoryArgs>
 
-export const Playground: Story = {}
+export const InputOTPSlotPlayground: Story = { name: 'InputOTPSlot · Playground' }
 
 /** Every Size × State × Variant, as the file's 54 variants. */
-export const AllCombinations: Story = {
+export const InputOTPSlotAllCombinations: Story = {
+  name: 'InputOTPSlot · All Combinations',
   render: (args) => (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
       {INPUT_OTP_SIZES.flatMap((size) => INPUT_OTP_VARIANTS.map((variant) => (
@@ -52,8 +54,8 @@ const caption = { font: '12px sans-serif', color: 'var(--color-content-secondary
 
 /** The file's own prototype page: filled slots in each variant; focused slots in each
  *  variant and an error slot. */
-export const RestingFocused: Story = {
-  name: 'Resting · Focused',
+export const InputOTPSlotRestingFocused: Story = {
+  name: 'InputOTPSlot · Resting · Focused',
   render: () => (
     <div style={{ display: 'flex', flexWrap: 'wrap', gap: 48 }}>
       <div>

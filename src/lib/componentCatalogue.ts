@@ -278,26 +278,6 @@ export const COMPONENTS: ComponentDef[] = [
     accessibility: 'Decorative: aria-hidden.',
   },
   {
-    key: 'ToggleGroup',
-    label: 'Toggle Group',
-    category: 'Button & Actions',
-    description: 'shadcn/ui Toggle Group: a set of two-state buttons — one or several pressed at a time.',
-    usage: 'Use for formatting toggles (bold · italic · underline) or a view filter that can combine. For one exclusive choice among views prefer Segmented Control or Tabs.',
-    axes: [
-      { name: 'Variant', values: ['default', 'outline'] },
-      { name: 'Size', values: ['default', 'sm', 'lg'] },
-    ],
-    figmaSets: ['Toggle Group'],
-    props: [
-      { name: 'type', type: '"single" | "multiple"', description: 'One pressed item, or any number.' },
-      { name: 'variant', type: '"default" | "outline"', description: 'shadcn\'s toggle variants: no edge, or the control boundary.' },
-      { name: 'size', type: '"default" | "sm" | "lg"', description: 'Item height — the Button heights.' },
-      { name: 'value / defaultValue / onValueChange', type: 'string | string[]', description: 'The pressed item(s).' },
-      { name: 'ToggleGroupItem value', type: 'component', description: 'One toggle; Radix writes data-state="on" when pressed.' },
-    ],
-    accessibility: 'Radix ToggleGroup: arrow keys move between items (roving tabindex); each item exposes aria-pressed (multiple) or role="radio" (single).',
-  },
-  {
     key: 'Toggle',
     label: 'Toggle',
     category: 'Button & Actions',
@@ -320,20 +300,26 @@ export const COMPONENTS: ComponentDef[] = [
     key: 'SocialLoginButton',
     label: 'Social Login Button',
     category: 'Button & Actions',
-    description: 'Outlined sign-in button carrying a provider mark — Google, Apple, GitHub or Figma.',
-    usage: 'Stack vertically above the email form. Keep provider order consistent across screens.',
+    description: 'Sign-in button carrying a provider mark: white (a bordered control) or in the provider\'s own colour, full width or icon-only.',
+    usage: 'Stack vertically above the email form, or lay the icon-only form in a row. Keep provider order consistent across screens.',
+    // The Figma file's axes, value for value (SocialLoginButton, 364:20).
     axes: [
-      { name: 'Provider', values: ['google', 'apple', 'github', 'figma'] },
-      { name: 'Size', values: ['default', 'lg'] },
+      { name: 'Appearance', values: ['white', 'brand'] },
+      { name: 'Brand', values: ['Google', 'Apple', 'Discord', 'Dribbble', 'Facebook', 'GitHub', 'LinkedIn', 'Slack', 'X'] },
+      { name: 'IconOnly', values: ['false', 'true'] },
+      { name: 'Size', values: ['lg', 'default'] },
+      { name: 'State', values: ['Default', 'Hover', 'Pressed', 'Focused', 'Disabled'] },
     ],
-    figmaSets: ['Button Social'],
+    figmaSets: ['SocialLoginButton'],
     props: [
-      { name: 'provider', type: '"google" | "apple" | "github" | "figma"', description: 'Identity provider — picks the mark.' },
+      { name: 'brand', type: '"Google" | "Apple" | "Discord" | "Dribbble" | "Facebook" | "GitHub" | "LinkedIn" | "Slack" | "X"', description: 'Identity provider — picks the mark and, in the brand appearance, the colour (Social Media Brands).' },
+      { name: 'appearance', type: '"white" | "brand"', description: 'white: bordered control. brand: the provider fill.' },
+      { name: 'iconOnly', type: 'boolean', description: 'A square of the Size showing only the mark — give it an aria-label.' },
       { name: 'size', type: '"default" | "lg"', description: 'Control height — lg for mobile sign-in screens.' },
-      { name: 'label', type: 'ReactNode', description: 'Defaults to "Continue with <provider>". Never icon-only.' },
+      { name: 'label', type: 'ReactNode', description: 'Defaults to "Continue with <brand>".' },
       { name: 'onClick', type: '() => void', description: 'Starts the OAuth flow.' },
     ],
-    accessibility: 'Native <button> with the full "Continue with …" label — never icon-only.',
+    accessibility: 'Native <button>. Full width shows "Continue with …"; the icon-only form needs an aria-label (the component sets one from the brand).',
   },
   {
     key: 'AppStoreBadge',
@@ -549,43 +535,6 @@ export const COMPONENTS: ComponentDef[] = [
       { name: 'selected / disabled', type: 'boolean', description: 'aria-selected; State Disabled.' },
     ],
     accessibility: 'role="option" with aria-selected; the list that holds it is a listbox with arrow-key navigation.',
-  },
-  {
-    key: 'Select',
-    label: 'Select',
-    category: 'Form Controls',
-    description: 'Dropdown trigger that shares the input tokens, with full state coverage for forms and filters.',
-    usage: 'Use when options exceed 4 items. For fewer options, prefer Radio or ButtonGroup.',
-    axes: [
-      { name: 'Size', values: ['default', 'sm'] },
-      { name: 'State', values: ['Default', 'Hover', 'Focused', 'Error', 'Disabled'] },
-    ],
-    figmaSets: ['Select'],
-    props: [
-      { name: 'Select', type: 'component', description: 'Radix Select root: value, defaultValue, onValueChange, disabled.' },
-      { name: 'SelectTrigger size', type: '"md" | "sm" | "lg"', description: 'Field height — follows the Sizes foundation.' },
-      { name: 'SelectValue placeholder', type: 'string', description: 'Shown until an option is chosen.' },
-      { name: 'SelectContent / SelectItem', type: 'component', description: 'The list; it portals into the theme scope.' },
-    ],
-    accessibility: 'Built on Radix Select. Keyboard navigable. Options have role="option".',
-  },
-  {
-    key: 'NativeSelect',
-    label: 'Native Select',
-    category: 'Form Controls',
-    description: 'shadcn/ui Native Select: the browser\'s own <select>, drawn as the field box with a chevron.',
-    usage: 'Use where the platform picker is the better experience (mobile, long lists, forms that must work without JavaScript). For a styled list with search or rich items use Select or Combobox.',
-    axes: [
-      { name: 'Size', values: ['default', 'sm'] },
-      { name: 'State', values: ['Default', 'Hover', 'Focused', 'Disabled'] },
-    ],
-    figmaSets: ['Select'],
-    props: [
-      { name: 'size', type: '"default" | "sm"', description: 'The Select heights.' },
-      { name: 'NativeSelectOption / NativeSelectOptGroup', type: 'component', description: 'The options, as <option> / <optgroup>.' },
-      { name: '…select attributes', type: 'React.ComponentProps<"select">', description: 'value, onChange, disabled, name — a real <select>.' },
-    ],
-    accessibility: 'A native <select>: keyboard, screen readers and the platform picker come for free. Pair it with a Label (Field).',
   },
   {
     key: 'DatePickerTrigger',
@@ -821,7 +770,7 @@ export const COMPONENTS: ComponentDef[] = [
     usage: 'Used by Combobox and ComboboxPopover. Keep labels short; put detail in the description.',
     axes: [
       { name: 'Size', values: ['sm', 'default', 'lg'] },
-      { name: 'State', values: ['Default', 'Focused', 'Selected', 'Disabled'] },
+      { name: 'State', values: ['Default', 'Hover', 'Focused', 'Selected', 'Disabled'] },
     ],
     figmaSets: ['ComboboxItem'],
     props: [
@@ -1325,7 +1274,7 @@ export const COMPONENTS: ComponentDef[] = [
     axes: [
       { name: 'Size', values: ['default', 'sm', 'lg', 'xl'] },
       { name: 'Variant', values: ['default', 'secondary', 'critical', 'success', 'warning', 'info'] },
-      { name: 'Appearance', values: ['soft', 'solid'] },
+      { name: 'Appearance', values: ['soft', 'solid', 'gradient'] },
       { name: 'Shape', values: ['circle', 'rounded'] },
     ],
     figmaSets: ['FeaturedIcon'],
@@ -1647,18 +1596,20 @@ export const COMPONENTS: ComponentDef[] = [
     key: 'Sheet',
     label: 'Sheet',
     category: 'Content & Surfaces',
-    description: 'shadcn/ui Sheet: a panel that slides in from an edge of the screen.',
-    usage: 'Use for secondary tasks that keep the page in context (filters, details, settings). For a blocking decision use Alert Dialog.',
+    description: 'An edge-anchored panel on the Modal surface: a desktop drawer from the right or left, a mobile sheet from the bottom.',
+    usage: 'Use for secondary tasks that keep the page in context (filters, a cart, details, settings). For a blocking decision use Modal or Alert Dialog; for a list of choices tied to a field use Popover.',
     axes: [
-      { name: 'Side', values: ['right', 'left', 'top', 'bottom'] },
+      { name: 'Side', values: ['right', 'left', 'bottom'] },
     ],
     figmaSets: ['Sheet'],
     props: [
-      { name: 'SheetContent side', type: '"top" | "right" | "bottom" | "left"', description: 'The edge it slides from.' },
-      { name: 'showCloseButton', type: 'boolean', description: 'The ghost icon-sm close (default true).' },
-      { name: 'SheetHeader / SheetTitle / SheetDescription / SheetFooter', type: 'component', description: 'The parts.' },
+      { name: 'SheetContent side', type: '"right" | "left" | "bottom"', description: 'The edge it is anchored to (default right).' },
+      { name: 'header', type: 'ReactNode', description: 'The header: a SheetHeader (= ModalHeader), inside main above the Content.' },
+      { name: 'children', type: 'ReactNode', description: 'The Content slot; it scrolls when taller than the panel.' },
+      { name: 'footer', type: 'ReactNode', description: 'Figma FooterVisible: a SheetFooter (= ModalFooter); stacked on the bottom side.' },
+      { name: 'showClose', type: 'boolean', description: 'Figma CloseVisible: the soft pill CloseButton (default true).' },
     ],
-    accessibility: 'A Radix Dialog: focus is trapped inside, Esc closes and focus returns to the trigger.',
+    accessibility: 'A Radix Dialog like Modal: focus is trapped inside, Esc closes and focus returns to the trigger. The header\'s title is the accessible name and its description the aria-describedby; the close button has an accessible name. The bottom side is capped by the visual viewport (not 100vh) and keeps the safe area under its footer.',
   },
   {
     key: 'Drawer',
@@ -2249,22 +2200,6 @@ export const COMPONENTS: ComponentDef[] = [
   },
   // ── Navigation ──────────────────────────────────────────────────────────────
   {
-    key: 'Tabs',
-    label: 'Tabs',
-    category: 'Navigation',
-    description: 'Tab bar for switchable panels: a muted track (default) or an underline (line).',
-    usage: 'Use when content is parallel, not sequential. Limit to 2–7 tabs visible at once.',
-    axes: [{ name: 'Variant', values: ['default', 'line'] }],
-    figmaSets: ['Tabs'],
-    props: [
-      { name: 'Tabs value / defaultValue', type: 'string', description: 'The open tab.' },
-      { name: 'TabsList variant', type: '"default" | "line"', description: 'A muted track with a raised active tab, or an underline strip.' },
-      { name: 'TabsTrigger', type: 'component', description: 'One tab (arrow keys move between them).' },
-      { name: 'TabsContent value', type: 'string', description: 'The panel for a tab.' },
-    ],
-    accessibility: 'ARIA tabs pattern: role="tablist", role="tab", role="tabpanel". Arrow key navigation.',
-  },
-  {
     key: 'TabMenu',
     label: 'Tab Menu',
     category: 'Navigation',
@@ -2291,7 +2226,7 @@ export const COMPONENTS: ComponentDef[] = [
     usage: 'Inside a button-variant TabMenu.',
     axes: [
       { name: 'Size', values: ['default', 'sm', 'lg'] },
-      { name: 'State', values: ['Default', 'Hover', 'Selected', 'Focused', 'Disabled'] },
+      { name: 'State', values: ['Default', 'Hover', 'Focused', 'Selected', 'Disabled'] },
     ],
     figmaSets: ['TabMenuItem'],
     props: [
@@ -2308,7 +2243,7 @@ export const COMPONENTS: ComponentDef[] = [
     usage: 'Inside a line-variant TabMenu.',
     axes: [
       { name: 'Size', values: ['default', 'sm', 'lg'] },
-      { name: 'State', values: ['Default', 'Hover', 'Selected', 'Focused', 'Disabled'] },
+      { name: 'State', values: ['Default', 'Hover', 'Focused', 'Selected', 'Disabled'] },
       { name: 'Indicator', values: ['bottom', 'left'] },
     ],
     figmaSets: ['TabMenuLineItem'],
@@ -2326,7 +2261,7 @@ export const COMPONENTS: ComponentDef[] = [
     usage: 'In a header or navbar. Current marks the page you are on; with a trailing caret it opens a NavigationMenu. Tabs inside a view use TabMenuItem.',
     axes: [
       { name: 'Size', values: ['default', 'sm', 'lg'] },
-      { name: 'State', values: ['Default', 'Hover', 'Current', 'Focused', 'Disabled'] },
+      { name: 'State', values: ['Default', 'Hover', 'Focused', 'Current', 'Disabled'] },
     ],
     figmaSets: ['NavItem'],
     props: [
@@ -2645,7 +2580,7 @@ export const COMPONENTS: ComponentDef[] = [
     usage: 'One command per row. Put irreversible commands last as a destructive variant.',
     axes: [
       { name: 'Size', values: ['default', 'sm', 'lg'] },
-      { name: 'State', values: ['Default', 'Focused', 'Selected', 'Disabled'] },
+      { name: 'State', values: ['Default', 'Hover', 'Focused', 'Selected', 'Disabled'] },
       { name: 'Variant', values: ['default', 'destructive'] },
     ],
     figmaSets: ['DropdownMenuItem'],
@@ -2675,22 +2610,6 @@ export const COMPONENTS: ComponentDef[] = [
     accessibility: 'Keep it outside role menu; its controls are reachable with Tab after the list.',
   },
   {
-    key: 'Menubar',
-    label: 'Menubar',
-    category: 'Navigation',
-    description: 'shadcn/ui Menubar: a persistent bar of menus, as in desktop apps (File · Edit · View).',
-    usage: 'Use in app-like tools with many commands grouped by menu. For a few actions behind one button use Dropdown Menu.',
-    axes: [],
-    figmaSets: ['Menubar'],
-    props: [
-      { name: 'MenubarMenu / MenubarTrigger / MenubarContent', type: 'component', description: 'One menu.' },
-      { name: 'MenubarItem variant', type: '"default" | "destructive"', description: 'A command.' },
-      { name: 'MenubarSeparator / MenubarShortcut / MenubarLabel', type: 'component', description: 'Grouping and key hints.' },
-      { name: 'MenubarSub / MenubarCheckboxItem / MenubarRadioItem', type: 'component', description: 'Submenus and toggles.' },
-    ],
-    accessibility: 'Radix Menubar: arrow keys move between menus and items, Esc closes, type-ahead finds items.',
-  },
-  {
     key: 'NavigationMenu',
     label: 'Navigation Menu',
     category: 'Navigation',
@@ -2705,21 +2624,6 @@ export const COMPONENTS: ComponentDef[] = [
       { name: 'viewport', type: 'boolean', description: 'Panels share one animated viewport (default true).' },
     ],
     accessibility: 'Radix NavigationMenu: a nav landmark; triggers expose aria-expanded and arrow keys move between them.',
-  },
-  {
-    key: 'ContextMenu',
-    label: 'Context Menu',
-    category: 'Navigation',
-    description: 'Right-click menu with shortcut hints — the pointer-positioned sibling of Dropdown Menu.',
-    usage: 'Every context-menu action must also exist somewhere visible — right-click is a shortcut.',
-    axes: [],
-    figmaSets: ['Context Menu'],
-    props: [
-      { name: 'ContextMenu', type: 'component', description: 'Radix root.' },
-      { name: 'ContextMenuTrigger', type: 'component', description: 'The area that opens it on right-click.' },
-      { name: 'ContextMenuContent / Item / Separator / Shortcut', type: 'component', description: 'The panel and its rows.' },
-    ],
-    accessibility: 'Same ARIA menu pattern; also opened via the keyboard Menu key / Shift+F10.',
   },
   {
     key: 'Command',
@@ -2756,17 +2660,78 @@ export const COMPONENTS: ComponentDef[] = [
     key: 'Sidebar',
     label: 'Sidebar',
     category: 'Navigation',
-    description: 'Vertical navigation panel with grouped items and an active state.',
-    usage: 'Use for app-level sections when destinations exceed what a navbar holds.',
-    axes: [{ name: 'Variant', values: ['sidebar', 'floating', 'inset'] }],
+    description: 'App navigation rail: a header (SidebarBrand and a trigger), a scrollable content of SidebarGroups and an optional footer. Collapsed is the 48 px icon rail.',
+    usage: 'Use for app-level sections when destinations exceed what a navbar holds. Keep at most one row marked as the current page.',
+    axes: [{ name: 'Collapsed', values: ['false', 'true'] }],
     figmaSets: ['Sidebar'],
     props: [
-      { name: 'variant / side', type: '"sidebar" | "floating" | "inset" / "left" | "right"', description: 'shadcn\'s variants: flush panel, floating card, or inset.' },
+      { name: 'collapsed', type: 'boolean', description: 'Figma Collapsed: the 48 px icon rail. It cascades to every part.' },
       { name: 'SidebarHeader / SidebarContent / SidebarFooter', type: 'component', description: 'The panel\'s regions.' },
+      { name: 'SidebarBrand / SidebarTrigger', type: 'component', description: 'The header\'s logo block and the ghost IconButton that folds the rail.' },
       { name: 'SidebarGroup / SidebarGroupLabel / SidebarMenu', type: 'component', description: 'A labelled group of rows.' },
-      { name: 'SidebarMenuButton isActive / variant / size', type: 'boolean / "default" | "outline" / "default" | "sm" | "lg"', description: 'One row; isActive marks the current page.' },
     ],
-    accessibility: '<nav aria-label="Sidebar">; active item uses aria-current. Fully arrow-key navigable.',
+    accessibility: 'Rendered as an aside landmark with an aria-label; the trigger carries aria-expanded and aria-controls; collapsed rows keep an accessible name and want a Tooltip with their label.',
+  },
+  {
+    key: 'SidebarMenuButton',
+    label: 'Sidebar Menu Button',
+    category: 'Navigation',
+    description: 'A navigation row of the Sidebar: leading icon, label, trailing count, trend Badge and trailing icon. Current marks the page you are on.',
+    usage: 'One row per destination. Collapsed comes from the Sidebar, not from the row.',
+    axes: [
+      { name: 'Size', values: ['default', 'sm', 'lg'] },
+      { name: 'State', values: ['Default', 'Hover', 'Focused', 'Current', 'Disabled'] },
+      { name: 'Collapsed', values: ['false', 'true'] },
+    ],
+    figmaSets: ['SidebarMenuButton'],
+    props: [
+      { name: 'children', type: 'ReactNode', description: 'Figma Label.' },
+      { name: 'icon / trailing / iconTrailing', type: 'ReactNode', description: 'Figma IconLeadingIcon, Trailing, IconTrailingIcon.' },
+      { name: 'trend / trendLabel', type: '"up" | "down" / ReactNode', description: 'Figma TrendVisible: an exposed Badge, success for up, critical for down.' },
+      { name: 'state', type: 'SidebarMenuButtonState', description: 'Pins a state (docs). `isActive` is the older name of `state="Current"`.' },
+    ],
+    accessibility: 'A button, or a link with asChild; aria-current="page" on the current row; keep it Tab-reachable; a collapsed row keeps its label for assistive tech.',
+  },
+  {
+    key: 'SidebarGroup',
+    label: 'Sidebar Group',
+    category: 'Navigation',
+    description: 'A labelled section of the Sidebar: a SidebarGroupLabel and a SidebarMenu. Size cascades to every row.',
+    usage: 'Group related destinations under one label.',
+    axes: [
+      { name: 'Size', values: ['default', 'sm', 'lg'] },
+      { name: 'Collapsed', values: ['false', 'true'] },
+    ],
+    figmaSets: ['SidebarGroup'],
+    props: [
+      { name: 'size', type: '"default" | "sm" | "lg"', description: 'Figma Size: cascades to its SidebarMenu and every SidebarMenuButton.' },
+    ],
+    accessibility: 'role group with aria-labelledby pointing at its label.',
+  },
+  {
+    key: 'SidebarGroupLabel',
+    label: 'Sidebar Group Label',
+    category: 'Navigation',
+    description: 'The heading of a group of SidebarMenuButtons; hidden while the Sidebar is collapsed. A twin of DropdownMenuLabel.',
+    usage: 'Name the group in one or two words.',
+    axes: [{ name: 'Size', values: ['default', 'sm', 'lg'] }],
+    figmaSets: ['SidebarGroupLabel'],
+    props: [{ name: 'children', type: 'ReactNode', description: 'Figma Label.' }],
+    accessibility: 'It is the label of the group (aria-labelledby).',
+  },
+  {
+    key: 'SidebarBrand',
+    label: 'Sidebar Brand',
+    category: 'Navigation',
+    description: 'The brand block at the top of the Sidebar: a logo with a title and an optional subtitle; collapses to the logo only.',
+    usage: 'Wrap it in a link to the home route.',
+    axes: [{ name: 'Collapsed', values: ['false', 'true'] }],
+    figmaSets: ['SidebarBrand'],
+    props: [
+      { name: 'logo', type: 'ReactNode', description: 'Figma Logo (the slot): an Avatar or the product mark.' },
+      { name: 'title / subtitle', type: 'ReactNode', description: 'Figma Title, Subtitle (omit the subtitle to hide it).' },
+    ],
+    accessibility: 'The link around it needs an accessible name equal to the title.',
   },
 ]
 
@@ -2811,16 +2776,16 @@ export const COMPONENT_KEYS = COMPONENTS.map((c) => c.key)
 // only changes what a system starts with.
 //
 // Deliberately NOT exhaustive — no variants (CloseButton, StatusBadge…), no
-// navigation beyond Tabs, no advanced form controls (Combobox, Slider…). Add
+// navigation beyond TabMenu, no advanced form controls (Slider…). Add
 // to this list only when it's genuinely a "day one" need for most systems;
 // everything else belongs in the full catalogue, selected on purpose.
 export const ESSENTIAL_COMPONENT_KEYS = [
   'Button', 'IconButton',
-  'Input', 'Select', 'Checkbox', 'Switch',
+  'Input', 'Combobox', 'Checkbox', 'Switch',
   'Badge',
   'Card', 'Avatar', 'Modal', 'TooltipContent', 'Separator',
   'Toast',
-  'Tabs',
+  'TabMenu',
 ] as const
 
 /** The components a system SELECTED (`atoms` / `selectedComponents`), known to

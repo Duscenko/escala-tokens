@@ -53,7 +53,8 @@ function render(a: ItemArgs) {
 }
 
 const meta: Meta<ItemArgs> = {
-  title: 'Buttons/ButtonGroupItem',
+  title: 'Buttons/ButtonGroup',
+  tags: ['!autodocs', 'part'],
   render,
   args: {
     size: 'default', forceState: 'Default', variant: 'default', iconOnly: false, active: false, label: 'Label',
@@ -76,10 +77,11 @@ const meta: Meta<ItemArgs> = {
 export default meta
 type Story = StoryObj<ItemArgs>
 
-export const Playground: Story = {}
+export const ButtonGroupItemPlayground: Story = { name: 'ButtonGroupItem · Playground' }
 
 /** Every Variant × State, inactive then active. */
-export const States: Story = {
+export const ButtonGroupItemStates: Story = {
+  name: 'ButtonGroupItem · States',
   render: (args) => (
     <div style={{ display: 'grid', gridTemplateColumns: `repeat(${STATES.length}, max-content)`, gap: 16 }}>
       {BUTTON_GROUP_VARIANTS.flatMap((variant) =>
@@ -93,7 +95,8 @@ export const States: Story = {
   ),
 }
 
-export const Sizes: Story = {
+export const ButtonGroupItemSizes: Story = {
+  name: 'ButtonGroupItem · Sizes',
   render: (args) => (
     <div style={{ display: 'flex', gap: 16, alignItems: 'start' }}>
       {SIZES.flatMap((size) => [false, true].map((iconOnly) => <div key={`${size}-${iconOnly}`}>{render({ ...args, size, iconOnly })}</div>))}

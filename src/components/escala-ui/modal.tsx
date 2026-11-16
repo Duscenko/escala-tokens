@@ -4,9 +4,10 @@
 // it, a ghost pill CloseButton in the corner. Appearance: recipes Modal, ModalHeader, ModalFooter (lib/componentRecipes.ts).
 import * as React from 'react'
 import { Dialog as DialogPrimitive } from 'radix-ui'
+import { HALO_BLEED } from './halo-bleed'
 import { cn } from '../../lib/utils'
 import { CloseButton } from './close-button'
-import { FeaturedIcon } from './featured-icon'
+import { FeaturedIcon, type FeaturedIconVariant } from './featured-icon'
 
 export const MODAL_SIZES = ['default', 'lg'] as const
 export type ModalSize = (typeof MODAL_SIZES)[number]
@@ -15,8 +16,10 @@ export type ModalHeaderAlign = (typeof MODAL_HEADER_ALIGNS)[number]
 export const MODAL_FOOTER_LAYOUTS = ['inline', 'stacked'] as const
 export type ModalFooterLayout = (typeof MODAL_FOOTER_LAYOUTS)[number]
 
-/** What the Modal tells its parts: its Size cascades to the header and the footer, the header leaves room for the close. */
-const ModalContext = React.createContext<{ size: ModalSize; closeClearance: boolean; dialog: boolean } | null>(null)
+/** What the Modal tells its parts: its Size cascades to the header and the footer, the header leaves room for the close.
+ *  A Sheet provides the same context (`footerLayout`: stacked on its bottom side), so ModalHeader and ModalFooter are the
+ *  Sheet's header and footer too. */
+export const ModalContext = React.createContext<{ size: ModalSize; closeClearance: boolean; dialog: boolean; footerLayout?: ModalFooterLayout } | null>(null)
 
 function Modal(props: React.ComponentProps<typeof DialogPrimitive.Root>) {
   return <DialogPrimitive.Root data-slot="modal" {...props} />
@@ -86,7 +89,7 @@ function ModalContent({
       >
         <div data-part="Modal.main" className="flex min-h-0 flex-col">
           {header}
-          {children != null && <div data-part="Modal.content" className="flex min-h-0 flex-col overflow-y-auto">{children}</div>}
+          {children != null && <div data-part="Modal.content" className={cn('flex min-h-0 flex-col overflow-y-auto', HALO_BLEED)}>{children}</div>}
         </div>
         {footer}
         {showCloseButton && (
@@ -136,6 +139,11 @@ export interface ModalHeaderProps extends Omit<React.ComponentProps<'div'>, 'tit
   /** Figma IconVisible + the glyph: a FeaturedIcon (soft, circle), 40 · 48 like the header. */
   iconVisible?: boolean
   icon?: React.ReactNode
+  /**
+   * The FeaturedIcon's Variant. The ModalHeader set draws `default` (the accent tint); the Modal set nests its header with
+   * `secondary` (Surface/muted + Content/secondary, enough contrast on the card), so inside a Modal that is the default.
+   */
+  iconVariant?: FeaturedIconVariant
   /** Figma TrailingVisible / Trailing (Reset, Clear all, a Badge). Not in vertical headers. */
   trailingVisible?: boolean
   trailing?: React.ReactNode
@@ -145,7 +153,7 @@ export interface ModalHeaderProps extends Omit<React.ComponentProps<'div'>, 'tit
 
 /** Figma ModalHeader. Inside a Modal the title / description are the dialog's accessible name and description. */
 function ModalHeader({
-  size, align = 'horizontal', title, descriptionVisible = true, description, iconVisible = true, icon, trailingVisible = false, trailing,
+  size, align = 'horizontal', title, descriptionVisible = true, description, iconVisible = true, icon, iconVariant, trailingVisible = false, trailing,
   closeClearance, className, children, ...props
 }: ModalHeaderProps) {
   const ctx = React.useContext(ModalContext)
@@ -163,13 +171,14 @@ function ModalHeader({
       data-align={align}
       className={cn(
         'flex w-full',
-        horizontal ? 'flex-row items-center' : 'flex-col',
+        // Figma ModalHeader Align=horizontal: counter-axis MIN, the icon sits on the top of the title (965:81).
+        horizontal ? 'flex-row items-start' : 'flex-col',
         align === 'vertical-center' ? 'items-center' : align === 'vertical-left' ? 'items-start' : '',
         className,
       )}
       {...props}
     >
-      {iconVisible && icon !== null && <FeaturedIcon size={sz} variant="default" appearance="soft" shape="circle" icon={icon} />}
+      {iconVisible && icon !== null && <FeaturedIcon size={sz} variant={iconVariant ?? (inDialog ? 'secondary' : 'default')} appearance="soft" shape="circle" icon={icon} />}
       <div
         data-part="ModalHeader.content"
         className={cn('flex min-w-0 flex-1 flex-col', align === 'vertical-center' && 'items-center text-center', !horizontal && 'self-stretch')}
@@ -198,9 +207,10 @@ export interface ModalFooterProps extends React.ComponentProps<'div'> {
 }
 
 /** Figma ModalFooter. `children` is the Actions slot (put the primary action last for `inline`; `stacked` stacks them as given). */
-function ModalFooter({ size, layout = 'inline', leadingVisible = false, leading, className, children, ...props }: ModalFooterProps) {
+function ModalFooter({ size, layout: layoutProp, leadingVisible = false, leading, className, children, ...props }: ModalFooterProps) {
   const ctx = React.useContext(ModalContext)
   const sz = size ?? ctx?.size ?? 'default'
+  const layout = layoutProp ?? ctx?.footerLayout ?? 'inline'
   const stacked = layout === 'stacked'
   return (
     <div

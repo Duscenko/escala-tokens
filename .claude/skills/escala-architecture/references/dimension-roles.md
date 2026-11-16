@@ -18,25 +18,31 @@ Corner roundness. Three INDEPENDENT axes (Boxes · Fields · Selectors) — roun
 
 | Role | CSS | Figma | Default step | Default px | Use |
 | --- | --- | --- | --- | --- | --- |
-| `radius.container` | `--radius-container` | `Radius/container` | `2xl` | 16px | Cards, accordion, inline alerts. |
-| `radius.overlay` | `--radius-overlay` | `Radius/overlay` | `2xl` | 16px | Modal, popover, command, dropdown. |
+| `radius.container` | `--radius-container` | `Radius/container` | `dimension-20` | 20px | Cards, accordion, inline alerts. |
+| `radius.overlay` | `--radius-overlay` | `Radius/overlay` | `3xl` | 24px | Modal, popover, command, dropdown. |
 
-### Fields — Button, input, select, tab.
-
-| Role | CSS | Figma | Default step | Default px | Use |
-| --- | --- | --- | --- | --- | --- |
-| `radius.action` | `--radius-action` | `Radius/action` | `xl` | 12px | Buttons, inputs, selects, OTP, tabs. |
-
-### Selectors — Checkbox, radio, toggle, menu, badge.
+### Fields — Button, input, select, tab, rows in an overlay.
 
 | Role | CSS | Figma | Default step | Default px | Use |
 | --- | --- | --- | --- | --- | --- |
-| `radius.control` | `--radius-control` | `Radius/control` | `lg` | 8px | Checkbox, nested child, menu item, inner thumb. |
+| `radius.action` | `--radius-action` | `Radius/action` | `xl` | 12px | Buttons, inputs, selects, OTP, tabs, rows inside an overlay. |
+
+### Items — Segment in a track, sidebar menu button.
+
+| Role | CSS | Figma | Default step | Default px | Use |
+| --- | --- | --- | --- | --- | --- |
+| `radius.item` | `--radius-item` | `Radius/item` | `lg` | 8px | An element nested in a track or a flush list: a segment, a sidebar menu button. Never a row inside an overlay. |
+
+### Selectors — Checkbox, radio, toggle, badge.
+
+| Role | CSS | Figma | Default step | Default px | Use |
+| --- | --- | --- | --- | --- | --- |
+| `radius.control` | `--radius-control` | `Radius/control` | `sm` | 4px | Checkbox, nested child, inner thumb. |
 | `radius.pill` | `--radius-full` | `Radius/full` | `full` | 9999px | Badge, chip, avatar, switch, progress. |
 
 Static scale: `none` 0px · `xs` 2px · `sm` 4px · `md` 6px · `lg` 8px · `xl` 12px · `2xl` 16px · `3xl` 24px · `4xl` 32px · `5xl` 48px · `full` 9999px
 
-**Axes.** Boxes (card, modal, alert) → `radius.container`, `radius.overlay`; Fields (button, input, select, tab) → `radius.action`; Selectors (checkbox, radio, toggle, menu) → `radius.control`. `radius.pill` is not an axis: it means "a circle" and stays `full`.
+**Axes.** Boxes (card, modal, alert) → `radius.container`, `radius.overlay`; Fields (button, input, select, tab, rows in an overlay) → `radius.action`; Items (segment in a track, sidebar menu button) → `radius.item`; Selectors (checkbox, radio, toggle, badge) → `radius.control`. `radius.pill` is not an axis: it means "a circle" and stays `full`.
 
 **Roles hold one value on every viewport** (the Escala Figma file): only a hand-set Tablet / Mobile value changes one. The `--radius-component-<step>` tokens are the opt-in responsive corners — each reads one rung smaller on Tablet and Mobile (two from 3xl up):
 

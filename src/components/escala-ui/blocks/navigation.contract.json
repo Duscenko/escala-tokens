@@ -1,0 +1,262 @@
+{
+  "$comment": "Contract of the HeaderNavigation and SidebarNavigation blocks. Persistent chrome: no motion on load; collapse and mobile menu belong to Sidebar / Sheet.",
+  "figma": {
+    "file": "7j5zukN5HpihGVJMmyjA20",
+    "pages": [
+      "HeaderNavigation 1059:2",
+      "SidebarNavigation 1064:2"
+    ]
+  },
+  "blocks": [
+    {
+      "name": "AnnouncementBar",
+      "figmaSet": "1059:3",
+      "axes": {},
+      "variants": 1,
+      "nests": [
+        "Badge",
+        "CloseButton"
+      ],
+      "slots": [],
+      "props": [
+        "style"
+      ],
+      "a11y": [
+        "Landmarks: header + nav (aria-label), region for the announcement",
+        "Icon-only buttons carry an aria-label"
+      ],
+      "motion": [
+        {
+          "moment": "on load",
+          "mechanism": "none",
+          "role": "none",
+          "reduced": "n/a"
+        },
+        {
+          "moment": "Layout desktop ↔ mobile",
+          "mechanism": "none (a viewport, not an interaction)",
+          "role": "none",
+          "reduced": "n/a"
+        }
+      ]
+    },
+    {
+      "name": "UtilityBar",
+      "figmaSet": "1059:27",
+      "axes": {},
+      "variants": 1,
+      "nests": [
+        "TextLink",
+        "IconButton",
+        "Button"
+      ],
+      "slots": [],
+      "props": [
+        "style"
+      ],
+      "a11y": [
+        "Landmarks: header + nav (aria-label), region for the announcement",
+        "Icon-only buttons carry an aria-label"
+      ],
+      "motion": [
+        {
+          "moment": "on load",
+          "mechanism": "none",
+          "role": "none",
+          "reduced": "n/a"
+        },
+        {
+          "moment": "Layout desktop ↔ mobile",
+          "mechanism": "none (a viewport, not an interaction)",
+          "role": "none",
+          "reduced": "n/a"
+        }
+      ]
+    },
+    {
+      "name": "AppHeader",
+      "figmaSet": "1061:433",
+      "axes": {
+        "Layout": "desktop|mobile"
+      },
+      "variants": 2,
+      "nests": [
+        "Brand",
+        "Separator",
+        "NavItem",
+        "Input",
+        "IconButton",
+        "SegmentedControl",
+        "AccountMenuTrigger"
+      ],
+      "slots": [
+        "Nav"
+      ],
+      "props": [
+        "layout",
+        "style"
+      ],
+      "a11y": [
+        "Landmarks: header + nav (aria-label), region for the announcement",
+        "Icon-only buttons carry an aria-label"
+      ],
+      "motion": [
+        {
+          "moment": "on load",
+          "mechanism": "none",
+          "role": "none",
+          "reduced": "n/a"
+        },
+        {
+          "moment": "Layout desktop ↔ mobile",
+          "mechanism": "none (a viewport, not an interaction)",
+          "role": "none",
+          "reduced": "n/a"
+        }
+      ]
+    },
+    {
+      "name": "AppHeaderExtended",
+      "figmaSet": "1061:5849",
+      "axes": {
+        "Layout": "desktop|mobile"
+      },
+      "variants": 2,
+      "nests": [
+        "AnnouncementBar",
+        "UtilityBar",
+        "AppHeader",
+        "Breadcrumb"
+      ],
+      "slots": [],
+      "props": [
+        "layout",
+        "style"
+      ],
+      "a11y": [
+        "Landmarks: header + nav (aria-label), region for the announcement",
+        "Icon-only buttons carry an aria-label"
+      ],
+      "motion": [
+        {
+          "moment": "on load",
+          "mechanism": "none",
+          "role": "none",
+          "reduced": "n/a"
+        },
+        {
+          "moment": "Layout desktop ↔ mobile",
+          "mechanism": "none (a viewport, not an interaction)",
+          "role": "none",
+          "reduced": "n/a"
+        }
+      ]
+    },
+    {
+      "name": "FloatingHeader",
+      "figmaSet": "1061:6090",
+      "axes": {
+        "Layout": "desktop|mobile"
+      },
+      "variants": 2,
+      "nests": [
+        "Brand",
+        "NavItem",
+        "IconButton",
+        "AccountMenuTrigger"
+      ],
+      "slots": [],
+      "props": [
+        "layout",
+        "style"
+      ],
+      "a11y": [
+        "Landmarks: header + nav (aria-label), region for the announcement",
+        "Icon-only buttons carry an aria-label"
+      ],
+      "motion": [
+        {
+          "moment": "on load",
+          "mechanism": "none",
+          "role": "none",
+          "reduced": "n/a"
+        },
+        {
+          "moment": "Layout desktop ↔ mobile",
+          "mechanism": "none (a viewport, not an interaction)",
+          "role": "none",
+          "reduced": "n/a"
+        }
+      ]
+    },
+    {
+      "name": "DualSidebar",
+      "figmaSet": "1064:49",
+      "axes": {},
+      "variants": 1,
+      "nests": [
+        "Sidebar",
+        "SidebarBrand",
+        "SidebarGroup",
+        "SidebarMenuButton",
+        "Avatar",
+        "SidebarStatCard"
+      ],
+      "slots": [],
+      "props": [
+        "style"
+      ],
+      "a11y": [
+        "Landmarks: header + nav (aria-label), region for the announcement",
+        "Icon-only buttons carry an aria-label"
+      ],
+      "motion": [
+        {
+          "moment": "on load",
+          "mechanism": "none",
+          "role": "none",
+          "reduced": "n/a"
+        },
+        {
+          "moment": "Layout desktop ↔ mobile",
+          "mechanism": "none (a viewport, not an interaction)",
+          "role": "none",
+          "reduced": "n/a"
+        }
+      ]
+    },
+    {
+      "name": "SidebarStatCard",
+      "figmaSet": "1064:3",
+      "axes": {},
+      "variants": 1,
+      "nests": [
+        "Badge",
+        "CloseButton",
+        "Button"
+      ],
+      "slots": [],
+      "props": [
+        "style"
+      ],
+      "a11y": [
+        "Landmarks: header + nav (aria-label), region for the announcement",
+        "Icon-only buttons carry an aria-label"
+      ],
+      "motion": [
+        {
+          "moment": "on load",
+          "mechanism": "none",
+          "role": "none",
+          "reduced": "n/a"
+        },
+        {
+          "moment": "Layout desktop ↔ mobile",
+          "mechanism": "none (a viewport, not an interaction)",
+          "role": "none",
+          "reduced": "n/a"
+        }
+      ]
+    }
+  ]
+}

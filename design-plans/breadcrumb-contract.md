@@ -36,3 +36,13 @@ Tinta (label e iconos): default Default/Focused `Content/secondary`, Hover `Cont
 
 ## Anida
 Iconos Phosphor (House, CaretDown, DotsThree, CaretRight, Dot). Items y separadores van en `<li>` dentro de `<ol>`; el ellipsis es un `<button>` con `aria-label`.
+
+## Corrección 2026-11-14 (medida en Storybook contra Figma)
+- **El trail se apilaba en columna.** El `<ol>` llevaba `flex-wrap` (heredado de shadcn) y la raíz era `flex` (bloque): en cualquier
+  padre que encoge al contenido (el lienzo centrado de Storybook, una barra) la raíz medía 0 de ancho y la lista se partía en un ítem
+  por línea. Figma: raíz HORIZONTAL `AUTO/AUTO` (abraza) y `layoutWrap` NO_WRAP. Ahora la raíz es `inline-flex` y la lista `flex-nowrap`.
+- Medido después (default ghost chevron): items @0 · 119 · 224.8 · 319.4, separadores @95 / 200.8 / 295.4 y=10, 424.3×40 contra Figma
+  @0 · 120 · 226 · 321, 426×40. La diferencia (≤ 1,7 px acumulados) es la métrica del texto: Figma redondea el ancho de cada etiqueta
+  hacia arriba («Home» 40 contra 39,04). Paddings, gaps, alturas, iconos y separadores coinciden al píxel en xs · sm · default y en las
+  tres apariencias (outline +2 por el trazo en el layout).
+- Raro en el archivo (se deja igual): el frame oculto `collapsed` mide 56×32 pero contiene un ellipsis de 40×40 (tamaño viejo del frame).

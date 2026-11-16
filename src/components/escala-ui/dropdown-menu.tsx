@@ -7,11 +7,13 @@
 import * as React from 'react'
 import { DropdownMenu as DropdownMenuPrimitive } from 'radix-ui'
 import { cn } from '../../lib/utils'
+import { HALO_BLEED } from './halo-bleed'
+import { glyph } from '../../lib/icons'
 import { usePortalContainer } from './portal-scope'
 
 export const DROPDOWN_MENU_SIZES = ['default', 'sm', 'lg'] as const
 export type DropdownMenuSize = (typeof DROPDOWN_MENU_SIZES)[number]
-export const DROPDOWN_MENU_ITEM_STATES = ['Default', 'Focused', 'Selected', 'Disabled'] as const
+export const DROPDOWN_MENU_ITEM_STATES = ['Default', 'Hover', 'Focused', 'Selected', 'Disabled'] as const
 export type DropdownMenuItemState = (typeof DROPDOWN_MENU_ITEM_STATES)[number]
 export const DROPDOWN_MENU_ITEM_VARIANTS = ['default', 'destructive'] as const
 export type DropdownMenuItemVariant = (typeof DROPDOWN_MENU_ITEM_VARIANTS)[number]
@@ -23,7 +25,11 @@ const DropdownMenuTrigger = DropdownMenuPrimitive.Trigger
 const DropdownMenuGroup = DropdownMenuPrimitive.Group
 
 /** What the panel tells its parts: whether it is drawn in place (plain elements, not Radix items) and its Size. */
-const MenuContext = React.createContext<{ inline: boolean; size: DropdownMenuSize }>({ inline: false, size: 'default' })
+const MenuContext = React.createContext<{ inline: boolean; size: DropdownMenuSize; active?: string | null; setActive?: (id: string | null) => void }>({ inline: false, size: 'default' })
+
+/** The inline panel's ONE highlight, as Radix keeps it live: `undefined` until the pointer enters a row (each row's own
+ *  `highlighted` prop decides), then the row under the pointer, and `null` once the pointer leaves the panel. */
+const INITIAL = undefined
 
 export interface DropdownMenuContentProps extends React.ComponentProps<typeof DropdownMenuPrimitive.Content> {
   /** Figma Size: it cascades to every label and item. */
@@ -41,14 +47,23 @@ function DropdownMenuContent({ size = 'default', header, footer, inline = false,
   const inner = (
     <>
       {header != null && <div data-part="DropdownMenu.header" className="flex flex-col">{header}</div>}
-      <div data-part="DropdownMenu.content" className="flex min-h-0 flex-col overflow-y-auto">{children}</div>
+      <div data-part="DropdownMenu.content" className={cn('flex min-h-0 flex-col overflow-y-auto', HALO_BLEED)}>{children}</div>
       {footer}
     </>
   )
+  const [active, setActive] = React.useState<string | null | undefined>(INITIAL)
   if (inline) {
     return (
-      <MenuContext.Provider value={{ inline: true, size }}>
-        <div role="menu" data-slot="dropdown-menu-content" data-escala="DropdownMenu" data-size={size} className={cn('flex max-w-full flex-col overflow-hidden outline-none', className)} style={props.style}>
+      <MenuContext.Provider value={{ inline: true, size, active, setActive }}>
+        <div
+          role="menu"
+          data-slot="dropdown-menu-content"
+          data-escala="DropdownMenu"
+          data-size={size}
+          className={cn('flex max-w-full flex-col overflow-hidden outline-none', className)}
+          style={props.style}
+          onPointerLeave={() => setActive(null)}
+        >
           {inner}
         </div>
       </MenuContext.Provider>
@@ -119,11 +134,11 @@ export interface DropdownMenuItemProps extends Omit<React.ComponentProps<typeof 
   indicatorVisible?: boolean
   /** The check glyph (Phosphor Check by default). */
   indicator?: React.ReactNode
-  /** Inline only: draw the row as Focused (a live menu gets it from hover and the arrow keys). */
+  /** Inline only: the row highlighted at first (fill, no ring). The highlight then follows the pointer, one row at a
+   *  time, as a live menu's does from hover and the arrow keys. */
   highlighted?: boolean
 }
 
-const CHECK = 'M229.66,77.66l-128,128a8,8,0,0,1-11.32,0l-56-56a8,8,0,0,1,11.32-11.32L96,188.69,218.34,66.34a8,8,0,0,1,11.32,11.32Z'
 
 /** Figma DropdownMenuItem. */
 function DropdownMenuItem({
@@ -131,7 +146,9 @@ function DropdownMenuItem({
   highlighted, disabled, onCheckedChange, className, ...props
 }: DropdownMenuItemProps) {
   const ctx = React.useContext(MenuContext)
-  const state: DropdownMenuItemState | undefined = disabled ? 'Disabled' : forceState && forceState !== 'Default' ? forceState : checked ? 'Selected' : highlighted ? 'Focused' : undefined
+  const id = React.useId()
+  const lit = ctx.active === INITIAL ? !!highlighted : ctx.active === id
+  const state: DropdownMenuItemState | undefined = disabled ? 'Disabled' : forceState && forceState !== 'Default' ? forceState : checked ? 'Selected' : undefined
   const selected = checked || state === 'Selected'
   const body = (
     <>
@@ -146,7 +163,7 @@ function DropdownMenuItem({
       {iconTrailing != null && <span data-part="DropdownMenuItem.iconTrailing" aria-hidden className="inline-flex shrink-0 items-center justify-center [&>svg]:size-full">{iconTrailing}</span>}
       {selected && indicatorVisible && (
         <span data-part="DropdownMenuItem.indicator" aria-hidden className="inline-flex shrink-0 items-center justify-center [&>svg]:size-full">
-          {indicator ?? <svg viewBox="0 0 256 256" fill="currentColor" focusable="false"><path d={CHECK} /></svg>}
+          {indicator ?? glyph('check', { decorative: false })}
         </span>
       )}
     </>
@@ -164,10 +181,11 @@ function DropdownMenuItem({
         data-size={size ?? ctx.size}
         data-variant={variant}
         data-force-state={state}
-        data-highlighted={highlighted ? '' : undefined}
+        data-highlighted={lit && !disabled ? '' : undefined}
         data-disabled={disabled ? '' : undefined}
         className={cls}
         {...(rest as React.ComponentProps<'div'>)}
+        onPointerEnter={(e) => { (rest as React.ComponentProps<'div'>).onPointerEnter?.(e); ctx.setActive?.(disabled ? null : id) }}
       >
         {body}
       </div>

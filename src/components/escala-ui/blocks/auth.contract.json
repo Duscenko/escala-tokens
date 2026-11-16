@@ -1,0 +1,664 @@
+{
+  "$comment": "Contract of the Auth blocks (escala-governance step 2). Anatomy and variants mirror the Figma set; nests lists every escala-ui component the block draws; motion lists each moving part with its role. A block draws no colour, length or type of its own.",
+  "figma": {
+    "file": "7j5zukN5HpihGVJMmyjA20",
+    "page": "Auth",
+    "pageId": "999:108478"
+  },
+  "blocks": [
+    {
+      "name": "AuthAccountLocked",
+      "figmaSet": "1006:1473",
+      "axes": {
+        "Container": "card|plain"
+      },
+      "variants": 2,
+      "anatomy": [
+        "header-area (ModalHeader, Align vertical-center in card · horizontal in plain)",
+        "divider (Separator, Tone subtle)",
+        "body (gap-group)",
+        "footer (sentence + TextLink)"
+      ],
+      "nests": [
+        "ModalHeader",
+        "Separator",
+        "Alert",
+        "Button",
+        "TextLink"
+      ],
+      "slots": [],
+      "props": [
+        "container",
+        "onSubmit",
+        "onNavigate"
+      ],
+      "a11y": [
+        "The block is a <section>; the header's title is its heading",
+        "Every field is a Field (label, description, error tied to the control)",
+        "An inline notice is aria-live=polite",
+        "Icon-only social buttons carry the full label as aria-label"
+      ],
+      "motion": [
+        {
+          "moment": "content swap (the block mounts or its key changes)",
+          "mechanism": "inline transition on the body region",
+          "role": "use-page-transition",
+          "reduced": "fade kept, travel neutralised by the token"
+        },
+        {
+          "moment": "Container card ↔ plain",
+          "mechanism": "none",
+          "role": "none",
+          "reduced": "n/a"
+        }
+      ]
+    },
+    {
+      "name": "AuthCheckEmail",
+      "figmaSet": "1006:1036",
+      "axes": {
+        "Container": "card|plain"
+      },
+      "variants": 2,
+      "anatomy": [
+        "header-area (ModalHeader, Align vertical-center in card · horizontal in plain)",
+        "divider (Separator, Tone subtle)",
+        "body (gap-group)",
+        "footer (sentence + TextLink)"
+      ],
+      "nests": [
+        "ModalHeader",
+        "Separator",
+        "Button",
+        "TextLink"
+      ],
+      "slots": [],
+      "props": [
+        "container",
+        "onSubmit",
+        "onNavigate"
+      ],
+      "a11y": [
+        "The block is a <section>; the header's title is its heading",
+        "Every field is a Field (label, description, error tied to the control)",
+        "An inline notice is aria-live=polite",
+        "Icon-only social buttons carry the full label as aria-label"
+      ],
+      "motion": [
+        {
+          "moment": "content swap (the block mounts or its key changes)",
+          "mechanism": "inline transition on the body region",
+          "role": "use-page-transition",
+          "reduced": "fade kept, travel neutralised by the token"
+        },
+        {
+          "moment": "success moment (header rises once)",
+          "mechanism": "opacity + transform transition",
+          "role": "use-celebration",
+          "reduced": "fade kept, travel neutralised"
+        },
+        {
+          "moment": "Container card ↔ plain",
+          "mechanism": "none",
+          "role": "none",
+          "reduced": "n/a"
+        }
+      ]
+    },
+    {
+      "name": "AuthError",
+      "figmaSet": "1006:1635",
+      "axes": {
+        "Container": "card|plain"
+      },
+      "variants": 2,
+      "anatomy": [
+        "header-area (ModalHeader, Align vertical-center in card · horizontal in plain)",
+        "divider (Separator, Tone subtle)",
+        "body (gap-group)"
+      ],
+      "nests": [
+        "ModalHeader",
+        "Separator",
+        "Alert",
+        "Button"
+      ],
+      "slots": [],
+      "props": [
+        "container",
+        "onSubmit",
+        "onNavigate"
+      ],
+      "a11y": [
+        "The block is a <section>; the header's title is its heading",
+        "Every field is a Field (label, description, error tied to the control)",
+        "An inline notice is aria-live=polite",
+        "Icon-only social buttons carry the full label as aria-label"
+      ],
+      "motion": [
+        {
+          "moment": "content swap (the block mounts or its key changes)",
+          "mechanism": "inline transition on the body region",
+          "role": "use-page-transition",
+          "reduced": "fade kept, travel neutralised by the token"
+        },
+        {
+          "moment": "Container card ↔ plain",
+          "mechanism": "none",
+          "role": "none",
+          "reduced": "n/a"
+        }
+      ]
+    },
+    {
+      "name": "AuthForgotPassword",
+      "figmaSet": "1005:1497",
+      "axes": {
+        "Container": "card|plain",
+        "Method": "email|sms"
+      },
+      "variants": 4,
+      "anatomy": [
+        "header-area (ModalHeader, Align vertical-center in card · horizontal in plain)",
+        "divider (Separator, Tone subtle)",
+        "body (gap-group)"
+      ],
+      "nests": [
+        "ModalHeader",
+        "Separator",
+        "SegmentedControl",
+        "Field",
+        "Input",
+        "Button"
+      ],
+      "slots": [],
+      "props": [
+        "container",
+        "status",
+        "error",
+        "onSubmit",
+        "onNavigate"
+      ],
+      "a11y": [
+        "The block is a <section>; the header's title is its heading",
+        "Every field is a Field (label, description, error tied to the control)",
+        "An inline notice is aria-live=polite",
+        "Icon-only social buttons carry the full label as aria-label"
+      ],
+      "motion": [
+        {
+          "moment": "content swap (the block mounts or its key changes)",
+          "mechanism": "inline transition on the body region",
+          "role": "use-page-transition",
+          "reduced": "fade kept, travel neutralised by the token"
+        },
+        {
+          "moment": "inline notice appears / closes",
+          "mechanism": "grid-rows + opacity transition",
+          "role": "use-disclosure-in / use-disclosure-out",
+          "reduced": "fade kept"
+        },
+        {
+          "moment": "Container card ↔ plain",
+          "mechanism": "none",
+          "role": "none",
+          "reduced": "n/a"
+        }
+      ]
+    },
+    {
+      "name": "AuthMagicLinkSent",
+      "figmaSet": "1006:1261",
+      "axes": {
+        "Container": "card|plain"
+      },
+      "variants": 2,
+      "anatomy": [
+        "header-area (ModalHeader, Align vertical-center in card · horizontal in plain)",
+        "divider (Separator, Tone subtle)",
+        "body (gap-group)",
+        "footer (sentence + TextLink)"
+      ],
+      "nests": [
+        "ModalHeader",
+        "Separator",
+        "Alert",
+        "Button",
+        "TextLink"
+      ],
+      "slots": [],
+      "props": [
+        "container",
+        "onSubmit",
+        "onNavigate"
+      ],
+      "a11y": [
+        "The block is a <section>; the header's title is its heading",
+        "Every field is a Field (label, description, error tied to the control)",
+        "An inline notice is aria-live=polite",
+        "Icon-only social buttons carry the full label as aria-label"
+      ],
+      "motion": [
+        {
+          "moment": "content swap (the block mounts or its key changes)",
+          "mechanism": "inline transition on the body region",
+          "role": "use-page-transition",
+          "reduced": "fade kept, travel neutralised by the token"
+        },
+        {
+          "moment": "success moment (header rises once)",
+          "mechanism": "opacity + transform transition",
+          "role": "use-celebration",
+          "reduced": "fade kept, travel neutralised"
+        },
+        {
+          "moment": "Container card ↔ plain",
+          "mechanism": "none",
+          "role": "none",
+          "reduced": "n/a"
+        }
+      ]
+    },
+    {
+      "name": "AuthNewPassword",
+      "figmaSet": "1005:1838",
+      "axes": {
+        "Container": "card|plain"
+      },
+      "variants": 2,
+      "anatomy": [
+        "header-area (ModalHeader, Align vertical-center in card · horizontal in plain)",
+        "divider (Separator, Tone subtle)",
+        "body (gap-group)"
+      ],
+      "nests": [
+        "ModalHeader",
+        "Separator",
+        "Field",
+        "Input",
+        "PasswordStrength",
+        "Button"
+      ],
+      "slots": [],
+      "props": [
+        "container",
+        "status",
+        "error",
+        "onSubmit",
+        "onNavigate"
+      ],
+      "a11y": [
+        "The block is a <section>; the header's title is its heading",
+        "Every field is a Field (label, description, error tied to the control)",
+        "An inline notice is aria-live=polite",
+        "Icon-only social buttons carry the full label as aria-label"
+      ],
+      "motion": [
+        {
+          "moment": "content swap (the block mounts or its key changes)",
+          "mechanism": "inline transition on the body region",
+          "role": "use-page-transition",
+          "reduced": "fade kept, travel neutralised by the token"
+        },
+        {
+          "moment": "inline notice appears / closes",
+          "mechanism": "grid-rows + opacity transition",
+          "role": "use-disclosure-in / use-disclosure-out",
+          "reduced": "fade kept"
+        },
+        {
+          "moment": "Container card ↔ plain",
+          "mechanism": "none",
+          "role": "none",
+          "reduced": "n/a"
+        }
+      ]
+    },
+    {
+      "name": "AuthOTPVerification",
+      "figmaSet": "1005:640",
+      "axes": {
+        "Container": "card|plain"
+      },
+      "variants": 2,
+      "anatomy": [
+        "header-area (ModalHeader, Align vertical-center in card · horizontal in plain)",
+        "divider (Separator, Tone subtle)",
+        "body (gap-group)",
+        "footer (sentence + TextLink)"
+      ],
+      "nests": [
+        "ModalHeader",
+        "Separator",
+        "InputOTP",
+        "Button",
+        "TextLink",
+        "Alert"
+      ],
+      "slots": [],
+      "props": [
+        "container",
+        "status",
+        "error",
+        "onSubmit",
+        "onNavigate"
+      ],
+      "a11y": [
+        "The block is a <section>; the header's title is its heading",
+        "Every field is a Field (label, description, error tied to the control)",
+        "An inline notice is aria-live=polite",
+        "Icon-only social buttons carry the full label as aria-label"
+      ],
+      "motion": [
+        {
+          "moment": "content swap (the block mounts or its key changes)",
+          "mechanism": "inline transition on the body region",
+          "role": "use-page-transition",
+          "reduced": "fade kept, travel neutralised by the token"
+        },
+        {
+          "moment": "inline notice appears / closes",
+          "mechanism": "grid-rows + opacity transition",
+          "role": "use-disclosure-in / use-disclosure-out",
+          "reduced": "fade kept"
+        },
+        {
+          "moment": "Container card ↔ plain",
+          "mechanism": "none",
+          "role": "none",
+          "reduced": "n/a"
+        }
+      ]
+    },
+    {
+      "name": "AuthSignIn",
+      "figmaSet": "1004:436",
+      "axes": {
+        "Container": "card|plain"
+      },
+      "variants": 2,
+      "anatomy": [
+        "header-area (ModalHeader, Align vertical-center in card · horizontal in plain)",
+        "divider (Separator, Tone subtle)",
+        "body (gap-group)",
+        "footer (sentence + TextLink)"
+      ],
+      "nests": [
+        "ModalHeader",
+        "Separator",
+        "SocialLoginButton",
+        "Field",
+        "Input",
+        "CheckboxItem",
+        "Button",
+        "TextLink",
+        "Alert"
+      ],
+      "slots": [],
+      "props": [
+        "container",
+        "status",
+        "error",
+        "onSubmit",
+        "onNavigate"
+      ],
+      "a11y": [
+        "The block is a <section>; the header's title is its heading",
+        "Every field is a Field (label, description, error tied to the control)",
+        "An inline notice is aria-live=polite",
+        "Icon-only social buttons carry the full label as aria-label"
+      ],
+      "motion": [
+        {
+          "moment": "content swap (the block mounts or its key changes)",
+          "mechanism": "inline transition on the body region",
+          "role": "use-page-transition",
+          "reduced": "fade kept, travel neutralised by the token"
+        },
+        {
+          "moment": "inline notice appears / closes",
+          "mechanism": "grid-rows + opacity transition",
+          "role": "use-disclosure-in / use-disclosure-out",
+          "reduced": "fade kept"
+        },
+        {
+          "moment": "Container card ↔ plain",
+          "mechanism": "none",
+          "role": "none",
+          "reduced": "n/a"
+        }
+      ]
+    },
+    {
+      "name": "AuthSignInPhone",
+      "figmaSet": "1004:1199",
+      "axes": {
+        "Container": "card|plain"
+      },
+      "variants": 2,
+      "anatomy": [
+        "header-area (ModalHeader, Align vertical-center in card · horizontal in plain; FeaturedIcon secondary, a phone)",
+        "divider (Separator, Tone subtle)",
+        "body (gap-section between two groups)",
+        "form (gap-group): Field (Phone number, required) + CheckboxItem",
+        "actions (gap-group): Button · Separator (OR) · Button (secondary, mail icon)",
+        "country picker: an anchored Popover on every viewport (search Input + ComboboxItem rows)"
+      ],
+      "nests": [
+        "ModalHeader",
+        "Separator",
+        "Field",
+        "PhoneNumberInput",
+        "CheckboxItem",
+        "Button"
+      ],
+      "slots": [],
+      "props": [
+        "container",
+        "status",
+        "error",
+        "defaultCountry",
+        "defaultPhone",
+        "onSubmit",
+        "onNavigate"
+      ],
+      "a11y": [
+        "The block is a <section>; the header's title is its heading",
+        "The phone field is a Field (label, error tied to the control by aria-describedby; aria-invalid); input type=tel, inputmode=tel, autocomplete=tel",
+        "The country trigger is a combobox: aria-expanded, aria-controls, ArrowDown opens, typing opens with the query",
+        "In the picker the search is the combobox: aria-activedescendant, ArrowUp / Down / PageUp / PageDown / Ctrl+Home / Ctrl+End move the highlight, Enter picks, Escape closes and returns focus to the trigger",
+        "The list is a listbox of options with aria-setsize / aria-posinset (it draws only the rows in view)",
+        "The search is not focused on a touch device (no keyboard before the list is visible)"
+      ],
+      "motion": [
+        {
+          "moment": "content swap (the block mounts or its key changes)",
+          "mechanism": "inline transition on the body region",
+          "role": "use-page-transition",
+          "reduced": "fade kept, travel neutralised by the token"
+        },
+        {
+          "moment": "field error appears / clears",
+          "mechanism": "the Field's own disclosure: grid-rows + opacity + margin on the disclosure roles (recipe motion Field.errorRegion); the block adds nothing",
+          "role": "use-disclosure-in / use-disclosure-out",
+          "reduced": "from the tokens"
+        },
+        {
+          "moment": "country picker opens / closes",
+          "mechanism": "the Popover choreography on the panel (data-state), from the trigger",
+          "role": "popover-enter / popover-exit",
+          "reduced": "fade, from the tokens"
+        },
+        {
+          "moment": "Container card ↔ plain",
+          "mechanism": "none",
+          "role": "none",
+          "reduced": "n/a"
+        }
+      ]
+    },
+    {
+      "name": "AuthSignUp",
+      "figmaSet": "1004:971",
+      "axes": {
+        "Container": "card|plain"
+      },
+      "variants": 2,
+      "anatomy": [
+        "header-area (ModalHeader, Align vertical-center in card · horizontal in plain)",
+        "divider (Separator, Tone subtle)",
+        "body (gap-group)",
+        "footer (sentence + TextLink)"
+      ],
+      "nests": [
+        "ModalHeader",
+        "Separator",
+        "Field",
+        "Input",
+        "PasswordStrengthMeter",
+        "Checkbox",
+        "TextLink",
+        "Button",
+        "Alert"
+      ],
+      "slots": [],
+      "props": [
+        "container",
+        "status",
+        "error",
+        "onSubmit",
+        "onNavigate"
+      ],
+      "a11y": [
+        "The block is a <section>; the header's title is its heading",
+        "Every field is a Field (label, description, error tied to the control)",
+        "An inline notice is aria-live=polite",
+        "Icon-only social buttons carry the full label as aria-label"
+      ],
+      "motion": [
+        {
+          "moment": "content swap (the block mounts or its key changes)",
+          "mechanism": "inline transition on the body region",
+          "role": "use-page-transition",
+          "reduced": "fade kept, travel neutralised by the token"
+        },
+        {
+          "moment": "inline notice appears / closes",
+          "mechanism": "grid-rows + opacity transition",
+          "role": "use-disclosure-in / use-disclosure-out",
+          "reduced": "fade kept"
+        },
+        {
+          "moment": "Container card ↔ plain",
+          "mechanism": "none",
+          "role": "none",
+          "reduced": "n/a"
+        }
+      ]
+    },
+    {
+      "name": "AuthSocialSignIn",
+      "figmaSet": "1006:1904",
+      "axes": {
+        "Container": "card|plain"
+      },
+      "variants": 2,
+      "anatomy": [
+        "header-area (ModalHeader, Align vertical-center in card · horizontal in plain)",
+        "divider (Separator, Tone subtle)",
+        "body (gap-group)",
+        "footer (sentence + TextLink)"
+      ],
+      "nests": [
+        "ModalHeader",
+        "Separator",
+        "SocialLoginButton",
+        "Button",
+        "TextLink"
+      ],
+      "slots": [],
+      "props": [
+        "container",
+        "onSubmit",
+        "onNavigate"
+      ],
+      "a11y": [
+        "The block is a <section>; the header's title is its heading",
+        "Every field is a Field (label, description, error tied to the control)",
+        "An inline notice is aria-live=polite",
+        "Icon-only social buttons carry the full label as aria-label"
+      ],
+      "motion": [
+        {
+          "moment": "content swap (the block mounts or its key changes)",
+          "mechanism": "inline transition on the body region",
+          "role": "use-page-transition",
+          "reduced": "fade kept, travel neutralised by the token"
+        },
+        {
+          "moment": "Container card ↔ plain",
+          "mechanism": "none",
+          "role": "none",
+          "reduced": "n/a"
+        }
+      ]
+    },
+    {
+      "name": "AuthTwoFactor",
+      "figmaSet": "1005:905",
+      "axes": {
+        "Container": "card|plain"
+      },
+      "variants": 2,
+      "anatomy": [
+        "header-area (ModalHeader, Align vertical-center in card · horizontal in plain)",
+        "divider (Separator, Tone subtle)",
+        "body (gap-group)",
+        "footer (sentence + TextLink)"
+      ],
+      "nests": [
+        "ModalHeader",
+        "Separator",
+        "InputOTP",
+        "CheckboxItem",
+        "Button",
+        "TextLink",
+        "Alert"
+      ],
+      "slots": [],
+      "props": [
+        "container",
+        "status",
+        "error",
+        "onSubmit",
+        "onNavigate"
+      ],
+      "a11y": [
+        "The block is a <section>; the header's title is its heading",
+        "Every field is a Field (label, description, error tied to the control)",
+        "An inline notice is aria-live=polite",
+        "Icon-only social buttons carry the full label as aria-label"
+      ],
+      "motion": [
+        {
+          "moment": "content swap (the block mounts or its key changes)",
+          "mechanism": "inline transition on the body region",
+          "role": "use-page-transition",
+          "reduced": "fade kept, travel neutralised by the token"
+        },
+        {
+          "moment": "inline notice appears / closes",
+          "mechanism": "grid-rows + opacity transition",
+          "role": "use-disclosure-in / use-disclosure-out",
+          "reduced": "fade kept"
+        },
+        {
+          "moment": "Container card ↔ plain",
+          "mechanism": "none",
+          "role": "none",
+          "reduced": "n/a"
+        }
+      ]
+    }
+  ]
+}

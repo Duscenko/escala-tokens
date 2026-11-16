@@ -10,7 +10,7 @@ export type TokenRef = string
  *  centred on a glyph smaller than 24px — the glyph itself does not grow. */
 export const RECIPE_PROPS = [
   'fill', 'stroke', 'text', 'ring', 'focus',
-  'height', 'minHeight', 'minWidth', 'width', 'travel', 'paint', 'strokeTop', 'strokeTopWidth', 'strokeBottomWidth', 'strokeRightWidth', 'radius', 'paddingX', 'paddingY', 'paddingBottom', 'paddingRight', 'gap', 'rowGap', 'strokeWidth', 'font', 'shadow', 'hit',
+  'height', 'minHeight', 'minWidth', 'width', 'travel', 'paint', 'strokeTop', 'strokeTopWidth', 'strokeBottomWidth', 'strokeRightWidth', 'strokeLeftWidth', 'radius', 'radiusTop', 'radiusLeft', 'radiusRight', 'maxWidth', 'paddingTop', 'paddingX', 'paddingY', 'paddingBottom', 'paddingRight', 'gap', 'rowGap', 'strokeWidth', 'font', 'shadow', 'hit',
   // The top highlight of a solid control (Figma: an inner shadow 0 · 2 · 0
   // painted `Elevation/highlight`). Its value is a colour role.
   'highlight',
@@ -18,6 +18,9 @@ export const RECIPE_PROPS = [
   // the same translucent fill laid on top once or twice). Each is a colour
   // role; `overlay` sits on `fill`, `overlay2` on `overlay`.
   'overlay', 'overlay2',
+  // A three-stop gradient fill (Figma: GRADIENT_LINEAR at 45°, stops at 0 · 52 · 100 %). `fill` is the first
+  // stop, `fillMid` and `fillEnd` the others — each a colour ROLE, never a raw colour (A4, FeaturedIcon).
+  'fillMid', 'fillEnd',
   // A focus ring fully OUTSIDE the control, `stroke.focus` wide, with no edge
   // of its own (Figma's CloseButton · soft / solid · Focused). A colour role.
   'halo',
@@ -103,6 +106,10 @@ export interface ComponentRecipe {
   dom?: { root: string; slots?: Record<string, string> }
   /** Transitions and choreographies (merged from `lib/recipes/motion.ts`). */
   motion?: RecipeMotion
+  /** Where the live `Hover` state comes from. `pointer` (default): CSS `:hover`. `highlight`: a row of a menu or a
+   *  listbox, whose ONE highlighted row (`[data-highlighted]`, set by Radix or the listbox for the pointer AND the arrow
+   *  keys) carries the fill — a `:hover` there would light a second row whenever the keys move away from the pointer. */
+  hover?: 'pointer' | 'highlight'
 }
 
 export type AxisValues = Record<string, string | undefined>

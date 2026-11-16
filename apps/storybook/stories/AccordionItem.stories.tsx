@@ -32,7 +32,8 @@ function render({ iconVisible, icon, label, content, variant, state }: ItemStory
 }
 
 const meta: Meta<ItemStoryArgs> = {
-  title: 'Content & Surfaces/AccordionItem',
+  title: 'Content & Surfaces/Accordion',
+  tags: ['!autodocs', 'part'],
   render,
   args: {
     iconVisible: true, label: 'Accordion title', variant: 'ghost-default', state: 'Closed',
@@ -50,9 +51,10 @@ const meta: Meta<ItemStoryArgs> = {
 export default meta
 type Story = StoryObj<ItemStoryArgs>
 
-export const Playground: Story = {}
+export const AccordionItemPlayground: Story = { name: 'AccordionItem · Playground' }
 
-export const AllCombinations: Story = {
+export const AccordionItemAllCombinations: Story = {
+  name: 'AccordionItem · All Combinations',
   render: (args) => (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
       {ACCORDION_VARIANTS.flatMap((variant) => ACCORDION_ITEM_STATES.map((state) => <div key={`${variant}-${state}`}>{render({ ...args, variant, state, label: `${args.label} · ${variant} · ${state}` })}</div>))}

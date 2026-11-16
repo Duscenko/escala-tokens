@@ -13,7 +13,8 @@ function Frame({ children, width = 200 }: { children: React.ReactNode; width?: n
 /** Story args = the Figma `TableTrendCell` set: Value · Delta · DeltaVisible · Size · Trend · State. */
 interface Args { value: string; delta: string; deltaVisible: boolean; size: TableSize; trend: 'up' | 'down' | 'neutral'; state: 'Default' | 'Disabled' }
 const meta: Meta<Args> = {
-  title: 'Content & Surfaces/TableTrendCell',
+  title: 'Content & Surfaces/Table',
+  tags: ['!autodocs', 'part'],
   render: (a) => <Frame><TableTrendCell {...a} /></Frame>,
   args: { value: '4,335.50', delta: '12.4%', deltaVisible: true, size: 'default', trend: 'up', state: 'Default' },
   argTypes: {
@@ -25,8 +26,9 @@ const meta: Meta<Args> = {
 }
 export default meta
 type Story = StoryObj<Args>
-export const Playground: Story = {}
-export const Trends: Story = {
+export const TableTrendCellPlayground: Story = { name: 'TableTrendCell · Playground' }
+export const TableTrendCellTrends: Story = {
+  name: 'TableTrendCell · Trends',
   render: (a) => (
     <div style={{ display: 'flex', flexWrap: 'wrap', gap: 16 }}>
       {(['up', 'down', 'neutral'] as const).flatMap((trend) => (['Default', 'Disabled'] as const).map((state) => <Frame key={trend + state}><TableTrendCell {...a} trend={trend} state={state} /></Frame>))}

@@ -1,49 +1,41 @@
 import type { Decorator, Preview } from '@storybook/react-vite'
 import './storybook.css'
-import { RecipeScope } from '../../../src/components/configurator/docs/skeleton/scope'
-import { resolvePreviewTokens } from '../../../src/lib/previewTokens'
-import { buildStudioTokens } from '../../../src/lib/pluginStudio'
-import { FIGMA_FILE_PALETTE, applyFigmaFilePalette } from '../../../src/lib/figmaFilePalette'
-import { useDesignStore } from '../../../src/store/useDesignStore'
 import type { GridViewport } from '../../../src/lib/layoutTokens'
+import { ComponentDocPage } from '../docs/ComponentDocPage'
+import { escalaDocsTheme } from './escalaTheme'
+import { EscalaScope } from './escalaScope'
 
-// The system the Figma file `Escala Design System (Real)` holds: a brand minted
-// from the file's accent (the plugin's own build), then carrying the file's
-// CURATED ramps and alpha twins (owner, 2026-11-12: Figma wins over the
-// generator). Every Color Semantics role then resolves to the file's hex in
-// both modes — figmaFilePalette.test.ts holds all 166.
-const built = buildStudioTokens({ accent: FIGMA_FILE_PALETTE.accent, name: 'Escala' }, 'pro')
-if ('error' in built) throw new Error(`Storybook: could not build the Figma file's system — ${built.error}`)
-const { themeOrder, themeSources } = useDesignStore.getState()
-/** The brand the stories paint with: the one the studio just minted. */
-const BRAND = themeOrder.find((k) => themeSources?.[k]) ?? themeOrder[0]
-applyFigmaFilePalette(BRAND)
-
-/** Every story paints with the system's real tokens: the recipe stylesheet
- *  reads `var(--…)`, RecipeScope supplies the values for the theme and the
- *  viewport picked in the toolbar — the Figma file's Color Semantics and
- *  Dimension Semantics modes. */
-const withEscala: Decorator = (Story, ctx) => {
-  const appearance = (ctx.globals.theme ?? 'light') as 'light' | 'dark'
-  const viewport = (ctx.globals.viewport ?? 'desktop') as GridViewport
-  const t = resolvePreviewTokens(useDesignStore.getState(), BRAND, appearance, viewport)
-  return (
-    <div className={appearance} style={{ background: t.surface, padding: 32, minHeight: '100vh' }}>
-      <RecipeScope t={t}>
-        <Story />
-      </RecipeScope>
-    </div>
-  )
-}
+/** Every story paints with the system's real tokens for the theme and the viewport picked in the toolbar — the
+ *  Figma file's Color Semantics and Dimension Semantics modes. On a Documentation page the story sits in a block of
+ *  its own: no full-screen height there, and the page paint grows with a story wider than the block (the block scrolls
+ *  sideways; the white would stop at the block's width and show the dark behind). */
+const isPlayground = (name: string) => name === 'Playground' || name.endsWith(' · Playground')
+const withEscala: Decorator = (Story, ctx) => (
+  <EscalaScope
+    // A component's Playground is a stage (centred, a minimum height); matrices and blocks keep the page layout.
+    stage={isPlayground(ctx.name) && !ctx.title.startsWith('Blocks/')}
+    appearance={(ctx.globals.theme ?? 'light') as 'light' | 'dark'}
+    viewport={(ctx.globals.dimensions ?? 'desktop') as GridViewport}
+    fullHeight={ctx.viewMode !== 'docs'}
+    growWidth={ctx.viewMode === 'docs'}
+  >
+    <Story />
+  </EscalaScope>
+)
 
 const preview: Preview = {
   decorators: [withEscala],
+  // Every component gets a "Documentation" page first in its folder (main.ts names it), drawn by ComponentDocPage
+  // from the catalogue and the Figma contract.
+  tags: ['autodocs'],
   globalTypes: {
     theme: {
       description: 'Color Semantics mode',
       toolbar: { title: 'Color Semantics', icon: 'mirror', items: [{ value: 'light', title: 'Escala Light' }, { value: 'dark', title: 'Escala Dark' }], dynamicTitle: true },
     },
-    viewport: {
+    // NOT `viewport`: that is Storybook's own viewport tool. Sharing the key made "Desktop" also emulate a 1280×1024
+    // screen, so every story sat in a frame wider and taller than the canvas, cut on the right and at the bottom.
+    dimensions: {
       // One mode for both collections: Figma's Dimension Semantics and
       // Typography share the Desktop · Tablet · Mobile modes.
       description: 'Dimension Semantics + Typography mode',
@@ -53,12 +45,20 @@ const preview: Preview = {
       },
     },
   },
-  initialGlobals: { theme: 'light', viewport: 'desktop' },
+  initialGlobals: { theme: 'light', dimensions: 'desktop' },
   parameters: {
     layout: 'fullscreen',
     controls: { expanded: true },
     // Accessibility is a gate, not a hint: a violation fails the story.
     a11y: { test: 'error' },
+    docs: { page: ComponentDocPage, theme: escalaDocsTheme, codePanel: true },
+    options: {
+      // Getting started, then the tokens (Variables), then the components by Figma page. A literal list: storySort must be
+      // self-contained (Storybook evaluates it on its own). The Variables names are FOUNDATION_DOCS' labels.
+      storySort: {
+        order: ['Getting started', ['Introduction'], 'Variables', ['Color', 'Font', 'Radius', 'Spacing', 'Shadow', 'Grid', 'Sizes', 'Stroke', 'Icons', 'Motion'], 'Buttons', 'Forms', 'Indicators', 'Content & Surfaces', 'Feedback', 'Navigation'],
+      },
+    },
   },
 }
 export default preview

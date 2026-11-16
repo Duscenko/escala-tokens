@@ -275,14 +275,14 @@ function motionChoreographies(settings) {
     },
     "popover-enter": {
       pattern: "coordinated",
-      components: ["Popover", "DatePickerPopover", "TooltipContent", "HoverCard", "DropdownMenu", "ContextMenu", "Select", "Menubar"],
+      components: ["Popover", "DatePickerPopover", "TooltipContent", "HoverCard", "DropdownMenu"],
       intent: { usage: ["popovers", "tooltips", "menus"], direction: "A floating layer grows out of its trigger: a short pop on the disclosure role." },
       tracks: [{ keyframes: s.pop < 1 ? "pop" : "fade-in", motion: r("use-disclosure-in"), delay: 0 }],
       reducedMotion: { collapseTo: "coordinated", pattern: "coordinated", tracks: [{ keyframes: "fade-in", motion: FADE_IN, delay: 0 }] }
     },
     "popover-exit": {
       pattern: "coordinated",
-      components: ["Popover", "DatePickerPopover", "TooltipContent", "HoverCard", "DropdownMenu", "ContextMenu", "Select", "Menubar"],
+      components: ["Popover", "DatePickerPopover", "TooltipContent", "HoverCard", "DropdownMenu"],
       intent: { usage: ["popovers", "tooltips", "menus"], direction: "Gets out of the way, faster than it came." },
       tracks: [{ keyframes: s.shrink < 1 ? "shrink" : "fade-out", motion: r("use-disclosure-out"), delay: 0 }],
       reducedMotion: { collapseTo: "coordinated", pattern: "coordinated", tracks: [{ keyframes: "fade-out", motion: FADE_OUT, delay: 0 }] }
@@ -909,6 +909,9 @@ var init_apca = __esm({
       // border 10) sit at Lc 20–44 on the dark page. History: 2026-10-21 made the
       // field outline a 1.4:1 hairline (black-a.3); the file reverted it.
       "control-boundary": { wcag: 3, apcaLc: null },
+      // The field outline as the owner set it in the Figma file (DEC-2026-11-16-004): Border/control at Black / White Alpha 03,
+      // a soft hairline BELOW the 3:1 of WCAG 1.4.11. A visibility floor only, so a regression to nothing still fails.
+      "control-hairline": { wcag: 1.4, apcaLc: null },
       // A label on a PRESSED fill (a state held for ~100 ms under the pointer):
       // WCAG AA with no APCA term. The Escala file pins `action.secondary.pressed`
       // to gray 06, where `content.on-secondary` reads 4.5+ :1 but Lc 57–59.
@@ -1861,9 +1864,15 @@ function applyDesktopFrameToGrid(grid, frame, spacing) {
     container: desktop.container
   };
 }
+function boxRoles(lead) {
+  return { container: lead, overlay: lead === BOX_CONTAINER_PX ? "3xl" : lead };
+}
+function groupRoleValues(group, lead) {
+  return group.derive ? group.derive(lead) : Object.fromEntries(group.roles.map((role) => [role, lead]));
+}
 function applyRadiusGroup(group, roles, step) {
   const next = mergeLayoutRoles("radius", roles);
-  for (const role of group.roles) next[role] = step;
+  Object.assign(next, groupRoleValues(group, step));
   return next;
 }
 function radiusRolesFromGroups(picks) {
@@ -1887,8 +1896,8 @@ function radiusPresetPatch(label, roles) {
   return { radius: { ...RADIUS_STANDARD }, radiusRoles, radiusRoleViewports: {} };
 }
 function radiusPresetPx(preset) {
-  const px2 = (step) => parseFloat(RADIUS_STANDARD[step] ?? "0") || 0;
-  return [px2(preset.picks.boxes), px2(preset.picks.fields), px2(preset.picks.selectors)];
+  const px2 = (step) => roleValuePx(step, RADIUS_STANDARD) ?? 0;
+  return [px2(preset.picks.boxes), px2(preset.picks.fields), px2(preset.picks.items), px2(preset.picks.selectors)];
 }
 function isGradedRadiusRamp(radius) {
   const lg = parseFloat(radius?.lg ?? "");
@@ -2136,7 +2145,24 @@ function nearestSpacingStep(spacing, targetPx) {
     return best;
   }).key;
 }
-var ROLE_DIMENSION_PREFIX, SPACING_RESPONSIVE_FAMILIES, SPACING_RESPONSIVE_SIZES, SR, SPACING_RESPONSIVE_TABLE, SPACING_RESPONSIVE, SPACING_RESPONSIVE_KEYS, RADIUS_WORKING_STEPS, RADIUS_SCALE_RATIOS, RADIUS_STEPS, RADIUS_DEFAULT_LG, RADIUS_PRESETS, RADIUS_STANDARD, SPACING_STEPS, SPACING_DEFAULT_BASE, SPACING_STANDARD, PADDING_DEFAULT_STEP, PADDING_STANDARD, INSET_SURFACE_ROLE, SIZE_STEPS, SIZE_STANDARD, FIELD_MULTIPLIERS, SIZE_DEFAULT_BASE, SIZE_CONTROL_MIN_PX, FIELD_BASE_MIN, BASE_UNIT_RANGE, SELECTOR_STEPS, SELECTOR_MULTIPLIERS, SELECTOR_DEFAULT_BASE, SELECTOR_TO_SIZE_BASE, SELECTOR_STANDARD, inferSizeBase, STROKE_STEPS, STROKE_STANDARD, STROKE_SM_STOPS, BREAKPOINT_STEPS, BREAKPOINT_STANDARD, GRID_VIEWPORTS, GRID_COLUMN_STEPS, GRID_CONTAINER_STEPS, GRID_FRAME_FIELDS, GRID_FRAME_STANDARD, GRID_FRAME_LEGACY_STANDARD, GRID_STYLES, GRID_STANDARD, RADIUS_ROLES, RADIUS_GROUP_STEPS, RADIUS_GROUPS, RADIUS_ROLE_PRESETS, LEGACY_RADIUS_ROLE_RUNGS, LEGACY_RADIUS_LG_FACTOR, LEGACY_RADIUS_WORKING_STEPS, RADIUS_V77_RENAME, RADIUS_RESPONSIVE_STEPS, RADIUS_RESPONSIVE, SPACING_ROLES, INSET_ROLES, INSET_SIDES, INSET_SIDE_KEYS, INSET_SIDE_BY_KEY, SPACING_MODES, LEGACY_SPACING_ROLE_STEPS, SIZE_ROLES, SELECTOR_ROLES, STROKE_ROLES, BREAKPOINT_ROLES, LAYOUT_ROLES, PRIMITIVE_SET, GRID_MODE_STYLE;
+function moveRadiusLadderV151(state2) {
+  const OLD = { control: "lg", action: "xl", container: "2xl", overlay: "2xl" };
+  const NEW = { control: "sm", container: BOX_CONTAINER_PX, overlay: "3xl" };
+  const wasDefault = (roles) => Object.entries(OLD).every(([k, v]) => (roles[k] ?? v) === v);
+  if (!state2 || typeof state2 !== "object") return;
+  const root = state2.radiusRoles && typeof state2.radiusRoles === "object" ? state2.radiusRoles : {};
+  const rootWas = wasDefault(root);
+  if (rootWas) state2.radiusRoles = { ...root, ...NEW };
+  const origins = state2.themeOrigin ?? {};
+  for (const [key2, own] of Object.entries(state2.themeFoundations ?? {})) {
+    const roles = own?.radiusRoles;
+    if (!roles || typeof roles !== "object" || origins[key2]) continue;
+    if (wasDefault({ ...rootWas ? OLD : root, ...roles })) {
+      own.radiusRoles = { ...roles, ...Object.fromEntries(Object.entries(NEW).filter(([k]) => k in roles)) };
+    }
+  }
+}
+var ROLE_DIMENSION_PREFIX, SPACING_RESPONSIVE_FAMILIES, SPACING_RESPONSIVE_SIZES, SR, SPACING_RESPONSIVE_TABLE, SPACING_RESPONSIVE, SPACING_RESPONSIVE_KEYS, RADIUS_WORKING_STEPS, RADIUS_SCALE_RATIOS, RADIUS_STEPS, RADIUS_DEFAULT_LG, RADIUS_PRESETS, RADIUS_STANDARD, SPACING_STEPS, SPACING_DEFAULT_BASE, SPACING_STANDARD, PADDING_DEFAULT_STEP, PADDING_STANDARD, INSET_SURFACE_ROLE, SIZE_STEPS, SIZE_STANDARD, FIELD_MULTIPLIERS, SIZE_DEFAULT_BASE, SIZE_CONTROL_MIN_PX, FIELD_BASE_MIN, BASE_UNIT_RANGE, SELECTOR_STEPS, SELECTOR_MULTIPLIERS, SELECTOR_DEFAULT_BASE, SELECTOR_TO_SIZE_BASE, SELECTOR_STANDARD, inferSizeBase, STROKE_STEPS, STROKE_STANDARD, STROKE_SM_STOPS, BREAKPOINT_STEPS, BREAKPOINT_STANDARD, GRID_VIEWPORTS, GRID_COLUMN_STEPS, GRID_CONTAINER_STEPS, GRID_FRAME_FIELDS, GRID_FRAME_STANDARD, GRID_FRAME_LEGACY_STANDARD, GRID_STYLES, GRID_STANDARD, BOX_CONTAINER_PX, RADIUS_ROLES, RADIUS_GROUP_STEPS, RADIUS_GROUPS, RADIUS_ROLE_PRESETS, LEGACY_RADIUS_ROLE_RUNGS, LEGACY_RADIUS_LG_FACTOR, LEGACY_RADIUS_WORKING_STEPS, RADIUS_V77_RENAME, RADIUS_RESPONSIVE_STEPS, RADIUS_RESPONSIVE, SPACING_ROLES, INSET_ROLES, INSET_SIDES, INSET_SIDE_KEYS, INSET_SIDE_BY_KEY, SPACING_MODES, LEGACY_SPACING_ROLE_STEPS, SIZE_ROLES, SELECTOR_ROLES, STROKE_ROLES, BREAKPOINT_ROLES, LAYOUT_ROLES, PRIMITIVE_SET, GRID_MODE_STYLE;
 var init_layoutTokens = __esm({
   "src/lib/layoutTokens.ts"() {
     init_dimensionCore();
@@ -2305,27 +2331,30 @@ var init_layoutTokens = __esm({
       }
     ];
     GRID_STANDARD = buildGridStandard();
+    BOX_CONTAINER_PX = "dimension-20";
     RADIUS_ROLES = [
-      { key: "control", label: "Control", description: "Checkbox, nested child, menu item, inner thumb.", group: "selectors", primitive: "lg" },
-      { key: "action", label: "Action", description: "Buttons, inputs, selects, OTP, tabs.", group: "fields", primitive: "xl" },
-      { key: "container", label: "Container", description: "Cards, accordion, inline alerts.", group: "boxes", primitive: "2xl" },
-      { key: "overlay", label: "Overlay", description: "Modal, popover, command, dropdown.", group: "boxes", primitive: "2xl" },
+      { key: "control", label: "Control", description: "Checkbox, nested child, inner thumb.", group: "selectors", primitive: "sm" },
+      { key: "item", label: "Item", description: "An element nested in a track or a flush list: a segment, a sidebar menu button. Never a row inside an overlay.", group: "items", primitive: "lg" },
+      { key: "action", label: "Action", description: "Buttons, inputs, selects, OTP, tabs, rows inside an overlay.", group: "fields", primitive: "xl" },
+      { key: "container", label: "Container", description: "Cards, accordion, inline alerts.", group: "boxes", primitive: BOX_CONTAINER_PX },
+      { key: "overlay", label: "Overlay", description: "Modal, popover, command, dropdown.", group: "boxes", primitive: "3xl" },
       { key: "pill", label: "Pill", description: "Badge, chip, avatar, switch, progress.", group: "selectors", primitive: "full" }
     ];
     RADIUS_GROUP_STEPS = ["none", "sm", "lg", "xl", "2xl", "3xl", "4xl"];
     RADIUS_GROUPS = [
-      { key: "boxes", label: "Boxes", hint: "card, modal, alert", roles: ["container", "overlay"] },
-      { key: "fields", label: "Fields", hint: "button, input, select, tab", roles: ["action"] },
-      { key: "selectors", label: "Selectors", hint: "checkbox, radio, toggle, menu", roles: ["control"] }
+      { key: "boxes", label: "Boxes", hint: "card, modal, alert", roles: ["container", "overlay"], derive: boxRoles },
+      { key: "fields", label: "Fields", hint: "button, input, select, tab, rows in an overlay", roles: ["action"] },
+      { key: "items", label: "Items", hint: "segment in a track, sidebar menu button", roles: ["item"] },
+      { key: "selectors", label: "Selectors", hint: "checkbox, radio, toggle, badge", roles: ["control"] }
     ];
     RADIUS_ROLE_PRESETS = [
-      { label: "Sharp", description: "Square corners everywhere \u2014 0 / 0 / 0.", picks: { boxes: "none", fields: "none", selectors: "none" } },
-      { label: "Soft", description: "A hint of rounding \u2014 boxes 8, fields 4, selectors 4.", picks: { boxes: "lg", fields: "sm", selectors: "sm" } },
-      { label: "Rounded", description: "The standard \u2014 boxes 16, fields 12, selectors 8.", picks: { boxes: "2xl", fields: "xl", selectors: "lg" } },
+      { label: "Sharp", description: "Square corners everywhere \u2014 0 / 0 / 0.", picks: { boxes: "none", fields: "none", items: "none", selectors: "none" } },
+      { label: "Soft", description: "A hint of rounding \u2014 boxes 8, fields 4, items 4, selectors 4.", picks: { boxes: "lg", fields: "sm", items: "sm", selectors: "sm" } },
+      { label: "Rounded", description: "The standard \u2014 boxes 20 (overlay 24), fields 12, items 8, selectors 4.", picks: { boxes: BOX_CONTAINER_PX, fields: "xl", items: "lg", selectors: "sm" } },
       // Boxes at 3xl (24): rounder than Rounded's 16, but a card or alert holding
       // tags and text keeps its shape — 32 rounded the corners past the content
       // and clipped it. The full pill look is the fields'.
-      { label: "Pill", description: "Pill fields \u2014 boxes 24, fields 32, selectors 8.", picks: { boxes: "3xl", fields: "4xl", selectors: "lg" } }
+      { label: "Pill", description: "Pill fields \u2014 boxes 24, fields 32, items 8, selectors 8.", picks: { boxes: "3xl", fields: "4xl", items: "lg", selectors: "lg" } }
     ];
     LEGACY_RADIUS_ROLE_RUNGS = { control: "sm", action: "2xl", container: "3xl", overlay: "4xl", pill: "full" };
     LEGACY_RADIUS_LG_FACTOR = 2;
@@ -4174,26 +4203,6 @@ var init_componentCatalogue = __esm({
         accessibility: "Decorative: aria-hidden."
       },
       {
-        key: "ToggleGroup",
-        label: "Toggle Group",
-        category: "Button & Actions",
-        description: "shadcn/ui Toggle Group: a set of two-state buttons \u2014 one or several pressed at a time.",
-        usage: "Use for formatting toggles (bold \xB7 italic \xB7 underline) or a view filter that can combine. For one exclusive choice among views prefer Segmented Control or Tabs.",
-        axes: [
-          { name: "Variant", values: ["default", "outline"] },
-          { name: "Size", values: ["default", "sm", "lg"] }
-        ],
-        figmaSets: ["Toggle Group"],
-        props: [
-          { name: "type", type: '"single" | "multiple"', description: "One pressed item, or any number." },
-          { name: "variant", type: '"default" | "outline"', description: "shadcn's toggle variants: no edge, or the control boundary." },
-          { name: "size", type: '"default" | "sm" | "lg"', description: "Item height \u2014 the Button heights." },
-          { name: "value / defaultValue / onValueChange", type: "string | string[]", description: "The pressed item(s)." },
-          { name: "ToggleGroupItem value", type: "component", description: 'One toggle; Radix writes data-state="on" when pressed.' }
-        ],
-        accessibility: 'Radix ToggleGroup: arrow keys move between items (roving tabindex); each item exposes aria-pressed (multiple) or role="radio" (single).'
-      },
-      {
         key: "Toggle",
         label: "Toggle",
         category: "Button & Actions",
@@ -4216,20 +4225,26 @@ var init_componentCatalogue = __esm({
         key: "SocialLoginButton",
         label: "Social Login Button",
         category: "Button & Actions",
-        description: "Outlined sign-in button carrying a provider mark \u2014 Google, Apple, GitHub or Figma.",
-        usage: "Stack vertically above the email form. Keep provider order consistent across screens.",
+        description: "Sign-in button carrying a provider mark: white (a bordered control) or in the provider's own colour, full width or icon-only.",
+        usage: "Stack vertically above the email form, or lay the icon-only form in a row. Keep provider order consistent across screens.",
+        // The Figma file's axes, value for value (SocialLoginButton, 364:20).
         axes: [
-          { name: "Provider", values: ["google", "apple", "github", "figma"] },
-          { name: "Size", values: ["default", "lg"] }
+          { name: "Appearance", values: ["white", "brand"] },
+          { name: "Brand", values: ["Google", "Apple", "Discord", "Dribbble", "Facebook", "GitHub", "LinkedIn", "Slack", "X"] },
+          { name: "IconOnly", values: ["false", "true"] },
+          { name: "Size", values: ["lg", "default"] },
+          { name: "State", values: ["Default", "Hover", "Pressed", "Focused", "Disabled"] }
         ],
-        figmaSets: ["Button Social"],
+        figmaSets: ["SocialLoginButton"],
         props: [
-          { name: "provider", type: '"google" | "apple" | "github" | "figma"', description: "Identity provider \u2014 picks the mark." },
+          { name: "brand", type: '"Google" | "Apple" | "Discord" | "Dribbble" | "Facebook" | "GitHub" | "LinkedIn" | "Slack" | "X"', description: "Identity provider \u2014 picks the mark and, in the brand appearance, the colour (Social Media Brands)." },
+          { name: "appearance", type: '"white" | "brand"', description: "white: bordered control. brand: the provider fill." },
+          { name: "iconOnly", type: "boolean", description: "A square of the Size showing only the mark \u2014 give it an aria-label." },
           { name: "size", type: '"default" | "lg"', description: "Control height \u2014 lg for mobile sign-in screens." },
-          { name: "label", type: "ReactNode", description: 'Defaults to "Continue with <provider>". Never icon-only.' },
+          { name: "label", type: "ReactNode", description: 'Defaults to "Continue with <brand>".' },
           { name: "onClick", type: "() => void", description: "Starts the OAuth flow." }
         ],
-        accessibility: 'Native <button> with the full "Continue with \u2026" label \u2014 never icon-only.'
+        accessibility: 'Native <button>. Full width shows "Continue with \u2026"; the icon-only form needs an aria-label (the component sets one from the brand).'
       },
       {
         key: "AppStoreBadge",
@@ -4445,43 +4460,6 @@ var init_componentCatalogue = __esm({
           { name: "selected / disabled", type: "boolean", description: "aria-selected; State Disabled." }
         ],
         accessibility: 'role="option" with aria-selected; the list that holds it is a listbox with arrow-key navigation.'
-      },
-      {
-        key: "Select",
-        label: "Select",
-        category: "Form Controls",
-        description: "Dropdown trigger that shares the input tokens, with full state coverage for forms and filters.",
-        usage: "Use when options exceed 4 items. For fewer options, prefer Radio or ButtonGroup.",
-        axes: [
-          { name: "Size", values: ["default", "sm"] },
-          { name: "State", values: ["Default", "Hover", "Focused", "Error", "Disabled"] }
-        ],
-        figmaSets: ["Select"],
-        props: [
-          { name: "Select", type: "component", description: "Radix Select root: value, defaultValue, onValueChange, disabled." },
-          { name: "SelectTrigger size", type: '"md" | "sm" | "lg"', description: "Field height \u2014 follows the Sizes foundation." },
-          { name: "SelectValue placeholder", type: "string", description: "Shown until an option is chosen." },
-          { name: "SelectContent / SelectItem", type: "component", description: "The list; it portals into the theme scope." }
-        ],
-        accessibility: 'Built on Radix Select. Keyboard navigable. Options have role="option".'
-      },
-      {
-        key: "NativeSelect",
-        label: "Native Select",
-        category: "Form Controls",
-        description: "shadcn/ui Native Select: the browser's own <select>, drawn as the field box with a chevron.",
-        usage: "Use where the platform picker is the better experience (mobile, long lists, forms that must work without JavaScript). For a styled list with search or rich items use Select or Combobox.",
-        axes: [
-          { name: "Size", values: ["default", "sm"] },
-          { name: "State", values: ["Default", "Hover", "Focused", "Disabled"] }
-        ],
-        figmaSets: ["Select"],
-        props: [
-          { name: "size", type: '"default" | "sm"', description: "The Select heights." },
-          { name: "NativeSelectOption / NativeSelectOptGroup", type: "component", description: "The options, as <option> / <optgroup>." },
-          { name: "\u2026select attributes", type: 'React.ComponentProps<"select">', description: "value, onChange, disabled, name \u2014 a real <select>." }
-        ],
-        accessibility: "A native <select>: keyboard, screen readers and the platform picker come for free. Pair it with a Label (Field)."
       },
       {
         key: "DatePickerTrigger",
@@ -4717,7 +4695,7 @@ var init_componentCatalogue = __esm({
         usage: "Used by Combobox and ComboboxPopover. Keep labels short; put detail in the description.",
         axes: [
           { name: "Size", values: ["sm", "default", "lg"] },
-          { name: "State", values: ["Default", "Focused", "Selected", "Disabled"] }
+          { name: "State", values: ["Default", "Hover", "Focused", "Selected", "Disabled"] }
         ],
         figmaSets: ["ComboboxItem"],
         props: [
@@ -5220,7 +5198,7 @@ var init_componentCatalogue = __esm({
         axes: [
           { name: "Size", values: ["default", "sm", "lg", "xl"] },
           { name: "Variant", values: ["default", "secondary", "critical", "success", "warning", "info"] },
-          { name: "Appearance", values: ["soft", "solid"] },
+          { name: "Appearance", values: ["soft", "solid", "gradient"] },
           { name: "Shape", values: ["circle", "rounded"] }
         ],
         figmaSets: ["FeaturedIcon"],
@@ -5542,18 +5520,20 @@ var init_componentCatalogue = __esm({
         key: "Sheet",
         label: "Sheet",
         category: "Content & Surfaces",
-        description: "shadcn/ui Sheet: a panel that slides in from an edge of the screen.",
-        usage: "Use for secondary tasks that keep the page in context (filters, details, settings). For a blocking decision use Alert Dialog.",
+        description: "An edge-anchored panel on the Modal surface: a desktop drawer from the right or left, a mobile sheet from the bottom.",
+        usage: "Use for secondary tasks that keep the page in context (filters, a cart, details, settings). For a blocking decision use Modal or Alert Dialog; for a list of choices tied to a field use Popover.",
         axes: [
-          { name: "Side", values: ["right", "left", "top", "bottom"] }
+          { name: "Side", values: ["right", "left", "bottom"] }
         ],
         figmaSets: ["Sheet"],
         props: [
-          { name: "SheetContent side", type: '"top" | "right" | "bottom" | "left"', description: "The edge it slides from." },
-          { name: "showCloseButton", type: "boolean", description: "The ghost icon-sm close (default true)." },
-          { name: "SheetHeader / SheetTitle / SheetDescription / SheetFooter", type: "component", description: "The parts." }
+          { name: "SheetContent side", type: '"right" | "left" | "bottom"', description: "The edge it is anchored to (default right)." },
+          { name: "header", type: "ReactNode", description: "The header: a SheetHeader (= ModalHeader), inside main above the Content." },
+          { name: "children", type: "ReactNode", description: "The Content slot; it scrolls when taller than the panel." },
+          { name: "footer", type: "ReactNode", description: "Figma FooterVisible: a SheetFooter (= ModalFooter); stacked on the bottom side." },
+          { name: "showClose", type: "boolean", description: "Figma CloseVisible: the soft pill CloseButton (default true)." }
         ],
-        accessibility: "A Radix Dialog: focus is trapped inside, Esc closes and focus returns to the trigger."
+        accessibility: "A Radix Dialog like Modal: focus is trapped inside, Esc closes and focus returns to the trigger. The header's title is the accessible name and its description the aria-describedby; the close button has an accessible name. The bottom side is capped by the visual viewport (not 100vh) and keeps the safe area under its footer."
       },
       {
         key: "Drawer",
@@ -6144,22 +6124,6 @@ var init_componentCatalogue = __esm({
       },
       // ── Navigation ──────────────────────────────────────────────────────────────
       {
-        key: "Tabs",
-        label: "Tabs",
-        category: "Navigation",
-        description: "Tab bar for switchable panels: a muted track (default) or an underline (line).",
-        usage: "Use when content is parallel, not sequential. Limit to 2\u20137 tabs visible at once.",
-        axes: [{ name: "Variant", values: ["default", "line"] }],
-        figmaSets: ["Tabs"],
-        props: [
-          { name: "Tabs value / defaultValue", type: "string", description: "The open tab." },
-          { name: "TabsList variant", type: '"default" | "line"', description: "A muted track with a raised active tab, or an underline strip." },
-          { name: "TabsTrigger", type: "component", description: "One tab (arrow keys move between them)." },
-          { name: "TabsContent value", type: "string", description: "The panel for a tab." }
-        ],
-        accessibility: 'ARIA tabs pattern: role="tablist", role="tab", role="tabpanel". Arrow key navigation.'
-      },
-      {
         key: "TabMenu",
         label: "Tab Menu",
         category: "Navigation",
@@ -6186,7 +6150,7 @@ var init_componentCatalogue = __esm({
         usage: "Inside a button-variant TabMenu.",
         axes: [
           { name: "Size", values: ["default", "sm", "lg"] },
-          { name: "State", values: ["Default", "Hover", "Selected", "Focused", "Disabled"] }
+          { name: "State", values: ["Default", "Hover", "Focused", "Selected", "Disabled"] }
         ],
         figmaSets: ["TabMenuItem"],
         props: [
@@ -6203,7 +6167,7 @@ var init_componentCatalogue = __esm({
         usage: "Inside a line-variant TabMenu.",
         axes: [
           { name: "Size", values: ["default", "sm", "lg"] },
-          { name: "State", values: ["Default", "Hover", "Selected", "Focused", "Disabled"] },
+          { name: "State", values: ["Default", "Hover", "Focused", "Selected", "Disabled"] },
           { name: "Indicator", values: ["bottom", "left"] }
         ],
         figmaSets: ["TabMenuLineItem"],
@@ -6221,7 +6185,7 @@ var init_componentCatalogue = __esm({
         usage: "In a header or navbar. Current marks the page you are on; with a trailing caret it opens a NavigationMenu. Tabs inside a view use TabMenuItem.",
         axes: [
           { name: "Size", values: ["default", "sm", "lg"] },
-          { name: "State", values: ["Default", "Hover", "Current", "Focused", "Disabled"] }
+          { name: "State", values: ["Default", "Hover", "Focused", "Current", "Disabled"] }
         ],
         figmaSets: ["NavItem"],
         props: [
@@ -6540,7 +6504,7 @@ var init_componentCatalogue = __esm({
         usage: "One command per row. Put irreversible commands last as a destructive variant.",
         axes: [
           { name: "Size", values: ["default", "sm", "lg"] },
-          { name: "State", values: ["Default", "Focused", "Selected", "Disabled"] },
+          { name: "State", values: ["Default", "Hover", "Focused", "Selected", "Disabled"] },
           { name: "Variant", values: ["default", "destructive"] }
         ],
         figmaSets: ["DropdownMenuItem"],
@@ -6570,22 +6534,6 @@ var init_componentCatalogue = __esm({
         accessibility: "Keep it outside role menu; its controls are reachable with Tab after the list."
       },
       {
-        key: "Menubar",
-        label: "Menubar",
-        category: "Navigation",
-        description: "shadcn/ui Menubar: a persistent bar of menus, as in desktop apps (File \xB7 Edit \xB7 View).",
-        usage: "Use in app-like tools with many commands grouped by menu. For a few actions behind one button use Dropdown Menu.",
-        axes: [],
-        figmaSets: ["Menubar"],
-        props: [
-          { name: "MenubarMenu / MenubarTrigger / MenubarContent", type: "component", description: "One menu." },
-          { name: "MenubarItem variant", type: '"default" | "destructive"', description: "A command." },
-          { name: "MenubarSeparator / MenubarShortcut / MenubarLabel", type: "component", description: "Grouping and key hints." },
-          { name: "MenubarSub / MenubarCheckboxItem / MenubarRadioItem", type: "component", description: "Submenus and toggles." }
-        ],
-        accessibility: "Radix Menubar: arrow keys move between menus and items, Esc closes, type-ahead finds items."
-      },
-      {
         key: "NavigationMenu",
         label: "Navigation Menu",
         category: "Navigation",
@@ -6600,21 +6548,6 @@ var init_componentCatalogue = __esm({
           { name: "viewport", type: "boolean", description: "Panels share one animated viewport (default true)." }
         ],
         accessibility: "Radix NavigationMenu: a nav landmark; triggers expose aria-expanded and arrow keys move between them."
-      },
-      {
-        key: "ContextMenu",
-        label: "Context Menu",
-        category: "Navigation",
-        description: "Right-click menu with shortcut hints \u2014 the pointer-positioned sibling of Dropdown Menu.",
-        usage: "Every context-menu action must also exist somewhere visible \u2014 right-click is a shortcut.",
-        axes: [],
-        figmaSets: ["Context Menu"],
-        props: [
-          { name: "ContextMenu", type: "component", description: "Radix root." },
-          { name: "ContextMenuTrigger", type: "component", description: "The area that opens it on right-click." },
-          { name: "ContextMenuContent / Item / Separator / Shortcut", type: "component", description: "The panel and its rows." }
-        ],
-        accessibility: "Same ARIA menu pattern; also opened via the keyboard Menu key / Shift+F10."
       },
       {
         key: "Command",
@@ -6651,17 +6584,78 @@ var init_componentCatalogue = __esm({
         key: "Sidebar",
         label: "Sidebar",
         category: "Navigation",
-        description: "Vertical navigation panel with grouped items and an active state.",
-        usage: "Use for app-level sections when destinations exceed what a navbar holds.",
-        axes: [{ name: "Variant", values: ["sidebar", "floating", "inset"] }],
+        description: "App navigation rail: a header (SidebarBrand and a trigger), a scrollable content of SidebarGroups and an optional footer. Collapsed is the 48 px icon rail.",
+        usage: "Use for app-level sections when destinations exceed what a navbar holds. Keep at most one row marked as the current page.",
+        axes: [{ name: "Collapsed", values: ["false", "true"] }],
         figmaSets: ["Sidebar"],
         props: [
-          { name: "variant / side", type: '"sidebar" | "floating" | "inset" / "left" | "right"', description: "shadcn's variants: flush panel, floating card, or inset." },
+          { name: "collapsed", type: "boolean", description: "Figma Collapsed: the 48 px icon rail. It cascades to every part." },
           { name: "SidebarHeader / SidebarContent / SidebarFooter", type: "component", description: "The panel's regions." },
-          { name: "SidebarGroup / SidebarGroupLabel / SidebarMenu", type: "component", description: "A labelled group of rows." },
-          { name: "SidebarMenuButton isActive / variant / size", type: 'boolean / "default" | "outline" / "default" | "sm" | "lg"', description: "One row; isActive marks the current page." }
+          { name: "SidebarBrand / SidebarTrigger", type: "component", description: "The header's logo block and the ghost IconButton that folds the rail." },
+          { name: "SidebarGroup / SidebarGroupLabel / SidebarMenu", type: "component", description: "A labelled group of rows." }
         ],
-        accessibility: '<nav aria-label="Sidebar">; active item uses aria-current. Fully arrow-key navigable.'
+        accessibility: "Rendered as an aside landmark with an aria-label; the trigger carries aria-expanded and aria-controls; collapsed rows keep an accessible name and want a Tooltip with their label."
+      },
+      {
+        key: "SidebarMenuButton",
+        label: "Sidebar Menu Button",
+        category: "Navigation",
+        description: "A navigation row of the Sidebar: leading icon, label, trailing count, trend Badge and trailing icon. Current marks the page you are on.",
+        usage: "One row per destination. Collapsed comes from the Sidebar, not from the row.",
+        axes: [
+          { name: "Size", values: ["default", "sm", "lg"] },
+          { name: "State", values: ["Default", "Hover", "Focused", "Current", "Disabled"] },
+          { name: "Collapsed", values: ["false", "true"] }
+        ],
+        figmaSets: ["SidebarMenuButton"],
+        props: [
+          { name: "children", type: "ReactNode", description: "Figma Label." },
+          { name: "icon / trailing / iconTrailing", type: "ReactNode", description: "Figma IconLeadingIcon, Trailing, IconTrailingIcon." },
+          { name: "trend / trendLabel", type: '"up" | "down" / ReactNode', description: "Figma TrendVisible: an exposed Badge, success for up, critical for down." },
+          { name: "state", type: "SidebarMenuButtonState", description: 'Pins a state (docs). `isActive` is the older name of `state="Current"`.' }
+        ],
+        accessibility: 'A button, or a link with asChild; aria-current="page" on the current row; keep it Tab-reachable; a collapsed row keeps its label for assistive tech.'
+      },
+      {
+        key: "SidebarGroup",
+        label: "Sidebar Group",
+        category: "Navigation",
+        description: "A labelled section of the Sidebar: a SidebarGroupLabel and a SidebarMenu. Size cascades to every row.",
+        usage: "Group related destinations under one label.",
+        axes: [
+          { name: "Size", values: ["default", "sm", "lg"] },
+          { name: "Collapsed", values: ["false", "true"] }
+        ],
+        figmaSets: ["SidebarGroup"],
+        props: [
+          { name: "size", type: '"default" | "sm" | "lg"', description: "Figma Size: cascades to its SidebarMenu and every SidebarMenuButton." }
+        ],
+        accessibility: "role group with aria-labelledby pointing at its label."
+      },
+      {
+        key: "SidebarGroupLabel",
+        label: "Sidebar Group Label",
+        category: "Navigation",
+        description: "The heading of a group of SidebarMenuButtons; hidden while the Sidebar is collapsed. A twin of DropdownMenuLabel.",
+        usage: "Name the group in one or two words.",
+        axes: [{ name: "Size", values: ["default", "sm", "lg"] }],
+        figmaSets: ["SidebarGroupLabel"],
+        props: [{ name: "children", type: "ReactNode", description: "Figma Label." }],
+        accessibility: "It is the label of the group (aria-labelledby)."
+      },
+      {
+        key: "SidebarBrand",
+        label: "Sidebar Brand",
+        category: "Navigation",
+        description: "The brand block at the top of the Sidebar: a logo with a title and an optional subtitle; collapses to the logo only.",
+        usage: "Wrap it in a link to the home route.",
+        axes: [{ name: "Collapsed", values: ["false", "true"] }],
+        figmaSets: ["SidebarBrand"],
+        props: [
+          { name: "logo", type: "ReactNode", description: "Figma Logo (the slot): an Avatar or the product mark." },
+          { name: "title / subtitle", type: "ReactNode", description: "Figma Title, Subtitle (omit the subtitle to hide it)." }
+        ],
+        accessibility: "The link around it needs an accessible name equal to the title."
       }
     ];
     COMPONENT_KEYS = COMPONENTS.map((c2) => c2.key);
@@ -6669,7 +6663,7 @@ var init_componentCatalogue = __esm({
       "Button",
       "IconButton",
       "Input",
-      "Select",
+      "Combobox",
       "Checkbox",
       "Switch",
       "Badge",
@@ -6679,7 +6673,7 @@ var init_componentCatalogue = __esm({
       "TooltipContent",
       "Separator",
       "Toast",
-      "Tabs"
+      "TabMenu"
     ];
   }
 });
@@ -8855,7 +8849,7 @@ var init_semanticArchitectures = __esm({
       //    while warning/success on 11 sat at ~73. One step is worth ~30 Lc on the
       //    dark ramp, so 10 was not a hue-vs-contrast trade, just a miss: 11 still
       //    reads as red, and all three severities now agree on the same step.
-      { group: "status", key: "critical.surface", light: "{error-a.3}", dark: "{error-a.4}" },
+      { group: "status", key: "critical.surface", light: "{error-a.3}", dark: "{error-a.3}" },
       { group: "status", key: "critical.content", light: "{error.11}", dark: "{error.11}" },
       { group: "status", key: "warning.surface", light: "{warning-a.3}", dark: "{warning-a.4}" },
       // Warning content / border-strong / surface-solid can resolve to ONE hex.
@@ -9041,9 +9035,9 @@ var init_semanticArchitectures = __esm({
       // APCA Lc 0 (below the algorithm's noise floor) via `check_contrast`.
       // Step 2 is the smallest lift that leaves that floor in light (Lc ~12)
       // while staying decoration — still under `border.strong` (step 7 / 8).
-      { group: "border", key: "default", light: "{black-a.3}", dark: "{white-a.3}" },
+      { group: "border", key: "default", light: "{black-a.2}", dark: "{white-a.2}" },
       // Lightest decorative rung — a hairline divider, a quiet grouping edge.
-      { group: "border", key: "subtle", light: "{black-a.2}", dark: "{white-a.2}" },
+      { group: "border", key: "subtle", light: "{black-a.1}", dark: "{white-a.1}" },
       // ── The control boundary — SOLVED on the alpha ladder (`{ui-a:…}` composites
       // each step over the page before measuring), not pinned. Measured: `black-a`
       // clears WCAG 1.4.11 + APCA Lc 45 against a light page at step 7, `white-a`
@@ -9065,8 +9059,10 @@ var init_semanticArchitectures = __esm({
       // 1.4.11 on its own does it with a FILL, not this stroke.
       // `strong` is EMPHASIS — the edge of a grouping that must read before its
       // neighbours — and keeps the ui-component solve (black-a.7 / white-a.8).
-      { group: "border", key: "control", light: "{ctl-a:black-a.3}", dark: "{ctl-a:white-a.3}" },
-      { group: "border", key: "control-hover", light: "{ctl+a:black-a.3}", dark: "{ctl+a:white-a.3}" },
+      // OWNER DECISION 2026-11-16 (DEC-2026-11-16-004): the Figma file is the rule. `Border/control` sits at Black Alpha/03 ·
+      // White Alpha/03 and its hover at /04, a soft hairline below the 3:1 of WCAG 1.4.11. Pinned to the file's steps, not solved.
+      { group: "border", key: "control", light: "{black-a.3}", dark: "{white-a.3}" },
+      { group: "border", key: "control-hover", light: "{black-a.4}", dark: "{white-a.4}" },
       { group: "border", key: "strong", light: "{ui-a:black-a.5}", dark: "{ui-a:white-a.5}" },
       // DECORATIVE brand emphasis — a tinted card edge or a grouping stroke. It is
       // NOT a state indicator: anything that says "this control is selected /
@@ -9224,10 +9220,10 @@ var init_semanticArchitectures = __esm({
       "status.warning.border-strong": "[ROLE: Warning Control Boundary] Affects form fields in a warning state. {warning.11} \u2014 the minimum tone clearing WCAG in light (tone 9 = 2.35, tone 10 = 2.74, both fail). Same step as warning.content / warning.surface-solid on every seed measured; the jobs stay distinct even when the hex does not.",
       "status.success.border-strong": "[ROLE: Success Control Boundary] Affects validated / success-state form fields. {success.10} \u2014 one step lighter than warning/critical; this ramp clears both metrics a full step earlier (3.32:1/Lc60 light, 8.21:1/Lc56 dark).",
       "status.info.border-strong": "[ROLE: Info Control Boundary] Affects informational-state form fields. Light {info.9} = 3.24:1/Lc59. Dark {info.10} = 7.15:1/Lc49 \u2014 info.9 fails APCA in dark (Lc 42), one step earlier than error needs.",
-      "border.subtle": "[ROLE: Decorative Border 1/3] Affects hairline dividers, table rules, the edge of a quiet grouping. Lightest neutral stroke \u2014 {black-a.2} in light, {white-a.2} in dark (the FIXED alpha ladder, so it composites correctly on any surface). One step above the 5% rung: that step measured APCA Lc 0 on the dark page. DECORATION: separates regions, carries no state, no contrast floor. If the stroke is the only thing telling the user a control is there, that is border.control.",
-      "border.default": "[ROLE: Decorative Border 2/3] Affects a card edge, a panel boundary, a grouping box. {black-a.3} / {white-a.3}. DECORATION, no contrast floor. One step above border.subtle so a panel edge still outranks a hairline.",
-      "border.control": "[ROLE: Control Boundary] Affects the resting border of inputs, textareas, selects, checkboxes, radios, switch tracks and outline buttons. SOLVED on the alpha ladder ({ctl-a:\u2026}) to the WCAG 1.4.11 control boundary (3:1) against the page: {black-a.7} in Light, {white-a.6} in Dark for the default system, so a field reads without a fill.",
-      "border.control-hover": "[ROLE: Control Boundary Hover] Affects the hover state of a control's resting (border.control) border. One step past whatever border.control RESOLVED to ({ctl+a:\u2026}), never a fixed step \u2014 pinning it would collapse it onto rest. {black-a.8} / {white-a.7} for the default system.",
+      "border.subtle": "[ROLE: Decorative Border 1/3] Affects hairline dividers, table rules, the edge of a quiet grouping. Lightest neutral stroke \u2014 {black-a.1} in light, {white-a.1} in dark (the FIXED alpha ladder, so it composites correctly on any surface): 5 %, owner decision 2026-11-16 (DEC-2026-11-16-003). It measures APCA Lc 0 on the dark page, which is accepted: shadow and surface carry the separation. DECORATION: separates regions, carries no state, no contrast floor. If the stroke is the only thing telling the user a control is there, that is border.control.",
+      "border.default": "[ROLE: Decorative Border 2/3] Affects a card edge, a panel boundary, a grouping box. {black-a.2} / {white-a.2} (10 %, owner decision 2026-11-16, DEC-2026-11-16-003). DECORATION, no contrast floor. One step above border.subtle so a panel edge still outranks a hairline. Never the only boundary of a control.",
+      "border.control": "[ROLE: Control Boundary] Affects the resting border of inputs, textareas, selects, checkboxes, radios, switch tracks and outline buttons. {black-a.3} in Light, {white-a.3} in Dark: a soft hairline, below the 3:1 of WCAG 1.4.11 BY OWNER DECISION (DEC-2026-11-16-004, the Figma file is the rule); a field is identified by its fill and its focus ring, not by this stroke alone.",
+      "border.control-hover": "[ROLE: Control Boundary Hover] Affects the hover state of a control's resting (border.control) border. One step past border.control: {black-a.4} in Light, {white-a.4} in Dark (DEC-2026-11-16-004).",
       "border.strong": "[ROLE: Strong Border] Affects the edge of a grouping or a selected container that must read before its neighbours. Not the field outline \u2014 that is border.control. WCAG 1.4.11 + APCA Lc 45 against the page, SOLVED on the alpha ladder ({ui-a:\u2026}): {black-a.7} in light, {white-a.8} in dark for the default system.",
       "border.focus": "[ROLE: A11y Focus Ring] The keyboard focus-visible boundary on every interactive element of the default / accent variant. SOLVED per theme ({focus:accent.9}): the first accent tone from 9 that clears WCAG 1.4.11 (3:1) on the page \u2014 tone 9 in both themes for the default system. Severity, neutral and inverse variants take their own boundary (status.<sev>.border-strong, border.strong, border.inverse). The translucent halo outside it is border.ring.*.",
       "border.ring.default": "[ROLE: Focus Halo] Translucent glow outside border.focus. Paired with border.focus on EVERY focused control (shadcn border-ring + ring-[3px]): the edge turns to border.focus, this halo sits outside it. Never the only focus cue. Decoration, NOT a boundary \u2014 never measured for WCAG 1.4.11; border.focus is the contrast-bearing part. Replaces a hardcoded 40% alpha in the preview specimens. A field in an error/success state reuses status.<sev>.border for its halo \u2014 there is no separate per-severity ring role.",
@@ -9472,7 +9468,7 @@ function part(axes, build) {
   for (const combo of combos(axes)) values[combo.join("|")] = build(...combo);
   return { axes: Object.keys(axes), values };
 }
-var c, NONE, FOCUS, TALL_FIELD_RADIUS, PANEL_RADIUS, PANEL_ROW_RADIUS;
+var c, NONE, FOCUS, TALL_FIELD_RADIUS, PANEL_RADIUS;
 var init_helpers = __esm({
   "src/lib/recipes/helpers.ts"() {
     c = (role) => `color.${role}`;
@@ -9480,7 +9476,6 @@ var init_helpers = __esm({
     FOCUS = { focus: "color.border.focus", ring: "color.border.ring.default" };
     TALL_FIELD_RADIUS = "min(radius.action,radius.2xl)";
     PANEL_RADIUS = "radius.container";
-    PANEL_ROW_RADIUS = "sub(radius.container,spacing.1)";
   }
 });
 
@@ -9612,7 +9607,30 @@ function buttonGroupItemPaint(variant, active, state2) {
   const k = ITEM_SOLID[variant];
   return { root: { fill: k.fill[step], text: k.ink, focus: state2 === "Focused" ? k.focus : NONE } };
 }
-var BUTTON_VARIANTS, BUTTON_APPEARANCES, BUTTON_SIZES, BUTTON_STATES, SOLID, QUIET, LINK, strokeOf, BUTTON_HEIGHT, BUTTON_GAP, BUTTON, ICON_BUTTON_GLYPH, ICON_BUTTON, CLOSE_BUTTON_APPEARANCES, CLOSE_BUTTON_SHAPES, CLOSE_BUTTON_SIZES, CLOSE_BUTTON_VARIANTS, CLOSE_STATES, same3, NO_OVER, MUTED, CLOSE, CLOSE_SIZE, CLOSE_RADIUS, CLOSE_BUTTON, TEXT_LINK_VARIANTS, TEXT_LINK_SIZES, TEXT_LINK_STATES, LINK_INK, LINK_FOCUS, LINK_FONT, LINK_ICON, LINK_GAP, TEXT_LINK, FAB_APPEARANCES, FAB_SHAPES, FAB_SIZES, FAB_VARIANTS, FAB_STATES, FAB_MUTED, FAB, FAB_SIZE, FAB_BUTTON, FAB_GROUP_LAYOUTS, FAB_GROUP, BUTTON_GROUP_VARIANTS, BUTTON_GROUP_SHAPES, BUTTON_GROUP_ORIENTATIONS, BUTTON_GROUP_ITEM_SIZES, BUTTON_GROUP_ITEM_STATES, GROUP_RADIUS, BUTTON_GROUP, ITEM_SOLID, MUTED_INV, ITEM_GEOMETRY, BUTTON_GROUP_ITEM, DIVIDER_FILL, BUTTON_GROUP_DIVIDER, SOCIAL_GEOMETRY, SOCIAL_LOGIN_BUTTON, APP_STORE_BADGE, TOGGLE_GROUP_VARIANTS, TOGGLE_GROUP_SIZES, TOGGLE_HEIGHT, TOGGLE_GROUP, TOGGLE;
+function socialPaint(appearance, brand, state2) {
+  const id = brand.toLowerCase();
+  if (state2 === "Disabled") {
+    return {
+      root: { fill: c("action.disabled.default"), text: c("content.disabled"), ...appearance === "white" ? { stroke: c("border.subtle") } : { stroke: NONE } },
+      label: { text: c("content.disabled") }
+    };
+  }
+  if (appearance === "white") {
+    const root2 = state2 === "Hover" || state2 === "Pressed" ? { fill: c(state2 === "Hover" ? "surface.layer-1" : "surface.muted"), stroke: c("border.control-hover") } : state2 === "Focused" ? { fill: c("surface.page"), stroke: c("border.focus"), ring: c("border.ring.default") } : { fill: c("surface.page"), stroke: c("border.control") };
+    return { root: { ...root2, text: c("content.primary") }, label: { text: c("content.primary") } };
+  }
+  const fill = state2 === "Hover" ? `social.${id}.action.hover` : state2 === "Pressed" ? `social.${id}.action.pressed` : `social.${id}.action.default`;
+  const root = {
+    // `social.*` refs are not Categorical roles: written whole, never through `c()`.
+    fill,
+    text: `social.${id}.content.on-action`,
+    highlight: c("elevation.highlight"),
+    stroke: state2 === "Focused" ? `social.${id}.border.focus` : `social.${id}.action.pressed`,
+    ...state2 === "Focused" ? { ring: c("border.ring.default") } : {}
+  };
+  return { root, label: { text: `social.${id}.content.on-action` } };
+}
+var BUTTON_VARIANTS, BUTTON_APPEARANCES, BUTTON_SIZES, BUTTON_STATES, SOLID, QUIET, LINK, strokeOf, BUTTON_HEIGHT, BUTTON_GAP, BUTTON, ICON_BUTTON_GLYPH, ICON_BUTTON, CLOSE_BUTTON_APPEARANCES, CLOSE_BUTTON_SHAPES, CLOSE_BUTTON_SIZES, CLOSE_BUTTON_VARIANTS, CLOSE_STATES, same3, NO_OVER, MUTED, CLOSE, CLOSE_SIZE, CLOSE_RADIUS, CLOSE_BUTTON, TEXT_LINK_VARIANTS, TEXT_LINK_SIZES, TEXT_LINK_STATES, LINK_INK, LINK_FOCUS, LINK_FONT, LINK_ICON, LINK_GAP, TEXT_LINK, FAB_APPEARANCES, FAB_SHAPES, FAB_SIZES, FAB_VARIANTS, FAB_STATES, FAB_MUTED, FAB, FAB_SIZE, FAB_BUTTON, FAB_GROUP_LAYOUTS, FAB_GROUP, BUTTON_GROUP_VARIANTS, BUTTON_GROUP_SHAPES, BUTTON_GROUP_ORIENTATIONS, BUTTON_GROUP_ITEM_SIZES, BUTTON_GROUP_ITEM_STATES, GROUP_RADIUS, BUTTON_GROUP, ITEM_SOLID, MUTED_INV, ITEM_GEOMETRY, BUTTON_GROUP_ITEM, DIVIDER_FILL, BUTTON_GROUP_DIVIDER, SOCIAL_BRAND_NAMES, SOCIAL_APPEARANCES, SOCIAL_SIZES, SOCIAL_STATES, SOCIAL_GEOMETRY, SOCIAL_LOGIN_BUTTON, APP_STORE_BADGE, TOGGLE_GROUP_VARIANTS, TOGGLE_GROUP_SIZES, TOGGLE_HEIGHT, TOGGLE;
 var init_actions = __esm({
   "src/lib/recipes/actions.ts"() {
     init_helpers();
@@ -9923,29 +9941,27 @@ var init_actions = __esm({
         }))
       ]
     };
+    SOCIAL_BRAND_NAMES = ["Google", "Apple", "Discord", "Dribbble", "Facebook", "GitHub", "LinkedIn", "Slack", "X"];
+    SOCIAL_APPEARANCES = ["white", "brand"];
+    SOCIAL_SIZES = ["lg", "default"];
+    SOCIAL_STATES = ["Default", "Hover", "Pressed", "Focused", "Disabled"];
     SOCIAL_GEOMETRY = {
-      default: { height: "size.control", paddingX: "spacing.4", gap: "spacing.2_5" },
-      lg: { height: "size.touch", paddingX: "spacing.5", gap: "spacing.2_5" }
+      default: { height: "size.control" },
+      lg: { height: "size.touch" }
     };
     SOCIAL_LOGIN_BUTTON = {
       key: "SocialLoginButton",
       slots: ["root", "label", "icon"],
-      defaults: { Provider: "google", Size: "default" },
+      defaults: { Brand: "Google", Appearance: "white", Size: "default", State: "Default", IconOnly: "false" },
       parts: [
         part({}, () => ({
-          root: {
-            fill: c("surface.layer-1"),
-            stroke: c("border.control"),
-            strokeWidth: "stroke.control",
-            text: c("content.primary"),
-            radius: "radius.action",
-            font: "type.button"
-          },
-          "root:hover": { fill: c("action.ghost.hover") },
-          "root:active": { fill: c("action.ghost.pressed") },
-          "root:focus-visible": FOCUS
+          root: { radius: "radius.action", strokeWidth: "stroke.control", font: "type.button", gap: "spacing.gap-control" },
+          icon: { width: "icon.medium", height: "icon.medium" }
         })),
-        part({ Size: ["default", "lg"] }, (size) => ({ root: SOCIAL_GEOMETRY[size] }))
+        part({ Size: SOCIAL_SIZES, IconOnly: ["false", "true"] }, (size, iconOnly) => ({
+          root: iconOnly === "true" ? { ...SOCIAL_GEOMETRY[size], width: SOCIAL_GEOMETRY[size].height, paddingX: "spacing.none" } : { ...SOCIAL_GEOMETRY[size], paddingX: "spacing.inset-control" }
+        })),
+        part({ Appearance: SOCIAL_APPEARANCES, Brand: SOCIAL_BRAND_NAMES, State: SOCIAL_STATES }, socialPaint)
       ]
     };
     APP_STORE_BADGE = {
@@ -9963,33 +9979,6 @@ var init_actions = __esm({
     TOGGLE_GROUP_VARIANTS = ["default", "outline"];
     TOGGLE_GROUP_SIZES = ["default", "sm", "lg"];
     TOGGLE_HEIGHT = { sm: "size.compact", default: "size.control", lg: "size.touch" };
-    TOGGLE_GROUP = {
-      key: "ToggleGroup",
-      slots: ["root", "item"],
-      defaults: { Variant: "default", Size: "default" },
-      parts: [
-        part({}, () => ({
-          root: { gap: "spacing.1" },
-          "item:focus-visible": FOCUS
-        })),
-        part({ Variant: TOGGLE_GROUP_VARIANTS }, (variant) => ({
-          item: variant === "outline" ? {
-            fill: NONE,
-            stroke: c("border.control"),
-            strokeWidth: "stroke.control",
-            text: c("content.secondary"),
-            font: "type.button",
-            radius: "radius.action",
-            gap: "spacing.1"
-          } : { fill: NONE, text: c("content.secondary"), font: "type.button", radius: "radius.action", gap: "spacing.1" },
-          "item:hover": { fill: c("action.ghost.hover"), text: c("content.primary") },
-          'item[data-state="on"]': { fill: c("surface.layer-2"), text: c("content.primary") }
-        })),
-        part({ Size: TOGGLE_GROUP_SIZES }, (size) => ({
-          item: { height: TOGGLE_HEIGHT[size], paddingX: "spacing.2_5" }
-        }))
-      ]
-    };
     TOGGLE = {
       key: "Toggle",
       slots: ["root"],
@@ -10007,6 +9996,85 @@ var init_actions = __esm({
           "root:focus-visible": FOCUS
         }))
       ]
+    };
+  }
+});
+
+// src/lib/recipes/groupLabel.ts
+function groupLabelRecipe(size) {
+  return {
+    minHeight: "size.xs",
+    paddingX: size === "lg" ? "spacing.inset-control" : "spacing.gap-control",
+    paddingY: "spacing.gap-tight",
+    font: "type.caption",
+    text: c("content.secondary")
+  };
+}
+var init_groupLabel = __esm({
+  "src/lib/recipes/groupLabel.ts"() {
+    init_helpers();
+  }
+});
+
+// src/lib/recipes/listItem.ts
+function highlight(variant) {
+  return variant === "destructive" ? { fill: c("status.critical.surface"), focus: c("status.critical.border-strong"), ring: c("status.critical.border") } : { fill: c("surface.muted"), focus: c("border.focus"), ring: c("border.ring.default") };
+}
+function listItemHighlightFill(variant = "default") {
+  return { fill: highlight(variant).fill };
+}
+function listItemRootPaint(state2, variant = "default", metrics) {
+  const h = highlight(variant);
+  switch (state2) {
+    case "Hover":
+      return { fill: h.fill };
+    case "Focused":
+      return metrics?.edge ? { fill: h.fill, stroke: h.focus, halo: h.ring } : { fill: h.fill, focus: h.focus, ring: h.ring };
+    case "Selected":
+      return { fill: c("surface.selected") };
+    default:
+      return { fill: NONE };
+  }
+}
+function listItemInk(variant, disabled) {
+  const label = disabled ? c("content.disabled") : variant === "destructive" ? c("status.critical.content") : c("content.primary");
+  return { label, quiet: disabled ? c("content.disabled") : c("content.secondary") };
+}
+function listItemRecipe(size, state2, variant = "default", opts = {}) {
+  const metrics = (opts.metrics ?? LIST_ITEM_METRICS)[size];
+  const iconSlot = opts.iconSlot ?? "icon";
+  const edge = state2 === "Focused" && metrics.edge;
+  const disabled = state2 === "Disabled";
+  const ink = listItemInk(variant, disabled);
+  const root = {
+    minHeight: metrics.minHeight,
+    radius: opts.radius ?? metrics.radius ?? "radius.action",
+    gap: metrics.gap,
+    paddingX: edge ? `${metrics.paddingX}+${metrics.edge}` : metrics.paddingX,
+    paddingY: edge ? `${metrics.paddingY}+${metrics.edge}` : metrics.paddingY,
+    ...listItemRootPaint(state2, variant, metrics)
+  };
+  if (metrics.edge) root.strokeWidth = edge ? metrics.edge : "stroke.none";
+  return {
+    root,
+    [iconSlot]: { text: ink.label, width: metrics.icon, height: metrics.icon },
+    label: { text: ink.label, font: metrics.label },
+    description: { text: ink.quiet, font: "type.caption" },
+    trailing: { text: ink.quiet, font: "type.caption" },
+    indicator: { text: c("content.accent"), width: metrics.icon, height: metrics.icon },
+    // The Default row also takes the fill while it is the highlighted one: a live
+    // menu / listbox marks it, and no ring comes with it.
+    ...state2 === "Default" ? { "root[data-highlighted]": listItemHighlightFill(variant) } : {}
+  };
+}
+var LIST_ITEM_METRICS;
+var init_listItem = __esm({
+  "src/lib/recipes/listItem.ts"() {
+    init_helpers();
+    LIST_ITEM_METRICS = {
+      sm: { minHeight: "size.xs", paddingX: "spacing.gap-control", paddingY: "spacing.gap-tight", gap: "spacing.gap-tight", icon: "icon.small", label: "type.caption" },
+      default: { minHeight: "size.sm", paddingX: "spacing.gap-control", paddingY: "spacing.gap-tight", gap: "spacing.gap-control", icon: "icon.small", label: "type.body-sm" },
+      lg: { minHeight: "size.md", paddingX: "spacing.inset-control", paddingY: "spacing.gap-tight", gap: "spacing.gap-control", icon: "icon.medium", label: "type.body-md" }
     };
   }
 });
@@ -10153,8 +10221,8 @@ function optionPaint(state2) {
   }
   const ink = c("content.primary");
   const rest = { label: { text: ink }, meta: { text: c("content.subtle") }, icon: { text: ink }, badge: { fill: c("status.success.content") } };
-  if (state2 === "Hover") return { ...rest, root: { fill: c("surface.muted-hover"), strokeWidth: "stroke.none", halo: NONE, text: ink } };
-  if (state2 === "Focused") return { ...rest, root: { fill: c("surface.muted-hover"), stroke: c("border.focus"), strokeWidth: "stroke.control", halo: c("border.ring.default"), text: ink } };
+  if (state2 === "Hover") return { ...rest, root: { fill: c("surface.muted"), strokeWidth: "stroke.none", halo: NONE, text: ink } };
+  if (state2 === "Focused") return { ...rest, root: { fill: c("surface.muted"), stroke: c("border.focus"), strokeWidth: "stroke.control", halo: c("border.ring.default"), text: ink } };
   return { ...rest, root: { fill: c("surface.input"), stroke: c("border.control"), strokeWidth: "stroke.control", halo: NONE, text: ink } };
 }
 function comboboxPaint(state2) {
@@ -10171,34 +10239,6 @@ function comboboxPaint(state2) {
   else if (state2 === "Hover") out.root = { fill: c("surface.input"), stroke: c("border.control-hover") };
   else out.root = { fill: c("surface.input"), stroke: c("border.control") };
   return out;
-}
-function comboboxItemPaint(size, state2) {
-  const g = COMBO_ITEM[size];
-  const edge = state2 === "Focused";
-  const root = {
-    minHeight: g.minH,
-    radius: "radius.control",
-    gap: g.gap,
-    font: g.font,
-    paddingX: edge ? `${g.padX}+stroke.control` : g.padX,
-    paddingY: edge ? "spacing.gap-tight+stroke.control" : "spacing.gap-tight",
-    strokeWidth: edge ? "stroke.control" : "stroke.none"
-  };
-  if (edge) {
-    root.fill = c("surface.muted");
-    root.stroke = c("border.focus");
-    root.halo = c("border.ring.default");
-  } else if (state2 === "Selected") root.fill = c("surface.selected");
-  const disabled = state2 === "Disabled";
-  const ink = (role) => ({ text: c(disabled ? "content.disabled" : role) });
-  return {
-    root,
-    icon: { ...ink("content.primary"), width: g.icon, height: g.icon },
-    label: ink("content.primary"),
-    description: { ...ink("content.secondary"), font: "type.caption" },
-    trailing: { ...ink("content.subtle"), font: "type.caption" },
-    indicator: { text: c("content.accent"), width: g.icon, height: g.icon }
-  };
 }
 function otpSlotRoot(variant, state2) {
   const underline = variant === "underline";
@@ -10239,11 +10279,12 @@ function switchPaint(checked, state2) {
   const track2 = disabled ? on ? "action.disabled.default" : "surface.muted" : on ? hover ? "action.primary.hover" : "action.primary.default" : hover ? "surface.muted-hover" : "surface.muted";
   return {
     root: { fill: c(track2), focus: focused ? c("border.focus") : NONE, ring: focused ? c("border.ring.default") : NONE },
-    thumb: { fill: c(on && !disabled ? "content.on-action" : "surface.input") },
-    // The I / O marks: a ring (off) or a bar (on), drawn in the thumb's opposite half.
-    io: { text: c(on ? disabled ? "surface.input" : "content.on-action" : disabled ? "content.disabled" : "content.subtle") },
-    // The glyph on the thumb (not drawn in any variant of the file, which hides it).
-    thumbIcon: { text: c(disabled ? "content.disabled" : on ? "action.primary.default" : "content.subtle") }
+    // Thumb (DEC-2026-11-16-003): on = ink of the solid track; off = `content.secondary` (the old
+    // `surface.input` thumb read 1.28:1 on the muted track); disabled, on or off = `content.disabled`.
+    thumb: { fill: c(disabled ? "content.disabled" : on ? "content.on-action" : "content.secondary") },
+    // The I / O marks and the glyph on the thumb take the TRACK's role, so they read as a cut-out of the thumb.
+    io: { text: c(track2) },
+    thumbIcon: { text: c(track2) }
   };
 }
 function sliderThumbPaint(variant, state2) {
@@ -10289,16 +10330,12 @@ function fileUploadDropzonePaint(state2) {
     description: ink("content.secondary")
   };
 }
-var FIELD_FIXED, INPUT_STATES, INPUT_SIZES, INPUT_TYPES, INPUT_GEOMETRY, INPUT_GLYPH, INPUT_STROKE_IN_LAYOUT, INPUT, TEXTAREA_SIZES, TEXTAREA_STATES, TEXTAREA_HEIGHT, TEXTAREA_PAD, TEXTAREA_FONT, TEXTAREA_GLYPH, TEXTAREA, DATE_PICKER_TRIGGER_SIZES, DATE_PICKER_TRIGGER_STATES, DPT_GEOMETRY, DATE_PICKER_TRIGGER, DATE_PICKER_POPOVER, CALENDAR_DAY_SIZES, CALENDAR_DAY_STATES, CALENDAR_DAY_VARIANTS, CALENDAR_DAY_GEOMETRY, CALENDAR_DAY, CALENDAR_HEADER_SIZES, CALENDAR_HEADER_GEOMETRY, SEVEN, CALENDAR_HEADER, CALENDAR_MONTH, CALENDAR_PRESETS_SIZES, CALENDAR_PRESETS_VARIANTS, CALENDAR_PRESETS_GEOMETRY, CALENDAR_PRESETS, CALENDAR_FOOTER_SIZES, CALENDAR_FOOTER_GEOMETRY, CALENDAR_FOOTER, GROUP_LIVE, GROUP_CONTROL, INPUT_GROUP, NUMBER_INPUT_SIZES, NUMBER_INPUT_STATES, NUMBER_BOX, NUMBER_INPUT, INPUT_TAG_LAYOUTS, INPUT_TAG_SIZES, INPUT_TAG_STATES, TAG_BOX, INPUT_TAG, INPUT_TAG_CHIP_SIZES, INPUT_TAG_CHIP_STATES, INPUT_TAG_CHIP_VARIANTS, CHIP_GEOMETRY, INPUT_TAG_CHIP, INPUT_TAG_OPTION_STATES, INPUT_TAG_OPTION, SELECT_GEOMETRY, MENU_ITEM, MENU_CONTENT, SELECT, COMBOBOX_SIZES, COMBOBOX_STATES, COMBOBOX_SHAPES, COMBOBOX_ITEM_STATES, COMBO_TRIGGER, COMBOBOX, POPOVER_SIZE, COMBOBOX_POPOVER, COMBO_ITEM, COMBOBOX_ITEM, GROUP_LABEL2, COMBOBOX_GROUP_LABEL, INPUT_OTP_SIZES, INPUT_OTP_VARIANTS, INPUT_OTP_STATES, INPUT_OTP_SLOT_STATES, INPUT_OTP, OTP_SLOT_BOX, OTP_SLOT_FONT, OTP_CARET, INPUT_OTP_SLOT, CHECKBOX_SIZES, CHECKBOX_CHECKED, CHECKBOX_STATES, CHECKBOX_VARIANTS, CHECKBOX_ON, CHECKBOX, CHECKBOX_ITEM_SIZES, CHECKBOX_ITEM_STATES, CHECKBOX_ITEM_TYPE, CHECKBOX_ITEM, CHECKBOX_GROUP_STATES, CHECKBOX_GROUP, RADIO_GROUP, SWITCH_SIZES, SWITCH_STATES, SWITCH_CHECKED, SWITCH_THUMBS, SWITCH_GEOMETRY, SWITCH, SWITCH_GROUP_SIZES, SWITCH_GROUP_STATES, SWITCH_GROUP_TYPE, SWITCH_GROUP, SLIDER_SIZES, SLIDER_THUMB_STATES, SLIDER_STATES, SLIDER_VARIANTS, SLIDER_THUMB_PX, SLIDER_THUMB_EDGE, SLIDER_THUMB, SLIDER_CONTROL, SLIDER, FIELD_STATES, FIELD, LABEL, PASSWORD_STRENGTH_SIZES, PASSWORD_STRENGTHS, STRENGTH_SEGMENT, STRENGTH_LEVEL, PASSWORD_STRENGTH, METER_HEIGHT, PASSWORD_STRENGTH_METER, RULE_ICON, RULE_MARKER, RULE_FONT, PASSWORD_STRENGTH_RULE, FILE_UPLOAD_SIZES, FILE_UPLOAD, FILE_UPLOAD_DROPZONE_SIZES, FILE_UPLOAD_DROPZONE_STATES, FUD_GEOMETRY, FILE_UPLOAD_DROPZONE, FILE_UPLOAD_ITEM_SIZES, FILE_UPLOAD_ITEM_STATUSES, FILE_UPLOAD_ITEM, NATIVE_SELECT_STATES, NATIVE_SELECT, CALENDAR_SIZES, CALENDAR;
+var INPUT_STATES, INPUT_SIZES, INPUT_TYPES, INPUT_GEOMETRY, INPUT_GLYPH, INPUT_STROKE_IN_LAYOUT, INPUT, TEXTAREA_SIZES, TEXTAREA_STATES, TEXTAREA_HEIGHT, TEXTAREA_PAD, TEXTAREA_FONT, TEXTAREA_GLYPH, TEXTAREA, DATE_PICKER_TRIGGER_SIZES, DATE_PICKER_TRIGGER_STATES, DPT_GEOMETRY, DATE_PICKER_TRIGGER, DATE_PICKER_POPOVER, CALENDAR_DAY_SIZES, CALENDAR_DAY_STATES, CALENDAR_DAY_VARIANTS, CALENDAR_DAY_GEOMETRY, CALENDAR_DAY, CALENDAR_HEADER_SIZES, CALENDAR_HEADER_GEOMETRY, SEVEN, CALENDAR_HEADER, CALENDAR_MONTH, CALENDAR_PRESETS_SIZES, CALENDAR_PRESETS_VARIANTS, CALENDAR_PRESETS_GEOMETRY, CALENDAR_PRESETS, CALENDAR_FOOTER_SIZES, CALENDAR_FOOTER_GEOMETRY, CALENDAR_FOOTER, GROUP_LIVE, GROUP_CONTROL, INPUT_GROUP, NUMBER_INPUT_SIZES, NUMBER_INPUT_STATES, NUMBER_BOX, NUMBER_INPUT, INPUT_TAG_LAYOUTS, INPUT_TAG_SIZES, INPUT_TAG_STATES, TAG_BOX, INPUT_TAG, INPUT_TAG_CHIP_SIZES, INPUT_TAG_CHIP_STATES, INPUT_TAG_CHIP_VARIANTS, CHIP_GEOMETRY, INPUT_TAG_CHIP, INPUT_TAG_OPTION_STATES, INPUT_TAG_OPTION, COMBOBOX_SIZES, COMBOBOX_STATES, COMBOBOX_SHAPES, COMBOBOX_ITEM_STATES, COMBO_TRIGGER, COMBOBOX, POPOVER_SIZE, COMBOBOX_POPOVER, COMBO_ITEM, COMBOBOX_ITEM, COMBOBOX_GROUP_LABEL, INPUT_OTP_SIZES, INPUT_OTP_VARIANTS, INPUT_OTP_STATES, INPUT_OTP_SLOT_STATES, INPUT_OTP, OTP_SLOT_BOX, OTP_SLOT_FONT, OTP_CARET, INPUT_OTP_SLOT, CHECKBOX_SIZES, CHECKBOX_CHECKED, CHECKBOX_STATES, CHECKBOX_VARIANTS, CHECKBOX_ON, CHECKBOX, CHECKBOX_ITEM_SIZES, CHECKBOX_ITEM_STATES, CHECKBOX_ITEM_TYPE, CHECKBOX_ITEM, CHECKBOX_GROUP_STATES, CHECKBOX_GROUP, RADIO_GROUP, SWITCH_SIZES, SWITCH_STATES, SWITCH_CHECKED, SWITCH_THUMBS, SWITCH_GEOMETRY, SWITCH, SWITCH_GROUP_SIZES, SWITCH_GROUP_STATES, SWITCH_GROUP_TYPE, SWITCH_GROUP, SLIDER_SIZES, SLIDER_THUMB_STATES, SLIDER_STATES, SLIDER_VARIANTS, SLIDER_THUMB_PX, SLIDER_THUMB_EDGE, SLIDER_THUMB, SLIDER_CONTROL, SLIDER, FIELD_STATES, FIELD, LABEL, PASSWORD_STRENGTH_SIZES, PASSWORD_STRENGTHS, STRENGTH_SEGMENT, STRENGTH_LEVEL, PASSWORD_STRENGTH, METER_HEIGHT, PASSWORD_STRENGTH_METER, RULE_ICON, RULE_MARKER, RULE_FONT, PASSWORD_STRENGTH_RULE, FILE_UPLOAD_SIZES, FILE_UPLOAD, FILE_UPLOAD_DROPZONE_SIZES, FILE_UPLOAD_DROPZONE_STATES, FUD_GEOMETRY, FILE_UPLOAD_DROPZONE, FILE_UPLOAD_ITEM_SIZES, FILE_UPLOAD_ITEM_STATUSES, FILE_UPLOAD_ITEM, CALENDAR_SIZES, CALENDAR;
 var init_forms = __esm({
   "src/lib/recipes/forms.ts"() {
+    init_groupLabel();
+    init_listItem();
     init_helpers();
-    FIELD_FIXED = {
-      radius: "radius.action",
-      strokeWidth: "stroke.control",
-      paddingX: "spacing.inset-control",
-      gap: "spacing.gap-control"
-    };
     INPUT_STATES = ["Default", "Hover", "Focused", "Invalid", "Disabled"];
     INPUT_SIZES = ["default", "sm", "lg"];
     INPUT_TYPES = [
@@ -10672,10 +10709,10 @@ var init_forms = __esm({
         part({}, () => ({
           root: {
             height: "size.compact",
-            radius: "radius.control",
+            radius: "radius.action",
             paddingX: "spacing.gap-control",
             gap: "spacing.gap-control",
-            font: "type.body-md"
+            font: "type.body-sm"
           },
           badge: { width: "spacing.2", height: "spacing.2", radius: "radius.pill" },
           icon: { width: "spacing.3+spacing.0_5", height: "spacing.3+spacing.0_5" },
@@ -10684,47 +10721,10 @@ var init_forms = __esm({
         part({ State: INPUT_TAG_OPTION_STATES }, (state2) => optionPaint(state2))
       ]
     };
-    SELECT_GEOMETRY = { default: "size.control", sm: "size.compact" };
-    MENU_ITEM = {
-      item: { text: c("content.primary"), font: "type.body-sm", radius: PANEL_ROW_RADIUS, paddingX: "spacing.2_5", paddingY: "spacing.1_5", gap: "spacing.2" },
-      "item[data-highlighted]": { fill: c("action.ghost.hover") },
-      'item[data-state="checked"]': { fill: c("surface.selected"), text: c("content.accent") },
-      "item[data-disabled]": { text: c("content.disabled") }
-    };
-    MENU_CONTENT = {
-      fill: c("surface.layer-2"),
-      stroke: c("border.subtle"),
-      strokeWidth: "stroke.control",
-      radius: PANEL_RADIUS,
-      shadow: "shadow.lg",
-      paddingX: "spacing.1",
-      paddingY: "spacing.1"
-    };
-    SELECT = {
-      key: "Select",
-      slots: ["root", "icon", "content", "item"],
-      // Radix portals the list: it is a sibling of the trigger, not inside it.
-      detachedSlots: ["content", "item"],
-      defaults: { Size: "default", State: "Default" },
-      parts: [
-        part({}, () => ({
-          root: { ...FIELD_FIXED, font: "type.placeholder", text: c("content.primary") },
-          "root[data-placeholder]": { text: c("content.subtle") },
-          icon: { text: c("content.secondary") },
-          content: MENU_CONTENT,
-          ...MENU_ITEM
-        })),
-        part({ Size: ["default", "sm"] }, (size) => ({ root: { height: SELECT_GEOMETRY[size] } })),
-        part({ State: ["Default", "Hover", "Focused", "Error", "Disabled"] }, (state2) => ({
-          root: { ...fieldBox(state2), ...state2 === "Disabled" ? { text: c("content.disabled") } : {} },
-          icon: { text: c(state2 === "Disabled" ? "content.disabled" : "content.secondary") }
-        }))
-      ]
-    };
     COMBOBOX_SIZES = ["sm", "default", "lg"];
     COMBOBOX_STATES = ["Default", "Hover", "Focused", "Open", "Invalid", "Disabled", "Loading"];
     COMBOBOX_SHAPES = ["rounded", "pill"];
-    COMBOBOX_ITEM_STATES = ["Default", "Focused", "Selected", "Disabled"];
+    COMBOBOX_ITEM_STATES = ["Default", "Hover", "Focused", "Selected", "Disabled"];
     COMBO_TRIGGER = {
       sm: { h: "size.compact", padX: "spacing.gap-control", gap: "spacing.1_5", icon: "spacing.3+spacing.0_5", font: "type.caption" },
       default: { h: "size.control", padX: "spacing.2_5", gap: "spacing.1_5", icon: "icon.small", font: "type.body-sm" },
@@ -10750,9 +10750,9 @@ var init_forms = __esm({
       ]
     };
     POPOVER_SIZE = {
-      sm: { padX: "spacing.gap-control", empty: "type.caption" },
-      default: { padX: "spacing.gap-control", empty: "type.body-sm" },
-      lg: { padX: "spacing.2_5", empty: "type.body-sm" }
+      sm: { padX: "spacing.inset-control", empty: "type.caption" },
+      default: { padX: "spacing.inset-control", empty: "type.body-sm" },
+      lg: { padX: "spacing.inset-control", empty: "type.body-sm" }
     };
     COMBOBOX_POPOVER = {
       key: "ComboboxPopover",
@@ -10768,7 +10768,10 @@ var init_forms = __esm({
             shadow: "shadow.md",
             text: c("content.primary")
           },
-          list: { paddingX: "spacing.gap-tight", paddingY: "spacing.gap-tight" },
+          // Concentric with the overlay: 24 − inset-control 12 = Radius/action 12 for the rows (DEC-2026-11-16-001).
+          list: { paddingX: "spacing.inset-control", paddingY: "spacing.inset-control" },
+          // Under a search header the list starts gap-tight below it (the file's country picker: search, 4, rows).
+          "list[data-after-header]": { paddingTop: "spacing.gap-tight" },
           separator: { paddingY: "spacing.gap-tight" },
           line: { height: "stroke.divider", fill: c("border.subtle") },
           empty: { paddingX: "spacing.inset-control", paddingY: "spacing.inset-control", text: c("content.secondary") },
@@ -10787,32 +10790,25 @@ var init_forms = __esm({
       ]
     };
     COMBO_ITEM = {
-      sm: { minH: "spacing.6+spacing.1", padX: "spacing.gap-control", gap: "spacing.1_5", icon: "spacing.3+spacing.0_5", font: "type.caption" },
-      default: { minH: "size.compact", padX: "spacing.gap-control", gap: "spacing.gap-control", icon: "icon.small", font: "type.body-sm" },
-      lg: { minH: "spacing.8+spacing.1", padX: "spacing.2_5", gap: "spacing.gap-control", icon: "spacing.4+spacing.0_5", font: "type.body-md" }
+      sm: { minHeight: "spacing.6+spacing.1", paddingX: "spacing.gap-control", paddingY: "spacing.gap-tight", gap: "spacing.1_5", icon: "spacing.3+spacing.0_5", label: "type.caption", edge: "stroke.control" },
+      default: { minHeight: "size.compact", paddingX: "spacing.gap-control", paddingY: "spacing.gap-tight", gap: "spacing.gap-control", icon: "icon.small", label: "type.body-sm", edge: "stroke.control" },
+      lg: { minHeight: "spacing.8+spacing.1", paddingX: "spacing.inset-control", paddingY: "spacing.gap-tight", gap: "spacing.gap-control", icon: "spacing.4+spacing.0_5", label: "type.body-md", edge: "stroke.control" }
     };
     COMBOBOX_ITEM = {
       key: "ComboboxItem",
+      hover: "highlight",
       slots: ["root", "icon", "text", "label", "description", "trailing", "indicator"],
       defaults: { Size: "default", State: "Default" },
       parts: [
-        part({ Size: COMBOBOX_SIZES, State: COMBOBOX_ITEM_STATES }, (size, state2) => comboboxItemPaint(size, state2))
+        part({ Size: COMBOBOX_SIZES, State: COMBOBOX_ITEM_STATES }, (size, state2) => listItemRecipe(size, state2, "default", { metrics: COMBO_ITEM }))
       ]
-    };
-    GROUP_LABEL2 = {
-      sm: { minH: "size.hit", padX: "spacing.gap-control", font: "type.caption" },
-      default: { minH: "spacing.6+spacing.1", padX: "spacing.gap-control", font: "type.label" },
-      lg: { minH: "spacing.6+spacing.1", padX: "spacing.2_5", font: "type.label" }
     };
     COMBOBOX_GROUP_LABEL = {
       key: "ComboboxGroupLabel",
       slots: ["root"],
       defaults: { Size: "default" },
       parts: [
-        part({ Size: COMBOBOX_SIZES }, (size) => {
-          const g = GROUP_LABEL2[size];
-          return { root: { minHeight: g.minH, paddingX: g.padX, paddingY: "spacing.gap-tight", font: g.font, text: c("content.secondary") } };
-        })
+        part({ Size: COMBOBOX_SIZES }, (size) => ({ root: groupLabelRecipe(size) }))
       ]
     };
     INPUT_OTP_SIZES = ["sm", "default", "lg"];
@@ -11088,7 +11084,7 @@ var init_forms = __esm({
     FIELD_STATES = ["Default", "Invalid", "Disabled"];
     FIELD = {
       key: "Field",
-      slots: ["root", "labelRow", "label", "required", "description", "error", "legend"],
+      slots: ["root", "labelRow", "label", "required", "description", "errorRegion", "error", "legend"],
       defaults: { Size: "default", State: "Default" },
       parts: [
         part({}, () => ({
@@ -11262,25 +11258,6 @@ var init_forms = __esm({
         })
       ]
     };
-    NATIVE_SELECT_STATES = ["Default", "Hover", "Focused", "Disabled"];
-    NATIVE_SELECT = {
-      key: "NativeSelect",
-      slots: ["root", "select", "icon"],
-      defaults: { Size: "default", State: "Default" },
-      parts: [
-        part({}, () => ({
-          select: { ...FIELD_FIXED, font: "type.placeholder" }
-        })),
-        part({ Size: ["default", "sm"] }, (size) => ({ select: { height: SELECT_GEOMETRY[size] } })),
-        part({ State: NATIVE_SELECT_STATES }, (state2) => {
-          const disabled = state2 === "Disabled";
-          return {
-            select: { ...fieldBox(state2), text: c(disabled ? "content.disabled" : "content.primary") },
-            icon: { text: c(disabled ? "content.disabled" : "content.secondary") }
-          };
-        })
-      ]
-    };
     CALENDAR_SIZES = ["default", "sm"];
     CALENDAR = {
       key: "Calendar",
@@ -11305,7 +11282,7 @@ function accordionItemShell(variant, state2) {
   const open = state2 === "Open";
   switch (variant) {
     case "ghost-underline":
-      return { fill: NONE, stroke: c("border.default"), strokeBottomWidth: "stroke.divider" };
+      return { fill: NONE, stroke: c(state2 === "Disabled" ? "border.subtle" : "border.default"), strokeBottomWidth: "stroke.divider" };
     case "ghost-rounded":
       return { fill: open ? c("surface.muted") : NONE, radius: "radius.container" };
     case "outline-rounded":
@@ -11336,7 +11313,7 @@ function tooltipTriggerInk(variant, state2) {
       return hot ? "action.primary.hover" : "action.primary.default";
   }
 }
-var CARD, OVERLAY_TITLE, MODAL_SIZES, MODAL, MODAL_HEADER, MODAL_FOOTER, SEPARATOR_ORIENTATIONS, SEPARATOR_TONES, SEPARATOR, ACCORDION_VARIANTS, ACCORDION_ITEM_STATES, ACCORDION, ACCORDION_ITEM, IMAGE_RATIOS, IMAGE_SHAPES, IMAGE, POPOVER_SIZES, POPOVER, POPOVER_FOOTER, TOOLTIP_SIZES, TOOLTIP_VARIANTS, TOOLTIP_TRIGGER_STATES, TOOLTIP_TONE, TOOLTIP_CONTENT, TOOLTIP_INFO_TRIGGER, SCROLL_AREA_SIZES, SCROLL_BAR_ORIENTATIONS, SCROLL_APPEARANCES, SCROLL_AREA, SCROLL_BAR_THICKNESS, SCROLL_BAR, COLLAPSIBLE, ALERT_DIALOG, SHEET, DRAWER, HOVER_CARD, ITEM_VARIANTS, ITEM_SIZES, ITEM_GEOMETRY2, ITEM_DESCRIPTION, ITEM_CONTENT_GAP, ITEM_MEDIA, ITEM, ATTACHMENT_SIZES, ATTACHMENT_GEOMETRY, ATTACHMENT_MEDIA, ATTACHMENT, MESSAGE, BUBBLE_VARIANTS, BUBBLE_PAINT, BUBBLE, RESIZABLE, CAROUSEL, CHART;
+var CARD, OVERLAY_TITLE, MODAL_SIZES, MODAL, MODAL_HEADER, MODAL_FOOTER, SEPARATOR_ORIENTATIONS, SEPARATOR_TONES, SEPARATOR, ACCORDION_VARIANTS, ACCORDION_ITEM_STATES, ACCORDION, ACCORDION_ITEM, IMAGE_RATIOS, IMAGE_SHAPES, IMAGE, POPOVER_SIZES, POPOVER, POPOVER_FOOTER, TOOLTIP_SIZES, TOOLTIP_VARIANTS, TOOLTIP_TRIGGER_STATES, TOOLTIP_TONE, TOOLTIP_CONTENT, TOOLTIP_INFO_TRIGGER, SCROLL_AREA_SIZES, SCROLL_BAR_ORIENTATIONS, SCROLL_APPEARANCES, SCROLL_AREA, SCROLL_BAR_THICKNESS, SCROLL_BAR, COLLAPSIBLE, ALERT_DIALOG, SHEET_SIDES, SHEET, DRAWER, HOVER_CARD, ITEM_VARIANTS, ITEM_SIZES, ITEM_GEOMETRY2, ITEM_DESCRIPTION, ITEM_CONTENT_GAP, ITEM_MEDIA, ITEM, ATTACHMENT_SIZES, ATTACHMENT_GEOMETRY, ATTACHMENT_MEDIA, ATTACHMENT, MESSAGE, BUBBLE_VARIANTS, BUBBLE_PAINT, BUBBLE, RESIZABLE, CAROUSEL, CHART;
 var init_surfaces = __esm({
   "src/lib/recipes/surfaces.ts"() {
     init_helpers();
@@ -11405,7 +11382,9 @@ var init_surfaces = __esm({
         })),
         part({ Size: MODAL_SIZES }, (size) => ({
           title: { font: size === "lg" ? "type.heading-md" : "type.heading-sm" },
-          description: { font: size === "lg" ? "type.body-md" : "type.body-sm" },
+          // The file's ModalHeader set draws the description at Type/body-md in BOTH sizes (header 53 / 58 tall; it was body-sm at
+          // default when the Modal was first built, 2026-11-13).
+          description: { font: "type.body-md" },
           clearance: size === "lg" ? { width: "size.md", height: "size.md" } : { width: "size.sm", height: "size.sm" }
         }))
       ]
@@ -11461,7 +11440,8 @@ var init_surfaces = __esm({
         part({}, () => ({
           trigger: { paddingY: "spacing.inset-surface", gap: "spacing.gap-group" },
           icon: { width: "icon.medium", height: "icon.medium", text: c("content.secondary") },
-          label: { font: "type.label", text: c("content.primary") },
+          // Figma binds the trigger label to the `heading-2xs` role (16/25), not `label` (comment 2007003612, 2026-11-16).
+          label: { font: "type.heading-2xs", text: c("content.primary") },
           chevron: { width: "icon.medium", height: "icon.medium", text: c("content.secondary") },
           content: { font: "type.body-md", text: c("content.secondary"), paddingBottom: "spacing.inset-surface" }
         })),
@@ -11524,8 +11504,8 @@ var init_surfaces = __esm({
       parts: [
         part({}, () => ({
           root: {
-            paddingX: "spacing.gap-control",
-            paddingY: "spacing.gap-control",
+            paddingX: "spacing.inset-control",
+            paddingY: "spacing.inset-control",
             gap: "spacing.gap-control",
             stroke: c("border.subtle"),
             strokeTopWidth: "stroke.divider"
@@ -11550,7 +11530,11 @@ var init_surfaces = __esm({
       slots: ["root", "bubble", "title", "text", "arrow"],
       defaults: { Size: "default", Variant: "default" },
       parts: [
-        part({}, () => ({ bubble: { radius: "radius.overlay", gap: "spacing.0_5", lift: "popover-md" }, title: { font: "type.label" } })),
+        part({}, () => ({
+          // A bubble stays a soft square on Radius/action (12): overlay (24) would turn it into a pill (DEC-2026-11-16-002).
+          bubble: { radius: "radius.action", gap: "spacing.0_5", lift: "popover-md" },
+          title: { font: "type.label" }
+        })),
         part({ Size: TOOLTIP_SIZES }, (size) => ({
           bubble: size === "sm" ? { paddingX: "spacing.2", paddingY: "spacing.1_5" } : size === "lg" ? { paddingX: "spacing.3", paddingY: "spacing.2_5" } : { paddingX: "spacing.2_5", paddingY: "spacing.2" },
           text: { font: size === "sm" ? "type.caption" : size === "lg" ? "type.body-md" : "type.body-sm" }
@@ -11666,27 +11650,28 @@ var init_surfaces = __esm({
         }))
       ]
     };
+    SHEET_SIDES = ["right", "left", "bottom"];
     SHEET = {
       key: "Sheet",
-      slots: ["content", "overlay", "header", "title", "description", "footer"],
+      slots: ["content", "overlay", "main", "body", "grabber", "handle", "close"],
       detachedSlots: ["overlay"],
-      defaults: {},
+      defaults: { Side: "right" },
       parts: [
         part({}, () => ({
           overlay: { fill: c("surface.overlay") },
-          content: {
-            fill: c("surface.layer-2"),
-            stroke: c("border.subtle"),
-            strokeWidth: "stroke.control",
-            shadow: "shadow.lg",
-            gap: "spacing.4",
-            text: c("content.primary")
-          },
-          header: { gap: "spacing.0_5", paddingX: "spacing.4", paddingY: "spacing.4" },
-          title: { text: c("content.primary"), font: OVERLAY_TITLE },
-          description: { text: c("content.secondary"), font: "type.body-sm" },
-          footer: { gap: "spacing.2", paddingX: "spacing.4", paddingY: "spacing.4" }
-        }))
+          content: { fill: c("surface.layer-2"), stroke: c("border.default"), lift: "sheet" },
+          main: { paddingX: "spacing.inset-surface", paddingY: "spacing.inset-surface", gap: "spacing.gap-group" },
+          body: { gap: "spacing.gap-group", text: c("content.secondary"), font: "type.body-md" },
+          // The grabber: 8 above a 40 x 4 bar (fixed geometry, no role: the spacing steps 10 and 1).
+          grabber: { paddingTop: "spacing.gap-control" },
+          handle: { fill: c("border.strong"), radius: "radius.pill", width: "spacing.10", height: "spacing.1" }
+        })),
+        part({ Side: SHEET_SIDES }, (side) => {
+          const edge = { width: "spacing.32+spacing.32+spacing.32+spacing.4", minWidth: "spacing.32+spacing.32+spacing.16", maxWidth: "spacing.32+spacing.32+spacing.32+spacing.24" };
+          if (side === "right") return { content: { ...edge, strokeLeftWidth: "stroke.divider", radiusLeft: "radius.overlay" } };
+          if (side === "left") return { content: { ...edge, strokeRightWidth: "stroke.divider", radiusRight: "radius.overlay" } };
+          return { content: { strokeTopWidth: "stroke.divider", radiusTop: "radius.overlay" } };
+        })
       ]
     };
     DRAWER = {
@@ -11919,11 +11904,11 @@ function tabMenuItemPaint(state2, line) {
 }
 function segmentPaint(checked, state2) {
   const on = checked === "true";
-  if (state2 === "Disabled") return { root: { fill: on ? c("surface.input") : NONE, text: c("content.disabled"), radius: on ? "radius.control" : "radius.action", ...on ? { highlight: NONE } : {} } };
+  if (state2 === "Disabled") return { root: { fill: on ? c("surface.input") : NONE, text: c("content.disabled"), radius: "radius.item", ...on ? { highlight: NONE } : {} } };
   const focus = state2 === "Focused" ? { focus: c("border.focus"), ring: c("border.ring.default") } : {};
-  if (on) return { root: { fill: c("surface.input"), text: c("content.primary"), radius: "radius.control", shadow: "shadow.xs", ...focus } };
+  if (on) return { root: { fill: c("surface.input"), text: c("content.primary"), radius: "radius.item", shadow: "shadow.xs", ...focus } };
   const fill = state2 === "Hover" ? c("action.ghost.hover") : state2 === "Pressed" ? c("action.ghost.pressed") : NONE;
-  return { root: { fill, text: c(state2 === "Hover" || state2 === "Pressed" ? "content.primary" : "content.secondary"), radius: "radius.action", ...focus } };
+  return { root: { fill, text: c(state2 === "Hover" || state2 === "Pressed" ? "content.primary" : "content.secondary"), radius: "radius.item", ...focus } };
 }
 function breadcrumbPaint(variant, appearance, state2) {
   const secondary = variant === "secondary";
@@ -11943,75 +11928,15 @@ function breadcrumbPaint(variant, appearance, state2) {
   }
   return root;
 }
-function menu(key2) {
-  const slots = {
-    root: {
-      fill: c("surface.layer-2"),
-      stroke: c("border.subtle"),
-      strokeWidth: "stroke.control",
-      radius: MENU_PANEL_RADIUS,
-      shadow: "shadow.lg",
-      paddingX: "spacing.1",
-      paddingY: "spacing.1"
-    },
-    item: {
-      text: c("content.primary"),
-      font: "type.body-sm",
-      radius: PANEL_ROW_RADIUS,
-      paddingX: "spacing.2_5",
-      paddingY: "spacing.1_5",
-      gap: "spacing.2_5"
-    },
-    "item[data-highlighted]": { fill: c("action.ghost.hover") },
-    "item:hover": { fill: c("action.ghost.hover") },
-    'item[data-variant="destructive"]': { text: c("status.critical.content") },
-    "item[data-disabled]": { text: c("content.disabled") },
-    separator: { fill: c("border.subtle"), height: "stroke.divider" },
-    shortcut: { text: c("content.subtle"), font: "type.caption" }
-  };
-  return { key: key2, slots: ["root", "item", "separator", "shortcut"], defaults: {}, parts: [part({}, () => slots)] };
-}
-function dropdownItemPaint(variant, state2) {
-  const destructive = variant === "destructive";
-  switch (state2) {
-    case "Focused":
-      return destructive ? { fill: c("status.critical.surface"), focus: c("status.critical.border-strong"), ring: c("status.critical.border") } : { fill: c("surface.muted"), focus: c("border.focus"), ring: c("border.ring.default") };
-    case "Selected":
-      return { fill: c("surface.selected") };
-    case "Disabled":
-      return { fill: NONE };
-    default:
-      return { fill: NONE };
-  }
-}
-var TABS, TAB_MENU_SIZES, TAB_MENU_VARIANTS, TAB_MENU_ITEM_STATES, TAB_MENU_INDICATORS, TAB_MENU, tabMenuSizeSlots, TAB_MENU_ITEM, TAB_MENU_LINE_ITEM, NAV_ITEM_SIZES, NAV_ITEM_STATES, NAV_ITEM, BRAND_SIZES, BRAND, ACCOUNT_MENU_TRIGGER_SIZES, ACCOUNT_MENU_TRIGGER_STATES, ACCOUNT_MENU_TRIGGER, SEGMENTED_CONTROL_SIZES, SEGMENTED_CONTROL, SEGMENTED_CONTROL_ITEM_STATES, SEGMENT_ITEM, SEGMENTED_CONTROL_ITEM, BREADCRUMB_SIZES, BREADCRUMB_APPEARANCES, BREADCRUMB_SEPARATORS, BREADCRUMB_VARIANTS, BREADCRUMB_ITEM_STATES, BREADCRUMB_ELLIPSIS_STATES, BREADCRUMB, BREADCRUMB_ITEM, BREADCRUMB_ELLIPSIS, BREADCRUMB_SEPARATOR, PAGINATION_SIZES, PAGINATION_VARIANTS, PAGINATION_LINK_STATES, PAGINATION_LINK_ACTIVE, paginationBox, paginationIcon, PAGINATION, PAGINATION_LINK, PAGINATION_ELLIPSIS, STEPPER_SIZES, STEPPER_ORIENTATIONS, STEPPER_STATUSES, STEPPER_STATES, stepperBox, STEPPER, STEPPER_ITEM, STEPPER_INDICATOR, STEPPER_ICON, MENU_PANEL_RADIUS, DROPDOWN_SIZES, DROPDOWN_ITEM_STATES, DROPDOWN_ITEM_VARIANTS, DROPDOWN_MENU, DROPDOWN_MENU_LABEL, DROPDOWN_MENU_ITEM, DROPDOWN_MENU_FOOTER, CONTEXT_MENU, COMMAND, NAVBAR, SIDEBAR, MENUBAR, NAVIGATION_MENU;
+var TAB_MENU_SIZES, TAB_MENU_VARIANTS, TAB_MENU_ITEM_STATES, TAB_MENU_INDICATORS, TAB_MENU, tabMenuSizeSlots, TAB_MENU_ITEM, TAB_MENU_LINE_ITEM, NAV_ITEM_SIZES, NAV_ITEM_STATES, NAV_ITEM, BRAND_SIZES, BRAND, ACCOUNT_MENU_TRIGGER_SIZES, ACCOUNT_MENU_TRIGGER_STATES, ACCOUNT_MENU_TRIGGER, SEGMENTED_CONTROL_SIZES, SEGMENTED_CONTROL, SEGMENTED_CONTROL_ITEM_STATES, SEGMENT_ITEM, SEGMENTED_CONTROL_ITEM, BREADCRUMB_SIZES, BREADCRUMB_APPEARANCES, BREADCRUMB_SEPARATORS, BREADCRUMB_VARIANTS, BREADCRUMB_ITEM_STATES, BREADCRUMB_ELLIPSIS_STATES, BREADCRUMB, BREADCRUMB_ITEM, BREADCRUMB_ELLIPSIS, BREADCRUMB_SEPARATOR, PAGINATION_SIZES, PAGINATION_VARIANTS, PAGINATION_LINK_STATES, PAGINATION_LINK_ACTIVE, paginationBox, paginationIcon, PAGINATION, PAGINATION_LINK, PAGINATION_ELLIPSIS, STEPPER_SIZES, STEPPER_ORIENTATIONS, STEPPER_STATUSES, STEPPER_STATES, stepperBox, STEPPER, STEPPER_ITEM, STEPPER_INDICATOR, STEPPER_ICON, DROPDOWN_SIZES, DROPDOWN_ITEM_STATES, DROPDOWN_ITEM_VARIANTS, DROPDOWN_MENU, DROPDOWN_MENU_LABEL, DROPDOWN_MENU_ITEM, DROPDOWN_MENU_FOOTER, COMMAND, NAVBAR, SIDEBAR_COLLAPSED, SIDEBAR_SIZES, SIDEBAR_MENU_BUTTON_STATES, SIDEBAR, SIDEBAR_BRAND, SIDEBAR_GROUP, SIDEBAR_GROUP_LABEL, SIDEBAR_MENU_BUTTON, NAVIGATION_MENU;
 var init_navigation = __esm({
   "src/lib/recipes/navigation.ts"() {
+    init_groupLabel();
+    init_listItem();
     init_helpers();
-    TABS = {
-      key: "Tabs",
-      slots: ["root", "trigger"],
-      defaults: { Variant: "default" },
-      parts: [
-        part({}, () => ({
-          trigger: { text: c("content.secondary"), font: "type.button", paddingX: "spacing.2", paddingY: "spacing.1", gap: "spacing.1_5" },
-          "trigger:hover": { text: c("content.primary") },
-          "trigger:focus-visible": FOCUS
-        })),
-        part({ Variant: ["default", "line"] }, (variant) => variant === "line" ? {
-          root: { fill: NONE, gap: "spacing.1" },
-          trigger: { stroke: NONE, strokeBottomWidth: "stroke.md" },
-          'trigger[data-state="active"]': { text: c("content.primary"), stroke: c("content.primary") }
-        } : {
-          root: { fill: c("surface.layer-2"), radius: "radius.action", paddingX: "spacing.1", paddingY: "spacing.1", gap: "spacing.0_5" },
-          trigger: { radius: "radius.control" },
-          'trigger[data-state="active"]': { fill: c("surface.page"), text: c("content.primary"), shadow: "shadow.xs" }
-        })
-      ]
-    };
     TAB_MENU_SIZES = ["default", "sm", "lg"];
     TAB_MENU_VARIANTS = ["horizontal-line", "horizontal-button", "vertical-line", "vertical-button"];
-    TAB_MENU_ITEM_STATES = ["Default", "Hover", "Selected", "Focused", "Disabled"];
+    TAB_MENU_ITEM_STATES = ["Default", "Hover", "Focused", "Selected", "Disabled"];
     TAB_MENU_INDICATORS = ["bottom", "left"];
     TAB_MENU = {
       key: "TabMenu",
@@ -12062,7 +11987,7 @@ var init_navigation = __esm({
       ]
     };
     NAV_ITEM_SIZES = TAB_MENU_SIZES;
-    NAV_ITEM_STATES = ["Default", "Hover", "Current", "Focused", "Disabled"];
+    NAV_ITEM_STATES = ["Default", "Hover", "Focused", "Current", "Disabled"];
     NAV_ITEM = {
       key: "NavItem",
       slots: ["root", "iconLeading", "label", "badge", "iconTrailing"],
@@ -12095,8 +12020,8 @@ var init_navigation = __esm({
           root: {
             height: size === "sm" ? "size.sm" : "size.md",
             radius: "radius.action",
-            paddingX: "spacing.inset-control",
-            paddingRight: "spacing.gap-tight",
+            paddingX: "spacing.gap-tight",
+            paddingRight: "spacing.inset-control",
             paddingY: "spacing.none",
             gap: "spacing.gap-control",
             text: c("content.primary"),
@@ -12332,9 +12257,8 @@ var init_navigation = __esm({
         })
       ]
     };
-    MENU_PANEL_RADIUS = PANEL_RADIUS;
     DROPDOWN_SIZES = ["default", "sm", "lg"];
-    DROPDOWN_ITEM_STATES = ["Default", "Focused", "Selected", "Disabled"];
+    DROPDOWN_ITEM_STATES = ["Default", "Hover", "Focused", "Selected", "Disabled"];
     DROPDOWN_ITEM_VARIANTS = ["default", "destructive"];
     DROPDOWN_MENU = {
       key: "DropdownMenu",
@@ -12350,8 +12274,10 @@ var init_navigation = __esm({
             lift: "popover-md",
             width: "spacing.32+spacing.32"
           },
-          header: { paddingX: "spacing.gap-tight", paddingY: "spacing.gap-tight" },
-          content: { paddingX: "spacing.gap-tight", paddingY: "spacing.gap-tight" },
+          // Concentric with the overlay: 24 − inset-control 12 = Radius/action 12 for the rows (DEC-2026-11-16-001).
+          // The header sits on the content, so its bottom padding is none.
+          header: { paddingX: "spacing.inset-control", paddingY: "spacing.inset-control", paddingBottom: "spacing.none" },
+          content: { paddingX: "spacing.inset-control", paddingY: "spacing.inset-control" },
           // A separator row: 4px above and below a 1px subtle rule.
           separator: { fill: c("border.subtle"), height: "stroke.divider" }
         }))
@@ -12362,51 +12288,20 @@ var init_navigation = __esm({
       slots: ["root"],
       defaults: { Size: "default" },
       parts: [
-        part({ Size: DROPDOWN_SIZES }, (size) => ({
-          root: {
-            paddingX: size === "lg" ? "spacing.inset-control" : "spacing.gap-control",
-            paddingY: "spacing.gap-tight",
-            text: c("content.secondary"),
-            font: "type.caption"
-          }
-        }))
+        part({ Size: DROPDOWN_SIZES }, (size) => ({ root: groupLabelRecipe(size) }))
       ]
     };
     DROPDOWN_MENU_ITEM = {
       key: "DropdownMenuItem",
+      hover: "highlight",
       slots: ["root", "iconLeading", "media", "text", "label", "description", "trailing", "control", "iconTrailing", "indicator"],
       defaults: { Size: "default", State: "Default", Variant: "default" },
       parts: [
-        part({ Size: DROPDOWN_SIZES }, (size) => ({
-          root: {
-            minHeight: size === "sm" ? "size.xs" : size === "lg" ? "size.md" : "size.sm",
-            radius: "radius.control",
-            paddingX: size === "lg" ? "spacing.inset-control" : "spacing.gap-control",
-            paddingY: "spacing.gap-tight",
-            gap: size === "sm" ? "spacing.gap-tight" : "spacing.gap-control"
-          },
-          iconLeading: size === "lg" ? { width: "icon.medium", height: "icon.medium" } : { width: "icon.small", height: "icon.small" },
-          iconTrailing: size === "lg" ? { width: "icon.medium", height: "icon.medium" } : { width: "icon.small", height: "icon.small" },
-          indicator: size === "lg" ? { width: "icon.medium", height: "icon.medium" } : { width: "icon.small", height: "icon.small" },
-          label: { font: size === "sm" ? "type.caption" : size === "lg" ? "type.body-md" : "type.body-sm" },
-          description: { font: "type.caption" },
-          trailing: { font: "type.caption" }
-        })),
-        part({ Variant: DROPDOWN_ITEM_VARIANTS, State: DROPDOWN_ITEM_STATES }, (variant, state2) => {
-          const disabled = state2 === "Disabled";
-          const ink = disabled ? c("content.disabled") : variant === "destructive" ? c("status.critical.content") : c("content.primary");
-          return {
-            root: dropdownItemPaint(variant, state2),
-            label: { text: ink },
-            description: { text: disabled ? c("content.disabled") : c("content.secondary") },
-            trailing: { text: disabled ? c("content.disabled") : c("content.secondary") },
-            iconLeading: { text: disabled ? c("content.disabled") : variant === "destructive" ? c("status.critical.content") : c("content.primary") },
-            iconTrailing: { text: c("content.secondary") },
-            indicator: { text: c("content.accent") },
-            // A live menu highlights a row on hover or arrow keys: the file's Focused look.
-            ...state2 === "Default" ? { "root[data-highlighted]": dropdownItemPaint(variant, "Focused") } : {}
-          };
-        })
+        // Geometry per Size (the Dropdown file's); the paint is the shared `listItemRecipe`.
+        part({ Size: DROPDOWN_SIZES, Variant: DROPDOWN_ITEM_VARIANTS, State: DROPDOWN_ITEM_STATES }, (size, variant, state2) => ({
+          ...listItemRecipe(size, state2, variant, { iconSlot: "iconLeading" }),
+          iconTrailing: { text: c("content.secondary"), width: LIST_ITEM_METRICS[size].icon, height: LIST_ITEM_METRICS[size].icon }
+        }))
       ]
     };
     DROPDOWN_MENU_FOOTER = {
@@ -12416,8 +12311,8 @@ var init_navigation = __esm({
       parts: [
         part({}, () => ({
           root: {
-            paddingX: "spacing.gap-control",
-            paddingY: "spacing.gap-control",
+            paddingX: "spacing.inset-control",
+            paddingY: "spacing.inset-control",
             gap: "spacing.gap-control",
             stroke: c("border.subtle"),
             strokeTopWidth: "stroke.divider"
@@ -12427,10 +12322,9 @@ var init_navigation = __esm({
         }))
       ]
     };
-    CONTEXT_MENU = menu("ContextMenu");
     COMMAND = {
       key: "Command",
-      slots: ["root", "search", "icon", "input", "kbd", "list", "heading", "item"],
+      slots: ["root", "search", "icon", "input", "list", "heading", "item"],
       defaults: {},
       parts: [
         part({}, () => ({
@@ -12444,7 +12338,6 @@ var init_navigation = __esm({
           search: { stroke: c("border.subtle"), strokeBottomWidth: "stroke.control", paddingX: "spacing.3", paddingY: "spacing.2_5", gap: "spacing.gap-control" },
           icon: { text: c("content.secondary") },
           input: { text: c("content.primary"), font: "type.placeholder" },
-          kbd: { text: c("content.subtle"), font: "type.caption", stroke: c("border.subtle"), strokeWidth: "stroke.control", radius: "radius.control", paddingX: "spacing.1_5" },
           list: { paddingX: "spacing.1_5", paddingY: "spacing.1_5" },
           heading: { text: c("content.subtle"), font: "type.caption", paddingX: "spacing.2_5", paddingY: "spacing.1" },
           item: { text: c("content.primary"), font: "type.body-sm", radius: "sub(radius.container,spacing.1_5)", paddingX: "spacing.2_5", paddingY: "spacing.1_5" },
@@ -12477,79 +12370,74 @@ var init_navigation = __esm({
         }))
       ]
     };
+    SIDEBAR_COLLAPSED = ["false", "true"];
+    SIDEBAR_SIZES = ["default", "sm", "lg"];
+    SIDEBAR_MENU_BUTTON_STATES = ["Default", "Hover", "Focused", "Current", "Disabled"];
     SIDEBAR = {
       key: "Sidebar",
-      slots: ["root", "group", "label", "menu", "button"],
-      defaults: { Variant: "sidebar" },
+      slots: ["root", "header", "content", "footer"],
+      defaults: { Collapsed: "false" },
       parts: [
         part({}, () => ({
-          root: { fill: c("surface.layer-1"), text: c("content.primary"), paddingX: "spacing.2", paddingY: "spacing.2", gap: "spacing.2" },
-          group: { gap: "spacing.1" },
-          label: { text: c("content.secondary"), font: "type.caption", height: "size.compact", paddingX: "spacing.2" },
-          menu: { gap: "spacing.1" },
-          button: {
-            text: c("content.primary"),
-            font: "type.body-sm",
-            radius: "radius.action",
-            height: "size.compact",
-            paddingX: "spacing.2",
-            gap: "spacing.2"
-          },
-          "button:hover": { fill: c("action.ghost.hover") },
-          'button[data-active="true"]': { fill: c("action.ghost.hover"), font: "type.label" },
-          // No fill, as Button's outline: the page colour would patch the sidebar's own surface.
-          'button[data-variant="outline"]': { fill: NONE, stroke: c("border.default"), strokeWidth: "stroke.control" },
-          'button[data-size="sm"]': { height: "size.hit", font: "type.caption" },
-          'button[data-size="lg"]': { height: "size.touch" }
+          root: { fill: c("surface.layer-1"), text: c("content.primary"), stroke: c("border.default"), strokeRightWidth: "stroke.divider" },
+          header: { paddingX: "spacing.gap-control", paddingY: "spacing.gap-control", gap: "spacing.gap-control" },
+          content: { paddingX: "spacing.gap-control", paddingY: "spacing.gap-control", gap: "spacing.gap-group" },
+          footer: {
+            paddingX: "spacing.gap-control",
+            paddingY: "spacing.gap-control",
+            gap: "spacing.gap-tight",
+            stroke: c("border.default"),
+            strokeTopWidth: "stroke.divider"
+          }
         })),
-        part({ Variant: ["sidebar", "floating", "inset"] }, (variant) => ({
-          root: variant === "floating" ? { stroke: c("border.default"), strokeWidth: "stroke.control", radius: "radius.container", shadow: "shadow.sm" } : variant === "sidebar" ? { stroke: c("border.default"), strokeWidth: "stroke.control", radius: "radius.container" } : { stroke: NONE }
+        part({ Collapsed: SIDEBAR_COLLAPSED }, (collapsed) => ({
+          root: { width: collapsed === "true" ? "size.lg" : "spacing.32+spacing.32+spacing.4" }
         }))
       ]
     };
-    MENUBAR = {
-      key: "Menubar",
-      slots: ["root", "trigger", "content", "item", "separator", "shortcut"],
-      detachedSlots: ["content", "item", "separator", "shortcut"],
-      defaults: {},
+    SIDEBAR_BRAND = {
+      key: "SidebarBrand",
+      slots: ["root", "logo", "text", "title", "subtitle"],
+      defaults: { Collapsed: "false" },
       parts: [
         part({}, () => ({
-          root: {
-            fill: c("surface.layer-1"),
-            stroke: c("border.default"),
-            strokeWidth: "stroke.control",
-            radius: PANEL_RADIUS,
-            height: "size.compact",
-            paddingX: "spacing.1",
-            paddingY: "spacing.1",
-            gap: "spacing.0_5"
-          },
-          trigger: { text: c("content.primary"), font: "type.label", radius: PANEL_ROW_RADIUS, paddingX: "spacing.2", paddingY: "spacing.0_5" },
-          "trigger:hover": { fill: c("action.ghost.hover") },
-          'trigger[data-state="open"]': { fill: c("action.ghost.hover") },
-          'trigger[data-active="true"]': { fill: c("action.ghost.hover") },
-          content: {
-            fill: c("surface.layer-2"),
-            stroke: c("border.subtle"),
-            strokeWidth: "stroke.control",
-            radius: MENU_PANEL_RADIUS,
-            shadow: "shadow.lg",
-            paddingX: "spacing.1",
-            paddingY: "spacing.1"
-          },
-          item: {
-            text: c("content.primary"),
-            font: "type.body-sm",
-            radius: PANEL_ROW_RADIUS,
-            paddingX: "spacing.2_5",
-            paddingY: "spacing.1_5",
-            gap: "spacing.2_5"
-          },
-          "item[data-highlighted]": { fill: c("action.ghost.hover") },
-          "item:hover": { fill: c("action.ghost.hover") },
-          'item[data-variant="destructive"]': { text: c("status.critical.content") },
-          separator: { fill: c("border.subtle"), height: "stroke.divider" },
-          shortcut: { text: c("content.subtle"), font: "type.caption" }
+          root: { gap: "spacing.gap-control" },
+          logo: { width: "size.sm", height: "size.sm" },
+          title: { text: c("content.primary"), font: "type.label" },
+          subtitle: { text: c("content.secondary"), font: "type.caption" }
+        }))
+      ]
+    };
+    SIDEBAR_GROUP = {
+      key: "SidebarGroup",
+      slots: ["root", "label", "content"],
+      defaults: { Size: "default", Collapsed: "false" },
+      parts: [
+        part({}, () => ({ content: { gap: "spacing.gap-tight" } }))
+      ]
+    };
+    SIDEBAR_GROUP_LABEL = {
+      key: "SidebarGroupLabel",
+      slots: ["root"],
+      defaults: { Size: "default" },
+      parts: [
+        part({ Size: SIDEBAR_SIZES }, (size) => ({ root: groupLabelRecipe(size) }))
+      ]
+    };
+    SIDEBAR_MENU_BUTTON = {
+      key: "SidebarMenuButton",
+      slots: ["root", "icon", "text", "label", "description", "trailing", "trend", "iconTrailing", "indicator"],
+      defaults: { Size: "default", State: "Default", Collapsed: "false" },
+      parts: [
+        // Paint and geometry: the shared list row. Hover is the highlight fill; Current is the Selected paint.
+        part({ Size: SIDEBAR_SIZES, State: SIDEBAR_MENU_BUTTON_STATES }, (size, state2) => {
+          const base = listItemRecipe(size, state2 === "Current" ? "Selected" : state2, "default", { radius: "radius.item" });
+          const g = LIST_ITEM_METRICS[size];
+          return { ...base, iconTrailing: { text: c("content.secondary"), width: g.icon, height: g.icon } };
+        }),
+        // Collapsed: a square of the row's height, no side padding (the icon centres).
+        part({ Size: SIDEBAR_SIZES, Collapsed: SIDEBAR_COLLAPSED }, (size, collapsed) => ({
+          root: collapsed === "true" ? { width: LIST_ITEM_METRICS[size].minHeight, paddingX: "spacing.none" } : {}
         }))
       ]
     };
@@ -12827,7 +12715,7 @@ function ratingItemPaint(type, checked, state2) {
   const ink = on ? "content.accent" : state2 === "Hover" || state2 === "Pressed" ? "content.primary" : "content.secondary";
   return { root: { fill: hoverFill, text: c(ink), ...focus } };
 }
-var BADGE_APPEARANCES, BADGE_SHAPES, BADGE_SIZES, BADGE_TYPES, BADGE_VARIANTS, BADGE_GEOMETRY, BADGE, PRESENCE_DOT, STATUS_BADGE, CHIP_VARIANTS, CHIP_APPEARANCES, CHIP_SIZES, CHIP_STATES, CHIP_SHAPES, CHIP_GEOMETRY2, CHIP, PROGRESS_SIZES, PROGRESS_APPEARANCES, LINE_THICKNESS, RING_DIAMETER, PROGRESS_LINE, PROGRESS_CIRCLE, SPINNER, ICON_ROLE, ICON, RATING_GROUP_SIZES, RATING_GROUP_TYPES, RATING_GROUP_ITEM_STATES, RATING_ITEM, RATING_GROUP, RATING_GROUP_ITEM, FORMAT_TONE, FILE_FORMAT, AVATAR_SIZES, AVATAR_SHAPES, AVATAR_VARIANTS, AVATAR_APPEARANCES, AVATAR_STATUSES, AVATAR_STATUS_SIZES, AVATAR_GEOMETRY, AVATAR_TONE, AVATAR, STATUS_FILL, STATUS_GEOMETRY, AVATAR_STATUS, GROUP_GEOMETRY, AVATAR_GROUP, FEATURED_ICON_SIZES, FEATURED_ICON_VARIANTS, FEATURED_ICON_GEOMETRY, FEATURED_ICON, KBD_SIZES, KBD_GEOMETRY, KBD;
+var BADGE_APPEARANCES, BADGE_SHAPES, BADGE_SIZES, BADGE_TYPES, BADGE_VARIANTS, BADGE_GEOMETRY, BADGE, PRESENCE_DOT, STATUS_BADGE, CHIP_VARIANTS, CHIP_APPEARANCES, CHIP_SIZES, CHIP_STATES, CHIP_SHAPES, CHIP_GEOMETRY2, CHIP, PROGRESS_SIZES, PROGRESS_APPEARANCES, LINE_THICKNESS, RING_DIAMETER, PROGRESS_LINE, PROGRESS_CIRCLE, SPINNER, ICON_ROLE, ICON, RATING_GROUP_SIZES, RATING_GROUP_TYPES, RATING_GROUP_ITEM_STATES, RATING_ITEM, RATING_GROUP, RATING_GROUP_ITEM, FORMAT_TONE, FILE_FORMAT, AVATAR_SIZES, AVATAR_SHAPES, AVATAR_VARIANTS, AVATAR_APPEARANCES, AVATAR_STATUSES, AVATAR_STATUS_SIZES, AVATAR_GEOMETRY, AVATAR_TONE, AVATAR, STATUS_FILL, STATUS_GEOMETRY, AVATAR_STATUS, GROUP_GEOMETRY, AVATAR_GROUP, FEATURED_ICON_APPEARANCES, FEATURED_ICON_SIZES, FEATURED_ICON_VARIANTS, FEATURED_ICON_GEOMETRY, FEATURED_ICON_GRADIENT, FEATURED_ICON, KBD_SIZES, KBD_GEOMETRY, KBD;
 var init_indicators = __esm({
   "src/lib/recipes/indicators.ts"() {
     init_helpers();
@@ -12896,11 +12784,11 @@ var init_indicators = __esm({
     CHIP_STATES = ["Default", "Hover", "Focused", "Selected", "Disabled", "Dragging"];
     CHIP_SHAPES = ["rounded", "pill"];
     CHIP_GEOMETRY2 = {
-      xs: { h: "size.xs", pad: "spacing.gap-control", gap: "spacing.gap-tight", font: "type.caption", icon: "icon.small", radius: "radius.control" },
-      sm: { h: "size.sm", pad: "spacing.gap-control", gap: "spacing.gap-tight", font: "type.label", icon: "icon.small", radius: "radius.control" },
-      default: { h: "size.md", pad: "spacing.inset-control", gap: "spacing.gap-tight", font: "type.label", icon: "icon.medium", radius: "radius.control" },
+      xs: { h: "size.xs", pad: "spacing.gap-control", gap: "spacing.gap-tight", font: "type.caption", icon: "icon.small", radius: "radius.action" },
+      sm: { h: "size.sm", pad: "spacing.gap-control", gap: "spacing.gap-tight", font: "type.label", icon: "icon.small", radius: "radius.action" },
+      default: { h: "size.md", pad: "spacing.inset-control", gap: "spacing.gap-tight", font: "type.label", icon: "icon.medium", radius: "radius.action" },
       lg: { h: "size.lg", pad: "spacing.inset-control", gap: "spacing.gap-control", font: "type.body-md", icon: "icon.medium", radius: "radius.action" },
-      xl: { h: "size.xl", pad: "spacing.gap-group", gap: "spacing.gap-control", font: "type.body-lg", icon: "icon.large", radius: "radius.container" }
+      xl: { h: "size.xl", pad: "spacing.gap-group", gap: "spacing.gap-control", font: "type.body-lg", icon: "icon.large", radius: "radius.action" }
     };
     CHIP = {
       key: "Chip",
@@ -13057,7 +12945,7 @@ var init_indicators = __esm({
           ring: { stroke: c("border.accent"), strokeWidth: "stroke.md" }
         })),
         part({ Shape: AVATAR_SHAPES }, (shape) => {
-          const radius = shape === "circle" ? "radius.pill" : "radius.control";
+          const radius = shape === "circle" ? "radius.pill" : "radius.action";
           return { root: { radius }, image: { radius }, stroke: { radius }, ring: { radius } };
         }),
         part({ Size: AVATAR_SIZES }, (size) => {
@@ -13133,11 +13021,12 @@ var init_indicators = __esm({
           };
         }),
         part({ Shape: AVATAR_SHAPES }, (shape) => {
-          const radius = shape === "circle" ? "radius.pill" : "radius.control";
+          const radius = shape === "circle" ? "radius.pill" : "radius.action";
           return { item: { radius }, action: { radius } };
         })
       ]
     };
+    FEATURED_ICON_APPEARANCES = ["soft", "solid", "gradient"];
     FEATURED_ICON_SIZES = ["default", "sm", "lg", "xl"];
     FEATURED_ICON_VARIANTS = ["default", "secondary", "critical", "success", "warning", "info"];
     FEATURED_ICON_GEOMETRY = {
@@ -13145,6 +13034,14 @@ var init_indicators = __esm({
       default: { box: "size.md", icon: "icon.large" },
       lg: { box: "size.lg", icon: "icon.large" },
       xl: { box: "size.xl", icon: "icon.large" }
+    };
+    FEATURED_ICON_GRADIENT = {
+      default: { stops: ["action.primary.default", "action.primary.hover", "action.primary.pressed"], ink: "content.on-action" },
+      secondary: { stops: ["action.secondary.default", "action.secondary.hover", "action.secondary.pressed"], ink: "content.on-secondary" },
+      critical: { stops: ["status.critical.surface-solid", "status.critical.surface-solid-hover", "status.critical.surface-solid-pressed"], ink: "status.critical.on-solid" },
+      success: { stops: ["status.success.surface-solid", "status.success.surface-solid-hover", "status.success.surface-solid-pressed"], ink: "status.success.on-solid" },
+      warning: { stops: ["status.warning.surface-solid", "status.warning.surface-solid-hover", "status.warning.surface-solid-pressed"], ink: "status.warning.on-solid" },
+      info: { stops: ["status.info.surface-solid", "status.info.surface-solid-hover", "status.info.surface-solid-pressed"], ink: "status.info.on-solid" }
     };
     FEATURED_ICON = {
       key: "FeaturedIcon",
@@ -13156,7 +13053,11 @@ var init_indicators = __esm({
           icon: { width: FEATURED_ICON_GEOMETRY[size].icon, height: FEATURED_ICON_GEOMETRY[size].icon }
         })),
         part({ Shape: AVATAR_SHAPES }, (shape) => ({ root: { radius: shape === "circle" ? "radius.pill" : "radius.action" } })),
-        part({ Variant: FEATURED_ICON_VARIANTS, Appearance: AVATAR_APPEARANCES }, (variant, appearance) => {
+        part({ Variant: FEATURED_ICON_VARIANTS, Appearance: FEATURED_ICON_APPEARANCES }, (variant, appearance) => {
+          if (appearance === "gradient") {
+            const g = FEATURED_ICON_GRADIENT[variant];
+            return { root: { fill: c(g.stops[0]), fillMid: c(g.stops[1]), fillEnd: c(g.stops[2]), text: c(g.ink), highlight: c("elevation.highlight") } };
+          }
           const [fill, ink] = AVATAR_TONE[variant][appearance];
           return { root: { fill: c(fill), text: c(ink) } };
         })
@@ -13462,7 +13363,6 @@ var init_motion2 = __esm({
       Badge: { transitions: { root: states("background-color", "color", "border-color") } },
       Chip: { transitions: { root: states("background-color", "border-color", "color") } },
       Toggle: { transitions: { root: FILL } },
-      ToggleGroup: { transitions: { item: FILL } },
       Item: { transitions: { root: FILL } },
       PaginationLink: { transitions: { root: FILL } },
       TabMenuItem: { transitions: { root: FILL } },
@@ -13470,13 +13370,19 @@ var init_motion2 = __esm({
       NavItem: { transitions: { root: FILL } },
       AccountMenuTrigger: { transitions: { root: FILL } },
       SegmentedControlItem: { transitions: { root: FILL } },
-      Sidebar: { transitions: { button: FILL } },
-      Tabs: { transitions: { trigger: states("color", "background-color", "border-color", "box-shadow") } },
+      SidebarMenuButton: { transitions: { root: FILL } },
       TableRow: { transitions: { root: states("background-color") } },
       TableHead: { transitions: { root: states("background-color") } },
       TableResizer: { transitions: { handle: states("background-color") } },
       FileUploadDropzone: { transitions: { root: states("background-color", "border-color") } },
       Input: { transitions: { root: FIELD2 } },
+      // A field's error opens and closes on the disclosure roles: in when it appears, out when it clears (the `[data-open]` rule wins while open).
+      Field: {
+        transitions: {
+          errorRegion: { "grid-template-rows": "use-disclosure-out", opacity: "use-disclosure-out", "margin-top": "use-disclosure-out" },
+          "errorRegion[data-open]": { "grid-template-rows": "use-disclosure-in", opacity: "use-disclosure-in", "margin-top": "use-disclosure-in" }
+        }
+      },
       DatePickerTrigger: { transitions: { root: FIELD2 } },
       CalendarDay: { transitions: { cell: states("background-color", "border-color", "box-shadow", "color"), day: states("color") } },
       DatePickerPopover: popover("--radix-popover-content-transform-origin"),
@@ -13485,9 +13391,9 @@ var init_motion2 = __esm({
       InputTagChip: { transitions: { root: FIELD2 } },
       InputTagOption: { transitions: { root: FIELD2 } },
       InputOTPSlot: { transitions: { root: FIELD2 } },
-      Select: { transitions: { root: FIELD2 }, ...popover("--radix-select-content-transform-origin", "content") },
-      NativeSelect: { transitions: { select: FIELD2 } },
       Combobox: { transitions: { root: FIELD2 } },
+      // A menu row: the highlight crossfades from row to row on `use-hover` (Radix moves it for the pointer and the keys).
+      DropdownMenuItem: { transitions: { root: FILL } },
       ComboboxItem: { transitions: { root: states("background-color", "border-color", "box-shadow") } },
       Checkbox: { transitions: { root: states("background-color", "border-color", "box-shadow") } },
       RadioGroup: { transitions: { item: states("background-color", "border-color", "box-shadow") } },
@@ -13505,9 +13411,7 @@ var init_motion2 = __esm({
       Popover: popover("--radix-popover-content-transform-origin"),
       TooltipContent: popover("--radix-tooltip-content-transform-origin"),
       HoverCard: popover("--radix-hover-card-content-transform-origin"),
-      DropdownMenu: popover("--radix-dropdown-menu-content-transform-origin"),
-      ContextMenu: popover("--radix-context-menu-content-transform-origin"),
-      Menubar: popover("--radix-menubar-content-transform-origin", "content")
+      DropdownMenu: popover("--radix-dropdown-menu-content-transform-origin")
     };
   }
 });
@@ -13556,7 +13460,6 @@ var init_componentRecipes = __esm({
       InputTag: INPUT_TAG,
       InputTagChip: INPUT_TAG_CHIP,
       InputTagOption: INPUT_TAG_OPTION,
-      Select: SELECT,
       Combobox: COMBOBOX,
       ComboboxPopover: COMBOBOX_POPOVER,
       ComboboxItem: COMBOBOX_ITEM,
@@ -13609,8 +13512,6 @@ var init_componentRecipes = __esm({
       TableEmpty: TABLE_EMPTY,
       TableLoading: TABLE_LOADING,
       TableLoadMore: TABLE_LOAD_MORE,
-      ToggleGroup: TOGGLE_GROUP,
-      NativeSelect: NATIVE_SELECT,
       Kbd: KBD,
       Skeleton: SKELETON,
       Empty: EMPTY,
@@ -13627,7 +13528,6 @@ var init_componentRecipes = __esm({
       Resizable: RESIZABLE,
       Carousel: CAROUSEL,
       Chart: CHART,
-      Menubar: MENUBAR,
       NavigationMenu: NAVIGATION_MENU,
       Accordion: ACCORDION,
       AccordionItem: ACCORDION_ITEM,
@@ -13640,7 +13540,6 @@ var init_componentRecipes = __esm({
       ScrollBar: SCROLL_BAR,
       Alert: ALERT,
       Toast: TOAST,
-      Tabs: TABS,
       TabMenu: TAB_MENU,
       TabMenuItem: TAB_MENU_ITEM,
       TabMenuLineItem: TAB_MENU_LINE_ITEM,
@@ -13664,10 +13563,13 @@ var init_componentRecipes = __esm({
       DropdownMenuLabel: DROPDOWN_MENU_LABEL,
       DropdownMenuItem: DROPDOWN_MENU_ITEM,
       DropdownMenuFooter: DROPDOWN_MENU_FOOTER,
-      ContextMenu: CONTEXT_MENU,
       Command: COMMAND,
       Navbar: NAVBAR,
       Sidebar: SIDEBAR,
+      SidebarBrand: SIDEBAR_BRAND,
+      SidebarGroup: SIDEBAR_GROUP,
+      SidebarGroupLabel: SIDEBAR_GROUP_LABEL,
+      SidebarMenuButton: SIDEBAR_MENU_BUTTON,
       Card: CARD,
       Modal: MODAL,
       ModalHeader: MODAL_HEADER,
@@ -16484,7 +16386,7 @@ var init_useDesignStore = __esm({
         }),
         {
           name: "scalable-designs-store",
-          version: 149,
+          version: 151,
           migrate: (persisted, version) => {
             if (persisted) {
               delete persisted.styleDirection;
@@ -18331,6 +18233,258 @@ var init_useDesignStore = __esm({
               add2(persisted);
               if (Array.isArray(persisted.savedSystems)) {
                 for (const sys of persisted.savedSystems) add2(sys?.snapshot);
+              }
+            }
+            if (version < 150) {
+              const TWIN = { Tabs: "TabMenu", Select: "Combobox", ToggleGroup: null, ContextMenu: null, Menubar: null, NativeSelect: null };
+              const swap = (state2) => {
+                if (!Array.isArray(state2?.selectedComponents)) return;
+                const out = [];
+                for (const k of state2.selectedComponents) {
+                  const next = k in TWIN ? TWIN[k] : k;
+                  if (next && !out.includes(next)) out.push(next);
+                }
+                state2.selectedComponents = out;
+              };
+              swap(persisted);
+              if (Array.isArray(persisted.savedSystems)) {
+                for (const sys of persisted.savedSystems) swap(sys?.snapshot);
+              }
+            }
+            if (version < 151) {
+              const move = moveRadiusLadderV151;
+              move(persisted);
+              if (Array.isArray(persisted.savedSystems)) {
+                for (const sys of persisted.savedSystems) move(sys?.snapshot);
+              }
+            }
+            if (version < 133) {
+              const add2 = (state2) => {
+                if (!Array.isArray(state2?.selectedComponents)) return;
+                const sel = state2.selectedComponents;
+                const at = sel.indexOf("Avatar");
+                if (at < 0) return;
+                for (const part2 of ["AvatarStatus", "AvatarGroup"]) if (!sel.includes(part2)) sel.splice(sel.indexOf("Avatar") + 1, 0, part2);
+              };
+              add2(persisted);
+              if (Array.isArray(persisted.savedSystems)) {
+                for (const sys of persisted.savedSystems) add2(sys?.snapshot);
+              }
+            }
+            if (version < 134) {
+              const add2 = (state2) => {
+                if (!Array.isArray(state2?.selectedComponents)) return;
+                const sel = state2.selectedComponents;
+                if (sel.includes("FeaturedIcon")) return;
+                const at = sel.indexOf("Icon");
+                if (at >= 0) sel.splice(at + 1, 0, "FeaturedIcon");
+              };
+              add2(persisted);
+              if (Array.isArray(persisted.savedSystems)) {
+                for (const sys of persisted.savedSystems) add2(sys?.snapshot);
+              }
+            }
+            if (version < 135) {
+              const rename = (state2) => {
+                if (!Array.isArray(state2?.selectedComponents)) return;
+                const sel = state2.selectedComponents;
+                const at = sel.indexOf("AspectRatio");
+                if (at >= 0) sel.splice(at, 1, "Image");
+              };
+              rename(persisted);
+              if (Array.isArray(persisted.savedSystems)) {
+                for (const sys of persisted.savedSystems) rename(sys?.snapshot);
+              }
+            }
+            if (version < 136) {
+              const add2 = (state2) => {
+                if (!Array.isArray(state2?.selectedComponents)) return;
+                const sel = state2.selectedComponents;
+                const at = sel.indexOf("Accordion");
+                if (at >= 0 && !sel.includes("AccordionItem")) sel.splice(at + 1, 0, "AccordionItem");
+              };
+              add2(persisted);
+              if (Array.isArray(persisted.savedSystems)) {
+                for (const sys of persisted.savedSystems) add2(sys?.snapshot);
+              }
+            }
+            if (version < 137) {
+              const parts = ["TableCell", "TableHead", "TableMediaCell", "TableTrendCell", "TableResizer", "TableRow", "TableHeader", "TableFooter", "TableCaption", "TableDropIndicator", "TableEmpty", "TableLoading", "TableLoadMore"];
+              const add2 = (state2) => {
+                if (!Array.isArray(state2?.selectedComponents)) return;
+                const sel = state2.selectedComponents;
+                const at = sel.indexOf("Table");
+                if (at < 0) return;
+                const missing = parts.filter((k) => !sel.includes(k));
+                sel.splice(at + 1, 0, ...missing);
+              };
+              add2(persisted);
+              if (Array.isArray(persisted.savedSystems)) {
+                for (const sys of persisted.savedSystems) add2(sys?.snapshot);
+              }
+            }
+            if (version < 138) {
+              const rename = (state2) => {
+                if (!Array.isArray(state2?.selectedComponents)) return;
+                const sel = state2.selectedComponents;
+                const at = sel.indexOf("Progress");
+                if (at >= 0) sel.splice(at, 1, "ProgressLine");
+                const line = sel.indexOf("ProgressLine");
+                if (line >= 0 && !sel.includes("ProgressCircle")) sel.splice(line + 1, 0, "ProgressCircle");
+              };
+              rename(persisted);
+              if (Array.isArray(persisted.savedSystems)) {
+                for (const sys of persisted.savedSystems) rename(sys?.snapshot);
+              }
+            }
+            if (version < 139) {
+              const rename = (state2) => {
+                if (!Array.isArray(state2?.selectedComponents)) return;
+                const sel = state2.selectedComponents;
+                const at = sel.indexOf("Sonner");
+                if (at >= 0) sel.splice(at, 1, "Toast");
+              };
+              rename(persisted);
+              if (Array.isArray(persisted.savedSystems)) {
+                for (const sys of persisted.savedSystems) rename(sys?.snapshot);
+              }
+            }
+            if (version < 140) {
+              const rename = (state2) => {
+                if (!Array.isArray(state2?.selectedComponents)) return;
+                const sel = state2.selectedComponents;
+                const at = sel.indexOf("Dialog");
+                if (at >= 0) sel.splice(at, 1, "Modal", "ModalHeader", "ModalFooter");
+              };
+              rename(persisted);
+              if (Array.isArray(persisted.savedSystems)) {
+                for (const sys of persisted.savedSystems) rename(sys?.snapshot);
+              }
+            }
+            if (version < 141) {
+              const add2 = (state2) => {
+                if (!Array.isArray(state2?.selectedComponents)) return;
+                const sel = state2.selectedComponents;
+                const at = sel.indexOf("Popover");
+                if (at >= 0 && !sel.includes("PopoverFooter")) sel.splice(at + 1, 0, "PopoverFooter");
+              };
+              add2(persisted);
+              if (Array.isArray(persisted.savedSystems)) {
+                for (const sys of persisted.savedSystems) add2(sys?.snapshot);
+              }
+            }
+            if (version < 142) {
+              const add2 = (state2) => {
+                if (!Array.isArray(state2?.selectedComponents)) return;
+                const sel = state2.selectedComponents;
+                const at = sel.indexOf("DropdownMenu");
+                if (at < 0) return;
+                const parts = ["DropdownMenuLabel", "DropdownMenuItem", "DropdownMenuFooter"].filter((k) => !sel.includes(k));
+                sel.splice(at + 1, 0, ...parts);
+              };
+              add2(persisted);
+              if (Array.isArray(persisted.savedSystems)) {
+                for (const sys of persisted.savedSystems) add2(sys?.snapshot);
+              }
+            }
+            if (version < 143) {
+              const rename = (state2) => {
+                if (!Array.isArray(state2?.selectedComponents)) return;
+                const sel = state2.selectedComponents;
+                const at = sel.indexOf("Tooltip");
+                if (at >= 0) sel.splice(at, 1, "TooltipContent", "TooltipInfoTrigger");
+              };
+              rename(persisted);
+              if (Array.isArray(persisted.savedSystems)) {
+                for (const sys of persisted.savedSystems) rename(sys?.snapshot);
+              }
+            }
+            if (version < 144) {
+              const add2 = (state2) => {
+                if (!Array.isArray(state2?.selectedComponents)) return;
+                const sel = state2.selectedComponents;
+                const at = sel.indexOf("Breadcrumb");
+                if (at >= 0) sel.splice(at + 1, 0, ...["BreadcrumbItem", "BreadcrumbEllipsis", "BreadcrumbSeparator"].filter((k) => !sel.includes(k)));
+              };
+              add2(persisted);
+              if (Array.isArray(persisted.savedSystems)) {
+                for (const sys of persisted.savedSystems) add2(sys?.snapshot);
+              }
+            }
+            if (version < 145) {
+              const add2 = (state2) => {
+                if (!Array.isArray(state2?.selectedComponents)) return;
+                const sel = state2.selectedComponents;
+                const at = sel.indexOf("TabMenu");
+                if (at >= 0) sel.splice(at + 1, 0, ...["TabMenuItem", "TabMenuLineItem"].filter((k) => !sel.includes(k)));
+              };
+              add2(persisted);
+              if (Array.isArray(persisted.savedSystems)) {
+                for (const sys of persisted.savedSystems) add2(sys?.snapshot);
+              }
+            }
+            if (version < 146) {
+              const add2 = (state2) => {
+                if (!Array.isArray(state2?.selectedComponents)) return;
+                const sel = state2.selectedComponents;
+                const at = sel.indexOf("TabMenuLineItem");
+                if (at >= 0) sel.splice(at + 1, 0, ...["NavItem", "Brand", "AccountMenuTrigger"].filter((k) => !sel.includes(k)));
+              };
+              add2(persisted);
+              if (Array.isArray(persisted.savedSystems)) {
+                for (const sys of persisted.savedSystems) add2(sys?.snapshot);
+              }
+            }
+            if (version < 147) {
+              const add2 = (state2) => {
+                if (!Array.isArray(state2?.selectedComponents)) return;
+                const sel = state2.selectedComponents;
+                const at = sel.indexOf("Pagination");
+                if (at >= 0) sel.splice(at + 1, 0, ...["PaginationLink", "PaginationEllipsis"].filter((k) => !sel.includes(k)));
+              };
+              add2(persisted);
+              if (Array.isArray(persisted.savedSystems)) {
+                for (const sys of persisted.savedSystems) add2(sys?.snapshot);
+              }
+            }
+            if (version < 148) {
+              const add2 = (state2) => {
+                if (!Array.isArray(state2?.selectedComponents)) return;
+                const sel = state2.selectedComponents;
+                const at = sel.indexOf("Stepper");
+                if (at >= 0) sel.splice(at + 1, 0, ...["StepperItem", "StepperIndicator", "StepperIcon"].filter((k) => !sel.includes(k)));
+              };
+              add2(persisted);
+              if (Array.isArray(persisted.savedSystems)) {
+                for (const sys of persisted.savedSystems) add2(sys?.snapshot);
+              }
+            }
+            if (version < 149) {
+              const add2 = (state2) => {
+                if (!Array.isArray(state2?.selectedComponents)) return;
+                const sel = state2.selectedComponents;
+                const at = sel.indexOf("ScrollArea");
+                if (at >= 0 && !sel.includes("ScrollBar")) sel.splice(at + 1, 0, "ScrollBar");
+              };
+              add2(persisted);
+              if (Array.isArray(persisted.savedSystems)) {
+                for (const sys of persisted.savedSystems) add2(sys?.snapshot);
+              }
+            }
+            if (version < 150) {
+              const TWIN = { Tabs: "TabMenu", Select: "Combobox", ToggleGroup: null, ContextMenu: null, Menubar: null, NativeSelect: null };
+              const swap = (state2) => {
+                if (!Array.isArray(state2?.selectedComponents)) return;
+                const out = [];
+                for (const k of state2.selectedComponents) {
+                  const next = k in TWIN ? TWIN[k] : k;
+                  if (next && !out.includes(next)) out.push(next);
+                }
+                state2.selectedComponents = out;
+              };
+              swap(persisted);
+              if (Array.isArray(persisted.savedSystems)) {
+                for (const sys of persisted.savedSystems) swap(sys?.snapshot);
               }
             }
             return persisted;

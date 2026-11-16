@@ -5,7 +5,8 @@ import { DropdownMenuLabel, DROPDOWN_MENU_SIZES, type DropdownMenuSize } from '.
 interface LabelStoryArgs { size: DropdownMenuSize; label: string }
 
 const meta: Meta<LabelStoryArgs> = {
-  title: 'Navigation/DropdownMenuLabel',
+  title: 'Navigation/DropdownMenu',
+  tags: ['!autodocs', 'part'],
   render: ({ size, label }) => <div style={{ width: 256 }}><DropdownMenuLabel size={size}>{label}</DropdownMenuLabel></div>,
   args: { size: 'default', label: 'Action' },
   argTypes: {
@@ -16,4 +17,4 @@ const meta: Meta<LabelStoryArgs> = {
 export default meta
 type Story = StoryObj<LabelStoryArgs>
 
-export const Playground: Story = {}
+export const DropdownMenuLabelPlayground: Story = { name: 'DropdownMenuLabel · Playground' }

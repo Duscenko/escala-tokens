@@ -5,7 +5,8 @@ import {
 /** Story args = the Figma `TableFooter` set: Content (cells) · Size · Dividers. */
 interface Args { size: TableSize; dividers: TableDividers }
 const meta: Meta<Args> = {
-  title: 'Content & Surfaces/TableFooter',
+  title: 'Content & Surfaces/Table',
+  tags: ['!autodocs', 'part'],
   render: ({ size, dividers }) => (
     <div style={{ width: 800 }}>
       <Table appearance="ghost" size={size} dividers={dividers}>
@@ -21,4 +22,4 @@ const meta: Meta<Args> = {
 }
 export default meta
 type Story = StoryObj<Args>
-export const Playground: Story = {}
+export const TableFooterPlayground: Story = { name: 'TableFooter · Playground' }

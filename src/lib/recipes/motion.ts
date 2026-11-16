@@ -37,7 +37,6 @@ export const RECIPE_MOTION: Record<string, RecipeMotion> = {
   Badge: { transitions: { root: states('background-color', 'color', 'border-color') } },
   Chip: { transitions: { root: states('background-color', 'border-color', 'color') } },
   Toggle: { transitions: { root: FILL } },
-  ToggleGroup: { transitions: { item: FILL } },
   Item: { transitions: { root: FILL } },
   PaginationLink: { transitions: { root: FILL } },
   TabMenuItem: { transitions: { root: FILL } },
@@ -45,13 +44,19 @@ export const RECIPE_MOTION: Record<string, RecipeMotion> = {
   NavItem: { transitions: { root: FILL } },
   AccountMenuTrigger: { transitions: { root: FILL } },
   SegmentedControlItem: { transitions: { root: FILL } },
-  Sidebar: { transitions: { button: FILL } },
-  Tabs: { transitions: { trigger: states('color', 'background-color', 'border-color', 'box-shadow') } },
+  SidebarMenuButton: { transitions: { root: FILL } },
   TableRow: { transitions: { root: states('background-color') } },
   TableHead: { transitions: { root: states('background-color') } },
   TableResizer: { transitions: { handle: states('background-color') } },
   FileUploadDropzone: { transitions: { root: states('background-color', 'border-color') } },
   Input: { transitions: { root: FIELD } },
+  // A field's error opens and closes on the disclosure roles: in when it appears, out when it clears (the `[data-open]` rule wins while open).
+  Field: {
+    transitions: {
+      errorRegion: { 'grid-template-rows': 'use-disclosure-out', opacity: 'use-disclosure-out', 'margin-top': 'use-disclosure-out' },
+      'errorRegion[data-open]': { 'grid-template-rows': 'use-disclosure-in', opacity: 'use-disclosure-in', 'margin-top': 'use-disclosure-in' },
+    },
+  },
   DatePickerTrigger: { transitions: { root: FIELD } },
   CalendarDay: { transitions: { cell: states('background-color', 'border-color', 'box-shadow', 'color'), day: states('color') } },
   DatePickerPopover: popover('--radix-popover-content-transform-origin'),
@@ -60,9 +65,9 @@ export const RECIPE_MOTION: Record<string, RecipeMotion> = {
   InputTagChip: { transitions: { root: FIELD } },
   InputTagOption: { transitions: { root: FIELD } },
   InputOTPSlot: { transitions: { root: FIELD } },
-  Select: { transitions: { root: FIELD }, ...popover('--radix-select-content-transform-origin', 'content') },
-  NativeSelect: { transitions: { select: FIELD } },
   Combobox: { transitions: { root: FIELD } },
+  // A menu row: the highlight crossfades from row to row on `use-hover` (Radix moves it for the pointer and the keys).
+  DropdownMenuItem: { transitions: { root: FILL } },
   ComboboxItem: { transitions: { root: states('background-color', 'border-color', 'box-shadow') } },
   Checkbox: { transitions: { root: states('background-color', 'border-color', 'box-shadow') } },
   RadioGroup: { transitions: { item: states('background-color', 'border-color', 'box-shadow') } },
@@ -81,6 +86,4 @@ export const RECIPE_MOTION: Record<string, RecipeMotion> = {
   TooltipContent: popover('--radix-tooltip-content-transform-origin'),
   HoverCard: popover('--radix-hover-card-content-transform-origin'),
   DropdownMenu: popover('--radix-dropdown-menu-content-transform-origin'),
-  ContextMenu: popover('--radix-context-menu-content-transform-origin'),
-  Menubar: popover('--radix-menubar-content-transform-origin', 'content'),
 }

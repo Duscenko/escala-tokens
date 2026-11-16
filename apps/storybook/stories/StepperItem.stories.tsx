@@ -21,7 +21,8 @@ const box = (a: ItemStoryArgs, children: React.ReactNode, label = 'Step', key?: 
 )
 
 const meta: Meta<ItemStoryArgs> = {
-  title: 'Navigation/StepperItem',
+  title: 'Navigation/Stepper',
+  tags: ['!autodocs', 'part'],
   render: (a) => box(a, item(a)),
   args: { size: 'default', status: 'active', state: 'Default', orientation: 'vertical', title: 'Step title', description: 'Short description of the step', descriptionVisible: true },
   argTypes: {
@@ -37,9 +38,10 @@ const meta: Meta<ItemStoryArgs> = {
 export default meta
 type Story = StoryObj<ItemStoryArgs>
 
-export const Playground: Story = {}
+export const StepperItemPlayground: Story = { name: 'StepperItem · Playground' }
 
-export const AllCombinations: Story = {
+export const StepperItemAllCombinations: Story = {
+  name: 'StepperItem · All Combinations',
   render: (a) => (
     <div style={{ display: 'flex', flexWrap: 'wrap', gap: 24, alignItems: 'flex-start' }}>
       {STEPPER_STATES.flatMap((state) => STEPPER_STATUSES.map((status) => box({ ...a, state, status }, item({ ...a, state, status, title: `${status}` }), `${status} ${state}`, status + state)))}
@@ -47,7 +49,8 @@ export const AllCombinations: Story = {
   ),
 }
 
-export const Sizes: Story = {
+export const StepperItemSizes: Story = {
+  name: 'StepperItem · Sizes',
   render: (a) => (
     <div style={{ display: 'flex', flexWrap: 'wrap', gap: 24, alignItems: 'flex-start' }}>
       {STEPPER_SIZES.map((size) => box({ ...a, size }, item(a), `Size ${size}`, size))}

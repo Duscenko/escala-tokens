@@ -59,7 +59,8 @@ function item(a: ItemStoryArgs) {
 }
 
 const meta: Meta<ItemStoryArgs> = {
-  title: 'Navigation/DropdownMenuItem',
+  title: 'Navigation/DropdownMenu',
+  tags: ['!autodocs', 'part'],
   render: item,
   args: {
     size: 'default', forceState: 'Default', variant: 'default', label: 'Option', descriptionVisible: false, description: 'Secondary text', iconLeadingVisible: false,
@@ -87,9 +88,10 @@ const meta: Meta<ItemStoryArgs> = {
 export default meta
 type Story = StoryObj<ItemStoryArgs>
 
-export const Playground: Story = {}
+export const DropdownMenuItemPlayground: Story = { name: 'DropdownMenuItem · Playground' }
 
-export const AllCombinations: Story = {
+export const DropdownMenuItemAllCombinations: Story = {
+  name: 'DropdownMenuItem · All Combinations',
   render: (args) => (
     <div style={{ display: 'flex', flexWrap: 'wrap', gap: 16 }}>
       {DROPDOWN_MENU_ITEM_VARIANTS.flatMap((variant) => DROPDOWN_MENU_ITEM_STATES.map((forceState) => (
@@ -99,10 +101,27 @@ export const AllCombinations: Story = {
   ),
 }
 
-export const Sizes: Story = {
+export const DropdownMenuItemSizes: Story = {
+  name: 'DropdownMenuItem · Sizes',
   render: (args) => (
     <div style={{ display: 'flex', flexWrap: 'wrap', gap: 16 }}>
       {DROPDOWN_MENU_SIZES.map((size) => <div key={size}>{item({ ...args, size, iconLeadingVisible: true, trailingVisible: true, descriptionVisible: true })}</div>)}
+    </div>
+  ),
+}
+
+/** A row under the pointer or the arrow keys (`highlighted`) takes the fill only; the ring is keyboard focus, shown by the pinned Focused row beside it. */
+export const DropdownMenuItemHighlightedHasNoRing: Story = {
+  name: 'DropdownMenuItem · Highlighted Has No Ring',
+  render: (args) => (
+    <div style={{ width: 256 }}>
+      <DropdownMenu>
+        <DropdownMenuContent inline size={args.size}>
+          <DropdownMenuItem highlighted>Highlighted: fill, no ring</DropdownMenuItem>
+          <DropdownMenuItem forceState="Focused">Focused: fill + ring</DropdownMenuItem>
+          <DropdownMenuItem>Default</DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
     </div>
   ),
 }

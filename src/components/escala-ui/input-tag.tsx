@@ -14,6 +14,7 @@
 // Paint: the InputTag, InputTagChip and InputTagOption recipes.
 import * as React from 'react'
 import { cn } from '../../lib/utils'
+import { glyph } from '../../lib/icons'
 import { Spinner } from './spinner'
 
 export const INPUT_TAG_LAYOUTS = ['inline', 'outside'] as const
@@ -33,21 +34,10 @@ export type InputTagOptionState = 'Default' | 'Hover' | 'Focused' | 'Disabled'
 /** Which chip the file nests per box size: xs in sm, sm in default, default in lg. */
 const CHIP_FOR_SIZE: Record<InputTagSize, InputTagChipSize> = { sm: 'xs', default: 'sm', lg: 'default' }
 
-/** Phosphor `x` (regular) — the glyph the file's `icon/close` draws. */
-function CloseGlyph() {
-  return (
-    <svg viewBox="0 0 256 256" fill="currentColor" aria-hidden focusable="false" className="size-full">
-      <path d="M205.66,194.34a8,8,0,0,1-11.32,11.32L128,139.31,61.66,205.66a8,8,0,0,1-11.32-11.32L116.69,128,50.34,61.66A8,8,0,0,1,61.66,50.34L128,116.69l66.34-66.35a8,8,0,0,1,11.32,11.32L139.31,128Z" />
-    </svg>
-  )
-}
-
 /** Phosphor `plus` (regular) — the glyph of the create row. */
 function PlusGlyph() {
   return (
-    <svg viewBox="0 0 256 256" fill="currentColor" aria-hidden focusable="false" className="size-full">
-      <path d="M224,128a8,8,0,0,1-8,8H136v80a8,8,0,0,1-16,0V136H40a8,8,0,0,1,0-16h80V40a8,8,0,0,1,16,0v80h80A8,8,0,0,1,224,128Z" />
-    </svg>
+    glyph('plus', { className: 'size-full' })
   )
 }
 
@@ -93,7 +83,7 @@ function InputTagChip({
           className="inline-flex shrink-0 cursor-pointer items-center justify-center border-0 bg-transparent p-0 outline-none disabled:cursor-not-allowed"
           onClick={(e) => { e.stopPropagation(); onRemove?.() }}
         >
-          <CloseGlyph />
+          {glyph('close', { className: 'size-full' })}
         </button>
       ) : null}
     </span>

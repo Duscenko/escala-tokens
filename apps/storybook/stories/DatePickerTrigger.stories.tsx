@@ -1,5 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
-import { DatePickerTrigger, type DatePickerTriggerSize, type DatePickerTriggerState } from '../../../src/components/escala-ui/date-picker'
+import { expect, screen, userEvent, waitFor } from 'storybook/test'
+import { DatePicker, DatePickerTrigger, type DatePickerTriggerSize, type DatePickerTriggerState } from '../../../src/components/escala-ui/date-picker'
 
 const SIZES: DatePickerTriggerSize[] = ['lg', 'sm', 'default']
 const STATES: DatePickerTriggerState[] = ['Default', 'Hover', 'Focused', 'Invalid', 'Disabled', 'Loading']
@@ -18,10 +19,21 @@ interface DatePickerTriggerStoryArgs {
 }
 
 function render({ size, forceState, value, placeholderText, valueText }: DatePickerTriggerStoryArgs) {
+  // A pinned state is a still (docs, Figma parity); at Default the trigger is live: it opens the calendar.
+  if (forceState === 'Default') {
+    return (
+      <div style={{ minHeight: 480 }}>
+        <DatePicker
+          size={size} placeholderText={placeholderText} style={{ width: 280 }}
+          defaultValue={value === 'filled' ? new Date(2026, 10, 12) : undefined}
+        />
+      </div>
+    )
+  }
   return (
     <DatePickerTrigger
       size={size}
-      forceState={forceState === 'Default' ? undefined : forceState}
+      forceState={forceState}
       placeholderText={placeholderText}
       valueText={value === 'filled' ? valueText : undefined}
       style={{ width: 280 }}
@@ -30,7 +42,8 @@ function render({ size, forceState, value, placeholderText, valueText }: DatePic
 }
 
 const meta: Meta<DatePickerTriggerStoryArgs> = {
-  title: 'Forms/DatePickerTrigger',
+  title: 'Forms/DatePicker',
+  tags: ['!autodocs', 'part'],
   render,
   args: {
     size: 'default',
@@ -50,10 +63,11 @@ const meta: Meta<DatePickerTriggerStoryArgs> = {
 export default meta
 type Story = StoryObj<DatePickerTriggerStoryArgs>
 
-export const Playground: Story = {}
+export const DatePickerTriggerPlayground: Story = { name: 'DatePickerTrigger · Playground' }
 
 /** Every Size × State × Value, as the file's 36 variants. */
-export const AllCombinations: Story = {
+export const DatePickerTriggerAllCombinations: Story = {
+  name: 'DatePickerTrigger · All Combinations',
   render: (args) => (
     <div style={{ display: 'flex', flexWrap: 'wrap', gap: 24 }}>
       {VALUES.flatMap((value) => SIZES.flatMap((size) => STATES.map((forceState) => (
@@ -63,7 +77,8 @@ export const AllCombinations: Story = {
   ),
 }
 
-export const Sizes: Story = {
+export const DatePickerTriggerSizes: Story = {
+  name: 'DatePickerTrigger · Sizes',
   render: (args) => (
     <div style={{ display: 'flex', flexWrap: 'wrap', gap: 24, alignItems: 'flex-start' }}>
       {SIZES.map((size) => <div key={size}>{render({ ...args, size, value: 'filled' })}</div>)}
@@ -71,7 +86,8 @@ export const Sizes: Story = {
   ),
 }
 
-export const States: Story = {
+export const DatePickerTriggerStates: Story = {
+  name: 'DatePickerTrigger · States',
   render: (args) => (
     <div style={{ display: 'flex', flexWrap: 'wrap', gap: 24, alignItems: 'flex-start' }}>
       {STATES.map((forceState) => <div key={forceState}>{render({ ...args, forceState, value: 'filled' })}</div>)}
@@ -84,8 +100,8 @@ const caption = { font: '12px sans-serif', color: 'var(--color-content-secondary
 /** The file's own prototype page. RESTING (hover to try): a placeholder, a filled and a small
  *  filled trigger. FOCUSED · INVALID · LOADING: "Pick a start date" focused, "Jan 1, 2025"
  *  invalid, and the Spinner. */
-export const RestingFocused: Story = {
-  name: 'Resting · Focused',
+export const DatePickerTriggerRestingFocused: Story = {
+  name: 'DatePickerTrigger · Resting · Focused',
   render: () => (
     <div style={{ display: 'flex', flexWrap: 'wrap', gap: 48 }}>
       <div>
@@ -106,4 +122,37 @@ export const RestingFocused: Story = {
       </div>
     </div>
   ),
+}
+
+/** Trigger → popover, the whole lifecycle: a click opens the DatePickerPopover 8px under the trigger on `popover-enter`, choosing a day writes
+ *  it into the trigger and closes on `popover-exit`, and focus returns to the trigger. */
+export const DatePickerTriggerOpensTheCalendar: Story = {
+  name: 'DatePickerTrigger · Opens the calendar',
+  args: { value: 'placeholder', forceState: 'Default' },
+  play: async ({ canvasElement }) => {
+    const trigger = canvasElement.querySelector<HTMLButtonElement>('[data-escala=DatePickerTrigger]')!
+    await expect(trigger).toHaveAttribute('aria-expanded', 'false')
+    await userEvent.click(trigger)
+    const panel = await waitFor(() => { const p = document.querySelector('[data-escala=DatePickerPopover]'); expect(p).toBeTruthy(); return p as HTMLElement })
+    await expect(trigger).toHaveAttribute('aria-expanded', 'true')
+    await expect(getComputedStyle(panel).animationName).not.toBe('none')
+    await userEvent.click(await screen.findByRole('button', { name: / 15, \d{4}$/ }))
+    await waitFor(() => expect(trigger).toHaveTextContent(/ 15, \d{4}$/))
+    await waitFor(() => expect(document.querySelector('[data-escala=DatePickerPopover]')).toBeNull())
+    await expect(trigger).toHaveFocus()
+  },
+}
+
+/** A range from the trigger: the popover carries the presets rail, two clicks pick the dates, Apply closes it and the trigger shows "from – to". */
+export const DatePickerTriggerPickARange: Story = {
+  name: 'DatePickerTrigger · Pick a range',
+  render: () => <div style={{ minHeight: 520 }}><DatePicker mode="range" placeholderText="Select dates" style={{ width: 320 }} /></div>,
+  play: async ({ canvasElement }) => {
+    const trigger = canvasElement.querySelector<HTMLButtonElement>('[data-escala=DatePickerTrigger]')!
+    await userEvent.click(trigger)
+    await userEvent.click(await screen.findByRole('button', { name: / 10, \d{4}$/ }))
+    await userEvent.click(await screen.findByRole('button', { name: / 18, \d{4}$/ }))
+    await userEvent.click(await screen.findByRole('button', { name: 'Apply' }))
+    await waitFor(() => expect(trigger).toHaveTextContent(/10, \d{4} – .* 18, \d{4}/))
+  },
 }
