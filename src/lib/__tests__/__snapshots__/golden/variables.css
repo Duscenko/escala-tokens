@@ -305,7 +305,7 @@
   --color-elevation-shadow-key: #0000001a;
   --color-elevation-shadow-ambient: #0000000d;
   --color-elevation-shadow-ring: #ffffff0d;
-  --color-elevation-highlight: #ffffff26;
+  --color-elevation-highlight: #ffffff4d;
 
   /* Panel background — apply to surface-1: backdrop-filter: var(--panel-blur) */
   --panel-blur: none;

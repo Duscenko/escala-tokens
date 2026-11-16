@@ -1159,7 +1159,9 @@ const CATEGORICAL_ROLES: { group: string; key: string; light: string; dark: stri
   // neighbours — and keeps the ui-component solve (black-a.7 / white-a.8).
   // OWNER DECISION 2026-11-16 (DEC-2026-11-16-004): the Figma file is the rule. `Border/control` sits at Black Alpha/03 ·
   // White Alpha/03 and its hover at /04, a soft hairline below the 3:1 of WCAG 1.4.11. Pinned to the file's steps, not solved.
-  { group: 'border', key: 'control',       light: '{black-a.3}', dark: '{white-a.3}' },
+  // Re-read from the file later the same day: Dark rest moved to White Alpha/04 — the SAME step as its hover. Built as the
+  // file has it (rest and hover read alike in Dark; the file is the rule).
+  { group: 'border', key: 'control',       light: '{black-a.3}', dark: '{white-a.4}' },
   { group: 'border', key: 'control-hover', light: '{black-a.4}', dark: '{white-a.4}' },
   { group: 'border', key: 'strong',        light: '{ui-a:black-a.5}',  dark: '{ui-a:white-a.5}' },
   // DECORATIVE brand emphasis — a tinted card edge or a grouping stroke. It is
@@ -1224,7 +1226,8 @@ const CATEGORICAL_ROLES: { group: string; key: string; light: string; dark: stri
   { group: 'elevation', key: 'shadow-key',     light: '{black-a.2}', dark: '{black-a.6}' },
   { group: 'elevation', key: 'shadow-ambient', light: '{black-a.1}', dark: '{black-a.4}' },
   { group: 'elevation', key: 'shadow-ring',    light: '{white-a.1}', dark: '{white-a.1}' },
-  { group: 'elevation', key: 'highlight',      light: '{white-a.3}', dark: '{white-a.3}' },
+  // The file (2026-11-16): White Alpha/05 in Light, /03 in Dark — a light fill needs more white to show its top edge.
+  { group: 'elevation', key: 'highlight',      light: '{white-a.5}', dark: '{white-a.3}' },
   // `border.critical` / `border.warning` / `border.success` moved to
   // `status.<sev>.border-strong` (audit F3 — a severity-family stroke belongs in
   // the `status` group, beside `status.<sev>.border`), and `info` joined them so
@@ -1274,7 +1277,7 @@ export function projectCategorical(
  * actually ship.
  */
 export const CATEGORICAL_ROLE_COMMENTS: Record<string, string> = {
-  'elevation.highlight': '[ROLE: Solid Control Highlight] The inner 2px top highlight of a solid filled control (primary and destructive buttons, every state but disabled): box-shadow: inset 0 2px 0 var(--color-elevation-highlight). {white-a.3} in both themes. EFFECT colour only.',
+  'elevation.highlight': '[ROLE: Solid Control Highlight] The inner 2px top highlight of a solid filled control (primary and destructive buttons, every state but disabled): box-shadow: inset 0 2px 0 var(--color-elevation-highlight). {white-a.5} in Light, {white-a.3} in Dark, as the Figma file has it. EFFECT colour only.',
   'elevation.shadow-ring': '[ROLE: Shadow Ring] The 0 0 0 1px highlight edge every shadow and depth recipe starts with. EFFECT colour only. {white-a.1} in both themes: invisible on a light surface, the rim that buys elevation on a dark page.',
   'elevation.shadow-ambient': '[ROLE: Shadow Ambient] The tight, secondary layer of the shadow and depth recipes. EFFECT colour only. {black-a.1} (5%) in Light, {black-a.4} (20%) in Dark.',
   'elevation.shadow-key': '[ROLE: Shadow Key] The main, larger-offset layer of every Shadow/* and Depth/* recipe. EFFECT colour only, never a fill or stroke. {black-a.2} (10%) in Light, {black-a.6} (40%) in Dark, so one shadow style follows the theme.',
@@ -1350,8 +1353,8 @@ export const CATEGORICAL_ROLE_COMMENTS: Record<string, string> = {
   'status.info.border-strong': '[ROLE: Info Control Boundary] Affects informational-state form fields. Light {info.9} = 3.24:1/Lc59. Dark {info.10} = 7.15:1/Lc49 — info.9 fails APCA in dark (Lc 42), one step earlier than error needs.',
   'border.subtle': '[ROLE: Decorative Border 1/3] Affects hairline dividers, table rules, the edge of a quiet grouping. Lightest neutral stroke — {black-a.1} in light, {white-a.1} in dark (the FIXED alpha ladder, so it composites correctly on any surface): 5 %, owner decision 2026-11-16 (DEC-2026-11-16-003). It measures APCA Lc 0 on the dark page, which is accepted: shadow and surface carry the separation. DECORATION: separates regions, carries no state, no contrast floor. If the stroke is the only thing telling the user a control is there, that is border.control.',
   'border.default': '[ROLE: Decorative Border 2/3] Affects a card edge, a panel boundary, a grouping box. {black-a.2} / {white-a.2} (10 %, owner decision 2026-11-16, DEC-2026-11-16-003). DECORATION, no contrast floor. One step above border.subtle so a panel edge still outranks a hairline. Never the only boundary of a control.',
-  'border.control': '[ROLE: Control Boundary] Affects the resting border of inputs, textareas, selects, checkboxes, radios, switch tracks and outline buttons. {black-a.3} in Light, {white-a.3} in Dark: a soft hairline, below the 3:1 of WCAG 1.4.11 BY OWNER DECISION (DEC-2026-11-16-004, the Figma file is the rule); a field is identified by its fill and its focus ring, not by this stroke alone.',
-  'border.control-hover': '[ROLE: Control Boundary Hover] Affects the hover state of a control\'s resting (border.control) border. One step past border.control: {black-a.4} in Light, {white-a.4} in Dark (DEC-2026-11-16-004).',
+  'border.control': '[ROLE: Control Boundary] Affects the resting border of inputs, textareas, selects, checkboxes, radios, switch tracks and outline buttons. {black-a.3} in Light, {white-a.4} in Dark: a soft hairline, below the 3:1 of WCAG 1.4.11 BY OWNER DECISION (DEC-2026-11-16-004, the Figma file is the rule); a field is identified by its fill and its focus ring, not by this stroke alone.',
+  'border.control-hover': '[ROLE: Control Boundary Hover] Affects the hover state of a control\'s resting (border.control) border. One step past border.control in Light ({black-a.4}); in Dark the Figma file puts rest and hover on the same {white-a.4} (DEC-2026-11-16-004).',
   'border.strong': '[ROLE: Strong Border] Affects the edge of a grouping or a selected container that must read before its neighbours. Not the field outline — that is border.control. WCAG 1.4.11 + APCA Lc 45 against the page, SOLVED on the alpha ladder ({ui-a:…}): {black-a.7} in light, {white-a.8} in dark for the default system.',
   'border.focus': '[ROLE: A11y Focus Ring] The keyboard focus-visible boundary on every interactive element of the default / accent variant. SOLVED per theme ({focus:accent.9}): the first accent tone from 9 that clears WCAG 1.4.11 (3:1) on the page — tone 9 in both themes for the default system. Severity, neutral and inverse variants take their own boundary (status.<sev>.border-strong, border.strong, border.inverse). The translucent halo outside it is border.ring.*.',
   'border.ring.default': '[ROLE: Focus Halo] Translucent glow outside border.focus. Paired with border.focus on EVERY focused control (shadcn border-ring + ring-[3px]): the edge turns to border.focus, this halo sits outside it. Never the only focus cue. Decoration, NOT a boundary — never measured for WCAG 1.4.11; border.focus is the contrast-bearing part. Replaces a hardcoded 40% alpha in the preview specimens. A field in an error/success state reuses status.<sev>.border for its halo — there is no separate per-severity ring role.',
