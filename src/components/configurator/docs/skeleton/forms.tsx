@@ -612,14 +612,16 @@ export function SkeletonPasswordStrengthRuleSpecimen({ t, v }: SpecimenProps) {
 }
 
 export function SkeletonFileUploadSpecimen({ t, v, w }: SpecimenProps) {
-  // The board (no axes) uploads one file: the trigger layout, sm, the bar filling in steps.
+  // The board (no axes) uploads one file: the trigger layout, the bar filling in steps. The
+  // default size, not sm: sm puts name · status · meta · actions on ONE line, and in a tile's
+  // width the status and meta (which never shrink) left the file name 0px.
   const board = v.Layout == null && v.Size == null
   const step = useAutoplayStep(UPLOAD_PLAY.values.length, UPLOAD_PLAY.ms)
   const progress = step == null ? 80 : UPLOAD_PLAY.values[step]
   return (
     <RecipeScope t={t}>
       {board ? (
-        <SkFileUpload size="sm" layout="trigger" style={{ width: w ?? 300 }}>
+        <SkFileUpload layout="trigger" style={{ width: w ?? 300 }}>
           <SkFileUploadItem status="uploading" name="brand-guide.pdf" progress={progress} statusText={`Uploading · ${progress}%`} />
         </SkFileUpload>
       ) : (

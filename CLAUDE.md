@@ -907,6 +907,27 @@ explicitly out of scope. Individual components still adapt between `md` and `xl`
 > and would vanish) and the monthly total, all on one script. The tile width
 > (`collageFrame`) reads the OTP from its recipe (6 × `size.control` + 5 × `gap-control`).
 
+> **UPDATE (2026-11-16): the Board's tiles all end on the column edges, and a narrow canvas SLIDES.**
+> Reported as the Calendar having more air at its sides than the other tiles. Measured: its slot was
+> 375px, the panel 357.6px, centred — 8.7px short on each side. Cause: the column is
+> `max(frame.source, blocks)`; with the default theme the OTP's six cells (322px) set it, not the
+> blocks, so the slot is wider than the file's panel.
+> - **The Calendar FILLS its slot** (`SpecimenProps.w` on the Calendar specimen, `heavy.tsx`): beside a
+>   presets rail the RAIL takes the spare width; with no rail (the phone tile) the weeks spread their
+>   seven cells. Day cells never grow. The board reads the panel's own width with the fill taken away
+>   for a moment (`width: max-content` inside the layout effect), as `ScaledModule` reads a stretched
+>   tile's natural height. A new block placed in a derived slot must fill it or be the one measured.
+> - **One scale, exactly:** `photo()` rounds only the painted width (rounding the source too gave
+>   0.7542 · 0.7545 · 0.7547 on one board), and `CollageFrameContext.source` is `unit`, not
+>   `frame.source` (a theme whose blocks set the column photographed its tiles larger than the blocks).
+> - **`BOARD_MIN_COLUMN` = 160 (half size). Below four columns at that width the board SLIDES sideways**
+>   in its own scrollport (`data-board-slides`): it bleeds through the canvas inset, snaps on the bento
+>   columns, and the canvas never scrolls sideways. Before it hung 17–40px past the canvas. Tablet /
+>   Mobile were already a sideways strip of phones.
+> - The board's FileUpload is the default size: sm puts name · status · meta · actions on one line and
+>   left the file name 0px wide in a tile.
+> Measured after: 7 shifts on load, CLS 0.027, zero at rest (see the `ScaledModule` note above).
+
 > **UPDATE (2026-11-05): the INSPECTOR moves ONE way — `lib/inspectorMotion.ts`.** Reported as
 > many bugs in the right panel. Measured: three layers over the panel slot moved three ways (pinned
 > trace 0.16s `easeOut` with no exit, Token Details 0.18s under a second fade, the ship panel not at
