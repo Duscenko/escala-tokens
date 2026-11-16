@@ -82,6 +82,32 @@
       "firstSeen": "2026-11-16",
       "lastSeen": "2026-11-16",
       "regression": false
+    },
+    {
+      "id": "CC-001:code-connect-missing",
+      "rule": "DEPARTURE",
+      "severity": "warn",
+      "side": "code",
+      "entity": "Auth blocks",
+      "evidence": "No Code Connect files exist in this repo (no .figma.tsx, no figma.config). The prompt asks for one per block; not created. Needs a decision on the Code Connect setup first.",
+      "status": "Open",
+      "resolution": null,
+      "firstSeen": "2026-11-16",
+      "lastSeen": "2026-11-16",
+      "regression": false
+    },
+    {
+      "id": "CMP-006:AuthBlock-icons-unverified",
+      "rule": "CMP-002",
+      "severity": "info",
+      "side": "both",
+      "entity": "Auth*",
+      "evidence": "The ModalHeader icon of each block is chosen from the component icon set (lock, user, warning…); the Figma icon swap per block was not read. Size=lg padding of SocialLoginButton unverified.",
+      "status": "Open",
+      "resolution": null,
+      "firstSeen": "2026-11-16",
+      "lastSeen": "2026-11-16",
+      "regression": false
     }
   ]
 }

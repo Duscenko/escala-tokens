@@ -74,6 +74,12 @@ const LIFT: Record<string, (key: string, ambient: string, ring: string) => strin
   // The Chip being dragged: Shadow/sm without its spreads (Figma paints none on a frame that does not clip).
   drag: (k, a) => [`0 1px 3px ${k}`, `0 1px 2px ${a}`],
 }
+/** A named elevation as one CSS `box-shadow` value on the Elevation roles (a block's card draws the Modal's `modal`). */
+export function liftShadow(name: keyof typeof LIFT): string {
+  const v = (ref: string) => `var(${cssVarOf(ref)})`
+  return LIFT[name](v('color.elevation.shadow-key'), v('color.elevation.shadow-ambient'), v('color.elevation.shadow-ring')).join(', ')
+}
+
 /** The surface effects a slot carries: its lift, then the top highlight. */
 function surfaceShadows(props: SlotProps, v: (ref: string) => string): string[] {
   const lift = props.lift && LIFT[props.lift] ? LIFT[props.lift](v('color.elevation.shadow-key'), v('color.elevation.shadow-ambient'), v('color.elevation.shadow-ring')) : []

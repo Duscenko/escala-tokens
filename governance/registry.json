@@ -1,1 +1,155 @@
-{}
+{
+  "AuthAccountLocked": {
+    "kind": "block",
+    "stage": "storybook",
+    "version": null,
+    "workshopPage": null,
+    "story": "blocks-auth-accountlocked--playground",
+    "figmaNode": "1006:1473",
+    "lastAudit": "2026-11-16",
+    "lastSyncSha": null,
+    "codeConnect": null
+  },
+  "AuthCheckEmail": {
+    "kind": "block",
+    "stage": "storybook",
+    "version": null,
+    "workshopPage": null,
+    "story": "blocks-auth-checkemail--playground",
+    "figmaNode": "1006:1036",
+    "lastAudit": "2026-11-16",
+    "lastSyncSha": null,
+    "codeConnect": null
+  },
+  "AuthError": {
+    "kind": "block",
+    "stage": "storybook",
+    "version": null,
+    "workshopPage": null,
+    "story": "blocks-auth-error--playground",
+    "figmaNode": "1006:1635",
+    "lastAudit": "2026-11-16",
+    "lastSyncSha": null,
+    "codeConnect": null
+  },
+  "AuthForgotPassword": {
+    "kind": "block",
+    "stage": "storybook",
+    "version": null,
+    "workshopPage": null,
+    "story": "blocks-auth-forgotpassword--playground",
+    "figmaNode": "1005:1497",
+    "lastAudit": "2026-11-16",
+    "lastSyncSha": null,
+    "codeConnect": null
+  },
+  "AuthMagicLinkSent": {
+    "kind": "block",
+    "stage": "storybook",
+    "version": null,
+    "workshopPage": null,
+    "story": "blocks-auth-magiclinksent--playground",
+    "figmaNode": "1006:1261",
+    "lastAudit": "2026-11-16",
+    "lastSyncSha": null,
+    "codeConnect": null
+  },
+  "AuthNewPassword": {
+    "kind": "block",
+    "stage": "storybook",
+    "version": null,
+    "workshopPage": null,
+    "story": "blocks-auth-newpassword--playground",
+    "figmaNode": "1005:1838",
+    "lastAudit": "2026-11-16",
+    "lastSyncSha": null,
+    "codeConnect": null
+  },
+  "AuthOTPVerification": {
+    "kind": "block",
+    "stage": "storybook",
+    "version": null,
+    "workshopPage": null,
+    "story": "blocks-auth-otpverification--playground",
+    "figmaNode": "1005:640",
+    "lastAudit": "2026-11-16",
+    "lastSyncSha": null,
+    "codeConnect": null
+  },
+  "AuthSignIn": {
+    "kind": "block",
+    "stage": "storybook",
+    "version": null,
+    "workshopPage": null,
+    "story": "blocks-auth-signin--playground",
+    "figmaNode": "1004:436",
+    "lastAudit": "2026-11-16",
+    "lastSyncSha": null,
+    "codeConnect": null
+  },
+  "AuthSignInPhone": {
+    "kind": "block",
+    "stage": "storybook",
+    "version": null,
+    "workshopPage": null,
+    "story": "blocks-auth-signinphone--playground",
+    "figmaNode": "1004:1199",
+    "lastAudit": "2026-11-16",
+    "lastSyncSha": null,
+    "codeConnect": null
+  },
+  "AuthSignUp": {
+    "kind": "block",
+    "stage": "storybook",
+    "version": null,
+    "workshopPage": null,
+    "story": "blocks-auth-signup--playground",
+    "figmaNode": "1004:971",
+    "lastAudit": "2026-11-16",
+    "lastSyncSha": null,
+    "codeConnect": null
+  },
+  "AuthSocialSignIn": {
+    "kind": "block",
+    "stage": "storybook",
+    "version": null,
+    "workshopPage": null,
+    "story": "blocks-auth-socialsignin--playground",
+    "figmaNode": "1006:1904",
+    "lastAudit": "2026-11-16",
+    "lastSyncSha": null,
+    "codeConnect": null
+  },
+  "AuthTwoFactor": {
+    "kind": "block",
+    "stage": "storybook",
+    "version": null,
+    "workshopPage": null,
+    "story": "blocks-auth-twofactor--playground",
+    "figmaNode": "1005:905",
+    "lastAudit": "2026-11-16",
+    "lastSyncSha": null,
+    "codeConnect": null
+  },
+  "SocialLoginButton": {
+    "kind": "component",
+    "stage": "storybook",
+    "version": null,
+    "workshopPage": null,
+    "story": "buttons-socialloginbutton--playground",
+    "figmaNode": "364:20",
+    "lastAudit": "2026-11-16",
+    "lastSyncSha": null
+  },
+  "FeaturedIcon": {
+    "kind": "component",
+    "stage": "storybook",
+    "version": null,
+    "workshopPage": null,
+    "story": "indicators-featuredicon--playground",
+    "figmaNode": "1119:10857",
+    "lastAudit": "2026-11-16",
+    "lastSyncSha": null,
+    "note": "Appearance=gradient added (A4)"
+  }
+}
