@@ -57,7 +57,38 @@ export function searchPhoneCountries(query: string, list: PhoneCountry[] = PHONE
   const q = query.trim().toLowerCase()
   if (!q) return list
   const digits = q.replace(/^\+/, '')
-  // "+…" searches the calling code only (the field's hint: "Type + to search by calling code").
+  // "+…" searches the calling code only (the picker's search placeholder: "Search country or +code").
   if (q.startsWith('+')) return list.filter((c) => c.dial.slice(1).startsWith(digits))
   return list.filter((c) => c.name.toLowerCase().includes(q) || c.iso.toLowerCase() === q || (/^\d+$/.test(q) && c.dial.slice(1).startsWith(q)))
+}
+
+/**
+ * The country the visitor is most likely in: the region of the first browser language that names one
+ * (`fr-FR` → FR, `en` alone → the likely region of that language, `es-419` → none). Undefined when nothing says.
+ */
+export function detectCountry(languages: readonly string[] | undefined = typeof navigator !== 'undefined' ? navigator.languages : undefined): string | undefined {
+  for (const tag of languages ?? []) {
+    try {
+      const region = new Intl.Locale(tag).maximize().region
+      if (region && phoneCountry(region)) return region
+    } catch { /* not a locale */ }
+  }
+  return undefined
+}
+
+/** The list with the detected country first (an unfiltered list only: a search keeps its own order). */
+export function surfaceCountry(list: PhoneCountry[], iso: string | undefined): PhoneCountry[] {
+  const at = iso ? list.findIndex((c) => c.iso === iso) : -1
+  return at <= 0 ? list : [list[at], ...list.slice(0, at), ...list.slice(at + 1)]
+}
+
+/**
+ * Which rows of a long, equal-height list to draw: the ones in view plus `overscan` either side.
+ * `before` / `after` are the heights the rows left out take (a spacer), so the scroll bar stays true.
+ */
+export function virtualWindow(count: number, rowHeight: number, scrollTop: number, viewport: number, overscan = 6): { start: number; end: number; before: number; after: number } {
+  if (rowHeight <= 0 || viewport <= 0) return { start: 0, end: Math.min(count, overscan * 2), before: 0, after: 0 }
+  const start = Math.max(0, Math.floor(scrollTop / rowHeight) - overscan)
+  const end = Math.min(count, Math.ceil((scrollTop + viewport) / rowHeight) + overscan)
+  return { start, end, before: start * rowHeight, after: Math.max(0, (count - end) * rowHeight) }
 }

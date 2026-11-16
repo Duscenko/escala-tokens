@@ -32,7 +32,7 @@ describe('Auth blocks', () => {
   })
 
   it('every block declares its motion (none counts) and only uses the existing roles', () => {
-    const ROLES = /^(use-page-transition|use-disclosure-in \/ use-disclosure-out|use-celebration|none)$/
+    const ROLES = /^(use-page-transition|use-disclosure-in \/ use-disclosure-out|popover-enter \/ popover-exit|use-celebration|none)$/
     for (const block of contract.blocks) {
       expect(block.motion.length, block.name).toBeGreaterThan(0)
       for (const m of block.motion) expect(m.role, block.name).toMatch(ROLES)

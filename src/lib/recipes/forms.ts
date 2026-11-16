@@ -769,6 +769,8 @@ export const COMBOBOX_POPOVER: ComponentRecipe = {
       },
       // Concentric with the overlay: 24 − inset-control 12 = Radius/action 12 for the rows (DEC-2026-11-16-001).
       list: { paddingX: 'spacing.inset-control', paddingY: 'spacing.inset-control' },
+      // Under a search header the list starts gap-tight below it (the file's country picker: search, 4, rows).
+      'list[data-after-header]': { paddingTop: 'spacing.gap-tight' },
       separator: { paddingY: 'spacing.gap-tight' },
       line: { height: 'stroke.divider', fill: c('border.subtle') },
       empty: { paddingX: 'spacing.inset-control', paddingY: 'spacing.inset-control', text: c('content.secondary') },
@@ -1237,7 +1239,7 @@ export const FIELD_STATES = ['Default', 'Invalid', 'Disabled'] as const
 
 export const FIELD: ComponentRecipe = {
   key: 'Field',
-  slots: ['root', 'labelRow', 'label', 'required', 'description', 'error', 'legend'],
+  slots: ['root', 'labelRow', 'label', 'required', 'description', 'errorRegion', 'error', 'legend'],
   defaults: { Size: 'default', State: 'Default' },
   parts: [
     part({}, () => ({

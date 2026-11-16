@@ -13120,6 +13120,9 @@
                 "paddingX": "spacing.inset-control",
                 "paddingY": "spacing.inset-control"
               },
+              "list[data-after-header]": {
+                "paddingTop": "spacing.gap-tight"
+              },
               "separator": {
                 "paddingY": "spacing.gap-tight"
               },
@@ -16649,6 +16652,7 @@
         "label",
         "required",
         "description",
+        "errorRegion",
         "error",
         "legend"
       ],
@@ -16713,7 +16717,21 @@
             }
           }
         }
-      ]
+      ],
+      "motion": {
+        "transitions": {
+          "errorRegion": {
+            "grid-template-rows": "use-disclosure-out",
+            "opacity": "use-disclosure-out",
+            "margin-top": "use-disclosure-out"
+          },
+          "errorRegion[data-open]": {
+            "grid-template-rows": "use-disclosure-in",
+            "opacity": "use-disclosure-in",
+            "margin-top": "use-disclosure-in"
+          }
+        }
+      }
     },
     "Label": {
       "key": "Label",

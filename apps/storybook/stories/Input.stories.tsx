@@ -167,3 +167,22 @@ export const States: Story = {
     </div>
   ),
 }
+
+/**
+ * Type=phone with a typed number in every State. The Figma set draws one Filled variant for the phone (Default); the code holds a value in
+ * Hover, Focused, Invalid and Disabled too, so the contract gap is closed here first (flagged for the Figma sync: Input Type=phone · Value=filled ×
+ * Hover · Focused · Invalid · Disabled).
+ */
+export const PhoneFilledStates: Story = {
+  name: 'Phone · filled · every state',
+  render: (args) => (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 16, width: 280 }}>
+      {STATES.map((forceState) => (
+        <div key={forceState}>
+          <p style={label}>{forceState}</p>
+          {render({ ...args, type: 'phone', value: 'filled', forceState })}
+        </div>
+      ))}
+    </div>
+  ),
+}

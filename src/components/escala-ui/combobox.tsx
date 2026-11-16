@@ -137,11 +137,14 @@ export interface ComboboxPopoverProps extends React.ComponentProps<'div'> {
   /** The listbox's accessible name (default "Options"); the Combobox passes its own. */
   listLabel?: string
   listLabelledBy?: string
+  /** The scrolling list element, and its scroll (a long list that draws only the rows in view). */
+  listRef?: React.Ref<HTMLDivElement>
+  onListScroll?: React.UIEventHandler<HTMLDivElement>
   width?: number | string
 }
 
 function ComboboxPopover({
-  size = 'default', content = 'list', emptyText = 'No match', footer, header, maxListHeight, listId, listLabel, listLabelledBy, width, children, className, style, ...props
+  size = 'default', content = 'list', emptyText = 'No match', footer, header, maxListHeight, listId, listLabel, listLabelledBy, listRef, onListScroll, width, children, className, style, ...props
 }: ComboboxPopoverProps) {
   return (
     <div
@@ -158,6 +161,9 @@ function ComboboxPopover({
       )}
       <div
         id={listId}
+        ref={listRef}
+        onScroll={onListScroll}
+        data-after-header={header != null ? '' : undefined}
         role={content === 'empty' ? undefined : 'listbox'}
         aria-label={content === 'empty' || listLabelledBy ? undefined : listLabel ?? 'Options'}
         aria-labelledby={content === 'empty' ? undefined : listLabelledBy}

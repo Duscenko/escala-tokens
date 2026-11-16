@@ -437,15 +437,18 @@
       },
       "variants": 2,
       "anatomy": [
-        "header-area (ModalHeader, Align vertical-center in card · horizontal in plain)",
+        "header-area (ModalHeader, Align vertical-center in card · horizontal in plain; FeaturedIcon secondary, a phone)",
         "divider (Separator, Tone subtle)",
-        "body (gap-group)"
+        "body (gap-section between two groups)",
+        "form (gap-group): Field (Phone number, required) + CheckboxItem",
+        "actions (gap-group): Button · Separator (OR) · Button (secondary, mail icon)",
+        "country picker: an anchored Popover on every viewport (search Input + ComboboxItem rows)"
       ],
       "nests": [
         "ModalHeader",
         "Separator",
         "Field",
-        "Input",
+        "PhoneNumberInput",
         "CheckboxItem",
         "Button"
       ],
@@ -454,14 +457,18 @@
         "container",
         "status",
         "error",
+        "defaultCountry",
+        "defaultPhone",
         "onSubmit",
         "onNavigate"
       ],
       "a11y": [
         "The block is a <section>; the header's title is its heading",
-        "Every field is a Field (label, description, error tied to the control)",
-        "An inline notice is aria-live=polite",
-        "Icon-only social buttons carry the full label as aria-label"
+        "The phone field is a Field (label, error tied to the control by aria-describedby; aria-invalid); input type=tel, inputmode=tel, autocomplete=tel",
+        "The country trigger is a combobox: aria-expanded, aria-controls, ArrowDown opens, typing opens with the query",
+        "In the picker the search is the combobox: aria-activedescendant, ArrowUp / Down / PageUp / PageDown / Ctrl+Home / Ctrl+End move the highlight, Enter picks, Escape closes and returns focus to the trigger",
+        "The list is a listbox of options with aria-setsize / aria-posinset (it draws only the rows in view)",
+        "The search is not focused on a touch device (no keyboard before the list is visible)"
       ],
       "motion": [
         {
@@ -471,10 +478,16 @@
           "reduced": "fade kept, travel neutralised by the token"
         },
         {
-          "moment": "inline notice appears / closes",
-          "mechanism": "grid-rows + opacity transition",
+          "moment": "field error appears / clears",
+          "mechanism": "the Field's own disclosure: grid-rows + opacity + margin on the disclosure roles (recipe motion Field.errorRegion); the block adds nothing",
           "role": "use-disclosure-in / use-disclosure-out",
-          "reduced": "fade kept"
+          "reduced": "from the tokens"
+        },
+        {
+          "moment": "country picker opens / closes",
+          "mechanism": "the Popover choreography on the panel (data-state), from the trigger",
+          "role": "popover-enter / popover-exit",
+          "reduced": "fade, from the tokens"
         },
         {
           "moment": "Container card ↔ plain",

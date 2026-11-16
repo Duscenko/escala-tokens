@@ -50,6 +50,13 @@ export const RECIPE_MOTION: Record<string, RecipeMotion> = {
   TableResizer: { transitions: { handle: states('background-color') } },
   FileUploadDropzone: { transitions: { root: states('background-color', 'border-color') } },
   Input: { transitions: { root: FIELD } },
+  // A field's error opens and closes on the disclosure roles: in when it appears, out when it clears (the `[data-open]` rule wins while open).
+  Field: {
+    transitions: {
+      errorRegion: { 'grid-template-rows': 'use-disclosure-out', opacity: 'use-disclosure-out', 'margin-top': 'use-disclosure-out' },
+      'errorRegion[data-open]': { 'grid-template-rows': 'use-disclosure-in', opacity: 'use-disclosure-in', 'margin-top': 'use-disclosure-in' },
+    },
+  },
   DatePickerTrigger: { transitions: { root: FIELD } },
   CalendarDay: { transitions: { cell: states('background-color', 'border-color', 'box-shadow', 'color'), day: states('color') } },
   DatePickerPopover: popover('--radix-popover-content-transform-origin'),

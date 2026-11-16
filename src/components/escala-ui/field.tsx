@@ -114,7 +114,24 @@ function Field({
       </div>
       {wired}
       {description != null ? <p data-part="Field.description" id={descId} className="m-0">{description}</p> : null}
-      {errorId ? <p data-part="Field.error" id={errorId} className="m-0">{error}</p> : null}
+      {error != null ? (
+        // The error opens and closes (it never pops): a grid row that grows from 0 to its height, on the disclosure roles
+        // (recipe motion: Field.errorRegion). Closed, it is inert and its margin cancels the root's gap, so a field
+        // with no error is exactly as tall as one that never had it.
+        <div
+          data-part="Field.errorRegion"
+          data-open={errorId ? '' : undefined}
+          inert={errorId ? undefined : true}
+          className="grid"
+          style={{
+            gridTemplateRows: errorId ? '1fr' : '0fr',
+            opacity: errorId ? 1 : 0,
+            marginTop: errorId ? undefined : 'calc(var(--spacing-gap-control) * -1)',
+          }}
+        >
+          <div className="min-h-0 overflow-hidden"><p data-part="Field.error" id={errorId} className="m-0">{error}</p></div>
+        </div>
+      ) : null}
     </div>
   )
 }

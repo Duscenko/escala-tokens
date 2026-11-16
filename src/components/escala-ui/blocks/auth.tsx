@@ -13,6 +13,7 @@ import { Alert } from '../alert'
 import { Button } from '../button'
 import { Checkbox, CheckboxItem } from '../checkbox'
 import { Field } from '../field'
+import { type FeaturedIconVariant } from '../featured-icon'
 import { glyph } from '../../../lib/icons'
 import { boxedGlyph } from './shared'
 import { Input } from '../input'
@@ -74,6 +75,10 @@ interface ShellProps extends Omit<React.ComponentProps<'section'>, 'title'> {
   title: React.ReactNode
   description?: React.ReactNode
   icon?: React.ReactNode
+  /** The header icon's FeaturedIcon Variant, as each Figma block nests it (default · secondary · info · success · warning · critical). */
+  iconVariant?: FeaturedIconVariant
+  /** The gap between the body's children: `spacing.gap-group` (a flat form), or `spacing.gap-section` between two groups. */
+  bodyGap?: 'spacing.gap-group' | 'spacing.gap-section'
   /** The header's size: the sign-in block draws `lg`. */
   headerSize?: 'default' | 'lg'
   /** Cross-fade the content region when this key changes (sign-in ↔ sign-up). */
@@ -83,7 +88,7 @@ interface ShellProps extends Omit<React.ComponentProps<'section'>, 'title'> {
 }
 
 /** The frame every Auth block shares: header area, a rule, the body. Card = a Modal-like panel; plain = bare content. */
-function AuthShell({ block, container = 'card', title, description, icon, headerSize = 'default', swapKey, celebrate = false, children, style, ...props }: ShellProps) {
+function AuthShell({ block, container = 'card', title, description, icon, iconVariant, bodyGap = 'spacing.gap-group', headerSize = 'default', swapKey, celebrate = false, children, style, ...props }: ShellProps) {
   const card = container === 'card'
   const inset = v('spacing.inset-surface')
   return (
@@ -104,13 +109,13 @@ function AuthShell({ block, container = 'card', title, description, icon, header
     >
       <div data-part="header-area" style={card ? { padding: inset } : { paddingBottom: v('spacing.gap-section') }}>
         {celebrate
-          ? <Appear role="use-celebration"><ModalHeader size={headerSize} align={card ? 'vertical-center' : 'horizontal'} title={title} description={description} descriptionVisible={Boolean(description)} icon={icon} iconVisible={Boolean(icon)} /></Appear>
-          : <ModalHeader size={headerSize} align={card ? 'vertical-center' : 'horizontal'} title={title} description={description} descriptionVisible={Boolean(description)} icon={icon} iconVisible={Boolean(icon)} />}
+          ? <Appear role="use-celebration"><ModalHeader size={headerSize} align={card ? 'vertical-center' : 'horizontal'} title={title} description={description} descriptionVisible={Boolean(description)} icon={icon} iconVariant={iconVariant} iconVisible={Boolean(icon)} /></Appear>
+          : <ModalHeader size={headerSize} align={card ? 'vertical-center' : 'horizontal'} title={title} description={description} descriptionVisible={Boolean(description)} icon={icon} iconVariant={iconVariant} iconVisible={Boolean(icon)} />}
       </div>
       <Separator tone="subtle" />
       <div data-part="body" key={swapKey} style={card ? { padding: inset } : { paddingTop: v('spacing.gap-section') }}>
         <Appear role="use-page-transition">
-          <div style={{ display: 'flex', flexDirection: 'column', gap: v('spacing.gap-group') }}>{children}</div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: v(bodyGap) }}>{children}</div>
         </Appear>
       </div>
     </section>
@@ -141,8 +146,14 @@ interface BlockProps extends Omit<React.ComponentProps<'section'>, 'title' | 'on
   onNavigate?: (to: string) => void
 }
 
-/** The phone field's hint: the picker searches by calling code when the query starts with "+". */
-const PHONE_HINT = 'Type + to search by calling code'
+/** The error each Field draws, as the Figma file words them (16 Nov 2026), by the field's label. */
+export const FIELD_ERRORS = {
+  email: 'Enter a valid email address.',
+  phone: 'Enter a valid phone number.',
+  password: 'Password must be at least 8 characters.',
+  confirmPassword: 'Passwords do not match.',
+  fullName: 'Enter your full name.',
+} as const
 
 const busy = (status: AuthStatus) => status === 'loading'
 const invalid = (status: AuthStatus) => (status === 'invalid' ? 'Invalid' : 'Default') as 'Invalid' | 'Default'
@@ -157,7 +168,7 @@ export function AuthSignIn({ container, status = 'idle', error = 'The email or p
       </div>
       <OrRule />
       <Notice open={status === 'invalid'}><Alert variant="critical" appearance="soft" size="sm" description={error} /></Notice>
-      <Field label="Email address" state={invalid(status)} error={error}><Input type="email" placeholder="you@company.com" aria-invalid={status === 'invalid' || undefined} /></Field>
+      <Field label="Email address" state={invalid(status)} error={FIELD_ERRORS.email}><Input type="email" placeholder="you@company.com" aria-invalid={status === 'invalid' || undefined} /></Field>
       <Field label="Password" trailing={<TextLink href="#" size="xs" onClick={(e) => { e.preventDefault(); onNavigate?.('forgot-password') }}>Forgot?</TextLink>}>
         <Input type="password" placeholder="Enter your password" />
       </Field>
@@ -176,7 +187,7 @@ export function AuthSignUp({ container, status = 'idle', error = 'That email alr
     <AuthShell block="AuthSignUp" container={container} icon={glyph('user-bold')} title="Get started now" description="Create your account in less than a minute." {...props}>
       <Notice open={status === 'invalid'}><Alert variant="critical" appearance="soft" size="sm" description={error} /></Notice>
       <Field label="Full name"><Input placeholder="Ada Lovelace" /></Field>
-      <Field label="Email address" state={invalid(status)} error={error}><Input type="email" placeholder="you@company.com" /></Field>
+      <Field label="Email address" state={invalid(status)} error={FIELD_ERRORS.email}><Input type="email" placeholder="you@company.com" /></Field>
       <Field label="Password"><Input type="password" autoComplete="new-password" placeholder="Create a password" value={password} onChange={(e) => setPassword(e.target.value)} /></Field>
       <PasswordStrengthMeter size="sm" strength={scorePassword(password)} />
       <div data-part="consent" style={{ display: 'flex', alignItems: 'center', gap: v('spacing.gap-control') }}>
@@ -191,15 +202,31 @@ export function AuthSignUp({ container, status = 'idle', error = 'That email alr
   )
 }
 
-/** Figma `AuthSignInPhone`. */
-export function AuthSignInPhone({ container, status = 'idle', error = 'Enter a valid phone number.', onSubmit, onNavigate, ...props }: BlockProps) {
+/** Figma `AuthSignInPhone` (flow 1662:717): the body is two groups, the form (field + consent) and the actions (code · OR · email),
+ *  a `gap-section` apart; each group keeps `gap-group` inside. The country picker is an anchored Popover on every viewport. */
+export function AuthSignInPhone({
+  container, status = 'idle', error = FIELD_ERRORS.phone, defaultCountry, defaultPhone, picker, onSubmit, onNavigate, ...props
+}: BlockProps & {
+  /** Where the country starts (ISO code); the browser's language by default. */
+  defaultCountry?: string
+  /** The number the field starts with (the Filled state). */
+  defaultPhone?: string
+  /** Docs and tests: the picker's visible viewport and the box it flips inside (a phone frame, a keyboard). */
+  picker?: Pick<React.ComponentProps<typeof PhoneNumberInput>, 'viewport' | 'collisionBoundary'>
+}) {
   return (
-    <AuthShell block="AuthSignInPhone" container={container} icon={glyph('lock')} title="Sign in with your phone" description="We will text you a 6-digit code. Standard message rates may apply." {...props}>
-      <Field label="Phone number" required state={invalid(status)} error={error} description={PHONE_HINT}><PhoneNumberInput placeholder="(201) 555-0123" /></Field>
-      <CheckboxItem size="sm" label="Send me product updates by SMS" />
-      <Button loading={busy(status)} onClick={onSubmit}>Send code</Button>
-      <OrRule />
-      <Button variant="secondary" onClick={() => onNavigate?.('sign-in')}>Continue with email</Button>
+    <AuthShell block="AuthSignInPhone" container={container} icon={glyph('device-mobile')} iconVariant="secondary" bodyGap="spacing.gap-section" title="Sign in with your phone" description="We will text you a 6-digit code. Standard message rates may apply." {...props}>
+      <div data-part="form" style={{ display: 'flex', flexDirection: 'column', gap: v('spacing.gap-group') }}>
+        <Field label="Phone number" required state={invalid(status)} error={error}>
+          <PhoneNumberInput autoComplete="tel" placeholder="6 12 34 56 78" defaultCountry={defaultCountry} defaultValue={defaultPhone} {...picker} />
+        </Field>
+        <CheckboxItem size="sm" label="Send me product updates by SMS" rowStyle={{ width: '100%' }} />
+      </div>
+      <div data-part="actions" style={{ display: 'flex', flexDirection: 'column', gap: v('spacing.gap-group') }}>
+        <Button loading={busy(status)} onClick={onSubmit}>Send code</Button>
+        <OrRule />
+        <Button variant="secondary" leading={boxedGlyph('envelope-simple')} disabled={busy(status)} onClick={() => onNavigate?.('sign-in')}>Continue with email</Button>
+      </div>
     </AuthShell>
   )
 }
@@ -207,7 +234,7 @@ export function AuthSignInPhone({ container, status = 'idle', error = 'Enter a v
 /** Figma `AuthOTPVerification`. */
 export function AuthOTPVerification({ container, status = 'idle', onSubmit, onNavigate, ...props }: BlockProps) {
   return (
-    <AuthShell block="AuthOTPVerification" container={container} icon={glyph('lock')} title="Enter your code" description="We sent a 4-digit code to +49 171 39200 12." {...props}>
+    <AuthShell block="AuthOTPVerification" container={container} iconVariant="secondary" icon={glyph('lock')} title="Enter your code" description="We sent a 4-digit code to +49 171 39200 12." {...props}>
       <Centered><InputOTP length={4} variant="outline" aria-label="One-time code" aria-invalid={status === 'invalid' || undefined} /></Centered>
       <Notice open={status === 'invalid'}><Alert variant="critical" appearance="soft" size="sm" description="That code is not right. Try again." /></Notice>
       <Button loading={busy(status)} onClick={onSubmit}>Verify and continue</Button>
@@ -220,7 +247,7 @@ export function AuthOTPVerification({ container, status = 'idle', onSubmit, onNa
 /** Figma `AuthTwoFactor`. */
 export function AuthTwoFactor({ container, status = 'idle', onSubmit, onNavigate, ...props }: BlockProps) {
   return (
-    <AuthShell block="AuthTwoFactor" container={container} icon={glyph('lock')} title="Two-factor authentication" description="Open your authenticator app and enter the current code for Escala." {...props}>
+    <AuthShell block="AuthTwoFactor" container={container} iconVariant="info" icon={glyph('lock')} title="Two-factor authentication" description="Open your authenticator app and enter the current code for Escala." {...props}>
       <div data-part="code-timer" style={{ display: 'flex', justifyContent: 'space-between', color: v('color.content.secondary'), ...type('body-sm') }}>
         <span>Code refreshes in</span><span>00:18</span>
       </div>
@@ -244,7 +271,7 @@ export function AuthForgotPassword({
   const email = method === 'email'
   const choose = (m: string) => { const next = m as 'email' | 'sms'; setInner(next); onMethodChange?.(next) }
   return (
-    <AuthShell block="AuthForgotPassword" container={container} icon={glyph('lock')} title="Forgot password?" description="No worries, we'll send you reset instructions." {...props}>
+    <AuthShell block="AuthForgotPassword" container={container} iconVariant="secondary" icon={glyph('lock')} title="Forgot password?" description="No worries, we'll send you reset instructions." {...props}>
       <SegmentedControl fullWidth value={method} onValueChange={choose} aria-label="Send reset instructions by">
         <SegmentedControlItem value="email" label="Email" />
         <SegmentedControlItem value="sms" label="SMS" />
@@ -254,8 +281,7 @@ export function AuthForgotPassword({
           label={email ? 'Email address' : 'Phone number'}
           required
           state={invalid(status)}
-          error={error ?? (email ? 'Enter a valid email address.' : 'Enter a valid phone number.')}
-          description={email ? undefined : PHONE_HINT}
+          error={error ?? (email ? FIELD_ERRORS.email : FIELD_ERRORS.phone)}
         >
           {email ? <Input type="email" placeholder="you@company.com" /> : <PhoneNumberInput placeholder="(201) 555-0123" />}
         </Field>
@@ -267,10 +293,10 @@ export function AuthForgotPassword({
 }
 
 /** Figma `AuthNewPassword`. */
-export function AuthNewPassword({ container, status = 'idle', error = 'The passwords do not match.', onSubmit, ...props }: BlockProps) {
+export function AuthNewPassword({ container, status = 'idle', error = FIELD_ERRORS.confirmPassword, onSubmit, ...props }: BlockProps) {
   const [password, setPassword] = React.useState('')
   return (
-    <AuthShell block="AuthNewPassword" container={container} icon={glyph('lock')} title="Set a new password" description="Your new password must be different from the last one you used." {...props}>
+    <AuthShell block="AuthNewPassword" container={container} iconVariant="secondary" icon={glyph('lock')} title="Set a new password" description="Your new password must be different from the last one you used." {...props}>
       <Field label="New password"><Input type="password" autoComplete="new-password" placeholder="Create a password" value={password} onChange={(e) => setPassword(e.target.value)} /></Field>
       <PasswordStrength size="sm" value={password} rulesVisible />
       <Field label="Confirm password" state={invalid(status)} error={error}><Input type="password" placeholder="Repeat the password" /></Field>
@@ -282,7 +308,7 @@ export function AuthNewPassword({ container, status = 'idle', error = 'The passw
 /** Figma `AuthCheckEmail`. A success moment: the header rises once on `use-celebration`. */
 export function AuthCheckEmail({ container, onSubmit, onNavigate, ...props }: BlockProps) {
   return (
-    <AuthShell block="AuthCheckEmail" container={container} icon={glyph('check-circle')} celebrate title="Check your email" description="We sent a password reset link to hi@escala.design. It expires in 30 minutes." {...props}>
+    <AuthShell block="AuthCheckEmail" container={container} iconVariant="success" icon={glyph('check-circle')} celebrate title="Check your email" description="We sent a password reset link to hi@escala.design. It expires in 30 minutes." {...props}>
       <Button onClick={onSubmit}>Open mail app</Button>
       <Button variant="secondary" onClick={() => onNavigate?.('sign-in')}>Skip for now</Button>
       <AuthFooter text="Didn't receive it?" linkLabel="Resend email" onLink={() => onNavigate?.('resend')} />
@@ -293,7 +319,7 @@ export function AuthCheckEmail({ container, onSubmit, onNavigate, ...props }: Bl
 /** Figma `AuthMagicLinkSent`. */
 export function AuthMagicLinkSent({ container, onSubmit, onNavigate, ...props }: BlockProps) {
   return (
-    <AuthShell block="AuthMagicLinkSent" container={container} icon={glyph('sparkle')} celebrate title="Your sign-in link is on the way" description="Click the link we sent to hi@escala.design to sign in. No password needed." {...props}>
+    <AuthShell block="AuthMagicLinkSent" container={container} iconVariant="info" icon={glyph('sparkle')} celebrate title="Your sign-in link is on the way" description="Click the link we sent to hi@escala.design to sign in. No password needed." {...props}>
       <Alert variant="info" appearance="soft" size="sm" description="The link expires in 10 minutes and works once." />
       <Button onClick={onSubmit}>Open inbox</Button>
       <Button variant="secondary" onClick={() => onNavigate?.('resend')}>Send a new link</Button>
@@ -305,7 +331,7 @@ export function AuthMagicLinkSent({ container, onSubmit, onNavigate, ...props }:
 /** Figma `AuthAccountLocked`. */
 export function AuthAccountLocked({ container, onSubmit, onNavigate, ...props }: BlockProps) {
   return (
-    <AuthShell block="AuthAccountLocked" container={container} icon={glyph('warning')} title="Account temporarily locked" description="We paused sign-in after five failed attempts. This protects your account while we confirm it is you." {...props}>
+    <AuthShell block="AuthAccountLocked" container={container} iconVariant="warning" icon={glyph('warning')} title="Account temporarily locked" description="We paused sign-in after five failed attempts. This protects your account while we confirm it is you." {...props}>
       <Alert variant="warning" appearance="soft" size="sm" description="Unlocks automatically in 14:52. Last attempt from Istanbul, TR." />
       <Button onClick={onSubmit}>Unlock with email</Button>
       <Button variant="secondary" onClick={() => onNavigate?.('forgot-password')}>Reset my password</Button>
@@ -317,7 +343,7 @@ export function AuthAccountLocked({ container, onSubmit, onNavigate, ...props }:
 /** Figma `AuthError`. */
 export function AuthError({ container, onSubmit, onNavigate, ...props }: BlockProps) {
   return (
-    <AuthShell block="AuthError" container={container} icon={glyph('warning-circle')} title="Verification failed" description="The link you used has expired or was already claimed. Reset links stay valid for 30 minutes." {...props}>
+    <AuthShell block="AuthError" container={container} iconVariant="critical" icon={glyph('warning-circle')} title="Verification failed" description="The link you used has expired or was already claimed. Reset links stay valid for 30 minutes." {...props}>
       <Alert variant="critical" appearance="soft" size="sm" description="Error code AUTH_LINK_EXPIRED. Nothing was changed on your account." />
       <Button onClick={onSubmit}>Request a new link</Button>
       <Button variant="secondary" onClick={() => onNavigate?.('support')}>Contact support</Button>
@@ -328,7 +354,7 @@ export function AuthError({ container, onSubmit, onNavigate, ...props }: BlockPr
 /** Figma `AuthSocialSignIn`. */
 export function AuthSocialSignIn({ container, onSubmit, onNavigate, ...props }: BlockProps) {
   return (
-    <AuthShell block="AuthSocialSignIn" container={container} icon={glyph('user-bold')} title="Continue with" description="Use the account you already have. We never post on your behalf." {...props}>
+    <AuthShell block="AuthSocialSignIn" container={container} iconVariant="secondary" icon={glyph('user-bold')} title="Continue with" description="Use the account you already have. We never post on your behalf." {...props}>
       {(['Google', 'Discord', 'Apple'] as SocialBrand[]).map((brand) => <SocialLoginButton key={brand} brand={brand} appearance="brand" onClick={onSubmit} />)}
       <OrRule label="OR PICK A PROVIDER" />
       <div data-part="provider-grid" style={{ display: 'flex', flexDirection: 'column', gap: v('spacing.gap-control') }}>

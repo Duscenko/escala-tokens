@@ -10770,6 +10770,8 @@ var init_forms = __esm({
           },
           // Concentric with the overlay: 24 − inset-control 12 = Radius/action 12 for the rows (DEC-2026-11-16-001).
           list: { paddingX: "spacing.inset-control", paddingY: "spacing.inset-control" },
+          // Under a search header the list starts gap-tight below it (the file's country picker: search, 4, rows).
+          "list[data-after-header]": { paddingTop: "spacing.gap-tight" },
           separator: { paddingY: "spacing.gap-tight" },
           line: { height: "stroke.divider", fill: c("border.subtle") },
           empty: { paddingX: "spacing.inset-control", paddingY: "spacing.inset-control", text: c("content.secondary") },
@@ -11082,7 +11084,7 @@ var init_forms = __esm({
     FIELD_STATES = ["Default", "Invalid", "Disabled"];
     FIELD = {
       key: "Field",
-      slots: ["root", "labelRow", "label", "required", "description", "error", "legend"],
+      slots: ["root", "labelRow", "label", "required", "description", "errorRegion", "error", "legend"],
       defaults: { Size: "default", State: "Default" },
       parts: [
         part({}, () => ({
@@ -13374,6 +13376,13 @@ var init_motion2 = __esm({
       TableResizer: { transitions: { handle: states("background-color") } },
       FileUploadDropzone: { transitions: { root: states("background-color", "border-color") } },
       Input: { transitions: { root: FIELD2 } },
+      // A field's error opens and closes on the disclosure roles: in when it appears, out when it clears (the `[data-open]` rule wins while open).
+      Field: {
+        transitions: {
+          errorRegion: { "grid-template-rows": "use-disclosure-out", opacity: "use-disclosure-out", "margin-top": "use-disclosure-out" },
+          "errorRegion[data-open]": { "grid-template-rows": "use-disclosure-in", opacity: "use-disclosure-in", "margin-top": "use-disclosure-in" }
+        }
+      },
       DatePickerTrigger: { transitions: { root: FIELD2 } },
       CalendarDay: { transitions: { cell: states("background-color", "border-color", "box-shadow", "color"), day: states("color") } },
       DatePickerPopover: popover("--radix-popover-content-transform-origin"),
