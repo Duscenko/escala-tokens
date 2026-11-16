@@ -69,6 +69,9 @@ const LIFT: Record<string, (key: string, ambient: string, ring: string) => strin
   pressed: (k, a) => [`0 4px 6px ${k}`, `0 2px 4px ${a}`],
   // The Modal's Shadow/xl: the frame CLIPS its content, so Figma paints the ring and the negative spreads.
   modal: (k, a, r) => [`0 0 0 1px ${r}`, `0 20px 24px -4px ${k}`, `0 8px 8px -4px ${a}`],
+  // The Sheet's Shadow/xl: its frame does NOT clip, so Figma paints no ring and no spread (measured on the file): the key
+  // and ambient drops alone.
+  sheet: (k, a) => [`0 20px 24px ${k}`, `0 8px 8px ${a}`],
   // The Popover's Shadow/md and Shadow/lg (the panel clips, so ring and spreads paint).
   'popover-md': (k, a, r) => [`0 0 0 1px ${r}`, `0 4px 6px -1px ${k}`, `0 2px 4px -2px ${a}`],
   'popover-lg': (k, a, r) => [`0 0 0 1px ${r}`, `0 12px 16px -4px ${k}`, `0 4px 6px -2px ${a}`],
@@ -142,6 +145,8 @@ function declarations(props: SlotProps): string[] {
       case 'strokeBottomWidth': out.push(`border-bottom-width: ${dim(ref)}`, 'border-bottom-style: solid'); break
       // A rail's divider on its right edge (CalendarPresets).
       case 'strokeRightWidth': out.push(`border-right-width: ${dim(ref)}`, 'border-right-style: solid'); break
+      // The edge a Sheet leaves toward the page (Figma: one stroke weight on one side, inside).
+      case 'strokeLeftWidth': out.push(`border-left-width: ${dim(ref)}`, 'border-left-style: solid'); break
       // Alone, a FIELD's focus halo (Figma's Input): the field keeps its 1px
       // edge, and a `stroke.focus` ring straddles it — half over the edge,
       // half outside. An outline with a negative offset paints exactly that
@@ -194,6 +199,7 @@ function declarations(props: SlotProps): string[] {
       case 'height': out.push(`height: ${dim(ref)}`); break
       case 'minHeight': out.push(`min-height: ${dim(ref)}`); break
       case 'minWidth': out.push(`min-width: ${dim(ref)}`); break
+      case 'maxWidth': out.push(`max-width: ${dim(ref)}`); break
       case 'width': out.push(`width: ${dim(ref)}`); break
       // A custom property the part reads (a switch thumb's travel); not a CSS property.
       case 'overlap': out.push(`--escala-overlap: ${dim(ref)}`); break
@@ -203,6 +209,10 @@ function declarations(props: SlotProps): string[] {
         out.push(`border-radius: ${f ? refFnCss(f, (r) => v(r)) : v(ref)}`)
         break
       }
+      // The corners that face the page on an edge panel (a Sheet): two corners, one radius.
+      case 'radiusTop': { const r = v(ref); out.push(`border-top-left-radius: ${r}`, `border-top-right-radius: ${r}`); break }
+      case 'radiusLeft': { const r = v(ref); out.push(`border-top-left-radius: ${r}`, `border-bottom-left-radius: ${r}`); break }
+      case 'radiusRight': { const r = v(ref); out.push(`border-top-right-radius: ${r}`, `border-bottom-right-radius: ${r}`); break }
       // Figma draws a stroke INSIDE the frame; a CSS border sits outside the
       // padding. So the padding gives back the border's width, and a 12px inset
       // with a 1px stroke lays out exactly as the Figma component does.
@@ -210,6 +220,8 @@ function declarations(props: SlotProps): string[] {
       case 'paddingY': out.push(`padding-block: ${insetMinusStroke(dim(ref))}`); break
       // The bottom inset alone (an accordion answer hugs its question above it).
       case 'paddingBottom': out.push(`padding-bottom: ${dim(ref)}`); break
+      // The top inset alone (a Sheet's grabber: 8px above the bar, none under it).
+      case 'paddingTop': out.push(`padding-top: ${dim(ref)}`); break
       // The right inset alone (a FAB's label: 8px of its own beyond the root's 12).
       case 'paddingRight': out.push(`padding-right: ${dim(ref)}`); break
       case 'gap': out.push(`gap: ${dim(ref)}`); break

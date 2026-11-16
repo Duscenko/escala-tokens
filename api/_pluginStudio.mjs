@@ -909,6 +909,9 @@ var init_apca = __esm({
       // border 10) sit at Lc 20–44 on the dark page. History: 2026-10-21 made the
       // field outline a 1.4:1 hairline (black-a.3); the file reverted it.
       "control-boundary": { wcag: 3, apcaLc: null },
+      // The field outline as the owner set it in the Figma file (DEC-2026-11-16-004): Border/control at Black / White Alpha 03,
+      // a soft hairline BELOW the 3:1 of WCAG 1.4.11. A visibility floor only, so a regression to nothing still fails.
+      "control-hairline": { wcag: 1.4, apcaLc: null },
       // A label on a PRESSED fill (a state held for ~100 ms under the pointer):
       // WCAG AA with no APCA term. The Escala file pins `action.secondary.pressed`
       // to gray 06, where `content.on-secondary` reads 4.5+ :1 but Lc 57–59.
@@ -5517,18 +5520,20 @@ var init_componentCatalogue = __esm({
         key: "Sheet",
         label: "Sheet",
         category: "Content & Surfaces",
-        description: "shadcn/ui Sheet: a panel that slides in from an edge of the screen.",
-        usage: "Use for secondary tasks that keep the page in context (filters, details, settings). For a blocking decision use Alert Dialog.",
+        description: "An edge-anchored panel on the Modal surface: a desktop drawer from the right or left, a mobile sheet from the bottom.",
+        usage: "Use for secondary tasks that keep the page in context (filters, a cart, details, settings). For a blocking decision use Modal or Alert Dialog; for a list of choices tied to a field use Popover.",
         axes: [
-          { name: "Side", values: ["right", "left", "top", "bottom"] }
+          { name: "Side", values: ["right", "left", "bottom"] }
         ],
         figmaSets: ["Sheet"],
         props: [
-          { name: "SheetContent side", type: '"top" | "right" | "bottom" | "left"', description: "The edge it slides from." },
-          { name: "showCloseButton", type: "boolean", description: "The ghost icon-sm close (default true)." },
-          { name: "SheetHeader / SheetTitle / SheetDescription / SheetFooter", type: "component", description: "The parts." }
+          { name: "SheetContent side", type: '"right" | "left" | "bottom"', description: "The edge it is anchored to (default right)." },
+          { name: "header", type: "ReactNode", description: "The header: a SheetHeader (= ModalHeader), inside main above the Content." },
+          { name: "children", type: "ReactNode", description: "The Content slot; it scrolls when taller than the panel." },
+          { name: "footer", type: "ReactNode", description: "Figma FooterVisible: a SheetFooter (= ModalFooter); stacked on the bottom side." },
+          { name: "showClose", type: "boolean", description: "Figma CloseVisible: the soft pill CloseButton (default true)." }
         ],
-        accessibility: "A Radix Dialog: focus is trapped inside, Esc closes and focus returns to the trigger."
+        accessibility: "A Radix Dialog like Modal: focus is trapped inside, Esc closes and focus returns to the trigger. The header's title is the accessible name and its description the aria-describedby; the close button has an accessible name. The bottom side is capped by the visual viewport (not 100vh) and keeps the safe area under its footer."
       },
       {
         key: "Drawer",
@@ -9054,8 +9059,10 @@ var init_semanticArchitectures = __esm({
       // 1.4.11 on its own does it with a FILL, not this stroke.
       // `strong` is EMPHASIS — the edge of a grouping that must read before its
       // neighbours — and keeps the ui-component solve (black-a.7 / white-a.8).
-      { group: "border", key: "control", light: "{ctl-a:black-a.3}", dark: "{ctl-a:white-a.3}" },
-      { group: "border", key: "control-hover", light: "{ctl+a:black-a.3}", dark: "{ctl+a:white-a.3}" },
+      // OWNER DECISION 2026-11-16 (DEC-2026-11-16-004): the Figma file is the rule. `Border/control` sits at Black Alpha/03 ·
+      // White Alpha/03 and its hover at /04, a soft hairline below the 3:1 of WCAG 1.4.11. Pinned to the file's steps, not solved.
+      { group: "border", key: "control", light: "{black-a.3}", dark: "{white-a.3}" },
+      { group: "border", key: "control-hover", light: "{black-a.4}", dark: "{white-a.4}" },
       { group: "border", key: "strong", light: "{ui-a:black-a.5}", dark: "{ui-a:white-a.5}" },
       // DECORATIVE brand emphasis — a tinted card edge or a grouping stroke. It is
       // NOT a state indicator: anything that says "this control is selected /
@@ -9215,8 +9222,8 @@ var init_semanticArchitectures = __esm({
       "status.info.border-strong": "[ROLE: Info Control Boundary] Affects informational-state form fields. Light {info.9} = 3.24:1/Lc59. Dark {info.10} = 7.15:1/Lc49 \u2014 info.9 fails APCA in dark (Lc 42), one step earlier than error needs.",
       "border.subtle": "[ROLE: Decorative Border 1/3] Affects hairline dividers, table rules, the edge of a quiet grouping. Lightest neutral stroke \u2014 {black-a.1} in light, {white-a.1} in dark (the FIXED alpha ladder, so it composites correctly on any surface): 5 %, owner decision 2026-11-16 (DEC-2026-11-16-003). It measures APCA Lc 0 on the dark page, which is accepted: shadow and surface carry the separation. DECORATION: separates regions, carries no state, no contrast floor. If the stroke is the only thing telling the user a control is there, that is border.control.",
       "border.default": "[ROLE: Decorative Border 2/3] Affects a card edge, a panel boundary, a grouping box. {black-a.2} / {white-a.2} (10 %, owner decision 2026-11-16, DEC-2026-11-16-003). DECORATION, no contrast floor. One step above border.subtle so a panel edge still outranks a hairline. Never the only boundary of a control.",
-      "border.control": "[ROLE: Control Boundary] Affects the resting border of inputs, textareas, selects, checkboxes, radios, switch tracks and outline buttons. SOLVED on the alpha ladder ({ctl-a:\u2026}) to the WCAG 1.4.11 control boundary (3:1) against the page: {black-a.7} in Light, {white-a.6} in Dark for the default system, so a field reads without a fill.",
-      "border.control-hover": "[ROLE: Control Boundary Hover] Affects the hover state of a control's resting (border.control) border. One step past whatever border.control RESOLVED to ({ctl+a:\u2026}), never a fixed step \u2014 pinning it would collapse it onto rest. {black-a.8} / {white-a.7} for the default system.",
+      "border.control": "[ROLE: Control Boundary] Affects the resting border of inputs, textareas, selects, checkboxes, radios, switch tracks and outline buttons. {black-a.3} in Light, {white-a.3} in Dark: a soft hairline, below the 3:1 of WCAG 1.4.11 BY OWNER DECISION (DEC-2026-11-16-004, the Figma file is the rule); a field is identified by its fill and its focus ring, not by this stroke alone.",
+      "border.control-hover": "[ROLE: Control Boundary Hover] Affects the hover state of a control's resting (border.control) border. One step past border.control: {black-a.4} in Light, {white-a.4} in Dark (DEC-2026-11-16-004).",
       "border.strong": "[ROLE: Strong Border] Affects the edge of a grouping or a selected container that must read before its neighbours. Not the field outline \u2014 that is border.control. WCAG 1.4.11 + APCA Lc 45 against the page, SOLVED on the alpha ladder ({ui-a:\u2026}): {black-a.7} in light, {white-a.8} in dark for the default system.",
       "border.focus": "[ROLE: A11y Focus Ring] The keyboard focus-visible boundary on every interactive element of the default / accent variant. SOLVED per theme ({focus:accent.9}): the first accent tone from 9 that clears WCAG 1.4.11 (3:1) on the page \u2014 tone 9 in both themes for the default system. Severity, neutral and inverse variants take their own boundary (status.<sev>.border-strong, border.strong, border.inverse). The translucent halo outside it is border.ring.*.",
       "border.ring.default": "[ROLE: Focus Halo] Translucent glow outside border.focus. Paired with border.focus on EVERY focused control (shadcn border-ring + ring-[3px]): the edge turns to border.focus, this halo sits outside it. Never the only focus cue. Decoration, NOT a boundary \u2014 never measured for WCAG 1.4.11; border.focus is the contrast-bearing part. Replaces a hardcoded 40% alpha in the preview specimens. A field in an error/success state reuses status.<sev>.border for its halo \u2014 there is no separate per-severity ring role.",
@@ -10787,6 +10794,7 @@ var init_forms = __esm({
     };
     COMBOBOX_ITEM = {
       key: "ComboboxItem",
+      hover: "highlight",
       slots: ["root", "icon", "text", "label", "description", "trailing", "indicator"],
       defaults: { Size: "default", State: "Default" },
       parts: [
@@ -11303,7 +11311,7 @@ function tooltipTriggerInk(variant, state2) {
       return hot ? "action.primary.hover" : "action.primary.default";
   }
 }
-var CARD, OVERLAY_TITLE, MODAL_SIZES, MODAL, MODAL_HEADER, MODAL_FOOTER, SEPARATOR_ORIENTATIONS, SEPARATOR_TONES, SEPARATOR, ACCORDION_VARIANTS, ACCORDION_ITEM_STATES, ACCORDION, ACCORDION_ITEM, IMAGE_RATIOS, IMAGE_SHAPES, IMAGE, POPOVER_SIZES, POPOVER, POPOVER_FOOTER, TOOLTIP_SIZES, TOOLTIP_VARIANTS, TOOLTIP_TRIGGER_STATES, TOOLTIP_TONE, TOOLTIP_CONTENT, TOOLTIP_INFO_TRIGGER, SCROLL_AREA_SIZES, SCROLL_BAR_ORIENTATIONS, SCROLL_APPEARANCES, SCROLL_AREA, SCROLL_BAR_THICKNESS, SCROLL_BAR, COLLAPSIBLE, ALERT_DIALOG, SHEET, DRAWER, HOVER_CARD, ITEM_VARIANTS, ITEM_SIZES, ITEM_GEOMETRY2, ITEM_DESCRIPTION, ITEM_CONTENT_GAP, ITEM_MEDIA, ITEM, ATTACHMENT_SIZES, ATTACHMENT_GEOMETRY, ATTACHMENT_MEDIA, ATTACHMENT, MESSAGE, BUBBLE_VARIANTS, BUBBLE_PAINT, BUBBLE, RESIZABLE, CAROUSEL, CHART;
+var CARD, OVERLAY_TITLE, MODAL_SIZES, MODAL, MODAL_HEADER, MODAL_FOOTER, SEPARATOR_ORIENTATIONS, SEPARATOR_TONES, SEPARATOR, ACCORDION_VARIANTS, ACCORDION_ITEM_STATES, ACCORDION, ACCORDION_ITEM, IMAGE_RATIOS, IMAGE_SHAPES, IMAGE, POPOVER_SIZES, POPOVER, POPOVER_FOOTER, TOOLTIP_SIZES, TOOLTIP_VARIANTS, TOOLTIP_TRIGGER_STATES, TOOLTIP_TONE, TOOLTIP_CONTENT, TOOLTIP_INFO_TRIGGER, SCROLL_AREA_SIZES, SCROLL_BAR_ORIENTATIONS, SCROLL_APPEARANCES, SCROLL_AREA, SCROLL_BAR_THICKNESS, SCROLL_BAR, COLLAPSIBLE, ALERT_DIALOG, SHEET_SIDES, SHEET, DRAWER, HOVER_CARD, ITEM_VARIANTS, ITEM_SIZES, ITEM_GEOMETRY2, ITEM_DESCRIPTION, ITEM_CONTENT_GAP, ITEM_MEDIA, ITEM, ATTACHMENT_SIZES, ATTACHMENT_GEOMETRY, ATTACHMENT_MEDIA, ATTACHMENT, MESSAGE, BUBBLE_VARIANTS, BUBBLE_PAINT, BUBBLE, RESIZABLE, CAROUSEL, CHART;
 var init_surfaces = __esm({
   "src/lib/recipes/surfaces.ts"() {
     init_helpers();
@@ -11372,7 +11380,9 @@ var init_surfaces = __esm({
         })),
         part({ Size: MODAL_SIZES }, (size) => ({
           title: { font: size === "lg" ? "type.heading-md" : "type.heading-sm" },
-          description: { font: size === "lg" ? "type.body-md" : "type.body-sm" },
+          // The file's ModalHeader set draws the description at Type/body-md in BOTH sizes (header 53 / 58 tall; it was body-sm at
+          // default when the Modal was first built, 2026-11-13).
+          description: { font: "type.body-md" },
           clearance: size === "lg" ? { width: "size.md", height: "size.md" } : { width: "size.sm", height: "size.sm" }
         }))
       ]
@@ -11638,27 +11648,28 @@ var init_surfaces = __esm({
         }))
       ]
     };
+    SHEET_SIDES = ["right", "left", "bottom"];
     SHEET = {
       key: "Sheet",
-      slots: ["content", "overlay", "header", "title", "description", "footer"],
+      slots: ["content", "overlay", "main", "body", "grabber", "handle", "close"],
       detachedSlots: ["overlay"],
-      defaults: {},
+      defaults: { Side: "right" },
       parts: [
         part({}, () => ({
           overlay: { fill: c("surface.overlay") },
-          content: {
-            fill: c("surface.layer-2"),
-            stroke: c("border.subtle"),
-            strokeWidth: "stroke.control",
-            shadow: "shadow.lg",
-            gap: "spacing.4",
-            text: c("content.primary")
-          },
-          header: { gap: "spacing.0_5", paddingX: "spacing.4", paddingY: "spacing.4" },
-          title: { text: c("content.primary"), font: OVERLAY_TITLE },
-          description: { text: c("content.secondary"), font: "type.body-sm" },
-          footer: { gap: "spacing.2", paddingX: "spacing.4", paddingY: "spacing.4" }
-        }))
+          content: { fill: c("surface.layer-2"), stroke: c("border.default"), lift: "sheet" },
+          main: { paddingX: "spacing.inset-surface", paddingY: "spacing.inset-surface", gap: "spacing.gap-group" },
+          body: { gap: "spacing.gap-group", text: c("content.secondary"), font: "type.body-md" },
+          // The grabber: 8 above a 40 x 4 bar (fixed geometry, no role: the spacing steps 10 and 1).
+          grabber: { paddingTop: "spacing.gap-control" },
+          handle: { fill: c("border.strong"), radius: "radius.pill", width: "spacing.10", height: "spacing.1" }
+        })),
+        part({ Side: SHEET_SIDES }, (side) => {
+          const edge = { width: "spacing.32+spacing.32+spacing.32+spacing.4", minWidth: "spacing.32+spacing.32+spacing.16", maxWidth: "spacing.32+spacing.32+spacing.32+spacing.24" };
+          if (side === "right") return { content: { ...edge, strokeLeftWidth: "stroke.divider", radiusLeft: "radius.overlay" } };
+          if (side === "left") return { content: { ...edge, strokeRightWidth: "stroke.divider", radiusRight: "radius.overlay" } };
+          return { content: { strokeTopWidth: "stroke.divider", radiusTop: "radius.overlay" } };
+        })
       ]
     };
     DRAWER = {
@@ -12280,6 +12291,7 @@ var init_navigation = __esm({
     };
     DROPDOWN_MENU_ITEM = {
       key: "DropdownMenuItem",
+      hover: "highlight",
       slots: ["root", "iconLeading", "media", "text", "label", "description", "trailing", "control", "iconTrailing", "indicator"],
       defaults: { Size: "default", State: "Default", Variant: "default" },
       parts: [
@@ -13371,6 +13383,8 @@ var init_motion2 = __esm({
       InputTagOption: { transitions: { root: FIELD2 } },
       InputOTPSlot: { transitions: { root: FIELD2 } },
       Combobox: { transitions: { root: FIELD2 } },
+      // A menu row: the highlight crossfades from row to row on `use-hover` (Radix moves it for the pointer and the keys).
+      DropdownMenuItem: { transitions: { root: FILL } },
       ComboboxItem: { transitions: { root: states("background-color", "border-color", "box-shadow") } },
       Checkbox: { transitions: { root: states("background-color", "border-color", "box-shadow") } },
       RadioGroup: { transitions: { item: states("background-color", "border-color", "box-shadow") } },

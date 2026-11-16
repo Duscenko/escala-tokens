@@ -4,7 +4,8 @@
 // (`dialog-enter` / exit): inside an overlay a block adds none. `inline` renders in place (docs, previews); without it the
 // block is a real dialog with a scrim, a focus trap and Escape.
 //
-// Drawer-named blocks (CartDrawer, FilterDrawer) are built on Modal, as the Figma file draws them.
+// Drawer-named blocks (CartDrawer, FilterDrawer) are built on Sheet (Sheet 1648:1577): side right on desktop, bottom on a phone.
+// Same header, footer and Content slot as every other block; the panel's own choreography (`sheet-enter` / `sheet-exit`) is the motion.
 import * as React from 'react'
 import { cssVarOf } from '../../../lib/componentRecipes'
 import { glyph } from '../../../lib/icons'
@@ -19,6 +20,7 @@ import { FeaturedIcon, type FeaturedIconVariant } from '../featured-icon'
 import { IconButton } from '../icon-button'
 import { Input } from '../input'
 import { Modal, ModalContent, ModalFooter, ModalHeader } from '../modal'
+import { Sheet, SheetContent, SheetFooter, SheetHeader, type SheetSide } from '../sheet'
 import { NumberInput } from '../number-input'
 import { RadioGroup, RadioGroupItem } from '../radio-group'
 import { RatingGroup } from '../rating-group'
@@ -78,6 +80,29 @@ function OverlayShell({ block, inline = true, open = true, onOpenChange, title, 
     </Modal>
   )
 }
+interface DrawerProps extends OverlayBlockProps {
+  /** Figma Sheet Side: `right` on desktop, `bottom` on a phone. */
+  side?: SheetSide
+}
+
+/** The Sheet every drawer block is: header · content · footer on an edge panel. `data-block` names the Figma set. */
+function SheetShell({ block, side = 'right', inline = true, open = true, onOpenChange, title, trailing, footer, leading, children }: Pick<ShellProps, 'block' | 'title' | 'trailing' | 'footer' | 'leading' | 'children'> & DrawerProps) {
+  return (
+    <Sheet open={open} onOpenChange={onOpenChange} modal={!inline}>
+      <SheetContent
+        inline={inline}
+        side={side}
+        data-block={block}
+        closeLabel="Close"
+        header={<SheetHeader title={title} descriptionVisible={false} iconVisible={false} trailing={trailing} trailingVisible={Boolean(trailing)} closeClearance />}
+        footer={footer ? <SheetFooter leading={leading} leadingVisible={Boolean(leading)}>{footer}</SheetFooter> : undefined}
+      >
+        {children}
+      </SheetContent>
+    </Sheet>
+  )
+}
+
 // The Modal's `main` already pads the header and the Content slot (Spacing/inset-surface) and puts Spacing/gap-group between
 // them; the footer pads itself. The Content slot adds NO padding of its own (Figma 1054:6209), or it doubles.
 const body = (children: React.ReactNode, gap = 'spacing.gap-group') => (
@@ -204,10 +229,10 @@ export function SessionTimeoutWarning(p: OverlayBlockProps) {
 
 const CART = [{ name: 'Escala UI Complete', hint: 'Design + code kit, lifetime', price: '$249', qty: 1 }, { name: 'Dashboard templates', hint: '12 screens', price: '$98', qty: 2 }, { name: 'Icon pack extended', hint: '1,200 icons', price: '$39', qty: 1 }]
 
-/** Figma `CartDrawer` (built on Modal, as the file draws it). */
-export function CartDrawer(p: OverlayBlockProps) {
+/** Figma `CartDrawer`, on Sheet. */
+export function CartDrawer(p: DrawerProps) {
   return (
-    <OverlayShell block="CartDrawer" {...p} title="Your cart" trailing={<Badge type="number" shape="pill" count={3} />}
+    <SheetShell block="CartDrawer" {...p} title="Your cart" trailing={<Badge type="number" shape="pill" count={3} />}
       footer={<Button onClick={p.onConfirm}>Checkout</Button>}>
       {body(<>
         <div data-part="items" style={col('spacing.gap-group')}>
@@ -229,7 +254,7 @@ export function CartDrawer(p: OverlayBlockProps) {
         <Separator tone="subtle" />
         <div data-part="summary" style={{ ...row(), justifyContent: 'space-between', ...type('label') }}><span>Subtotal</span><span>$386.00</span></div>
       </>)}
-    </OverlayShell>
+    </SheetShell>
   )
 }
 
@@ -243,10 +268,10 @@ export function QuickEditDialog(p: OverlayBlockProps) {
   )
 }
 
-/** Figma `FilterDrawer` (built on Modal). */
-export function FilterDrawer(p: OverlayBlockProps) {
+/** Figma `FilterDrawer`, on Sheet. */
+export function FilterDrawer(p: DrawerProps) {
   return (
-    <OverlayShell block="FilterDrawer" {...p} title="Filters" trailing={<Button size="sm" variant="secondary" appearance="ghost">Reset</Button>}
+    <SheetShell block="FilterDrawer" {...p} title="Filters" trailing={<Button size="sm" variant="secondary" appearance="ghost">Reset</Button>}
       footer={<Button onClick={p.onConfirm}>Show 62 results</Button>}>
       {body(<>
         <div style={col('spacing.gap-control')}><span style={eyebrow}>Price range</span><Slider range tooltipVisible aria-label="Price range" /></div>
@@ -255,7 +280,7 @@ export function FilterDrawer(p: OverlayBlockProps) {
         </div>
         <div style={col('spacing.gap-control')}><span style={eyebrow}>Availability</span><SwitchGroup label="In stock only" description="Hide items that are sold out." /></div>
       </>)}
-    </OverlayShell>
+    </SheetShell>
   )
 }
 

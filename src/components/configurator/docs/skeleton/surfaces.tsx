@@ -21,7 +21,7 @@ import { Toast as SkToast, type ToastAppearance, type ToastVariant } from '../..
 import { Spinner as SkSpinner } from '../../../escala-ui/spinner'
 import { RecipeScope } from './scope'
 import { AlertDialog as SkAlertDialog, AlertDialogAction as SkAlertDialogAction, AlertDialogCancel as SkAlertDialogCancel, AlertDialogContent as SkAlertDialogContent, AlertDialogDescription as SkAlertDialogDescription, AlertDialogFooter as SkAlertDialogFooter, AlertDialogHeader as SkAlertDialogHeader, AlertDialogMedia as SkAlertDialogMedia, AlertDialogTitle as SkAlertDialogTitle, type AlertDialogSize } from '../../../escala-ui/_skeleton/alert-dialog'
-import { Sheet as SkSheet, SheetContent as SkSheetContent, SheetDescription as SkSheetDescription, SheetFooter as SkSheetFooter, SheetHeader as SkSheetHeader, SheetTitle as SkSheetTitle, type SheetSide } from '../../../escala-ui/_skeleton/sheet'
+import { Sheet as SkSheet, SheetContent as SkSheetContent, SheetFooter as SkSheetFooter, SheetHeader as SkSheetHeader, type SheetSide } from '../../../escala-ui/sheet'
 import { DrawerContent as SkDrawerContent, DrawerDescription as SkDrawerDescription, DrawerFooter as SkDrawerFooter, DrawerHeader as SkDrawerHeader, DrawerTitle as SkDrawerTitle, type DrawerDirection } from '../../../escala-ui/_skeleton/drawer'
 import { HoverCardContent as SkHoverCardContent } from '../../../escala-ui/_skeleton/hover-card'
 import { Item as SkItem, ItemActions as SkItemActions, ItemContent as SkItemContent, ItemDescription as SkItemDescription, ItemMedia as SkItemMedia, ItemTitle as SkItemTitle, type ItemSize, type ItemVariant } from '../../../escala-ui/item'
@@ -660,20 +660,23 @@ export function SkeletonAlertDialogSpecimen({ t, v }: SpecimenProps) {
   )
 }
 
+/** The Figma Sheet (1648:1577): header, the Content slot and the footer on an edge panel, shown in place (400 wide on a side,
+ *  the width of a phone on the bottom). */
 export function SkeletonSheetSpecimen({ t, v }: SpecimenProps) {
   const side = (v.Side ?? 'right') as SheetSide
-  const across = side === 'top' || side === 'bottom'
+  const bottom = side === 'bottom'
   return (
     <RecipeScope t={t}>
       <SkSheet open modal={false}>
-        <SkSheetContent inline side={side} closeIcon={<PreviewIcon concept="close" size={16} />} style={across ? { width: 420 } : { width: 300, height: 300 }}>
-          <SkSheetHeader>
-            <SkSheetTitle>Edit profile</SkSheetTitle>
-            <SkSheetDescription>Make changes to your profile here.</SkSheetDescription>
-          </SkSheetHeader>
-          <SkSheetFooter>
-            <SkButton size="sm">Save changes</SkButton>
-          </SkSheetFooter>
+        <SkSheetContent
+          inline
+          side={side}
+          closeIcon={<PreviewIcon concept="close" size={16} />}
+          style={bottom ? { width: 393 } : { height: 460 }}
+          header={<SkSheetHeader iconVisible={false} title="Sheet title" description="Short description of what this panel is for." />}
+          footer={<SkSheetFooter>{modalActions(bottom ? 'stacked' : 'inline', 'default')}</SkSheetFooter>}
+        >
+          Replace this slot with the sheet body.
         </SkSheetContent>
       </SkSheet>
     </RecipeScope>

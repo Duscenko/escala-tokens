@@ -15,8 +15,10 @@ export type ModalHeaderAlign = (typeof MODAL_HEADER_ALIGNS)[number]
 export const MODAL_FOOTER_LAYOUTS = ['inline', 'stacked'] as const
 export type ModalFooterLayout = (typeof MODAL_FOOTER_LAYOUTS)[number]
 
-/** What the Modal tells its parts: its Size cascades to the header and the footer, the header leaves room for the close. */
-const ModalContext = React.createContext<{ size: ModalSize; closeClearance: boolean; dialog: boolean } | null>(null)
+/** What the Modal tells its parts: its Size cascades to the header and the footer, the header leaves room for the close.
+ *  A Sheet provides the same context (`footerLayout`: stacked on its bottom side), so ModalHeader and ModalFooter are the
+ *  Sheet's header and footer too. */
+export const ModalContext = React.createContext<{ size: ModalSize; closeClearance: boolean; dialog: boolean; footerLayout?: ModalFooterLayout } | null>(null)
 
 function Modal(props: React.ComponentProps<typeof DialogPrimitive.Root>) {
   return <DialogPrimitive.Root data-slot="modal" {...props} />
@@ -204,9 +206,10 @@ export interface ModalFooterProps extends React.ComponentProps<'div'> {
 }
 
 /** Figma ModalFooter. `children` is the Actions slot (put the primary action last for `inline`; `stacked` stacks them as given). */
-function ModalFooter({ size, layout = 'inline', leadingVisible = false, leading, className, children, ...props }: ModalFooterProps) {
+function ModalFooter({ size, layout: layoutProp, leadingVisible = false, leading, className, children, ...props }: ModalFooterProps) {
   const ctx = React.useContext(ModalContext)
   const sz = size ?? ctx?.size ?? 'default'
+  const layout = layoutProp ?? ctx?.footerLayout ?? 'inline'
   const stacked = layout === 'stacked'
   return (
     <div

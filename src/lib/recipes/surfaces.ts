@@ -81,7 +81,9 @@ export const MODAL_HEADER: ComponentRecipe = {
     })),
     part({ Size: MODAL_SIZES }, (size) => ({
       title: { font: size === 'lg' ? 'type.heading-md' : 'type.heading-sm' },
-      description: { font: size === 'lg' ? 'type.body-md' : 'type.body-sm' },
+      // The file's ModalHeader set draws the description at Type/body-md in BOTH sizes (header 53 / 58 tall; it was body-sm at
+      // default when the Modal was first built, 2026-11-13).
+      description: { font: 'type.body-md' },
       clearance: size === 'lg'
         ? { width: 'size.md', height: 'size.md' }
         : { width: 'size.sm', height: 'size.sm' },
@@ -441,25 +443,36 @@ export const ALERT_DIALOG: ComponentRecipe = {
 }
 
 // ── Sheet ──────────────────────────────────────────────────────────────────
-// shadcn's Sheet: a raised panel from an edge. `side` is layout only.
+// The Figma set Sheet (1648:1577; design-plans/sheet-contract.md): an edge-anchored panel on the Modal's surface
+// (Surface/layer-2, Shadow/xl). Side right | left (desktop drawers, full height) | bottom (the mobile sheet, a grabber on top).
+// One stroke weight on the edge that faces the page and the Radius/overlay on the two corners on that edge. The frame
+// does not clip, so Figma paints no ring and no spread: `lift: sheet` is the key and the ambient drops alone.
+// The root slot is named `content` (the choreography `sheet-enter` plays on it); the Figma Content slot is `body`.
+
+export const SHEET_SIDES = ['right', 'left', 'bottom'] as const
 
 export const SHEET: ComponentRecipe = {
   key: 'Sheet',
-  slots: ['content', 'overlay', 'header', 'title', 'description', 'footer'],
+  slots: ['content', 'overlay', 'main', 'body', 'grabber', 'handle', 'close'],
   detachedSlots: ['overlay'],
-  defaults: {},
+  defaults: { Side: 'right' },
   parts: [
     part({}, () => ({
       overlay: { fill: c('surface.overlay') },
-      content: {
-        fill: c('surface.layer-2'), stroke: c('border.subtle'), strokeWidth: 'stroke.control',
-        shadow: 'shadow.lg', gap: 'spacing.4', text: c('content.primary'),
-      },
-      header: { gap: 'spacing.0_5', paddingX: 'spacing.4', paddingY: 'spacing.4' },
-      title: { text: c('content.primary'), font: OVERLAY_TITLE },
-      description: { text: c('content.secondary'), font: 'type.body-sm' },
-      footer: { gap: 'spacing.2', paddingX: 'spacing.4', paddingY: 'spacing.4' },
+      content: { fill: c('surface.layer-2'), stroke: c('border.default'), lift: 'sheet' },
+      main: { paddingX: 'spacing.inset-surface', paddingY: 'spacing.inset-surface', gap: 'spacing.gap-group' },
+      body: { gap: 'spacing.gap-group', text: c('content.secondary'), font: 'type.body-md' },
+      // The grabber: 8 above a 40 x 4 bar (fixed geometry, no role: the spacing steps 10 and 1).
+      grabber: { paddingTop: 'spacing.gap-control' },
+      handle: { fill: c('border.strong'), radius: 'radius.pill', width: 'spacing.10', height: 'spacing.1' },
     })),
+    part({ Side: SHEET_SIDES }, (side) => {
+      // 400 = 3 × 128 + 16; the width clamps between 320 (2 × 128 + 64) and 480 (3 × 128 + 96).
+      const edge: SlotProps = { width: 'spacing.32+spacing.32+spacing.32+spacing.4', minWidth: 'spacing.32+spacing.32+spacing.16', maxWidth: 'spacing.32+spacing.32+spacing.32+spacing.24' }
+      if (side === 'right') return { content: { ...edge, strokeLeftWidth: 'stroke.divider', radiusLeft: 'radius.overlay' } }
+      if (side === 'left') return { content: { ...edge, strokeRightWidth: 'stroke.divider', radiusRight: 'radius.overlay' } }
+      return { content: { strokeTopWidth: 'stroke.divider', radiusTop: 'radius.overlay' } }
+    }),
   ],
 }
 

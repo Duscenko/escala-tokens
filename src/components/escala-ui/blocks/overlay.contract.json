@@ -1,5 +1,5 @@
 {
-  "$comment": "Contract of the Overlay blocks. Each block is the system's Modal (Modal · ModalHeader · Content slot · ModalFooter · CloseButton) filled with escala-ui components. Motion: the Modal's own choreography; a block adds none.",
+  "$comment": "Contract of the Overlay blocks. Each block is the system's Modal (Modal · ModalHeader · Content slot · ModalFooter · CloseButton) filled with escala-ui components; the two drawers (CartDrawer, FilterDrawer) are the system's Sheet instead. Motion: the Modal's own choreography (the Sheet's sheet-enter / sheet-exit for the drawers); a block adds none.",
   "figma": {
     "file": "7j5zukN5HpihGVJMmyjA20",
     "page": "Overlay",
@@ -395,13 +395,14 @@
       "axes": {},
       "variants": 1,
       "anatomy": [
-        "Modal (Size default)",
-        "ModalHeader",
+        "Sheet (Side right on desktop · bottom on a phone)",
+        "ModalHeader (SheetHeader)",
         "Content slot",
-        "ModalFooter",
+        "ModalFooter (SheetFooter)",
         "CloseButton"
       ],
       "nests": [
+        "Sheet",
         "ModalHeader",
         "ModalFooter",
         "Badge",
@@ -416,20 +417,21 @@
         "Actions"
       ],
       "props": [
+        "side",
         "inline",
         "open",
         "onOpenChange",
         "onConfirm"
       ],
       "a11y": [
-        "Rendered as the Modal: dialog role, focus trap and Escape when not inline",
+        "Rendered as the Sheet: dialog role, focus trap and Escape when not inline",
         "The header's title names the dialog",
-        "Destructive and warning actions stay disabled until the user confirms the risk"
+        "The bottom side is capped by the visual viewport and keeps the safe area under the footer"
       ],
       "motion": [
         {
           "moment": "open / close",
-          "mechanism": "the Modal's own choreography (dialog-enter / exit)",
+          "mechanism": "the Sheet's own choreography (sheet-enter / sheet-exit, from its edge); the block adds none",
           "role": "none",
           "reduced": "from the tokens"
         }
@@ -484,13 +486,14 @@
       "axes": {},
       "variants": 1,
       "anatomy": [
-        "Modal (Size default)",
-        "ModalHeader",
+        "Sheet (Side right on desktop · bottom on a phone)",
+        "ModalHeader (SheetHeader)",
         "Content slot",
-        "ModalFooter",
+        "ModalFooter (SheetFooter)",
         "CloseButton"
       ],
       "nests": [
+        "Sheet",
         "ModalHeader",
         "ModalFooter",
         "Slider",
@@ -503,20 +506,21 @@
         "Actions"
       ],
       "props": [
+        "side",
         "inline",
         "open",
         "onOpenChange",
         "onConfirm"
       ],
       "a11y": [
-        "Rendered as the Modal: dialog role, focus trap and Escape when not inline",
+        "Rendered as the Sheet: dialog role, focus trap and Escape when not inline",
         "The header's title names the dialog",
-        "Destructive and warning actions stay disabled until the user confirms the risk"
+        "The bottom side is capped by the visual viewport and keeps the safe area under the footer"
       ],
       "motion": [
         {
           "moment": "open / close",
-          "mechanism": "the Modal's own choreography (dialog-enter / exit)",
+          "mechanism": "the Sheet's own choreography (sheet-enter / sheet-exit, from its edge); the block adds none",
           "role": "none",
           "reduced": "from the tokens"
         }

@@ -200,6 +200,8 @@ describe.skipIf(!existsSync(pluginFile))('plugin ↔ web recipe parity', () => {
     const WEB_ONLY_SLOTS: Record<string, string[]> = { Chip: ['leading', 'label', 'close'], Badge: ['iconLeading', 'label', 'iconTrailing', 'icon', 'count'], Avatar: ['icon', 'stroke', 'ring'], SegmentedControl: ['content'], Slider: ['control', 'tooltips', 'tooltip', 'marks', 'mark', 'tick', 'markLabel'], Switch: ['io', 'thumbIcon'], Input: ['addon', 'divider', 'kbd'], ButtonGroup: ['item', 'border'], Field: ['labelRow', 'required'], Alert: ['content', 'description', 'actions', 'close', 'title'], Popover: ['panel', 'media', 'header', 'description', 'content', 'close'], DropdownMenu: ['header', 'content'],
       // 2026-11-14: Sidebar rebuilt from the file (982:1003): the header, Content and Footer slots; its rows, groups and brand are their own sets.
       Sidebar: ['header', 'content', 'footer'],
+      // 2026-11-16: Sheet rebuilt from the file (1648:1577): main, the Content slot (body), the grabber and its bar, the close; the frozen plugin draws the shadcn panel.
+      Sheet: ['main', 'body', 'grabber', 'handle', 'close'],
       // 2026-11-12: Textarea rebuilt from the file (394:152): its corner glyphs and resize grip.
       Textarea: ['adornment', 'status', 'spinner', 'corner', 'grip'],
       // 2026-11-12: InputOTP rebuilt from the file (416:994): the separator between halves.

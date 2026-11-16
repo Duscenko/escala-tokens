@@ -422,7 +422,7 @@ export const OVERVIEWS: Record<string, Overview> = {
   ModalFooter: [each('Layout', ['inline', 'stacked'], {}, 480), each('Size', ['default', 'lg'], {}, 640)],
   AlertDialog: [each('Size', ['default', 'sm'])],
   // Drawn inline, left/right and top/bottom look alike: one of each shape.
-  Sheet: [each('Side', ['right', 'bottom'])],
+  Sheet: [each('Side', ['right', 'left', 'bottom'])],
   Drawer: [each('Direction', ['bottom', 'right'])],
   Item: [
     ...stack('Variant', ['default', 'outline', 'muted'], {}, 360),
