@@ -33,7 +33,7 @@ export interface PhoneNumberInputProps extends Omit<InputProps, 'type' | 'addon'
   onCountryChange?: (iso: string, country: PhoneCountry) => void
   countries?: PhoneCountry[]
   /** The translatable copy of the picker. */
-  pickerLabels?: Partial<Record<'button' | 'search' | 'list' | 'empty', string>>
+  pickerLabels?: Partial<Record<'button' | 'dialog' | 'search' | 'list' | 'empty', string>>
   /** Docs and tests: the visible part of the page, replacing the live `visualViewport` (a phone frame in a story, a keyboard). */
   viewport?: { height: number; bottom: number }
   /** Docs and tests: the box the picker flips inside (a phone frame in a story). Defaults to the browser viewport. */
@@ -185,6 +185,7 @@ export function PhoneNumberInput({
           avoidCollisions
           collisionBoundary={collisionBoundary ?? undefined}
           tabIndex={-1}
+          aria-label={pickerLabels?.dialog ?? 'Choose a country'}
           className="z-50 outline-none"
           style={{
             width: 'var(--radix-popover-trigger-width)',

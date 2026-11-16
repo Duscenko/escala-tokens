@@ -131,8 +131,10 @@
       "side": "both",
       "entity": "CartDrawer, FilterDrawer",
       "evidence": "Figma draws both as Modal instances. A drawer is a Sheet/Drawer in code. Better: build them on the Sheet (side panel, own motion).",
-      "status": "Open",
-      "resolution": null,
+      "status": "Fixed",
+      "resolution": {
+        "ref": "7ad1cdf · CartDrawer and FilterDrawer are built on Sheet (code); the Figma file still draws them as Modal instances (not edited)"
+      },
       "firstSeen": "2026-11-16",
       "lastSeen": "2026-11-16",
       "regression": false
@@ -162,6 +164,48 @@
       "firstSeen": "2026-11-16",
       "lastSeen": "2026-11-16",
       "regression": false
+    },
+    {
+      "id": "CMP-011:Field-font-below-16px",
+      "rule": "CMP-002",
+      "severity": "warn",
+      "side": "both",
+      "entity": "Input, Textarea, Combobox, NumberInput, InputTag",
+      "evidence": "Focusable fields render at 11–14px (Input 12 at every size, Textarea 14, Combobox 11/12/14): iOS Safari zooms the page on focus. Same on the Mobile typography mode.",
+      "status": "Open",
+      "resolution": null,
+      "firstSeen": "2026-11-16",
+      "lastSeen": "2026-11-16",
+      "regression": false,
+      "ticket": 24
+    },
+    {
+      "id": "COL-004:Content/secondary-on-Surface/selected",
+      "rule": "COL-003",
+      "severity": "warn",
+      "side": "both",
+      "entity": "ComboboxItem Selected trailing",
+      "evidence": "Content/secondary #6c6774 on Surface/selected over layer-2 = 3.82:1 in Light (11px caption, needs 4.5:1); Dark 6.34:1.",
+      "status": "Open",
+      "resolution": null,
+      "firstSeen": "2026-11-16",
+      "lastSeen": "2026-11-16",
+      "regression": false,
+      "ticket": 25
+    },
+    {
+      "id": "CMP-012:Sheet-AuthSignInPhone-decisions",
+      "rule": "DEPARTURE",
+      "severity": "warn",
+      "side": "both",
+      "entity": "Sheet, ModalHeader, AuthSignInPhone, Field",
+      "evidence": "Decisions taken while building (header body-md, Sheet shadow without ring, emoji flags, autocomplete tel, Field error disclosure) and Figma-side items (mobile picker drawn as Sheet; Input phone filled states).",
+      "status": "Open",
+      "resolution": null,
+      "firstSeen": "2026-11-16",
+      "lastSeen": "2026-11-16",
+      "regression": false,
+      "ticket": 26
     }
   ]
 }
