@@ -160,8 +160,9 @@ export function ContactSection({ layout = 'desktop', media, style, className }: 
           <Field label="Message"><Textarea placeholder="Leave us a message…" /></Field>
           <div data-part="services" style={{ display: 'flex', flexDirection: 'column', gap: v('spacing.gap-control') }}>
             <span style={type('label')}>Services</span>
-            <div style={{ display: 'flex', flexDirection: mobile ? 'column' : 'row', gap: v('spacing.gap-group') }}>
-              {SERVICES.map((column, i) => <div key={i} style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: v('spacing.gap-control') }}>{column.map((s) => <CheckboxItem key={s} size="xs" label={s} />)}</div>)}
+            {/* A checkbox row is as wide as the file draws it: when two columns do not fit the form, the second wraps under the first. */}
+            <div style={{ display: 'flex', flexDirection: mobile ? 'column' : 'row', flexWrap: 'wrap', gap: v('spacing.gap-group') }}>
+              {SERVICES.map((column, i) => <div key={i} style={{ flex: mobile ? undefined : '1 0 auto', display: 'flex', flexDirection: 'column', gap: v('spacing.gap-control') }}>{column.map((s) => <CheckboxItem key={s} size="xs" label={s} />)}</div>)}
             </div>
           </div>
           <Button type="submit">Get started</Button>
