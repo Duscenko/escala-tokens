@@ -131,15 +131,16 @@ function Phone({ keyboard }: { keyboard: boolean }) {
     <div
       ref={setFrame}
       // `transform` makes the frame the containing block of the picker's `position: fixed`.
-      style={{ position: 'relative', width: 393, height: 852, overflow: 'hidden', transform: 'translateZ(0)', background: 'var(--color-surface-page)', boxShadow: '0 0 0 1px var(--color-border-default)', borderRadius: 40 }}
+      style={{ position: 'relative', width: 393, height: 852, overflow: 'hidden', transform: 'translateZ(0)', background: 'var(--color-surface-page)', boxShadow: '0 0 0 1px var(--color-border-default)', borderRadius: 'var(--radius-container)' }}
     >
       <PortalScopeContext.Provider value={frame}>
-        <div style={{ paddingTop: 54 }}>
+        {/* A screen: the status bar's room above, the page inset (Grid margin, Mobile) at the sides. The block is bare content. */}
+        <div style={{ paddingTop: 54, paddingInline: 'var(--spacing-inset-page)' }}>
           <AuthSignInPhone container="plain" defaultCountry="FR" picker={{ viewport: keyboard ? { height: 852 - 336, bottom: 336 } : { height: 852, bottom: 0 }, collisionBoundary: frame }} />
         </div>
       </PortalScopeContext.Provider>
     </div>
   )
 }
-export const Mobile: Story = { render: () => <Phone keyboard={false} />, parameters: { layout: 'padded' } }
-export const MobileKeyboard: Story = { render: () => <Phone keyboard />, parameters: { layout: 'padded' } }
+export const Mobile: Story = { render: () => <Phone keyboard={false} />, parameters: { layout: 'padded' }, globals: { viewport: 'mobile' } }
+export const MobileKeyboard: Story = { render: () => <Phone keyboard />, parameters: { layout: 'padded' }, globals: { viewport: 'mobile' } }
