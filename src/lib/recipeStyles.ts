@@ -402,10 +402,19 @@ export function playedKeyframes(recipes: readonly ComponentRecipe[] = Object.val
   return [...names].sort()
 }
 
+/** A browser's autofill (Chrome's pale blue, Safari's yellow) paints the text box of an input only — not the pill around it —
+ *  and in its own colour. The field keeps its own: an inset shadow of the field's fill covers the UA background (it cannot be
+ *  turned off), and the ink stays the field's. One rule per engine: an unknown pseudo-class would drop a shared list. */
+export function autofillCss(): string {
+  const body = '  box-shadow: inset 0 0 0 100vmax var(--color-surface-input);\n  -webkit-text-fill-color: var(--color-content-primary);\n  caret-color: var(--color-content-primary);'
+  return ['-webkit-autofill', 'autofill'].map((pseudo) => `[data-escala] :is(input, textarea):${pseudo} {\n${body}\n}`).join('\n')
+}
+
 /** The whole sheet, every recipe, and the keyframes the choreographies play.
  *  Static: computed once. */
 export const RECIPE_CSS: string = [
   ...Object.values(COMPONENT_RECIPES).map(recipeCss),
+  autofillCss(),
   ...Object.values(COMPONENT_RECIPES).map(recipeMotionCss).filter(Boolean),
   motionKeyframesCss(playedKeyframes()).join('\n'),
 ].join('\n\n')
