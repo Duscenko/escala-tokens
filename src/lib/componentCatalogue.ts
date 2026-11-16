@@ -1268,7 +1268,7 @@ export const COMPONENTS: ComponentDef[] = [
     axes: [
       { name: 'Size', values: ['default', 'sm', 'lg', 'xl'] },
       { name: 'Variant', values: ['default', 'secondary', 'critical', 'success', 'warning', 'info'] },
-      { name: 'Appearance', values: ['soft', 'solid'] },
+      { name: 'Appearance', values: ['soft', 'solid', 'gradient'] },
       { name: 'Shape', values: ['circle', 'rounded'] },
     ],
     figmaSets: ['FeaturedIcon'],

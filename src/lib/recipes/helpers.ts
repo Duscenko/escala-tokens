@@ -18,6 +18,9 @@ export const RECIPE_PROPS = [
   // the same translucent fill laid on top once or twice). Each is a colour
   // role; `overlay` sits on `fill`, `overlay2` on `overlay`.
   'overlay', 'overlay2',
+  // A three-stop gradient fill (Figma: GRADIENT_LINEAR at 45°, stops at 0 · 52 · 100 %). `fill` is the first
+  // stop, `fillMid` and `fillEnd` the others — each a colour ROLE, never a raw colour (A4, FeaturedIcon).
+  'fillMid', 'fillEnd',
   // A focus ring fully OUTSIDE the control, `stroke.focus` wide, with no edge
   // of its own (Figma's CloseButton · soft / solid · Focused). A colour role.
   'halo',

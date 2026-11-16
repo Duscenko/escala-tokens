@@ -1,5 +1,5 @@
 {
-  "$comment": "Hand-maintained ledger: how far the code catalogue is from the Figma file (spec/figma-components.json). A component leaves `pending` when its catalogue axes equal Figma's \u2014 the test then demands the entry be removed. `codeOnly` are catalogue components Figma does not document: frozen, no new work. See design-plans/figma-components-inventory.md.",
+  "$comment": "Hand-maintained ledger: how far the code catalogue is from the Figma file (spec/figma-components.json). A component leaves `pending` when its catalogue axes equal Figma's — the test then demands the entry be removed. `codeOnly` are catalogue components Figma does not document: frozen, no new work. See design-plans/figma-components-inventory.md.",
   "pending": {
     "SocialLoginButton": {
       "status": "rebuild"
@@ -207,5 +207,8 @@
     "Spinner",
     "StatusBadge",
     "Toggle"
-  ]
+  ],
+  "ahead": {
+    "FeaturedIcon": "Figma added Appearance=gradient (144 variants) on 2026-11-16; the code carries it already (A4). Drops out when spec/figma-components.json is re-exported (live checksum d06cd1d9 on 2026-11-16)."
+  }
 }

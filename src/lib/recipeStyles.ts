@@ -98,11 +98,17 @@ function declarations(props: SlotProps): string[] {
         // over the base: Figma's fills array, top layer first in CSS.
         const layers = [props.overlay2, props.overlay].filter((r): r is string => Boolean(r) && r !== 'none')
         const stack = layers.map((l) => `linear-gradient(${color(l)}, ${color(l)})`)
-        out.push(`background: ${[...stack, color(ref)].join(', ')}`)
+        // A gradient fill: 135deg is Figma's [[.5 .5 0] [-.5 .5 .5]] transform (top-left to bottom-right).
+        const base = props.fillEnd && props.fillEnd !== 'none'
+          ? `linear-gradient(135deg, ${color(ref)} 0%, ${color(props.fillMid ?? ref)} 52%, ${color(props.fillEnd)} 100%)`
+          : color(ref)
+        out.push(`background: ${[...stack, base].join(', ')}`)
         break
       }
       case 'overlay':
       case 'overlay2':
+      case 'fillMid':
+      case 'fillEnd':
         break // painted by `fill`
       case 'opacity': out.push(`opacity: ${ref}`); break
       // An unbound text style (Avatar initials): literal px, Medium, line height 100%.

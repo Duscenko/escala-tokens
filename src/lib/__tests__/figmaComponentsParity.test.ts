@@ -38,6 +38,8 @@ const snapshot = JSON.parse(readFileSync(join(root, 'spec/figma-components.json'
 const ledger = JSON.parse(readFileSync(join(root, 'spec/figma-components.status.json'), 'utf8')) as {
   pending: Record<string, Pending>
   codeOnly: string[]
+  /** Components the code carries ahead of a stale snapshot: Figma changed, the snapshot is not re-exported yet. */
+  ahead?: Record<string, string>
 }
 
 const figmaSets = snapshot.pages.flatMap((p) => p.sets)
@@ -71,13 +73,18 @@ describe('code catalogue ↔ Figma file (spec/figma-components.json)', () => {
   })
 
   it('every Figma component matches the catalogue or is pending in the ledger', () => {
-    const unaccounted = figmaSets.filter((s) => !matches(s) && !ledger.pending[s.name]).map((s) => s.name)
+    const unaccounted = figmaSets.filter((s) => !matches(s) && !ledger.pending[s.name] && !ledger.ahead?.[s.name]).map((s) => s.name)
     expect(unaccounted, 'add them to spec/figma-components.status.json, or build them').toEqual([])
   })
 
   it('a component that now matches Figma has left the ledger', () => {
     const done = figmaSets.filter((s) => matches(s) && ledger.pending[s.name]).map((s) => s.name)
     expect(done, 'remove them from `pending` — they are done').toEqual([])
+  })
+
+  it('a component the code carries ahead of the snapshot is really ahead (its snapshot entry still differs)', () => {
+    const settled = figmaSets.filter((s) => matches(s) && ledger.ahead?.[s.name]).map((s) => s.name)
+    expect(settled, 'the snapshot caught up: remove them from `ahead`').toEqual([])
   })
 
   it('the ledger names only components the Figma file has', () => {
