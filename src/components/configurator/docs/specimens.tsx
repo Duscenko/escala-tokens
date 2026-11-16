@@ -19,23 +19,23 @@ import { PHOSPHOR_CORE, PHOSPHOR_CORE_COMPONENT, type IconConcept } from '../../
 import { PHOSPHOR_CORE_BODIES, loadPhosphorWeight, peekPhosphorWeight, phosphorCoreBody, phosphorIconMaskUrl, type PhosphorWeight } from '../../../lib/phosphorIcons'
 import {
   SkeletonButtonSpecimen, SkeletonIconButtonSpecimen, SkeletonCloseButtonSpecimen, SkeletonTextLinkSpecimen, SkeletonFABButtonSpecimen, SkeletonFABGroupSpecimen, SkeletonButtonGroupSpecimen, SkeletonButtonGroupItemSpecimen, SkeletonButtonGroupDividerSpecimen,
-  SkeletonSocialLoginButtonSpecimen, SkeletonAppStoreBadgeSpecimen, SkeletonToggleSpecimen,
+  SkeletonSocialLoginButtonSpecimen, 
 } from './skeleton/actions'
 import {
-  SkeletonBadgeSpecimen, SkeletonStatusBadgeSpecimen, SkeletonChipSpecimen, SkeletonProgressLineSpecimen, SkeletonProgressCircleSpecimen,
-  SkeletonSpinnerSpecimen, SkeletonIconSpecimen, SkeletonRatingGroupSpecimen, SkeletonRatingGroupItemSpecimen, SkeletonFileFormatSpecimen, SkeletonAvatarSpecimen, SkeletonAvatarStatusSpecimen, SkeletonAvatarGroupSpecimen, SkeletonFeaturedIconSpecimen,
+  SkeletonBadgeSpecimen, SkeletonChipSpecimen, SkeletonProgressLineSpecimen, SkeletonProgressCircleSpecimen, SkeletonSpinnerSpecimen,
+  SkeletonRatingGroupSpecimen, SkeletonRatingGroupItemSpecimen, SkeletonAvatarSpecimen, SkeletonAvatarStatusSpecimen, SkeletonAvatarGroupSpecimen, SkeletonFeaturedIconSpecimen,
   SkeletonKbdSpecimen,
 } from './skeleton/indicators'
 import {
   SkeletonTabMenuSpecimen, SkeletonTabMenuItemSpecimen, SkeletonTabMenuLineItemSpecimen, SkeletonNavItemSpecimen, SkeletonBrandSpecimen, SkeletonAccountMenuTriggerSpecimen, SkeletonSegmentedControlSpecimen, SkeletonSegmentedControlItemSpecimen, SkeletonBreadcrumbSpecimen, SkeletonBreadcrumbItemSpecimen, SkeletonBreadcrumbEllipsisSpecimen, SkeletonBreadcrumbSeparatorSpecimen,
   SkeletonPaginationSpecimen, SkeletonPaginationLinkSpecimen, SkeletonPaginationEllipsisSpecimen, SkeletonStepperSpecimen, SkeletonStepperItemSpecimen, SkeletonStepperIndicatorSpecimen, SkeletonStepperIconSpecimen, SkeletonDropdownMenuSpecimen, SkeletonDropdownMenuLabelSpecimen, SkeletonDropdownMenuItemSpecimen, SkeletonDropdownMenuFooterSpecimen, 
-  SkeletonCommandSpecimen, SkeletonNavbarSpecimen, SkeletonSidebarSpecimen, SkeletonSidebarMenuButtonSpecimen, SkeletonSidebarGroupSpecimen, SkeletonSidebarGroupLabelSpecimen, SkeletonSidebarBrandSpecimen,
-  SkeletonNavigationMenuSpecimen,
+  SkeletonSidebarSpecimen, SkeletonSidebarMenuButtonSpecimen, SkeletonSidebarGroupSpecimen, SkeletonSidebarGroupLabelSpecimen, SkeletonSidebarBrandSpecimen,
+  
 } from './skeleton/navigation'
 import { SKELETON_SNIPPETS } from './skeleton/snippets'
 import {
   SkeletonDatePickerTriggerSpecimen,
-  SkeletonInputSpecimen, SkeletonTextareaSpecimen, SkeletonInputGroupSpecimen, SkeletonNumberInputSpecimen,
+  SkeletonInputSpecimen, SkeletonTextareaSpecimen, SkeletonNumberInputSpecimen,
   SkeletonInputTagSpecimen, SkeletonInputTagChipSpecimen, SkeletonInputTagOptionSpecimen, SkeletonComboboxSpecimen, SkeletonComboboxPopoverSpecimen, SkeletonComboboxItemSpecimen, SkeletonComboboxGroupLabelSpecimen, SkeletonInputOTPSpecimen, SkeletonInputOTPSlotSpecimen,
   SkeletonCheckboxSpecimen, SkeletonCheckboxItemSpecimen, SkeletonCheckboxGroupSpecimen, SkeletonRadioGroupSpecimen,
   SkeletonSwitchSpecimen, SkeletonSwitchGroupSpecimen, SkeletonSliderSpecimen, SkeletonSliderThumbSpecimen, SkeletonFileUploadSpecimen,
@@ -46,9 +46,9 @@ import {
   SkeletonCardSpecimen, SkeletonModalSpecimen, SkeletonModalHeaderSpecimen, SkeletonModalFooterSpecimen, SkeletonSeparatorSpecimen, SkeletonAccordionSpecimen, SkeletonAccordionItemSpecimen, SkeletonTableCellSpecimen, SkeletonTableHeadSpecimen, SkeletonTableMediaCellSpecimen, SkeletonTableTrendCellSpecimen, SkeletonTableResizerSpecimen, SkeletonTableRowSpecimen, SkeletonTableHeaderSpecimen, SkeletonTableFooterSpecimen, SkeletonTableCaptionSpecimen, SkeletonTableDropIndicatorSpecimen, SkeletonTableEmptySpecimen, SkeletonTableLoadingSpecimen, SkeletonTableLoadMoreSpecimen,
   SkeletonImageSpecimen, SkeletonPopoverSpecimen, SkeletonPopoverFooterSpecimen, SkeletonTooltipContentSpecimen, SkeletonTooltipInfoTriggerSpecimen,
   SkeletonScrollAreaSpecimen, SkeletonScrollBarSpecimen, SkeletonAlertSpecimen, SkeletonToastSpecimen,
-  SkeletonCollapsibleSpecimen, SkeletonTableSpecimen, SkeletonSkeletonSpecimen, SkeletonEmptySpecimen,
-  SkeletonAlertDialogSpecimen, SkeletonSheetSpecimen, SkeletonDrawerSpecimen, SkeletonHoverCardSpecimen, SkeletonItemSpecimen,
-  SkeletonAttachmentSpecimen, SkeletonMessageSpecimen, SkeletonBubbleSpecimen, SkeletonResizableSpecimen,
+  SkeletonTableSpecimen, 
+  SkeletonSheetSpecimen, 
+  
 } from './skeleton/surfaces'
 import { useInspectorActive } from '../../preview/artefacts/TokenInspector'
 
@@ -355,7 +355,7 @@ export function preloadHeavySpecimens() {
   heavyModule ??= import('./skeleton/heavy')
   return heavyModule
 }
-function lazySpecimen(name: 'SkeletonCalendarSpecimen' | 'SkeletonCalendarDaySpecimen' | 'SkeletonCalendarHeaderSpecimen' | 'SkeletonCalendarMonthSpecimen' | 'SkeletonCalendarPresetsSpecimen' | 'SkeletonCalendarFooterSpecimen' | 'SkeletonDatePickerPopoverSpecimen' | 'SkeletonChartSpecimen' | 'SkeletonCarouselSpecimen') {
+function lazySpecimen(name: 'SkeletonCalendarSpecimen' | 'SkeletonCalendarDaySpecimen' | 'SkeletonCalendarHeaderSpecimen' | 'SkeletonCalendarMonthSpecimen' | 'SkeletonCalendarPresetsSpecimen' | 'SkeletonCalendarFooterSpecimen' | 'SkeletonDatePickerPopoverSpecimen') {
   const L = lazy(() => preloadHeavySpecimens().then((m) => ({ default: m[name] as ComponentType<SpecimenProps> })))
   return function LazySpecimen(p: SpecimenProps) {
     return <Suspense fallback={null}><L {...p} /></Suspense>
@@ -373,12 +373,9 @@ export const SPECIMENS: Record<string, (p: SpecimenProps) => ReactNode> = {
   ButtonGroup: SkeletonButtonGroupSpecimen,
   ButtonGroupItem: SkeletonButtonGroupItemSpecimen,
   ButtonGroupDivider: SkeletonButtonGroupDividerSpecimen,
-  Toggle: SkeletonToggleSpecimen,
   SocialLoginButton: SkeletonSocialLoginButtonSpecimen,
-  AppStoreBadge: SkeletonAppStoreBadgeSpecimen,
   // Form Controls
   Input: SkeletonInputSpecimen,
-  InputGroup: SkeletonInputGroupSpecimen,
   Textarea: SkeletonTextareaSpecimen,
   InputOTP: SkeletonInputOTPSpecimen,
   InputOTPSlot: SkeletonInputOTPSlotSpecimen,
@@ -416,16 +413,13 @@ export const SPECIMENS: Record<string, (p: SpecimenProps) => ReactNode> = {
   PasswordStrengthRule: SkeletonPasswordStrengthRuleSpecimen,
   // Indicators
   Badge: SkeletonBadgeSpecimen,
-  StatusBadge: SkeletonStatusBadgeSpecimen,
   Chip: SkeletonChipSpecimen,
   ProgressLine: SkeletonProgressLineSpecimen,
   ProgressCircle: SkeletonProgressCircleSpecimen,
   Spinner: SkeletonSpinnerSpecimen,
-  Icon: SkeletonIconSpecimen,
   FeaturedIcon: SkeletonFeaturedIconSpecimen,
   RatingGroup: SkeletonRatingGroupSpecimen,
   RatingGroupItem: SkeletonRatingGroupItemSpecimen,
-  FileFormat: SkeletonFileFormatSpecimen,
   Kbd: SkeletonKbdSpecimen,
   // Content & Surfaces
   Avatar: SkeletonAvatarSpecimen,
@@ -433,7 +427,6 @@ export const SPECIMENS: Record<string, (p: SpecimenProps) => ReactNode> = {
   AvatarGroup: SkeletonAvatarGroupSpecimen,
   Card: SkeletonCardSpecimen,
   Separator: SkeletonSeparatorSpecimen,
-  Collapsible: SkeletonCollapsibleSpecimen,
   Table: SkeletonTableSpecimen,
   TableCell: SkeletonTableCellSpecimen,
   TableHead: SkeletonTableHeadSpecimen,
@@ -448,17 +441,7 @@ export const SPECIMENS: Record<string, (p: SpecimenProps) => ReactNode> = {
   TableEmpty: SkeletonTableEmptySpecimen,
   TableLoading: SkeletonTableLoadingSpecimen,
   TableLoadMore: SkeletonTableLoadMoreSpecimen,
-  Item: SkeletonItemSpecimen,
-  Attachment: SkeletonAttachmentSpecimen,
-  Message: SkeletonMessageSpecimen,
-  Bubble: SkeletonBubbleSpecimen,
-  Resizable: SkeletonResizableSpecimen,
-  Carousel: lazySpecimen('SkeletonCarouselSpecimen'),
-  Chart: lazySpecimen('SkeletonChartSpecimen'),
-  AlertDialog: SkeletonAlertDialogSpecimen,
   Sheet: SkeletonSheetSpecimen,
-  Drawer: SkeletonDrawerSpecimen,
-  HoverCard: SkeletonHoverCardSpecimen,
   Accordion: SkeletonAccordionSpecimen,
   AccordionItem: SkeletonAccordionItemSpecimen,
   Image: SkeletonImageSpecimen,
@@ -474,8 +457,6 @@ export const SPECIMENS: Record<string, (p: SpecimenProps) => ReactNode> = {
   // Feedback
   Toast: SkeletonToastSpecimen,
   Alert: SkeletonAlertSpecimen,
-  Skeleton: SkeletonSkeletonSpecimen,
-  Empty: SkeletonEmptySpecimen,
   // Navigation
   TabMenu: SkeletonTabMenuSpecimen,
   TabMenuItem: SkeletonTabMenuItemSpecimen,
@@ -500,9 +481,6 @@ export const SPECIMENS: Record<string, (p: SpecimenProps) => ReactNode> = {
   DropdownMenuLabel: SkeletonDropdownMenuLabelSpecimen,
   DropdownMenuItem: SkeletonDropdownMenuItemSpecimen,
   DropdownMenuFooter: SkeletonDropdownMenuFooterSpecimen,
-  Command: SkeletonCommandSpecimen,
-  NavigationMenu: SkeletonNavigationMenuSpecimen,
-  Navbar: SkeletonNavbarSpecimen,
   Sidebar: SkeletonSidebarSpecimen,
   SidebarMenuButton: SkeletonSidebarMenuButtonSpecimen,
   SidebarGroup: SkeletonSidebarGroupSpecimen,

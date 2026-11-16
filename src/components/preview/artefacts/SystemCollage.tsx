@@ -6,7 +6,6 @@ import { BoardAutoplayContext, TileLiveContext, useAutoplayStep, useBoardConduct
 import { CALENDAR_PLAY, EDITORS_PLAY, EDITOR_PRICE, FOLLOWERS_PLAY, READINESS_PLAY } from './boardScripts'
 import { RollingNumber } from './RollingNumber'
 import { BoardRevealContext, REVEAL_CAP_MS, SETTLE_MS, boardEnteredOnce, boardRevealTiming, markBoardEntered } from './boardReveal'
-import { Skeleton as UiSkeleton } from '../../escala-ui/skeleton'
 import { useReducedMotion } from 'framer-motion'
 import { SkeletonInlineLinkSpecimen } from '../../configurator/docs/skeleton/actions'
 import { SkeletonSettingsList } from '../../configurator/docs/skeleton/forms'
@@ -65,7 +64,7 @@ const Segmented = inspectable('SegmentedControl')
 const Toast = inspectable('Toast')
 const TabMenu = inspectable('TabMenu')
 const Progress = inspectable('ProgressLine')
-const StatusBadge = inspectable('StatusBadge')
+const AvatarStatus = inspectable('AvatarStatus')
 const Chip = inspectable('Chip')
 const Sidebar = inspectable('Sidebar')
 const InputTag = inspectable('InputTag')
@@ -73,7 +72,6 @@ const FileUpload = inspectable('FileUpload')
 const Stepper = inspectable('Stepper')
 const Pagination = inspectable('Pagination')
 const Separator = inspectable('Separator')
-const Chart = inspectable('Chart')
 const Calendar = inspectable('Calendar')
 const InputStepper = inspectable('NumberInput')
 
@@ -734,8 +732,8 @@ function ScaledModule({
 
 const SKELETON_WIDTHS = ['42%', '88%', '70%', '94%', '58%', '80%']
 
-/** A tile before its content: the tile's own Card with bars of the catalogue's
- *  Skeleton, as many as its height holds. */
+/** A tile before its content: the tile's own Card with pulsing placeholder bars
+ *  (surface.layer-2 on radius.action), as many as its height holds. */
 function TileSkeleton({ t, height }: { t: PreviewTokens; height: number }) {
   const inset = px(spacingRoleOf(t, 'inset-surface', '20px')) || 20
   const line = 14
@@ -744,10 +742,11 @@ function TileSkeleton({ t, height }: { t: PreviewTokens; height: number }) {
   return (
     <ModuleSurface t={t} style={{ height: '100%', gap: gapPx }}>
       {SKELETON_WIDTHS.slice(0, lines).map((width, i) => (
-        <UiSkeleton
+        <div
           key={i}
-          className="flex-shrink-0 motion-reduce:animate-none"
-          style={{ width, height: i === 0 ? line + 4 : line }}
+          aria-hidden
+          className="flex-shrink-0 animate-pulse motion-reduce:animate-none"
+          style={{ width, height: i === 0 ? line + 4 : line, background: t.layer2, borderRadius: radiusRoleOf(t, 'action', '8px') }}
         />
       ))}
     </ModuleSurface>
@@ -960,8 +959,8 @@ export function SystemCollage({
           </div>
           <Separator t={tile(4)} v={{}} w="100%" />
           <div className="flex flex-wrap items-center" style={{ gap: gap(tile(4), 'gap-control', '8px') }}>
-            <StatusBadge t={tile(4)} v={{ Status: 'online' }} />
-            <StatusBadge t={tile(4)} v={{ Status: 'busy' }} />
+            <AvatarStatus t={tile(4)} v={{ Status: 'online' }} />
+            <AvatarStatus t={tile(4)} v={{ Status: 'busy' }} />
             <Chip t={tile(4)} v={{ Interactive: 'True', State: 'Selected' }}>Design tokens</Chip>
           </div>
         </ScaledModule>
@@ -1193,15 +1192,15 @@ export function SystemCollage({
     </ScaledModule>
   )
 
-  // CHART — how a data widget reads in this system: a metric, a trend badge and
-  // the catalogue's Chart (shadcn `chart` over Recharts), all on tokens.
+  // CHART — how a data widget reads in this system: a metric over Escala's
+  // ProgressLine, all on tokens.
   const chart = tile(10)
   const chartCard = (
     <ScaledModule key="chart" t={chart} appearance={appearanceAt(10)}>
       <div className="flex items-start justify-between" style={{ gap: gap(chart, 'gap-control', '8px') }}>
         <ReadinessFigure t={chart} muted={muted(10)} />
       </div>
-      <Chart t={chart} v={{ Type: 'area' }} w="100%" />
+      <Progress t={chart} v={{ Value: '75', Size: 'default' }} w="100%" />
     </ScaledModule>
   )
   const colorStyle = (wide: boolean, fill = false) => (

@@ -60,10 +60,6 @@ export const SKELETON_SNIPPETS: Record<string, Snippet> = {
     `import { DropdownMenuItem } from "@/components/ui/dropdown-menu"\n\n<DropdownMenuItem${v.Variant === 'destructive' ? ' variant="destructive"' : ''}${v.Size && v.Size !== 'default' ? ` size="${v.Size}"` : ''}${v.State === 'Selected' ? ' checked' : ''}${v.State === 'Disabled' ? ' disabled' : ''} iconLeading={<House />} trailing="⌘K">Option</DropdownMenuItem>`,
   DropdownMenuFooter: (v) =>
     `import { DropdownMenuFooter } from "@/components/ui/dropdown-menu"\n\n<DropdownMenuFooter${v.Size && v.Size !== 'default' ? ` size="${v.Size}"` : ''}${v.Layout === 'stacked' ? ' layout="stacked"' : ''} leading="12 of 40 selected">\n  <Button variant="secondary">Clear</Button>\n  <Button>Apply</Button>\n</DropdownMenuFooter>`,
-  Command: () =>
-    `import {\n  Command, CommandInput, CommandList, CommandGroup, CommandItem,\n} from "@/components/ui/command"\n\n<Command>\n  <CommandInput placeholder="Type a command…" />\n  <CommandList>\n    <CommandGroup heading="Actions">\n      <CommandItem onSelect={openColor}>Open Color foundation</CommandItem>\n    </CommandGroup>\n  </CommandList>\n</Command>`,
-  Navbar: () =>
-    `import { Navbar } from "@/components/ui/navbar"\n\n<Navbar\n  links={[{ label: "Home", current: true }, { label: "Tokens" }, { label: "Docs" }]}\n  trailing="MD"\n/>`,
   Sidebar: (v) =>
     `import {\n  Sidebar, SidebarHeader, SidebarBrand, SidebarTrigger, SidebarContent, SidebarGroup, SidebarGroupLabel,\n  SidebarMenu, SidebarMenuItem, SidebarMenuButton,\n} from "@/components/ui/sidebar"\n\n<Sidebar${v.Collapsed === 'true' ? ' collapsed' : ''}>\n  <SidebarHeader>\n    <SidebarBrand logo={<Avatar type="initials">E</Avatar>} title="Escala" subtitle="Design system" />\n    <SidebarTrigger />\n  </SidebarHeader>\n  <SidebarContent>\n    <SidebarGroup>\n      <SidebarGroupLabel>Platform</SidebarGroupLabel>\n      <SidebarMenu>\n        <SidebarMenuItem>\n          <SidebarMenuButton icon={<Palette />} state="Current">Tokens</SidebarMenuButton>\n        </SidebarMenuItem>\n      </SidebarMenu>\n    </SidebarGroup>\n  </SidebarContent>\n</Sidebar>`,
   SidebarMenuButton: (v) =>
@@ -84,47 +80,12 @@ export const SKELETON_SNIPPETS: Record<string, Snippet> = {
     const size = v.Size && v.Size !== 'default' ? ` size="${v.Size}"` : ''
     return `import { Kbd, KbdGroup } from "@/components/ui/kbd"\n\n<KbdGroup>\n  <Kbd${size}>⌘</Kbd>\n  <Kbd${size}>K</Kbd>\n</KbdGroup>`
   },
-  Skeleton: () =>
-    `import { Skeleton } from "@/components/ui/skeleton"\n\n<div aria-busy="true" className="flex items-center gap-3">\n  <Skeleton className="size-10 rounded-full" />\n  <Skeleton className="h-3.5 w-[200px]" />\n</div>`,
-  Empty: (v) =>
-    `import {\n  Empty, EmptyHeader, EmptyMedia, EmptyTitle, EmptyDescription, EmptyContent,\n} from "@/components/ui/empty"\n\n<Empty>\n  <EmptyHeader>\n    <EmptyMedia${v.Media === 'icon' ? ' variant="icon"' : ''}><Package /></EmptyMedia>\n    <EmptyTitle>No projects yet</EmptyTitle>\n    <EmptyDescription>Create your first project to start.</EmptyDescription>\n  </EmptyHeader>\n  <EmptyContent><Button size="sm">Create project</Button></EmptyContent>\n</Empty>`,
-  Collapsible: (v) =>
-    `import {\n  Collapsible, CollapsibleTrigger, CollapsibleContent, CollapsibleItem,\n} from "@/components/ui/collapsible"\n\n<Collapsible${v.Open === 'True' ? ' defaultOpen' : ''}>\n  <CollapsibleTrigger>3 starred repositories</CollapsibleTrigger>\n  <CollapsibleItem>escala/tokens</CollapsibleItem>\n  <CollapsibleContent>\n    <CollapsibleItem>escala/figma-plugin</CollapsibleItem>\n  </CollapsibleContent>\n</Collapsible>`,
-
-  Toggle: (v) =>
-    `import { Toggle } from "@/components/ui/toggle"\n\n<Toggle${v.Variant === 'outline' ? ' variant="outline"' : ''}${sizeProp(v)}${v.Pressed === 'True' ? ' defaultPressed' : ''} aria-label="Bold">\n  <Bold />\n</Toggle>`,
   Calendar: (v) =>
     v.Mode === 'range'
       ? `import { Calendar } from "@/components/ui/calendar"\n\nconst [range, setRange] = useState<CalendarValue>()\n\n<Calendar${v.Size === 'sm' ? ' size="sm"' : ''} mode="range"${v.Header && v.Header !== 'single' ? ` header="${v.Header}"` : ''} presets footer value={range} onValueChange={setRange} />`
       : `import { Calendar } from "@/components/ui/calendar"\n\nconst [value, setValue] = useState<CalendarValue>(new Date())\n\n<Calendar${v.Size === 'sm' ? ' size="sm"' : ''}${v.Mode === 'multiple' ? ' mode="multiple"' : ''}${v.Header && v.Header !== 'single' ? ` header="${v.Header}"` : ''} value={value} onValueChange={setValue} />`,
-  AlertDialog: (v) =>
-    `import {\n  AlertDialog, AlertDialogTrigger, AlertDialogContent, AlertDialogHeader, AlertDialogTitle,\n  AlertDialogDescription, AlertDialogFooter, AlertDialogCancel, AlertDialogAction,\n} from "@/components/ui/alert-dialog"\n\n<AlertDialog>\n  <AlertDialogTrigger asChild><Button variant="outline">Delete</Button></AlertDialogTrigger>\n  <AlertDialogContent${v.Size === 'sm' ? ' size="sm"' : ''}>\n    <AlertDialogHeader>\n      <AlertDialogTitle>Delete this project?</AlertDialogTitle>\n      <AlertDialogDescription>You can't undo this.</AlertDialogDescription>\n    </AlertDialogHeader>\n    <AlertDialogFooter>\n      <AlertDialogCancel>Cancel</AlertDialogCancel>\n      <AlertDialogAction variant="destructive">Delete</AlertDialogAction>\n    </AlertDialogFooter>\n  </AlertDialogContent>\n</AlertDialog>`,
   Sheet: (v) =>
     `import {\n  Sheet, SheetContent, SheetFooter, SheetHeader, SheetClose,\n} from "@/components/ui/sheet"\n\n<Sheet open={open} onOpenChange={setOpen}>\n  <SheetContent${v.Side && v.Side !== 'right' ? ` side="${v.Side}"` : ''}\n    header={<SheetHeader iconVisible={false} title="Filters" description="Narrow the list." />}\n    footer={<SheetFooter><SheetClose asChild><Button variant="secondary">Cancel</Button></SheetClose><Button>Apply</Button></SheetFooter>}\n  >\n    Replace this slot with the sheet body.\n  </SheetContent>\n</Sheet>`,
-  Drawer: (v) =>
-    `import {\n  Drawer, DrawerTrigger, DrawerContent, DrawerHeader, DrawerTitle, DrawerDescription, DrawerFooter, DrawerClose,\n} from "@/components/ui/drawer"\n\n<Drawer${v.Direction && v.Direction !== 'bottom' ? ` direction="${v.Direction}"` : ''}>\n  <DrawerTrigger asChild><Button variant="outline">Open</Button></DrawerTrigger>\n  <DrawerContent>\n    <DrawerHeader>\n      <DrawerTitle>Move goal</DrawerTitle>\n      <DrawerDescription>Set your daily activity goal.</DrawerDescription>\n    </DrawerHeader>\n    <DrawerFooter>\n      <Button>Submit</Button>\n      <DrawerClose asChild><Button variant="outline">Cancel</Button></DrawerClose>\n    </DrawerFooter>\n  </DrawerContent>\n</Drawer>`,
-  HoverCard: () =>
-    `import { HoverCard, HoverCardTrigger, HoverCardContent } from "@/components/ui/hover-card"\n\n<HoverCard>\n  <HoverCardTrigger asChild><Button variant="link">@escala</Button></HoverCardTrigger>\n  <HoverCardContent>Design tokens and components for Figma and code.</HoverCardContent>\n</HoverCard>`,
-  Item: (v) =>
-    `import {\n  Item, ItemMedia, ItemContent, ItemTitle, ItemDescription, ItemActions,\n} from "@/components/ui/item"\n\n<Item${v.Variant && v.Variant !== 'default' ? ` variant="${v.Variant}"` : ''}${sizeProp(v)}>\n  <ItemMedia variant="icon"><ShieldCheck /></ItemMedia>\n  <ItemContent>\n    <ItemTitle>Two-factor authentication</ItemTitle>\n    <ItemDescription>Verify sign-ins with a code from your phone.</ItemDescription>\n  </ItemContent>\n  <ItemActions><Button size="sm" variant="outline">Enable</Button></ItemActions>\n</Item>`,
-  Attachment: (v) =>
-    `import {\n  Attachment, AttachmentMedia, AttachmentContent, AttachmentTitle, AttachmentDescription,\n  AttachmentActions, AttachmentAction,\n} from "@/components/ui/attachment"\n\n<Attachment${v.State && v.State !== 'done' ? ` state="${v.State}"` : ''}${sizeProp(v)}${v.Orientation === 'vertical' ? ' orientation="vertical"' : ''}>\n  <AttachmentMedia><File /></AttachmentMedia>\n  <AttachmentContent>\n    <AttachmentTitle>brand-tokens.json</AttachmentTitle>\n    <AttachmentDescription>2.4 MB</AttachmentDescription>\n  </AttachmentContent>\n  <AttachmentActions><AttachmentAction aria-label="Remove"><X /></AttachmentAction></AttachmentActions>\n</Attachment>`,
-  Message: (v) =>
-    `import { Message, MessageAvatar, MessageContent, MessageHeader, MessageFooter } from "@/components/ui/message"\nimport { Bubble, BubbleContent } from "@/components/ui/bubble"\n\n<Message${v.Align === 'end' ? ' align="end"' : ''}>\n  <MessageAvatar>AI</MessageAvatar>\n  <MessageContent>\n    <MessageHeader>Escala · 10:42</MessageHeader>\n    <Bubble variant="muted"><BubbleContent>Done — Boxes moved to 24px.</BubbleContent></Bubble>\n    <MessageFooter>Delivered</MessageFooter>\n  </MessageContent>\n</Message>`,
-  Bubble: (v) =>
-    `import { Bubble, BubbleContent } from "@/components/ui/bubble"\n\n<Bubble${v.Variant && v.Variant !== 'default' ? ` variant="${v.Variant}"` : ''}${v.Align === 'end' ? ' align="end"' : ''}>\n  <BubbleContent>Ship the new radius to Figma today?</BubbleContent>\n</Bubble>`,
-  Resizable: (v) =>
-    `import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from "@/components/ui/resizable"\n\n<ResizablePanelGroup orientation="${v.Orientation ?? 'horizontal'}">\n  <ResizablePanel defaultSize={50}>One</ResizablePanel>\n  <ResizableHandle withHandle />\n  <ResizablePanel defaultSize={50}>Two</ResizablePanel>\n</ResizablePanelGroup>`,
-  Carousel: (v) =>
-    `import {\n  Carousel, CarouselContent, CarouselItem, CarouselPrevious, CarouselNext,\n} from "@/components/ui/carousel"\n\n<Carousel${v.Orientation === 'vertical' ? ' orientation="vertical"' : ''}>\n  <CarouselContent>\n    {slides.map((s) => <CarouselItem key={s.id}>{s.content}</CarouselItem>)}\n  </CarouselContent>\n  <CarouselPrevious />\n  <CarouselNext />\n</Carousel>`,
-  Chart: (v) => {
-    const kind = v.Type === 'line' ? 'Line' : v.Type === 'area' ? 'Area' : 'Bar'
-    const mark = kind === 'Bar' ? `<Bar dataKey="desktop" fill="var(--color-desktop)" radius={4} />` : `<${kind} dataKey="desktop" type="monotone" stroke="var(--color-desktop)"${kind === 'Area' ? ' fill="var(--color-desktop)" fillOpacity={0.4}' : ''} />`
-    return `import { ${kind}, ${kind}Chart, CartesianGrid, XAxis } from "recharts"\nimport { ChartContainer, ChartTooltip, ChartTooltipContent, type ChartConfig } from "@/components/ui/chart"\n\nconst config = { desktop: { label: "Desktop", color: "var(--chart-1)" } } satisfies ChartConfig\n\n<ChartContainer config={config}>\n  <${kind}Chart accessibilityLayer data={data}>\n    <CartesianGrid vertical={false} />\n    <XAxis dataKey="month" tickLine={false} axisLine={false} />\n    <ChartTooltip content={<ChartTooltipContent />} />\n    ${mark}\n  </${kind}Chart>\n</ChartContainer>`
-  },
-  NavigationMenu: () =>
-    `import {\n  NavigationMenu, NavigationMenuList, NavigationMenuItem, NavigationMenuTrigger,\n  NavigationMenuContent, NavigationMenuLink,\n} from "@/components/ui/navigation-menu"\n\n<NavigationMenu>\n  <NavigationMenuList>\n    <NavigationMenuItem>\n      <NavigationMenuTrigger>Getting started</NavigationMenuTrigger>\n      <NavigationMenuContent>\n        <NavigationMenuLink href="/docs">Introduction</NavigationMenuLink>\n      </NavigationMenuContent>\n    </NavigationMenuItem>\n  </NavigationMenuList>\n</NavigationMenu>`,
-
   Separator: (v) =>
     `import { Separator } from "@/components/ui/separator"\n\n<Separator${v.Align && v.Align !== 'none' ? ` align="${v.Align}"` : ''}${v.Orientation === 'vertical' ? ' orientation="vertical"' : ''}${v.Tone && v.Tone !== 'default' ? ` tone="${v.Tone}"` : ''}${v.Variant === 'dashed' ? ' variant="dashed"' : ''}>${v.Align && v.Align !== 'none' ? 'OR' : ''}${v.Align && v.Align !== 'none' ? '</Separator>' : ''}`,
   Table: (v) =>
@@ -174,6 +135,12 @@ export const SKELETON_SNIPPETS: Record<string, Snippet> = {
   ScrollBar: (v) =>
     `import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area"\n\n// Inside a ScrollArea the bars place themselves; render one yourself only for custom placement.\n<ScrollBar${v.Orientation === 'horizontal' ? ' orientation="horizontal"' : ''}${v.Size && v.Size !== 'default' ? ` size="${v.Size}"` : ''}${v.Appearance === 'ghost' ? ' appearance="ghost"' : ''} />`,
 
+  Label: () =>
+    `import { Label } from "@/components/ui/label"\n\n<Label htmlFor="email">Email address</Label>`,
+  Spinner: () =>
+    `import { Spinner } from "@/components/ui/spinner"\n\n<Spinner />  // size it with a class: <Spinner className="size-6" />`,
+  Card: (v) =>
+    `import {\n  Card, CardHeader, CardTitle, CardDescription, CardFooter,\n} from "@/components/ui/card"\n\n<Card${v.Size === 'sm' ? ' size="sm"' : ''}>\n  <CardHeader>\n    <CardTitle>Card title</CardTitle>\n    <CardDescription>Supporting copy…</CardDescription>\n  </CardHeader>\n  <CardFooter>\n    <Button variant="link" size="sm">Learn more →</Button>\n  </CardFooter>\n</Card>`,
   Badge: (v) => {
     const type = v.Type && v.Type !== 'default' ? ` type="${v.Type}"` : ''
     const props = `${v.Appearance && v.Appearance !== 'soft' ? ` appearance="${v.Appearance}"` : ''}${v.Shape === 'pill' ? ' shape="pill"' : ''}${v.Size && v.Size !== 'default' ? ` size="${v.Size}"` : ''}${type}${v.Variant && v.Variant !== 'default' ? ` variant="${v.Variant}"` : ''}`
@@ -182,8 +149,6 @@ export const SKELETON_SNIPPETS: Record<string, Snippet> = {
     if (v.Type === 'number') return `import { Badge } from "@/components/ui/badge"\n\n<Badge${props} count={8} />`
     return `import { Badge } from "@/components/ui/badge"\n\n<Badge${props}>Badge</Badge>`
   },
-  StatusBadge: (v) =>
-    `import { StatusBadge } from "@/components/ui/badge"\n\n<StatusBadge status="${v.Status ?? 'online'}" />`,
   Chip: (v) =>
     `import { Chip } from "@/components/ui/chip"\n\n<Chip${v.Variant && v.Variant !== 'default' ? ` variant="${v.Variant}"` : ''}${v.Appearance === 'soft' ? ' appearance="soft"' : ''}${v.Size && v.Size !== 'default' ? ` size="${v.Size}"` : ''}${v.Shape === 'pill' ? ' shape="pill"' : ''}${v.State === 'Selected' ? ' selected' : ''}${v.State === 'Disabled' ? ' disabled' : ''}${v.CloseVisible === 'True' ? ' onRemove={remove}' : ''} onPressedChange={setSelected}>\n  Design tokens\n</Chip>`,
   ProgressLine: (v) =>
@@ -194,18 +159,12 @@ export const SKELETON_SNIPPETS: Record<string, Snippet> = {
     `import { ProgressCircle } from "@/components/ui/progress-line"
 
 <ProgressCircle${v.Size && v.Size !== 'default' ? ` size="${v.Size}"` : ''}${v.Cap === 'butt' ? ' cap="butt"' : ''}${v.Appearance === 'gradient' ? ' appearance="gradient"' : ''} aria-label="Uploading" value={${v.Value ?? 50}} />`,
-  Spinner: () =>
-    `import { Spinner } from "@/components/ui/spinner"\n\n<Spinner />  // size it with a class: <Spinner className="size-6" />`,
-  Icon: (v) =>
-    `import { Icon } from "@/components/ui/icon"\n\n<Icon${sizeProp(v)}>\n  <House />\n</Icon>`,
   FeaturedIcon: (v) =>
     `import { FeaturedIcon } from "@/components/ui/featured-icon"\n\n<FeaturedIcon${v.Size && v.Size !== 'default' ? ` size="${v.Size}"` : ''}${v.Variant && v.Variant !== 'default' ? ` variant="${v.Variant}"` : ''}${v.Appearance === 'solid' ? ' appearance="solid"' : ''}${v.Shape === 'rounded' ? ' shape="rounded"' : ''} />`,
   RatingGroup: (v) =>
     `import { RatingGroup } from "@/components/ui/rating-group"\n\n<RatingGroup${v.Type === 'emoji' ? ' type="emoji"' : ''}${v.Size && v.Size !== 'default' ? ` size="${v.Size}"` : ''} defaultValue={4} onValueChange={setScore} aria-label="How was it?" />`,
   RatingGroupItem: (v) =>
     `import { RatingGroupItem } from "@/components/ui/rating-group"\n\n<RatingGroupItem${v.Type === 'emoji' ? ' kind="emoji"' : ''}${v.Size && v.Size !== 'default' ? ` size="${v.Size}"` : ''}${v.Checked === 'true' ? ' checked' : ''}${v.State === 'Disabled' ? ' disabled' : ''} aria-label="4 of 5 stars" />`,
-  FileFormat: (v) =>
-    `import { FileFormat } from "@/components/ui/file-format"\n\n<FileFormat format="${v.Format ?? 'pdf'}" />`,
   Avatar: (v) =>
     `import { Avatar } from "@/components/ui/avatar"\n\n<Avatar${v.Type && v.Type !== 'image' ? ` type="${v.Type}"` : ''}${v.Size && v.Size !== 'default' ? ` size="${v.Size}"` : ''}${v.Shape === 'rounded' ? ' shape="rounded"' : ''}${v.Variant && v.Variant !== 'secondary' ? ` variant="${v.Variant}"` : ''}${v.Appearance === 'solid' ? ' appearance="solid"' : ''} aria-label="Maya Duscenko"${v.Type === 'image' || !v.Type ? ' src={user.image}' : ''}>${v.Type === 'initials' ? 'MD' : ''}</Avatar>`,
   AvatarStatus: (v) =>
@@ -246,8 +205,6 @@ export const SKELETON_SNIPPETS: Record<string, Snippet> = {
     const attrs = [v.Size && v.Size !== 'default' ? ` size="${v.Size}"` : '', v.Mode === 'range' ? ' mode="range"' : ''].join('')
     return `import { Popover, PopoverTrigger } from "@/components/ui/popover"\nimport { DatePickerPopover, DatePickerTrigger } from "@/components/ui/date-picker"\nimport { Calendar } from "@/components/ui/calendar"\n\n<Popover>\n  <PopoverTrigger asChild><DatePickerTrigger valueText={date} /></PopoverTrigger>\n  <DatePickerPopover${attrs}>\n    <Calendar${v.Size === 'sm' ? ' size="sm"' : ''} mode="${v.Mode ?? 'single'}"${v.Mode === 'range' ? ' presets' : ''} footer value={${v.Mode === 'range' ? 'range' : 'date'}} onValueChange={${v.Mode === 'range' ? 'setRange' : 'setDate'}} onApply={close} />\n  </DatePickerPopover>\n</Popover>`
   },
-  InputGroup: () =>
-    `import {\n  InputGroup, InputGroupAddon, InputGroupInput, InputGroupButton, InputGroupSeparator,\n} from "@/components/ui/input-group"\n\n<InputGroup>\n  <InputGroupAddon>https://</InputGroupAddon>\n  <InputGroupSeparator />\n  <InputGroupInput defaultValue="escala.design" />\n  <InputGroupSeparator />\n  <InputGroupButton>Copy</InputGroupButton>\n</InputGroup>`,
   InputOTP: (v) => {
     const attrs = [v.Size && v.Size !== 'default' ? ` size="${v.Size}"` : '', v.Variant && v.Variant !== 'outline' ? ` variant="${v.Variant}"` : '', v.State === 'Invalid' ? ' aria-invalid' : '', v.State === 'Disabled' ? ' disabled' : ''].join('')
     return `import { InputOTP } from "@/components/ui/input-otp"\n\n<InputOTP length={${v.Length ?? 6}}${attrs} value={code} onChange={setCode} aria-label="Verification code" />`
@@ -305,8 +262,6 @@ export const SKELETON_SNIPPETS: Record<string, Snippet> = {
     ].join('')
     return `import { Field } from "@/components/ui/field"\nimport { Input } from "@/components/ui/input"\nimport { TextLink } from "@/components/ui/text-link"\n\n<Field\n  label="Email address"\n  required\n  trailing={<TextLink href="/reset">Forgot password?</TextLink>}\n  description="We will never share your email."\n  error="Enter a valid email address."${attrs}\n>\n  <Input type="email" placeholder="Jane Doe" />\n</Field>`
   },
-  Label: () =>
-    `import { Label } from "@/components/ui/label"\n\n<Label htmlFor="email">Email address</Label>`,
   PasswordStrength: (v) =>
     `import { PasswordStrength } from "@/components/ui/password-strength"\n\n<PasswordStrength${v.Size && v.Size !== 'default' ? ` size="${v.Size}"` : ''} value={password} />`,
   PasswordStrengthMeter: (v) =>
@@ -329,8 +284,6 @@ export const SKELETON_SNIPPETS: Record<string, Snippet> = {
     `// ButtonGroup draws a ButtonGroupDivider between its items by itself.\nimport { ButtonGroup, ButtonGroupItem } from "@/components/ui/button-group"\n\n<ButtonGroup aria-label="Range">\n  <ButtonGroupItem>Day</ButtonGroupItem>\n  <ButtonGroupItem>Week</ButtonGroupItem>\n</ButtonGroup>`,
   SocialLoginButton: (v) =>
     `import { SocialLoginButton } from "@/components/ui/social-login-button"\n\n<SocialLoginButton provider="${v.Provider ?? 'google'}"${v.Size === 'lg' ? ' size="lg"' : ''} />`,
-  AppStoreBadge: (v) =>
-    `import { AppStoreBadge } from "@/components/ui/app-store-badge"\n\n<AppStoreBadge store="${v.Store ?? 'app-store'}" href={storeUrl} />`,
   Button: (v, icons) => {
     const variant = v.Variant && v.Variant !== 'default' ? ` variant="${v.Variant}"` : ''
     const appearance = v.Appearance && v.Appearance !== 'solid' ? ` appearance="${v.Appearance}"` : ''
@@ -384,8 +337,6 @@ export const SKELETON_SNIPPETS: Record<string, Snippet> = {
     return `import { Input } from "@/components/ui/input"\n\n<Input type="email" placeholder="you@company.com"${flags} />`
   },
 
-  Card: (v) =>
-    `import {\n  Card, CardHeader, CardTitle, CardDescription, CardFooter,\n} from "@/components/ui/card"\n\n<Card${v.Size === 'sm' ? ' size="sm"' : ''}>\n  <CardHeader>\n    <CardTitle>Card title</CardTitle>\n    <CardDescription>Supporting copy…</CardDescription>\n  </CardHeader>\n  <CardFooter>\n    <Button variant="link" size="sm">Learn more →</Button>\n  </CardFooter>\n</Card>`,
   Modal: (v) =>
     `import {\n  Modal, ModalContent, ModalFooter, ModalHeader, ModalClose,\n} from "@/components/ui/modal"\n\n<Modal open={open} onOpenChange={setOpen}>\n  <ModalContent${v.Size === 'lg' ? ' size="lg"' : ''}\n    header={<ModalHeader title="Delete project?" description="This action can't be undone." />}\n    footer={<ModalFooter><ModalClose asChild><Button variant="secondary">Cancel</Button></ModalClose><Button>Delete</Button></ModalFooter>}\n  >\n    All tokens in this project will be removed.\n  </ModalContent>\n</Modal>`,
   ModalHeader: (v) =>

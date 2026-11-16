@@ -178,32 +178,10 @@
     }
   },
   "codeOnly": [
-    "AlertDialog",
-    "AppStoreBadge",
-    "Attachment",
-    "Bubble",
     "Card",
-    "Carousel",
-    "Chart",
-    "Collapsible",
-    "Command",
-    "Drawer",
-    "Empty",
-    "FileFormat",
-    "HoverCard",
-    "Icon",
-    "InputGroup",
-    "Item",
     "Label",
-    "Message",
-    "Navbar",
-    "NavigationMenu",
-    "Resizable",
     "Sheet",
-    "Skeleton",
-    "Spinner",
-    "StatusBadge",
-    "Toggle"
+    "Spinner"
   ],
   "ahead": {
     "Sheet": "Figma has the Sheet set (1648:1577, built 2026-11-16) and the code builds it 1:1, but the snapshot predates it. When spec/figma-components.json is re-exported, take Sheet out of codeOnly and drop this entry.",

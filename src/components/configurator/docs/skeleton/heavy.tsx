@@ -11,8 +11,6 @@ import { iconOf } from '../../../../lib/previewTokens'
 import { chartPalette } from '../../../../lib/chartPalette'
 import { Calendar as SkCalendar, type CalendarHeaderKind, type CalendarMode, type CalendarSize, type CalendarValue, CalendarDay as SkCalendarDay, CalendarHeader as SkCalendarHeader, CalendarMonth as SkCalendarMonth, CalendarPresets as SkCalendarPresets, CalendarFooter as SkCalendarFooter, type CalendarFooterSize, type CalendarPresetsSize, type CalendarPresetsVariant, type CalendarMonthMode, type CalendarMonthSize, type CalendarMonthVariant, type CalendarHeaderHeader, type CalendarHeaderSize, type CalendarDaySize, type CalendarDayState, type CalendarDayVariant } from '../../../escala-ui/calendar'
 import { DatePickerPopover as SkDatePickerPopover, type DatePickerPopoverMode, type DatePickerPopoverSize } from '../../../escala-ui/date-picker'
-import { ChartContainer as SkChartContainer, ChartLegend as SkChartLegend, ChartLegendContent as SkChartLegendContent, ChartTooltip as SkChartTooltip, ChartTooltipContent as SkChartTooltipContent, type ChartConfig } from '../../../escala-ui/chart'
-import { Carousel as SkCarousel, CarouselContent as SkCarouselContent, CarouselItem as SkCarouselItem, CarouselNext as SkCarouselNext, CarouselPrevious as SkCarouselPrevious } from '../../../escala-ui/carousel'
 import { Card as SkCard, CardContent as SkCardContent } from '../../../escala-ui/card'
 import { RecipeScope } from './scope'
 import { useAutoplayStep } from '../../../preview/artefacts/boardAutoplay'
@@ -119,62 +117,4 @@ const CHART_DATA = [
   { month: 'Oct', desktop: 264, mobile: 140 },
 ]
 
-export function SkeletonChartSpecimen({ t, v, w }: SpecimenProps) {
-  const [a, b] = chartPalette(t.brandSolid)
-  const config: ChartConfig = { desktop: { label: 'Desktop', color: a }, mobile: { label: 'Mobile', color: b } }
-  const type = v.Type ?? 'bar'
-  const common = { accessibilityLayer: true, data: CHART_DATA }
-  const axis = <XAxis dataKey="month" tickLine={false} axisLine={false} tickMargin={8} />
-  const grid = <CartesianGrid vertical={false} />
-  const tip = <SkChartTooltip content={<SkChartTooltipContent />} />
-  const legend = <SkChartLegend content={<SkChartLegendContent />} />
-  return (
-    <RecipeScope t={t}>
-      <SkChartContainer config={config} style={{ width: w ?? 380 }}>
-        {type === 'line' ? (
-          <LineChart {...common}>{grid}{axis}{tip}{legend}
-            <Line dataKey="desktop" type="monotone" stroke="var(--color-desktop)" strokeWidth={2} dot={false} />
-            <Line dataKey="mobile" type="monotone" stroke="var(--color-mobile)" strokeWidth={2} dot={false} />
-          </LineChart>
-        ) : type === 'area' ? (
-          <AreaChart {...common}>{grid}{axis}{tip}{legend}
-            <Area dataKey="mobile" type="natural" fill="var(--color-mobile)" fillOpacity={0.4} stroke="var(--color-mobile)" stackId="a" />
-            <Area dataKey="desktop" type="natural" fill="var(--color-desktop)" fillOpacity={0.4} stroke="var(--color-desktop)" stackId="a" />
-          </AreaChart>
-        ) : (
-          <BarChart {...common}>{grid}{axis}{tip}{legend}
-            <Bar dataKey="desktop" fill="var(--color-desktop)" radius={4} />
-            <Bar dataKey="mobile" fill="var(--color-mobile)" radius={4} />
-          </BarChart>
-        )}
-      </SkChartContainer>
-    </RecipeScope>
-  )
-}
 
-export function SkeletonCarouselSpecimen({ t, v }: SpecimenProps) {
-  const vertical = v.Orientation === 'vertical'
-  const prev = <PreviewIcon concept="chevron-left" size={iconOf(13)} />
-  const next = <PreviewIcon concept="chevron-right" size={iconOf(13)} />
-  return (
-    <RecipeScope t={t}>
-      <div style={{ padding: vertical ? '48px 0' : '0 48px' }}>
-        <SkCarousel orientation={vertical ? 'vertical' : 'horizontal'} style={{ width: 200 }}>
-          <SkCarouselContent style={vertical ? { height: 200 } : undefined}>
-            {[1, 2, 3, 4, 5].map((n) => (
-              <SkCarouselItem key={n}>
-                <SkCard style={{ width: '100%' }}>
-                  <SkCardContent>
-                    <div className="flex aspect-square items-center justify-center" style={{ fontSize: 32, fontWeight: 600 }}>{n}</div>
-                  </SkCardContent>
-                </SkCard>
-              </SkCarouselItem>
-            ))}
-          </SkCarouselContent>
-          <SkCarouselPrevious icon={prev} />
-          <SkCarouselNext icon={next} />
-        </SkCarousel>
-      </div>
-    </RecipeScope>
-  )
-}

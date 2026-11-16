@@ -456,34 +456,6 @@ export const CALENDAR_FOOTER: ComponentRecipe = {
 const GROUP_LIVE = ':not([data-force-state]):not([aria-disabled="true"]):not(:has(:disabled))'
 const GROUP_CONTROL = '[data-slot="input-group-control"]'
 
-export const INPUT_GROUP: ComponentRecipe = {
-  key: 'InputGroup',
-  slots: ['root', 'addon', 'input', 'button', 'separator'],
-  defaults: {},
-  parts: [
-    part({}, () => ({
-      root: { ...fieldBox('Default'), strokeWidth: 'stroke.control', radius: 'radius.action', height: 'size.control' },
-      [`root:hover${GROUP_LIVE}`]: fieldBox('Hover'),
-      'root[data-force-state="Hover"]': fieldBox('Hover'),
-      [`root:has(${GROUP_CONTROL}:focus-visible)${GROUP_LIVE}`]: fieldBox('Focused'),
-      'root[data-force-state="Focused"]': fieldBox('Focused'),
-      [`root:has(${GROUP_CONTROL}[aria-invalid="true"])`]: fieldBox('Error'),
-      'root[data-force-state="Error"]': fieldBox('Error'),
-      'root:has(:disabled)': fieldBox('Disabled'),
-      'root[aria-disabled="true"]': fieldBox('Disabled'),
-      // shadcn's addon is transparent: it holds an icon, text, kbd or button.
-      addon: { text: c('content.secondary'), font: 'type.placeholder', paddingX: 'spacing.inset-control', gap: 'spacing.gap-control' },
-      input: { text: c('content.primary'), font: 'type.placeholder', paddingX: 'spacing.inset-control' },
-      'input::placeholder': { text: c('content.subtle') },
-      'input:disabled': { text: c('content.disabled') },
-      'input:disabled::placeholder': { text: c('content.disabled') },
-      button: { text: c('content.accent'), font: 'type.button', paddingX: 'spacing.4' },
-      'button:hover': { fill: c('action.ghost.hover') },
-      'button:active': { fill: c('action.ghost.pressed') },
-      separator: { fill: c('border.control'), width: 'stroke.control' },
-    })),
-  ],
-}
 
 // ── NumberInput ────────────────────────────────────────────────────────────
 // The Figma `NumberInput` set (design-plans/number-input-contract.md, 1107:243,

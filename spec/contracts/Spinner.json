@@ -4,7 +4,7 @@
   "key": "Spinner",
   "label": "Spinner",
   "category": "Indicators",
-  "description": "shadcn/ui Spinner: a spinning loader glyph in the ink of the text around it. No variants; size it with a class.",
+  "description": "Spinner: the Loading glyph of Button, Switch, Textarea, InputTag and DatePicker — a spinning loader glyph in the ink of the text around it. No variants; size it with a class.",
   "owners": {
     "anatomy": "figma",
     "foundations": "figma",

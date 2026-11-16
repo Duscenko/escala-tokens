@@ -81,15 +81,6 @@
     "tokens": 5
   },
   {
-    "key": "Toggle",
-    "label": "Toggle",
-    "category": "Button & Actions",
-    "file": "spec/contracts/Toggle.json",
-    "figmaSet": null,
-    "story": null,
-    "tokens": 15
-  },
-  {
     "key": "SocialLoginButton",
     "label": "Social Login Button",
     "category": "Button & Actions",
@@ -99,15 +90,6 @@
     "tokens": 66
   },
   {
-    "key": "AppStoreBadge",
-    "label": "App Store Badge",
-    "category": "Button & Actions",
-    "file": "spec/contracts/AppStoreBadge.json",
-    "figmaSet": null,
-    "story": null,
-    "tokens": 6
-  },
-  {
     "key": "Input",
     "label": "Input",
     "category": "Form Controls",
@@ -115,15 +97,6 @@
     "figmaSet": "Input",
     "story": "forms-input--playground",
     "tokens": 28
-  },
-  {
-    "key": "InputGroup",
-    "label": "Input Group",
-    "category": "Form Controls",
-    "file": "spec/contracts/InputGroup.json",
-    "figmaSet": null,
-    "story": null,
-    "tokens": 23
   },
   {
     "key": "Textarea",
@@ -450,15 +423,6 @@
     "tokens": 54
   },
   {
-    "key": "StatusBadge",
-    "label": "Status Badge",
-    "category": "Indicators",
-    "file": "spec/contracts/StatusBadge.json",
-    "figmaSet": null,
-    "story": null,
-    "tokens": 13
-  },
-  {
     "key": "Chip",
     "label": "Chip",
     "category": "Indicators",
@@ -495,15 +459,6 @@
     "tokens": 1
   },
   {
-    "key": "Icon",
-    "label": "Icon",
-    "category": "Indicators",
-    "file": "spec/contracts/Icon.json",
-    "figmaSet": null,
-    "story": null,
-    "tokens": 4
-  },
-  {
     "key": "FeaturedIcon",
     "label": "Featured Icon",
     "category": "Indicators",
@@ -538,15 +493,6 @@
     "figmaSet": "RatingGroupItem",
     "story": "indicators-ratinggroup--rating-group-item-playground",
     "tokens": 17
-  },
-  {
-    "key": "FileFormat",
-    "label": "File Format",
-    "category": "Indicators",
-    "file": "spec/contracts/FileFormat.json",
-    "figmaSet": null,
-    "story": null,
-    "tokens": 16
   },
   {
     "key": "Avatar",
@@ -612,15 +558,6 @@
     "tokens": 18
   },
   {
-    "key": "Collapsible",
-    "label": "Collapsible",
-    "category": "Content & Surfaces",
-    "file": "spec/contracts/Collapsible.json",
-    "figmaSet": null,
-    "story": null,
-    "tokens": 13
-  },
-  {
     "key": "Image",
     "label": "Image",
     "category": "Content & Surfaces",
@@ -657,15 +594,6 @@
     "tokens": 7
   },
   {
-    "key": "AlertDialog",
-    "label": "Alert Dialog",
-    "category": "Content & Surfaces",
-    "file": "spec/contracts/AlertDialog.json",
-    "figmaSet": null,
-    "story": null,
-    "tokens": 18
-  },
-  {
     "key": "Sheet",
     "label": "Sheet",
     "category": "Content & Surfaces",
@@ -673,15 +601,6 @@
     "figmaSet": null,
     "story": "content-surfaces-sheet--playground",
     "tokens": 20
-  },
-  {
-    "key": "Drawer",
-    "label": "Drawer",
-    "category": "Content & Surfaces",
-    "file": "spec/contracts/Drawer.json",
-    "figmaSet": null,
-    "story": null,
-    "tokens": 14
   },
   {
     "key": "Popover",
@@ -700,15 +619,6 @@
     "figmaSet": "PopoverFooter",
     "story": "content-surfaces-popover--popover-footer-playground",
     "tokens": 7
-  },
-  {
-    "key": "HoverCard",
-    "label": "Hover Card",
-    "category": "Content & Surfaces",
-    "file": "spec/contracts/HoverCard.json",
-    "figmaSet": null,
-    "story": null,
-    "tokens": 9
   },
   {
     "key": "TooltipContent",
@@ -873,69 +783,6 @@
     "tokens": 1
   },
   {
-    "key": "Item",
-    "label": "Item",
-    "category": "Content & Surfaces",
-    "file": "spec/contracts/Item.json",
-    "figmaSet": null,
-    "story": null,
-    "tokens": 19
-  },
-  {
-    "key": "Attachment",
-    "label": "Attachment",
-    "category": "Content & Surfaces",
-    "file": "spec/contracts/Attachment.json",
-    "figmaSet": null,
-    "story": null,
-    "tokens": 21
-  },
-  {
-    "key": "Message",
-    "label": "Message",
-    "category": "Content & Surfaces",
-    "file": "spec/contracts/Message.json",
-    "figmaSet": null,
-    "story": null,
-    "tokens": 9
-  },
-  {
-    "key": "Bubble",
-    "label": "Bubble",
-    "category": "Content & Surfaces",
-    "file": "spec/contracts/Bubble.json",
-    "figmaSet": null,
-    "story": null,
-    "tokens": 22
-  },
-  {
-    "key": "Resizable",
-    "label": "Resizable",
-    "category": "Content & Surfaces",
-    "file": "spec/contracts/Resizable.json",
-    "figmaSet": null,
-    "story": null,
-    "tokens": 9
-  },
-  {
-    "key": "Carousel",
-    "label": "Carousel",
-    "category": "Content & Surfaces",
-    "file": "spec/contracts/Carousel.json",
-    "figmaSet": null,
-    "story": null,
-    "tokens": 2
-  },
-  {
-    "key": "Chart",
-    "label": "Chart",
-    "category": "Content & Surfaces",
-    "file": "spec/contracts/Chart.json",
-    "figmaSet": null,
-    "story": null,
-    "tokens": 11
-  },
-  {
     "key": "Toast",
     "label": "Toast",
     "category": "Feedback",
@@ -952,24 +799,6 @@
     "figmaSet": "Alert",
     "story": "feedback-alert--playground",
     "tokens": 48
-  },
-  {
-    "key": "Skeleton",
-    "label": "Skeleton",
-    "category": "Feedback",
-    "file": "spec/contracts/Skeleton.json",
-    "figmaSet": null,
-    "story": null,
-    "tokens": 2
-  },
-  {
-    "key": "Empty",
-    "label": "Empty",
-    "category": "Feedback",
-    "file": "spec/contracts/Empty.json",
-    "figmaSet": null,
-    "story": null,
-    "tokens": 14
   },
   {
     "key": "TabMenu",
@@ -1177,33 +1006,6 @@
     "figmaSet": "DropdownMenuFooter",
     "story": "navigation-dropdownmenu--dropdown-menu-footer-playground",
     "tokens": 7
-  },
-  {
-    "key": "NavigationMenu",
-    "label": "Navigation Menu",
-    "category": "Navigation",
-    "file": "spec/contracts/NavigationMenu.json",
-    "figmaSet": null,
-    "story": null,
-    "tokens": 16
-  },
-  {
-    "key": "Command",
-    "label": "Command",
-    "category": "Navigation",
-    "file": "spec/contracts/Command.json",
-    "figmaSet": null,
-    "story": null,
-    "tokens": 17
-  },
-  {
-    "key": "Navbar",
-    "label": "Navbar",
-    "category": "Navigation",
-    "file": "spec/contracts/Navbar.json",
-    "figmaSet": null,
-    "story": null,
-    "tokens": 20
   },
   {
     "key": "Sidebar",

@@ -176,7 +176,7 @@ function motionChoreographies(settings) {
   const sheet = (side) => [
     {
       pattern: "coordinated",
-      components: side === "bottom" ? ["Drawer"] : ["Sheet"],
+      components: ["Sheet"],
       intent: { usage: [side === "bottom" ? "drawers" : "side panels"], direction: "The backdrop fades while the panel crosses into place from its edge." },
       tracks: [
         { slot: "overlay", keyframes: "fade-in", motion: r("use-overlay-in"), delay: 0 },
@@ -186,7 +186,7 @@ function motionChoreographies(settings) {
     },
     {
       pattern: "coordinated",
-      components: side === "bottom" ? ["Drawer"] : ["Sheet"],
+      components: ["Sheet"],
       intent: { usage: [side === "bottom" ? "drawers" : "side panels"], direction: "The panel leaves the way it came; the backdrop follows, shorter." },
       tracks: [
         { slot: "content", keyframes: `slide-out-${side}`, motion: r("use-travel-out"), delay: 0 },
@@ -200,7 +200,7 @@ function motionChoreographies(settings) {
   return {
     "dialog-enter": {
       pattern: "coordinated",
-      components: ["Modal", "AlertDialog"],
+      components: ["Modal"],
       intent: { usage: ["dialogs", "confirmations", "focal overlays"], direction: "The backdrop fades while the card pops a beat behind it. The card is the focal point, so it takes the emphasis role and a `quick` delay." },
       tracks: [
         { slot: "overlay", keyframes: "fade-in", motion: r("use-overlay-in"), delay: 0 },
@@ -210,7 +210,7 @@ function motionChoreographies(settings) {
     },
     "dialog-exit": {
       pattern: "coordinated",
-      components: ["Modal", "AlertDialog"],
+      components: ["Modal"],
       intent: { usage: ["dialogs", "confirmations"], direction: "Card and backdrop leave together, fast." },
       tracks: [
         { slot: "content", keyframes: "shrink", motion: r("use-overlay-out"), delay: 0 },
@@ -261,7 +261,7 @@ function motionChoreographies(settings) {
     },
     "accordion-expand": {
       pattern: "disclosure",
-      components: ["Accordion", "AccordionItem", "Collapsible"],
+      components: ["Accordion", "AccordionItem"],
       intent: { usage: ["accordion", "collapsible"], direction: "Height eases open; never a jump cut." },
       direction: "expand",
       motion: r("use-disclosure-in"),
@@ -269,7 +269,7 @@ function motionChoreographies(settings) {
     },
     "accordion-collapse": {
       pattern: "disclosure",
-      components: ["Accordion", "AccordionItem", "Collapsible"],
+      components: ["Accordion", "AccordionItem"],
       intent: { usage: ["accordion", "collapsible"], direction: "Height eases closed, faster than it opened." },
       direction: "collapse",
       motion: r("use-disclosure-out"),
@@ -277,14 +277,14 @@ function motionChoreographies(settings) {
     },
     "popover-enter": {
       pattern: "coordinated",
-      components: ["Popover", "DatePickerPopover", "TooltipContent", "HoverCard", "DropdownMenu"],
+      components: ["Popover", "DatePickerPopover", "TooltipContent", "DropdownMenu"],
       intent: { usage: ["popovers", "tooltips", "menus"], direction: "A floating layer grows out of its trigger: a short pop on the disclosure role." },
       tracks: [{ keyframes: s.pop < 1 ? "pop" : "fade-in", motion: r("use-disclosure-in"), delay: 0 }],
       reducedMotion: { collapseTo: "coordinated", pattern: "coordinated", tracks: [{ keyframes: "fade-in", motion: FADE_IN, delay: 0 }] }
     },
     "popover-exit": {
       pattern: "coordinated",
-      components: ["Popover", "DatePickerPopover", "TooltipContent", "HoverCard", "DropdownMenu"],
+      components: ["Popover", "DatePickerPopover", "TooltipContent", "DropdownMenu"],
       intent: { usage: ["popovers", "tooltips", "menus"], direction: "Gets out of the way, faster than it came." },
       tracks: [{ keyframes: s.shrink < 1 ? "shrink" : "fade-out", motion: r("use-disclosure-out"), delay: 0 }],
       reducedMotion: { collapseTo: "coordinated", pattern: "coordinated", tracks: [{ keyframes: "fade-out", motion: FADE_OUT, delay: 0 }] }
@@ -4208,25 +4208,6 @@ var init_componentCatalogue = __esm({
         accessibility: "Decorative: aria-hidden."
       },
       {
-        key: "Toggle",
-        label: "Toggle",
-        category: "Button & Actions",
-        description: "shadcn/ui Toggle: a two-state button \u2014 on or off.",
-        usage: "Use for one setting that is on or off and acts at once (bold, mute). For a set of them use Toggle Group; for a setting saved later use Switch.",
-        axes: [
-          { name: "Variant", values: ["default", "outline"] },
-          { name: "Size", values: ["default", "sm", "lg"] },
-          { name: "Pressed", values: ["False", "True"] }
-        ],
-        figmaSets: ["Toggle"],
-        props: [
-          { name: "variant", type: '"default" | "outline"', description: "shadcn's toggle variants: no edge, or the control boundary." },
-          { name: "size", type: '"default" | "sm" | "lg"', description: "The Button heights." },
-          { name: "pressed / defaultPressed / onPressedChange", type: "boolean", description: 'Controlled or uncontrolled state; Radix writes data-state="on".' }
-        ],
-        accessibility: "Radix Toggle: a button with aria-pressed. Give an icon-only toggle an aria-label."
-      },
-      {
         key: "SocialLoginButton",
         label: "Social Login Button",
         category: "Button & Actions",
@@ -4250,20 +4231,6 @@ var init_componentCatalogue = __esm({
           { name: "onClick", type: "() => void", description: "Starts the OAuth flow." }
         ],
         accessibility: 'Native <button>. Full width shows "Continue with \u2026"; the icon-only form needs an aria-label (the component sets one from the brand).'
-      },
-      {
-        key: "AppStoreBadge",
-        label: "App Store Badge",
-        category: "Button & Actions",
-        description: "Marketing download badge for the App Store and Google Play, in the standard dark style.",
-        usage: "Use only on marketing surfaces, at the platform-mandated minimum size.",
-        axes: [{ name: "Store", values: ["app-store", "google-play"] }],
-        figmaSets: ["Store Badge"],
-        props: [
-          { name: "store", type: '"app-store" | "google-play"', description: "Target store \u2014 picks the artwork." },
-          { name: "href", type: "string", description: "Store listing URL." }
-        ],
-        accessibility: 'Anchor with descriptive aria-label ("Download on the App Store").'
       },
       // ── Form Controls ───────────────────────────────────────────────────────────
       {
@@ -4296,23 +4263,6 @@ var init_componentCatalogue = __esm({
           { name: "disabled", type: "boolean", description: "Prevents interaction and applies the disabled tokens." }
         ],
         accessibility: "The field is a native <input> with its keyboard (inputmode) and autofill hint per type; pair it with a FieldLabel (htmlFor) or an aria-label. The select addon is a native <select> with its own name; Browse, Copy and the password toggle are buttons with names; the shortcut keys are <kbd>."
-      },
-      {
-        key: "InputGroup",
-        label: "Input Group",
-        category: "Form Controls",
-        description: "An input with attached add-ons \u2014 prefix segments, selects or buttons sharing one border.",
-        usage: "Use for values with a fixed context (URLs, amounts, handles). Keep one add-on per side.",
-        axes: [],
-        figmaSets: ["Input Group"],
-        props: [
-          { name: "InputGroup", type: "component", description: "The bordered row: add-ons, control and action share one edge and one focus halo." },
-          { name: "InputGroupAddon", type: "component", description: "Static text or icon before / after the control (https://, @, .com)." },
-          { name: "InputGroupInput", type: "component", description: "The text control." },
-          { name: "InputGroupButton", type: "component", description: 'An action inside the field ("Copy").' },
-          { name: "InputGroupSeparator", type: "component", description: "Hairline between parts." }
-        ],
-        accessibility: "Add-ons are described to the field via aria-describedby."
       },
       {
         key: "Textarea",
@@ -4998,7 +4948,7 @@ var init_componentCatalogue = __esm({
         key: "Label",
         label: "Label",
         category: "Form Controls",
-        description: "shadcn/ui Label: accessible text for a control (Radix Label).",
+        description: "Label: the accessible name of a control, the label part of Field (Radix Label).",
         usage: "Inside a form, prefer FieldLabel. Mark required fields in the text, not with colour alone.",
         axes: [],
         figmaSets: ["Label"],
@@ -5088,20 +5038,6 @@ var init_componentCatalogue = __esm({
         accessibility: "Static text \u2014 not focusable. Colour is never the only signal: the label says what it means."
       },
       {
-        key: "StatusBadge",
-        label: "Status Badge",
-        category: "Indicators",
-        description: "Presence indicator \u2014 a colored dot plus label for online / away / busy / offline.",
-        usage: "Pair with an Avatar or a row of people. Keep the dot\u2013meaning mapping consistent.",
-        axes: [{ name: "Status", values: ["online", "away", "busy", "offline"] }],
-        figmaSets: ["Status Badge"],
-        props: [
-          { name: "status", type: '"online" | "away" | "busy" | "offline"', description: "Presence state \u2014 picks the dot colour." },
-          { name: "children", type: "ReactNode", description: "Label text; defaults to the status name." }
-        ],
-        accessibility: "Status conveyed in text (visible or sr-only) \u2014 never by the dot color alone."
-      },
-      {
         key: "Chip",
         label: "Chip",
         category: "Indicators",
@@ -5168,7 +5104,7 @@ var init_componentCatalogue = __esm({
         key: "Spinner",
         label: "Spinner",
         category: "Indicators",
-        description: "shadcn/ui Spinner: a spinning loader glyph in the ink of the text around it. No variants; size it with a class.",
+        description: "Spinner: the Loading glyph of Button, Switch, Textarea, InputTag and DatePicker \u2014 a spinning loader glyph in the ink of the text around it. No variants; size it with a class.",
         usage: "Prefer skeleton screens for content loading. Use Spinner for action feedback.",
         axes: [],
         figmaSets: ["Spinner"],
@@ -5177,21 +5113,6 @@ var init_componentCatalogue = __esm({
           { name: "aria-label", type: "string", description: 'Screen-reader label (default "Loading").' }
         ],
         accessibility: 'role="status" with aria-label. Animated via CSS, respects prefers-reduced-motion.'
-      },
-      {
-        key: "Icon",
-        label: "Icon",
-        category: "Indicators",
-        description: "A glyph from the system icon set, at one of three sizes that follow the control height (16 \xB7 20 \xB7 24 at a 40px control).",
-        usage: "Small inside a compact control, medium on a default button, large on a large control or as a feature glyph. The same px on Desktop, Tablet and Mobile. Pair an icon-only control with an accessible label; a decorative icon next to text is aria-hidden.",
-        axes: [{ name: "Size", values: ["sm", "default", "lg"] }],
-        figmaSets: ["Icon"],
-        props: [
-          { name: "size", type: '"sm" | "default" | "lg"', description: "Icon role: small 16 \xB7 medium 20 \xB7 large 24 at a 40px control (Size/icon-sm \xB7 md \xB7 lg)." },
-          { name: "children", type: "ReactNode", description: "The glyph, from the system icon set (Phosphor by default)." },
-          { name: "label", type: "string", description: "Only for a meaningful standalone icon; omit when decorative." }
-        ],
-        accessibility: 'Decorative icons are aria-hidden. A standalone meaningful icon needs role="img" + aria-label, and an icon-only button carries the label on the button.'
       },
       {
         key: "FeaturedIcon",
@@ -5268,19 +5189,6 @@ var init_componentCatalogue = __esm({
           { name: "disabled / forceState", type: "boolean / State", description: "Disabled mutes it; forceState pins a state for docs." }
         ],
         accessibility: 'role="radio" with aria-checked; the roving tabindex belongs to the group.'
-      },
-      {
-        key: "FileFormat",
-        label: "File Format",
-        category: "Indicators",
-        description: "Document glyph with a format plate (PDF, PNG, SVG, ZIP\u2026) for file lists.",
-        usage: "Use inside upload rows and attachment lists so formats scan at a glance.",
-        axes: [{ name: "Format", values: ["pdf", "png", "svg", "zip"] }],
-        figmaSets: ["File Format"],
-        props: [
-          { name: "format", type: '"pdf" | "png" | "svg" | "zip"', description: "Extension shown on the plate; the plate colour follows it." }
-        ],
-        accessibility: "Decorative next to a visible filename (aria-hidden); labelled when standalone."
       },
       // ── Content & Surfaces ──────────────────────────────────────────────────────
       {
@@ -5412,22 +5320,6 @@ var init_componentCatalogue = __esm({
         accessibility: "A button in a heading with aria-expanded and aria-controls; Disabled sets disabled and mutes icon, label and chevron."
       },
       {
-        key: "Collapsible",
-        label: "Collapsible",
-        category: "Content & Surfaces",
-        description: "shadcn/ui Collapsible: one trigger that shows or hides a panel of content.",
-        usage: "Use for a single expandable region (more repositories, advanced options). For several stacked sections use Accordion.",
-        axes: [{ name: "Open", values: ["False", "True"] }],
-        figmaSets: ["Collapsible"],
-        props: [
-          { name: "open / defaultOpen / onOpenChange", type: "boolean", description: "Controlled or uncontrolled visibility." },
-          { name: "CollapsibleTrigger", type: "component", description: "The row that toggles it; the chevron turns when open." },
-          { name: "CollapsibleContent", type: "component", description: "The panel shown when open." },
-          { name: "CollapsibleItem", type: "component", description: "A bordered row inside the panel." }
-        ],
-        accessibility: "Radix Collapsible: the trigger is a button with aria-expanded and aria-controls; Space / Enter toggles."
-      },
-      {
         key: "Image",
         label: "Image",
         category: "Content & Surfaces",
@@ -5504,24 +5396,6 @@ var init_componentCatalogue = __esm({
         accessibility: "Put the primary action last in inline order; the buttons keep their own focus order."
       },
       {
-        key: "AlertDialog",
-        label: "Alert Dialog",
-        category: "Content & Surfaces",
-        description: "shadcn/ui Alert Dialog: a modal that interrupts to confirm an important action.",
-        usage: "Use only for a decision that needs an answer now (delete, discard changes). For anything else use Dialog or a Toast.",
-        axes: [
-          { name: "Size", values: ["default", "sm"] }
-        ],
-        figmaSets: ["Alert Dialog"],
-        props: [
-          { name: "AlertDialogContent size", type: '"default" | "sm"', description: "sm: narrow, centred, two equal buttons." },
-          { name: "AlertDialogMedia", type: "component", description: "An icon above the title." },
-          { name: "AlertDialogTitle / AlertDialogDescription", type: "component", description: "The question and its consequence." },
-          { name: "AlertDialogAction / AlertDialogCancel", type: "component", description: "Buttons (default and outline; any variant)." }
-        ],
-        accessibility: 'role="alertdialog": focus moves to Cancel, Esc closes, and nothing behind it can be reached until it is answered.'
-      },
-      {
         key: "Sheet",
         label: "Sheet",
         category: "Content & Surfaces",
@@ -5539,23 +5413,6 @@ var init_componentCatalogue = __esm({
           { name: "showClose", type: "boolean", description: "Figma CloseVisible: the soft pill CloseButton (default true)." }
         ],
         accessibility: "A Radix Dialog like Modal: focus is trapped inside, Esc closes and focus returns to the trigger. The header's title is the accessible name and its description the aria-describedby; the close button has an accessible name. The bottom side is capped by the visual viewport (not 100vh) and keeps the safe area under its footer."
-      },
-      {
-        key: "Drawer",
-        label: "Drawer",
-        category: "Content & Surfaces",
-        description: "shadcn/ui Drawer: a panel dragged up from the bottom (vaul), with a grab handle.",
-        usage: "Use on touch layouts for short tasks (share, quick actions). On desktop prefer Dialog or Sheet.",
-        axes: [
-          { name: "Direction", values: ["bottom", "top", "left", "right"] }
-        ],
-        figmaSets: ["Drawer"],
-        props: [
-          { name: "direction", type: '"bottom" | "top" | "left" | "right"', description: "The edge it comes from; bottom shows the handle." },
-          { name: "DrawerHeader / DrawerTitle / DrawerDescription / DrawerFooter", type: "component", description: "The parts." },
-          { name: "DrawerTrigger / DrawerClose", type: "component", description: "Open and close." }
-        ],
-        accessibility: "Built on Radix Dialog: focus is trapped and Esc closes; dragging is never the only way to close it."
       },
       {
         key: "Popover",
@@ -5594,21 +5451,6 @@ var init_componentCatalogue = __esm({
           { name: "layout", type: "'inline' | 'stacked'", description: "Figma Layout." }
         ],
         accessibility: "Buttons keep their own focus order; the leading text is plain copy."
-      },
-      {
-        key: "HoverCard",
-        label: "Hover Card",
-        category: "Content & Surfaces",
-        description: "shadcn/ui Hover Card: a preview card shown when hovering a link.",
-        usage: "Use to preview what a link points to (a profile, a page) for sighted pointer users. Never put the only copy of information or an action in it.",
-        axes: [],
-        figmaSets: ["Hover Card"],
-        props: [
-          { name: "openDelay / closeDelay", type: "number", description: "Hover timing." },
-          { name: "HoverCardTrigger asChild", type: "component", description: "The link it previews." },
-          { name: "HoverCardContent align sideOffset", type: "component", description: "The card." }
-        ],
-        accessibility: "Hover-only: keyboard and touch users never see it, so it must only repeat what the link already offers."
       },
       {
         key: "TooltipContent",
@@ -5926,135 +5768,6 @@ var init_componentCatalogue = __esm({
         ],
         accessibility: "The button is a real button; the loading row announces itself."
       },
-      {
-        key: "Item",
-        label: "Item",
-        category: "Content & Surfaces",
-        description: "shadcn/ui Item: a list row \u2014 media, title, description and actions.",
-        usage: "Use for rows of settings, people, files or results. For tabular data compared across columns use Table.",
-        axes: [
-          { name: "Variant", values: ["default", "outline", "muted"] },
-          { name: "Size", values: ["default", "sm", "xs"] }
-        ],
-        figmaSets: ["Item"],
-        props: [
-          { name: "variant", type: '"default" | "outline" | "muted"', description: "No edge, a hairline, or the muted surface." },
-          { name: "size", type: '"default" | "sm" | "xs"', description: "Padding, gap and media size." },
-          { name: "ItemMedia variant", type: '"default" | "icon" | "image"', description: "A glyph, an icon, or a cropped image." },
-          { name: "ItemContent / ItemTitle / ItemDescription / ItemActions", type: "component", description: "The parts." },
-          { name: "asChild", type: "boolean", description: "Render as a link or button." }
-        ],
-        accessibility: 'Group items in ItemGroup (role="list"). A clickable item is a real link or button (asChild).'
-      },
-      {
-        key: "Attachment",
-        label: "Attachment",
-        category: "Content & Surfaces",
-        description: "shadcn/ui Attachment: a file on a message or a form \u2014 media, name, size, actions \u2014 with an upload state.",
-        usage: "Use to show files attached to a message, a comment or a form. For the drop target itself use File Upload Dropzone or File Upload.",
-        axes: [
-          { name: "Size", values: ["default", "sm", "xs"] },
-          { name: "Orientation", values: ["horizontal", "vertical"] },
-          { name: "State", values: ["idle", "uploading", "processing", "error", "done"] }
-        ],
-        figmaSets: ["Attachment"],
-        props: [
-          { name: "state", type: '"idle" | "uploading" | "processing" | "error" | "done"', description: "The upload state; error paints the media and description critical." },
-          { name: "size", type: '"default" | "sm" | "xs"', description: "Padding and media size." },
-          { name: "orientation", type: '"horizontal" | "vertical"', description: "A row, or a tile." },
-          { name: "AttachmentMedia / AttachmentTitle / AttachmentDescription / AttachmentActions / AttachmentAction", type: "component", description: "The parts; an action is a ghost icon-xs Button." }
-        ],
-        accessibility: "Announce upload progress and errors in text (the description), not by colour alone."
-      },
-      {
-        key: "Message",
-        label: "Message",
-        category: "Content & Surfaces",
-        description: "shadcn/ui Message: one chat message \u2014 avatar, header, the bubble and a footer.",
-        usage: "Use for conversation threads (support chat, AI assistants). The body is a Bubble.",
-        axes: [
-          { name: "Align", values: ["start", "end"] }
-        ],
-        figmaSets: ["Message"],
-        props: [
-          { name: "align", type: '"start" | "end"', description: "Who wrote it: the other party, or you." },
-          { name: "MessageAvatar / MessageHeader / MessageContent / MessageFooter", type: "component", description: "The parts." },
-          { name: "MessageGroup", type: "component", description: "Stacks messages." }
-        ],
-        accessibility: "Render a thread as a list with each message's author and time in text; announce new messages with a live region."
-      },
-      {
-        key: "Bubble",
-        label: "Bubble",
-        category: "Content & Surfaces",
-        description: "shadcn/ui Bubble: the body of a chat message, in seven variants, with optional reactions.",
-        usage: "Use inside Message. Default for your own messages, muted or outline for the other party, destructive for a failed send.",
-        axes: [
-          { name: "Variant", values: ["default", "secondary", "muted", "tinted", "outline", "ghost", "destructive"] },
-          { name: "Align", values: ["start", "end"] }
-        ],
-        figmaSets: ["Bubble"],
-        props: [
-          { name: "variant", type: '"default" | "secondary" | "muted" | "tinted" | "outline" | "ghost" | "destructive"', description: "How the bubble is painted." },
-          { name: "align", type: '"start" | "end"', description: "Which side it sits on." },
-          { name: "BubbleContent asChild", type: "component", description: "The text box; a link or button with asChild." },
-          { name: "BubbleReactions side align", type: "component", description: "Emoji reactions pinned to an edge." }
-        ],
-        accessibility: "The bubble's colour must not be the only signal of who wrote it \u2014 keep the author in the Message header."
-      },
-      {
-        key: "Resizable",
-        label: "Resizable",
-        category: "Content & Surfaces",
-        description: "shadcn/ui Resizable: panels split by handles you drag to resize (react-resizable-panels).",
-        usage: "Use for editor layouts where people tune the space (a sidebar, a preview). Not for content that should simply reflow.",
-        axes: [
-          { name: "Orientation", values: ["horizontal", "vertical"] }
-        ],
-        figmaSets: ["Resizable"],
-        props: [
-          { name: "ResizablePanelGroup orientation", type: '"horizontal" | "vertical"', description: "The split direction." },
-          { name: "ResizablePanel defaultSize minSize", type: "number", description: "Each panel, in percent." },
-          { name: "ResizableHandle withHandle", type: "boolean", description: "A visible grip on the handle." }
-        ],
-        accessibility: "Each handle is a separator you can focus and move with the arrow keys."
-      },
-      {
-        key: "Carousel",
-        label: "Carousel",
-        category: "Content & Surfaces",
-        description: "shadcn/ui Carousel: slides you swipe or step through with previous / next (Embla).",
-        usage: "Use for a set of comparable items people browse (images, plans). Do not hide important content in later slides.",
-        axes: [
-          { name: "Orientation", values: ["horizontal", "vertical"] }
-        ],
-        figmaSets: ["Carousel"],
-        props: [
-          { name: "orientation", type: '"horizontal" | "vertical"', description: "The scroll axis." },
-          { name: "opts / plugins / setApi", type: "Embla", description: "Loop, alignment, autoplay, the API." },
-          { name: "CarouselContent / CarouselItem", type: "component", description: "The track and each slide." },
-          { name: "CarouselPrevious / CarouselNext", type: "component", description: "Outline icon-sm Buttons, round." }
-        ],
-        accessibility: 'role="region" aria-roledescription="carousel"; arrow keys step; each slide is a group labelled "slide".'
-      },
-      {
-        key: "Chart",
-        label: "Chart",
-        category: "Content & Surfaces",
-        description: "shadcn/ui Chart: Recharts with a config of series \u2192 colour, a tooltip and a legend in the system.",
-        usage: "Use for trends and comparisons. Colour the series with the system's chart palette and pair colour with a second encoding (labels, legend).",
-        axes: [
-          { name: "Type", values: ["bar", "line", "area"] }
-        ],
-        figmaSets: ["Chart"],
-        props: [
-          { name: "ChartContainer config", type: "ChartConfig", description: "Series \u2192 label and colour; sets --color-<key>." },
-          { name: "ChartTooltip / ChartTooltipContent", type: "component", description: "The hover readout (indicator dot | line | dashed)." },
-          { name: "ChartLegend / ChartLegendContent", type: "component", description: "The legend." },
-          { name: "\u2026Recharts", type: "BarChart \xB7 LineChart \xB7 AreaChart", description: "The chart itself." }
-        ],
-        accessibility: "Give the chart a text alternative (a summary or the table). accessibilityLayer adds keyboard navigation in Recharts."
-      },
       // ── Feedback ────────────────────────────────────────────────────────────────
       {
         key: "Toast",
@@ -6098,34 +5811,6 @@ var init_componentCatalogue = __esm({
           { name: "children", type: "ReactNode", description: "The older composition: AlertTitle + AlertDescription in a boxed alert with no close." }
         ],
         accessibility: 'role="alert". Convey severity with the icon and the text as well as colour, and give the close button an accessible name.'
-      },
-      {
-        key: "Skeleton",
-        label: "Skeleton",
-        category: "Feedback",
-        description: "shadcn/ui Skeleton: a placeholder block that pulses while content loads.",
-        usage: "Use in the shape of the content that is coming (a line, an avatar, a card) so the layout does not jump. For an action in progress use Spinner.",
-        axes: [],
-        figmaSets: ["Skeleton"],
-        props: [
-          { name: "className / style", type: "string | CSSProperties", description: "The size and shape of the content it stands in for." }
-        ],
-        accessibility: 'Decorative: mark the loading region with aria-busy="true" and hide the skeletons with aria-hidden.'
-      },
-      {
-        key: "Empty",
-        label: "Empty",
-        category: "Feedback",
-        description: "shadcn/ui Empty: the empty state \u2014 media, title, description and the actions under them.",
-        usage: "Use when a list, search or page has nothing to show yet; say why and offer the next step. Not for errors \u2014 use Alert.",
-        axes: [{ name: "Media", values: ["default", "icon"] }],
-        figmaSets: ["Empty"],
-        props: [
-          { name: "EmptyHeader / EmptyTitle / EmptyDescription", type: "component", description: "The message." },
-          { name: "EmptyMedia variant", type: '"default" | "icon"', description: "An illustration or avatar as is, or a glyph on a muted tile." },
-          { name: "EmptyContent", type: "component", description: "The actions (a Button, a link)." }
-        ],
-        accessibility: "Keep the title a real heading when it labels a region; the actions are ordinary buttons and links."
       },
       // ── Navigation ──────────────────────────────────────────────────────────────
       {
@@ -6537,53 +6222,6 @@ var init_componentCatalogue = __esm({
           { name: "leading / leadingVisible", type: "ReactNode / boolean", description: "Status text that fills the row (default visible)." }
         ],
         accessibility: "Keep it outside role menu; its controls are reachable with Tab after the list."
-      },
-      {
-        key: "NavigationMenu",
-        label: "Navigation Menu",
-        category: "Navigation",
-        description: "shadcn/ui Navigation Menu: site navigation whose triggers open panels of links.",
-        usage: "Use for marketing and docs sites with grouped destinations. For an app's main navigation use Sidebar or Navbar.",
-        axes: [],
-        figmaSets: ["Navigation Menu"],
-        props: [
-          { name: "NavigationMenuList / NavigationMenuItem", type: "component", description: "The bar." },
-          { name: "NavigationMenuTrigger / NavigationMenuContent", type: "component", description: "A trigger and its panel." },
-          { name: "NavigationMenuLink", type: "component", description: "A destination." },
-          { name: "viewport", type: "boolean", description: "Panels share one animated viewport (default true)." }
-        ],
-        accessibility: "Radix NavigationMenu: a nav landmark; triggers expose aria-expanded and arrow keys move between them."
-      },
-      {
-        key: "Command",
-        label: "Command",
-        category: "Navigation",
-        description: "Command palette \u2014 a searchable action list summoned with \u2318K.",
-        usage: "Index every significant action and destination. Rank recent items first.",
-        axes: [],
-        figmaSets: ["Command"],
-        props: [
-          { name: "Command", type: "component", description: "Container; holds the search text." },
-          { name: "CommandInput icon / shortcut", type: "ReactNode", description: "Search field with a glyph and a key hint." },
-          { name: "CommandGroup heading", type: "ReactNode", description: "Caption over a set of items." },
-          { name: "CommandItem onSelect", type: "() => void", description: "A result row; hidden when it does not match the search." }
-        ],
-        accessibility: "Combobox+listbox pattern inside a dialog. Results announced via aria-live."
-      },
-      {
-        key: "Navbar",
-        label: "Navbar",
-        category: "Navigation",
-        description: "Top app bar \u2014 brand mark, primary destinations and the account cluster.",
-        usage: "Keep to 5\xB12 destinations. The current page must be visibly marked.",
-        axes: [],
-        figmaSets: ["Navbar"],
-        props: [
-          { name: "links", type: "{ label; href?; current? }[]", description: "Primary links; the current one is marked." },
-          { name: "logo", type: "ReactNode", description: "Brand mark." },
-          { name: "trailing", type: "ReactNode", description: "Right-hand slot (an avatar)." }
-        ],
-        accessibility: '<header> + <nav aria-label="Main">. Current page uses aria-current="page".'
       },
       {
         key: "Sidebar",
@@ -9478,14 +9116,12 @@ function part(axes, build) {
   for (const combo of combos(axes)) values[combo.join("|")] = build(...combo);
   return { axes: Object.keys(axes), values };
 }
-var c, NONE, FOCUS, TALL_FIELD_RADIUS, PANEL_RADIUS;
+var c, NONE, FOCUS;
 var init_helpers = __esm({
   "src/lib/recipes/helpers.ts"() {
     c = (role) => `color.${role}`;
     NONE = "none";
     FOCUS = { focus: "color.border.focus", ring: "color.border.ring.default" };
-    TALL_FIELD_RADIUS = "min(radius.action,radius.2xl)";
-    PANEL_RADIUS = "radius.container";
   }
 });
 
@@ -9640,7 +9276,7 @@ function socialPaint(appearance, brand, state2) {
   };
   return { root, label: { text: `social.${id}.content.on-action` } };
 }
-var BUTTON_VARIANTS, BUTTON_APPEARANCES, BUTTON_SIZES, BUTTON_STATES, SOLID, QUIET, LINK, strokeOf, BUTTON_HEIGHT, BUTTON_GAP, BUTTON, ICON_BUTTON_GLYPH, ICON_BUTTON, CLOSE_BUTTON_APPEARANCES, CLOSE_BUTTON_SHAPES, CLOSE_BUTTON_SIZES, CLOSE_BUTTON_VARIANTS, CLOSE_STATES, same3, NO_OVER, MUTED, CLOSE, CLOSE_SIZE, CLOSE_RADIUS, CLOSE_BUTTON, TEXT_LINK_VARIANTS, TEXT_LINK_SIZES, TEXT_LINK_STATES, LINK_INK, LINK_FOCUS, LINK_FONT, LINK_ICON, LINK_GAP, TEXT_LINK, FAB_APPEARANCES, FAB_SHAPES, FAB_SIZES, FAB_VARIANTS, FAB_STATES, FAB_MUTED, FAB, FAB_SIZE, FAB_BUTTON, FAB_GROUP_LAYOUTS, FAB_GROUP, BUTTON_GROUP_VARIANTS, BUTTON_GROUP_SHAPES, BUTTON_GROUP_ORIENTATIONS, BUTTON_GROUP_ITEM_SIZES, BUTTON_GROUP_ITEM_STATES, GROUP_RADIUS, BUTTON_GROUP, ITEM_SOLID, MUTED_INV, ITEM_GEOMETRY, BUTTON_GROUP_ITEM, DIVIDER_FILL, BUTTON_GROUP_DIVIDER, SOCIAL_BRAND_NAMES, SOCIAL_APPEARANCES, SOCIAL_SIZES, SOCIAL_STATES, SOCIAL_GEOMETRY, SOCIAL_LOGIN_BUTTON, APP_STORE_BADGE, TOGGLE_GROUP_VARIANTS, TOGGLE_GROUP_SIZES, TOGGLE_HEIGHT, TOGGLE;
+var BUTTON_VARIANTS, BUTTON_APPEARANCES, BUTTON_SIZES, BUTTON_STATES, SOLID, QUIET, LINK, strokeOf, BUTTON_HEIGHT, BUTTON_GAP, BUTTON, ICON_BUTTON_GLYPH, ICON_BUTTON, CLOSE_BUTTON_APPEARANCES, CLOSE_BUTTON_SHAPES, CLOSE_BUTTON_SIZES, CLOSE_BUTTON_VARIANTS, CLOSE_STATES, same3, NO_OVER, MUTED, CLOSE, CLOSE_SIZE, CLOSE_RADIUS, CLOSE_BUTTON, TEXT_LINK_VARIANTS, TEXT_LINK_SIZES, TEXT_LINK_STATES, LINK_INK, LINK_FOCUS, LINK_FONT, LINK_ICON, LINK_GAP, TEXT_LINK, FAB_APPEARANCES, FAB_SHAPES, FAB_SIZES, FAB_VARIANTS, FAB_STATES, FAB_MUTED, FAB, FAB_SIZE, FAB_BUTTON, FAB_GROUP_LAYOUTS, FAB_GROUP, BUTTON_GROUP_VARIANTS, BUTTON_GROUP_SHAPES, BUTTON_GROUP_ORIENTATIONS, BUTTON_GROUP_ITEM_SIZES, BUTTON_GROUP_ITEM_STATES, GROUP_RADIUS, BUTTON_GROUP, ITEM_SOLID, MUTED_INV, ITEM_GEOMETRY, BUTTON_GROUP_ITEM, DIVIDER_FILL, BUTTON_GROUP_DIVIDER, SOCIAL_BRAND_NAMES, SOCIAL_APPEARANCES, SOCIAL_SIZES, SOCIAL_STATES, SOCIAL_GEOMETRY, SOCIAL_LOGIN_BUTTON;
 var init_actions = __esm({
   "src/lib/recipes/actions.ts"() {
     init_helpers();
@@ -9972,39 +9608,6 @@ var init_actions = __esm({
           root: iconOnly === "true" ? { ...SOCIAL_GEOMETRY[size], width: SOCIAL_GEOMETRY[size].height, paddingX: "spacing.none" } : { ...SOCIAL_GEOMETRY[size], paddingX: "spacing.inset-control" }
         })),
         part({ Appearance: SOCIAL_APPEARANCES, Brand: SOCIAL_BRAND_NAMES, State: SOCIAL_STATES }, socialPaint)
-      ]
-    };
-    APP_STORE_BADGE = {
-      key: "AppStoreBadge",
-      slots: ["root", "eyebrow", "name"],
-      defaults: { Store: "app-store" },
-      parts: [
-        part({ Store: ["app-store", "google-play"] }, () => ({
-          root: { radius: "radius.action", paddingX: "spacing.4", paddingY: "spacing.2", gap: "spacing.2_5" },
-          eyebrow: { font: "type.caption" },
-          name: { font: "type.button" }
-        }))
-      ]
-    };
-    TOGGLE_GROUP_VARIANTS = ["default", "outline"];
-    TOGGLE_GROUP_SIZES = ["default", "sm", "lg"];
-    TOGGLE_HEIGHT = { sm: "size.compact", default: "size.control", lg: "size.touch" };
-    TOGGLE = {
-      key: "Toggle",
-      slots: ["root"],
-      defaults: { Variant: "default", Size: "default", Pressed: "False" },
-      parts: [
-        part({ Variant: TOGGLE_GROUP_VARIANTS }, (variant) => ({
-          root: variant === "outline" ? { stroke: c("border.control"), strokeWidth: "stroke.control", font: "type.button", radius: "radius.action", gap: "spacing.1" } : { font: "type.button", radius: "radius.action", gap: "spacing.1" }
-        })),
-        part({ Size: TOGGLE_GROUP_SIZES }, (size) => ({
-          root: { height: TOGGLE_HEIGHT[size], paddingX: "spacing.2_5" }
-        })),
-        part({ Pressed: ["False", "True"] }, (pressed) => ({
-          root: pressed === "True" ? { fill: c("surface.layer-2"), text: c("content.primary") } : { fill: NONE, text: c("content.secondary") },
-          "root:hover": { fill: c("action.ghost.hover"), text: c("content.primary") },
-          "root:focus-visible": FOCUS
-        }))
       ]
     };
   }
@@ -10340,7 +9943,7 @@ function fileUploadDropzonePaint(state2) {
     description: ink("content.secondary")
   };
 }
-var INPUT_STATES, INPUT_SIZES, INPUT_TYPES, INPUT_GEOMETRY, INPUT_GLYPH, INPUT_STROKE_IN_LAYOUT, INPUT, TEXTAREA_SIZES, TEXTAREA_STATES, TEXTAREA_HEIGHT, TEXTAREA_PAD, TEXTAREA_FONT, TEXTAREA_GLYPH, TEXTAREA, DATE_PICKER_TRIGGER_SIZES, DATE_PICKER_TRIGGER_STATES, DPT_GEOMETRY, DATE_PICKER_TRIGGER, DATE_PICKER_POPOVER, CALENDAR_DAY_SIZES, CALENDAR_DAY_STATES, CALENDAR_DAY_VARIANTS, CALENDAR_DAY_GEOMETRY, CALENDAR_DAY, CALENDAR_HEADER_SIZES, CALENDAR_HEADER_GEOMETRY, SEVEN, CALENDAR_HEADER, CALENDAR_MONTH, CALENDAR_PRESETS_SIZES, CALENDAR_PRESETS_VARIANTS, CALENDAR_PRESETS_GEOMETRY, CALENDAR_PRESETS, CALENDAR_FOOTER_SIZES, CALENDAR_FOOTER_GEOMETRY, CALENDAR_FOOTER, GROUP_LIVE, GROUP_CONTROL, INPUT_GROUP, NUMBER_INPUT_SIZES, NUMBER_INPUT_STATES, NUMBER_BOX, NUMBER_INPUT, INPUT_TAG_LAYOUTS, INPUT_TAG_SIZES, INPUT_TAG_STATES, TAG_BOX, INPUT_TAG, INPUT_TAG_CHIP_SIZES, INPUT_TAG_CHIP_STATES, INPUT_TAG_CHIP_VARIANTS, CHIP_GEOMETRY, INPUT_TAG_CHIP, INPUT_TAG_OPTION_STATES, INPUT_TAG_OPTION, COMBOBOX_SIZES, COMBOBOX_STATES, COMBOBOX_SHAPES, COMBOBOX_ITEM_STATES, COMBO_TRIGGER, COMBOBOX, POPOVER_SIZE, COMBOBOX_POPOVER, COMBO_ITEM, COMBOBOX_ITEM, COMBOBOX_GROUP_LABEL, INPUT_OTP_SIZES, INPUT_OTP_VARIANTS, INPUT_OTP_STATES, INPUT_OTP_SLOT_STATES, INPUT_OTP, OTP_SLOT_BOX, OTP_SLOT_FONT, OTP_CARET, INPUT_OTP_SLOT, CHECKBOX_SIZES, CHECKBOX_CHECKED, CHECKBOX_STATES, CHECKBOX_VARIANTS, CHECKBOX_ON, CHECKBOX, CHECKBOX_ITEM_SIZES, CHECKBOX_ITEM_STATES, CHECKBOX_ITEM_TYPE, CHECKBOX_ITEM, CHECKBOX_GROUP_STATES, CHECKBOX_GROUP, RADIO_GROUP, SWITCH_SIZES, SWITCH_STATES, SWITCH_CHECKED, SWITCH_THUMBS, SWITCH_GEOMETRY, SWITCH, SWITCH_GROUP_SIZES, SWITCH_GROUP_STATES, SWITCH_GROUP_TYPE, SWITCH_GROUP, SLIDER_SIZES, SLIDER_THUMB_STATES, SLIDER_STATES, SLIDER_VARIANTS, SLIDER_THUMB_PX, SLIDER_THUMB_EDGE, SLIDER_THUMB, SLIDER_CONTROL, SLIDER, FIELD_STATES, FIELD, LABEL, PASSWORD_STRENGTH_SIZES, PASSWORD_STRENGTHS, STRENGTH_SEGMENT, STRENGTH_LEVEL, PASSWORD_STRENGTH, METER_HEIGHT, PASSWORD_STRENGTH_METER, RULE_ICON, RULE_MARKER, RULE_FONT, PASSWORD_STRENGTH_RULE, FILE_UPLOAD_SIZES, FILE_UPLOAD, FILE_UPLOAD_DROPZONE_SIZES, FILE_UPLOAD_DROPZONE_STATES, FUD_GEOMETRY, FILE_UPLOAD_DROPZONE, FILE_UPLOAD_ITEM_SIZES, FILE_UPLOAD_ITEM_STATUSES, FILE_UPLOAD_ITEM, CALENDAR_SIZES, CALENDAR;
+var INPUT_STATES, INPUT_SIZES, INPUT_TYPES, INPUT_GEOMETRY, INPUT_GLYPH, INPUT_STROKE_IN_LAYOUT, INPUT, TEXTAREA_SIZES, TEXTAREA_STATES, TEXTAREA_HEIGHT, TEXTAREA_PAD, TEXTAREA_FONT, TEXTAREA_GLYPH, TEXTAREA, DATE_PICKER_TRIGGER_SIZES, DATE_PICKER_TRIGGER_STATES, DPT_GEOMETRY, DATE_PICKER_TRIGGER, DATE_PICKER_POPOVER, CALENDAR_DAY_SIZES, CALENDAR_DAY_STATES, CALENDAR_DAY_VARIANTS, CALENDAR_DAY_GEOMETRY, CALENDAR_DAY, CALENDAR_HEADER_SIZES, CALENDAR_HEADER_GEOMETRY, SEVEN, CALENDAR_HEADER, CALENDAR_MONTH, CALENDAR_PRESETS_SIZES, CALENDAR_PRESETS_VARIANTS, CALENDAR_PRESETS_GEOMETRY, CALENDAR_PRESETS, CALENDAR_FOOTER_SIZES, CALENDAR_FOOTER_GEOMETRY, CALENDAR_FOOTER, NUMBER_INPUT_SIZES, NUMBER_INPUT_STATES, NUMBER_BOX, NUMBER_INPUT, INPUT_TAG_LAYOUTS, INPUT_TAG_SIZES, INPUT_TAG_STATES, TAG_BOX, INPUT_TAG, INPUT_TAG_CHIP_SIZES, INPUT_TAG_CHIP_STATES, INPUT_TAG_CHIP_VARIANTS, CHIP_GEOMETRY, INPUT_TAG_CHIP, INPUT_TAG_OPTION_STATES, INPUT_TAG_OPTION, COMBOBOX_SIZES, COMBOBOX_STATES, COMBOBOX_SHAPES, COMBOBOX_ITEM_STATES, COMBO_TRIGGER, COMBOBOX, POPOVER_SIZE, COMBOBOX_POPOVER, COMBO_ITEM, COMBOBOX_ITEM, COMBOBOX_GROUP_LABEL, INPUT_OTP_SIZES, INPUT_OTP_VARIANTS, INPUT_OTP_STATES, INPUT_OTP_SLOT_STATES, INPUT_OTP, OTP_SLOT_BOX, OTP_SLOT_FONT, OTP_CARET, INPUT_OTP_SLOT, CHECKBOX_SIZES, CHECKBOX_CHECKED, CHECKBOX_STATES, CHECKBOX_VARIANTS, CHECKBOX_ON, CHECKBOX, CHECKBOX_ITEM_SIZES, CHECKBOX_ITEM_STATES, CHECKBOX_ITEM_TYPE, CHECKBOX_ITEM, CHECKBOX_GROUP_STATES, CHECKBOX_GROUP, RADIO_GROUP, SWITCH_SIZES, SWITCH_STATES, SWITCH_CHECKED, SWITCH_THUMBS, SWITCH_GEOMETRY, SWITCH, SWITCH_GROUP_SIZES, SWITCH_GROUP_STATES, SWITCH_GROUP_TYPE, SWITCH_GROUP, SLIDER_SIZES, SLIDER_THUMB_STATES, SLIDER_STATES, SLIDER_VARIANTS, SLIDER_THUMB_PX, SLIDER_THUMB_EDGE, SLIDER_THUMB, SLIDER_CONTROL, SLIDER, FIELD_STATES, FIELD, LABEL, PASSWORD_STRENGTH_SIZES, PASSWORD_STRENGTHS, STRENGTH_SEGMENT, STRENGTH_LEVEL, PASSWORD_STRENGTH, METER_HEIGHT, PASSWORD_STRENGTH_METER, RULE_ICON, RULE_MARKER, RULE_FONT, PASSWORD_STRENGTH_RULE, FILE_UPLOAD_SIZES, FILE_UPLOAD, FILE_UPLOAD_DROPZONE_SIZES, FILE_UPLOAD_DROPZONE_STATES, FUD_GEOMETRY, FILE_UPLOAD_DROPZONE, FILE_UPLOAD_ITEM_SIZES, FILE_UPLOAD_ITEM_STATUSES, FILE_UPLOAD_ITEM, CALENDAR_SIZES, CALENDAR;
 var init_forms = __esm({
   "src/lib/recipes/forms.ts"() {
     init_groupLabel();
@@ -10601,36 +10204,6 @@ var init_forms = __esm({
           const g = CALENDAR_FOOTER_GEOMETRY[size];
           return { root: { width: g.width, height: g.height, paddingX: g.inset } };
         })
-      ]
-    };
-    GROUP_LIVE = ':not([data-force-state]):not([aria-disabled="true"]):not(:has(:disabled))';
-    GROUP_CONTROL = '[data-slot="input-group-control"]';
-    INPUT_GROUP = {
-      key: "InputGroup",
-      slots: ["root", "addon", "input", "button", "separator"],
-      defaults: {},
-      parts: [
-        part({}, () => ({
-          root: { ...fieldBox("Default"), strokeWidth: "stroke.control", radius: "radius.action", height: "size.control" },
-          [`root:hover${GROUP_LIVE}`]: fieldBox("Hover"),
-          'root[data-force-state="Hover"]': fieldBox("Hover"),
-          [`root:has(${GROUP_CONTROL}:focus-visible)${GROUP_LIVE}`]: fieldBox("Focused"),
-          'root[data-force-state="Focused"]': fieldBox("Focused"),
-          [`root:has(${GROUP_CONTROL}[aria-invalid="true"])`]: fieldBox("Error"),
-          'root[data-force-state="Error"]': fieldBox("Error"),
-          "root:has(:disabled)": fieldBox("Disabled"),
-          'root[aria-disabled="true"]': fieldBox("Disabled"),
-          // shadcn's addon is transparent: it holds an icon, text, kbd or button.
-          addon: { text: c("content.secondary"), font: "type.placeholder", paddingX: "spacing.inset-control", gap: "spacing.gap-control" },
-          input: { text: c("content.primary"), font: "type.placeholder", paddingX: "spacing.inset-control" },
-          "input::placeholder": { text: c("content.subtle") },
-          "input:disabled": { text: c("content.disabled") },
-          "input:disabled::placeholder": { text: c("content.disabled") },
-          button: { text: c("content.accent"), font: "type.button", paddingX: "spacing.4" },
-          "button:hover": { fill: c("action.ghost.hover") },
-          "button:active": { fill: c("action.ghost.pressed") },
-          separator: { fill: c("border.control"), width: "stroke.control" }
-        }))
       ]
     };
     NUMBER_INPUT_SIZES = ["default", "sm", "lg"];
@@ -11323,7 +10896,7 @@ function tooltipTriggerInk(variant, state2) {
       return hot ? "action.primary.hover" : "action.primary.default";
   }
 }
-var CARD, OVERLAY_TITLE, MODAL_SIZES, MODAL, MODAL_HEADER, MODAL_FOOTER, SEPARATOR_ORIENTATIONS, SEPARATOR_TONES, SEPARATOR, ACCORDION_VARIANTS, ACCORDION_ITEM_STATES, ACCORDION, ACCORDION_ITEM, IMAGE_RATIOS, IMAGE_SHAPES, IMAGE, POPOVER_SIZES, POPOVER, POPOVER_FOOTER, TOOLTIP_SIZES, TOOLTIP_VARIANTS, TOOLTIP_TRIGGER_STATES, TOOLTIP_TONE, TOOLTIP_CONTENT, TOOLTIP_INFO_TRIGGER, SCROLL_AREA_SIZES, SCROLL_BAR_ORIENTATIONS, SCROLL_APPEARANCES, SCROLL_AREA, SCROLL_BAR_THICKNESS, SCROLL_BAR, COLLAPSIBLE, ALERT_DIALOG, SHEET_SIDES, SHEET, DRAWER, HOVER_CARD, ITEM_VARIANTS, ITEM_SIZES, ITEM_GEOMETRY2, ITEM_DESCRIPTION, ITEM_CONTENT_GAP, ITEM_MEDIA, ITEM, ATTACHMENT_SIZES, ATTACHMENT_GEOMETRY, ATTACHMENT_MEDIA, ATTACHMENT, MESSAGE, BUBBLE_VARIANTS, BUBBLE_PAINT, BUBBLE, RESIZABLE, CAROUSEL, CHART;
+var CARD, MODAL_SIZES, MODAL, MODAL_HEADER, MODAL_FOOTER, SEPARATOR_ORIENTATIONS, SEPARATOR_TONES, SEPARATOR, ACCORDION_VARIANTS, ACCORDION_ITEM_STATES, ACCORDION, ACCORDION_ITEM, IMAGE_RATIOS, IMAGE_SHAPES, IMAGE, POPOVER_SIZES, POPOVER, POPOVER_FOOTER, TOOLTIP_SIZES, TOOLTIP_VARIANTS, TOOLTIP_TRIGGER_STATES, TOOLTIP_TONE, TOOLTIP_CONTENT, TOOLTIP_INFO_TRIGGER, SCROLL_AREA_SIZES, SCROLL_BAR_ORIENTATIONS, SCROLL_APPEARANCES, SCROLL_AREA, SCROLL_BAR_THICKNESS, SCROLL_BAR, SHEET_SIDES, SHEET, BUBBLE_PAINT;
 var init_surfaces = __esm({
   "src/lib/recipes/surfaces.ts"() {
     init_helpers();
@@ -11352,7 +10925,6 @@ var init_surfaces = __esm({
         }))
       ]
     };
-    OVERLAY_TITLE = "type.heading-2xs";
     MODAL_SIZES = ["default", "lg"];
     MODAL = {
       key: "Modal",
@@ -11608,58 +11180,6 @@ var init_surfaces = __esm({
         }))
       ]
     };
-    COLLAPSIBLE = {
-      key: "Collapsible",
-      slots: ["root", "trigger", "icon", "content", "item"],
-      defaults: {},
-      parts: [
-        part({}, () => ({
-          root: { gap: "spacing.2" },
-          trigger: { text: c("content.primary"), font: "type.label", gap: "spacing.4", paddingX: "spacing.1", paddingY: "spacing.1" },
-          icon: { text: c("content.secondary"), radius: "radius.action", width: "size.compact", height: "size.compact" },
-          "trigger:hover": { text: c("content.primary") },
-          // The focusable part is the icon button at the end of the row.
-          "icon:focus-visible": FOCUS,
-          content: { gap: "spacing.2" },
-          item: {
-            stroke: c("border.default"),
-            strokeWidth: "stroke.control",
-            radius: "radius.action",
-            paddingX: "spacing.4",
-            paddingY: "spacing.2",
-            text: c("content.primary"),
-            font: "type.body-sm"
-          }
-        }))
-      ]
-    };
-    ALERT_DIALOG = {
-      key: "AlertDialog",
-      slots: ["content", "overlay", "header", "media", "title", "description", "footer"],
-      detachedSlots: ["overlay"],
-      defaults: { Size: "default" },
-      parts: [
-        part({}, () => ({
-          overlay: { fill: c("surface.overlay") },
-          content: {
-            fill: c("surface.layer-2"),
-            stroke: c("border.subtle"),
-            strokeWidth: "stroke.control",
-            radius: "radius.overlay",
-            shadow: "shadow.2xl",
-            text: c("content.primary")
-          },
-          header: { gap: "spacing.1_5" },
-          media: { fill: c("surface.layer-1"), text: c("content.primary"), radius: "radius.action", width: "size.control", height: "size.control" },
-          title: { text: c("content.primary"), font: OVERLAY_TITLE },
-          description: { text: c("content.secondary"), font: "type.body-sm" },
-          footer: { gap: "spacing.gap-control" }
-        })),
-        part({ Size: ["default", "sm"] }, (size) => ({
-          content: size === "sm" ? { paddingX: "spacing.4", paddingY: "spacing.4", gap: "spacing.4" } : { paddingX: "spacing.inset-surface", paddingY: "spacing.inset-surface", gap: "spacing.gap-group" }
-        }))
-      ]
-    };
     SHEET_SIDES = ["right", "left", "bottom"];
     SHEET = {
       key: "Sheet",
@@ -11684,134 +11204,6 @@ var init_surfaces = __esm({
         })
       ]
     };
-    DRAWER = {
-      key: "Drawer",
-      slots: ["content", "overlay", "handle", "header", "title", "description", "footer"],
-      detachedSlots: ["overlay"],
-      defaults: {},
-      parts: [
-        part({}, () => ({
-          overlay: { fill: c("surface.overlay") },
-          content: {
-            fill: c("surface.layer-2"),
-            stroke: c("border.subtle"),
-            strokeWidth: "stroke.control",
-            radius: "radius.overlay",
-            text: c("content.primary")
-          },
-          handle: { fill: c("surface.inverse"), radius: "radius.pill" },
-          header: { gap: "spacing.0_5", paddingX: "spacing.4", paddingY: "spacing.4" },
-          title: { text: c("content.primary"), font: OVERLAY_TITLE },
-          description: { text: c("content.secondary"), font: "type.body-sm" },
-          footer: { gap: "spacing.2", paddingX: "spacing.4", paddingY: "spacing.4" }
-        }))
-      ]
-    };
-    HOVER_CARD = {
-      key: "HoverCard",
-      slots: ["root"],
-      defaults: {},
-      parts: [
-        part({}, () => ({
-          root: {
-            fill: c("surface.layer-2"),
-            stroke: c("border.subtle"),
-            strokeWidth: "stroke.control",
-            radius: "radius.overlay",
-            shadow: "shadow.lg",
-            paddingX: "spacing.4",
-            paddingY: "spacing.4",
-            gap: "spacing.2",
-            text: c("content.primary"),
-            font: "type.body-sm"
-          }
-        }))
-      ]
-    };
-    ITEM_VARIANTS = ["default", "outline", "muted"];
-    ITEM_SIZES = ["default", "sm", "xs"];
-    ITEM_GEOMETRY2 = {
-      default: { paddingX: "spacing.4", paddingY: "spacing.4", gap: "spacing.4" },
-      sm: { paddingX: "spacing.4", paddingY: "spacing.3", gap: "spacing.2_5" },
-      xs: { paddingX: "spacing.3", paddingY: "spacing.2", gap: "spacing.2" }
-    };
-    ITEM_DESCRIPTION = { default: "type.body-sm", sm: "type.caption", xs: "type.caption" };
-    ITEM_CONTENT_GAP = { default: "spacing.1", sm: "spacing.0_5", xs: "spacing.0_5" };
-    ITEM_MEDIA = { default: "size.control", sm: "size.compact", xs: "size.xs" };
-    ITEM = {
-      key: "Item",
-      slots: ["root", "media", "content", "title", "description", "actions"],
-      defaults: { Variant: "default", Size: "default" },
-      parts: [
-        part({}, () => ({
-          root: { radius: PANEL_RADIUS, strokeWidth: "stroke.control", text: c("content.primary") },
-          media: { text: c("content.primary") },
-          title: { text: c("content.primary"), font: "type.label", gap: "spacing.2" },
-          description: { text: c("content.secondary") },
-          actions: { gap: "spacing.2" }
-        })),
-        part({ Variant: ITEM_VARIANTS }, (variant) => ({
-          root: variant === "outline" ? { fill: NONE, stroke: c("border.default") } : variant === "muted" ? { fill: c("surface.layer-2"), stroke: NONE } : { fill: NONE, stroke: NONE }
-        })),
-        part({ Size: ITEM_SIZES }, (size) => ({
-          root: ITEM_GEOMETRY2[size],
-          content: { gap: ITEM_CONTENT_GAP[size] },
-          description: { font: ITEM_DESCRIPTION[size] },
-          'media[data-variant="image"]': { width: ITEM_MEDIA[size], height: ITEM_MEDIA[size], radius: "radius.control" }
-        }))
-      ]
-    };
-    ATTACHMENT_SIZES = ["default", "sm", "xs"];
-    ATTACHMENT_GEOMETRY = {
-      default: { paddingX: "spacing.2", paddingY: "spacing.2", gap: "spacing.2_5" },
-      sm: { paddingX: "spacing.1_5", paddingY: "spacing.1_5", gap: "spacing.2" },
-      xs: { paddingX: "spacing.1", paddingY: "spacing.1", gap: "spacing.1_5" }
-    };
-    ATTACHMENT_MEDIA = { default: "size.control", sm: "size.compact", xs: "size.xs" };
-    ATTACHMENT = {
-      key: "Attachment",
-      slots: ["root", "media", "content", "title", "description", "actions"],
-      defaults: { Size: "default" },
-      parts: [
-        part({}, () => ({
-          root: {
-            fill: c("surface.layer-1"),
-            stroke: c("border.default"),
-            strokeWidth: "stroke.control",
-            radius: TALL_FIELD_RADIUS,
-            text: c("content.primary")
-          },
-          media: { fill: c("surface.layer-2"), text: c("content.secondary"), radius: "radius.control" },
-          'media[data-state="error"]': { fill: c("status.critical.surface"), text: c("status.critical.content") },
-          content: { gap: "spacing.0_5" },
-          title: { text: c("content.primary"), font: "type.label" },
-          description: { text: c("content.secondary"), font: "type.caption" },
-          'description[data-state="error"]': { text: c("status.critical.content") },
-          // The remove × is an icon slot inked content.secondary — a quiet
-          // control on the file, never the title's ink.
-          actions: { gap: "spacing.1", text: c("content.secondary") }
-        })),
-        part({ Size: ATTACHMENT_SIZES }, (size) => ({
-          root: ATTACHMENT_GEOMETRY[size],
-          media: { width: ATTACHMENT_MEDIA[size], height: ATTACHMENT_MEDIA[size] }
-        }))
-      ]
-    };
-    MESSAGE = {
-      key: "Message",
-      slots: ["root", "avatar", "content", "header", "footer"],
-      defaults: {},
-      parts: [
-        part({}, () => ({
-          root: { gap: "spacing.2" },
-          avatar: { fill: c("surface.layer-2"), text: c("content.secondary"), radius: "radius.pill", width: "size.compact", height: "size.compact", font: "type.caption" },
-          content: { gap: "spacing.1" },
-          header: { text: c("content.secondary"), font: "type.caption", gap: "spacing.1_5" },
-          footer: { text: c("content.subtle"), font: "type.caption", gap: "spacing.1" }
-        }))
-      ]
-    };
-    BUBBLE_VARIANTS = ["default", "secondary", "muted", "tinted", "outline", "ghost", "destructive"];
     BUBBLE_PAINT = {
       default: { fill: c("action.primary.default"), stroke: NONE, text: c("content.on-action") },
       secondary: { fill: c("surface.muted"), stroke: NONE, text: c("content.accent") },
@@ -11820,79 +11212,6 @@ var init_surfaces = __esm({
       outline: { fill: c("surface.page"), stroke: c("border.default"), text: c("content.primary") },
       ghost: { fill: NONE, stroke: NONE, text: c("content.primary"), paddingX: "spacing.0", paddingY: "spacing.0" },
       destructive: { fill: c("status.critical.surface"), stroke: NONE, text: c("status.critical.content") }
-    };
-    BUBBLE = {
-      key: "Bubble",
-      slots: ["root", "content", "reactions"],
-      defaults: { Variant: "default" },
-      parts: [
-        part({}, () => ({
-          root: { gap: "spacing.1" },
-          reactions: { fill: c("surface.layer-2"), text: c("content.primary"), radius: "radius.pill", paddingX: "spacing.1_5", paddingY: "spacing.0_5", gap: "spacing.1", font: "type.caption" }
-        })),
-        part({ Variant: BUBBLE_VARIANTS }, (variant) => ({
-          content: {
-            radius: "radius.container",
-            strokeWidth: "stroke.control",
-            paddingX: "spacing.3",
-            paddingY: "spacing.2",
-            font: "type.body-sm",
-            ...BUBBLE_PAINT[variant]
-          }
-        }))
-      ]
-    };
-    RESIZABLE = {
-      key: "Resizable",
-      slots: ["root", "panel", "handle", "grip"],
-      defaults: { Orientation: "horizontal" },
-      parts: [
-        part({}, () => ({
-          root: { stroke: c("border.default"), strokeWidth: "stroke.control", radius: "radius.container", text: c("content.primary") },
-          panel: { paddingX: "spacing.4", paddingY: "spacing.4", font: "type.label" },
-          grip: { fill: c("border.default"), radius: "radius.pill" },
-          "handle:focus-visible": { fill: c("border.focus") }
-        })),
-        part({ Orientation: ["horizontal", "vertical"] }, (o) => ({
-          handle: o === "horizontal" ? { fill: c("border.default"), width: "stroke.divider" } : { fill: c("border.default"), height: "stroke.divider" }
-        }))
-      ]
-    };
-    CAROUSEL = {
-      key: "Carousel",
-      slots: ["root", "item", "previous", "next"],
-      defaults: { Orientation: "horizontal" },
-      parts: [
-        part({ Orientation: ["horizontal", "vertical"] }, () => ({
-          root: { text: c("content.primary") },
-          previous: { radius: "radius.pill" },
-          next: { radius: "radius.pill" }
-        }))
-      ]
-    };
-    CHART = {
-      key: "Chart",
-      slots: ["root", "tooltip", "label", "legend"],
-      defaults: {},
-      parts: [
-        part({}, () => ({
-          root: { text: c("content.secondary"), font: "type.caption" },
-          tooltip: {
-            fill: c("surface.layer-2"),
-            stroke: c("border.subtle"),
-            strokeWidth: "stroke.control",
-            radius: PANEL_RADIUS,
-            shadow: "shadow.xl",
-            paddingX: "spacing.2_5",
-            paddingY: "spacing.1_5",
-            gap: "spacing.1_5",
-            text: c("content.primary"),
-            font: "type.caption"
-          },
-          label: { text: c("content.secondary") },
-          legend: { text: c("content.secondary"), gap: "spacing.4", font: "type.caption" }
-        }))
-      ]
     };
   }
 });
@@ -11938,7 +11257,7 @@ function breadcrumbPaint(variant, appearance, state2) {
   }
   return root;
 }
-var TAB_MENU_SIZES, TAB_MENU_VARIANTS, TAB_MENU_ITEM_STATES, TAB_MENU_INDICATORS, TAB_MENU, tabMenuSizeSlots, TAB_MENU_ITEM, TAB_MENU_LINE_ITEM, NAV_ITEM_SIZES, NAV_ITEM_STATES, NAV_ITEM, BRAND_SIZES, BRAND, ACCOUNT_MENU_TRIGGER_SIZES, ACCOUNT_MENU_TRIGGER_STATES, ACCOUNT_MENU_TRIGGER, SEGMENTED_CONTROL_SIZES, SEGMENTED_CONTROL, SEGMENTED_CONTROL_ITEM_STATES, SEGMENT_ITEM, SEGMENTED_CONTROL_ITEM, BREADCRUMB_SIZES, BREADCRUMB_APPEARANCES, BREADCRUMB_SEPARATORS, BREADCRUMB_VARIANTS, BREADCRUMB_ITEM_STATES, BREADCRUMB_ELLIPSIS_STATES, BREADCRUMB, BREADCRUMB_ITEM, BREADCRUMB_ELLIPSIS, BREADCRUMB_SEPARATOR, PAGINATION_SIZES, PAGINATION_VARIANTS, PAGINATION_LINK_STATES, PAGINATION_LINK_ACTIVE, paginationBox, paginationIcon, PAGINATION, PAGINATION_LINK, PAGINATION_ELLIPSIS, STEPPER_SIZES, STEPPER_ORIENTATIONS, STEPPER_STATUSES, STEPPER_STATES, stepperBox, STEPPER, STEPPER_ITEM, STEPPER_INDICATOR, STEPPER_ICON, DROPDOWN_SIZES, DROPDOWN_ITEM_STATES, DROPDOWN_ITEM_VARIANTS, DROPDOWN_MENU, DROPDOWN_MENU_LABEL, DROPDOWN_MENU_ITEM, DROPDOWN_MENU_FOOTER, COMMAND, NAVBAR, SIDEBAR_COLLAPSED, SIDEBAR_SIZES, SIDEBAR_MENU_BUTTON_STATES, SIDEBAR, SIDEBAR_BRAND, SIDEBAR_GROUP, SIDEBAR_GROUP_LABEL, SIDEBAR_MENU_BUTTON, NAVIGATION_MENU;
+var TAB_MENU_SIZES, TAB_MENU_VARIANTS, TAB_MENU_ITEM_STATES, TAB_MENU_INDICATORS, TAB_MENU, tabMenuSizeSlots, TAB_MENU_ITEM, TAB_MENU_LINE_ITEM, NAV_ITEM_SIZES, NAV_ITEM_STATES, NAV_ITEM, BRAND_SIZES, BRAND, ACCOUNT_MENU_TRIGGER_SIZES, ACCOUNT_MENU_TRIGGER_STATES, ACCOUNT_MENU_TRIGGER, SEGMENTED_CONTROL_SIZES, SEGMENTED_CONTROL, SEGMENTED_CONTROL_ITEM_STATES, SEGMENT_ITEM, SEGMENTED_CONTROL_ITEM, BREADCRUMB_SIZES, BREADCRUMB_APPEARANCES, BREADCRUMB_SEPARATORS, BREADCRUMB_VARIANTS, BREADCRUMB_ITEM_STATES, BREADCRUMB_ELLIPSIS_STATES, BREADCRUMB, BREADCRUMB_ITEM, BREADCRUMB_ELLIPSIS, BREADCRUMB_SEPARATOR, PAGINATION_SIZES, PAGINATION_VARIANTS, PAGINATION_LINK_STATES, PAGINATION_LINK_ACTIVE, paginationBox, paginationIcon, PAGINATION, PAGINATION_LINK, PAGINATION_ELLIPSIS, STEPPER_SIZES, STEPPER_ORIENTATIONS, STEPPER_STATUSES, STEPPER_STATES, stepperBox, STEPPER, STEPPER_ITEM, STEPPER_INDICATOR, STEPPER_ICON, DROPDOWN_SIZES, DROPDOWN_ITEM_STATES, DROPDOWN_ITEM_VARIANTS, DROPDOWN_MENU, DROPDOWN_MENU_LABEL, DROPDOWN_MENU_ITEM, DROPDOWN_MENU_FOOTER, SIDEBAR_COLLAPSED, SIDEBAR_SIZES, SIDEBAR_MENU_BUTTON_STATES, SIDEBAR, SIDEBAR_BRAND, SIDEBAR_GROUP, SIDEBAR_GROUP_LABEL, SIDEBAR_MENU_BUTTON;
 var init_navigation = __esm({
   "src/lib/recipes/navigation.ts"() {
     init_groupLabel();
@@ -12332,54 +11651,6 @@ var init_navigation = __esm({
         }))
       ]
     };
-    COMMAND = {
-      key: "Command",
-      slots: ["root", "search", "icon", "input", "list", "heading", "item"],
-      defaults: {},
-      parts: [
-        part({}, () => ({
-          root: {
-            fill: c("surface.layer-2"),
-            stroke: c("border.subtle"),
-            strokeWidth: "stroke.control",
-            radius: "radius.container",
-            shadow: "shadow.2xl"
-          },
-          search: { stroke: c("border.subtle"), strokeBottomWidth: "stroke.control", paddingX: "spacing.3", paddingY: "spacing.2_5", gap: "spacing.gap-control" },
-          icon: { text: c("content.secondary") },
-          input: { text: c("content.primary"), font: "type.placeholder" },
-          list: { paddingX: "spacing.1_5", paddingY: "spacing.1_5" },
-          heading: { text: c("content.subtle"), font: "type.caption", paddingX: "spacing.2_5", paddingY: "spacing.1" },
-          item: { text: c("content.primary"), font: "type.body-sm", radius: "sub(radius.container,spacing.1_5)", paddingX: "spacing.2_5", paddingY: "spacing.1_5" },
-          "item[data-highlighted]": { fill: c("action.ghost.hover") },
-          "item:hover": { fill: c("action.ghost.hover") }
-        }))
-      ]
-    };
-    NAVBAR = {
-      key: "Navbar",
-      slots: ["root", "logo", "nav", "link", "avatar"],
-      defaults: {},
-      parts: [
-        part({}, () => ({
-          root: {
-            fill: c("surface.layer-1"),
-            stroke: c("border.subtle"),
-            strokeWidth: "stroke.control",
-            radius: PANEL_RADIUS,
-            paddingX: "spacing.4",
-            paddingY: "spacing.2_5",
-            gap: "spacing.5"
-          },
-          logo: { fill: c("action.primary.default"), radius: "radius.control", width: "spacing.6", height: "spacing.6" },
-          nav: { gap: "spacing.3" },
-          link: { text: c("content.secondary"), font: "type.body-sm" },
-          "link:hover": { text: c("content.primary") },
-          'link[aria-current="page"]': { text: c("content.primary"), font: "type.button" },
-          avatar: { fill: c("surface.selected"), text: c("content.accent"), font: "type.caption", radius: "radius.pill", width: "size.xs", height: "size.xs" }
-        }))
-      ]
-    };
     SIDEBAR_COLLAPSED = ["false", "true"];
     SIDEBAR_SIZES = ["default", "sm", "lg"];
     SIDEBAR_MENU_BUTTON_STATES = ["Default", "Hover", "Focused", "Current", "Disabled"];
@@ -12451,34 +11722,11 @@ var init_navigation = __esm({
         }))
       ]
     };
-    NAVIGATION_MENU = {
-      key: "NavigationMenu",
-      slots: ["root", "trigger", "viewport", "content", "link"],
-      defaults: {},
-      parts: [
-        part({}, () => ({
-          root: { gap: "spacing.0" },
-          trigger: { text: c("content.primary"), font: "type.label", radius: "radius.action", height: "size.compact", paddingX: "spacing.2_5", gap: "spacing.1" },
-          "trigger:hover": { fill: c("action.ghost.hover") },
-          'trigger[data-state="open"]': { fill: c("action.ghost.hover") },
-          viewport: {
-            fill: c("surface.layer-2"),
-            stroke: c("border.subtle"),
-            strokeWidth: "stroke.control",
-            radius: PANEL_RADIUS,
-            shadow: "shadow.lg"
-          },
-          content: { paddingX: "spacing.1_5", paddingY: "spacing.1_5", gap: "spacing.1" },
-          link: { text: c("content.primary"), font: "type.body-sm", radius: "sub(radius.container,spacing.1_5)", paddingX: "spacing.2", paddingY: "spacing.2", gap: "spacing.1" },
-          "link:hover": { fill: c("action.ghost.hover") }
-        }))
-      ]
-    };
   }
 });
 
 // src/lib/recipes/feedback.ts
-var ALERT_VARIANTS, ALERT_APPEARANCES, ALERT_LAYOUTS, ALERT_SIZES, STATUS_TONE, ALERT_TONE, ALERT, TOAST_APPEARANCES, TOAST_VARIANTS, TOAST_STATUS, TOAST_TONE, TOAST, SKELETON, EMPTY;
+var ALERT_VARIANTS, ALERT_APPEARANCES, ALERT_LAYOUTS, ALERT_SIZES, STATUS_TONE, ALERT_TONE, ALERT, TOAST_APPEARANCES, TOAST_VARIANTS, TOAST_STATUS, TOAST_TONE, TOAST;
 var init_feedback = __esm({
   "src/lib/recipes/feedback.ts"() {
     init_helpers();
@@ -12623,36 +11871,6 @@ var init_feedback = __esm({
         })
       ]
     };
-    SKELETON = {
-      key: "Skeleton",
-      slots: ["root"],
-      defaults: {},
-      parts: [part({}, () => ({ root: { fill: c("surface.layer-2"), radius: "radius.action" } }))]
-    };
-    EMPTY = {
-      key: "Empty",
-      slots: ["root", "header", "media", "title", "description", "content"],
-      defaults: {},
-      parts: [
-        part({}, () => ({
-          root: {
-            stroke: c("border.default"),
-            strokeWidth: "stroke.control",
-            radius: "radius.container",
-            paddingX: "spacing.6",
-            paddingY: "spacing.6",
-            gap: "spacing.4",
-            text: c("content.primary")
-          },
-          header: { gap: "spacing.2" },
-          media: { text: c("content.primary") },
-          'media[data-variant="icon"]': { fill: c("surface.layer-2"), radius: "radius.action", width: "size.compact", height: "size.compact" },
-          title: { text: c("content.primary"), font: "type.label" },
-          description: { text: c("content.secondary"), font: "type.body-sm" },
-          content: { gap: "spacing.2_5" }
-        }))
-      ]
-    };
   }
 });
 
@@ -12725,7 +11943,7 @@ function ratingItemPaint(type, checked, state2) {
   const ink = on ? "content.accent" : state2 === "Hover" || state2 === "Pressed" ? "content.primary" : "content.secondary";
   return { root: { fill: hoverFill, text: c(ink), ...focus } };
 }
-var BADGE_APPEARANCES, BADGE_SHAPES, BADGE_SIZES, BADGE_TYPES, BADGE_VARIANTS, BADGE_GEOMETRY, BADGE, PRESENCE_DOT, STATUS_BADGE, CHIP_VARIANTS, CHIP_APPEARANCES, CHIP_SIZES, CHIP_STATES, CHIP_SHAPES, CHIP_GEOMETRY2, CHIP, PROGRESS_SIZES, PROGRESS_APPEARANCES, LINE_THICKNESS, RING_DIAMETER, PROGRESS_LINE, PROGRESS_CIRCLE, SPINNER, ICON_ROLE, ICON, RATING_GROUP_SIZES, RATING_GROUP_TYPES, RATING_GROUP_ITEM_STATES, RATING_ITEM, RATING_GROUP, RATING_GROUP_ITEM, FORMAT_TONE, FILE_FORMAT, AVATAR_SIZES, AVATAR_SHAPES, AVATAR_VARIANTS, AVATAR_APPEARANCES, AVATAR_STATUSES, AVATAR_STATUS_SIZES, AVATAR_GEOMETRY, AVATAR_TONE, AVATAR, STATUS_FILL, STATUS_GEOMETRY, AVATAR_STATUS, GROUP_GEOMETRY, AVATAR_GROUP, FEATURED_ICON_APPEARANCES, FEATURED_ICON_SIZES, FEATURED_ICON_VARIANTS, FEATURED_ICON_GEOMETRY, FEATURED_ICON_GRADIENT, FEATURED_ICON, KBD_SIZES, KBD_GEOMETRY, KBD;
+var BADGE_APPEARANCES, BADGE_SHAPES, BADGE_SIZES, BADGE_TYPES, BADGE_VARIANTS, BADGE_GEOMETRY, BADGE, CHIP_VARIANTS, CHIP_APPEARANCES, CHIP_SIZES, CHIP_STATES, CHIP_SHAPES, CHIP_GEOMETRY2, CHIP, PROGRESS_SIZES, PROGRESS_APPEARANCES, LINE_THICKNESS, RING_DIAMETER, PROGRESS_LINE, PROGRESS_CIRCLE, SPINNER, RATING_GROUP_SIZES, RATING_GROUP_TYPES, RATING_GROUP_ITEM_STATES, RATING_ITEM, RATING_GROUP, RATING_GROUP_ITEM, AVATAR_SIZES, AVATAR_SHAPES, AVATAR_VARIANTS, AVATAR_APPEARANCES, AVATAR_STATUSES, AVATAR_STATUS_SIZES, AVATAR_GEOMETRY, AVATAR_TONE, AVATAR, STATUS_FILL, STATUS_GEOMETRY, AVATAR_STATUS, GROUP_GEOMETRY, AVATAR_GROUP, FEATURED_ICON_APPEARANCES, FEATURED_ICON_SIZES, FEATURED_ICON_VARIANTS, FEATURED_ICON_GEOMETRY, FEATURED_ICON_GRADIENT, FEATURED_ICON, KBD_SIZES, KBD_GEOMETRY, KBD;
 var init_indicators = __esm({
   "src/lib/recipes/indicators.ts"() {
     init_helpers();
@@ -12757,35 +11975,6 @@ var init_indicators = __esm({
             }
           };
         })
-      ]
-    };
-    PRESENCE_DOT = {
-      online: "status.success.surface-solid",
-      away: "status.warning.surface-solid",
-      busy: "status.critical.surface-solid",
-      // The absence of a signal reads as muted ink.
-      offline: "content.subtle"
-    };
-    STATUS_BADGE = {
-      key: "StatusBadge",
-      slots: ["root", "dot"],
-      defaults: { Status: "online" },
-      parts: [
-        part({}, () => ({
-          root: {
-            fill: c("surface.layer-1"),
-            stroke: c("border.subtle"),
-            strokeWidth: "stroke.control",
-            text: c("content.primary"),
-            radius: "radius.pill",
-            font: "type.caption",
-            paddingX: "spacing.2_5",
-            paddingY: "spacing.1",
-            gap: "spacing.2"
-          },
-          dot: { width: "spacing.2", height: "spacing.2", radius: "radius.pill" }
-        })),
-        part({ Status: ["online", "away", "busy", "offline"] }, (status) => ({ dot: { fill: c(PRESENCE_DOT[status]) } }))
       ]
     };
     CHIP_VARIANTS = ["info", "success", "default", "critical"];
@@ -12860,17 +12049,6 @@ var init_indicators = __esm({
         part({}, () => ({ root: { text: c("content.secondary") } }))
       ]
     };
-    ICON_ROLE = { sm: "icon.small", default: "icon.medium", lg: "icon.large" };
-    ICON = {
-      key: "Icon",
-      slots: ["root"],
-      defaults: { Size: "default" },
-      parts: [
-        part({ Size: ["sm", "default", "lg"] }, (size) => ({
-          root: { width: ICON_ROLE[size], height: ICON_ROLE[size], text: c("content.primary") }
-        }))
-      ]
-    };
     RATING_GROUP_SIZES = ["default", "sm", "lg"];
     RATING_GROUP_TYPES = ["star", "emoji"];
     RATING_GROUP_ITEM_STATES = ["Default", "Hover", "Pressed", "Focused", "Disabled"];
@@ -12898,27 +12076,6 @@ var init_indicators = __esm({
           icon: { width: RATING_ITEM[size].icon, height: RATING_ITEM[size].icon }
         })),
         part({ Type: RATING_GROUP_TYPES, Checked: ["false", "true"], State: RATING_GROUP_ITEM_STATES }, ratingItemPaint)
-      ]
-    };
-    FORMAT_TONE = {
-      pdf: { fill: "status.critical.surface-solid", on: "status.critical.on-solid" },
-      png: { fill: "status.info.surface-solid", on: "status.info.on-solid" },
-      svg: { fill: "action.primary.default", on: "content.on-action" },
-      zip: { fill: "status.warning.surface-solid", on: "status.warning.on-solid" }
-    };
-    FILE_FORMAT = {
-      key: "FileFormat",
-      slots: ["root", "page", "plate"],
-      defaults: { Format: "pdf" },
-      parts: [
-        part({}, () => ({
-          root: { width: "size.control", height: "size.lg" },
-          page: { text: c("border.strong"), paint: c("surface.layer-1") },
-          plate: { radius: "radius.control", font: "type.caption", paddingX: "spacing.1_5", paddingY: "spacing.0_5" }
-        })),
-        part({ Format: ["pdf", "png", "svg", "zip"] }, (format) => ({
-          plate: { fill: c(FORMAT_TONE[format].fill), text: c(FORMAT_TONE[format].on) }
-        }))
       ]
     };
     AVATAR_SIZES = ["2xs", "xs", "sm", "default", "lg", "xl", "2xl"];
@@ -13372,8 +12529,6 @@ var init_motion2 = __esm({
       Button: { transitions: { root: states("background-color", "color", "border-color", "box-shadow") } },
       Badge: { transitions: { root: states("background-color", "color", "border-color") } },
       Chip: { transitions: { root: states("background-color", "border-color", "color") } },
-      Toggle: { transitions: { root: FILL } },
-      Item: { transitions: { root: FILL } },
       PaginationLink: { transitions: { root: FILL } },
       TabMenuItem: { transitions: { root: FILL } },
       TabMenuLineItem: { transitions: { root: FILL } },
@@ -13396,7 +12551,6 @@ var init_motion2 = __esm({
       DatePickerTrigger: { transitions: { root: FIELD2 } },
       CalendarDay: { transitions: { cell: states("background-color", "border-color", "box-shadow", "color"), day: states("color") } },
       DatePickerPopover: popover("--radix-popover-content-transform-origin"),
-      InputGroup: { transitions: { root: FIELD2 } },
       InputTag: { transitions: { root: FIELD2, field: FIELD2 } },
       InputTagChip: { transitions: { root: FIELD2 } },
       InputTagOption: { transitions: { root: FIELD2 } },
@@ -13414,13 +12568,10 @@ var init_motion2 = __esm({
       // AccordionItem (the Figma file, 2026-11-12): the item owns the trigger and the content, so the chevron
       // and the expand / collapse play on it; the Accordion only stacks items.
       AccordionItem: { ...disclosure("--radix-accordion-content-height"), transitions: { chevron: { transform: "use-disclosure-in" } } },
-      Collapsible: disclosure("--radix-collapsible-content-height"),
       Modal: { enter: { name: "dialog-enter" }, exit: { name: "dialog-exit" } },
-      AlertDialog: { enter: { name: "dialog-enter" }, exit: { name: "dialog-exit" } },
       Sheet: { enter: { name: "sheet-enter" }, exit: { name: "sheet-exit" }, sideAttr: "side" },
       Popover: popover("--radix-popover-content-transform-origin"),
       TooltipContent: popover("--radix-tooltip-content-transform-origin"),
-      HoverCard: popover("--radix-hover-card-content-transform-origin"),
       DropdownMenu: popover("--radix-dropdown-menu-content-transform-origin")
     };
   }
@@ -13455,7 +12606,6 @@ var init_componentRecipes = __esm({
       ButtonGroupItem: BUTTON_GROUP_ITEM,
       ButtonGroupDivider: BUTTON_GROUP_DIVIDER,
       SocialLoginButton: SOCIAL_LOGIN_BUTTON,
-      AppStoreBadge: APP_STORE_BADGE,
       Input: INPUT,
       Textarea: TEXTAREA,
       DatePickerTrigger: DATE_PICKER_TRIGGER,
@@ -13465,7 +12615,6 @@ var init_componentRecipes = __esm({
       CalendarPresets: CALENDAR_PRESETS,
       CalendarFooter: CALENDAR_FOOTER,
       DatePickerPopover: DATE_PICKER_POPOVER,
-      InputGroup: INPUT_GROUP,
       NumberInput: NUMBER_INPUT,
       InputTag: INPUT_TAG,
       InputTagChip: INPUT_TAG_CHIP,
@@ -13493,21 +12642,17 @@ var init_componentRecipes = __esm({
       PasswordStrengthMeter: PASSWORD_STRENGTH_METER,
       PasswordStrengthRule: PASSWORD_STRENGTH_RULE,
       Badge: BADGE,
-      StatusBadge: STATUS_BADGE,
       Chip: CHIP,
       ProgressLine: PROGRESS_LINE,
       ProgressCircle: PROGRESS_CIRCLE,
       Spinner: SPINNER,
-      Icon: ICON,
       FeaturedIcon: FEATURED_ICON,
       RatingGroup: RATING_GROUP,
       RatingGroupItem: RATING_GROUP_ITEM,
-      FileFormat: FILE_FORMAT,
       Avatar: AVATAR,
       AvatarStatus: AVATAR_STATUS,
       AvatarGroup: AVATAR_GROUP,
       Separator: SEPARATOR,
-      Collapsible: COLLAPSIBLE,
       Table: TABLE,
       TableCell: TABLE_CELL,
       TableHead: TABLE_HEAD,
@@ -13523,22 +12668,8 @@ var init_componentRecipes = __esm({
       TableLoading: TABLE_LOADING,
       TableLoadMore: TABLE_LOAD_MORE,
       Kbd: KBD,
-      Skeleton: SKELETON,
-      Empty: EMPTY,
-      Toggle: TOGGLE,
       Calendar: CALENDAR,
-      AlertDialog: ALERT_DIALOG,
       Sheet: SHEET,
-      Drawer: DRAWER,
-      HoverCard: HOVER_CARD,
-      Item: ITEM,
-      Attachment: ATTACHMENT,
-      Message: MESSAGE,
-      Bubble: BUBBLE,
-      Resizable: RESIZABLE,
-      Carousel: CAROUSEL,
-      Chart: CHART,
-      NavigationMenu: NAVIGATION_MENU,
       Accordion: ACCORDION,
       AccordionItem: ACCORDION_ITEM,
       Image: IMAGE,
@@ -13573,8 +12704,6 @@ var init_componentRecipes = __esm({
       DropdownMenuLabel: DROPDOWN_MENU_LABEL,
       DropdownMenuItem: DROPDOWN_MENU_ITEM,
       DropdownMenuFooter: DROPDOWN_MENU_FOOTER,
-      Command: COMMAND,
-      Navbar: NAVBAR,
       Sidebar: SIDEBAR,
       SidebarBrand: SIDEBAR_BRAND,
       SidebarGroup: SIDEBAR_GROUP,

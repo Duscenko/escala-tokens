@@ -188,7 +188,10 @@ describe.skipIf(!existsSync(pluginFile))('plugin ↔ web recipe parity', () => {
     // AspectRatio → Image (2026-11-12): the file's name for the cropped media box.
         // Tabs · ToggleGroup · ContextMenu · Menubar · Select · NativeSelect (2026-11-14): shadcn components retired on the web for
     // their Figma twins (TabMenu, SegmentedControl, DropdownMenu, Combobox); the frozen plugin still builds them.
-    const RENAMED_ON_WEB = new Set(['InputStepper', 'Dropzone', 'Rating', 'AspectRatio', 'Progress', 'Sonner', 'Dialog', 'Tooltip', 'Tabs', 'ToggleGroup', 'ContextMenu', 'Menubar', 'Select', 'NativeSelect'])
+    // Toggle · AppStoreBadge · InputGroup · StatusBadge · Icon · FileFormat · Collapsible · AlertDialog · Drawer · HoverCard · Item · Attachment · Message · Bubble · Resizable · Carousel · Chart · Skeleton · Empty · NavigationMenu · Command · Navbar (2026-11-16): shadcn components with no Figma
+    // twin, removed from the web (owner: only Escala components); the plugin is untouched for now and still builds them.
+    const RETIRED_ON_WEB = ['Toggle', 'AppStoreBadge', 'InputGroup', 'StatusBadge', 'Icon', 'FileFormat', 'Collapsible', 'AlertDialog', 'Drawer', 'HoverCard', 'Item', 'Attachment', 'Message', 'Bubble', 'Resizable', 'Carousel', 'Chart', 'Skeleton', 'Empty', 'NavigationMenu', 'Command', 'Navbar']
+    const RENAMED_ON_WEB = new Set(['InputStepper', 'Dropzone', 'Rating', 'AspectRatio', 'Progress', 'Sonner', 'Dialog', 'Tooltip', 'Tabs', 'ToggleGroup', 'ContextMenu', 'Menubar', 'Select', 'NativeSelect', ...RETIRED_ON_WEB])
     expect(Object.keys(plugin.RECIPE_BUILDERS).filter((k) => !RENAMED_ON_WEB.has(k)).sort()).toEqual(webAndPlugin.sort())
     // Parts a recipe gained from the Figma file after the freeze: the plugin's
     // builder predates them, so they are web + Storybook only (a decision).

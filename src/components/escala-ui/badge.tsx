@@ -1,7 +1,7 @@
-// Escala component: Badge (+ Escala's StatusBadge, a presence dot) — the Figma set Badge (383:176,
+// Escala component: Badge — the Figma set Badge (383:176,
 // design-plans/badge-contract.md), 1:1: a small non-interactive label for statuses, counts and categories.
 // Variant is the severity, Appearance soft · solid · outline · ghost, Type default · icon · number · dot (an
-// icon-only badge needs an accessible name). Appearance: recipes (Badge, StatusBadge).
+// icon-only badge needs an accessible name). Appearance: recipe (Badge). Presence is AvatarStatus.
 import * as React from 'react'
 import { cn } from '../../lib/utils'
 import { glyph } from '../../lib/icons'
@@ -70,23 +70,4 @@ function Badge({
   )
 }
 
-export type Presence = 'online' | 'away' | 'busy' | 'offline'
-
-const PRESENCE_LABEL: Record<Presence, string> = { online: 'Online', away: 'Away', busy: 'Busy', offline: 'Offline' }
-
-function StatusBadge({ status = 'online', className, children, ...props }: React.ComponentProps<'span'> & { status?: Presence }) {
-  return (
-    <span
-      data-slot="status-badge"
-      data-escala="StatusBadge"
-      data-status={status}
-      className={cn('inline-flex items-center', className)}
-      {...props}
-    >
-      <span data-part="StatusBadge.dot" aria-hidden className="inline-block shrink-0" />
-      {children ?? PRESENCE_LABEL[status] ?? status}
-    </span>
-  )
-}
-
-export { Badge, StatusBadge }
+export { Badge }

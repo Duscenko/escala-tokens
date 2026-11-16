@@ -483,48 +483,9 @@ export const DROPDOWN_MENU_FOOTER: ComponentRecipe = {
 
 // ── Command ────────────────────────────────────────────────────────────────
 
-export const COMMAND: ComponentRecipe = {
-  key: 'Command',
-  slots: ['root', 'search', 'icon', 'input', 'list', 'heading', 'item'],
-  defaults: {},
-  parts: [
-    part({}, () => ({
-      root: {
-        fill: c('surface.layer-2'), stroke: c('border.subtle'), strokeWidth: 'stroke.control', radius: 'radius.container', shadow: 'shadow.2xl',
-      },
-      search: { stroke: c('border.subtle'), strokeBottomWidth: 'stroke.control', paddingX: 'spacing.3', paddingY: 'spacing.2_5', gap: 'spacing.gap-control' },
-      icon: { text: c('content.secondary') },
-      input: { text: c('content.primary'), font: 'type.placeholder' },
-      list: { paddingX: 'spacing.1_5', paddingY: 'spacing.1_5' },
-      heading: { text: c('content.subtle'), font: 'type.caption', paddingX: 'spacing.2_5', paddingY: 'spacing.1' },
-      item: { text: c('content.primary'), font: 'type.body-sm', radius: 'sub(radius.container,spacing.1_5)', paddingX: 'spacing.2_5', paddingY: 'spacing.1_5' },
-      'item[data-highlighted]': { fill: c('action.ghost.hover') },
-      'item:hover': { fill: c('action.ghost.hover') },
-    })),
-  ],
-}
 
 // ── Navbar ─────────────────────────────────────────────────────────────────
 
-export const NAVBAR: ComponentRecipe = {
-  key: 'Navbar',
-  slots: ['root', 'logo', 'nav', 'link', 'avatar'],
-  defaults: {},
-  parts: [
-    part({}, () => ({
-      root: {
-        fill: c('surface.layer-1'), stroke: c('border.subtle'), strokeWidth: 'stroke.control', radius: PANEL_RADIUS,
-        paddingX: 'spacing.4', paddingY: 'spacing.2_5', gap: 'spacing.5',
-      },
-      logo: { fill: c('action.primary.default'), radius: 'radius.control', width: 'spacing.6', height: 'spacing.6' },
-      nav: { gap: 'spacing.3' },
-      link: { text: c('content.secondary'), font: 'type.body-sm' },
-      'link:hover': { text: c('content.primary') },
-      'link[aria-current="page"]': { text: c('content.primary'), font: 'type.button' },
-      avatar: { fill: c('surface.selected'), text: c('content.accent'), font: 'type.caption', radius: 'radius.pill', width: 'size.xs', height: 'size.xs' },
-    })),
-  ],
-}
 
 // ── Sidebar · SidebarBrand · SidebarGroup · SidebarGroupLabel · SidebarMenuButton ──
 // The Figma sets (page Sidebar, 931:87050; Sidebar 982:1003, SidebarMenuButton 980:368, SidebarGroup 982:292,
@@ -617,22 +578,3 @@ export const SIDEBAR_MENU_BUTTON: ComponentRecipe = {
 // ── NavigationMenu ─────────────────────────────────────────────────────────
 // shadcn's NavigationMenu: ghost triggers over a raised viewport of links.
 
-export const NAVIGATION_MENU: ComponentRecipe = {
-  key: 'NavigationMenu',
-  slots: ['root', 'trigger', 'viewport', 'content', 'link'],
-  defaults: {},
-  parts: [
-    part({}, () => ({
-      root: { gap: 'spacing.0' },
-      trigger: { text: c('content.primary'), font: 'type.label', radius: 'radius.action', height: 'size.compact', paddingX: 'spacing.2_5', gap: 'spacing.1' },
-      'trigger:hover': { fill: c('action.ghost.hover') },
-      'trigger[data-state="open"]': { fill: c('action.ghost.hover') },
-      viewport: {
-        fill: c('surface.layer-2'), stroke: c('border.subtle'), strokeWidth: 'stroke.control', radius: PANEL_RADIUS, shadow: 'shadow.lg',
-      },
-      content: { paddingX: 'spacing.1_5', paddingY: 'spacing.1_5', gap: 'spacing.1' },
-      link: { text: c('content.primary'), font: 'type.body-sm', radius: 'sub(radius.container,spacing.1_5)', paddingX: 'spacing.2', paddingY: 'spacing.2', gap: 'spacing.1' },
-      'link:hover': { fill: c('action.ghost.hover') },
-    })),
-  ],
-}

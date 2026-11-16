@@ -14,8 +14,6 @@ import { Pagination as SkPagination, PaginationScope as SkPaginationScope, Pagin
 import { useAutoplayStep } from '../../../preview/artefacts/boardAutoplay'
 import { Stepper as SkStepper, StepperIcon as SkStepperIcon, StepperIndicator as SkStepperIndicator, StepperItem as SkStepperItem, type StepperOrientation, type StepperSize, type StepperStatus } from '../../../escala-ui/stepper'
 import { DropdownMenu as SkDropdownMenu, DropdownMenuContent as SkDropdownMenuContent, DropdownMenuItem as SkDropdownMenuItem, DropdownMenuLabel as SkDropdownMenuLabel, DropdownMenuFooter as SkDropdownMenuFooter, DropdownMenuSeparator as SkDropdownMenuSeparator, type DropdownMenuSize, type DropdownMenuItemState, type DropdownMenuItemVariant, type DropdownMenuFooterLayout } from '../../../escala-ui/dropdown-menu'
-import { Command as SkCommand, CommandGroup as SkCommandGroup, CommandInput as SkCommandInput, CommandItem as SkCommandItem, CommandList as SkCommandList } from '../../../escala-ui/_skeleton/command'
-import { Navbar as SkNavbar } from '../../../escala-ui/_skeleton/navbar'
 import {
   Sidebar as SkSidebar, SidebarBrand as SkSidebarBrand, SidebarContent as SkSidebarContent, SidebarFooter as SkSidebarFooter,
   SidebarGroup as SkSidebarGroup, SidebarGroupLabel as SkSidebarGroupLabel, SidebarHeader as SkSidebarHeader,
@@ -25,7 +23,6 @@ import {
 import { Avatar as SkAvatar } from '../../../escala-ui/avatar'
 import { Button as SkButton } from '../../../escala-ui/button'
 import { RecipeScope } from './scope'
-import { NavigationMenu as SkNavigationMenu, NavigationMenuContent as SkNavigationMenuContent, NavigationMenuItem as SkNavigationMenuItem, NavigationMenuLink as SkNavigationMenuLink, NavigationMenuList as SkNavigationMenuList, NavigationMenuTrigger as SkNavigationMenuTrigger } from '../../../escala-ui/_skeleton/navigation-menu'
 
 /** The Figma TabMenu (984:1830) in place: Overview selected, Activity, Members with its count and Settings. */
 export function SkeletonTabMenuSpecimen({ t, v, w }: SpecimenProps) {
@@ -313,27 +310,7 @@ export function SkeletonDropdownMenuFooterSpecimen({ t, v }: SpecimenProps) {
   )
 }
 
-export function SkeletonCommandSpecimen({ t }: SpecimenProps) {
-  return (
-    <RecipeScope t={t}>
-      <SkCommand style={{ width: 320 }}>
-        <SkCommandInput icon={<PreviewIcon concept="search" size={iconOf(14)} />} shortcut="⌘K" placeholder="Type a command…" />
-        <SkCommandList>
-          <SkCommandGroup heading="Actions">
-            <SkCommandItem highlighted>Open Color foundation</SkCommandItem>
-            <SkCommandItem>Publish tokens to Figma</SkCommandItem>
-            <SkCommandItem>Export variables.css</SkCommandItem>
-          </SkCommandGroup>
-        </SkCommandList>
-      </SkCommand>
-    </RecipeScope>
-  )
-}
 
-export function SkeletonNavbarSpecimen({ t }: SpecimenProps) {
-  const links = ['Home', 'Tokens', 'Components', 'Docs'].map((label, i) => ({ label, current: i === 0 }))
-  return <RecipeScope t={t}><SkNavbar links={links} trailing="MD" style={{ width: 420 }} /></RecipeScope>
-}
 
 const SIDEBAR_ITEMS = [
   { label: 'Overview', concept: 'home' as const },
@@ -449,46 +426,3 @@ export function SkeletonSidebarBrandSpecimen({ t, v }: SpecimenProps) {
   )
 }
 
-/** The first panel starts open so the viewport shows; hover moves it. */
-export function SkeletonNavigationMenuSpecimen({ t }: SpecimenProps) {
-  const links = [
-    ['Introduction', 'What Escala is and how the tokens work.'],
-    ['Installation', 'Add the registry and the variables.'],
-    ['Figma', 'Sync the system into a file.'],
-  ]
-  return (
-    <RecipeScope t={t}>
-      <div style={{ minHeight: 280, width: 420, display: 'flex', justifyContent: 'center', alignItems: 'flex-start' }}>
-        <SkNavigationMenu defaultValue="start">
-          <SkNavigationMenuList>
-            <SkNavigationMenuItem value="start">
-              <SkNavigationMenuTrigger icon={<PreviewIcon concept="chevron" size={iconOf(11)} />}>Getting started</SkNavigationMenuTrigger>
-              <SkNavigationMenuContent>
-                <ul className="m-0 grid list-none p-0" style={{ width: 300 }}>
-                  {links.map(([title, body]) => (
-                    <li key={title}>
-                      <SkNavigationMenuLink href="#" onClick={(e) => e.preventDefault()}>
-                        <span style={{ fontWeight: 600 }}>{title}</span>
-                        <span style={{ color: 'var(--color-content-secondary)' }}>{body}</span>
-                      </SkNavigationMenuLink>
-                    </li>
-                  ))}
-                </ul>
-              </SkNavigationMenuContent>
-            </SkNavigationMenuItem>
-            <SkNavigationMenuItem value="components">
-              <SkNavigationMenuTrigger icon={<PreviewIcon concept="chevron" size={iconOf(11)} />}>Components</SkNavigationMenuTrigger>
-              <SkNavigationMenuContent>
-                <ul className="m-0 grid list-none p-0" style={{ width: 240 }}>
-                  {['Button', 'Card', 'Dialog'].map((c) => (
-                    <li key={c}><SkNavigationMenuLink href="#" onClick={(e) => e.preventDefault()}>{c}</SkNavigationMenuLink></li>
-                  ))}
-                </ul>
-              </SkNavigationMenuContent>
-            </SkNavigationMenuItem>
-          </SkNavigationMenuList>
-        </SkNavigationMenu>
-      </div>
-    </RecipeScope>
-  )
-}

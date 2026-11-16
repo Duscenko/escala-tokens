@@ -4,7 +4,7 @@
   "key": "Label",
   "label": "Label",
   "category": "Form Controls",
-  "description": "shadcn/ui Label: accessible text for a control (Radix Label).",
+  "description": "Label: the accessible name of a control, the label part of Field (Radix Label).",
   "owners": {
     "anatomy": "figma",
     "foundations": "figma",

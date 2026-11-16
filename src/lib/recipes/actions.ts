@@ -625,18 +625,6 @@ export const SOCIAL_LOGIN_BUTTON: ComponentRecipe = {
 // The badge is the STORE's artwork (Apple and Google require a black badge with
 // white type), so its ink and fill are not tokens — only its geometry is.
 
-export const APP_STORE_BADGE: ComponentRecipe = {
-  key: 'AppStoreBadge',
-  slots: ['root', 'eyebrow', 'name'],
-  defaults: { Store: 'app-store' },
-  parts: [
-    part({ Store: ['app-store', 'google-play'] as const }, () => ({
-      root: { radius: 'radius.action', paddingX: 'spacing.4', paddingY: 'spacing.2', gap: 'spacing.2_5' },
-      eyebrow: { font: 'type.caption' },
-      name: { font: 'type.button' },
-    })),
-  ],
-}
 
 // ── Toggle variants (shared by Toggle) ─────────────────────────────────────
 // `variant` default (no edge) | outline
@@ -654,25 +642,3 @@ const TOGGLE_HEIGHT: Record<string, string> = { sm: 'size.compact', default: 'si
 // `data-state="on"`, mirrored as `data-pressed` True/False — a Figma property)
 // takes the muted surface.
 
-export const TOGGLE: ComponentRecipe = {
-  key: 'Toggle',
-  slots: ['root'],
-  defaults: { Variant: 'default', Size: 'default', Pressed: 'False' },
-  parts: [
-    part({ Variant: TOGGLE_GROUP_VARIANTS }, (variant) => ({
-      root: variant === 'outline'
-        ? { stroke: c('border.control'), strokeWidth: 'stroke.control', font: 'type.button', radius: 'radius.action', gap: 'spacing.1' }
-        : { font: 'type.button', radius: 'radius.action', gap: 'spacing.1' },
-    })),
-    part({ Size: TOGGLE_GROUP_SIZES }, (size) => ({
-      root: { height: TOGGLE_HEIGHT[size], paddingX: 'spacing.2_5' },
-    })),
-    part({ Pressed: ['False', 'True'] as const }, (pressed) => ({
-      root: pressed === 'True'
-        ? { fill: c('surface.layer-2'), text: c('content.primary') }
-        : { fill: NONE, text: c('content.secondary') },
-      'root:hover': { fill: c('action.ghost.hover'), text: c('content.primary') },
-      'root:focus-visible': FOCUS,
-    })),
-  ],
-}

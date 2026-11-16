@@ -8,7 +8,6 @@ import { EDITORS_PLAY, EMAIL_PLAY, TAGS_PLAY, UPLOAD_PLAY } from '../../../previ
 import { Input as SkInput, INPUT_TYPES, type InputSize, type InputState, type InputType } from '../../../escala-ui/input'
 import { Textarea as SkTextarea, type TextareaSize, type TextareaState } from '../../../escala-ui/textarea'
 import { DatePickerTrigger as SkDatePickerTrigger, type DatePickerTriggerSize, type DatePickerTriggerState } from '../../../escala-ui/date-picker'
-import { InputGroup as SkInputGroup, InputGroupAddon as SkAddon, InputGroupInput as SkGroupInput, InputGroupText as SkGroupText, InputGroupButton as SkGroupButton, InputGroupSeparator as SkGroupSeparator } from '../../../escala-ui/input-group'
 import { NumberInput as SkNumberInput, type NumberInputSize, type NumberInputState } from '../../../escala-ui/number-input'
 import { InputTag as SkInputTag, InputTagChip as SkInputTagChip, InputTagOption as SkInputTagOption, type InputTagChipSize, type InputTagChipState, type InputTagChipVariant, type InputTagLayout, type InputTagOptionState, type InputTagOptionType, type InputTagSize, type InputTagState } from '../../../escala-ui/input-tag'
 import { Combobox as SkCombobox, ComboboxGroup as SkComboboxGroup, ComboboxGroupLabel as SkComboboxGroupLabel, ComboboxItem as SkComboboxItem, ComboboxPopover as SkComboboxPopover, ComboboxSeparator as SkComboboxSeparator, type ComboboxItemState, type ComboboxPopoverContent, type ComboboxShape, type ComboboxSize, type ComboboxState, type ComboboxVariant } from '../../../escala-ui/combobox'
@@ -93,34 +92,24 @@ function BoardInputSpecimen({ t, v, w, hideHint, icons }: SpecimenProps) {
       style={v.Type ? undefined : { width: w ?? 260 }}
     />
   )
-  // shadcn composes icons as InputGroup > InputGroupInput + InputGroupAddon.
+  // Escala's Input owns its icon slots (Figma IconLeading / IconTrailing).
   const slots = ICON_SLOTS.Input
   const iconPx = iconForControl(sizeRoleOf(t, 'control'), t)
   const withIcons = Boolean(icons?.leading || icons?.trailing)
   const control = withIcons ? (
-    <SkInputGroup forceState={state} style={{ width: w ?? 260 }}>
-      <SkGroupInput
-        type={INPUT_HTML_TYPE[v.Type ?? 'Default'] ?? 'text'}
-        placeholder={meta.placeholder}
-        value={value}
-        onChange={(e) => setValue(e.target.value)}
-        autoComplete="off"
-        spellCheck={false}
-        aria-label={translate(meta.label)}
-        aria-invalid={v.State === 'Invalid' || undefined}
-        disabled={v.State === 'Disabled'}
-      />
-      {icons?.leading && (
-        <SkAddon align="inline-start">
-          <PreviewIcon prefix={icons.prefix} concept={slots.leading} size={iconPx} />
-        </SkAddon>
-      )}
-      {icons?.trailing && (
-        <SkAddon align="inline-end">
-          <PreviewIcon prefix={icons.prefix} concept={slots.trailing} size={iconPx} />
-        </SkAddon>
-      )}
-    </SkInputGroup>
+    <SkInput
+      forceState={state}
+      type={INPUT_HTML_TYPE[v.Type ?? 'Default'] ?? 'text'}
+      placeholder={meta.placeholder}
+      value={value}
+      onChange={(e) => setValue(e.target.value)}
+      autoComplete="off"
+      spellCheck={false}
+      aria-label={translate(meta.label)}
+      style={{ width: w ?? 260 }}
+      leading={icons?.leading ? <PreviewIcon prefix={icons.prefix} concept={slots.leading} size={iconPx} /> : null}
+      trailing={icons?.trailing ? <PreviewIcon prefix={icons.prefix} concept={slots.trailing} size={iconPx} /> : null}
+    />
   ) : input
   if (!v.Type) return <RecipeScope t={t}>{control}</RecipeScope>
   return (
@@ -173,19 +162,6 @@ export function SkeletonDatePickerTriggerSpecimen({ t, v, w }: SpecimenProps) {
   )
 }
 
-export function SkeletonInputGroupSpecimen({ t, w }: SpecimenProps) {
-  return (
-    <RecipeScope t={t}>
-      <SkInputGroup style={{ width: w ?? 300 }}>
-        <SkAddon><SkGroupText>https://</SkGroupText></SkAddon>
-        <SkGroupSeparator />
-        <SkGroupInput defaultValue="escala.design" aria-label="Domain" />
-        <SkGroupSeparator />
-        <SkGroupButton>Copy</SkGroupButton>
-      </SkInputGroup>
-    </RecipeScope>
-  )
-}
 
 export function SkeletonNumberInputSpecimen({ t, v }: SpecimenProps) {
   // The board steps the count up and back (the Editors tile's total follows).
@@ -573,13 +549,6 @@ export function SkeletonFieldSpecimen({ t, v, w }: SpecimenProps) {
   )
 }
 
-export function SkeletonLabelSpecimen({ t }: SpecimenProps) {
-  return (
-    <RecipeScope t={t}>
-      <SkLabel>Email address</SkLabel>
-    </RecipeScope>
-  )
-}
 
 /** Pre-Figma docs said weak · fair · strong; old saved links still pass them. */
 const LEGACY_STRENGTH: Record<string, string> = { weak: '1', fair: '3', strong: '4' }
@@ -656,3 +625,10 @@ export function SkeletonFileUploadItemSpecimen({ t, v, w }: SpecimenProps) {
   )
 }
 
+export function SkeletonLabelSpecimen({ t }: SpecimenProps) {
+  return (
+    <RecipeScope t={t}>
+      <SkLabel>Email address</SkLabel>
+    </RecipeScope>
+  )
+}

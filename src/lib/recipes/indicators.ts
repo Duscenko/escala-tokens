@@ -99,21 +99,6 @@ const PRESENCE_DOT: Record<string, string> = {
   offline: 'content.subtle',
 }
 
-export const STATUS_BADGE: ComponentRecipe = {
-  key: 'StatusBadge',
-  slots: ['root', 'dot'],
-  defaults: { Status: 'online' },
-  parts: [
-    part({}, () => ({
-      root: {
-        fill: c('surface.layer-1'), stroke: c('border.subtle'), strokeWidth: 'stroke.control', text: c('content.primary'),
-        radius: 'radius.pill', font: 'type.caption', paddingX: 'spacing.2_5', paddingY: 'spacing.1', gap: 'spacing.2',
-      },
-      dot: { width: 'spacing.2', height: 'spacing.2', radius: 'radius.pill' },
-    })),
-    part({ Status: ['online', 'away', 'busy', 'offline'] as const }, (status) => ({ dot: { fill: c(PRESENCE_DOT[status]) } })),
-  ],
-}
 
 // ── Chip ───────────────────────────────────────────────────────────────────
 // The Figma set (design-plans/chip-contract.md, 390:10982, 480 variants): Variant info · success · default ·
@@ -245,16 +230,6 @@ export const SPINNER: ComponentRecipe = {
 
 const ICON_ROLE: Record<string, string> = { sm: 'icon.small', default: 'icon.medium', lg: 'icon.large' }
 
-export const ICON: ComponentRecipe = {
-  key: 'Icon',
-  slots: ['root'],
-  defaults: { Size: 'default' },
-  parts: [
-    part({ Size: ['sm', 'default', 'lg'] as const }, (size) => ({
-      root: { width: ICON_ROLE[size], height: ICON_ROLE[size], text: c('content.primary') },
-    })),
-  ],
-}
 
 // ── RatingGroup + RatingGroupItem ──────────────────────────────────────────
 // The Figma `RatingGroup` (design-plans/rating-group-contract.md, 1122:316, 6 variants: Size default ·
@@ -317,21 +292,6 @@ const FORMAT_TONE: Record<string, { fill: string; on: string }> = {
   zip: { fill: 'status.warning.surface-solid', on: 'status.warning.on-solid' },
 }
 
-export const FILE_FORMAT: ComponentRecipe = {
-  key: 'FileFormat',
-  slots: ['root', 'page', 'plate'],
-  defaults: { Format: 'pdf' },
-  parts: [
-    part({}, () => ({
-      root: { width: 'size.control', height: 'size.lg' },
-      page: { text: c('border.strong'), paint: c('surface.layer-1') },
-      plate: { radius: 'radius.control', font: 'type.caption', paddingX: 'spacing.1_5', paddingY: 'spacing.0_5' },
-    })),
-    part({ Format: ['pdf', 'png', 'svg', 'zip'] as const }, (format) => ({
-      plate: { fill: c(FORMAT_TONE[format].fill), text: c(FORMAT_TONE[format].on) },
-    })),
-  ],
-}
 
 // ── Avatar · AvatarStatus · AvatarGroup ────────────────────────────────────
 // The Figma sets of the same names (design-plans/avatar-contract.md, 378:2094 · 377:54 · 378:2507).

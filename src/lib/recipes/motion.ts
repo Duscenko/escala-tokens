@@ -36,8 +36,6 @@ export const RECIPE_MOTION: Record<string, RecipeMotion> = {
   Button: { transitions: { root: states('background-color', 'color', 'border-color', 'box-shadow') } },
   Badge: { transitions: { root: states('background-color', 'color', 'border-color') } },
   Chip: { transitions: { root: states('background-color', 'border-color', 'color') } },
-  Toggle: { transitions: { root: FILL } },
-  Item: { transitions: { root: FILL } },
   PaginationLink: { transitions: { root: FILL } },
   TabMenuItem: { transitions: { root: FILL } },
   TabMenuLineItem: { transitions: { root: FILL } },
@@ -60,7 +58,6 @@ export const RECIPE_MOTION: Record<string, RecipeMotion> = {
   DatePickerTrigger: { transitions: { root: FIELD } },
   CalendarDay: { transitions: { cell: states('background-color', 'border-color', 'box-shadow', 'color'), day: states('color') } },
   DatePickerPopover: popover('--radix-popover-content-transform-origin'),
-  InputGroup: { transitions: { root: FIELD } },
   InputTag: { transitions: { root: FIELD, field: FIELD } },
   InputTagChip: { transitions: { root: FIELD } },
   InputTagOption: { transitions: { root: FIELD } },
@@ -78,12 +75,9 @@ export const RECIPE_MOTION: Record<string, RecipeMotion> = {
   // AccordionItem (the Figma file, 2026-11-12): the item owns the trigger and the content, so the chevron
   // and the expand / collapse play on it; the Accordion only stacks items.
   AccordionItem: { ...disclosure('--radix-accordion-content-height'), transitions: { chevron: { transform: 'use-disclosure-in' } } },
-  Collapsible: disclosure('--radix-collapsible-content-height'),
   Modal: { enter: { name: 'dialog-enter' }, exit: { name: 'dialog-exit' } },
-  AlertDialog: { enter: { name: 'dialog-enter' }, exit: { name: 'dialog-exit' } },
   Sheet: { enter: { name: 'sheet-enter' }, exit: { name: 'sheet-exit' }, sideAttr: 'side' },
   Popover: popover('--radix-popover-content-transform-origin'),
   TooltipContent: popover('--radix-tooltip-content-transform-origin'),
-  HoverCard: popover('--radix-hover-card-content-transform-origin'),
   DropdownMenu: popover('--radix-dropdown-menu-content-transform-origin'),
 }

@@ -391,56 +391,11 @@ export const SCROLL_BAR: ComponentRecipe = {
 // shadcn ships Collapsible unstyled; this paints its demo: a trigger row (label
 // and a ghost icon button) over bordered rows. Open is a Figma property.
 
-export const COLLAPSIBLE: ComponentRecipe = {
-  key: 'Collapsible',
-  slots: ['root', 'trigger', 'icon', 'content', 'item'],
-  defaults: {},
-  parts: [
-    part({}, () => ({
-      root: { gap: 'spacing.2' },
-      trigger: { text: c('content.primary'), font: 'type.label', gap: 'spacing.4', paddingX: 'spacing.1', paddingY: 'spacing.1' },
-      icon: { text: c('content.secondary'), radius: 'radius.action', width: 'size.compact', height: 'size.compact' },
-      'trigger:hover': { text: c('content.primary') },
-      // The focusable part is the icon button at the end of the row.
-      'icon:focus-visible': FOCUS,
-      content: { gap: 'spacing.2' },
-      item: {
-        stroke: c('border.default'), strokeWidth: 'stroke.control', radius: 'radius.action',
-        paddingX: 'spacing.4', paddingY: 'spacing.2', text: c('content.primary'), font: 'type.body-sm',
-      },
-    })),
-  ],
-}
 
 // ── AlertDialog ────────────────────────────────────────────────────────────
 // shadcn's AlertDialog: the Dialog's surface, a muted media tile, and a footer
 // of Buttons (they paint themselves). `size` sm tightens the padding.
 
-export const ALERT_DIALOG: ComponentRecipe = {
-  key: 'AlertDialog',
-  slots: ['content', 'overlay', 'header', 'media', 'title', 'description', 'footer'],
-  detachedSlots: ['overlay'],
-  defaults: { Size: 'default' },
-  parts: [
-    part({}, () => ({
-      overlay: { fill: c('surface.overlay') },
-      content: {
-        fill: c('surface.layer-2'), stroke: c('border.subtle'), strokeWidth: 'stroke.control',
-        radius: 'radius.overlay', shadow: 'shadow.2xl', text: c('content.primary'),
-      },
-      header: { gap: 'spacing.1_5' },
-      media: { fill: c('surface.layer-1'), text: c('content.primary'), radius: 'radius.action', width: 'size.control', height: 'size.control' },
-      title: { text: c('content.primary'), font: OVERLAY_TITLE },
-      description: { text: c('content.secondary'), font: 'type.body-sm' },
-      footer: { gap: 'spacing.gap-control' },
-    })),
-    part({ Size: ['default', 'sm'] as const }, (size) => ({
-      content: size === 'sm'
-        ? { paddingX: 'spacing.4', paddingY: 'spacing.4', gap: 'spacing.4' }
-        : { paddingX: 'spacing.inset-surface', paddingY: 'spacing.inset-surface', gap: 'spacing.gap-group' },
-    })),
-  ],
-}
 
 // ── Sheet ──────────────────────────────────────────────────────────────────
 // The Figma set Sheet (1648:1577; design-plans/sheet-contract.md): an edge-anchored panel on the Modal's surface
@@ -479,43 +434,10 @@ export const SHEET: ComponentRecipe = {
 // ── Drawer ─────────────────────────────────────────────────────────────────
 // shadcn's Drawer (vaul): the Sheet's surface with a grab handle on the bottom one.
 
-export const DRAWER: ComponentRecipe = {
-  key: 'Drawer',
-  slots: ['content', 'overlay', 'handle', 'header', 'title', 'description', 'footer'],
-  detachedSlots: ['overlay'],
-  defaults: {},
-  parts: [
-    part({}, () => ({
-      overlay: { fill: c('surface.overlay') },
-      content: {
-        fill: c('surface.layer-2'), stroke: c('border.subtle'), strokeWidth: 'stroke.control',
-        radius: 'radius.overlay', text: c('content.primary'),
-      },
-      handle: { fill: c('surface.inverse'), radius: 'radius.pill' },
-      header: { gap: 'spacing.0_5', paddingX: 'spacing.4', paddingY: 'spacing.4' },
-      title: { text: c('content.primary'), font: OVERLAY_TITLE },
-      description: { text: c('content.secondary'), font: 'type.body-sm' },
-      footer: { gap: 'spacing.2', paddingX: 'spacing.4', paddingY: 'spacing.4' },
-    })),
-  ],
-}
 
 // ── HoverCard ──────────────────────────────────────────────────────────────
 // shadcn's HoverCard: the Popover's raised surface; its content is free.
 
-export const HOVER_CARD: ComponentRecipe = {
-  key: 'HoverCard',
-  slots: ['root'],
-  defaults: {},
-  parts: [
-    part({}, () => ({
-      root: {
-        fill: c('surface.layer-2'), stroke: c('border.subtle'), strokeWidth: 'stroke.control', radius: 'radius.overlay',
-        shadow: 'shadow.lg', paddingX: 'spacing.4', paddingY: 'spacing.4', gap: 'spacing.2', text: c('content.primary'), font: 'type.body-sm',
-      },
-    })),
-  ],
-}
 
 // ── Item ───────────────────────────────────────────────────────────────────
 // shadcn's Item: a row with media, title, description and actions. `variant`
@@ -536,33 +458,6 @@ const ITEM_DESCRIPTION: Record<string, string> = { default: 'type.body-sm', sm: 
 const ITEM_CONTENT_GAP: Record<string, string> = { default: 'spacing.1', sm: 'spacing.0_5', xs: 'spacing.0_5' }
 const ITEM_MEDIA: Record<string, string> = { default: 'size.control', sm: 'size.compact', xs: 'size.xs' }
 
-export const ITEM: ComponentRecipe = {
-  key: 'Item',
-  slots: ['root', 'media', 'content', 'title', 'description', 'actions'],
-  defaults: { Variant: 'default', Size: 'default' },
-  parts: [
-    part({}, () => ({
-      root: { radius: PANEL_RADIUS, strokeWidth: 'stroke.control', text: c('content.primary') },
-      media: { text: c('content.primary') },
-      title: { text: c('content.primary'), font: 'type.label', gap: 'spacing.2' },
-      description: { text: c('content.secondary') },
-      actions: { gap: 'spacing.2' },
-    })),
-    part({ Variant: ITEM_VARIANTS }, (variant) => ({
-      root: variant === 'outline'
-        ? { fill: NONE, stroke: c('border.default') }
-        : variant === 'muted'
-          ? { fill: c('surface.layer-2'), stroke: NONE }
-          : { fill: NONE, stroke: NONE },
-    })),
-    part({ Size: ITEM_SIZES }, (size) => ({
-      root: ITEM_GEOMETRY[size],
-      content: { gap: ITEM_CONTENT_GAP[size] },
-      description: { font: ITEM_DESCRIPTION[size] },
-      'media[data-variant="image"]': { width: ITEM_MEDIA[size], height: ITEM_MEDIA[size], radius: 'radius.control' },
-    })),
-  ],
-}
 
 // ── Attachment ─────────────────────────────────────────────────────────────
 // shadcn's Attachment: a file on the card surface — media tile, title,
@@ -577,50 +472,10 @@ const ATTACHMENT_GEOMETRY: Record<string, SlotProps> = {
 }
 const ATTACHMENT_MEDIA: Record<string, string> = { default: 'size.control', sm: 'size.compact', xs: 'size.xs' }
 
-export const ATTACHMENT: ComponentRecipe = {
-  key: 'Attachment',
-  slots: ['root', 'media', 'content', 'title', 'description', 'actions'],
-  defaults: { Size: 'default' },
-  parts: [
-    part({}, () => ({
-      root: {
-        fill: c('surface.layer-1'), stroke: c('border.default'), strokeWidth: 'stroke.control', radius: TALL_FIELD_RADIUS,
-        text: c('content.primary'),
-      },
-      media: { fill: c('surface.layer-2'), text: c('content.secondary'), radius: 'radius.control' },
-      'media[data-state="error"]': { fill: c('status.critical.surface'), text: c('status.critical.content') },
-      content: { gap: 'spacing.0_5' },
-      title: { text: c('content.primary'), font: 'type.label' },
-      description: { text: c('content.secondary'), font: 'type.caption' },
-      'description[data-state="error"]': { text: c('status.critical.content') },
-      // The remove × is an icon slot inked content.secondary — a quiet
-      // control on the file, never the title's ink.
-      actions: { gap: 'spacing.1', text: c('content.secondary') },
-    })),
-    part({ Size: ATTACHMENT_SIZES }, (size) => ({
-      root: ATTACHMENT_GEOMETRY[size],
-      media: { width: ATTACHMENT_MEDIA[size], height: ATTACHMENT_MEDIA[size] },
-    })),
-  ],
-}
 
 // ── Message ────────────────────────────────────────────────────────────────
 // shadcn's Message: avatar, header and footer around a Bubble (its own recipe).
 
-export const MESSAGE: ComponentRecipe = {
-  key: 'Message',
-  slots: ['root', 'avatar', 'content', 'header', 'footer'],
-  defaults: {},
-  parts: [
-    part({}, () => ({
-      root: { gap: 'spacing.2' },
-      avatar: { fill: c('surface.layer-2'), text: c('content.secondary'), radius: 'radius.pill', width: 'size.compact', height: 'size.compact', font: 'type.caption' },
-      content: { gap: 'spacing.1' },
-      header: { text: c('content.secondary'), font: 'type.caption', gap: 'spacing.1_5' },
-      footer: { text: c('content.subtle'), font: 'type.caption', gap: 'spacing.1' },
-    })),
-  ],
-}
 
 // ── Bubble ─────────────────────────────────────────────────────────────────
 // shadcn's Bubble: the message body, seven variants over Escala's roles —
@@ -638,82 +493,19 @@ const BUBBLE_PAINT: Record<string, SlotProps> = {
   destructive: { fill: c('status.critical.surface'), stroke: NONE, text: c('status.critical.content') },
 }
 
-export const BUBBLE: ComponentRecipe = {
-  key: 'Bubble',
-  slots: ['root', 'content', 'reactions'],
-  defaults: { Variant: 'default' },
-  parts: [
-    part({}, () => ({
-      root: { gap: 'spacing.1' },
-      reactions: { fill: c('surface.layer-2'), text: c('content.primary'), radius: 'radius.pill', paddingX: 'spacing.1_5', paddingY: 'spacing.0_5', gap: 'spacing.1', font: 'type.caption' },
-    })),
-    part({ Variant: BUBBLE_VARIANTS }, (variant) => ({
-      content: {
-        radius: 'radius.container', strokeWidth: 'stroke.control', paddingX: 'spacing.3', paddingY: 'spacing.2',
-        font: 'type.body-sm', ...BUBBLE_PAINT[variant],
-      },
-    })),
-  ],
-}
 
 // ── Resizable ──────────────────────────────────────────────────────────────
 // shadcn's Resizable: panels split by a hairline handle (`bg-border`), with an
 // optional grip. `orientation` turns the hairline.
 
-export const RESIZABLE: ComponentRecipe = {
-  key: 'Resizable',
-  slots: ['root', 'panel', 'handle', 'grip'],
-  defaults: { Orientation: 'horizontal' },
-  parts: [
-    part({}, () => ({
-      root: { stroke: c('border.default'), strokeWidth: 'stroke.control', radius: 'radius.container', text: c('content.primary') },
-      panel: { paddingX: 'spacing.4', paddingY: 'spacing.4', font: 'type.label' },
-      grip: { fill: c('border.default'), radius: 'radius.pill' },
-      'handle:focus-visible': { fill: c('border.focus') },
-    })),
-    part({ Orientation: ['horizontal', 'vertical'] as const }, (o) => ({
-      handle: o === 'horizontal'
-        ? { fill: c('border.default'), width: 'stroke.divider' }
-        : { fill: c('border.default'), height: 'stroke.divider' },
-    })),
-  ],
-}
 
 // ── Carousel ───────────────────────────────────────────────────────────────
 // shadcn's Carousel: the slides are the caller's (a Card); previous / next are
 // outline icon Buttons made round, as shadcn's `rounded-full`.
 
-export const CAROUSEL: ComponentRecipe = {
-  key: 'Carousel',
-  slots: ['root', 'item', 'previous', 'next'],
-  defaults: { Orientation: 'horizontal' },
-  parts: [
-    part({ Orientation: ['horizontal', 'vertical'] as const }, () => ({
-      root: { text: c('content.primary') },
-      previous: { radius: 'radius.pill' },
-      next: { radius: 'radius.pill' },
-    })),
-  ],
-}
 
 // ── Chart ──────────────────────────────────────────────────────────────────
 // shadcn's Chart: the frame inks axis ticks and grid in the secondary ink
 // (Recharts reads `currentColor`); the tooltip is a small raised panel. Series
 // colours are the caller's config (the brand's chartPalette).
 
-export const CHART: ComponentRecipe = {
-  key: 'Chart',
-  slots: ['root', 'tooltip', 'label', 'legend'],
-  defaults: {},
-  parts: [
-    part({}, () => ({
-      root: { text: c('content.secondary'), font: 'type.caption' },
-      tooltip: {
-        fill: c('surface.layer-2'), stroke: c('border.subtle'), strokeWidth: 'stroke.control', radius: PANEL_RADIUS,
-        shadow: 'shadow.xl', paddingX: 'spacing.2_5', paddingY: 'spacing.1_5', gap: 'spacing.1_5', text: c('content.primary'), font: 'type.caption',
-      },
-      label: { text: c('content.secondary') },
-      legend: { text: c('content.secondary'), gap: 'spacing.4', font: 'type.caption' },
-    })),
-  ],
-}

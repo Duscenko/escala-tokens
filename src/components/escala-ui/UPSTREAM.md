@@ -1,10 +1,9 @@
 # escala-ui — upstream
 
-> `_skeleton/` holds the shadcn skeletons that have no Storybook story yet (toggle, command, alert-dialog, sheet, drawer,
-> hover-card, navbar, navigation-menu). Tabs, toggle-group, context-menu, menubar, select and native-select were retired
-> (2026-11-14) for their Figma twins TabMenu, SegmentedControl, DropdownMenu and Combobox. They are
-> still served by the registry, flat; only `src/components/configurator` may import them (ESLint). A skeleton leaves the
-> folder when it gets a story and a Figma twin. The rows below that name one of them live there now.
+> Only Escala components live here: each one has a Figma set (or is a part one of them uses: Label, Spinner,
+> Card). The shadcn-only components with no Figma twin (the `_skeleton/` folder, Skeleton, InputGroup, Collapsible,
+> Empty, Item, Attachment, Message, Bubble, Resizable, Carousel, Chart, Icon, FileFormat, AppStoreBadge) were removed
+> on 2026-11-16 (owner decision). Rows below record where the surviving files started.
 
 Skeletons vendored from **shadcn/ui** (`apps/v4/registry/bases/radix/ui/`),
 MIT — see `LICENSE-shadcn.md`. Source: the `ui-main` archive downloaded
@@ -13,7 +12,7 @@ MIT — see `LICENSE-shadcn.md`. Source: the `ui-main` archive downloaded
 | File | Upstream | What changed |
 |---|---|---|
 | `button.tsx` | `bases/radix/ui/button.tsx` | shadcn's `variant` / `size` values verbatim (`data-variant`, `data-size`); `cn-*` classes → `data-escala` + the recipe sheet; adds `forceState`, `loading`, `recipe` |
-| `badge.tsx` | `bases/radix/ui/badge.tsx` | `variant` verbatim; plus Escala's StatusBadge |
+| `badge.tsx` | `bases/radix/ui/badge.tsx` | `variant` verbatim |
 | `alert.tsx` | `bases/radix/ui/alert.tsx` | `variant` verbatim; adds `AlertIcon` for a non-svg glyph |
 | `sonner.tsx` | `bases/radix/ui/sonner.tsx` | wraps the Toaster in `data-escala="Sonner"`; colours from the recipe, not CSS vars |
 | `avatar.tsx` | `bases/radix/ui/avatar.tsx` | `size` verbatim |
@@ -31,17 +30,9 @@ MIT — see `LICENSE-shadcn.md`. Source: the `ui-main` archive downloaded
 | `sidebar.tsx` | `bases/radix/ui/sidebar.tsx` | the parts and their props (`variant`/`side`, MenuButton `isActive`/`variant`/`size`); no SidebarProvider/collapsible/mobile sheet yet |
 | `dropdown-menu.tsx` | `bases/radix/ui/dropdown-menu.tsx` | item `variant` default · destructive |
 | `kbd.tsx` | `bases/radix/ui/kbd.tsx` | verbatim shape; KbdGroup spaces only |
-| `skeleton.tsx` | `bases/radix/ui/skeleton.tsx` | verbatim shape |
-| `empty.tsx` | `bases/radix/ui/empty.tsx` | all parts; EmptyMedia `variant` as `data-variant` on the media part; the dash is inline |
-| `collapsible.tsx` | `bases/radix/ui/collapsible.tsx` | Radix Collapsible; adds the chevron to the trigger and `CollapsibleItem` (the demo's row) |
 | `table.tsx` | `bases/radix/ui/table.tsx` | all parts; `border-collapse` so row hairlines draw |
-| `toggle.tsx` | `bases/radix/ui/toggle.tsx` | `variant` / `size` verbatim; mirrors pressed as `data-pressed` True/False |
 | `calendar.tsx` | — (was `bases/radix/ui/calendar.tsx`) | Rebuilt from the Figma file 2026-11-12: Calendar + CalendarDay / Header / Month / Presets / Footer, no react-day-picker |
-| `alert-dialog.tsx` · `sheet.tsx` · `hover-card.tsx` | `bases/radix/ui/…` | portal into the theme scope; `inline` draws in place |
-| `drawer.tsx` | `bases/radix/ui/drawer.tsx` | vaul; `direction` prop on the content; `inline` with plain title/description |
-| `navigation-menu.tsx` | `bases/radix/ui/…` | nav trigger chevron is a prop |
-| `item.tsx` · `attachment.tsx` · `message.tsx` · `bubble.tsx` | `bases/radix/ui/…` | all parts and variants; Attachment state also on media / description |
-| `resizable.tsx` · `carousel.tsx` · `chart.tsx` | `bases/radix/ui/…` | react-resizable-panels v4 · Embla · Recharts v3; chart frame tints with `currentColor` |
+| `sheet.tsx` | `bases/radix/ui/…` | portal into the theme scope; `inline` draws in place |
 
 Rules (design-plans/shadcn-component-skeleton.md):
 - Appearance lives in the generated sheet (`lib/recipeStyles.ts`) from
