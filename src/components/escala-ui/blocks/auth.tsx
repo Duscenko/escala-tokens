@@ -184,7 +184,7 @@ export function AuthSignUp({ container, status = 'idle', error = 'That email alr
   // The meter scores what is typed, live (the number of the five rules met).
   const [password, setPassword] = React.useState('')
   return (
-    <AuthShell block="AuthSignUp" container={container} icon={glyph('user-bold')} title="Get started now" description="Create your account in less than a minute." {...props}>
+    <AuthShell block="AuthSignUp" container={container} icon={glyph('user')} title="Get started now" description="Create your account in less than a minute." {...props}>
       <Notice open={status === 'invalid'}><Alert variant="critical" appearance="soft" size="sm" description={error} /></Notice>
       <Field label="Full name"><Input placeholder="Ada Lovelace" /></Field>
       <Field label="Email address" state={invalid(status)} error={FIELD_ERRORS.email}><Input type="email" placeholder="you@company.com" /></Field>
@@ -354,7 +354,7 @@ export function AuthError({ container, onSubmit, onNavigate, ...props }: BlockPr
 /** Figma `AuthSocialSignIn`. */
 export function AuthSocialSignIn({ container, onSubmit, onNavigate, ...props }: BlockProps) {
   return (
-    <AuthShell block="AuthSocialSignIn" container={container} iconVariant="secondary" icon={glyph('user-bold')} title="Continue with" description="Use the account you already have. We never post on your behalf." {...props}>
+    <AuthShell block="AuthSocialSignIn" container={container} iconVariant="secondary" icon={glyph('user')} title="Continue with" description="Use the account you already have. We never post on your behalf." {...props}>
       {(['Google', 'Discord', 'Apple'] as SocialBrand[]).map((brand) => <SocialLoginButton key={brand} brand={brand} appearance="brand" onClick={onSubmit} />)}
       <OrRule label="OR PICK A PROVIDER" />
       <div data-part="provider-grid" style={{ display: 'flex', flexDirection: 'column', gap: v('spacing.gap-control') }}>

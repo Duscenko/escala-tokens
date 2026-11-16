@@ -171,7 +171,7 @@ export function SidebarStatCard({ label = 'Net worth', value = '48,210.84', capt
 
 const GROUPS: { label: string; items: { label: string; icon: Parameters<typeof boxedGlyph>[0]; current?: boolean }[] }[] = [
   { label: 'Overview', items: [{ label: 'Dashboard', icon: 'house', current: true }, { label: 'Portfolio', icon: 'stack' }, { label: 'Activity', icon: 'lightning' }] },
-  { label: 'Account', items: [{ label: 'Team', icon: 'user-bold' }, { label: 'Settings', icon: 'lock' }] },
+  { label: 'Account', items: [{ label: 'Team', icon: 'user' }, { label: 'Settings', icon: 'lock' }] },
 ]
 
 /** Figma `DualSidebar`: the 48 px icon rail beside the 272 px panel (brand, groups, stat card). */

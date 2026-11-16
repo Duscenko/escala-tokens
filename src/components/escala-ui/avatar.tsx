@@ -140,7 +140,7 @@ function Avatar({
       {type === 'initials' && <span data-part="Avatar.initials" className="inline-flex items-center justify-center">{children}</span>}
       {type === 'icon' && (
         <span data-part="Avatar.icon" className="inline-flex items-center justify-center [&>svg]:size-full">
-          {icon ?? glyph('user-bold')}
+          {icon ?? glyph('user')}
         </span>
       )}
       <span data-part="Avatar.stroke" aria-hidden className="pointer-events-none absolute left-0 top-0 size-full" />
