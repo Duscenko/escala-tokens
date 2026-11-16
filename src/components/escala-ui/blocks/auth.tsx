@@ -16,6 +16,7 @@ import { Field } from '../field'
 import { glyph } from '../../../lib/icons'
 import { boxedGlyph } from './shared'
 import { Input } from '../input'
+import { PhoneNumberInput } from './phoneNumber'
 import { InputOTP } from '../input-otp'
 import { ModalHeader } from '../modal'
 import { PasswordStrength, PasswordStrengthMeter, scorePassword } from '../password-strength'
@@ -140,6 +141,9 @@ interface BlockProps extends Omit<React.ComponentProps<'section'>, 'title' | 'on
   onNavigate?: (to: string) => void
 }
 
+/** The phone field's hint: the picker searches by calling code when the query starts with "+". */
+const PHONE_HINT = 'Type + to search by calling code'
+
 const busy = (status: AuthStatus) => status === 'loading'
 const invalid = (status: AuthStatus) => (status === 'invalid' ? 'Invalid' : 'Default') as 'Invalid' | 'Default'
 
@@ -191,7 +195,7 @@ export function AuthSignUp({ container, status = 'idle', error = 'That email alr
 export function AuthSignInPhone({ container, status = 'idle', error = 'Enter a valid phone number.', onSubmit, onNavigate, ...props }: BlockProps) {
   return (
     <AuthShell block="AuthSignInPhone" container={container} icon={glyph('lock')} title="Sign in with your phone" description="We will text you a 6-digit code. Standard message rates may apply." {...props}>
-      <Field label="Phone number" required state={invalid(status)} error={error}><Input type="phone" placeholder="Phone number" /></Field>
+      <Field label="Phone number" required state={invalid(status)} error={error} description={PHONE_HINT}><PhoneNumberInput placeholder="(201) 555-0123" /></Field>
       <CheckboxItem size="sm" label="Send me product updates by SMS" />
       <Button loading={busy(status)} onClick={onSubmit}>Send code</Button>
       <OrRule />
@@ -229,19 +233,34 @@ export function AuthTwoFactor({ container, status = 'idle', onSubmit, onNavigate
   )
 }
 
-/** Figma `AuthForgotPassword` (Method email · sms). */
-export function AuthForgotPassword({ container, method = 'email', status = 'idle', error, onSubmit, onNavigate, onMethodChange, ...props }: BlockProps & { method?: 'email' | 'sms'; onMethodChange?: (m: 'email' | 'sms') => void }) {
+/** Figma `AuthForgotPassword` (Method email · sms). The method switch swaps the field (email ↔ phone with its country)
+ *  and the action's copy; only that region cross-fades, so the switch keeps its focus. `method` controls it, or
+ *  `defaultMethod` starts it and the block keeps it. */
+export function AuthForgotPassword({
+  container, method: controlled, defaultMethod = 'email', status = 'idle', error, onSubmit, onNavigate, onMethodChange, ...props
+}: BlockProps & { method?: 'email' | 'sms'; defaultMethod?: 'email' | 'sms'; onMethodChange?: (m: 'email' | 'sms') => void }) {
+  const [inner, setInner] = React.useState(defaultMethod)
+  const method = controlled ?? inner
   const email = method === 'email'
+  const choose = (m: string) => { const next = m as 'email' | 'sms'; setInner(next); onMethodChange?.(next) }
   return (
-    <AuthShell block="AuthForgotPassword" container={container} icon={glyph('lock')} title="Forgot password?" description="No worries, we'll send you reset instructions." swapKey={method} {...props}>
-      <SegmentedControl value={method} onValueChange={(m) => onMethodChange?.(m as 'email' | 'sms')} aria-label="Send reset instructions by">
+    <AuthShell block="AuthForgotPassword" container={container} icon={glyph('lock')} title="Forgot password?" description="No worries, we'll send you reset instructions." {...props}>
+      <SegmentedControl fullWidth value={method} onValueChange={choose} aria-label="Send reset instructions by">
         <SegmentedControlItem value="email" label="Email" />
         <SegmentedControlItem value="sms" label="SMS" />
       </SegmentedControl>
-      <Field label={email ? 'Email address' : 'Phone number'} required state={invalid(status)} error={error ?? (email ? 'Enter a valid email address.' : 'Enter a valid phone number.')}>
-        {email ? <Input type="email" placeholder="you@company.com" /> : <Input type="phone" placeholder="Phone number" />}
-      </Field>
-      <Button loading={busy(status)} onClick={onSubmit}>{email ? 'Send reset link' : 'Send reset code'}</Button>
+      <Appear key={method} role="use-page-transition" style={{ display: 'flex', flexDirection: 'column', gap: v('spacing.gap-group') }}>
+        <Field
+          label={email ? 'Email address' : 'Phone number'}
+          required
+          state={invalid(status)}
+          error={error ?? (email ? 'Enter a valid email address.' : 'Enter a valid phone number.')}
+          description={email ? undefined : PHONE_HINT}
+        >
+          {email ? <Input type="email" placeholder="you@company.com" /> : <PhoneNumberInput placeholder="(201) 555-0123" />}
+        </Field>
+        <Button loading={busy(status)} onClick={onSubmit}>{email ? 'Send reset link' : 'Send reset code'}</Button>
+      </Appear>
       <Button variant="secondary" leading={boxedGlyph('caret-left')} onClick={() => onNavigate?.('sign-in')}>Back to sign in</Button>
     </AuthShell>
   )

@@ -128,6 +128,10 @@ export interface ComboboxPopoverProps extends React.ComponentProps<'div'> {
   emptyText?: React.ReactNode
   /** Figma FooterVisible + FooterText. */
   footer?: React.ReactNode
+  /** A search field above the list (the DropdownMenu's HeaderVisible pattern), outside the listbox. */
+  header?: React.ReactNode
+  /** The list scrolls past this height (the popover keeps its header and footer in view). */
+  maxListHeight?: string
   /** The listbox's id (the trigger's `aria-controls`). */
   listId?: string
   /** The listbox's accessible name (default "Options"); the Combobox passes its own. */
@@ -137,7 +141,7 @@ export interface ComboboxPopoverProps extends React.ComponentProps<'div'> {
 }
 
 function ComboboxPopover({
-  size = 'default', content = 'list', emptyText = 'No match', footer, listId, listLabel, listLabelledBy, width, children, className, style, ...props
+  size = 'default', content = 'list', emptyText = 'No match', footer, header, maxListHeight, listId, listLabel, listLabelledBy, width, children, className, style, ...props
 }: ComboboxPopoverProps) {
   return (
     <div
@@ -149,13 +153,17 @@ function ComboboxPopover({
       style={{ width, ...style }}
       {...props}
     >
+      {header != null && (
+        <div data-part="ComboboxPopover.header" className="flex shrink-0 flex-col px-[var(--spacing-inset-control)] pt-[var(--spacing-inset-control)]">{header}</div>
+      )}
       <div
         id={listId}
         role={content === 'empty' ? undefined : 'listbox'}
         aria-label={content === 'empty' || listLabelledBy ? undefined : listLabel ?? 'Options'}
         aria-labelledby={content === 'empty' ? undefined : listLabelledBy}
         data-part="ComboboxPopover.list"
-        className="flex flex-col"
+        className={cn('flex flex-col', maxListHeight && 'min-h-0 overflow-y-auto')}
+        style={maxListHeight ? { maxHeight: maxListHeight } : undefined}
       >
         {content === 'empty'
           ? <div data-part="ComboboxPopover.empty" role="status" className="text-center">{emptyText}</div>

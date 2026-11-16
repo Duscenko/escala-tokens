@@ -50,6 +50,9 @@ export interface InputProps extends Omit<React.ComponentProps<'input'>, 'size' |
   addon?: string
   /** The select's choices on `phone` and `currency-select`. */
   addonOptions?: string[]
+  /** Replaces the native select of `phone` / `currency-select` with a control of your own (a country picker), drawn in
+   *  the same place: render its value in `Input.addon` and its caret in `Input.icon` (`data-icon="chevron"`). */
+  addonControl?: React.ReactNode
   onAddonChange?: (value: string) => void
   /** `upload`: the chosen files. */
   onFiles?: (files: FileList | null) => void
@@ -121,6 +124,7 @@ function Input({
   shortcut,
   addon,
   addonOptions,
+  addonControl,
   onAddonChange,
   onFiles,
   onCopy,
@@ -168,7 +172,7 @@ function Input({
 
   // A select addon: the visible +01 / USD and its caret, with the native select laid
   // over them so the choice is a real, keyboard-reachable control.
-  const select = options && (
+  const select = addonControl ?? (options && (
     <span className="relative inline-flex shrink-0 items-center gap-[var(--spacing-gap-control)]">
       <Addon>{chosen}</Addon>
       <Icon chevron>{glyph(GLYPHS.chevron)}</Icon>
@@ -182,7 +186,7 @@ function Input({
         {options.map((o) => <option key={o} value={o}>{o}</option>)}
       </select>
     </span>
-  )
+  ))
 
   const iconButton = 'inline-flex shrink-0 cursor-pointer items-center gap-[var(--spacing-gap-control)] rounded-[inherit] border-0 bg-transparent p-0 [color:inherit] [font:inherit] outline-none disabled:cursor-not-allowed'
 

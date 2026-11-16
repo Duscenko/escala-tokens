@@ -16,7 +16,7 @@ const meta: Meta<Args> = {
   title: 'Blocks/Auth/ForgotPassword',
   tags: ['stage:storybook'],
   parameters: { layout: 'padded' },
-  render: (args) => <AuthForgotPassword container={args.container} status={args.status} method={args.method} />,
+  render: (args) => <AuthForgotPassword container={args.container} status={args.status} key={args.method} defaultMethod={args.method} />,
   args: { container: 'card', status: 'idle', method: 'email' },
   argTypes: {
     container: { name: 'Container', control: 'select', options: [...AUTH_CONTAINERS] },
@@ -33,7 +33,7 @@ export const Playground: Story = {}
 export const Containers: Story = {
   render: (args) => (
     <Row>
-      {AUTH_CONTAINERS.map((container) => <AuthForgotPassword key={container} container={container} status={args.status} method={args.method} />)}
+      {AUTH_CONTAINERS.map((container) => <AuthForgotPassword key={`${container}-${args.method}`} container={container} status={args.status} defaultMethod={args.method} />)}
     </Row>
   ),
 }
@@ -42,7 +42,7 @@ export const Containers: Story = {
 export const States: Story = {
   render: (args) => (
     <Row>
-      {AUTH_STATUSES.map((status) => <AuthForgotPassword key={status} container={args.container} status={status} method={args.method} />)}
+      {AUTH_STATUSES.map((status) => <AuthForgotPassword key={`${status}-${args.method}`} container={args.container} status={status} defaultMethod={args.method} />)}
     </Row>
   ),
 }
@@ -62,7 +62,7 @@ export const Motion: Story = {
           <button onClick={() => setRun((n) => n + 1)}>Replay mount</button>
           <button onClick={() => setStatus((s) => (s === 'invalid' ? 'idle' : 'invalid'))}>Toggle notice</button>
         </div>
-        <AuthForgotPassword key={run} container={args.container} status={status} method={args.method} />
+        <AuthForgotPassword key={`${run}-${args.method}`} container={args.container} status={status} defaultMethod={args.method} />
       </div>
     )
   },
