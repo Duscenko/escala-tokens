@@ -32,7 +32,7 @@ export function SkeletonCalendarSpecimen({ t, v, children }: SpecimenProps) {
   if (children == null) {
     return (
       <RecipeScope t={t}>
-        <SkCalendar key={mode} size={size} mode={mode} header={header} />
+        <SkCalendar key={mode} size={size} mode={mode} header={header} presets={v.PresetsVisible === 'True'} footer={v.FooterVisible === 'True'} />
       </RecipeScope>
     )
   }

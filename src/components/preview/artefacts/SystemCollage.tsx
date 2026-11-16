@@ -1,22 +1,25 @@
 import { fontStack } from '../../../lib/fonts'
 import { cloneElement, createContext, useContext, useEffect, useLayoutEffect, useMemo, useRef, useState, type CSSProperties, type ReactElement, type ReactNode } from 'react'
-import { AVATAR_STACK_HUES, Live, PhosphorWeightProvider, SPECIMENS, TokenIcon, preloadHeavySpecimens, type IconOpts, type SpecimenProps } from '../../configurator/docs/specimens'
+import { Live, PhosphorWeightProvider, SPECIMENS, TokenIcon, preloadHeavySpecimens, type IconOpts, type SpecimenProps } from '../../configurator/docs/specimens'
 import { TokenInspector, INSPECT_EXEMPT_ATTR, inspectGroupAttrs, useInspectorActive } from './TokenInspector'
 import { BoardAutoplayContext, TileLiveContext, useAutoplayStep, useBoardConductor, useBoardPaused } from './boardAutoplay'
-import { CALENDAR_PLAY, EDITORS_PLAY, EDITOR_PRICE, FOLLOWERS_PLAY, READINESS_PLAY } from './boardScripts'
+import { CALENDAR_PLAY, EDITORS_PLAY, EDITOR_PRICE } from './boardScripts'
 import { RollingNumber } from './RollingNumber'
 import { BoardRevealContext, REVEAL_CAP_MS, SETTLE_MS, boardEnteredOnce, boardRevealTiming, markBoardEntered } from './boardReveal'
 import { Skeleton as UiSkeleton } from '../../escala-ui/skeleton'
 import { useReducedMotion } from 'framer-motion'
-import { SkeletonInlineLinkSpecimen } from '../../configurator/docs/skeleton/actions'
 import { SkeletonSettingsList } from '../../configurator/docs/skeleton/forms'
 import { RecipeScope } from '../../configurator/docs/skeleton/scope'
 import { Card as UiCard } from '../../escala-ui/card'
+import { Alert as UiAlert } from '../../escala-ui/alert'
+import { Button as UiButton } from '../../escala-ui/button'
+import { AuthSignIn } from '../../escala-ui/blocks/auth'
+import { SidebarStatCard } from '../../escala-ui/blocks/navigation'
+import { ShareModal } from '../../escala-ui/blocks/overlay'
 import {
   cardSurfaceStyle,
   radiusRoleOf,
   shadowOf,
-  sizeOf,
   sizeRoleOf,
   spacingRoleOf,
   strokeRoleOf,
@@ -49,33 +52,27 @@ const inspectable = (key: string) => {
   return Wrapped
 }
 
-const Input = inspectable('Input')
-const SocialLogin = inspectable('SocialLoginButton')
-const Card = inspectable('Card')
-const Avatar = inspectable('Avatar')
+// Every tile below is built from the Storybook families (`spec/storybook-families.json`,
+// the Figma file's components) — no shadcn-era entry (Chart, StatusBadge, Card as a
+// specimen…) is placed on the board.
+const AvatarGroup = inspectable('AvatarGroup')
 const Badge = inspectable('Badge')
 const InputOTP = inspectable('InputOTP')
-/** An inline link in running copy: shadcn's `Button variant="link"`. */
-const InlineLink = ({ t, children }: { t: PreviewTokens; children: ReactNode }) => (
-  <TokenInspector component="Button" variant={{ Variant: 'link' }}>
-    <SkeletonInlineLinkSpecimen t={t}>{children}</SkeletonInlineLinkSpecimen>
-  </TokenInspector>
-)
+const TextLink = inspectable('TextLink')
+const ButtonGroup = inspectable('ButtonGroup')
 const Segmented = inspectable('SegmentedControl')
 const Toast = inspectable('Toast')
 const TabMenu = inspectable('TabMenu')
 const Progress = inspectable('ProgressLine')
-const StatusBadge = inspectable('StatusBadge')
 const Chip = inspectable('Chip')
-const Sidebar = inspectable('Sidebar')
 const InputTag = inspectable('InputTag')
 const FileUpload = inspectable('FileUpload')
 const Stepper = inspectable('Stepper')
 const Pagination = inspectable('Pagination')
 const Separator = inspectable('Separator')
-const Chart = inspectable('Chart')
 const Calendar = inspectable('Calendar')
 const InputStepper = inspectable('NumberInput')
+const Table = inspectable('Table')
 
 /** `Live` already carries the catalogue key as `c`, so the marker reads it
  *  straight off the prop rather than being restated. */
@@ -345,37 +342,6 @@ function px(value: string): number {
  * direction — plus a translucent panel, which the recipe has no word for.
  */
 
-/**
- * A primary action as the board plays it: rest, Loading, done, rest. Still
- * (and inspectable as a plain Button) whenever the board is not playing.
- */
-function PlayedButton({ t, v, icons, done, period, children }: {
-  t: PreviewTokens
-  v: SpecimenProps['v']
-  icons?: IconOpts
-  /** The label once the work is done ("Saved"). */
-  done: string
-  /** Milliseconds per step — tiles differ so they do not load in unison. */
-  period: number
-  children: string
-}) {
-  const beat = useAutoplayStep(BUTTON_PLAY.length, period)
-  const phase = beat == null ? 'rest' : BUTTON_PLAY[beat]
-  return (
-    <InspectableLive
-      c="Button"
-      t={t}
-      v={phase === 'loading' ? { ...v, State: 'Loading' } : v}
-      icons={phase === 'done' ? { ...catalogueIcons(t, 'check'), leading: true } : icons}
-      w="100%"
-    >
-      {phase === 'done' ? done : children}
-    </InspectableLive>
-  )
-}
-
-const BUTTON_PLAY = ['rest', 'rest', 'rest', 'rest', 'loading', 'loading', 'done', 'done'] as const
-
 /** A step of one of `boardScripts`' value lists, or `still` when the board is
  *  still (the value the tile has always shown). */
 function useScripted<T>(script: { ms: number; values: readonly T[] }, still: T): T {
@@ -395,32 +361,6 @@ function useEnterOnChange(ref: { current: HTMLElement | null }, t: PreviewTokens
       { duration: role.ms, easing: MOTION_EASINGS[role.easing] },
     )
   }, [key]) // eslint-disable-line react-hooks/exhaustive-deps
-}
-
-/** The Chart tile's figure and its trend badge, climbing together. */
-function ReadinessFigure({ t, muted }: { t: PreviewTokens; muted: string }) {
-  const value = useScripted(READINESS_PLAY, 98)
-  return (
-    <>
-      <div className="flex min-w-0 flex-col">
-        <span style={{ ...typeStyleOf(t, 'heading-lg'), color: t.neutralText }}>
-          <RollingNumber value={String(value)} />
-          <span style={{ ...typeStyleOf(t, 'body-sm'), color: muted }}>%</span>
-        </span>
-        <ReadinessLabel t={t} muted={muted} />
-      </div>
-      <Badge t={t} v={{ Variant: 'secondary' }}><RollingNumber value={`+${value - 92}%`} /></Badge>
-    </>
-  )
-}
-
-function ReadinessLabel({ t, muted }: { t: PreviewTokens; muted: string }) {
-  const { t: translate } = useI18n()
-  return <span style={{ ...typeStyleOf(t, 'body-sm'), color: muted }}>{translate('Workspace readiness')}</span>
-}
-
-function FollowersCount({ t }: { t: PreviewTokens }) {
-  return <span style={{ ...typeStyleOf(t, 'heading-sm'), color: t.neutralText }}><RollingNumber value={useScripted(FOLLOWERS_PLAY, '12.4K')} /></span>
 }
 
 /** The Editors tile's total: the stepper's count × the seat price. */
@@ -754,34 +694,6 @@ function TileSkeleton({ t, height }: { t: PreviewTokens; height: number }) {
   )
 }
 
-function Well({
-  t, size, icon, iconSize, pill = false,
-}: {
-  t: PreviewTokens
-  size: string
-  icon: 'user' | 'users' | 'zap' | 'box'
-  /** Override glyph px. Default ~58% of the well — fills the chip without
-   *  growing the container (14–16 in a 32–40 well read as lost). */
-  iconSize?: number
-  pill?: boolean
-}) {
-  const wellPx = parseFloat(size) || 32
-  const glyph = iconSize ?? Math.round(wellPx * 0.58)
-  return (
-    <span
-      aria-hidden
-      style={{
-        width: size, height: size, flexShrink: 0,
-        display: 'grid', placeItems: 'center',
-        borderRadius: pill ? 999 : radiusRoleOf(t, 'control', '8px'),
-        background: t.neutralFill,
-      }}
-    >
-      <TokenIcon t={t} concept={icon} size={glyph} color={t.neutralText} />
-    </span>
-  )
-}
-
 function CollagePack({
   phones, t, gap, children,
 }: {
@@ -806,7 +718,7 @@ function CollagePack({
  * board layout remains for tests or a future entry point.
  */
 export function SystemCollage({
-  tokensByAppearance, tileAppearances, projectName, layout = 'phones', frameTokens,
+  tokensByAppearance, tileAppearances, layout = 'phones', frameTokens,
 }: {
   tokensByAppearance: Record<ThemeAppearance, PreviewTokens>
   tileAppearances: ThemeAppearance[]
@@ -838,9 +750,7 @@ export function SystemCollage({
   const tile = (index: number) => tokensByAppearance[tileAppearances[index] === 'dark' ? 'dark' : 'light']
   const appearanceAt = (index: number) => tileAppearances[index] ?? 'light'
   const muted = (index: number) => tile(index).fgMuted || '#717680'
-  const handle = `@${projectName.replace(/\s+/g, '_').toLowerCase()}`
   const gutter = gap(tile(2), 'gap-control', '8px')
-  const wellSm = sizeRoleOf(tile(2), 'compact', '32px')
   const frame = collageFrame(tokensByAppearance.light, {
     social: translate('Continue with Google'),
     pair: [translate('Critical'), translate('Success')].sort((a, b) => b.length - a.length)[0] ?? 'Critical',
@@ -868,13 +778,52 @@ export function SystemCollage({
     ro.observe(el)
     return () => ro.disconnect()
   }, [phones])
-  const boardDisplay = boardWidth
-    ? Math.min(frame.source, Math.max(BOARD_MIN_COLUMN, Math.floor((boardWidth - (BOARD_COLUMNS - 1) * gutterPx) / BOARD_COLUMNS)))
+  // ONE scale for the whole board. The blocks keep the width the Figma file
+  // draws them at (SignIn 480, the Calendar's full panel, the Share modal), so
+  // the column is derived from them: SignIn + Calendar span three columns and a
+  // gutter, and every tile — block or component — is photographed at the same
+  // `display / unit`. Widths are measured once the blocks render (below).
+  const [blockWidths, setBlockWidths] = useState({ signIn: 480, calendar: 418, share: 480 })
+  const avail = boardWidth
+    ? Math.max(BOARD_MIN_COLUMN, (boardWidth - (BOARD_COLUMNS - 1) * gutterPx) / BOARD_COLUMNS)
     : frame.display
+  const pair = blockWidths.signIn + blockWidths.calendar
+  const unitTrue = Math.max(frame.source, (pair - gutterPx) / 3)
+  // Never above true size: a wide canvas centres the board instead.
+  const fitsTrue = avail >= unitTrue
+  const unit = phones ? frame.source : fitsTrue ? unitTrue : Math.max(frame.source, (pair * avail) / (3 * avail + gutterPx))
+  const boardDisplay = Math.floor(fitsTrue ? unitTrue : avail)
   const display = phones ? phoneInner : boardDisplay
-  // A two-column photo: same scale as its neighbours, so its type matches.
-  const wideFrame = display * 2 + gutterPx
-  const widePhoto = { frameWidth: wideFrame, sourceWidth: Math.round(wideFrame * (frame.source / display)) }
+  const scale = display / unit
+  const boardSpan = BOARD_COLUMNS * display + (BOARD_COLUMNS - 1) * gutterPx
+  /** A photo `frameWidth` wide at the board's scale. */
+  const photo = (frameWidth: number) => ({ frameWidth: Math.round(frameWidth), sourceWidth: Math.round(frameWidth / scale) })
+  const widePhoto = photo(display * 2 + gutterPx)
+  const signInPhoto = photo(blockWidths.signIn * scale)
+  // The Calendar's slot takes whatever SignIn and the last column leave, so
+  // the row's edges land on the columns' edges at any width.
+  const calendarPhoto = photo(3 * display + gutterPx - signInPhoto.frameWidth)
+  const sharePhoto = photo(blockWidths.share * scale)
+  const membersPhoto = photo(boardSpan - sharePhoto.frameWidth - gutterPx)
+  // Every render, no deps: the Calendar is a lazy chunk that mounts after the
+  // board does, and a theme change can move any of the three. It only sets
+  // state on a change over 1px, so it settles in one extra render.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  useLayoutEffect(() => {
+    const root = stageRef.current
+    if (phones || !root) return
+    const auth = root.querySelector<HTMLElement>('[data-board-block="signIn"] [data-block="AuthSignIn"]')
+    const cal = root.querySelector<HTMLElement>('[data-board-block="calendar"] [data-slot="calendar"]')
+    const share = root.querySelector<HTMLElement>('[data-board-block="share"] [data-block="ShareModal"]')
+    const next = {
+      signIn: auth ? parseFloat(getComputedStyle(auth).maxWidth) || blockWidths.signIn : blockWidths.signIn,
+      calendar: cal?.offsetWidth || blockWidths.calendar,
+      share: share?.offsetWidth || blockWidths.share,
+    }
+    if (Math.abs(next.signIn - blockWidths.signIn) > 1 || Math.abs(next.calendar - blockWidths.calendar) > 1 || Math.abs(next.share - blockWidths.share) > 1) {
+      setBlockWidths(next)
+    }
+  })
   const pack = { phones, t: board, gap: gutter }
   const platformCaption =
     collageCut === 'mobile' ? translate('Mobile')
@@ -891,10 +840,13 @@ export function SystemCollage({
           <InputOTP t={tile(2)} v={{ State: 'Filled' }} />
           <span style={{ ...typeStyleOf(tile(2), 'body-sm'), color: muted(2) }}>
             {translate('Didn’t get a code?')}{' '}
-            <InlineLink t={tile(2)}>{translate('Resend')}</InlineLink>
+            <TextLink t={tile(2)} v={{ Size: 'sm' }} icons={{ prefix: tile(2).iconPrefix ?? 'phosphor', leading: false, trailing: false }}>{translate('Resend')}</TextLink>
           </span>
         </ScaledModule>
     ),
+    // The Figma Button's two axes — Variant (default · secondary · critical) ×
+    // Appearance (solid · outline · ghost · link) — then the IconButton set and a
+    // ButtonGroup, the three action families a screen is built from.
     buttons: (
         <ScaledModule key="buttons"
           t={tile(3)}
@@ -902,31 +854,32 @@ export function SystemCollage({
           style={{ gap: gap(tile(3), 'gap-group', '16px') }}
         >
           <div className="flex w-full min-w-0 flex-col" style={{ gap: gap(tile(3), 'gap-control', '8px') }}>
-            {(['default', 'secondary', 'outline', 'ghost'] as const).map((variant) => (
+            {([
+              ['default', 'solid', translate('Publish')],
+              ['secondary', 'solid', translate('Save draft')],
+              ['default', 'outline', translate('Preview')],
+              ['default', 'ghost', translate('Cancel')],
+            ] as const).map(([variant, look, label]) => (
               <InspectableLive
-                key={variant}
+                key={`${variant}-${look}`}
                 c="Button"
                 t={tile(3)}
-                v={{ Variant: variant, Size: 'sm' }}
+                v={{ Variant: variant, Appearance: look, Size: 'sm' }}
                 w="100%"
               >
-                {translate('Click me')}
+                {label}
               </InspectableLive>
             ))}
           </div>
-          <Separator t={tile(3)} v={{}} w="100%" />
           <div
             className="grid w-full min-w-0"
-            style={{
-              gridTemplateColumns: 'repeat(2, minmax(0, 1fr))',
-              gap: gap(tile(3), 'gap-control', '8px'),
-            }}
+            style={{ gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', gap: gap(tile(3), 'gap-control', '8px') }}
           >
             <InspectableLive
               c="Button"
               t={tile(3)}
-              v={{ Variant: 'destructive', Size: 'sm' }}
-              icons={{ ...catalogueIcons(tile(3)), leading: false }}
+              v={{ Variant: 'critical', Appearance: 'solid', Size: 'sm' }}
+              icons={{ ...catalogueIcons(tile(3), 'trash'), leading: true }}
               w="100%"
             >
               {translate('Delete')}
@@ -934,12 +887,35 @@ export function SystemCollage({
             <InspectableLive
               c="Button"
               t={tile(3)}
-              v={{ Variant: 'link', Size: 'sm' }}
+              v={{ Variant: 'default', Appearance: 'link', Size: 'sm' }}
               icons={{ ...catalogueIcons(tile(3)), leading: false }}
               w="100%"
             >
               {translate('Learn more')}
             </InspectableLive>
+          </div>
+          <Separator t={tile(3)} v={{}} w="100%" />
+          <div className="flex items-center justify-between" style={{ gap: gap(tile(3), 'gap-control', '8px') }}>
+            {([
+              ['default', 'solid', 'plus'],
+              ['secondary', 'solid', 'edit'],
+              ['default', 'outline', 'share'],
+              ['default', 'ghost', 'settings'],
+              ['critical', 'ghost', 'trash'],
+            ] as const).map(([variant, look, concept]) => (
+              <InspectableLive
+                key={`${variant}-${look}-${concept}`}
+                c="IconButton"
+                t={tile(3)}
+                v={{ Variant: variant, Appearance: look, Size: 'sm' }}
+                icons={catalogueIcons(tile(3), concept)}
+              >
+                {concept}
+              </InspectableLive>
+            ))}
+          </div>
+          <div className="flex w-full justify-center">
+            <ButtonGroup t={tile(3)} v={{ Size: 'sm', Variant: 'outline' }} />
           </div>
         </ScaledModule>
     ),
@@ -949,93 +925,20 @@ export function SystemCollage({
           appearance={appearanceAt(4)}
           style={{ gap: gap(tile(4), 'gap-group', '16px') }}
         >
-          <div
-            className="grid w-full min-w-0 grid-cols-2 justify-items-center"
-            style={{ gap: gap(tile(4), 'gap-control', '8px') }}
-          >
+          <div className="flex flex-wrap items-center" style={{ gap: gap(tile(4), 'gap-control', '8px') }}>
             <Badge t={tile(4)} v={{ Variant: 'default', Appearance: 'solid' }}>{translate('Published')}</Badge>
             <Badge t={tile(4)} v={{ Variant: 'secondary' }}>{translate('Draft')}</Badge>
-            <Badge t={tile(4)} v={{ Variant: 'critical' }}>{translate('Critical')}</Badge>
-            <Badge t={tile(4)} v={{ Variant: 'secondary', Appearance: 'outline' }}>{translate('Info')}</Badge>
+            <Badge t={tile(4)} v={{ Variant: 'success' }}>{translate('Live')}</Badge>
+            <Badge t={tile(4)} v={{ Variant: 'warning' }}>{translate('Review')}</Badge>
+            <Badge t={tile(4)} v={{ Variant: 'critical', Appearance: 'outline' }}>{translate('Critical')}</Badge>
+            <Badge t={tile(4)} v={{ Variant: 'info', Type: 'number', Shape: 'pill' }}>12</Badge>
           </div>
           <Separator t={tile(4)} v={{}} w="100%" />
           <div className="flex flex-wrap items-center" style={{ gap: gap(tile(4), 'gap-control', '8px') }}>
-            <StatusBadge t={tile(4)} v={{ Status: 'online' }} />
-            <StatusBadge t={tile(4)} v={{ Status: 'busy' }} />
-            <Chip t={tile(4)} v={{ Interactive: 'True', State: 'Selected' }}>Design tokens</Chip>
-          </div>
-        </ScaledModule>
-    ),
-    createAccount: (
-        <ScaledModule key="createAccount"
-          t={tile(5)}
-          appearance={appearanceAt(5)}
-          style={{ gap: gap(tile(5), 'gap-group', '16px') }}
-        >
-          <div className="flex justify-end" style={{ marginTop: -2 }}>
-            <InspectableLive c="Button" t={tile(5)} v={{ Variant: 'ghost', Size: 'icon-sm' }} icons={catalogueIcons(tile(5), 'close')}>{translate('Close')}</InspectableLive>
-          </div>
-          <div
-            className="flex flex-col items-center text-center"
-            style={{ gap: gap(tile(5), 'gap-control', '8px'), paddingBottom: spaceOf(tile(5), 2) }}
-          >
-            <Avatar t={tile(5)} v={{ Size: 'default', Fill: 'Gradient' }} />
-            <p style={{ margin: 0, ...typeStyleOf(tile(5), 'heading-sm'), color: tile(5).neutralText }}>
-              {translate('Create an account')}
-            </p>
-            <p
-              style={{
-                margin: 0,
-                maxWidth: '92%',
-                ...typeStyleOf(tile(5), 'body-sm', { leading: true }),
-                color: muted(5),
-              }}
-            >
-              {translate('Sign in to continue to your workspace.')}
-            </p>
-          </div>
-          <div className="flex w-full min-w-0 flex-col" style={{ gap: gap(tile(5), 'gap-group', '12px') }}>
-            <Input t={tile(5)} v={{ Type: 'E-Mail', State: 'Filled' }} w="100%" hideHint />
-            <Input t={tile(5)} v={{ Type: 'Password', State: 'Filled' }} w="100%" hideHint />
-          </div>
-          <PlayedButton t={tile(5)} v={{ Variant: 'default', Size: 'default' }} icons={catalogueIcons(tile(5), 'star')} done={translate('Welcome')} period={780}>
-            {translate('Get Started')}
-          </PlayedButton>
-          <div className="flex items-center" style={{ gap: gap(tile(5), 'gap-control', '8px') }}>
-            <span className="flex min-w-0 flex-1"><Separator t={tile(5)} v={{}} w="100%" /></span>
-            <span style={{ ...typeStyleOf(tile(5), 'caption'), color: muted(5) }}>{translate('or')}</span>
-            <span className="flex min-w-0 flex-1"><Separator t={tile(5)} v={{}} w="100%" /></span>
-          </div>
-          <div className="flex w-full min-w-0 flex-col" style={{ gap: gap(tile(5), 'gap-control', '8px') }}>
-            <SocialLogin t={tile(5)} v={{ Provider: 'google' }} w="100%" />
-            <SocialLogin t={tile(5)} v={{ Provider: 'apple' }} w="100%" />
-          </div>
-        </ScaledModule>
-    ),
-    profile: (
-        <ScaledModule key="profile" t={tile(8)} appearance={appearanceAt(8)}>
-          <div className="flex items-start" style={{ gap: gap(tile(8), 'gap-control', '8px') }}>
-            <Avatar t={tile(8)} v={{ Size: 'sm', Fill: 'Gradient' }} />
-            <div className="min-w-0 flex-1">
-              <div className="flex items-center" style={{ gap: gap(tile(8), 'gap-tight', '4px') }}>
-                <span style={{ ...typeStyleOf(tile(8), 'label'), color: tile(8).neutralText }}>{projectName}</span>
-                <TokenIcon t={tile(8)} concept="check" size={12} color={tile(8).brandSolid} />
-              </div>
-              <p style={{ margin: 0, ...typeStyleOf(tile(8), 'helper'), color: muted(8) }}>{handle}</p>
-            </div>
-          </div>
-          <p style={{ margin: 0, ...typeStyleOf(tile(8), 'body-sm', { leading: true }), color: tile(8).neutralText }}>
-            {translate('One payload underneath: the same JSON Figma, CSS, and an agent all read.')}
-          </p>
-          <div className="flex min-w-0 flex-wrap" style={{ gap: gap(tile(8), 'gap-group', '16px') }}>
-            <div>
-              <span style={{ ...typeStyleOf(tile(8), 'heading-sm'), color: tile(8).neutralText }}>4</span>
-              <span style={{ marginLeft: spaceOf(tile(8), 6), ...typeStyleOf(tile(8), 'helper'), color: muted(8) }}>{translate('Following')}</span>
-            </div>
-            <div>
-              <FollowersCount t={tile(8)} />
-              <span style={{ marginLeft: spaceOf(tile(8), 6), ...typeStyleOf(tile(8), 'helper'), color: muted(8) }}>{translate('Followers')}</span>
-            </div>
+            <Chip t={tile(4)} v={{ Interactive: 'True', State: 'Selected' }}>{translate('Tokens')}</Chip>
+            <Chip t={tile(4)} v={{ Interactive: 'True' }}>Figma</Chip>
+            <Chip t={tile(4)} v={{ Interactive: 'True' }}>{translate('Code')}</Chip>
+            <Chip t={tile(4)} v={{ Variant: 'info', Appearance: 'soft', CloseVisible: 'True' }}>{translate('Motion')}</Chip>
           </div>
         </ScaledModule>
     ),
@@ -1079,14 +982,29 @@ export function SystemCollage({
           </div>
         </ScaledModule>
     ),
+    // Feedback as a screen shows it: an in-page Alert with its action, and a
+    // Toast arriving on the brand's own choreography.
     toasts: (
         <ScaledModule key="toasts"
           t={tile(15)}
           appearance={appearanceAt(15)}
           style={{ gap: gap(tile(15), 'gap-group', '16px') }}
         >
+          <TokenInspector component="Alert" variant={{ Variant: 'info', Appearance: 'soft', Layout: 'vertical' }}>
+            <RecipeScope t={tile(15)}>
+              <UiAlert
+                variant="info"
+                appearance="soft"
+                layout="vertical"
+                size="sm"
+                closeVisible={false}
+                description={translate('A new version of your tokens is ready to sync.')}
+                actionsVisible
+                actions={<UiButton variant="default" appearance="solid" size="xs">{translate('Sync now')}</UiButton>}
+              />
+            </RecipeScope>
+          </TokenInspector>
           <Toast t={tile(15)} v={{ Variant: 'success' }} w="100%" />
-          <Toast t={tile(15)} v={{ Variant: 'critical' }} w="100%" />
         </ScaledModule>
     ),
     tabsProgress: (
@@ -1112,34 +1030,9 @@ export function SystemCollage({
           </div>
         </ScaledModule>
     ),
-    sidebar: (
-        <ScaledModule key="sidebar" t={tile(18)} appearance={appearanceAt(18)}>
-          {/* The tile's card is the panel — same border as every other tile —
-              so the sidebar draws no edge, fill or fixed height of its own. */}
-          <div className="[&_[data-slot=sidebar]]:!h-auto [&_[data-slot=sidebar]]:!border-0 [&_[data-slot=sidebar]]:!bg-transparent">
-            <Sidebar t={tile(18)} v={{}} w="100%" />
-          </div>
-        </ScaledModule>
-    ),
     inputTag: (
         <ScaledModule key="inputTag" t={tile(19)} appearance={appearanceAt(19)}>
           <InputTag t={tile(19)} v={{}} w="100%" />
-        </ScaledModule>
-    ),
-    checkbox: (
-        <ScaledModule key="checkbox" t={tile(20)} appearance={appearanceAt(20)}>
-          <TokenInspector component="Checkbox" variant={{ Checked: 'true' }}>
-            <SkeletonSettingsList
-              t={tile(20)}
-              control="checkbox"
-              legend={'Notify me about'}
-              rows={[
-                { label: 'Comments on my files', on: true },
-                { label: 'New team members', on: true },
-                { label: 'Weekly digest', on: false },
-              ]}
-            />
-          </TokenInspector>
         </ScaledModule>
     ),
     fileUpload: (
@@ -1161,47 +1054,63 @@ export function SystemCollage({
         </ScaledModule>
     ),
   }
-  // The avatar card: four avatars stacked by the `overlap-md` role. The px is
-  // the role's LIVE value (negative), so Variables edits land here too.
-  // Each avatar is ringed in the card's own colour — the ring is what keeps a
-  // tucked avatar's edge legible against the one it sits under.
-  const overlapPx = parseFloat(spacingRoleOf(tile(11), 'overlap-md', '-8px')) || 0
-  const cardBg = String(cardSurfaceStyle(tile(11)).background ?? tile(11).surface)
+  // TEAM — the Figma AvatarGroup (overlap and ring are its own recipe) with the
+  // presence of the person on screen and the action that grows the team.
   const teamCard = (
-    <ScaledModule key="team" t={tile(11)} appearance={appearanceAt(11)}>
+    <ScaledModule key="team" t={tile(11)} appearance={appearanceAt(11)} style={{ gap: gap(tile(11), 'gap-group', '12px') }} {...(phones ? {} : calendarPhoto)}>
       <div className="flex items-baseline justify-between" style={{ gap: gap(tile(11), 'gap-control', '8px') }}>
         <span style={{ ...typeStyleOf(tile(11), 'label'), color: tile(11).neutralText }}>{translate('Team')}</span>
-        <span style={{ ...typeStyleOf(tile(11), 'helper'), color: muted(11) }}>{translate('4 members')}</span>
+        <span style={{ ...typeStyleOf(tile(11), 'helper'), color: muted(11) }}>{translate('7 members')}</span>
       </div>
-      <div className="flex items-center">
-        {AVATAR_STACK_HUES.slice(0, 4).map((hue, i) => (
-          <span
-            key={hue}
-            style={{
-              display: 'inline-flex',
-              position: 'relative',
-              zIndex: 4 - i,
-              marginLeft: i === 0 ? 0 : overlapPx,
-              borderRadius: 999,
-              boxShadow: `0 0 0 2px ${cardBg}`,
-            }}
-          >
-            <Avatar t={tile(11)} v={{ Size: 'default', Fill: 'Gradient', Hue: String(hue) }} />
-          </span>
-        ))}
-      </div>
+      <AvatarGroup t={tile(11)} v={{ Size: 'sm' }} />
+      <InspectableLive
+        c="Button"
+        t={tile(11)}
+        v={{ Variant: 'secondary', Appearance: 'solid', Size: 'sm' }}
+        icons={{ ...catalogueIcons(tile(11), 'plus'), leading: true }}
+        w="100%"
+      >
+        {translate('Invite')}
+      </InspectableLive>
     </ScaledModule>
   )
 
-  // CHART — how a data widget reads in this system: a metric, a trend badge and
-  // the catalogue's Chart (shadcn `chart` over Recharts), all on tokens.
-  const chart = tile(10)
-  const chartCard = (
-    <ScaledModule key="chart" t={chart} appearance={appearanceAt(10)}>
-      <div className="flex items-start justify-between" style={{ gap: gap(chart, 'gap-control', '8px') }}>
-        <ReadinessFigure t={chart} muted={muted(10)} />
+  // BLOCKS — the Figma file's composed blocks (`escala-ui/blocks`, the Storybook's
+  // `Blocks/`), placed as they ship: their own card, header, fields and copy.
+  // Nothing on these tiles is composed here.
+  const block = (key: string, i: number, node: ReactNode, size?: { frameWidth: number; sourceWidth: number }) => (
+    <ScaledModule key={key} t={tile(i)} appearance={appearanceAt(i)} chrome={false} elev={false} {...size}>
+      <RecipeScope t={tile(i)}>
+        <div data-board-block={key} className="flex w-full justify-center">{node}</div>
+      </RecipeScope>
+    </ScaledModule>
+  )
+  const signIn = block('signIn', 5, <AuthSignIn container="card" />, phones ? undefined : signInPhoto)
+  const shareModal = block('share', 7, <ShareModal inline />, sharePhoto)
+  const statCard = block('stat', 10, <SidebarStatCard style={{ width: '100%' }} label={translate('Tokens shipped')} value="1,284" caption={translate('Across 3 brands · 2 themes')} delta="+12%" />)
+  // The Calendar at the width the file draws its full panel: the presets rail,
+  // one month in range mode and the footer — it needs two columns.
+  const calendarPanel = (
+    <ScaledModule key="calendarPanel" t={tile(9)} appearance={appearanceAt(9)} chrome={false} elev={false} {...calendarPhoto}>
+      <div data-board-block="calendar" className="flex w-full justify-center">
+        {/* `w-max`: the panel at its intrinsic width, which is what the board measures. */}
+        <div className="w-max">
+          <Calendar t={tile(9)} v={{ Size: 'default', Mode: 'range', PresetsVisible: 'True', FooterVisible: 'True' }} />
+        </div>
       </div>
-      <Chart t={chart} v={{ Type: 'area' }} w="100%" />
+    </ScaledModule>
+  )
+  // The Figma Table: a members list, the densest everyday surface.
+  const membersCard = (
+    <ScaledModule key="members" t={tile(6)} appearance={appearanceAt(6)} style={{ gap: gap(tile(6), 'gap-group', '12px') }} {...membersPhoto}>
+      <div className="flex items-center justify-between" style={{ gap: gap(tile(6), 'gap-control', '8px') }}>
+        <div className="flex min-w-0 flex-col">
+          <span style={{ ...typeStyleOf(tile(6), 'heading-sm'), color: tile(6).neutralText }}>{translate('Members')}</span>
+          <span style={{ ...typeStyleOf(tile(6), 'helper'), color: muted(6) }}>{translate('Who works on this design system')}</span>
+        </div>
+        <Segmented t={tile(6)} v={{ Size: 'sm' }} />
+      </div>
+      <Table t={tile(6)} v={{ Size: 'sm', Appearance: 'ghost' }} w="100%" />
     </ScaledModule>
   )
   const colorStyle = (wide: boolean, fill = false) => (
@@ -1221,25 +1130,35 @@ export function SystemCollage({
   // heights, every column ends on one line. Each column closes on a tile whose
   // content reads fine centred in extra height.
   const boardColumns: ReactElement[][] = [
-    [mod.createAccount, mod.profile, mod.checkbox],
-    [mod.buttons, mod.calendar, mod.tabsProgress, mod.notifications],
-    [mod.verify, mod.sidebar, mod.seats, mod.stepper],
-    [mod.badges, chartCard, teamCard, mod.toasts, mod.fileUpload, mod.inputTag],
+    [mod.buttons, mod.inputTag],
+    [mod.badges, mod.stepper],
+    [mod.tabsProgress, mod.seats],
+    [mod.toasts, mod.fileUpload],
   ]
+  /** Above the bento, each at its own width and the board's one scale:
+   *  the SignIn block, the Calendar's full panel over the team, and one
+   *  column (the stat card block, the OTP and the settings switches). */
+  const blockRow: { width: number; tiles: ReactElement[] }[] = [
+    { width: signInPhoto.frameWidth, tiles: [signIn] },
+    { width: calendarPhoto.frameWidth, tiles: [calendarPanel, teamCard] },
+    { width: display, tiles: [statCard, mod.verify, mod.notifications] },
+  ]
+  /** Under the bento: the Table beside the Share modal block. */
+  const wideRow: ReactElement[] = [membersCard, shareModal]
   const phonePacks: ReactElement[][] = [
     [colorStyle(false), typeStyle(false)],
+    [signIn],
     [mod.verify, mod.buttons, mod.badges],
-    [mod.createAccount],
-    [mod.calendar, mod.profile, chartCard, teamCard],
-    [mod.notifications, mod.seats, mod.toasts, mod.tabsProgress],
-    [mod.sidebar, mod.inputTag, mod.checkbox, mod.fileUpload, mod.stepper],
+    [mod.calendar, teamCard, mod.notifications],
+    [mod.seats, mod.toasts, mod.tabsProgress],
+    [mod.inputTag, mod.fileUpload, mod.stepper],
   ]
   // The wave runs on diagonals: the two style tiles first, then each column's
   // tiles one band later than the column to their left and the tile above.
   const place = (el: ReactElement, band: number) => cloneElement(el as ReactElement<{ band?: number }>, { band })
   const bands = phones
     ? phonePacks.reduce((n, pack, p) => Math.max(n, p + pack.length - 1), 0)
-    : boardColumns.reduce((n, column, c) => Math.max(n, 1 + c + column.length - 1), 1)
+    : boardColumns.reduce((n, column, c) => Math.max(n, 3 + c + column.length - 1), 3) + 1
   // The wave starts once the BOARD holds still: the on-demand library is in and
   // no tile has changed size for `SETTLE_MS`. Settling tile by tile was not
   // enough — when the Chart grows, every column's last tile re-stretches and
@@ -1301,17 +1220,27 @@ export function SystemCollage({
     // (22.5px inset left, 42.5px right). Growing the box by its own padding
     // keeps the content box exactly the canvas's, so the board centres.
     <div ref={boardRef} style={{ width: 'calc(100% + 20px)', padding: 10, margin: -10 }}>
-      <div className="mx-auto flex flex-col" style={{ width: BOARD_COLUMNS * display + (BOARD_COLUMNS - 1) * gutterPx, gap: gutter }}>
+      <div className="mx-auto flex flex-col" style={{ width: boardSpan, gap: gutter }}>
         <div className="flex items-stretch" style={{ gap: gutter }}>
           {place(colorStyle(true, true), 0)}
           {place(typeStyle(true, true), 1)}
         </div>
         <div className="flex items-stretch" style={{ gap: gutter }}>
-          {boardColumns.map((column, i) => (
-            <div key={i} className="flex flex-col" style={{ width: display, gap: gutter }}>
-              {fillLast(column).map((el, r) => place(el, 1 + i + r))}
+          {blockRow.map((slot, i) => (
+            <div key={i} className="flex flex-col" style={{ width: slot.width, gap: gutter }}>
+              {(i === 0 ? slot.tiles : fillLast(slot.tiles)).map((el, r) => place(el, 1 + i + r))}
             </div>
           ))}
+        </div>
+        <div className="flex items-stretch" style={{ gap: gutter }}>
+          {boardColumns.map((column, i) => (
+            <div key={i} className="flex flex-col" style={{ width: display, gap: gutter }}>
+              {fillLast(column).map((el, r) => place(el, 3 + i + r))}
+            </div>
+          ))}
+        </div>
+        <div className="flex items-stretch" style={{ gap: gutter }}>
+          {wideRow.map((el, i) => place(i === 0 ? cloneElement(el as ReactElement<{ fill?: boolean }>, { fill: true }) : el, bands - 1 + i))}
         </div>
       </div>
     </div>
