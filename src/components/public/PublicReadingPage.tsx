@@ -8,7 +8,8 @@ import { PRICING_PATH } from '../../lib/entitlement'
 import TopNav, { type DocsMenuPage, type TopNavKey } from '../configurator/TopNav'
 import ComponentsView from '../configurator/ComponentsView'
 import DocsView from '../configurator/DocsView'
-import { CATEGORIES, COMPONENTS } from '../../lib/componentCatalogue'
+import { COMPONENTS } from '../../lib/componentCatalogue'
+import { PLATFORM_FAMILIES, PLATFORM_FOLDERS, familiesIn, familyLabel, isPlatformComponent } from '../../lib/platformCatalogue'
 import { applyDocumentHead } from '../../lib/documentHead'
 import { useI18n } from '../../lib/i18n'
 import {
@@ -59,7 +60,7 @@ export function PublicReadingPage({ page }: { page: PublicPage }) {
         ) : page.kind === 'component' ? (
           <ComponentsView
             previewTheme={previewTheme}
-            active={COMPONENTS.find((c) => c.key === page.key) ?? null}
+            active={COMPONENTS.find((c) => c.key === page.key && isPlatformComponent(c.key)) ?? null}
             onSelect={(c) => go(`/components/${c.key}`)}
           />
         ) : (
@@ -99,6 +100,8 @@ const NAV_PATH: Record<TopNavKey, string | null> = {
   about: '/about',
   variables: null, // the configurator itself — `openEditor`
   components: '/components',
+  // Blocks have no public reading page yet: the workspace's Blocks tab.
+  blocks: '/?section=blocks',
   docs: '/docs',
   pricing: PRICING_PATH,
 }
@@ -132,11 +135,11 @@ function ComponentsIndex() {
         <div className="flex flex-col gap-2">
           <h1 className="text-heading text-fg">{t('Components')}</h1>
           <p className="text-body text-fg-muted leading-relaxed max-w-2xl">
-            {t(COMPONENTS_INDEX_DESCRIPTION, { count: COMPONENTS.length })}
+            {t(COMPONENTS_INDEX_DESCRIPTION, { count: PLATFORM_FAMILIES.length })}
           </p>
         </div>
-        {CATEGORIES.map((category) => {
-          const items = COMPONENTS.filter((c) => c.category === category)
+        {PLATFORM_FOLDERS.map((category) => {
+          const items = familiesIn(category).map((f) => ({ ...f.lead, label: familyLabel(f) }))
           if (!items.length) return null
           return (
             <section key={category} className="flex flex-col gap-2">

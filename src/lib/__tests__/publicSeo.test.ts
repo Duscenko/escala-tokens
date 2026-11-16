@@ -16,6 +16,7 @@ import {
   workspaceSectionForPage,
   workspaceSectionHref,
 } from '../publicSeo'
+import { PLATFORM_PAGES } from '../platformCatalogue'
 import { buildWorkspaceAppUrl, decodeWorkspaceSection } from '../workspaceLink'
 
 describe('public reading pages', () => {
@@ -55,7 +56,8 @@ describe('public reading pages', () => {
     expect(publicDocPath(CHANGELOG_KEY)).toBe('/docs/changelog')
     expect(publicDocPath(FAQ_KEY)).toBe('/docs/faq')
     expect(publicDocPath(OVERVIEW_KEY)).toBe('/docs/system')
-    for (const component of COMPONENTS) {
+    // Escala's own components only (platformCatalogue.test.ts holds the hidden ones).
+    for (const component of PLATFORM_PAGES) {
       expect(matchPublicPath(`/components/${component.key}`)?.kind).toBe('component')
     }
     for (const doc of FOUNDATION_DOCS) {

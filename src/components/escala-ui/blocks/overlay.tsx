@@ -9,7 +9,7 @@
 import * as React from 'react'
 import { cssVarOf } from '../../../lib/componentRecipes'
 import { glyph } from '../../../lib/icons'
-import { boxedGlyph } from './shared'
+import { boxedGlyph, blockType } from './shared'
 import { Avatar } from '../avatar'
 import { Badge } from '../badge'
 import { Button } from '../button'
@@ -31,10 +31,7 @@ import { SwitchGroup } from '../switch'
 import { Textarea } from '../textarea'
 
 const v = (ref: string) => `var(${cssVarOf(ref)})`
-const type = (role: string): React.CSSProperties => ({
-  fontFamily: `var(--text-${role}-font-family)`, fontSize: `var(--text-${role}-font-size)`, lineHeight: `var(--text-${role}-line-height)`,
-  fontWeight: `var(--text-${role}-font-weight)`, letterSpacing: `var(--text-${role}-letter-spacing)`,
-})
+const type = blockType
 const col = (gap = 'spacing.gap-group'): React.CSSProperties => ({ display: 'flex', flexDirection: 'column', gap: v(gap) })
 const row = (gap = 'spacing.gap-control'): React.CSSProperties => ({ display: 'flex', alignItems: 'center', gap: v(gap) })
 const secondary: React.CSSProperties = { color: v('color.content.secondary'), ...type('body-sm') }

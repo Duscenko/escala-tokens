@@ -20,7 +20,7 @@ import { Input } from '../input'
 import { Separator } from '../separator'
 import { Textarea } from '../textarea'
 import { TextLink } from '../text-link'
-import { boxedGlyph } from './shared'
+import { boxedGlyph, blockType } from './shared'
 import { glyph } from '../../../lib/icons'
 
 export const MARKETING_LAYOUTS = ['desktop', 'mobile'] as const
@@ -29,10 +29,7 @@ export const FAQ_STYLES = ['split', 'centered'] as const
 export type FaqStyle = (typeof FAQ_STYLES)[number]
 
 const v = (ref: string) => `var(${cssVarOf(ref)})`
-const type = (role: string): React.CSSProperties => ({
-  fontFamily: `var(--text-${role}-font-family)`, fontSize: `var(--text-${role}-font-size)`, lineHeight: `var(--text-${role}-line-height)`,
-  fontWeight: `var(--text-${role}-font-weight)`, letterSpacing: `var(--text-${role}-letter-spacing)`,
-})
+const type = blockType
 const motion = (role: string) => `var(--motion-${role}-duration) var(--motion-${role}-easing)`
 const secondary: React.CSSProperties = { color: v('color.content.secondary') }
 

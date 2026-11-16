@@ -159,7 +159,7 @@ export function ChromeAnchoredDropdown({
 // `pricing` is the one key that LEAVES the workspace — it's a public route
 // (`/pricing`), so the shell navigates to it instead of switching a tab, and
 // `PricingPage`'s own `PublicHeader` lights it.
-export type TopNavKey = 'about' | 'variables' | 'components' | 'docs' | 'pricing'
+export type TopNavKey = 'about' | 'variables' | 'components' | 'blocks' | 'docs' | 'pricing'
 export type DocsMenuPage = 'figma' | 'changelog' | 'faq' | 'beta'
 
 /** Generator's glyph (Figma node 1:388): outline while the section is idle,
@@ -187,6 +187,7 @@ const NAV_ITEMS: { key: TopNavKey; label: string }[] = [
   { key: 'about', label: 'About' },
   { key: 'variables', label: 'Generator' },
   { key: 'components', label: 'Components' },
+  { key: 'blocks', label: 'Blocks' },
   { key: 'docs', label: 'Docs' },
   // Open beta (`/pricing`) is NOT a section tab: it lives in the Docs menu
   // (`DOCS_MENU_PAGES`), so the top bar carries only the four places you work

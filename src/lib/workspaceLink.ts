@@ -26,6 +26,8 @@
  *   code/<theme>
  *   components
  *   components/<componentKey>
+ *   blocks
+ *   blocks/<Group>/<Name>
  *   docs
  *   docs/<docKey>
  *
@@ -70,7 +72,7 @@ export type FoundationSectionKey = (typeof FOUNDATION_SECTION_KEYS)[number]
 export type CollectionSectionKey = (typeof COLLECTION_SECTION_KEYS)[number]
 export type HubSurfaceKey = (typeof HUB_SURFACE_KEYS)[number]
 export type WorkspaceTabKey = 'preview' | 'primitives' | 'documentation' | 'code' | 'library' | 'system'
-export type AppTabKey = 'about' | 'foundations' | 'components' | 'docs'
+export type AppTabKey = 'about' | 'foundations' | 'components' | 'blocks' | 'docs'
 
 export type WorkspacePlace = {
   tab: AppTabKey
@@ -80,6 +82,8 @@ export type WorkspacePlace = {
   foundation?: FoundationSectionKey
   collection?: CollectionSectionKey
   component?: string
+  /** `<Group>/<Name>` of a block (Blocks tab). */
+  block?: string
   doc?: string
 }
 
@@ -120,6 +124,7 @@ export function encodeWorkspaceSection(place: {
   foundation?: string
   collection?: string
   component?: string
+  block?: string
   doc?: string
 }): string {
   const theme = isSegment(place.theme) ? place.theme : undefined
@@ -129,6 +134,10 @@ export function encodeWorkspaceSection(place: {
   if (place.tab === 'about') return 'about'
   if (place.tab === 'components') {
     return isSegment(place.component) ? `components/${place.component}` : 'components'
+  }
+  if (place.tab === 'blocks') {
+    const segs = (place.block ?? '').split('/')
+    return segs.length === 2 && segs.every(isSegment) ? `blocks/${segs.join('/')}` : 'blocks'
   }
   if (place.tab === 'docs') {
     return isSegment(place.doc) ? `docs/${place.doc}` : 'docs'
@@ -173,6 +182,14 @@ export function decodeWorkspaceSection(section: string | null | undefined): Work
       workspace: 'preview',
       surface: 'artefacts',
       component: isSegment(rest[0]) ? rest[0] : undefined,
+    }
+  }
+  if (root === 'blocks') {
+    return {
+      tab: 'blocks',
+      workspace: 'preview',
+      surface: 'artefacts',
+      block: rest.length === 2 ? `${rest[0]}/${rest[1]}` : undefined,
     }
   }
   if (root === 'docs') {
