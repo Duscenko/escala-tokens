@@ -154,7 +154,9 @@ One line each. Detail: search the archive or the plan named.
 
 ## Known gaps (2026-11-16)
 
-- No Code Connect yet (`codeConnect: null` for every registry piece).
+- **No Code Connect, and it cannot be added on the current plan**: the library is on Figma Professional and the
+  API refuses mappings ("only in Organization or Enterprise plans", measured 2026-11-16). The bridge instead:
+  an agent reading a Figma design finds the set name in `spec/contracts/index.json` and uses that contract's files.
 - 26 catalogue components have no set in the Figma snapshot and 25 have no story (see
   `spec/contracts/index.json`: `figmaSet` / `story` null). Each needs a decision: add to Figma or retire.
 - Governance designed, not yet run: every registry piece is at stage `storybook`; no sync has run.
