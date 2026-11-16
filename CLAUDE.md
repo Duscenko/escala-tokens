@@ -52,7 +52,7 @@ About + the phone generator (`MobileThemeSheet.tsx`, picks only, no free inputs)
 | Figma file palette (Storybook only) | `src/lib/figmaFilePalette.ts` + `.generated.ts` |
 | Components | `src/components/escala-ui/*.tsx` (Figma twins; Radix for behaviour) |
 | Styling of every component | recipes: `src/lib/componentRecipes.ts` + `src/lib/recipes/*.ts` (`motion.ts` for motion) |
-| Component contracts (human) | `design-plans/<component>-contract.md`; blocks also `src/components/escala-ui/blocks/*.contract.json` |
+| Component contracts | **machine:** `spec/contracts/<Key>.json` + `index.json` (GENERATED, `npm run gen:contracts`: Figma set + axes, API, slots, every token consumed, story id, files); **human:** `design-plans/<component>-contract.md`; blocks also `src/components/escala-ui/blocks/*.contract.json` |
 | Catalogue (mirrors the plugin's CATALOG) | `src/lib/componentCatalogue.ts` |
 | Figma component snapshot | `spec/figma-components.json` (generated) + `spec/figma-components.status.json` (debt ledger) |
 | Storybook | `apps/storybook` (stories, `.storybook`), families in `spec/storybook-families.json` |
@@ -61,8 +61,8 @@ About + the phone generator (`MobileThemeSheet.tsx`, picks only, no free inputs)
 | Agent router | `AGENTS.md`, `llms.txt`, `docs/agent-native/` |
 | Agent skills | `.claude/skills/` (`escala-figma-to-code`, `escala-architecture` — generated, `color-science-core`, …) |
 
-Target layout not built yet: `tokens/`, `packages/ui`, one `contract.json` per component
-(`design-plans/packages-ui-extraction.md`). Do not report their absence as a bug.
+Target layout not built yet: `tokens/`, `packages/ui` (`design-plans/packages-ui-extraction.md`);
+until then the per-component contract lives in `spec/contracts/`. Do not report their absence as a bug.
 
 ## Commands
 
@@ -75,7 +75,7 @@ npm run figma:inventory:check # spec/figma-components.json was not hand-edited
 npm run audit:exports         # every export agrees with tokens.json, value for value
 npm run color:report          # contrast audit → reports/ (gitignored)
 node scripts/storybook/apply-families.mjs   # Storybook titles from the families manifest
-npm run gen:escala-skill · gen:figma-palette · gen:phosphor-icons · gen:*-reference · bundle:plugin
+npm run gen:contracts · gen:escala-skill · gen:figma-palette · gen:phosphor-icons · gen:*-reference · bundle:plugin
 ```
 
 Deploy: `npx vercel --prod` (web); Storybook is its own Vercel project `escala-storybook`.
@@ -96,7 +96,7 @@ Deploy: `npx vercel --prod` (web); Storybook is its own Vercel project `escala-s
    emit via `gamut.oklchToHex` (never channel clipping), report WCAG and APCA, validate categorical
    palettes with `cvd.validateCategorical()`. The colour layer stays DOM-free.
 6. **Generated files are never hand-edited:** `*Reference.ts`, `*.generated.ts`, `src/generated/*`,
-   `spec/figma-components.json`, `src/lib/pluginVersion.ts`, `api/_pluginStudio.mjs`,
+   `spec/figma-components.json`, `spec/contracts/`, `src/lib/pluginVersion.ts`, `api/_pluginStudio.mjs`,
    `.claude/skills/escala-architecture/`. Regenerate with its `npm run gen:*`.
 7. **Store:** a new persisted field bumps `version` with an append-only migration; design fields
    also go into `DesignSnapshot` / `makeDesignDefaults()`.
@@ -155,7 +155,7 @@ One line each. Detail: search the archive or the plan named.
 ## Known gaps (2026-11-16)
 
 - No Code Connect yet (`codeConnect: null` for every registry piece).
-- Contracts are markdown, not machine-readable per component; no component declares the tokens it
-  consumes (derivable from `src/lib/tokenTrace.ts`).
+- 26 catalogue components have no set in the Figma snapshot and 25 have no story (see
+  `spec/contracts/index.json`: `figmaSet` / `story` null). Each needs a decision: add to Figma or retire.
 - Governance designed, not yet run: every registry piece is at stage `storybook`; no sync has run.
 - `AGENTS.md`'s router predates the deleted MCP in places — trust this file first.
