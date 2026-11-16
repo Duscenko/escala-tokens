@@ -16,8 +16,11 @@ import {
   iconRoleOf, radiusRoleOf, selectorRoleOf, shadowOf, sizeRoleOf, spacingRoleOf, strokeRoleOf, typeStyleOf,
 } from './previewTokens'
 
+/** Roles a BLOCK reads that no recipe does: a section's own vertical padding. (blockRefsProvided.test.ts fails on any other.) */
+export const BLOCK_ONLY_REFS = ['spacing.inset-section']
+
 const REFS: string[] = [
-  ...new Set(Object.values(COMPONENT_RECIPES).flatMap(recipeTokenRefs)),
+  ...new Set([...Object.values(COMPONENT_RECIPES).flatMap(recipeTokenRefs), ...BLOCK_ONLY_REFS]),
 ]
 
 function px(v: unknown): string | undefined {

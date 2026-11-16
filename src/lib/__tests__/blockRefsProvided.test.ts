@@ -1,0 +1,20 @@
+import { readdirSync, readFileSync } from 'node:fs'
+import { describe, expect, it } from 'vitest'
+import { COMPONENT_RECIPES, recipeTokenRefs } from '../componentRecipes'
+import { BLOCK_ONLY_REFS } from '../recipeVars'
+
+// A scope supplies only the roles the recipes reference (+ BLOCK_ONLY_REFS). A block that reads another role gets an undefined
+// custom property, and the declaration silently drops (ContactSection's section padding was 0 for that reason).
+describe('blocks read only roles a scope supplies', () => {
+  const have = new Set([...Object.values(COMPONENT_RECIPES).flatMap(recipeTokenRefs), ...BLOCK_ONLY_REFS])
+  const dir = 'src/components/escala-ui/blocks/'
+  it('every v(\'role\') of every block is supplied', () => {
+    const missing = new Set<string>()
+    for (const f of readdirSync(dir).filter((x) => x.endsWith('.tsx'))) {
+      for (const m of readFileSync(dir + f, 'utf8').matchAll(/\bv\('([a-z]+\.[a-z0-9_.+-]+)'\)/g)) {
+        if (!m[1].startsWith('color.') && !have.has(m[1])) missing.add(`${m[1]} (${f})`)
+      }
+    }
+    expect([...missing]).toEqual([])
+  })
+})

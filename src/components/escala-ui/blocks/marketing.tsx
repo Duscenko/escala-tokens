@@ -143,9 +143,9 @@ const SERVICES = [['Website design', 'UX design', 'User research'], ['Content cr
 export function ContactSection({ layout = 'desktop', media, style, className }: Common & { media?: React.ReactNode }) {
   const mobile = layout === 'mobile'
   return (
-    <section data-block="ContactSection" data-layout={layout} className={className} style={{ display: 'flex', flexDirection: mobile ? 'column' : 'row', width: '100%', background: v('color.surface.page'), color: v('color.content.primary'), ...style }}>
-      <div data-part="media" style={{ flex: 1, overflow: 'hidden' }}>{media ?? <Image ratio="auto" alt="" style={{ height: '100%', minHeight: mobile ? 'calc(var(--spacing-32) * 2)' : undefined }} />}</div>
-      <form data-part="form-area" onSubmit={(e) => e.preventDefault()} style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: v('spacing.gap-section'), padding: `${v('spacing.inset-section')} ${v('spacing.inset-page')}` }}>
+    <section data-block="ContactSection" data-layout={layout} className={className} style={{ ...SECTION(layout), alignItems: 'stretch', ...style }}>
+      <div data-part="media" style={{ flex: mobile ? 'none' : 1, overflow: 'hidden', borderRadius: v('radius.container') }}>{media ?? <Image ratio={mobile ? '4:3' : 'auto'} alt="" style={mobile ? undefined : { height: '100%' }} />}</div>
+      <form data-part="form-area" onSubmit={(e) => e.preventDefault()} style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: v('spacing.gap-section'), minWidth: 0 }}>
         <div data-part="intro" style={{ display: 'flex', flexDirection: 'column', gap: v('spacing.gap-group') }}>
           <h2 style={{ margin: 0, ...type('display-sm') }}>Let’s level up your brand, together</h2>
           <p style={{ margin: 0, display: 'flex', flexWrap: 'wrap', gap: v('spacing.gap-tight'), ...type('body-lg'), ...secondary }}>You can reach us anytime via <TextLink href="mailto:hi@escala.design" size="lg">hi@escala.design</TextLink></p>
