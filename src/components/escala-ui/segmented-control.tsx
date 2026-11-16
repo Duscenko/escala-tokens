@@ -106,6 +106,8 @@ function SegmentedControlItem({
       role="radio"
       aria-checked={checked}
       tabIndex={group ? (checked ? 0 : -1) : undefined}
+      // An icon-only item (LabelVisible off) is still named by its label.
+      aria-label={labelVisible || typeof label !== 'string' ? undefined : label}
       data-slot="segmented-control-item"
       data-escala="SegmentedControlItem"
       data-size={size}
