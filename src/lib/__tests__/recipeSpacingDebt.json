@@ -83,8 +83,6 @@
  "Sheet.footer.paddingY=spacing.4 (gap-group)",
  "Sheet.header.paddingX=spacing.4 (gap-group)",
  "Sheet.header.paddingY=spacing.4 (gap-group)",
- "SocialLoginButton.root.paddingX=spacing.4 (gap-group)",
- "SocialLoginButton.root.paddingX=spacing.5 (inset-surface)",
  "StatusBadge.root.gap=spacing.2 (gap-control)",
  "StatusBadge.root.paddingY=spacing.1 (gap-tight)",
  "Toggle.root.gap=spacing.1 (gap-tight)",

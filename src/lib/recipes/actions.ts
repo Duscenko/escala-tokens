@@ -559,27 +559,65 @@ export const BUTTON_GROUP_DIVIDER: ComponentRecipe = {
 }
 
 // ── SocialLoginButton ──────────────────────────────────────────────────────
+// The Figma set (364:20, 360 variants: Brand × Appearance white · brand × Size default · lg × State Default · Hover ·
+// Pressed · Focused · Disabled × IconOnly). `white` is a bordered control (Surface/page, Border/control; Hover
+// Surface/layer-1 + Border/control-hover; Focused Border/focus; Disabled Action/disabled/default + Border/subtle).
+// `brand` is the provider's own fill from the Social Media Brands collection (`<Brand>/Action/default|hover|pressed`,
+// `Content/on-action`, `Border/focus`) with a 1px edge in its pressed step and the solid-control highlight; Disabled
+// drops to Action/disabled/default with no edge. Radius/action, Size/control-md (40) · control-lg (48), padding
+// inset-control, gap gap-control, Type/button, a 20px mark. IconOnly is a square of the Size and no label.
+// The provider mark is third-party artwork (brand-artwork.tsx), painted in the label's ink.
+
+export const SOCIAL_BRAND_NAMES = ['Google', 'Apple', 'Discord', 'Dribbble', 'Facebook', 'GitHub', 'LinkedIn', 'Slack', 'X'] as const
+export const SOCIAL_APPEARANCES = ['white', 'brand'] as const
+export const SOCIAL_SIZES = ['lg', 'default'] as const
+export const SOCIAL_STATES = ['Default', 'Hover', 'Pressed', 'Focused', 'Disabled'] as const
 
 const SOCIAL_GEOMETRY: Record<string, SlotProps> = {
-  default: { height: 'size.control', paddingX: 'spacing.4', gap: 'spacing.2_5' },
-  lg: { height: 'size.touch', paddingX: 'spacing.5', gap: 'spacing.2_5' },
+  default: { height: 'size.control' },
+  lg: { height: 'size.touch' },
+}
+
+function socialPaint(appearance: string, brand: string, state: string): SlotMap {
+  const id = brand.toLowerCase()
+  if (state === 'Disabled') {
+    return {
+      root: { fill: c('action.disabled.default'), text: c('content.disabled'), ...(appearance === 'white' ? { stroke: c('border.subtle') } : { stroke: NONE }) },
+      label: { text: c('content.disabled') },
+    }
+  }
+  if (appearance === 'white') {
+    const root: SlotProps = state === 'Hover' || state === 'Pressed'
+      ? { fill: c(state === 'Hover' ? 'surface.layer-1' : 'surface.muted'), stroke: c('border.control-hover') }
+      : state === 'Focused' ? { fill: c('surface.page'), stroke: c('border.focus'), ring: c('border.ring.default') }
+      : { fill: c('surface.page'), stroke: c('border.control') }
+    return { root: { ...root, text: c('content.primary') }, label: { text: c('content.primary') } }
+  }
+  const fill = state === 'Hover' ? `social.${id}.action.hover` : state === 'Pressed' ? `social.${id}.action.pressed` : `social.${id}.action.default`
+  const root: SlotProps = {
+    // `social.*` refs are not Categorical roles: written whole, never through `c()`.
+    fill, text: `social.${id}.content.on-action`, highlight: c('elevation.highlight'),
+    stroke: state === 'Focused' ? `social.${id}.border.focus` : `social.${id}.action.pressed`,
+    ...(state === 'Focused' ? { ring: c('border.ring.default') } : {}),
+  }
+  return { root, label: { text: `social.${id}.content.on-action` } }
 }
 
 export const SOCIAL_LOGIN_BUTTON: ComponentRecipe = {
   key: 'SocialLoginButton',
   slots: ['root', 'label', 'icon'],
-  defaults: { Provider: 'google', Size: 'default' },
+  defaults: { Brand: 'Google', Appearance: 'white', Size: 'default', State: 'Default', IconOnly: 'false' },
   parts: [
     part({}, () => ({
-      root: {
-        fill: c('surface.layer-1'), stroke: c('border.control'), strokeWidth: 'stroke.control',
-        text: c('content.primary'), radius: 'radius.action', font: 'type.button',
-      },
-      'root:hover': { fill: c('action.ghost.hover') },
-      'root:active': { fill: c('action.ghost.pressed') },
-      'root:focus-visible': FOCUS,
+      root: { radius: 'radius.action', strokeWidth: 'stroke.control', font: 'type.button', gap: 'spacing.gap-control' },
+      icon: { width: 'icon.medium', height: 'icon.medium' },
     })),
-    part({ Size: ['default', 'lg'] as const }, (size) => ({ root: SOCIAL_GEOMETRY[size] })),
+    part({ Size: SOCIAL_SIZES, IconOnly: ['false', 'true'] as const }, (size, iconOnly) => ({
+      root: iconOnly === 'true'
+        ? { ...SOCIAL_GEOMETRY[size], width: SOCIAL_GEOMETRY[size].height, paddingX: 'spacing.none' }
+        : { ...SOCIAL_GEOMETRY[size], paddingX: 'spacing.inset-control' },
+    })),
+    part({ Appearance: SOCIAL_APPEARANCES, Brand: SOCIAL_BRAND_NAMES, State: SOCIAL_STATES }, socialPaint),
   ],
 }
 

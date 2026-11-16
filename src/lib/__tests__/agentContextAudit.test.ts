@@ -25,6 +25,7 @@ import { CLI_PUBLISHED } from '../featureFlags'
 import type { TokenJSON } from '../agentBundle/types'
 import { figmaSemanticName } from '../agentBundle/names'
 import { roleIdFromName } from '../roleNames'
+import { SOCIAL_BRANDS } from '../socialBrands'
 
 let brand = ''
 
@@ -434,6 +435,7 @@ describe('design skills cite only names the system ships', () => {
           else if (col === 'Dimension Primitives') expect(json.dimensions?.[name], `${f.path}: ${name}`).toBeDefined()
           else if (col === 'Text style') expect(json.typography.roles?.[name.replace(/^Type\//, '')], `${f.path}: ${name}`).toBeDefined()
           else if (col === 'Typography') expect(json.typography.sizes?.[name.replace(/^size\//, '')], `${f.path}: ${name}`).toBeDefined()
+          else if (col === 'Social Media Brands') expect(Object.keys(SOCIAL_BRANDS).includes(name.split('/')[0].toLowerCase()), `${f.path}: ${name}`).toBe(true)
           else if (col === 'Effect style') expect(json.shadows?.[name.replace(/^Shadow\//, '')], `${f.path}: ${name}`).toBeDefined()
           else {
             const [family, role] = roleOf(name)

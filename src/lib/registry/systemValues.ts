@@ -18,6 +18,7 @@ import { resolveToken } from '../agentAccess/resolveToken.js'
 import { cssVarOf } from '../componentRecipes.js'
 import { roleIdFromName } from '../roleNames.js'
 import { fontStack } from '../fontStack.js'
+import { socialCssVars } from '../socialBrands.js'
 
 export type Appearance = 'light' | 'dark'
 
@@ -162,6 +163,9 @@ function dimensionValue(json: Json, name: string, mode: string, appearance: Appe
  * cannot answer are left out (never guessed); `--escala-*` are set by the
  * recipe sheet itself and are skipped.
  */
+/** `--social-<id>-…` → its value (data of `socialBrands.ts`, one set for every system). */
+const SOCIAL_VAR_VALUES: Record<string, string> = Object.fromEntries(socialCssVars().map((l) => { const [n, v] = l.replace(/;$/, '').split(': '); return [n, v] }))
+
 export function cssVarValues(json: TokenJSON, names: string[], mode: string, appearance: Appearance): Record<string, string> {
   const j = asJson(json)
   const colorVar = new Map(roleIds(j).map((id) => [cssVarOf(`color.${id}`), id]))
@@ -169,7 +173,8 @@ export function cssVarValues(json: TokenJSON, names: string[], mode: string, app
   for (const name of names) {
     if (name.startsWith('--escala-') || name.startsWith('--radix-') || name.startsWith('--tw-')) continue
     const role = colorVar.get(name)
-    const value = role ? roleColor(j, role, mode) : dimensionValue(j, name, mode, appearance)
+    // The Social Media Brands roles are the same in every system: `--social-google-action-default` and kin.
+    const value = role ? roleColor(j, role, mode) : name.startsWith('--social-') ? SOCIAL_VAR_VALUES[name] : dimensionValue(j, name, mode, appearance)
     if (value) out[name] = value
   }
   return out

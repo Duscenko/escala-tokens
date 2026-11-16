@@ -21,6 +21,7 @@
  *
  * A reference is `<namespace>.<name>`:
  *   color.<categorical role id>  → `--color-<id with dashes>`  · Figma `Action/primary/default`
+ *   social.<brand>.<role>        → `--social-<brand>-<role>`    · Figma `Google/Action/default` (Social Media Brands)
  *   size.<role|step>             → `--size-<name>`; a role takes its Figma name (`size.hit` → `--size-control-xs`)
  *   selector.<role|step>         → `--size-selector-md|sm` (roles) · `--selector-<step>`
  *   icon.<role>                  → `--size-icon-sm|md|lg`
@@ -306,6 +307,8 @@ const TYPE_STEP = /^(text|display)-(xs|sm|md|lg|xl|2xl)$/
 export function cssVarOf(ref: TokenRef, facet = 'font-size'): string {
   const [ns, name] = splitRef(ref)
   if (ns === 'color') return `--color-${name.replace(/\./g, '-')}`
+  // A third-party brand role (`social.google.action.default` → `--social-google-action-default`): the Social Media Brands collection.
+  if (ns === 'social') return `--social-${name.replace(/\./g, '-')}`
   if (ns === 'type') {
     // A scale step (`type.text-xl`) reads the scale primitives, as a Figma text
     // style bound to them does; a role reads its own `--text-<role>-*` alias.

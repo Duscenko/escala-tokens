@@ -129,8 +129,8 @@ export const OVERVIEWS: Record<string, Overview> = {
     each('Size', ['sm', 'default', 'lg'], { Variant: 'outline', Pressed: 'True' }),
   ],
   SocialLoginButton: [
-    each('Provider', ['google', 'apple'], {}, 260),
-    each('Provider', ['github', 'figma'], {}, 260),
+    each('Brand', ['Google', 'Apple', 'Discord'], { Appearance: 'white' }, 260),
+    each('Brand', ['Google', 'GitHub', 'X'], { Appearance: 'brand' }, 260),
   ],
   AppStoreBadge: [each('Store', ['app-store', 'google-play'])],
 
