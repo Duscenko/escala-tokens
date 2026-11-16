@@ -9,6 +9,7 @@
 import * as React from 'react'
 import { Dialog as DialogPrimitive } from 'radix-ui'
 import { cn } from '../../lib/utils'
+import { HALO_BLEED } from './halo-bleed'
 import { CloseButton } from './close-button'
 import { ModalContext, ModalDescription, ModalFooter, ModalHeader, ModalTitle } from './modal'
 import { usePortalContainer } from './portal-scope'
@@ -103,7 +104,7 @@ function SheetContent({
       )}
       <div data-part="Sheet.main" className={cn('flex min-h-0 flex-col', !bottom && 'flex-1')}>
         {header}
-        {children != null && <div data-part="Sheet.body" className="flex min-h-0 flex-1 flex-col overflow-y-auto">{children}</div>}
+        {children != null && <div data-part="Sheet.body" className={cn('flex min-h-0 flex-1 flex-col overflow-y-auto', HALO_BLEED)}>{children}</div>}
       </div>
       {footer}
       {showClose && (

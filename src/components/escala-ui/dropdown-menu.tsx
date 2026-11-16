@@ -7,6 +7,7 @@
 import * as React from 'react'
 import { DropdownMenu as DropdownMenuPrimitive } from 'radix-ui'
 import { cn } from '../../lib/utils'
+import { HALO_BLEED } from './halo-bleed'
 import { glyph } from '../../lib/icons'
 import { usePortalContainer } from './portal-scope'
 
@@ -46,7 +47,7 @@ function DropdownMenuContent({ size = 'default', header, footer, inline = false,
   const inner = (
     <>
       {header != null && <div data-part="DropdownMenu.header" className="flex flex-col">{header}</div>}
-      <div data-part="DropdownMenu.content" className="flex min-h-0 flex-col overflow-y-auto">{children}</div>
+      <div data-part="DropdownMenu.content" className={cn('flex min-h-0 flex-col overflow-y-auto', HALO_BLEED)}>{children}</div>
       {footer}
     </>
   )

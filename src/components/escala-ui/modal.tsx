@@ -4,6 +4,7 @@
 // it, a ghost pill CloseButton in the corner. Appearance: recipes Modal, ModalHeader, ModalFooter (lib/componentRecipes.ts).
 import * as React from 'react'
 import { Dialog as DialogPrimitive } from 'radix-ui'
+import { HALO_BLEED } from './halo-bleed'
 import { cn } from '../../lib/utils'
 import { CloseButton } from './close-button'
 import { FeaturedIcon, type FeaturedIconVariant } from './featured-icon'
@@ -88,7 +89,7 @@ function ModalContent({
       >
         <div data-part="Modal.main" className="flex min-h-0 flex-col">
           {header}
-          {children != null && <div data-part="Modal.content" className="flex min-h-0 flex-col overflow-y-auto">{children}</div>}
+          {children != null && <div data-part="Modal.content" className={cn('flex min-h-0 flex-col overflow-y-auto', HALO_BLEED)}>{children}</div>}
         </div>
         {footer}
         {showCloseButton && (
