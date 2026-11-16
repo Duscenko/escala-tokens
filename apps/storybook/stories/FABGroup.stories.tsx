@@ -86,7 +86,8 @@ export const FABGroupOpenClosed: Story = {
 /** Motion. Open and close are the system's own list choreographies, no role of the component's: the items reveal forward on `use-stagger-in` at
  *  the `stagger` step (a stack rises, a fan leaves the trigger's centre and settles on its arc) and dismiss last item first on `use-stagger-out`.
  *  Reduced motion keeps the fade and drops the travel and the delay. */
-export const Motion: Story = {
+export const FABGroupMotion: Story = {
+  name: 'FABGroup · Motion',
   render: (args) => (
     <div style={{ display: 'flex', gap: 96, alignItems: 'flex-end', flexWrap: 'wrap', padding: '0 0 160px' }}>
       {FAB_GROUP_LAYOUTS.map((layout) => (

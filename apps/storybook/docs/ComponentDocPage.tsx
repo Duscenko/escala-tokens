@@ -80,7 +80,7 @@ function useDocsGlobals(): { appearance: 'light' | 'dark'; viewport: GridViewpor
     ctx.channel.on(GLOBALS_UPDATED, on)
     return () => { ctx.channel.off(GLOBALS_UPDATED, on) }
   }, [ctx])
-  return { appearance: (globals.theme ?? 'light') as 'light' | 'dark', viewport: (globals.viewport ?? 'desktop') as GridViewport }
+  return { appearance: (globals.theme ?? 'light') as 'light' | 'dark', viewport: (globals.dimensions ?? 'desktop') as GridViewport }
 }
 
 /** A preview that breaks never takes the Documentation page with it. */
@@ -118,7 +118,7 @@ function PartCard({ part, globals }: { part: StoryPart; globals: ReturnType<type
         <>
           <div className="max-h-[420px] overflow-auto border-b border-line">
             <PreviewBoundary>
-              <EscalaScope appearance={globals.appearance} viewport={globals.viewport} padding={24}>
+              <EscalaScope appearance={globals.appearance} viewport={globals.viewport} padding={24} stage stageMinHeight={160}>
                 <PartRender part={part} />
               </EscalaScope>
             </PreviewBoundary>
@@ -189,26 +189,27 @@ export function ComponentDocPage() {
           }
         />
 
-        <DocsSection title="What it is" lead={
-          entry ? <Prose text={ownEntry ? entry.description : `${name} is ${parts.map((p) => p.set).join(' + ')} placed together. ${entry.description}`} />
-            : <p>A component of the Figma file, documented by its contract below.</p>
-        } />
-
-        {entry?.usage && (
-          <DocsSection title="When & how to use it" lead={<Prose text={entry.usage} />} />
-        )}
-
-        <DocsSection title="Playground" lead={<p>
+        {/* The playground is what a reader opens this page for: the description in one paragraph, then the component. */}
+        <div className="mt-6 mb-5 max-w-[64ch] text-body leading-relaxed text-fg-muted">
+          {entry ? <Prose text={ownEntry ? entry.description : `${name} is ${parts.map((p) => p.set).join(' + ')} placed together. ${entry.description}`} />
+            : <p>A component of the Figma file, documented by its contract below.</p>}
+        </div>
+        <p className="mb-2 text-caption text-fg-faint">
           {rootSet
-            ? 'The controls are the Figma component’s properties: same names, same order and the same defaults as its playground in Figma.'
-            : `The Figma page has no ${name} set of its own: this playground puts its parts together as a designer places them. Each part keeps its own playground under Anatomy.`}
-          {' '}The toolbar switches the Color Semantics mode (Escala Light · Escala Dark) and the Dimension Semantics · Typography mode (Desktop · Tablet · Mobile).</p>} />
+            ? 'Playground: the controls are the Figma component’s properties, same names, order and defaults.'
+            : `Playground: the Figma page has no ${name} set of its own, so this puts its parts together as a designer places them.`}
+          {' '}The toolbar switches Escala Light · Dark and Desktop · Tablet · Mobile.
+        </p>
       </DocsFrame>
 
       <Primary />
       <Controls />
 
       <DocsFrame>
+        {entry?.usage && (
+          <DocsSection title="When & how to use it" lead={<Prose text={entry.usage} />} />
+        )}
+
         {entry && entry.axes.length > 0 && entry.key === rootSet && (
           <DocsSection title="Variants" lead={<p>The Figma set's variant axes, value for value.</p>}>
             <div className="flex flex-col gap-2">

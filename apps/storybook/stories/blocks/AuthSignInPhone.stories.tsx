@@ -142,5 +142,5 @@ function Phone({ keyboard }: { keyboard: boolean }) {
     </div>
   )
 }
-export const Mobile: Story = { render: () => <Phone keyboard={false} />, parameters: { layout: 'padded' }, globals: { viewport: 'mobile' } }
-export const MobileKeyboard: Story = { render: () => <Phone keyboard />, parameters: { layout: 'padded' }, globals: { viewport: 'mobile' } }
+export const Mobile: Story = { render: () => <Phone keyboard={false} />, parameters: { layout: 'padded' }, globals: { dimensions: 'mobile' } }
+export const MobileKeyboard: Story = { render: () => <Phone keyboard />, parameters: { layout: 'padded' }, globals: { dimensions: 'mobile' } }

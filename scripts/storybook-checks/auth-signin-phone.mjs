@@ -262,7 +262,7 @@ for (const reduced of [false, true]) {
     ['forms-inputtag--playground', 'InputTag'], ['blocks-auth-signinphone--playground', 'AuthSignInPhone (block)'],
   ]) {
     for (const viewport of ['desktop', 'mobile']) {
-      await page.goto(story(id, `viewport:${viewport}`))
+      await page.goto(story(id, `dimensions:${viewport}`))
       await sleep(1100)
       const sizes = await page.evaluate(() => [...document.querySelectorAll('#storybook-root input:not([type=hidden]):not([type=file]):not([type=checkbox]):not([type=radio]), #storybook-root textarea')].map((i) => parseFloat(getComputedStyle(i).fontSize)))
       rows.push({ label, viewport, min: sizes.length ? Math.min(...sizes) : null, n: sizes.length })

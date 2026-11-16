@@ -9,7 +9,7 @@ const ctx = await browser.newContext({ viewport: { width: 1400, height: 900 }, l
 const page = await ctx.newPage()
 const errors = []
 page.on('pageerror', (e) => errors.push(e.message))
-await page.goto(story('form-controls-input--resting-focused')); await sleep(1800)
+await page.goto(story('forms-input--resting-focused')); await sleep(1800)
 const resting = page.locator('div:has(> p:text-is("RESTING · hover and press to try"))')
 
 // phone: the composed field, not the native select

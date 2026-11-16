@@ -9,7 +9,7 @@ for (const reduced of [false, true]) {
   const errors = []
   page.on('pageerror', (e) => errors.push(e.message))
   const tag = reduced ? 'reduced' : 'full'
-  await page.goto(story('forms-datepickertrigger--playground')); await sleep(1500)
+  await page.goto(story('forms-datepicker--date-picker-trigger-playground')); await sleep(1500)
   const trigger = page.locator('[data-escala=DatePickerTrigger]').first()
   check(await trigger.getAttribute('aria-expanded') === 'false', `${tag}: starts closed`)
   await trigger.click()

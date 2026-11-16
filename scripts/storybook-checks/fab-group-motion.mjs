@@ -10,7 +10,7 @@ for (const reduced of [false, true]) {
   const errors = []
   page.on('pageerror', (e) => errors.push(e.message))
   const tag = reduced ? 'reduced' : 'full'
-  await page.goto(story('buttons-fabgroup--motion')); await sleep(1500)
+  await page.goto(story('buttons-fabbutton--fab-group-motion')); await sleep(1500)
   const groups = page.locator('[data-escala=FABGroup]')
   for (let g = 0; g < 4; g++) {
     const group = groups.nth(g)

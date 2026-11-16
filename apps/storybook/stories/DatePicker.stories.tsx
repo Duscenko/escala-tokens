@@ -1,56 +1,35 @@
-import * as React from 'react'
 import type { Meta, StoryObj } from '@storybook/react-vite'
-import {
-  DatePickerPopover, DatePickerTrigger, formatPickedDate,
-  type DatePickerPopoverMode, type DatePickerPopoverSize,
-} from '../../../src/components/escala-ui/date-picker'
-import { Calendar } from '../../../src/components/escala-ui/calendar'
-import { Popover, PopoverTrigger } from '../../../src/components/escala-ui/popover'
+import { DatePicker, type DatePickerTriggerSize } from '../../../src/components/escala-ui/date-picker'
+import type { CalendarMode } from '../../../src/components/escala-ui/calendar'
 
 /** The DatePicker family's root. The Figma page has no `DatePicker` set: it is DatePickerTrigger (the field) and
- *  DatePickerPopover (the panel around the file's Calendar). This is the two together as a designer places them: the
- *  trigger opens the popover 8px below it; Escape closes it, Apply closes it too and the chosen day goes back into the
- *  trigger. Size and Mode are the popover's axes. Each part keeps its own playground. */
+ *  DatePickerPopover (the panel around the file's Calendar), wired by the `DatePicker` component. A click opens the
+ *  popover 8px under the trigger; a day writes into the trigger; Apply, Escape or a click outside close it. Each part
+ *  keeps its own playground under Anatomy. */
 interface DatePickerStoryArgs {
-  size: DatePickerPopoverSize
-  mode: DatePickerPopoverMode
-}
-
-const MONTH = new Date(2026, 10, 1)
-
-function DatePickerDemo({ size, mode }: DatePickerStoryArgs) {
-  const [open, setOpen] = React.useState(true)
-  const [date, setDate] = React.useState<Date | undefined>(new Date(2026, 10, 12))
-  const single = mode === 'single'
-  return (
-    <div style={{ minHeight: single ? 480 : 560, padding: 24 }}>
-      <Popover open={open} onOpenChange={setOpen}>
-        <PopoverTrigger asChild>
-          <DatePickerTrigger valueText={single && date ? formatPickedDate(date) : undefined} style={{ width: 280 }} />
-        </PopoverTrigger>
-        <DatePickerPopover size={size} mode={mode}>
-          {single ? (
-            <Calendar
-              size={size} mode="single" footer defaultMonth={MONTH}
-              value={date} onValueChange={(d) => setDate(d instanceof Date ? d : undefined)}
-              onApply={() => setOpen(false)}
-            />
-          ) : (
-            <Calendar key="range" size={size} mode="range" presets footer defaultMonth={MONTH} onApply={() => setOpen(false)} />
-          )}
-        </DatePickerPopover>
-      </Popover>
-    </div>
-  )
+  size: DatePickerTriggerSize
+  mode: CalendarMode
+  open: boolean
+  placeholderText: string
 }
 
 const meta: Meta<DatePickerStoryArgs> = {
   title: 'Forms/DatePicker',
-  render: (args) => <DatePickerDemo key={`${args.size}-${args.mode}`} {...args} />,
-  args: { size: 'default', mode: 'single' },
+  render: ({ size, mode, open, placeholderText }) => (
+    <div style={{ minHeight: mode === 'range' ? 560 : 500, width: 340 }}>
+      <DatePicker
+        key={`${size}-${mode}-${open}`}
+        size={size} mode={mode} defaultOpen={open} placeholderText={placeholderText} style={{ width: 280 }}
+        defaultValue={mode === 'single' ? new Date(2026, 10, 12) : undefined}
+      />
+    </div>
+  ),
+  args: { size: 'default', mode: 'single', open: true, placeholderText: 'Select date' },
   argTypes: {
-    size: { name: 'Size', control: 'select', options: ['default', 'sm'] },
-    mode: { name: 'Mode', control: 'select', options: ['single', 'range'] },
+    size: { name: 'Size', control: 'select', options: ['lg', 'default', 'sm'], description: 'The trigger’s; the popover follows (sm → 250 px, else 322 px).' },
+    mode: { name: 'Mode', control: 'select', options: ['single', 'multiple', 'range'], description: 'One date, several, or a range (adds the presets rail).' },
+    open: { name: 'Open', control: 'boolean', description: 'Starts with the popover open. Click the trigger to toggle it.' },
+    placeholderText: { name: 'PlaceholderText', control: 'text' },
   },
 }
 export default meta

@@ -126,8 +126,8 @@ export const DatePickerTriggerRestingFocused: Story = {
 
 /** Trigger → popover, the whole lifecycle: a click opens the DatePickerPopover 8px under the trigger on `popover-enter`, choosing a day writes
  *  it into the trigger and closes on `popover-exit`, and focus returns to the trigger. */
-export const OpensTheCalendar: Story = {
-  name: 'Opens the calendar',
+export const DatePickerTriggerOpensTheCalendar: Story = {
+  name: 'DatePickerTrigger · Opens the calendar',
   args: { value: 'placeholder', forceState: 'Default' },
   play: async ({ canvasElement }) => {
     const trigger = canvasElement.querySelector<HTMLButtonElement>('[data-escala=DatePickerTrigger]')!
@@ -144,8 +144,8 @@ export const OpensTheCalendar: Story = {
 }
 
 /** A range from the trigger: the popover carries the presets rail, two clicks pick the dates, Apply closes it and the trigger shows "from – to". */
-export const PickARange: Story = {
-  name: 'Pick a range',
+export const DatePickerTriggerPickARange: Story = {
+  name: 'DatePickerTrigger · Pick a range',
   render: () => <div style={{ minHeight: 520 }}><DatePicker mode="range" placeholderText="Select dates" style={{ width: 320 }} /></div>,
   play: async ({ canvasElement }) => {
     const trigger = canvasElement.querySelector<HTMLButtonElement>('[data-escala=DatePickerTrigger]')!

@@ -997,6 +997,10 @@ explicitly out of scope. Individual components still adapt between `md` and `xl`
 > `node scripts/storybook/apply-families.mjs`; `storybookFamilies.test.ts` fails on a Figma set with no family, a
 > title off the manifest, an id collision, or an `All<X>` story name (the matrix is `AllCombinations`, an axis sweep is
 > the axis' plural). Folders: Buttons · Forms · Indicators · Content & Surfaces · Feedback · Navigation (no `Form Controls`).
+> The Desktop · Tablet · Mobile toolbar global is **`dimensions`, never `viewport`** — `viewport` is Storybook's own viewport
+> tool, and sharing the key made "Desktop" emulate a 1280×1024 screen that cut every story. A story pins a mode with
+> `globals: { dimensions: 'mobile' }`. A Playground renders as a stage (centred, min height; `EscalaScope stage`), and the
+> family Documentation opens on it.
 
 > **UPDATE (2026-11-12, owner's call): the Figma file's PALETTE wins over the generator.**
 > `Escala Design System (Real)` is curated and tested; for its accent (`#874fff`) the generator

@@ -8,7 +8,7 @@ const ids = process.argv.slice(2).length ? process.argv.slice(2) : [
   'blocks-overlay-feedbackrating--playground', 'blocks-overlay-destructiveconfirm--playground', 'blocks-overlay-formmodal--playground',
   'blocks-overlay-quickeditdialog--playground', 'blocks-overlay-sharemodal--playground',
   'blocks-overlay-cartdrawer--playground', 'blocks-auth-signup--playground', 'blocks-auth-newpassword--playground',
-  'blocks-auth-signinphone--playground', 'blocks-marketing-contactsection--playground', 'form-controls-input--all-types', 'forms-textarea--playground',
+  'blocks-auth-signinphone--playground', 'blocks-marketing-contactsection--playground', 'forms-input--types', 'forms-textarea--playground',
 ]
 const browser = await launch()
 for (const theme of ['light', 'dark']) {

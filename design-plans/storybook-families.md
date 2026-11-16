@@ -25,6 +25,25 @@ reverse.
 Measured on the build: 51 component entries (was 110), 102 Documentation pages in all (was 161), 549 index entries
 (was 603); 171 part stories hidden by default, 176 visible.
 
+### The Playground, second pass (2026-11-16, reported: "the playground is often cut and needs more UX")
+
+- **The cut was a key collision, not a layout bug.** The token mode global was named `viewport`, which is Storybook's
+  own viewport tool. "Desktop" therefore also emulated a 1280×1024 screen: every story sat in a frame wider and
+  taller than the canvas (cut on the right and under the addon panel), and the toolbar showed two "Desktop" buttons.
+  The global is `dimensions` now; Storybook's viewport tool is free again (responsive by default).
+- **A Playground is a stage** (`EscalaScope stage`): the component is centred (`margin: auto` on a flex child, so a
+  wide one scrolls from its edge instead of being cut on both sides), with the window's height in the canvas and
+  280 px in Documentation. Matrices (All Combinations…) and Blocks keep the page layout. Anatomy previews use a
+  160 px stage.
+- **Documentation opens on the Playground**: header, the description in one paragraph, a one-line caption, then the
+  Playground and its Controls. "When & how to use it" moved below them. At 1440×900 the component is on the first
+  screen (it used to start at y ≈ 750).
+- DatePicker's root story renders the `DatePicker` component (the trigger and popover wired, built in the parallel
+  bug-fix batch), with Size · Mode · Open · PlaceholderText.
+- `apply-families.mjs` also rewrites every PRE-family id (`<folder>/<Set>` titles, `Form Controls/Input`, the renamed
+  `All<X>` stories, TableParts and DatePickerPopover's folded story), so checks written on another branch against the
+  old ids are fixed by one run.
+
 ### Rebasing other branches onto this one
 
 Every story file's title moved, so a branch that adds or edits stories will conflict on the `title:` line. Resolve by

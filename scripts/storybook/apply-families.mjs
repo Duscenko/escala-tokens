@@ -104,8 +104,36 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
     console.log('Story files match spec/storybook-families.json.')
     process.exit(0)
   }
-  // Rewrite references to the ids that moved.
-  const moved = idMap.filter(([a, b]) => a !== b)
+  // Rewrite references to the ids that moved — in this run, and every id a set had before families existed
+  // (`<folder>/<Set>` titles, `Form Controls/Input`), so a branch written against the old ids is fixed by a re-run.
+  const legacy = []
+  const OLD_FOLDERS = [...manifest.folders, 'Form Controls']
+  for (const entry of familyPlan()) {
+    const file = join(STORIES, `${entry.set}.stories.tsx`)
+    if (!existsSync(file)) continue
+    const exps = [...readFileSync(file, 'utf8').matchAll(/^export const ([A-Za-z0-9_]+): Story\b/gm)].map((m) => m[1])
+    for (const folder of OLD_FOLDERS) {
+      const oldTitle = `${folder}/${entry.set}`
+      if (oldTitle === entry.title) continue
+      for (const e of exps) {
+        const local = entry.role === 'part' && e.startsWith(entry.set) && e !== entry.set ? e.slice(entry.set.length) : e
+        legacy.push([toId(oldTitle, storyNameFromExport(local)), toId(entry.title, storyNameFromExport(e))])
+      }
+      legacy.push([toId(oldTitle, 'Documentation'), toId(entry.title, 'Documentation')])
+    }
+  }
+  // Stories renamed or folded in the same change (F3/F4 of the plan): their old ids point at the survivor.
+  const RETIRED = [
+    ['form-controls-input--all-types', 'forms-input--types'], ['forms-input--all-types', 'forms-input--types'],
+    ['buttons-fabgroup--all-layouts', 'buttons-fabbutton--fab-group-layouts'],
+    ['forms-comboboxgrouplabel--all-sizes', 'forms-combobox--combobox-group-label-sizes'],
+    ['content-surfaces-accordion--all-variants', 'content-surfaces-accordion--all-combinations'],
+    ['forms-datepickerpopover--opens-from-trigger', 'forms-datepicker--playground'],
+    ['content-surfaces-tableparts--playground', 'content-surfaces-table--table-caption-playground'],
+    ['content-surfaces-tableparts--in-a-table', 'content-surfaces-table--table-empty-playground'],
+    ['content-surfaces-tableparts--documentation', 'content-surfaces-table--documentation'],
+  ]
+  const moved = [...RETIRED, ...idMap, ...legacy].filter(([a, b]) => a !== b)
   const refFiles = [...walk(join(ROOT, 'scripts/storybook-checks'), ['.mjs']), ...walk(join(ROOT, 'governance'), ['.json', '.md', '.yaml'])]
   for (const f of refFiles) {
     const src = readFileSync(f, 'utf8')

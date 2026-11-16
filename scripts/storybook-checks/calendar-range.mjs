@@ -23,10 +23,10 @@ check(await st(20) === 'Selected' && await st(12) !== 'RangeMiddle', 'third clic
 await day(20).focus(); await page.keyboard.press('ArrowRight'); await page.keyboard.press('ArrowRight'); await page.keyboard.press('Enter')
 check((await Promise.all([20, 21, 22].map(st))).join() === 'RangeStart,RangeMiddle,RangeEnd', 'keyboard: arrows + Enter end the range')
 
-await page.goto(story('forms-datepickerpopover--opens-from-trigger')); await sleep(1200)
+await page.goto(story('forms-datepicker--playground')); await sleep(1200)
 const sample = await page.evaluate(() => document.querySelector('[data-escala=DatePickerTrigger]').innerText)
 check(/Nov 12, 2026/.test(sample), 'DatePickerPopover story still opens on a day', sample)
-await page.goto(story('forms-datepickertrigger--pick-a-range')); await sleep(1500)
+await page.goto(story('forms-datepicker--date-picker-trigger-pick-a-range')); await sleep(1500)
 await page.locator('[data-escala=DatePickerTrigger]').click()
 await page.getByRole('button', { name: / 10, \d{4}$/ }).click()
 await page.getByRole('button', { name: / 18, \d{4}$/ }).click()
