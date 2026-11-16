@@ -10,6 +10,7 @@ import {
 import { PhosphorIconBrowser } from './PhosphorIconBrowser'
 import { phosphorCoreBody, phosphorIconMaskUrl } from '../../lib/phosphorIcons'
 import { sanitizeSvg, slugify } from '../../lib/utils'
+import { HelpGlyph } from './CodeHowTo'
 import { captureSnapshot, type DesignSnapshot } from '../../store/useDesignStore'
 import { recordEdit } from '../../lib/editHistory'
 import {
@@ -31,6 +32,7 @@ function CustomIcons() {
   const [selecting, setSelecting] = useState(false)
   const [selected, setSelected] = useState<Set<string>>(() => new Set())
   const [confirmAll, setConfirmAll] = useState(false)
+  const [help, setHelp] = useState(false)
   // The way back from a removal, in place: the Board's Undo is a tab away.
   const [undo, setUndo] = useState<{ icons: { name: string; svg: string }[]; count: number } | null>(null)
   const budget = iconBudget(customIcons)
@@ -94,8 +96,8 @@ function CustomIcons() {
 
   return (
     <section aria-labelledby="icons-yours-heading" className="flex flex-col gap-2">
-      <div className="flex items-center justify-between gap-2 px-1">
-        <div className="flex items-center gap-2 min-w-0">
+      <div className="flex flex-wrap items-center justify-between gap-x-2 gap-y-1 px-1">
+        <div className="flex items-center gap-1.5 min-w-0">
           <h2 id="icons-yours-heading" className="whitespace-nowrap text-ui font-semibold text-fg">Your icons</h2>
           <span
             className={`whitespace-nowrap text-mini font-mono tabular-nums ${over ? 'text-status-warning' : 'text-fg-faint'}`}
@@ -103,6 +105,17 @@ function CustomIcons() {
           >
             {budget.count.toLocaleString()}/{MAX_CUSTOM_ICONS}
           </span>
+          <button
+            type="button"
+            onClick={() => setHelp((v) => !v)}
+            aria-expanded={help}
+            aria-controls="icons-limits-help"
+            aria-label="About the icon limits"
+            title="About the icon limits"
+            className={`inline-flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-md transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50 ${help ? 'bg-elevated text-fg' : 'text-fg-faint hover:bg-elevated hover:text-fg'}`}
+          >
+            <HelpGlyph />
+          </button>
         </div>
         <input
           ref={fileRef}
@@ -113,13 +126,13 @@ function CustomIcons() {
           className="hidden"
           aria-label="Upload SVG icons"
         />
-        <div className="flex items-center gap-1">
+        <div className="ml-auto flex items-center gap-0.5">
           {customIcons.length > 0 && (
             <button
               type="button"
               onClick={() => { setSelecting((v) => !v); setSelected(new Set()); setConfirmAll(false) }}
               aria-pressed={selecting}
-              className="h-7 whitespace-nowrap rounded-lg px-2 text-caption font-medium text-fg-muted hover:text-fg hover:bg-elevated/60 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50"
+              className="h-7 whitespace-nowrap rounded-lg px-1.5 text-caption font-medium text-fg-muted hover:text-fg hover:bg-elevated/60 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50"
             >
               {selecting ? 'Done' : 'Select'}
             </button>
@@ -129,12 +142,30 @@ function CustomIcons() {
             disabled={full}
             title={full ? `The beta keeps ${MAX_CUSTOM_ICONS} icons (${formatKb(MAX_CUSTOM_ICON_BYTES)}) per design system` : undefined}
             aria-label="Upload SVG icons"
-            className="h-7 whitespace-nowrap rounded-lg px-2.5 text-caption font-medium bg-fg text-app transition-opacity hover:opacity-90 disabled:opacity-40 disabled:cursor-not-allowed focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50"
+            className="h-7 whitespace-nowrap rounded-lg px-2 text-caption font-medium bg-fg text-app transition-opacity hover:opacity-90 disabled:opacity-40 disabled:cursor-not-allowed focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50"
           >
             Upload
           </button>
         </div>
       </div>
+
+      {help && (
+        <div id="icons-limits-help" className="flex flex-col gap-1.5 rounded-lg border border-line bg-surface/60 p-3 text-caption leading-relaxed text-fg-muted">
+          <p className="font-medium text-fg">Your icons in the beta</p>
+          <p>
+            Each design system keeps up to <span className="text-fg">{MAX_CUSTOM_ICONS} icons</span> and{' '}
+            <span className="text-fg">{formatKb(MAX_CUSTOM_ICON_BYTES)}</span> in total, at most{' '}
+            {formatKb(MAX_SVG_BYTES)} per icon. You are using {budget.count.toLocaleString()} ({formatKb(budget.bytes)}).
+          </p>
+          <p>
+            They are for brand glyphs, logos and one-off marks. The full icon library is Phosphor ({PHOSPHOR_LIBRARY.count}), already included and not counted here.
+          </p>
+          <p>
+            Your icons travel with the system: your account, every saved copy, and the tokens file your Figma sync reads. The limit keeps all of them fast.
+          </p>
+          <p>Use <span className="text-fg">Select</span> to remove several at once. A larger allowance is planned for Pro.</p>
+        </div>
+      )}
 
       {over && (
         <p className="px-1 text-caption leading-relaxed text-status-warning">
