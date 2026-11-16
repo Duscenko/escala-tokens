@@ -258,7 +258,7 @@ export const POPOVER_FOOTER: ComponentRecipe = {
   parts: [
     part({}, () => ({
       root: {
-        paddingX: 'spacing.gap-control', paddingY: 'spacing.gap-control', gap: 'spacing.gap-control',
+        paddingX: 'spacing.inset-control', paddingY: 'spacing.inset-control', gap: 'spacing.gap-control',
         stroke: c('border.subtle'), strokeTopWidth: 'stroke.divider',
       },
       leading: { gap: 'spacing.gap-tight', text: c('content.secondary'), font: 'type.caption' },
@@ -291,7 +291,8 @@ export const TOOLTIP_CONTENT: ComponentRecipe = {
   slots: ['root', 'bubble', 'title', 'text', 'arrow'],
   defaults: { Size: 'default', Variant: 'default' },
   parts: [
-    part({}, () => ({ bubble: { radius: 'radius.overlay', gap: 'spacing.0_5', lift: 'popover-md' }, title: { font: 'type.label' } })),
+    part({}, () => ({ // A bubble stays a soft square on Radius/action (12): overlay (24) would turn it into a pill (DEC-2026-11-16-002).
+    bubble: { radius: 'radius.action', gap: 'spacing.0_5', lift: 'popover-md' }, title: { font: 'type.label' } })),
     part({ Size: TOOLTIP_SIZES }, (size) => ({
       bubble: size === 'sm'
         ? { paddingX: 'spacing.2', paddingY: 'spacing.1_5' }

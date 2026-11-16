@@ -129,11 +129,11 @@ export const CHIP_STATES = ['Default', 'Hover', 'Focused', 'Selected', 'Disabled
 export const CHIP_SHAPES = ['rounded', 'pill'] as const
 
 const CHIP_GEOMETRY: Record<string, { h: string; pad: string; gap: string; font: string; icon: string; radius: string }> = {
-  xs: { h: 'size.xs', pad: 'spacing.gap-control', gap: 'spacing.gap-tight', font: 'type.caption', icon: 'icon.small', radius: 'radius.control' },
-  sm: { h: 'size.sm', pad: 'spacing.gap-control', gap: 'spacing.gap-tight', font: 'type.label', icon: 'icon.small', radius: 'radius.control' },
-  default: { h: 'size.md', pad: 'spacing.inset-control', gap: 'spacing.gap-tight', font: 'type.label', icon: 'icon.medium', radius: 'radius.control' },
+  xs: { h: 'size.xs', pad: 'spacing.gap-control', gap: 'spacing.gap-tight', font: 'type.caption', icon: 'icon.small', radius: 'radius.action' },
+  sm: { h: 'size.sm', pad: 'spacing.gap-control', gap: 'spacing.gap-tight', font: 'type.label', icon: 'icon.small', radius: 'radius.action' },
+  default: { h: 'size.md', pad: 'spacing.inset-control', gap: 'spacing.gap-tight', font: 'type.label', icon: 'icon.medium', radius: 'radius.action' },
   lg: { h: 'size.lg', pad: 'spacing.inset-control', gap: 'spacing.gap-control', font: 'type.body-md', icon: 'icon.medium', radius: 'radius.action' },
-  xl: { h: 'size.xl', pad: 'spacing.gap-group', gap: 'spacing.gap-control', font: 'type.body-lg', icon: 'icon.large', radius: 'radius.container' },
+  xl: { h: 'size.xl', pad: 'spacing.gap-group', gap: 'spacing.gap-control', font: 'type.body-lg', icon: 'icon.large', radius: 'radius.action' },
 }
 
 function chipPaint(variant: string, appearance: string, state: string): SlotProps {
@@ -381,7 +381,8 @@ export const AVATAR: ComponentRecipe = {
       ring: { stroke: c('border.accent'), strokeWidth: 'stroke.md' },
     })),
     part({ Shape: AVATAR_SHAPES }, (shape) => {
-      const radius = shape === 'circle' ? 'radius.pill' : 'radius.control'
+      // A square avatar keeps Radius/action (12), never a circle (DEC-2026-11-16-002).
+      const radius = shape === 'circle' ? 'radius.pill' : 'radius.action'
       return { root: { radius }, image: { radius }, stroke: { radius }, ring: { radius } }
     }),
     part({ Size: AVATAR_SIZES }, (size) => {
@@ -466,7 +467,7 @@ export const AVATAR_GROUP: ComponentRecipe = {
       }
     }),
     part({ Shape: AVATAR_SHAPES }, (shape) => {
-      const radius = shape === 'circle' ? 'radius.pill' : 'radius.control'
+      const radius = shape === 'circle' ? 'radius.pill' : 'radius.action'
       return { item: { radius }, action: { radius } }
     }),
   ],

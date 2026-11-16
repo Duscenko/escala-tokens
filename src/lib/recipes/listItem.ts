@@ -28,7 +28,7 @@ export interface ListItemMetrics {
   /** The glyph box of the leading icon and the indicator. */
   icon: string
   label: string
-  /** Radius of the row (defaults to `radius.control`). */
+  /** Radius of the row (defaults to `radius.action`: a row inside an overlay, DEC-2026-11-16-001). */
   radius?: string
   /** A focus edge the file LAYS OUT (Combobox: a 1px edge that pushes the content in).
    *  Without it the edge is the 2px inset ring of Button (`focus` + `ring`). */
@@ -87,7 +87,7 @@ export function listItemRecipe(
   size: string,
   state: string,
   variant: string = 'default',
-  opts: { metrics?: Record<string, ListItemMetrics>; iconSlot?: string } = {},
+  opts: { metrics?: Record<string, ListItemMetrics>; iconSlot?: string; radius?: string } = {},
 ): SlotMap {
   const metrics = (opts.metrics ?? LIST_ITEM_METRICS)[size]
   const iconSlot = opts.iconSlot ?? 'icon'
@@ -96,7 +96,7 @@ export function listItemRecipe(
   const ink = listItemInk(variant, disabled)
 
   const root: SlotProps = {
-    minHeight: metrics.minHeight, radius: metrics.radius ?? 'radius.control', gap: metrics.gap,
+    minHeight: metrics.minHeight, radius: opts.radius ?? metrics.radius ?? 'radius.action', gap: metrics.gap,
     paddingX: edge ? `${metrics.paddingX}+${metrics.edge}` : metrics.paddingX,
     paddingY: edge ? `${metrics.paddingY}+${metrics.edge}` : metrics.paddingY,
     ...listItemRootPaint(state, variant, metrics),

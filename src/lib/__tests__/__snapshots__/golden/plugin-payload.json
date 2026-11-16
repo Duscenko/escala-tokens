@@ -11774,7 +11774,7 @@
             "": {
               "root": {
                 "height": "size.compact",
-                "radius": "radius.control",
+                "radius": "radius.action",
                 "paddingX": "spacing.gap-control",
                 "gap": "spacing.gap-control",
                 "font": "type.body-sm"
@@ -12146,8 +12146,8 @@
                 "text": "color.content.primary"
               },
               "list": {
-                "paddingX": "spacing.gap-tight",
-                "paddingY": "spacing.gap-tight"
+                "paddingX": "spacing.inset-control",
+                "paddingY": "spacing.inset-control"
               },
               "separator": {
                 "paddingY": "spacing.gap-tight"
@@ -12181,7 +12181,7 @@
                 "font": "type.caption"
               },
               "footer": {
-                "paddingX": "spacing.gap-control"
+                "paddingX": "spacing.inset-control"
               }
             },
             "default": {
@@ -12189,7 +12189,7 @@
                 "font": "type.body-sm"
               },
               "footer": {
-                "paddingX": "spacing.gap-control"
+                "paddingX": "spacing.inset-control"
               }
             },
             "lg": {
@@ -12197,7 +12197,7 @@
                 "font": "type.body-sm"
               },
               "footer": {
-                "paddingX": "spacing.2_5"
+                "paddingX": "spacing.inset-control"
               }
             }
           }
@@ -12229,7 +12229,7 @@
             "sm|Default": {
               "root": {
                 "minHeight": "spacing.6+spacing.1",
-                "radius": "radius.control",
+                "radius": "radius.action",
                 "gap": "spacing.1_5",
                 "paddingX": "spacing.gap-control",
                 "paddingY": "spacing.gap-tight",
@@ -12265,7 +12265,7 @@
             "sm|Hover": {
               "root": {
                 "minHeight": "spacing.6+spacing.1",
-                "radius": "radius.control",
+                "radius": "radius.action",
                 "gap": "spacing.1_5",
                 "paddingX": "spacing.gap-control",
                 "paddingY": "spacing.gap-tight",
@@ -12298,7 +12298,7 @@
             "sm|Focused": {
               "root": {
                 "minHeight": "spacing.6+spacing.1",
-                "radius": "radius.control",
+                "radius": "radius.action",
                 "gap": "spacing.1_5",
                 "paddingX": "spacing.gap-control+stroke.control",
                 "paddingY": "spacing.gap-tight+stroke.control",
@@ -12333,7 +12333,7 @@
             "sm|Selected": {
               "root": {
                 "minHeight": "spacing.6+spacing.1",
-                "radius": "radius.control",
+                "radius": "radius.action",
                 "gap": "spacing.1_5",
                 "paddingX": "spacing.gap-control",
                 "paddingY": "spacing.gap-tight",
@@ -12366,7 +12366,7 @@
             "sm|Disabled": {
               "root": {
                 "minHeight": "spacing.6+spacing.1",
-                "radius": "radius.control",
+                "radius": "radius.action",
                 "gap": "spacing.1_5",
                 "paddingX": "spacing.gap-control",
                 "paddingY": "spacing.gap-tight",
@@ -12399,7 +12399,7 @@
             "default|Default": {
               "root": {
                 "minHeight": "size.compact",
-                "radius": "radius.control",
+                "radius": "radius.action",
                 "gap": "spacing.gap-control",
                 "paddingX": "spacing.gap-control",
                 "paddingY": "spacing.gap-tight",
@@ -12435,7 +12435,7 @@
             "default|Hover": {
               "root": {
                 "minHeight": "size.compact",
-                "radius": "radius.control",
+                "radius": "radius.action",
                 "gap": "spacing.gap-control",
                 "paddingX": "spacing.gap-control",
                 "paddingY": "spacing.gap-tight",
@@ -12468,7 +12468,7 @@
             "default|Focused": {
               "root": {
                 "minHeight": "size.compact",
-                "radius": "radius.control",
+                "radius": "radius.action",
                 "gap": "spacing.gap-control",
                 "paddingX": "spacing.gap-control+stroke.control",
                 "paddingY": "spacing.gap-tight+stroke.control",
@@ -12503,7 +12503,7 @@
             "default|Selected": {
               "root": {
                 "minHeight": "size.compact",
-                "radius": "radius.control",
+                "radius": "radius.action",
                 "gap": "spacing.gap-control",
                 "paddingX": "spacing.gap-control",
                 "paddingY": "spacing.gap-tight",
@@ -12536,7 +12536,7 @@
             "default|Disabled": {
               "root": {
                 "minHeight": "size.compact",
-                "radius": "radius.control",
+                "radius": "radius.action",
                 "gap": "spacing.gap-control",
                 "paddingX": "spacing.gap-control",
                 "paddingY": "spacing.gap-tight",
@@ -12569,9 +12569,9 @@
             "lg|Default": {
               "root": {
                 "minHeight": "spacing.8+spacing.1",
-                "radius": "radius.control",
+                "radius": "radius.action",
                 "gap": "spacing.gap-control",
-                "paddingX": "spacing.2_5",
+                "paddingX": "spacing.inset-control",
                 "paddingY": "spacing.gap-tight",
                 "fill": "none",
                 "strokeWidth": "stroke.none"
@@ -12605,9 +12605,9 @@
             "lg|Hover": {
               "root": {
                 "minHeight": "spacing.8+spacing.1",
-                "radius": "radius.control",
+                "radius": "radius.action",
                 "gap": "spacing.gap-control",
-                "paddingX": "spacing.2_5",
+                "paddingX": "spacing.inset-control",
                 "paddingY": "spacing.gap-tight",
                 "fill": "color.surface.muted",
                 "strokeWidth": "stroke.none"
@@ -12638,9 +12638,9 @@
             "lg|Focused": {
               "root": {
                 "minHeight": "spacing.8+spacing.1",
-                "radius": "radius.control",
+                "radius": "radius.action",
                 "gap": "spacing.gap-control",
-                "paddingX": "spacing.2_5+stroke.control",
+                "paddingX": "spacing.inset-control+stroke.control",
                 "paddingY": "spacing.gap-tight+stroke.control",
                 "fill": "color.surface.muted",
                 "stroke": "color.border.focus",
@@ -12673,9 +12673,9 @@
             "lg|Selected": {
               "root": {
                 "minHeight": "spacing.8+spacing.1",
-                "radius": "radius.control",
+                "radius": "radius.action",
                 "gap": "spacing.gap-control",
-                "paddingX": "spacing.2_5",
+                "paddingX": "spacing.inset-control",
                 "paddingY": "spacing.gap-tight",
                 "fill": "color.surface.selected",
                 "strokeWidth": "stroke.none"
@@ -12706,9 +12706,9 @@
             "lg|Disabled": {
               "root": {
                 "minHeight": "spacing.8+spacing.1",
-                "radius": "radius.control",
+                "radius": "radius.action",
                 "gap": "spacing.gap-control",
-                "paddingX": "spacing.2_5",
+                "paddingX": "spacing.inset-control",
                 "paddingY": "spacing.gap-tight",
                 "fill": "none",
                 "strokeWidth": "stroke.none"
@@ -14693,7 +14693,7 @@
                 "fill": "color.content.on-action"
               },
               "io": {
-                "text": "color.content.on-action"
+                "text": "color.action.primary.default"
               },
               "thumbIcon": {
                 "text": "color.action.primary.default"
@@ -14709,10 +14709,10 @@
                 "fill": "color.content.on-action"
               },
               "io": {
-                "text": "color.content.on-action"
+                "text": "color.action.primary.hover"
               },
               "thumbIcon": {
-                "text": "color.action.primary.default"
+                "text": "color.action.primary.hover"
               }
             },
             "true|Focused": {
@@ -14725,7 +14725,7 @@
                 "fill": "color.content.on-action"
               },
               "io": {
-                "text": "color.content.on-action"
+                "text": "color.action.primary.default"
               },
               "thumbIcon": {
                 "text": "color.action.primary.default"
@@ -14738,13 +14738,13 @@
                 "ring": "none"
               },
               "thumb": {
-                "fill": "color.surface.input"
+                "fill": "color.content.disabled"
               },
               "io": {
-                "text": "color.surface.input"
+                "text": "color.action.disabled.default"
               },
               "thumbIcon": {
-                "text": "color.content.disabled"
+                "text": "color.action.disabled.default"
               }
             },
             "false|Default": {
@@ -14754,13 +14754,13 @@
                 "ring": "none"
               },
               "thumb": {
-                "fill": "color.surface.input"
+                "fill": "color.content.secondary"
               },
               "io": {
-                "text": "color.content.subtle"
+                "text": "color.surface.muted"
               },
               "thumbIcon": {
-                "text": "color.content.subtle"
+                "text": "color.surface.muted"
               }
             },
             "false|Hover": {
@@ -14770,13 +14770,13 @@
                 "ring": "none"
               },
               "thumb": {
-                "fill": "color.surface.input"
+                "fill": "color.content.secondary"
               },
               "io": {
-                "text": "color.content.subtle"
+                "text": "color.surface.muted-hover"
               },
               "thumbIcon": {
-                "text": "color.content.subtle"
+                "text": "color.surface.muted-hover"
               }
             },
             "false|Focused": {
@@ -14786,13 +14786,13 @@
                 "ring": "color.border.ring.default"
               },
               "thumb": {
-                "fill": "color.surface.input"
+                "fill": "color.content.secondary"
               },
               "io": {
-                "text": "color.content.subtle"
+                "text": "color.surface.muted"
               },
               "thumbIcon": {
-                "text": "color.content.subtle"
+                "text": "color.surface.muted"
               }
             },
             "false|Disabled": {
@@ -14802,13 +14802,13 @@
                 "ring": "none"
               },
               "thumb": {
-                "fill": "color.surface.input"
+                "fill": "color.content.disabled"
               },
               "io": {
-                "text": "color.content.disabled"
+                "text": "color.surface.muted"
               },
               "thumbIcon": {
-                "text": "color.content.disabled"
+                "text": "color.surface.muted"
               }
             }
           }
@@ -18444,7 +18444,7 @@
             "xs|rounded": {
               "root": {
                 "height": "size.xs",
-                "radius": "radius.control",
+                "radius": "radius.action",
                 "font": "type.caption",
                 "gap": "spacing.gap-tight"
               },
@@ -18478,7 +18478,7 @@
             "sm|rounded": {
               "root": {
                 "height": "size.sm",
-                "radius": "radius.control",
+                "radius": "radius.action",
                 "font": "type.label",
                 "gap": "spacing.gap-tight"
               },
@@ -18512,7 +18512,7 @@
             "default|rounded": {
               "root": {
                 "height": "size.md",
-                "radius": "radius.control",
+                "radius": "radius.action",
                 "font": "type.label",
                 "gap": "spacing.gap-tight"
               },
@@ -18580,7 +18580,7 @@
             "xl|rounded": {
               "root": {
                 "height": "size.xl",
-                "radius": "radius.container",
+                "radius": "radius.action",
                 "font": "type.body-lg",
                 "gap": "spacing.gap-control"
               },
@@ -20081,16 +20081,16 @@
             },
             "rounded": {
               "root": {
-                "radius": "radius.control"
+                "radius": "radius.action"
               },
               "image": {
-                "radius": "radius.control"
+                "radius": "radius.action"
               },
               "stroke": {
-                "radius": "radius.control"
+                "radius": "radius.action"
               },
               "ring": {
-                "radius": "radius.control"
+                "radius": "radius.action"
               }
             }
           }
@@ -20648,10 +20648,10 @@
             },
             "rounded": {
               "item": {
-                "radius": "radius.control"
+                "radius": "radius.action"
               },
               "action": {
-                "radius": "radius.control"
+                "radius": "radius.action"
               }
             }
           }
@@ -23733,8 +23733,8 @@
           "values": {
             "": {
               "root": {
-                "paddingX": "spacing.gap-control",
-                "paddingY": "spacing.gap-control",
+                "paddingX": "spacing.inset-control",
+                "paddingY": "spacing.inset-control",
                 "gap": "spacing.gap-control",
                 "stroke": "color.border.subtle",
                 "strokeTopWidth": "stroke.divider"
@@ -23771,7 +23771,7 @@
           "values": {
             "": {
               "bubble": {
-                "radius": "radius.overlay",
+                "radius": "radius.action",
                 "gap": "spacing.0_5",
                 "lift": "popover-md"
               },
@@ -26354,28 +26354,28 @@
               "root": {
                 "fill": "none",
                 "text": "color.content.secondary",
-                "radius": "radius.action"
+                "radius": "radius.item"
               }
             },
             "false|Hover": {
               "root": {
                 "fill": "color.action.ghost.hover",
                 "text": "color.content.primary",
-                "radius": "radius.action"
+                "radius": "radius.item"
               }
             },
             "false|Pressed": {
               "root": {
                 "fill": "color.action.ghost.pressed",
                 "text": "color.content.primary",
-                "radius": "radius.action"
+                "radius": "radius.item"
               }
             },
             "false|Focused": {
               "root": {
                 "fill": "none",
                 "text": "color.content.secondary",
-                "radius": "radius.action",
+                "radius": "radius.item",
                 "focus": "color.border.focus",
                 "ring": "color.border.ring.default"
               }
@@ -26384,14 +26384,14 @@
               "root": {
                 "fill": "none",
                 "text": "color.content.disabled",
-                "radius": "radius.action"
+                "radius": "radius.item"
               }
             },
             "true|Default": {
               "root": {
                 "fill": "color.surface.input",
                 "text": "color.content.primary",
-                "radius": "radius.control",
+                "radius": "radius.item",
                 "shadow": "shadow.xs"
               }
             },
@@ -26399,7 +26399,7 @@
               "root": {
                 "fill": "color.surface.input",
                 "text": "color.content.primary",
-                "radius": "radius.control",
+                "radius": "radius.item",
                 "shadow": "shadow.xs"
               }
             },
@@ -26407,7 +26407,7 @@
               "root": {
                 "fill": "color.surface.input",
                 "text": "color.content.primary",
-                "radius": "radius.control",
+                "radius": "radius.item",
                 "shadow": "shadow.xs"
               }
             },
@@ -26415,7 +26415,7 @@
               "root": {
                 "fill": "color.surface.input",
                 "text": "color.content.primary",
-                "radius": "radius.control",
+                "radius": "radius.item",
                 "shadow": "shadow.xs",
                 "focus": "color.border.focus",
                 "ring": "color.border.ring.default"
@@ -26425,7 +26425,7 @@
               "root": {
                 "fill": "color.surface.input",
                 "text": "color.content.disabled",
-                "radius": "radius.control",
+                "radius": "radius.item",
                 "highlight": "none"
               }
             }
@@ -27853,12 +27853,13 @@
                 "width": "spacing.32+spacing.32"
               },
               "header": {
-                "paddingX": "spacing.gap-tight",
-                "paddingY": "spacing.gap-tight"
+                "paddingX": "spacing.inset-control",
+                "paddingY": "spacing.inset-control",
+                "paddingBottom": "spacing.none"
               },
               "content": {
-                "paddingX": "spacing.gap-tight",
-                "paddingY": "spacing.gap-tight"
+                "paddingX": "spacing.inset-control",
+                "paddingY": "spacing.inset-control"
               },
               "separator": {
                 "fill": "color.border.subtle",
@@ -27953,7 +27954,7 @@
             "default|default|Default": {
               "root": {
                 "minHeight": "size.sm",
-                "radius": "radius.control",
+                "radius": "radius.action",
                 "gap": "spacing.gap-control",
                 "paddingX": "spacing.gap-control",
                 "paddingY": "spacing.gap-tight",
@@ -27993,7 +27994,7 @@
             "default|default|Hover": {
               "root": {
                 "minHeight": "size.sm",
-                "radius": "radius.control",
+                "radius": "radius.action",
                 "gap": "spacing.gap-control",
                 "paddingX": "spacing.gap-control",
                 "paddingY": "spacing.gap-tight",
@@ -28030,7 +28031,7 @@
             "default|default|Focused": {
               "root": {
                 "minHeight": "size.sm",
-                "radius": "radius.control",
+                "radius": "radius.action",
                 "gap": "spacing.gap-control",
                 "paddingX": "spacing.gap-control",
                 "paddingY": "spacing.gap-tight",
@@ -28069,7 +28070,7 @@
             "default|default|Selected": {
               "root": {
                 "minHeight": "size.sm",
-                "radius": "radius.control",
+                "radius": "radius.action",
                 "gap": "spacing.gap-control",
                 "paddingX": "spacing.gap-control",
                 "paddingY": "spacing.gap-tight",
@@ -28106,7 +28107,7 @@
             "default|default|Disabled": {
               "root": {
                 "minHeight": "size.sm",
-                "radius": "radius.control",
+                "radius": "radius.action",
                 "gap": "spacing.gap-control",
                 "paddingX": "spacing.gap-control",
                 "paddingY": "spacing.gap-tight",
@@ -28143,7 +28144,7 @@
             "default|destructive|Default": {
               "root": {
                 "minHeight": "size.sm",
-                "radius": "radius.control",
+                "radius": "radius.action",
                 "gap": "spacing.gap-control",
                 "paddingX": "spacing.gap-control",
                 "paddingY": "spacing.gap-tight",
@@ -28183,7 +28184,7 @@
             "default|destructive|Hover": {
               "root": {
                 "minHeight": "size.sm",
-                "radius": "radius.control",
+                "radius": "radius.action",
                 "gap": "spacing.gap-control",
                 "paddingX": "spacing.gap-control",
                 "paddingY": "spacing.gap-tight",
@@ -28220,7 +28221,7 @@
             "default|destructive|Focused": {
               "root": {
                 "minHeight": "size.sm",
-                "radius": "radius.control",
+                "radius": "radius.action",
                 "gap": "spacing.gap-control",
                 "paddingX": "spacing.gap-control",
                 "paddingY": "spacing.gap-tight",
@@ -28259,7 +28260,7 @@
             "default|destructive|Selected": {
               "root": {
                 "minHeight": "size.sm",
-                "radius": "radius.control",
+                "radius": "radius.action",
                 "gap": "spacing.gap-control",
                 "paddingX": "spacing.gap-control",
                 "paddingY": "spacing.gap-tight",
@@ -28296,7 +28297,7 @@
             "default|destructive|Disabled": {
               "root": {
                 "minHeight": "size.sm",
-                "radius": "radius.control",
+                "radius": "radius.action",
                 "gap": "spacing.gap-control",
                 "paddingX": "spacing.gap-control",
                 "paddingY": "spacing.gap-tight",
@@ -28333,7 +28334,7 @@
             "sm|default|Default": {
               "root": {
                 "minHeight": "size.xs",
-                "radius": "radius.control",
+                "radius": "radius.action",
                 "gap": "spacing.gap-tight",
                 "paddingX": "spacing.gap-control",
                 "paddingY": "spacing.gap-tight",
@@ -28373,7 +28374,7 @@
             "sm|default|Hover": {
               "root": {
                 "minHeight": "size.xs",
-                "radius": "radius.control",
+                "radius": "radius.action",
                 "gap": "spacing.gap-tight",
                 "paddingX": "spacing.gap-control",
                 "paddingY": "spacing.gap-tight",
@@ -28410,7 +28411,7 @@
             "sm|default|Focused": {
               "root": {
                 "minHeight": "size.xs",
-                "radius": "radius.control",
+                "radius": "radius.action",
                 "gap": "spacing.gap-tight",
                 "paddingX": "spacing.gap-control",
                 "paddingY": "spacing.gap-tight",
@@ -28449,7 +28450,7 @@
             "sm|default|Selected": {
               "root": {
                 "minHeight": "size.xs",
-                "radius": "radius.control",
+                "radius": "radius.action",
                 "gap": "spacing.gap-tight",
                 "paddingX": "spacing.gap-control",
                 "paddingY": "spacing.gap-tight",
@@ -28486,7 +28487,7 @@
             "sm|default|Disabled": {
               "root": {
                 "minHeight": "size.xs",
-                "radius": "radius.control",
+                "radius": "radius.action",
                 "gap": "spacing.gap-tight",
                 "paddingX": "spacing.gap-control",
                 "paddingY": "spacing.gap-tight",
@@ -28523,7 +28524,7 @@
             "sm|destructive|Default": {
               "root": {
                 "minHeight": "size.xs",
-                "radius": "radius.control",
+                "radius": "radius.action",
                 "gap": "spacing.gap-tight",
                 "paddingX": "spacing.gap-control",
                 "paddingY": "spacing.gap-tight",
@@ -28563,7 +28564,7 @@
             "sm|destructive|Hover": {
               "root": {
                 "minHeight": "size.xs",
-                "radius": "radius.control",
+                "radius": "radius.action",
                 "gap": "spacing.gap-tight",
                 "paddingX": "spacing.gap-control",
                 "paddingY": "spacing.gap-tight",
@@ -28600,7 +28601,7 @@
             "sm|destructive|Focused": {
               "root": {
                 "minHeight": "size.xs",
-                "radius": "radius.control",
+                "radius": "radius.action",
                 "gap": "spacing.gap-tight",
                 "paddingX": "spacing.gap-control",
                 "paddingY": "spacing.gap-tight",
@@ -28639,7 +28640,7 @@
             "sm|destructive|Selected": {
               "root": {
                 "minHeight": "size.xs",
-                "radius": "radius.control",
+                "radius": "radius.action",
                 "gap": "spacing.gap-tight",
                 "paddingX": "spacing.gap-control",
                 "paddingY": "spacing.gap-tight",
@@ -28676,7 +28677,7 @@
             "sm|destructive|Disabled": {
               "root": {
                 "minHeight": "size.xs",
-                "radius": "radius.control",
+                "radius": "radius.action",
                 "gap": "spacing.gap-tight",
                 "paddingX": "spacing.gap-control",
                 "paddingY": "spacing.gap-tight",
@@ -28713,7 +28714,7 @@
             "lg|default|Default": {
               "root": {
                 "minHeight": "size.md",
-                "radius": "radius.control",
+                "radius": "radius.action",
                 "gap": "spacing.gap-control",
                 "paddingX": "spacing.inset-control",
                 "paddingY": "spacing.gap-tight",
@@ -28753,7 +28754,7 @@
             "lg|default|Hover": {
               "root": {
                 "minHeight": "size.md",
-                "radius": "radius.control",
+                "radius": "radius.action",
                 "gap": "spacing.gap-control",
                 "paddingX": "spacing.inset-control",
                 "paddingY": "spacing.gap-tight",
@@ -28790,7 +28791,7 @@
             "lg|default|Focused": {
               "root": {
                 "minHeight": "size.md",
-                "radius": "radius.control",
+                "radius": "radius.action",
                 "gap": "spacing.gap-control",
                 "paddingX": "spacing.inset-control",
                 "paddingY": "spacing.gap-tight",
@@ -28829,7 +28830,7 @@
             "lg|default|Selected": {
               "root": {
                 "minHeight": "size.md",
-                "radius": "radius.control",
+                "radius": "radius.action",
                 "gap": "spacing.gap-control",
                 "paddingX": "spacing.inset-control",
                 "paddingY": "spacing.gap-tight",
@@ -28866,7 +28867,7 @@
             "lg|default|Disabled": {
               "root": {
                 "minHeight": "size.md",
-                "radius": "radius.control",
+                "radius": "radius.action",
                 "gap": "spacing.gap-control",
                 "paddingX": "spacing.inset-control",
                 "paddingY": "spacing.gap-tight",
@@ -28903,7 +28904,7 @@
             "lg|destructive|Default": {
               "root": {
                 "minHeight": "size.md",
-                "radius": "radius.control",
+                "radius": "radius.action",
                 "gap": "spacing.gap-control",
                 "paddingX": "spacing.inset-control",
                 "paddingY": "spacing.gap-tight",
@@ -28943,7 +28944,7 @@
             "lg|destructive|Hover": {
               "root": {
                 "minHeight": "size.md",
-                "radius": "radius.control",
+                "radius": "radius.action",
                 "gap": "spacing.gap-control",
                 "paddingX": "spacing.inset-control",
                 "paddingY": "spacing.gap-tight",
@@ -28980,7 +28981,7 @@
             "lg|destructive|Focused": {
               "root": {
                 "minHeight": "size.md",
-                "radius": "radius.control",
+                "radius": "radius.action",
                 "gap": "spacing.gap-control",
                 "paddingX": "spacing.inset-control",
                 "paddingY": "spacing.gap-tight",
@@ -29019,7 +29020,7 @@
             "lg|destructive|Selected": {
               "root": {
                 "minHeight": "size.md",
-                "radius": "radius.control",
+                "radius": "radius.action",
                 "gap": "spacing.gap-control",
                 "paddingX": "spacing.inset-control",
                 "paddingY": "spacing.gap-tight",
@@ -29056,7 +29057,7 @@
             "lg|destructive|Disabled": {
               "root": {
                 "minHeight": "size.md",
-                "radius": "radius.control",
+                "radius": "radius.action",
                 "gap": "spacing.gap-control",
                 "paddingX": "spacing.inset-control",
                 "paddingY": "spacing.gap-tight",
@@ -29111,8 +29112,8 @@
           "values": {
             "": {
               "root": {
-                "paddingX": "spacing.gap-control",
-                "paddingY": "spacing.gap-control",
+                "paddingX": "spacing.inset-control",
+                "paddingY": "spacing.inset-control",
                 "gap": "spacing.gap-control",
                 "stroke": "color.border.subtle",
                 "strokeTopWidth": "stroke.divider"
@@ -29448,7 +29449,7 @@
             "default|Default": {
               "root": {
                 "minHeight": "size.sm",
-                "radius": "radius.control",
+                "radius": "radius.item",
                 "gap": "spacing.gap-control",
                 "paddingX": "spacing.gap-control",
                 "paddingY": "spacing.gap-tight",
@@ -29488,7 +29489,7 @@
             "default|Hover": {
               "root": {
                 "minHeight": "size.sm",
-                "radius": "radius.control",
+                "radius": "radius.item",
                 "gap": "spacing.gap-control",
                 "paddingX": "spacing.gap-control",
                 "paddingY": "spacing.gap-tight",
@@ -29525,7 +29526,7 @@
             "default|Focused": {
               "root": {
                 "minHeight": "size.sm",
-                "radius": "radius.control",
+                "radius": "radius.item",
                 "gap": "spacing.gap-control",
                 "paddingX": "spacing.gap-control",
                 "paddingY": "spacing.gap-tight",
@@ -29564,7 +29565,7 @@
             "default|Current": {
               "root": {
                 "minHeight": "size.sm",
-                "radius": "radius.control",
+                "radius": "radius.item",
                 "gap": "spacing.gap-control",
                 "paddingX": "spacing.gap-control",
                 "paddingY": "spacing.gap-tight",
@@ -29601,7 +29602,7 @@
             "default|Disabled": {
               "root": {
                 "minHeight": "size.sm",
-                "radius": "radius.control",
+                "radius": "radius.item",
                 "gap": "spacing.gap-control",
                 "paddingX": "spacing.gap-control",
                 "paddingY": "spacing.gap-tight",
@@ -29638,7 +29639,7 @@
             "sm|Default": {
               "root": {
                 "minHeight": "size.xs",
-                "radius": "radius.control",
+                "radius": "radius.item",
                 "gap": "spacing.gap-tight",
                 "paddingX": "spacing.gap-control",
                 "paddingY": "spacing.gap-tight",
@@ -29678,7 +29679,7 @@
             "sm|Hover": {
               "root": {
                 "minHeight": "size.xs",
-                "radius": "radius.control",
+                "radius": "radius.item",
                 "gap": "spacing.gap-tight",
                 "paddingX": "spacing.gap-control",
                 "paddingY": "spacing.gap-tight",
@@ -29715,7 +29716,7 @@
             "sm|Focused": {
               "root": {
                 "minHeight": "size.xs",
-                "radius": "radius.control",
+                "radius": "radius.item",
                 "gap": "spacing.gap-tight",
                 "paddingX": "spacing.gap-control",
                 "paddingY": "spacing.gap-tight",
@@ -29754,7 +29755,7 @@
             "sm|Current": {
               "root": {
                 "minHeight": "size.xs",
-                "radius": "radius.control",
+                "radius": "radius.item",
                 "gap": "spacing.gap-tight",
                 "paddingX": "spacing.gap-control",
                 "paddingY": "spacing.gap-tight",
@@ -29791,7 +29792,7 @@
             "sm|Disabled": {
               "root": {
                 "minHeight": "size.xs",
-                "radius": "radius.control",
+                "radius": "radius.item",
                 "gap": "spacing.gap-tight",
                 "paddingX": "spacing.gap-control",
                 "paddingY": "spacing.gap-tight",
@@ -29828,7 +29829,7 @@
             "lg|Default": {
               "root": {
                 "minHeight": "size.md",
-                "radius": "radius.control",
+                "radius": "radius.item",
                 "gap": "spacing.gap-control",
                 "paddingX": "spacing.inset-control",
                 "paddingY": "spacing.gap-tight",
@@ -29868,7 +29869,7 @@
             "lg|Hover": {
               "root": {
                 "minHeight": "size.md",
-                "radius": "radius.control",
+                "radius": "radius.item",
                 "gap": "spacing.gap-control",
                 "paddingX": "spacing.inset-control",
                 "paddingY": "spacing.gap-tight",
@@ -29905,7 +29906,7 @@
             "lg|Focused": {
               "root": {
                 "minHeight": "size.md",
-                "radius": "radius.control",
+                "radius": "radius.item",
                 "gap": "spacing.gap-control",
                 "paddingX": "spacing.inset-control",
                 "paddingY": "spacing.gap-tight",
@@ -29944,7 +29945,7 @@
             "lg|Current": {
               "root": {
                 "minHeight": "size.md",
-                "radius": "radius.control",
+                "radius": "radius.item",
                 "gap": "spacing.gap-control",
                 "paddingX": "spacing.inset-control",
                 "paddingY": "spacing.gap-tight",
@@ -29981,7 +29982,7 @@
             "lg|Disabled": {
               "root": {
                 "minHeight": "size.md",
-                "radius": "radius.control",
+                "radius": "radius.item",
                 "gap": "spacing.gap-control",
                 "paddingX": "spacing.inset-control",
                 "paddingY": "spacing.gap-tight",

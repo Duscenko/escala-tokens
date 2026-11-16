@@ -132,8 +132,9 @@ export const ACCOUNT_MENU_TRIGGER: ComponentRecipe = {
 // Size default · sm · lg) and its `SegmentedControlItem` (1102:5087, 30 variants: Size × Checked ×
 // State Default · Hover · Pressed · Focused · Disabled). The track is a Surface/muted pill (Radius/
 // action) with gap-tight of padding around a `Content` slot of items 4 apart; every item is 8 less than
-// the track in height (Size/control-sm 32 · control-xs 24 · control-md 40). A checked item is the raised
-// thumb (Surface/input, Shadow/xs, Radius/control); the others are ghost fills on hover / press. Focused:
+// the track in height (Size/control-sm 32 · control-xs 24 · control-md 40). Every item, checked or not, is
+// Radius/item: track 12 − gap-tight 4 = 8, concentric (DEC-2026-11-16-001). A checked item is the raised
+// thumb (Surface/input, Shadow/xs, Radius/item); the others are ghost fills on hover / press. Focused:
 // a 2px edge inside (not in the layout) + a 2px halo outside.
 export const SEGMENTED_CONTROL_SIZES = ['default', 'sm', 'lg'] as const
 export const SEGMENTED_CONTROL: ComponentRecipe = {
@@ -158,12 +159,12 @@ const SEGMENT_ITEM: Record<string, { box: string; gap: string; icon: string }> =
 function segmentPaint(checked: string, state: string): SlotMap {
   const on = checked === 'true'
   // A disabled raised segment keeps the fill but loses Shadow/xs (the file draws no effect on it).
-  if (state === 'Disabled') return { root: { fill: on ? c('surface.input') : NONE, text: c('content.disabled'), radius: on ? 'radius.control' : 'radius.action', ...(on ? { highlight: NONE } : {}) } }
+  if (state === 'Disabled') return { root: { fill: on ? c('surface.input') : NONE, text: c('content.disabled'), radius: 'radius.item', ...(on ? { highlight: NONE } : {}) } }
   // A `focus` of none would clear the box-shadow the raised segment carries, so only Focused sets it.
   const focus = state === 'Focused' ? { focus: c('border.focus'), ring: c('border.ring.default') } : {}
-  if (on) return { root: { fill: c('surface.input'), text: c('content.primary'), radius: 'radius.control', shadow: 'shadow.xs', ...focus } }
+  if (on) return { root: { fill: c('surface.input'), text: c('content.primary'), radius: 'radius.item', shadow: 'shadow.xs', ...focus } }
   const fill = state === 'Hover' ? c('action.ghost.hover') : state === 'Pressed' ? c('action.ghost.pressed') : NONE
-  return { root: { fill, text: c(state === 'Hover' || state === 'Pressed' ? 'content.primary' : 'content.secondary'), radius: 'radius.action', ...focus } }
+  return { root: { fill, text: c(state === 'Hover' || state === 'Pressed' ? 'content.primary' : 'content.secondary'), radius: 'radius.item', ...focus } }
 }
 
 export const SEGMENTED_CONTROL_ITEM: ComponentRecipe = {
@@ -431,8 +432,10 @@ export const DROPDOWN_MENU: ComponentRecipe = {
         fill: c('surface.layer-2'), stroke: c('border.default'), strokeWidth: 'stroke.divider', radius: 'radius.overlay',
         lift: 'popover-md', width: 'spacing.32+spacing.32',
       },
-      header: { paddingX: 'spacing.gap-tight', paddingY: 'spacing.gap-tight' },
-      content: { paddingX: 'spacing.gap-tight', paddingY: 'spacing.gap-tight' },
+      // Concentric with the overlay: 24 − inset-control 12 = Radius/action 12 for the rows (DEC-2026-11-16-001).
+      // The header sits on the content, so its bottom padding is none.
+      header: { paddingX: 'spacing.inset-control', paddingY: 'spacing.inset-control', paddingBottom: 'spacing.none' },
+      content: { paddingX: 'spacing.inset-control', paddingY: 'spacing.inset-control' },
       // A separator row: 4px above and below a 1px subtle rule.
       separator: { fill: c('border.subtle'), height: 'stroke.divider' },
     })),
@@ -468,7 +471,7 @@ export const DROPDOWN_MENU_FOOTER: ComponentRecipe = {
   parts: [
     part({}, () => ({
       root: {
-        paddingX: 'spacing.gap-control', paddingY: 'spacing.gap-control', gap: 'spacing.gap-control',
+        paddingX: 'spacing.inset-control', paddingY: 'spacing.inset-control', gap: 'spacing.gap-control',
         stroke: c('border.subtle'), strokeTopWidth: 'stroke.divider',
       },
       leading: { gap: 'spacing.gap-tight', text: c('content.secondary'), font: 'type.caption' },
@@ -598,7 +601,8 @@ export const SIDEBAR_MENU_BUTTON: ComponentRecipe = {
   parts: [
     // Paint and geometry: the shared list row. Hover is the highlight fill; Current is the Selected paint.
     part({ Size: SIDEBAR_SIZES, State: SIDEBAR_MENU_BUTTON_STATES }, (size, state) => {
-      const base = listItemRecipe(size, state === 'Current' ? 'Selected' : state, 'default')
+      // A button in a flush list, not a row in an overlay: `radius.item` (DEC-2026-11-16-001).
+      const base = listItemRecipe(size, state === 'Current' ? 'Selected' : state, 'default', { radius: 'radius.item' })
       const g = LIST_ITEM_METRICS[size]
       return { ...base, iconTrailing: { text: c('content.secondary'), width: g.icon, height: g.icon } }
     }),

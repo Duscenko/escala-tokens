@@ -666,7 +666,7 @@ export const INPUT_TAG_OPTION: ComponentRecipe = {
   parts: [
     part({}, () => ({
       root: {
-        height: 'size.compact', radius: 'radius.control', paddingX: 'spacing.gap-control', gap: 'spacing.gap-control', font: 'type.body-sm',
+        height: 'size.compact', radius: 'radius.action', paddingX: 'spacing.gap-control', gap: 'spacing.gap-control', font: 'type.body-sm',
       },
       badge: { width: 'spacing.2', height: 'spacing.2', radius: 'radius.pill' },
       icon: { width: 'spacing.3+spacing.0_5', height: 'spacing.3+spacing.0_5' },
@@ -752,9 +752,9 @@ export const COMBOBOX: ComponentRecipe = {
 
 /** Per Size: the empty line's type and the footer's padding X. */
 const POPOVER_SIZE: Record<string, { padX: string; empty: string }> = {
-  sm: { padX: 'spacing.gap-control', empty: 'type.caption' },
-  default: { padX: 'spacing.gap-control', empty: 'type.body-sm' },
-  lg: { padX: 'spacing.2_5', empty: 'type.body-sm' },
+  sm: { padX: 'spacing.inset-control', empty: 'type.caption' },
+  default: { padX: 'spacing.inset-control', empty: 'type.body-sm' },
+  lg: { padX: 'spacing.inset-control', empty: 'type.body-sm' },
 }
 
 export const COMBOBOX_POPOVER: ComponentRecipe = {
@@ -767,7 +767,8 @@ export const COMBOBOX_POPOVER: ComponentRecipe = {
         fill: c('surface.layer-2'), stroke: c('border.default'), strokeWidth: 'stroke.divider',
         radius: 'radius.overlay', shadow: 'shadow.md', text: c('content.primary'),
       },
-      list: { paddingX: 'spacing.gap-tight', paddingY: 'spacing.gap-tight' },
+      // Concentric with the overlay: 24 − inset-control 12 = Radius/action 12 for the rows (DEC-2026-11-16-001).
+      list: { paddingX: 'spacing.inset-control', paddingY: 'spacing.inset-control' },
       separator: { paddingY: 'spacing.gap-tight' },
       line: { height: 'stroke.divider', fill: c('border.subtle') },
       empty: { paddingX: 'spacing.inset-control', paddingY: 'spacing.inset-control', text: c('content.secondary') },
@@ -787,7 +788,7 @@ export const COMBOBOX_POPOVER: ComponentRecipe = {
 const COMBO_ITEM: Record<string, ListItemMetrics> = {
   sm: { minHeight: 'spacing.6+spacing.1', paddingX: 'spacing.gap-control', paddingY: 'spacing.gap-tight', gap: 'spacing.1_5', icon: 'spacing.3+spacing.0_5', label: 'type.caption', edge: 'stroke.control' },
   default: { minHeight: 'size.compact', paddingX: 'spacing.gap-control', paddingY: 'spacing.gap-tight', gap: 'spacing.gap-control', icon: 'icon.small', label: 'type.body-sm', edge: 'stroke.control' },
-  lg: { minHeight: 'spacing.8+spacing.1', paddingX: 'spacing.2_5', paddingY: 'spacing.gap-tight', gap: 'spacing.gap-control', icon: 'spacing.4+spacing.0_5', label: 'type.body-md', edge: 'stroke.control' },
+  lg: { minHeight: 'spacing.8+spacing.1', paddingX: 'spacing.inset-control', paddingY: 'spacing.gap-tight', gap: 'spacing.gap-control', icon: 'spacing.4+spacing.0_5', label: 'type.body-md', edge: 'stroke.control' },
 }
 
 export const COMBOBOX_ITEM: ComponentRecipe = {
@@ -1061,11 +1062,12 @@ function switchPaint(checked: string, state: string): SlotMap {
     : (hover ? 'surface.muted-hover' : 'surface.muted')
   return {
     root: { fill: c(track), focus: focused ? c('border.focus') : NONE, ring: focused ? c('border.ring.default') : NONE },
-    thumb: { fill: c(on && !disabled ? 'content.on-action' : 'surface.input') },
-    // The I / O marks: a ring (off) or a bar (on), drawn in the thumb's opposite half.
-    io: { text: c(on ? (disabled ? 'surface.input' : 'content.on-action') : disabled ? 'content.disabled' : 'content.subtle') },
-    // The glyph on the thumb (not drawn in any variant of the file, which hides it).
-    thumbIcon: { text: c(disabled ? 'content.disabled' : on ? 'action.primary.default' : 'content.subtle') },
+    // Thumb (DEC-2026-11-16-003): on = ink of the solid track; off = `content.secondary` (the old
+    // `surface.input` thumb read 1.28:1 on the muted track); disabled, on or off = `content.disabled`.
+    thumb: { fill: c(disabled ? 'content.disabled' : on ? 'content.on-action' : 'content.secondary') },
+    // The I / O marks and the glyph on the thumb take the TRACK's role, so they read as a cut-out of the thumb.
+    io: { text: c(track) },
+    thumbIcon: { text: c(track) },
   }
 }
 
