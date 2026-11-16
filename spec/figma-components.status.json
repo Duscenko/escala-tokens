@@ -180,11 +180,6 @@
   "codeOnly": [
     "Card",
     "Label",
-    "Sheet",
     "Spinner"
-  ],
-  "ahead": {
-    "Sheet": "Figma has the Sheet set (1648:1577, built 2026-11-16) and the code builds it 1:1, but the snapshot predates it. When spec/figma-components.json is re-exported, take Sheet out of codeOnly and drop this entry.",
-    "FeaturedIcon": "Figma added Appearance=gradient (144 variants) on 2026-11-16; the code carries it already (A4). Drops out when spec/figma-components.json is re-exported (live checksum d06cd1d9 on 2026-11-16)."
-  }
+  ]
 }

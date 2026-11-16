@@ -598,7 +598,7 @@
     "label": "Sheet",
     "category": "Content & Surfaces",
     "file": "spec/contracts/Sheet.json",
-    "figmaSet": null,
+    "figmaSet": "Sheet",
     "story": "content-surfaces-sheet--playground",
     "tokens": 20
   },

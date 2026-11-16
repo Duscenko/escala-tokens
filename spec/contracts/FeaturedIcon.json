@@ -15,11 +15,12 @@
     "page": "FeaturedIcon (✓) (D)",
     "pageNodeId": "1119:10568",
     "set": "FeaturedIcon",
-    "variants": 96,
+    "variants": 144,
     "axes": {
       "Appearance": [
         "soft",
-        "solid"
+        "solid",
+        "gradient"
       ],
       "Shape": [
         "circle",

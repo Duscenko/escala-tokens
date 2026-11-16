@@ -12,16 +12,39 @@
   },
   "figma": {
     "file": "7j5zukN5HpihGVJMmyjA20",
-    "page": null,
-    "pageNodeId": null,
-    "set": null,
-    "variants": null,
-    "axes": null,
-    "properties": null,
+    "page": "Sheet",
+    "pageNodeId": "1652:8",
+    "set": "Sheet",
+    "variants": 3,
+    "axes": {
+      "Side": [
+        "right",
+        "left",
+        "bottom"
+      ]
+    },
+    "properties": [
+      {
+        "name": "CloseVisible",
+        "type": "BOOLEAN"
+      },
+      {
+        "name": "Content",
+        "type": "SLOT"
+      },
+      {
+        "name": "ContentVisible",
+        "type": "BOOLEAN"
+      },
+      {
+        "name": "FooterVisible",
+        "type": "BOOLEAN"
+      }
+    ],
     "catalogueSets": [
       "Sheet"
     ],
-    "url": null
+    "url": "https://www.figma.com/design/7j5zukN5HpihGVJMmyjA20/?node-id=1652-8"
   },
   "api": {
     "axes": [
