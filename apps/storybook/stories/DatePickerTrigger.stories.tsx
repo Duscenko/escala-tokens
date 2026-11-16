@@ -1,5 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
-import { DatePickerTrigger, type DatePickerTriggerSize, type DatePickerTriggerState } from '../../../src/components/escala-ui/date-picker'
+import { expect, screen, userEvent, waitFor } from 'storybook/test'
+import { DatePicker, DatePickerTrigger, type DatePickerTriggerSize, type DatePickerTriggerState } from '../../../src/components/escala-ui/date-picker'
 
 const SIZES: DatePickerTriggerSize[] = ['lg', 'sm', 'default']
 const STATES: DatePickerTriggerState[] = ['Default', 'Hover', 'Focused', 'Invalid', 'Disabled', 'Loading']
@@ -18,10 +19,21 @@ interface DatePickerTriggerStoryArgs {
 }
 
 function render({ size, forceState, value, placeholderText, valueText }: DatePickerTriggerStoryArgs) {
+  // A pinned state is a still (docs, Figma parity); at Default the trigger is live: it opens the calendar.
+  if (forceState === 'Default') {
+    return (
+      <div style={{ minHeight: 480 }}>
+        <DatePicker
+          size={size} placeholderText={placeholderText} style={{ width: 280 }}
+          defaultValue={value === 'filled' ? new Date(2026, 10, 12) : undefined}
+        />
+      </div>
+    )
+  }
   return (
     <DatePickerTrigger
       size={size}
-      forceState={forceState === 'Default' ? undefined : forceState}
+      forceState={forceState}
       placeholderText={placeholderText}
       valueText={value === 'filled' ? valueText : undefined}
       style={{ width: 280 }}
@@ -106,4 +118,23 @@ export const RestingFocused: Story = {
       </div>
     </div>
   ),
+}
+
+/** Trigger → popover, the whole lifecycle: a click opens the DatePickerPopover 8px under the trigger on `popover-enter`, choosing a day writes
+ *  it into the trigger and closes on `popover-exit`, and focus returns to the trigger. */
+export const OpensTheCalendar: Story = {
+  name: 'Opens the calendar',
+  args: { value: 'placeholder', forceState: 'Default' },
+  play: async ({ canvasElement }) => {
+    const trigger = canvasElement.querySelector<HTMLButtonElement>('[data-escala=DatePickerTrigger]')!
+    await expect(trigger).toHaveAttribute('aria-expanded', 'false')
+    await userEvent.click(trigger)
+    const panel = await waitFor(() => { const p = document.querySelector('[data-escala=DatePickerPopover]'); expect(p).toBeTruthy(); return p as HTMLElement })
+    await expect(trigger).toHaveAttribute('aria-expanded', 'true')
+    await expect(getComputedStyle(panel).animationName).not.toBe('none')
+    await userEvent.click(await screen.findByRole('button', { name: / 15, \d{4}$/ }))
+    await waitFor(() => expect(trigger).toHaveTextContent(/ 15, \d{4}$/))
+    await waitFor(() => expect(document.querySelector('[data-escala=DatePickerPopover]')).toBeNull())
+    await expect(trigger).toHaveFocus()
+  },
 }

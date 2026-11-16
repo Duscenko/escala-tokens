@@ -20,6 +20,8 @@ import { Popover as PopoverPrimitive } from 'radix-ui'
 import { cn } from '../../lib/utils'
 import { glyph } from '../../lib/icons'
 import { Spinner } from './spinner'
+import { Calendar, type CalendarMode, type CalendarSize, type CalendarValue } from './calendar'
+import { Popover, PopoverTrigger } from './popover'
 import { usePortalContainer } from './portal-scope'
 
 export const DATE_PICKER_TRIGGER_SIZES = ['default', 'sm', 'lg'] as const
@@ -152,4 +154,56 @@ function DatePickerPopover({
   )
 }
 
-export { DatePickerTrigger, DatePickerPopover }
+/** A selection as the trigger writes it: "Nov 12, 2026" · "Nov 10, 2026 – Nov 18, 2026" · "Nov 4, 2026, Nov 12, 2026". */
+export function formatCalendarValue(value: CalendarValue): string | undefined {
+  if (value instanceof Date) return formatPickedDate(value)
+  if (Array.isArray(value)) return value.length ? value.map((d) => formatPickedDate(d)).join(', ') : undefined
+  if (value && 'from' in value) return value.to && value.to.getTime() !== value.from.getTime() ? `${formatPickedDate(value.from)} – ${formatPickedDate(value.to)}` : formatPickedDate(value.from)
+  return undefined
+}
+
+export interface DatePickerProps extends Omit<DatePickerTriggerProps, 'valueText' | 'defaultValue' | 'onChange' | 'value'> {
+  /** Figma Mode of the popover's Calendar: one date, several, or a range (it adds the presets rail). */
+  mode?: CalendarMode
+  /** The popover's Size follows the trigger's: sm → 250 px, else 322 px. */
+  calendarSize?: CalendarSize
+  value?: CalendarValue
+  defaultValue?: CalendarValue
+  onValueChange?: (value: CalendarValue) => void
+  /** Open state (controlled) and its first value. */
+  open?: boolean
+  defaultOpen?: boolean
+  onOpenChange?: (open: boolean) => void
+}
+
+/** The trigger and the popover it opens, wired: a click (or Enter / Space) opens the DatePickerPopover anchored 8px under the trigger on
+ *  the popover's own motion (`popover-enter` / `popover-exit`); a day updates the trigger's text; Apply, Escape or a click outside close it
+ *  and focus returns to the trigger. In `single` mode choosing a day closes it. */
+function DatePicker({
+  mode = 'single', size = 'default', calendarSize, value, defaultValue, onValueChange, open, defaultOpen = false, onOpenChange, ...triggerProps
+}: DatePickerProps) {
+  const [ownOpen, setOwnOpen] = React.useState(defaultOpen)
+  const [ownValue, setOwnValue] = React.useState<CalendarValue>(defaultValue)
+  const isOpen = open ?? ownOpen
+  const current = value === undefined ? ownValue : value
+  const setOpen = (next: boolean) => { if (open === undefined) setOwnOpen(next); onOpenChange?.(next) }
+  const first = current instanceof Date ? current : Array.isArray(current) ? current[0] : current && 'from' in current ? current.from : undefined
+  const panelSize = calendarSize ?? (size === 'sm' ? 'sm' : 'default')
+  return (
+    <Popover open={isOpen} onOpenChange={setOpen}>
+      <PopoverTrigger asChild>
+        <DatePickerTrigger size={size} valueText={formatCalendarValue(current)} {...triggerProps} />
+      </PopoverTrigger>
+      <DatePickerPopover size={panelSize} mode={mode === 'range' ? 'range' : 'single'}>
+        <Calendar
+          size={panelSize} mode={mode} presets={mode === 'range'} footer defaultMonth={first ?? new Date()}
+          value={current}
+          onValueChange={(next) => { if (value === undefined) setOwnValue(next); onValueChange?.(next); if (mode === 'single' && next instanceof Date) setOpen(false) }}
+          onApply={() => setOpen(false)}
+        />
+      </DatePickerPopover>
+    </Popover>
+  )
+}
+
+export { DatePicker, DatePickerTrigger, DatePickerPopover }
