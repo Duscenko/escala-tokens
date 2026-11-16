@@ -245,10 +245,11 @@ describe('the categorical catalogue is complete', () => {
     // Figma file, 2026-11-11): 3:1 on the page, black-a.7 / white-a.6. The
     // 2026-10-21 hairline (1.4:1, black-a.3) did not let a field read without
     // a fill.
-    expect(label('control')?.light.label).toBe('black-a.7')
-    expect(label('control')?.dark.label).toBe('white-a.6')
-    expect(label('control-hover')?.light.label).toBe('black-a.8')
-    expect(label('control-hover')?.dark.label).toBe('white-a.7')
+    // DEC-2026-11-16-004: the Figma file is the rule, so the field outline is the soft hairline again (Alpha/03, hover /04).
+    expect(label('control')?.light.label).toBe('black-a.3')
+    expect(label('control')?.dark.label).toBe('white-a.3')
+    expect(label('control-hover')?.light.label).toBe('black-a.4')
+    expect(label('control-hover')?.dark.label).toBe('white-a.4')
     // Emphasis keeps the stricter ui-component solve.
     expect(label('strong')?.light.label).toBe('black-a.7')
     expect(label('strong')?.dark.label).toBe('white-a.8')

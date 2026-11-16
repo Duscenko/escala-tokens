@@ -70,9 +70,10 @@ describe('the default Escala system — contrast invariants (WCAG 2.x)', () => {
         }
       })
 
-      it('boundaries: focus and the control outline clear WCAG 1.4.11', () => {
+      it('boundaries: focus clears WCAG 1.4.11; the control outline is the owner\'s soft hairline (DEC-2026-11-16-004, below 3:1 on purpose)', () => {
         expect(ratio('border.focus', 'surface.page', theme)).toBeGreaterThanOrEqual(3)
-        expect(ratio('border.control', 'surface.page', theme)).toBeGreaterThanOrEqual(3)
+        expect(ratio('border.control', 'surface.page', theme)).toBeGreaterThanOrEqual(1.4)
+        expect(ratio('border.control', 'surface.page', theme)).toBeLessThan(3)
       })
 
       it('every severity: label on its solids, content on the page and on its tint', () => {
@@ -138,9 +139,9 @@ describe('the default Escala system — roles picked by job', () => {
     }
   })
 
-  it('the control outline sits on the alpha ladder at 3:1 (Black α 07 / White α 06)', () => {
-    expect([role('border.control', LIGHT), role('border.control-hover', LIGHT)]).toEqual([t.colors.primitiveAlpha['black-a-7'], t.colors.primitiveAlpha['black-a-8']])
-    expect([role('border.control', DARK), role('border.control-hover', DARK)]).toEqual([t.colors.primitiveAlpha['white-a-6'], t.colors.primitiveAlpha['white-a-7']])
+  it('the control outline sits on the alpha ladder at Alpha/03, hover /04 (the Figma file, DEC-2026-11-16-004)', () => {
+    expect([role('border.control', LIGHT), role('border.control-hover', LIGHT)]).toEqual([t.colors.primitiveAlpha['black-a-3'], t.colors.primitiveAlpha['black-a-4']])
+    expect([role('border.control', DARK), role('border.control-hover', DARK)]).toEqual([t.colors.primitiveAlpha['white-a-3'], t.colors.primitiveAlpha['white-a-4']])
   })
 })
 

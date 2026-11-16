@@ -189,6 +189,7 @@ export type IntentClass =
   | 'action-label'
   | 'ui-component'
   | 'control-boundary'
+  | 'control-hairline'
   | 'pressed-label'
   | 'disabled-text'
   | 'decorative'
@@ -210,6 +211,9 @@ export const INTENT_THRESHOLDS: Record<IntentClass, Thresholds> = {
   // border 10) sit at Lc 20–44 on the dark page. History: 2026-10-21 made the
   // field outline a 1.4:1 hairline (black-a.3); the file reverted it.
   'control-boundary': { wcag: 3, apcaLc: null },
+  // The field outline as the owner set it in the Figma file (DEC-2026-11-16-004): Border/control at Black / White Alpha 03,
+  // a soft hairline BELOW the 3:1 of WCAG 1.4.11. A visibility floor only, so a regression to nothing still fails.
+  'control-hairline': { wcag: 1.4, apcaLc: null },
   // A label on a PRESSED fill (a state held for ~100 ms under the pointer):
   // WCAG AA with no APCA term. The Escala file pins `action.secondary.pressed`
   // to gray 06, where `content.on-secondary` reads 4.5+ :1 but Lc 57–59.

@@ -30,6 +30,8 @@ const hasInventory = existsSync(INVENTORY)
 const SINCE_INVENTORY: Record<string, string> = {
   'Border/default': '{CP:Neutrals/Black Alpha/02} ; {CP:Neutrals/White Alpha/02}',
   'Border/subtle': '{CP:Neutrals/Black Alpha/01} ; {CP:Neutrals/White Alpha/01}',
+  'Border/control': '{CP:Neutrals/Black Alpha/03} ; {CP:Neutrals/White Alpha/03}',
+  'Border/control-hover': '{CP:Neutrals/Black Alpha/04} ; {CP:Neutrals/White Alpha/04}',
   'Status/critical/surface': '{CP:States/EscalaDS/Error/Alpha/03} ; {CP:States/EscalaDS/Error Dark/Alpha/03}',
 }
 function inventoryText(): string {
