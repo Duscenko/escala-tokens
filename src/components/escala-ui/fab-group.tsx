@@ -108,7 +108,7 @@ function Trigger({
 function Item({
   item, labelled, index, count, open, from, disabled,
 }: { item: FABGroupItem; labelled: boolean; index: number; count: number; open: boolean; from: string; disabled?: boolean }) {
-  const role = open ? 'use-stagger-in' : 'use-stagger-out'
+  const role = open ? 'var(--motion-use-stagger-in)' : 'var(--motion-use-stagger-out)'
   const step = open ? index : count - 1 - index
   return (
     <FABButton
@@ -127,7 +127,7 @@ function Item({
         transform: open ? 'none' : from,
         visibility: open ? 'visible' : 'hidden',
         pointerEvents: open ? undefined : 'none',
-        transition: `opacity var(--motion-${role}), transform var(--motion-${role}), visibility var(--motion-${role})`,
+        transition: `opacity ${role}, transform ${role}, visibility ${role}`,
         // The dismissal runs at 0.6 of the reveal's step, from the last item to the first (the `list-dismiss` choreography).
         transitionDelay: `calc(${step} * var(--motion-stagger, 0ms) * ${open ? 1 : 0.6})`,
       }}
