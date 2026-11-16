@@ -1329,7 +1329,7 @@ export const COMPONENTS: ComponentDef[] = [
     axes: [{ name: 'Size', values: ['default', 'sm'] }],
     figmaSets: ['Card'],
     props: [
-      { name: 'size', type: '"default" | "sm"', description: 'shadcn\'s sizes: sm tightens the padding and the gap between parts.' },
+      { name: 'size', type: '"default" | "sm"', description: 'sm tightens the padding and the gap between parts.' },
       { name: 'CardHeader / CardTitle / CardDescription', type: 'component', description: 'Heading block.' },
       { name: 'CardAction', type: 'component', description: 'An action pinned to the header\'s top-right corner.' },
       { name: 'CardContent / CardFooter', type: 'component', description: 'Body and the actions row (a link is <Button variant="link">).' },

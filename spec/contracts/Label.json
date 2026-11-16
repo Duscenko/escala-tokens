@@ -53,7 +53,12 @@
     "files": [
       "src/components/escala-ui/label.tsx"
     ],
-    "story": null
+    "story": {
+      "file": "apps/storybook/stories/Label.stories.tsx",
+      "title": "Forms/Label",
+      "id": "forms-label--playground",
+      "url": "https://escala-storybook.vercel.app/?path=/story/forms-label--playground"
+    }
   },
   "docs": {
     "humanContract": null

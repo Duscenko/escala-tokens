@@ -55,7 +55,12 @@
     "files": [
       "src/components/escala-ui/spinner.tsx"
     ],
-    "story": null
+    "story": {
+      "file": "apps/storybook/stories/Spinner.stories.tsx",
+      "title": "Feedback/Spinner",
+      "id": "feedback-spinner--playground",
+      "url": "https://escala-storybook.vercel.app/?path=/story/feedback-spinner--playground"
+    }
   },
   "docs": {
     "humanContract": null

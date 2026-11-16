@@ -40,7 +40,7 @@
       {
         "name": "size",
         "type": "\"default\" | \"sm\"",
-        "description": "shadcn's sizes: sm tightens the padding and the gap between parts."
+        "description": "sm tightens the padding and the gap between parts."
       },
       {
         "name": "CardHeader / CardTitle / CardDescription",
@@ -104,7 +104,12 @@
     "files": [
       "src/components/escala-ui/card.tsx"
     ],
-    "story": null
+    "story": {
+      "file": "apps/storybook/stories/Card.stories.tsx",
+      "title": "Content & Surfaces/Card",
+      "id": "content-surfaces-card--playground",
+      "url": "https://escala-storybook.vercel.app/?path=/story/content-surfaces-card--playground"
+    }
   },
   "docs": {
     "humanContract": null
