@@ -1344,6 +1344,7 @@
       },
       "radiusRoles": {
         "control": "lg",
+        "item": "lg",
         "action": "lg",
         "container": "2xl",
         "overlay": "2xl",
@@ -1352,6 +1353,7 @@
       "radiusRoleViewports": {
         "tablet": {
           "control": "lg",
+          "item": "lg",
           "action": "lg",
           "container": "2xl",
           "overlay": "2xl",
@@ -1359,6 +1361,7 @@
         },
         "mobile": {
           "control": "lg",
+          "item": "lg",
           "action": "lg",
           "container": "2xl",
           "overlay": "2xl",
@@ -2171,6 +2174,7 @@
       },
       "radiusRoles": {
         "control": "lg",
+        "item": "lg",
         "action": "lg",
         "container": "2xl",
         "overlay": "2xl",
@@ -2179,6 +2183,7 @@
       "radiusRoleViewports": {
         "tablet": {
           "control": "lg",
+          "item": "lg",
           "action": "lg",
           "container": "2xl",
           "overlay": "2xl",
@@ -2186,6 +2191,7 @@
         },
         "mobile": {
           "control": "lg",
+          "item": "lg",
           "action": "lg",
           "container": "2xl",
           "overlay": "2xl",
@@ -3218,25 +3224,28 @@
     "5xl": "48px"
   },
   "radiusRoles": {
-    "control": "lg",
+    "control": "sm",
+    "item": "lg",
     "action": "xl",
-    "container": "2xl",
-    "overlay": "2xl",
+    "container": "dimension-20",
+    "overlay": "3xl",
     "pill": "full"
   },
   "radiusRoleViewports": {
     "tablet": {
-      "control": "lg",
+      "control": "sm",
+      "item": "lg",
       "action": "xl",
-      "container": "2xl",
-      "overlay": "2xl",
+      "container": "dimension-20",
+      "overlay": "3xl",
       "pill": "full"
     },
     "mobile": {
-      "control": "lg",
+      "control": "sm",
+      "item": "lg",
       "action": "xl",
-      "container": "2xl",
-      "overlay": "2xl",
+      "container": "dimension-20",
+      "overlay": "3xl",
       "pill": "full"
     }
   },
@@ -30432,8 +30441,9 @@
       "Border/accent": "[ROLE: Accent Border] Border painted in the brand accent — a selected card, a toggled button, any element that needs its stroke to read as the primary accent. For keyboard focus use border.focus."
     },
     "Radius": {
-      "role/control": "Checkbox, nested child, menu item, inner thumb.",
-      "role/action": "Buttons, inputs, selects, OTP, tabs.",
+      "role/control": "Checkbox, nested child, inner thumb.",
+      "role/item": "An element nested in a track or a flush list: a segment, a sidebar menu button. Never a row inside an overlay.",
+      "role/action": "Buttons, inputs, selects, OTP, tabs, rows inside an overlay.",
       "role/container": "Cards, accordion, inline alerts.",
       "role/overlay": "Modal, popover, command, dropdown.",
       "role/pill": "Badge, chip, avatar, switch, progress."

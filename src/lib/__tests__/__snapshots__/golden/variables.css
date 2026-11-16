@@ -714,6 +714,7 @@
 
   /* Layout roles — alias the primitive scale. Never raw px. */
   --radius-control: var(--dimension-8);
+  --radius-item: var(--dimension-8);
   --radius-action: var(--dimension-8);
   --radius-container: var(--dimension-16);
   --radius-overlay: var(--dimension-16);

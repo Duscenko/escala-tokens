@@ -49,6 +49,7 @@ import {
   completeRadiusScale,
   isGradedRadiusRamp,
   radiusRolesAreLegacyDefault,
+  moveRadiusLadderV151,
   LEGACY_RADIUS_ROLE_RUNGS,
   LEGACY_RADIUS_LG_FACTOR,
   type GridFrameModes,
@@ -2058,7 +2059,7 @@ export const useDesignStore = create<DesignStore>()(
     }),
     {
       name: 'scalable-designs-store',
-      version: 150,
+      version: 151,
       migrate: (persisted: any, version: number) => {
         if (persisted) {
           // v1→v2: remove styleDirection, rename selectedAtoms → selectedComponents
@@ -4199,6 +4200,265 @@ export const useDesignStore = create<DesignStore>()(
             const group = sel.indexOf('RatingGroup')
             if (group >= 0 && !sel.includes('RatingGroupItem')) sel.splice(group + 1, 0, 'RatingGroupItem')
           }
+          move(persisted)
+          if (Array.isArray(persisted.savedSystems)) {
+            for (const sys of persisted.savedSystems) move(sys?.snapshot)
+          }
+        }
+        if (version < 133) {
+          // v132→v133: Avatar is rebuilt from the Figma file with its AvatarStatus and AvatarGroup parts.
+          const add = (state: any) => {
+            if (!Array.isArray(state?.selectedComponents)) return
+            const sel: string[] = state.selectedComponents
+            const at = sel.indexOf('Avatar')
+            if (at < 0) return
+            for (const part of ['AvatarStatus', 'AvatarGroup']) if (!sel.includes(part)) sel.splice(sel.indexOf('Avatar') + 1, 0, part)
+          }
+          add(persisted)
+          if (Array.isArray(persisted.savedSystems)) {
+            for (const sys of persisted.savedSystems) add(sys?.snapshot)
+          }
+        }
+        if (version < 134) {
+          // v133→v134: FeaturedIcon is new (built from the Figma file); it follows Icon.
+          const add = (state: any) => {
+            if (!Array.isArray(state?.selectedComponents)) return
+            const sel: string[] = state.selectedComponents
+            if (sel.includes('FeaturedIcon')) return
+            const at = sel.indexOf('Icon')
+            if (at >= 0) sel.splice(at + 1, 0, 'FeaturedIcon')
+          }
+          add(persisted)
+          if (Array.isArray(persisted.savedSystems)) {
+            for (const sys of persisted.savedSystems) add(sys?.snapshot)
+          }
+        }
+        if (version < 135) {
+          // v134→v135: AspectRatio is Image in the Figma file.
+          const rename = (state: any) => {
+            if (!Array.isArray(state?.selectedComponents)) return
+            const sel: string[] = state.selectedComponents
+            const at = sel.indexOf('AspectRatio')
+            if (at >= 0) sel.splice(at, 1, 'Image')
+          }
+          rename(persisted)
+          if (Array.isArray(persisted.savedSystems)) {
+            for (const sys of persisted.savedSystems) rename(sys?.snapshot)
+          }
+        }
+        if (version < 136) {
+          // v135→v136: Accordion is rebuilt from the Figma file with its AccordionItem part.
+          const add = (state: any) => {
+            if (!Array.isArray(state?.selectedComponents)) return
+            const sel: string[] = state.selectedComponents
+            const at = sel.indexOf('Accordion')
+            if (at >= 0 && !sel.includes('AccordionItem')) sel.splice(at + 1, 0, 'AccordionItem')
+          }
+          add(persisted)
+          if (Array.isArray(persisted.savedSystems)) {
+            for (const sys of persisted.savedSystems) add(sys?.snapshot)
+          }
+        }
+        if (version < 137) {
+          // v136→v137: Table is rebuilt from the Figma page with its 13 parts (TableCell … TableLoadMore).
+          const parts = ['TableCell', 'TableHead', 'TableMediaCell', 'TableTrendCell', 'TableResizer', 'TableRow', 'TableHeader', 'TableFooter', 'TableCaption', 'TableDropIndicator', 'TableEmpty', 'TableLoading', 'TableLoadMore']
+          const add = (state: any) => {
+            if (!Array.isArray(state?.selectedComponents)) return
+            const sel: string[] = state.selectedComponents
+            const at = sel.indexOf('Table')
+            if (at < 0) return
+            const missing = parts.filter((k) => !sel.includes(k))
+            sel.splice(at + 1, 0, ...missing)
+          }
+          add(persisted)
+          if (Array.isArray(persisted.savedSystems)) {
+            for (const sys of persisted.savedSystems) add(sys?.snapshot)
+          }
+        }
+        if (version < 138) {
+          // v137→v138: Progress is now ProgressLine, and the file's ProgressCircle joins it.
+          const rename = (state: any) => {
+            if (!Array.isArray(state?.selectedComponents)) return
+            const sel: string[] = state.selectedComponents
+            const at = sel.indexOf('Progress')
+            if (at >= 0) sel.splice(at, 1, 'ProgressLine')
+            const line = sel.indexOf('ProgressLine')
+            if (line >= 0 && !sel.includes('ProgressCircle')) sel.splice(line + 1, 0, 'ProgressCircle')
+          }
+          rename(persisted)
+          if (Array.isArray(persisted.savedSystems)) {
+            for (const sys of persisted.savedSystems) rename(sys?.snapshot)
+          }
+        }
+        if (version < 139) {
+          // v138→v139: Sonner is now Toast (the Figma set; the sonner library stays the queue behind it).
+          const rename = (state: any) => {
+            if (!Array.isArray(state?.selectedComponents)) return
+            const sel: string[] = state.selectedComponents
+            const at = sel.indexOf('Sonner')
+            if (at >= 0) sel.splice(at, 1, 'Toast')
+          }
+          rename(persisted)
+          if (Array.isArray(persisted.savedSystems)) {
+            for (const sys of persisted.savedSystems) rename(sys?.snapshot)
+          }
+        }
+        if (version < 140) {
+          // v139→v140: Dialog is now Modal (the Figma set), with its two parts ModalHeader and ModalFooter.
+          const rename = (state: any) => {
+            if (!Array.isArray(state?.selectedComponents)) return
+            const sel: string[] = state.selectedComponents
+            const at = sel.indexOf('Dialog')
+            if (at >= 0) sel.splice(at, 1, 'Modal', 'ModalHeader', 'ModalFooter')
+          }
+          rename(persisted)
+          if (Array.isArray(persisted.savedSystems)) {
+            for (const sys of persisted.savedSystems) rename(sys?.snapshot)
+          }
+        }
+        if (version < 141) {
+          // v140→v141: Popover gains its part PopoverFooter (the Figma set).
+          const add = (state: any) => {
+            if (!Array.isArray(state?.selectedComponents)) return
+            const sel: string[] = state.selectedComponents
+            const at = sel.indexOf('Popover')
+            if (at >= 0 && !sel.includes('PopoverFooter')) sel.splice(at + 1, 0, 'PopoverFooter')
+          }
+          add(persisted)
+          if (Array.isArray(persisted.savedSystems)) {
+            for (const sys of persisted.savedSystems) add(sys?.snapshot)
+          }
+        }
+        if (version < 142) {
+          // v141→v142: DropdownMenu gains its parts (Label, Item, Footer — the Figma sets).
+          const add = (state: any) => {
+            if (!Array.isArray(state?.selectedComponents)) return
+            const sel: string[] = state.selectedComponents
+            const at = sel.indexOf('DropdownMenu')
+            if (at < 0) return
+            const parts = ['DropdownMenuLabel', 'DropdownMenuItem', 'DropdownMenuFooter'].filter((k) => !sel.includes(k))
+            sel.splice(at + 1, 0, ...parts)
+          }
+          add(persisted)
+          if (Array.isArray(persisted.savedSystems)) {
+            for (const sys of persisted.savedSystems) add(sys?.snapshot)
+          }
+        }
+        if (version < 143) {
+          // v142→v143: Tooltip is now TooltipContent (the Figma set), with its part TooltipInfoTrigger.
+          const rename = (state: any) => {
+            if (!Array.isArray(state?.selectedComponents)) return
+            const sel: string[] = state.selectedComponents
+            const at = sel.indexOf('Tooltip')
+            if (at >= 0) sel.splice(at, 1, 'TooltipContent', 'TooltipInfoTrigger')
+          }
+          rename(persisted)
+          if (Array.isArray(persisted.savedSystems)) {
+            for (const sys of persisted.savedSystems) rename(sys?.snapshot)
+          }
+        }
+        if (version < 144) {
+          // v143→v144: Breadcrumb gains its Figma parts BreadcrumbItem, BreadcrumbEllipsis and BreadcrumbSeparator.
+          const add = (state: any) => {
+            if (!Array.isArray(state?.selectedComponents)) return
+            const sel: string[] = state.selectedComponents
+            const at = sel.indexOf('Breadcrumb')
+            if (at >= 0) sel.splice(at + 1, 0, ...['BreadcrumbItem', 'BreadcrumbEllipsis', 'BreadcrumbSeparator'].filter((k) => !sel.includes(k)))
+          }
+          add(persisted)
+          if (Array.isArray(persisted.savedSystems)) {
+            for (const sys of persisted.savedSystems) add(sys?.snapshot)
+          }
+        }
+        if (version < 145) {
+          // v144→v145: TabMenu gains its Figma parts TabMenuItem and TabMenuLineItem.
+          const add = (state: any) => {
+            if (!Array.isArray(state?.selectedComponents)) return
+            const sel: string[] = state.selectedComponents
+            const at = sel.indexOf('TabMenu')
+            if (at >= 0) sel.splice(at + 1, 0, ...['TabMenuItem', 'TabMenuLineItem'].filter((k) => !sel.includes(k)))
+          }
+          add(persisted)
+          if (Array.isArray(persisted.savedSystems)) {
+            for (const sys of persisted.savedSystems) add(sys?.snapshot)
+          }
+        }
+        if (version < 146) {
+          // v145→v146: NavItem, Brand and AccountMenuTrigger (new Figma components) follow TabMenuLineItem.
+          const add = (state: any) => {
+            if (!Array.isArray(state?.selectedComponents)) return
+            const sel: string[] = state.selectedComponents
+            const at = sel.indexOf('TabMenuLineItem')
+            if (at >= 0) sel.splice(at + 1, 0, ...['NavItem', 'Brand', 'AccountMenuTrigger'].filter((k) => !sel.includes(k)))
+          }
+          add(persisted)
+          if (Array.isArray(persisted.savedSystems)) {
+            for (const sys of persisted.savedSystems) add(sys?.snapshot)
+          }
+        }
+        if (version < 147) {
+          // v146→v147: Pagination gains its Figma parts PaginationLink and PaginationEllipsis.
+          const add = (state: any) => {
+            if (!Array.isArray(state?.selectedComponents)) return
+            const sel: string[] = state.selectedComponents
+            const at = sel.indexOf('Pagination')
+            if (at >= 0) sel.splice(at + 1, 0, ...['PaginationLink', 'PaginationEllipsis'].filter((k) => !sel.includes(k)))
+          }
+          add(persisted)
+          if (Array.isArray(persisted.savedSystems)) {
+            for (const sys of persisted.savedSystems) add(sys?.snapshot)
+          }
+        }
+        if (version < 148) {
+          // v147→v148: Stepper gains its Figma parts StepperItem, StepperIndicator and StepperIcon.
+          const add = (state: any) => {
+            if (!Array.isArray(state?.selectedComponents)) return
+            const sel: string[] = state.selectedComponents
+            const at = sel.indexOf('Stepper')
+            if (at >= 0) sel.splice(at + 1, 0, ...['StepperItem', 'StepperIndicator', 'StepperIcon'].filter((k) => !sel.includes(k)))
+          }
+          add(persisted)
+          if (Array.isArray(persisted.savedSystems)) {
+            for (const sys of persisted.savedSystems) add(sys?.snapshot)
+          }
+        }
+        if (version < 149) {
+          // v148→v149: ScrollArea gains its Figma part ScrollBar.
+          const add = (state: any) => {
+            if (!Array.isArray(state?.selectedComponents)) return
+            const sel: string[] = state.selectedComponents
+            const at = sel.indexOf('ScrollArea')
+            if (at >= 0 && !sel.includes('ScrollBar')) sel.splice(at + 1, 0, 'ScrollBar')
+          }
+          add(persisted)
+          if (Array.isArray(persisted.savedSystems)) {
+            for (const sys of persisted.savedSystems) add(sys?.snapshot)
+          }
+        }
+        if (version < 150) {
+          // v149→v150: six shadcn components are retired for their Figma twins: Tabs → TabMenu, Select → Combobox; ToggleGroup,
+          // ContextMenu, Menubar and NativeSelect leave the selection (SegmentedControl and DropdownMenu are already in the catalogue).
+          const TWIN: Record<string, string | null> = { Tabs: 'TabMenu', Select: 'Combobox', ToggleGroup: null, ContextMenu: null, Menubar: null, NativeSelect: null }
+          const swap = (state: any) => {
+            if (!Array.isArray(state?.selectedComponents)) return
+            const out: string[] = []
+            for (const k of state.selectedComponents as string[]) {
+              const next = k in TWIN ? TWIN[k] : k
+              if (next && !out.includes(next)) out.push(next)
+            }
+            state.selectedComponents = out
+          }
+          swap(persisted)
+          if (Array.isArray(persisted.savedSystems)) {
+            for (const sys of persisted.savedSystems) swap(sys?.snapshot)
+          }
+        }
+        if (version < 151) {
+          // v150→v151: the radius ladder is 0 · 4 · 8 · 12 · 20 · 24 · full and gains
+          // `radius.item` (DEC-2026-11-16-001 / -002). A system still on the previous
+          // default (control lg · action xl · container 2xl · overlay 2xl) moves with it;
+          // a hand-picked role is never touched. `item` is backfilled by `mergeLayoutRoles`.
+          const move = moveRadiusLadderV151
           move(persisted)
           if (Array.isArray(persisted.savedSystems)) {
             for (const sys of persisted.savedSystems) move(sys?.snapshot)

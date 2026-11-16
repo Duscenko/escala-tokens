@@ -227,7 +227,7 @@ describe('dimension primitives — pinned roles', () => {
 
   it('an untouched role still follows its step, and exports straight to the primitive', async () => {
     const { buildCSS } = await import('../exporters')
-    expect(buildCSS(useDesignStore.getState())).toContain('--radius-container: var(--dimension-16);')
+    expect(buildCSS(useDesignStore.getState())).toContain('--radius-container: var(--dimension-20);')
   })
 })
 

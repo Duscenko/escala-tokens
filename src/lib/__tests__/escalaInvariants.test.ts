@@ -145,7 +145,11 @@ describe('the default Escala system — roles picked by job', () => {
 
 describe('the default Escala system — dimensions and type', () => {
   const px = (v: string | undefined) => parseFloat(v ?? '')
-  const radius = (role: string, vp?: 'tablet' | 'mobile') => px(t.radius[vp ? t.radiusRoleViewports[vp][role] : t.radiusRoles[role]])
+  // A role holds a ramp step or a pinned Dimension primitive (`dimension-20`).
+  const radius = (role: string, vp?: 'tablet' | 'mobile') => {
+    const ref = vp ? t.radiusRoleViewports[vp][role] : t.radiusRoles[role]
+    return ref.startsWith('dimension-') ? px(ref.slice('dimension-'.length)) : px(t.radius[ref])
+  }
 
   it('type scale ×0.875', () => {
     expect(Object.values(t.typography.sizes).map(px)).toEqual([11, 12, 14, 16, 18, 21, 26, 32, 42, 53, 63])
@@ -153,9 +157,9 @@ describe('the default Escala system — dimensions and type', () => {
     expect(Object.values(t.typography.letterSpacings).map(px)).toEqual([0, 0, 0, 0, -0.2, -0.3, -0.5, -0.6, -0.8, -1.1, -1.3])
   })
 
-  it('radius: control 8 · action 12 · container 16 · overlay 16 · full, the same on every viewport', () => {
+  it('radius: control 4 · item 8 · action 12 · container 20 · overlay 24 · full, the same on every viewport', () => {
     for (const vp of [undefined, 'tablet', 'mobile'] as const) {
-      expect(['control', 'action', 'container', 'overlay', 'pill'].map((r) => radius(r, vp)), vp ?? 'desktop').toEqual([8, 12, 16, 16, 9999])
+      expect(['control', 'item', 'action', 'container', 'overlay', 'pill'].map((r) => radius(r, vp)), vp ?? 'desktop').toEqual([4, 8, 12, 20, 24, 9999])
     }
   })
 

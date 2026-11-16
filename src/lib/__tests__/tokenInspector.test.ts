@@ -391,7 +391,7 @@ describe('pickRampCell', () => {
 describe('geometryRoles', () => {
   const t = {
     radius: { sm: '4px', lg: '8px', '2xl': '16px', full: '9999px' },
-    radiusRoles: { control: 'sm', action: 'lg', container: '2xl', overlay: '2xl', pill: 'full' },
+    radiusRoles: { control: 'sm', item: 'sm', action: 'lg', container: '2xl', overlay: '2xl', pill: 'full' },
     sizes: { xs: '24px', sm: '32px', md: '40px', lg: '48px', xl: '56px' },
     sizeRoles: { compact: 'sm', control: 'md', touch: 'lg', hit: 'xs', fab: 'xl' },
     typography: {

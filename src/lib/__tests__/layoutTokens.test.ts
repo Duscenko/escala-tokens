@@ -153,17 +153,20 @@ describe('layout primitives', () => {
     expect(radiusPickerOptions(RADIUS_STANDARD, 'dimension-22').at(-1)).toEqual({ value: 'dimension-22', px: 22 })
   })
 
-  // The three axes resolve to a strictly increasing 4 · 8 · 16 ladder, and every
-  // default sits ON `RADIUS_GROUP_STEPS` so each picker opens with its own value
-  // selected rather than reading "Custom". `overlay` shares `container` because
-  // the reference has ONE box radius for card and modal alike.
-  it('the default system resolves the three-axis ladder', () => {
+  // DEC-2026-11-16-002: the ladder is 0 · 4 · 8 · 12 · 20 · 24 · full, one job per
+  // step, no two roles with the same value. Every axis opens on its own value
+  // (Boxes reads the pair 20 / 24) rather than "Custom".
+  it('the default system resolves the four-axis ladder', () => {
     const roles = defaultLayoutRoles('radius')
     const px = (role: string) => resolveLayoutRole('radius', roles, RADIUS_STANDARD, role)
-    expect(px('control')).toBe('8px')
+    expect(px('control')).toBe('4px')
+    expect(px('item')).toBe('8px')
     expect(px('action')).toBe('12px')
-    expect(px('container')).toBe('16px')
-    expect(px('overlay')).toBe('16px')
+    expect(px('container')).toBe('20px')
+    expect(px('overlay')).toBe('24px')
+    const values = ['control', 'item', 'action', 'container', 'overlay'].map((r) => parseFloat(px(r)))
+    expect(new Set(values).size).toBe(values.length)
+    expect(values).toEqual([...values].sort((a, b) => a - b))
     for (const group of RADIUS_GROUPS) {
       expect(radiusGroupStep(group, roles), group.key).not.toBeNull()
     }
@@ -254,9 +257,10 @@ describe('layout semantics', () => {
   it('default aliases only point at primitive steps', () => {
     const radius = defaultLayoutRoles('radius')
     expect(radius.action).toBe('xl')
-    expect(radius.control).toBe('lg')
-    expect(radius.container).toBe('2xl')
-    expect(radius.overlay).toBe('2xl')
+    expect(radius.control).toBe('sm')
+    expect(radius.item).toBe('lg')
+    expect(radius.container).toBe('dimension-20')
+    expect(radius.overlay).toBe('3xl')
     expect(radius.pill).toBe('full')
     expect(defaultLayoutRoles('spacing')['inset-surface']).toBe('5')
     expect(defaultLayoutRoles('size').control).toBe('md')
@@ -278,6 +282,7 @@ describe('layout semantics', () => {
         const ok = steps.has(role.primitive)
           || (family === 'spacing' && (isSpacingResponsiveRef(role.primitive) || roleDimensionPx(role.primitive, true) !== null))
           || (family === 'selector' && roleDimensionPx(role.primitive) !== null)
+          || (family === 'radius' && roleDimensionPx(role.primitive) !== null)
         expect(ok, `${family}-${role.key} → ${role.primitive}`).toBe(true)
       }
     }
@@ -460,12 +465,12 @@ describe('concentric radius nesting', () => {
     // filling a modal can at worst equal it, never exceed it.
     const report = radiusNestingReport(RADIUS_STANDARD, roles, spacing, spacingRoles)
     const pair = report.find((r) => r.inner === 'container')!
-    // Boxes is ONE axis, so container and overlay resolve to the same 16px —
-    // and the pair still reports broken, because 20px of padding sits between
-    // them and r_inner must clear r_outer − p. That is geometry, not a bug: a
-    // card FILLING a modal body wants a square corner. It stays a report.
-    expect(pair.innerPx).toBe(16)
-    expect(pair.limitPx).toBe(0) // overlay 16 − inset-surface 20, floored
+    // Boxes keeps container 20 and overlay 24, and the pair still reports broken:
+    // 20px of padding sits between them and r_inner must clear r_outer − p
+    // (24 − 20 = 4). That is geometry, not a bug: a card FILLING a modal body
+    // wants a nearly square corner. It stays a report.
+    expect(pair.innerPx).toBe(20)
+    expect(pair.limitPx).toBe(4) // overlay 24 − inset-surface 20
     expect(pair.broken).toBe(true)
     const after = concentricRadiusRoles(RADIUS_STANDARD, RADIUS_PRESETS[2].values, roles, spacing, spacingRoles)
     expect(after.container).toBe(roles.container)
@@ -476,6 +481,8 @@ describe('concentric radius nesting', () => {
     // acquire a constraint it does not have.
     expect(RADIUS_NESTING.map((p) => `${p.inner} in ${p.outer}`)).toEqual([
       'control in action',
+      'item in action',
+      'action in overlay',
       'container in overlay',
     ])
   })

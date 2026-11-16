@@ -305,6 +305,8 @@ export function concentricRadiusStep(
  *  middle of a card is not nested in this sense and has no constraint. */
 export const RADIUS_NESTING: { inner: string; outer: string; inset: string; note: string }[] = [
   { inner: 'control', outer: 'action', inset: 'inset-control', note: 'Chip, icon button or checkbox inside a field.' },
+  { inner: 'item', outer: 'action', inset: 'gap-tight', note: 'Segment inside its track, sidebar menu button in a flush list (DEC-2026-11-16-001).' },
+  { inner: 'action', outer: 'overlay', inset: 'inset-control', note: 'A row inside an overlay: dropdown, combobox and suggestion lists (DEC-2026-11-16-001).' },
   { inner: 'container', outer: 'overlay', inset: 'inset-surface', note: 'Card filling a modal or popover body.' },
 ]
 
@@ -1021,8 +1023,9 @@ export const LAYOUT_ROLE_GROUPS: Record<LayoutFamily, { id: string; label: strin
   // rail never drives it and it stays editable here only.
   radius: [
     { id: 'boxes', label: 'Boxes', hint: 'Card, modal, alert.' },
-    { id: 'fields', label: 'Fields', hint: 'Button, input, select, tab.' },
-    { id: 'selectors', label: 'Selectors', hint: 'Checkbox, radio, toggle, menu, badge.' },
+    { id: 'fields', label: 'Fields', hint: 'Button, input, select, tab, rows in an overlay.' },
+    { id: 'items', label: 'Items', hint: 'Segment in a track, sidebar menu button.' },
+    { id: 'selectors', label: 'Selectors', hint: 'Checkbox, radio, toggle, badge.' },
   ],
   spacing: [
     { id: 'gap', label: 'Gap', hint: 'Space between siblings.' },
@@ -1043,6 +1046,10 @@ export const LAYOUT_ROLE_GROUPS: Record<LayoutFamily, { id: string; label: strin
     { id: 'viewport', label: 'Viewport', hint: 'Desktop min-width and mobile max-width cut.' },
   ],
 }
+
+/** `radius.container` = 20 (DEC-2026-11-16-002): between `2xl` (16) and `3xl` (24)
+ *  on the Tailwind ramp, so the role pins the Dimension primitive instead of a step. */
+export const BOX_CONTAINER_PX = 'dimension-20'
 
 /**
  * ── Why the roles sit on xs / lg / xl / 2xl and not sm / 2xl / 3xl / 4xl ─────
@@ -1090,10 +1097,11 @@ export const LAYOUT_ROLE_GROUPS: Record<LayoutFamily, { id: string; label: strin
  * ladder is now **selectors 8 · fields 12 · boxes 16**, all on the 4px grid.
  */
 export const RADIUS_ROLES: LayoutRole[] = [
-  { key: 'control', label: 'Control', description: 'Checkbox, nested child, menu item, inner thumb.', group: 'selectors', primitive: 'lg' },
-  { key: 'action', label: 'Action', description: 'Buttons, inputs, selects, OTP, tabs.', group: 'fields', primitive: 'xl' },
-  { key: 'container', label: 'Container', description: 'Cards, accordion, inline alerts.', group: 'boxes', primitive: '2xl' },
-  { key: 'overlay', label: 'Overlay', description: 'Modal, popover, command, dropdown.', group: 'boxes', primitive: '2xl' },
+  { key: 'control', label: 'Control', description: 'Checkbox, nested child, inner thumb.', group: 'selectors', primitive: 'sm' },
+  { key: 'item', label: 'Item', description: 'An element nested in a track or a flush list: a segment, a sidebar menu button. Never a row inside an overlay.', group: 'items', primitive: 'lg' },
+  { key: 'action', label: 'Action', description: 'Buttons, inputs, selects, OTP, tabs, rows inside an overlay.', group: 'fields', primitive: 'xl' },
+  { key: 'container', label: 'Container', description: 'Cards, accordion, inline alerts.', group: 'boxes', primitive: BOX_CONTAINER_PX },
+  { key: 'overlay', label: 'Overlay', description: 'Modal, popover, command, dropdown.', group: 'boxes', primitive: '3xl' },
   { key: 'pill', label: 'Pill', description: 'Badge, chip, avatar, switch, progress.', group: 'selectors', primitive: 'full' },
 ]
 
@@ -1126,20 +1134,35 @@ export const RADIUS_ROLES: LayoutRole[] = [
  * from DaisyUI, whose selector axis also covers the badge.
  */
 export const RADIUS_GROUP_STEPS = ['none', 'sm', 'lg', 'xl', '2xl', '3xl', '4xl'] as const
-export type RadiusGroupStep = (typeof RADIUS_GROUP_STEPS)[number]
+export type RadiusGroupStep = (typeof RADIUS_GROUP_STEPS)[number] | typeof BOX_CONTAINER_PX
 
 export interface RadiusGroup {
   key: string
   label: string
   hint: string
-  /** Every role this axis drives. All of them take the same step. */
+  /** Every role this axis drives. All of them take the same step, unless `derive` says otherwise. */
   roles: string[]
+  /** What each role takes when the axis sits on `lead` (the first role's step). */
+  derive?: (lead: string) => Record<string, string>
+}
+
+/** Boxes: the card takes the pick; the overlay takes the same step, except on the
+ *  default 20, where it is one rung up (24, DEC-2026-11-16-002), so a row inside
+ *  it stays concentric: overlay 24 − `inset-control` 12 = `radius.action` 12. */
+function boxRoles(lead: string): Record<string, string> {
+  return { container: lead, overlay: lead === BOX_CONTAINER_PX ? '3xl' : lead }
+}
+
+/** The role values an axis writes when its lead sits on `lead`. */
+function groupRoleValues(group: RadiusGroup, lead: string): Record<string, string> {
+  return group.derive ? group.derive(lead) : Object.fromEntries(group.roles.map((role) => [role, lead]))
 }
 
 export const RADIUS_GROUPS: RadiusGroup[] = [
-  { key: 'boxes', label: 'Boxes', hint: 'card, modal, alert', roles: ['container', 'overlay'] },
-  { key: 'fields', label: 'Fields', hint: 'button, input, select, tab', roles: ['action'] },
-  { key: 'selectors', label: 'Selectors', hint: 'checkbox, radio, toggle, menu', roles: ['control'] },
+  { key: 'boxes', label: 'Boxes', hint: 'card, modal, alert', roles: ['container', 'overlay'], derive: boxRoles },
+  { key: 'fields', label: 'Fields', hint: 'button, input, select, tab, rows in an overlay', roles: ['action'] },
+  { key: 'items', label: 'Items', hint: 'segment in a track, sidebar menu button', roles: ['item'] },
+  { key: 'selectors', label: 'Selectors', hint: 'checkbox, radio, toggle, badge', roles: ['control'] },
 ]
 
 /** The step an axis is currently on, or `null` when its roles disagree or sit
@@ -1150,7 +1173,9 @@ export function radiusGroupStep(
 ): RadiusGroupStep | null {
   const merged = mergeLayoutRoles('radius', roles)
   const first = merged[group.roles[0]]
-  if (!group.roles.every((role) => merged[role] === first)) return null
+  const expected = groupRoleValues(group, first)
+  if (!group.roles.every((role) => merged[role] === expected[role])) return null
+  if (first === BOX_CONTAINER_PX && group.key === 'boxes') return BOX_CONTAINER_PX
   return (RADIUS_GROUP_STEPS as readonly string[]).includes(first) ? (first as RadiusGroupStep) : null
 }
 
@@ -1171,7 +1196,8 @@ export function radiusAxisStep(
 ): RadiusAxisStep | null {
   const merged = mergeLayoutRoles('radius', roles)
   const first = merged[group.roles[0]]
-  if (!group.roles.every((role) => merged[role] === first)) return null
+  const expected = groupRoleValues(group, first)
+  if (!group.roles.every((role) => merged[role] === expected[role])) return null
   return (RADIUS_AXIS_STEPS as readonly string[]).includes(first) ? (first as RadiusAxisStep) : null
 }
 
@@ -1182,7 +1208,7 @@ export function applyRadiusGroup(
   step: RadiusGroupStep | RadiusAxisStep,
 ): Record<string, string> {
   const next = mergeLayoutRoles('radius', roles)
-  for (const role of group.roles) next[role] = step
+  Object.assign(next, groupRoleValues(group, step))
   return next
 }
 
@@ -1203,8 +1229,8 @@ export function radiusRolesFromGroups(
  *
  * The static ramp IS the Corner Radius table (`RADIUS_STANDARD`) — the
  * Variables tables are the source of truth and every widget just follows that
- * token pattern. A preset therefore never regrades the ramp: it picks the three
- * axes (Boxes · Fields · Selectors) ON that ramp, so choosing one and the three
+ * token pattern. A preset therefore never regrades the ramp: it picks the four
+ * axes (Boxes · Fields · Items · Selectors) ON that ramp, so choosing one and the three
  * axis rows are one decision seen two ways. Sharp means every corner is 0;
  * Rounded is exactly the default roles. Picking a preset also puts the ramp back
  * on the standard table and clears per-viewport overrides — it is a whole look.
@@ -1215,17 +1241,17 @@ export function radiusRolesFromGroups(
 export interface RadiusRolePreset {
   label: string
   description: string
-  picks: Record<'boxes' | 'fields' | 'selectors', RadiusGroupStep>
+  picks: Record<'boxes' | 'fields' | 'items' | 'selectors', RadiusGroupStep>
 }
 
 export const RADIUS_ROLE_PRESETS: RadiusRolePreset[] = [
-  { label: 'Sharp', description: 'Square corners everywhere — 0 / 0 / 0.', picks: { boxes: 'none', fields: 'none', selectors: 'none' } },
-  { label: 'Soft', description: 'A hint of rounding — boxes 8, fields 4, selectors 4.', picks: { boxes: 'lg', fields: 'sm', selectors: 'sm' } },
-  { label: 'Rounded', description: 'The standard — boxes 16, fields 12, selectors 8.', picks: { boxes: '2xl', fields: 'xl', selectors: 'lg' } },
+  { label: 'Sharp', description: 'Square corners everywhere — 0 / 0 / 0.', picks: { boxes: 'none', fields: 'none', items: 'none', selectors: 'none' } },
+  { label: 'Soft', description: 'A hint of rounding — boxes 8, fields 4, items 4, selectors 4.', picks: { boxes: 'lg', fields: 'sm', items: 'sm', selectors: 'sm' } },
+  { label: 'Rounded', description: 'The standard — boxes 20 (overlay 24), fields 12, items 8, selectors 4.', picks: { boxes: BOX_CONTAINER_PX, fields: 'xl', items: 'lg', selectors: 'sm' } },
   // Boxes at 3xl (24): rounder than Rounded's 16, but a card or alert holding
   // tags and text keeps its shape — 32 rounded the corners past the content
   // and clipped it. The full pill look is the fields'.
-  { label: 'Pill', description: 'Pill fields — boxes 24, fields 32, selectors 8.', picks: { boxes: '3xl', fields: '4xl', selectors: 'lg' } },
+  { label: 'Pill', description: 'Pill fields — boxes 24, fields 32, items 8, selectors 8.', picks: { boxes: '3xl', fields: '4xl', items: 'lg', selectors: 'lg' } },
 ]
 
 /** The role map a preset produces (the `pill` role and any role outside the
@@ -1254,9 +1280,9 @@ export function radiusPresetPatch(label: string, roles?: Record<string, string>)
 }
 
 /** Resolved px of each axis for a preset on the standard ramp — for labels. */
-export function radiusPresetPx(preset: RadiusRolePreset): [number, number, number] {
-  const px = (step: string) => parseFloat(RADIUS_STANDARD[step as RadiusStep] ?? '0') || 0
-  return [px(preset.picks.boxes), px(preset.picks.fields), px(preset.picks.selectors)]
+export function radiusPresetPx(preset: RadiusRolePreset): [number, number, number, number] {
+  const px = (step: string) => roleValuePx(step, RADIUS_STANDARD) ?? 0
+  return [px(preset.picks.boxes), px(preset.picks.fields), px(preset.picks.items), px(preset.picks.selectors)]
 }
 
 /** The rungs the roles occupied before v63, and the factor between the two
@@ -2117,4 +2143,29 @@ export function nearestSpacingStep(spacing: Record<string, string>, targetPx: nu
     if (d === bd && r.n > best.n) return r
     return best
   }).key
+}
+
+/**
+ * Store v151 (DEC-2026-11-16-002): move one slot (the system or a saved snapshot)
+ * onto the 0 · 4 · 8 · 12 · 20 · 24 · full ladder. A slot still on the previous
+ * default (control lg · action xl · container 2xl · overlay 2xl) moves with it;
+ * a hand-picked role is never touched. `item` is backfilled by `mergeLayoutRoles`.
+ * Mutates `state`; the store migration calls it on the root and on every saved system.
+ */
+export function moveRadiusLadderV151(state: any): void {
+  const OLD: Record<string, string> = { control: 'lg', action: 'xl', container: '2xl', overlay: '2xl' }
+  const NEW: Record<string, string> = { control: 'sm', container: BOX_CONTAINER_PX, overlay: '3xl' }
+  const wasDefault = (roles: Record<string, string>) => Object.entries(OLD).every(([k, v]) => (roles[k] ?? v) === v)
+  if (!state || typeof state !== 'object') return
+  const root = state.radiusRoles && typeof state.radiusRoles === 'object' ? state.radiusRoles : {}
+  const rootWas = wasDefault(root)
+  if (rootWas) state.radiusRoles = { ...root, ...NEW }
+  const origins = state.themeOrigin ?? {}
+  for (const [key, own] of Object.entries<any>(state.themeFoundations ?? {})) {
+    const roles = own?.radiusRoles
+    if (!roles || typeof roles !== 'object' || origins[key]) continue
+    if (wasDefault({ ...(rootWas ? OLD : root), ...roles })) {
+      own.radiusRoles = { ...roles, ...Object.fromEntries(Object.entries(NEW).filter(([k]) => k in roles)) }
+    }
+  }
 }
