@@ -1,0 +1,66 @@
+// Input "Resting · Focused": the phone field is PhoneNumberInput, the currency field is the same kind of picker (CurrencyInput), and the
+// Copy button confirms with a check + "Copied" (live region, success ink) and goes back.
+// Run with Storybook up: node scripts/storybook-checks/input-types.mjs
+import { checker, launch, sleep, story } from './lib.mjs'
+
+const { check, done } = checker('input types')
+const browser = await launch()
+const ctx = await browser.newContext({ viewport: { width: 1400, height: 900 }, locale: 'en-US', permissions: ['clipboard-read', 'clipboard-write'] })
+const page = await ctx.newPage()
+const errors = []
+page.on('pageerror', (e) => errors.push(e.message))
+await page.goto(story('form-controls-input--resting-focused')); await sleep(1800)
+const resting = page.locator('div:has(> p:text-is("RESTING · hover and press to try"))')
+
+// phone: the composed field, not the native select
+const phone = resting.locator('[data-part=phone-number]')
+check(await phone.count() === 1, 'phone: PhoneNumberInput (flag + dial trigger)')
+check(await phone.locator('select').count() === 0, 'phone: no native select')
+await phone.getByRole('combobox', { name: /^Country:/ }).click()
+const searchBox = page.getByRole('combobox', { name: /search country/i })
+check(await searchBox.isVisible(), 'phone: a click opens the anchored country picker')
+await page.keyboard.press('Escape'); await sleep(500)
+
+// currency: same behaviour
+const cur = resting.locator('[data-part=currency-input]')
+check(await cur.count() === 1 && await cur.locator('select').count() === 0, 'currency: CurrencyInput, no native select')
+const trig = cur.getByRole('combobox', { name: /^Currency:/ })
+check((await trig.innerText()).trim() === 'USD', 'currency: the trigger shows the code', await trig.innerText())
+await trig.click()
+const cs = page.getByRole('combobox', { name: /search currency/i })
+await cs.waitFor({ timeout: 2000 })
+const panel = page.locator('[data-part="CurrencyInput.picker"]')
+check(await panel.evaluate((p) => getComputedStyle(p).animationName) !== 'none', 'currency: opens on the popover choreography')
+await sleep(600)
+const fieldW = await cur.evaluate((e) => e.getBoundingClientRect().width), panelW = await panel.evaluate((e) => e.getBoundingClientRect().width)
+check(Math.abs(fieldW - panelW) < 1, 'currency: the panel is as wide as the field', `${panelW} vs ${fieldW}`)
+check(await trig.getAttribute('aria-expanded') === 'true', 'currency: aria-expanded')
+await cs.fill('eur')
+check(await page.getByRole('option').count() === 1, 'currency: search by code or name', `${await page.getByRole('option').count()}`)
+await page.keyboard.press('Enter'); await sleep(600)
+check((await trig.innerText()).trim() === 'EUR', 'currency: Enter picks, the trigger shows EUR', await trig.innerText())
+check(await trig.evaluate((t) => document.activeElement === t), 'currency: focus returns to the trigger')
+await page.keyboard.press('ArrowDown'); await sleep(400)
+check(await cs.isVisible(), 'currency: ArrowDown opens from the keyboard')
+await page.keyboard.press('Escape'); await sleep(500)
+await trig.click(); await page.getByRole('option', { name: /Japanese yen/ }).click(); await sleep(500)
+check((await trig.innerText()).trim() === 'JPY', 'currency: a click on a row picks it', await trig.innerText())
+
+// copy feedback
+const copy = resting.locator('[data-type=copy-link] button')
+await resting.locator('[data-type=copy-link] input').fill('https://escala.design/invite/abc')
+check((await copy.innerText()).trim().startsWith('Copy'), 'copy: reads Copy at rest')
+const w0 = await copy.evaluate((b) => b.getBoundingClientRect().width), c0 = await copy.evaluate((b) => getComputedStyle(b).color)
+await copy.click(); await sleep(450)
+const w1 = await copy.evaluate((b) => b.getBoundingClientRect().width), c1 = await copy.evaluate((b) => getComputedStyle(b).color)
+check((await copy.innerText()).includes('Copied'), 'copy: reads Copied after the click')
+check(await copy.locator('svg').count() === 1 && (await copy.evaluate((b) => b.querySelector('svg path').getAttribute('d').startsWith('M229.66,77.66'))), 'copy: the glyph is the check')
+check(Math.abs(w0 - w1) < 1, 'copy: the button keeps its width', `${w0} → ${w1}`)
+check(c1 !== c0, 'copy: the ink moves to the success role', `${c0} → ${c1}`)
+check((await resting.locator('[data-type=copy-link] [role=status]').innerText()).trim() === 'Copied', 'copy: announced in a live region')
+check(await page.evaluate(() => navigator.clipboard.readText()) === 'https://escala.design/invite/abc', 'copy: the value is on the clipboard')
+await sleep(2300)
+check((await copy.innerText()).trim().startsWith('Copy') && !(await copy.innerText()).includes('Copied'), 'copy: goes back to Copy')
+check(errors.length === 0, 'no error', errors.join(' | '))
+await browser.close()
+done()

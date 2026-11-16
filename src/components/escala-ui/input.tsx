@@ -59,7 +59,7 @@ export interface InputProps extends Omit<React.ComponentProps<'input'>, 'size' |
   /** `copy-link`: called after the value is copied. */
   onCopy?: () => void
   /** The accessible names of the parts that act (translatable). */
-  labels?: Partial<Record<'addon' | 'browse' | 'copy' | 'show' | 'hide', string>>
+  labels?: Partial<Record<'addon' | 'browse' | 'copy' | 'copied' | 'show' | 'hide', string>>
 }
 
 /** Phosphor regular bodies, as the file's glyphs draw them. */
@@ -71,7 +71,11 @@ const GLYPHS = {
   chevron: 'chevron-down',
   folder: 'folder',
   copy: 'copy',
+  check: 'check',
 } as const
+
+/** How long a copied link keeps its check. */
+const COPIED_MS = 2000
 
 /** One icon slot: a glyph box sized by the recipe (`icon`, or `chevron` at 16). */
 function Icon({ children, chevron }: { children: React.ReactNode; chevron?: boolean }) {
@@ -145,6 +149,10 @@ function Input({
   const [choice, setChoice] = React.useState(addon ?? options?.[0] ?? '')
   const chosen = addon ?? choice
   const [fileName, setFileName] = React.useState('')
+  // `copy-link`: after the copy the button reads a check and "Copied" for a moment (and tells a screen reader).
+  const [copied, setCopied] = React.useState(false)
+  const copiedTimer = React.useRef<ReturnType<typeof setTimeout>>(undefined)
+  React.useEffect(() => () => clearTimeout(copiedTimer.current), [])
   const fileRef = React.useRef<HTMLInputElement>(null)
   const textRef = React.useRef<HTMLInputElement>(null)
   // The caller's ref reaches the <input> too (React 19 passes `ref` as a prop).
@@ -235,15 +243,26 @@ function Input({
             type="button"
             className={iconButton}
             disabled={isDisabled}
+            data-copied={copied || undefined}
+            // The ink moves to the success role on the hover motion role, and back: the only motion, and the system's own.
+            style={{ color: copied ? 'var(--color-status-success-content)' : undefined, transition: 'color var(--motion-use-hover)' }}
             onClick={async () => {
               const value = textRef.current?.value ?? ''
               try { await navigator.clipboard.writeText(value) } catch { /* the clipboard may be blocked */ }
+              setCopied(true)
+              clearTimeout(copiedTimer.current)
+              copiedTimer.current = setTimeout(() => setCopied(false), COPIED_MS)
               onCopy?.()
             }}
           >
-            {trailing !== null && <Icon>{trailing ?? glyph(GLYPHS.copy)}</Icon>}
-            <Addon>{labels?.copy ?? 'Copy'}</Addon>
+            {trailing !== null && <Icon>{copied ? glyph(GLYPHS.check) : (trailing ?? glyph(GLYPHS.copy))}</Icon>}
+            {/* Both labels share one cell so the button keeps its width when the word changes. */}
+            <span data-part="Input.addon" className="inline-grid shrink-0 whitespace-nowrap">
+              <span style={{ gridArea: '1 / 1', visibility: copied ? 'hidden' : undefined }}>{labels?.copy ?? 'Copy'}</span>
+              <span style={{ gridArea: '1 / 1', visibility: copied ? undefined : 'hidden' }}>{labels?.copied ?? 'Copied'}</span>
+            </span>
           </button>
+          <span role="status" aria-live="polite" className="sr-only">{copied ? (labels?.copied ?? 'Copied') : ''}</span>
         </>
       )
       break

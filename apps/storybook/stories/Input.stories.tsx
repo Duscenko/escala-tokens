@@ -2,6 +2,8 @@ import type { Meta, StoryObj } from '@storybook/react-vite'
 import {
   Input, INPUT_SIZES, INPUT_TYPES, type InputSize, type InputState, type InputType,
 } from '../../../src/components/escala-ui/input'
+import { PhoneNumberInput } from '../../../src/components/escala-ui/blocks/phoneNumber'
+import { CurrencyInput } from '../../../src/components/escala-ui/blocks/currencyInput'
 import { PreviewIcon } from '../../../src/components/configurator/docs/specimens'
 import type { ComponentIconName } from '../../../src/lib/iconLibraries'
 import { ICON_PX, iconSwapArg } from './iconSwap'
@@ -92,7 +94,8 @@ export const Playground: Story = {}
 const label = { font: '12px sans-serif', color: 'var(--color-content-secondary)', margin: '0 0 12px', textAlign: 'center' as const }
 
 /** The file's own page: the ten composed Types at rest and focused (the caret and the
- *  ring mark the active field). Hover and press the resting ones to try them. */
+ *  ring mark the active field). Hover and press the resting ones to try them. Phone and
+ *  currency are the live pickers (PhoneNumberInput, CurrencyInput); Copy confirms with a check. */
 const EXAMPLES: { type: InputType; placeholder: string; focus: string }[] = [
   { type: 'search', placeholder: 'Search customers', focus: 'Search orders' },
   { type: 'phone', placeholder: 'Mobile number', focus: 'Mobile number' },
@@ -110,16 +113,13 @@ function Grid({ focused }: { focused: boolean }) {
     <div>
       <p style={label}>{focused ? 'FOCUSED · ring and caret mark the active field' : 'RESTING · hover and press to try'}</p>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 308px)', gap: '18px 10px' }}>
-        {EXAMPLES.map((e) => (
-          <Input
-            key={e.type}
-            type={e.type}
-            forceState={focused ? 'Focused' : undefined}
-            placeholder={focused ? e.focus : e.placeholder}
-            aria-label={e.placeholder}
-            shortcut={e.type === 'search' ? null : undefined}
-          />
-        ))}
+        {EXAMPLES.map((e) => {
+          const common = { forceState: focused ? ('Focused' as const) : undefined, placeholder: focused ? e.focus : e.placeholder, 'aria-label': e.placeholder }
+          // The two types with a picker draw the composed fields: the country and the currency open an anchored Popover.
+          if (e.type === 'phone') return <PhoneNumberInput key={e.type} defaultCountry="US" {...common} />
+          if (e.type === 'currency-select') return <CurrencyInput key={e.type} {...common} />
+          return <Input key={e.type} type={e.type} {...common} shortcut={e.type === 'search' ? null : undefined} />
+        })}
       </div>
     </div>
   )
