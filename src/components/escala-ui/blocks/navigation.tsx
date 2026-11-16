@@ -14,6 +14,7 @@ import { Badge } from '../badge'
 import { Brand } from '../brand'
 import { Breadcrumb, BreadcrumbItem, BreadcrumbList, BreadcrumbSeparator } from '../breadcrumb'
 import { Button } from '../button'
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '../dropdown-menu'
 import { CloseButton } from '../close-button'
 import { IconButton } from '../icon-button'
 import { Input } from '../input'
@@ -34,6 +35,24 @@ const type = (role: string): React.CSSProperties => ({
 })
 const spacer: React.CSSProperties = { flex: 1 }
 const NAV = ['Product', 'Solutions', 'Pricing', 'Blog', 'Contact']
+
+/** The account menu a header's avatar opens: the system's DropdownMenu on the AccountMenuTrigger (label, rows, a destructive one).
+ *  Open and close are the DropdownMenu's own motion (disclosure roles); the block adds none. */
+function AccountMenu({ name = 'Ayla' }: { name?: string }) {
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild><AccountMenuTrigger size="sm" name={name} /></DropdownMenuTrigger>
+      <DropdownMenuContent align="end">
+        <DropdownMenuLabel>My account</DropdownMenuLabel>
+        <DropdownMenuItem iconLeading={boxedGlyph('user')}>Profile</DropdownMenuItem>
+        <DropdownMenuItem iconLeading={boxedGlyph('file')}>Billing</DropdownMenuItem>
+        <DropdownMenuItem iconLeading={boxedGlyph('gear')}>Settings</DropdownMenuItem>
+        <DropdownMenuSeparator />
+        <DropdownMenuItem variant="destructive" iconLeading={boxedGlyph('sign-out')}>Log out</DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
+  )
+}
 
 interface Common { layout?: NavLayout; className?: string; style?: React.CSSProperties }
 
@@ -77,7 +96,7 @@ export function AppHeader({ layout = 'desktop', themeToggleVisible = true, messa
     return (
       <header data-block="AppHeader" data-layout="mobile" className={className} style={{ ...HEADER_BAR, ...style }}>
         <Brand size="sm" /><span style={spacer} />
-        <AccountMenuTrigger size="sm" name="Ayla" />
+        <AccountMenu />
         <IconButton size="sm" variant="secondary" appearance="ghost" aria-label="Open menu" icon={boxedGlyph('dots-three')} />
       </header>
     )
@@ -101,7 +120,7 @@ export function AppHeader({ layout = 'desktop', themeToggleVisible = true, messa
             <SegmentedControlItem value="Dark" label="Dark" labelVisible={false} iconLeadingVisible iconLeading={boxedGlyph('lock', 'icon.small')} />
           </SegmentedControl>
         )}
-        <AccountMenuTrigger size="sm" name="Ayla" />
+        <AccountMenu />
       </div>
     </header>
   )
@@ -130,7 +149,7 @@ export function FloatingHeader({ layout = 'desktop', notificationsVisible = true
   if (layout === 'mobile') {
     return (
       <header data-block="FloatingHeader" data-layout="mobile" style={{ ...bar, ...style }}>
-        <Brand size="sm" /><span style={spacer} /><AccountMenuTrigger size="sm" name="Ayla" />
+        <Brand size="sm" /><span style={spacer} /><AccountMenu />
         <IconButton size="sm" variant="secondary" appearance="ghost" aria-label="Open menu" icon={boxedGlyph('dots-three')} />
       </header>
     )
@@ -146,7 +165,7 @@ export function FloatingHeader({ layout = 'desktop', notificationsVisible = true
       <div style={{ display: 'flex', alignItems: 'center', gap: v('spacing.gap-control') }}>
         {notificationsVisible && <IconButton size="sm" variant="secondary" appearance="ghost" aria-label="Notifications" badge icon={boxedGlyph('info')} />}
         <IconButton size="sm" variant="secondary" appearance="ghost" aria-label="Messages" icon={boxedGlyph('file')} />
-        <AccountMenuTrigger size="sm" name="Ayla" />
+        <AccountMenu />
       </div>
     </header>
   )

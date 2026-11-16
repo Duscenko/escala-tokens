@@ -48,7 +48,7 @@ function AccountMenuTrigger({
       onPointerLeave={(e) => { setLive((s) => ({ ...s, hover: false, pressed: false })); onPointerLeave?.(e) }}
       onPointerDown={(e) => { setLive((s) => ({ ...s, pressed: true })); onPointerDown?.(e) }}
       onPointerUp={(e) => { setLive((s) => ({ ...s, pressed: false })); onPointerUp?.(e) }}
-      onFocus={(e) => { setLive((s) => ({ ...s, focus: e.currentTarget.matches(':focus-visible') })); onFocus?.(e) }}
+      onFocus={(e) => { const visible = e.currentTarget.matches(':focus-visible'); setLive((s) => ({ ...s, focus: visible })); onFocus?.(e) }}
       onBlur={(e) => { setLive((s) => ({ ...s, focus: false })); onBlur?.(e) }}
       {...props}
     >
