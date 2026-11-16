@@ -1229,6 +1229,8 @@ interface DesignStore {
   customIcons: { name: string; svg: string }[]
   addCustomIcon: (name: string, svg: string) => void
   removeCustomIcon: (name: string) => void
+  /** Remove several at once (selection, or all). One write, so one undo step. */
+  removeCustomIcons: (names: string[]) => void
 
   // Multi design system — local registry backed by GitHub repos. An entry is
   // only created/updated by a successful push (GitHubConnectView).
@@ -1849,6 +1851,10 @@ export const useDesignStore = create<DesignStore>()(
         ),
       removeCustomIcon: (name) =>
         set((state) => ({ customIcons: state.customIcons.filter((i) => i.name !== name) })),
+      removeCustomIcons: (names) => {
+        const drop = new Set(names)
+        set((state) => ({ customIcons: state.customIcons.filter((i) => !drop.has(i.name)) }))
+      },
 
       // ── Multi design system registry ──
       savedSystems: [],

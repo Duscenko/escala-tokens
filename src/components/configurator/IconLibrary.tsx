@@ -10,38 +10,99 @@ import {
 import { PhosphorIconBrowser } from './PhosphorIconBrowser'
 import { phosphorCoreBody, phosphorIconMaskUrl } from '../../lib/phosphorIcons'
 import { sanitizeSvg, slugify } from '../../lib/utils'
-
-const MAX_CUSTOM_ICONS = 50
-const MAX_SVG_BYTES = 32 * 1024
+import { captureSnapshot, type DesignSnapshot } from '../../store/useDesignStore'
+import { recordEdit } from '../../lib/editHistory'
+import {
+  MAX_CUSTOM_ICONS,
+  MAX_CUSTOM_ICON_BYTES,
+  MAX_SVG_BYTES,
+  fitsIconBudget,
+  formatKb,
+  iconBudget,
+  overIconBudget,
+} from '../../lib/customIconLimits'
 
 function CustomIcons() {
-  const { customIcons, addCustomIcon, removeCustomIcon } = useDesignStore()
+  const { customIcons, addCustomIcon, removeCustomIcons } = useDesignStore()
   const fileRef = useRef<HTMLInputElement>(null)
   const [error, setError] = useState<string | null>(null)
+  // Selection mode: click tiles to pick, then remove them together. Removing
+  // 1,000 icons one × at a time was the reported problem.
+  const [selecting, setSelecting] = useState(false)
+  const [selected, setSelected] = useState<Set<string>>(() => new Set())
+  const [confirmAll, setConfirmAll] = useState(false)
+  // The way back from a removal, in place: the Board's Undo is a tab away.
+  const [undo, setUndo] = useState<{ icons: { name: string; svg: string }[]; count: number } | null>(null)
+  const budget = iconBudget(customIcons)
+  const over = overIconBudget(budget)
+
+  function remove(names: string[], label: string) {
+    if (!names.length) return
+    const before = captureSnapshot(useDesignStore.getState() as unknown as DesignSnapshot)
+    setUndo({ icons: useDesignStore.getState().customIcons, count: names.length })
+    removeCustomIcons(names)
+    recordEdit(before, label)
+    setSelected(new Set())
+    setSelecting(false)
+    setConfirmAll(false)
+  }
+
+  function toggle(name: string) {
+    setSelected((prev) => {
+      const next = new Set(prev)
+      if (next.has(name)) next.delete(name)
+      else next.add(name)
+      return next
+    })
+  }
 
   async function handleFiles(files: FileList | null) {
     if (!files?.length) return
     setError(null)
+    setUndo(null)
+    // The budget is tracked HERE, across the batch: the render's `customIcons`
+    // does not change while this loop runs, so reading its length let a single
+    // upload of 1,173 files straight past a limit of 50.
+    let b = iconBudget(useDesignStore.getState().customIcons)
     const rejected: string[] = []
-    for (const file of [...files]) {
-      if (customIcons.length >= MAX_CUSTOM_ICONS) { rejected.push(`${file.name} (limit of ${MAX_CUSTOM_ICONS} reached)`); break }
-      if (file.size > MAX_SVG_BYTES) { rejected.push(`${file.name} (over 32 KB)`); continue }
-      const raw = await file.text()
-      const clean = sanitizeSvg(raw)
+    let stoppedAt: number | null = null
+    const list = [...files]
+    for (let i = 0; i < list.length; i++) {
+      const file = list[i]
+      if (file.size > MAX_SVG_BYTES * 4) { rejected.push(`${file.name} (over ${formatKb(MAX_SVG_BYTES)})`); continue }
+      const clean = sanitizeSvg(await file.text())
       if (!clean) { rejected.push(`${file.name} (not a valid SVG)`); continue }
-      const name = slugify(file.name.replace(/\.svg$/i, '')) || `icon-${customIcons.length + 1}`
+      const icons = useDesignStore.getState().customIcons
+      const name = slugify(file.name.replace(/\.svg$/i, '')) || `icon-${icons.length + 1}`
+      const replacing = icons.find((ic) => ic.name === name)?.svg
+      const why = fitsIconBudget(b, clean, replacing)
+      if (why === 'size') { rejected.push(`${file.name} (over ${formatKb(MAX_SVG_BYTES)})`); continue }
+      if (why) { stoppedAt = i; break }
       addCustomIcon(name, clean)
+      b = { count: b.count + (replacing === undefined ? 1 : 0), bytes: b.bytes - (replacing?.length ?? 0) + clean.length }
     }
-    if (rejected.length) setError(`Skipped: ${rejected.join(', ')}`)
+    const notes: string[] = []
+    if (stoppedAt !== null) {
+      notes.push(`${(list.length - stoppedAt).toLocaleString()} not added: the beta keeps ${MAX_CUSTOM_ICONS} icons (${formatKb(MAX_CUSTOM_ICON_BYTES)}) per design system.`)
+    }
+    if (rejected.length) notes.push(`Skipped: ${rejected.slice(0, 5).join(', ')}${rejected.length > 5 ? ` and ${rejected.length - 5} more` : ''}.`)
+    if (notes.length) setError(notes.join(' '))
     if (fileRef.current) fileRef.current.value = ''
   }
+
+  const full = budget.count >= MAX_CUSTOM_ICONS || budget.bytes >= MAX_CUSTOM_ICON_BYTES
 
   return (
     <section aria-labelledby="icons-yours-heading" className="flex flex-col gap-2">
       <div className="flex items-center justify-between gap-2 px-1">
-        <div className="flex items-center gap-2">
-          <h2 id="icons-yours-heading" className="text-ui font-semibold text-fg">Your icons</h2>
-          <span className="text-mini font-mono tabular-nums text-fg-faint">{customIcons.length}</span>
+        <div className="flex items-center gap-2 min-w-0">
+          <h2 id="icons-yours-heading" className="whitespace-nowrap text-ui font-semibold text-fg">Your icons</h2>
+          <span
+            className={`whitespace-nowrap text-mini font-mono tabular-nums ${over ? 'text-status-warning' : 'text-fg-faint'}`}
+            title={`${formatKb(budget.bytes)} of ${formatKb(MAX_CUSTOM_ICON_BYTES)}`}
+          >
+            {budget.count.toLocaleString()}/{MAX_CUSTOM_ICONS}
+          </span>
         </div>
         <input
           ref={fileRef}
@@ -52,13 +113,74 @@ function CustomIcons() {
           className="hidden"
           aria-label="Upload SVG icons"
         />
-        <button
-          onClick={() => fileRef.current?.click()}
-          className="h-7 rounded-lg px-2.5 text-caption font-medium bg-fg text-app transition-opacity hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50"
-        >
-          Upload SVGs
-        </button>
+        <div className="flex items-center gap-1">
+          {customIcons.length > 0 && (
+            <button
+              type="button"
+              onClick={() => { setSelecting((v) => !v); setSelected(new Set()); setConfirmAll(false) }}
+              aria-pressed={selecting}
+              className="h-7 whitespace-nowrap rounded-lg px-2 text-caption font-medium text-fg-muted hover:text-fg hover:bg-elevated/60 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50"
+            >
+              {selecting ? 'Done' : 'Select'}
+            </button>
+          )}
+          <button
+            onClick={() => fileRef.current?.click()}
+            disabled={full}
+            title={full ? `The beta keeps ${MAX_CUSTOM_ICONS} icons (${formatKb(MAX_CUSTOM_ICON_BYTES)}) per design system` : undefined}
+            aria-label="Upload SVG icons"
+            className="h-7 whitespace-nowrap rounded-lg px-2.5 text-caption font-medium bg-fg text-app transition-opacity hover:opacity-90 disabled:opacity-40 disabled:cursor-not-allowed focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50"
+          >
+            Upload
+          </button>
+        </div>
       </div>
+
+      {over && (
+        <p className="px-1 text-caption leading-relaxed text-status-warning">
+          {budget.count.toLocaleString()} icons ({formatKb(budget.bytes)}). The beta keeps {MAX_CUSTOM_ICONS} icons
+          and {formatKb(MAX_CUSTOM_ICON_BYTES)} per design system — remove some to save it to your account and sync it.
+        </p>
+      )}
+
+      {selecting && (() => {
+        const all = customIcons.length > 0 && selected.size === customIcons.length
+        const btn = 'h-6 whitespace-nowrap rounded-md px-2 text-caption focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50'
+        const danger = `${btn} font-medium bg-status-danger-solid text-white hover:opacity-90 disabled:opacity-40 disabled:cursor-not-allowed`
+        return (
+          <div className="flex items-center justify-between gap-2 rounded-lg border border-line bg-surface/60 px-2 py-1.5">
+            {confirmAll ? (
+              <>
+                <span className="text-caption text-fg">Remove all {customIcons.length.toLocaleString()}?</span>
+                <div className="flex items-center gap-1">
+                  <button type="button" onClick={() => setConfirmAll(false)} className={`${btn} text-fg-muted hover:text-fg`}>Cancel</button>
+                  <button type="button" onClick={() => remove(customIcons.map((i) => i.name), 'Remove all icons')} className={danger}>
+                    Remove
+                  </button>
+                </div>
+              </>
+            ) : (
+              <>
+                <button
+                  type="button"
+                  onClick={() => setSelected(all ? new Set() : new Set(customIcons.map((i) => i.name)))}
+                  className={`${btn} -ml-1 text-fg-muted hover:text-fg`}
+                >
+                  {all ? 'Clear' : 'Select all'}
+                </button>
+                <button
+                  type="button"
+                  disabled={selected.size === 0}
+                  onClick={() => (all ? setConfirmAll(true) : remove([...selected], `Remove ${selected.size} icons`))}
+                  className={`${danger} tabular-nums`}
+                >
+                  {all ? `Remove all ${selected.size.toLocaleString()}` : selected.size ? `Remove ${selected.size.toLocaleString()}` : 'Remove'}
+                </button>
+              </>
+            )}
+          </div>
+        )
+      })()}
 
       {customIcons.length === 0 ? (
         <button
@@ -66,29 +188,62 @@ function CustomIcons() {
           className="rounded-lg border border-dashed border-line-strong bg-surface/30 hover:bg-surface/60 transition-colors px-3 py-5 text-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50"
         >
           <p className="text-caption leading-relaxed text-fg-faint">
-            Drop your brand glyphs, logos or one-off icons here — they're exported with your
+            Drop your brand glyphs, logos or one-off icons here — up to {MAX_CUSTOM_ICONS}. They're exported with your
             tokens and imported into Figma as components.
           </p>
         </button>
       ) : (
         <div className="grid grid-cols-[repeat(auto-fill,minmax(3.5rem,1fr))] gap-1 rounded-lg border border-line bg-surface/40 p-2">
-          {customIcons.map((icon) => (
-            <div key={icon.name} className="group relative flex flex-col items-center gap-1 p-2 rounded-lg hover:bg-elevated/60 transition-colors">
-              <span
-                className="w-[22px] h-[22px] text-fg-muted [&>svg]:w-full [&>svg]:h-full"
-                dangerouslySetInnerHTML={{ __html: icon.svg }}
-              />
-              <span className="text-micro text-fg-faint truncate w-full text-center">{icon.name}</span>
+          {customIcons.map((icon) => {
+            const picked = selected.has(icon.name)
+            const glyph = (
+              <>
+                <span
+                  className="w-[22px] h-[22px] text-fg-muted [&>svg]:w-full [&>svg]:h-full"
+                  dangerouslySetInnerHTML={{ __html: icon.svg }}
+                />
+                <span className="text-micro text-fg-faint truncate w-full text-center">{icon.name}</span>
+              </>
+            )
+            return selecting ? (
               <button
-                onClick={() => removeCustomIcon(icon.name)}
-                aria-label={`Remove ${icon.name}`}
-                className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-surface border border-line text-fg-faint hover:text-status-danger hover:border-status-danger/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center"
+                key={icon.name}
+                type="button"
+                onClick={() => toggle(icon.name)}
+                aria-pressed={picked}
+                aria-label={`Select ${icon.name}`}
+                className={`relative flex flex-col items-center gap-1 p-2 rounded-lg transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50 ${
+                  picked ? 'bg-accent-ui/10 ring-1 ring-accent-ui' : 'hover:bg-elevated/60'
+                }`}
               >
-                <svg width="7" height="7" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M10 2 2 10M2 2l8 8"/></svg>
+                {glyph}
               </button>
-            </div>
-          ))}
+            ) : (
+              <div key={icon.name} className="group relative flex flex-col items-center gap-1 p-2 rounded-lg hover:bg-elevated/60 transition-colors">
+                {glyph}
+                <button
+                  onClick={() => remove([icon.name], `Remove ${icon.name}`)}
+                  aria-label={`Remove ${icon.name}`}
+                  className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-surface border border-line text-fg-faint hover:text-status-danger hover:border-status-danger/40 opacity-0 group-hover:opacity-100 focus-visible:opacity-100 transition-opacity flex items-center justify-center"
+                >
+                  <svg width="7" height="7" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M10 2 2 10M2 2l8 8"/></svg>
+                </button>
+              </div>
+            )
+          })}
         </div>
+      )}
+      {undo && (
+        <p className="flex items-center gap-2 px-1 text-caption text-fg-muted" role="status">
+          {undo.count === 1 ? '1 icon removed.' : `${undo.count.toLocaleString()} icons removed.`}
+          <button
+            type="button"
+            onClick={() => { useDesignStore.setState({ customIcons: undo.icons }); setUndo(null) }}
+            className="font-medium text-fg underline-offset-2 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50 rounded-sm"
+          >
+            Undo
+          </button>
+        </p>
       )}
       {error && <p className="px-1 text-caption text-status-warning">{error}</p>}
     </section>
