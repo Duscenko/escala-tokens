@@ -23292,7 +23292,7 @@
                 "text": "color.content.secondary"
               },
               "label": {
-                "font": "type.label",
+                "font": "type.heading-2xs",
                 "text": "color.content.primary"
               },
               "chevron": {
@@ -23410,7 +23410,7 @@
             "ghost-underline|Disabled": {
               "root": {
                 "fill": "none",
-                "stroke": "color.border.default",
+                "stroke": "color.border.subtle",
                 "strokeBottomWidth": "stroke.divider"
               },
               "icon": {

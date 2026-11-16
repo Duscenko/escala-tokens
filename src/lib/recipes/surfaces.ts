@@ -153,7 +153,7 @@ function accordionItemShell(variant: string, state: string): SlotProps {
   const open = state === 'Open'
   switch (variant) {
     case 'ghost-underline':
-      return { fill: NONE, stroke: c('border.default'), strokeBottomWidth: 'stroke.divider' }
+      return { fill: NONE, stroke: c(state === 'Disabled' ? 'border.subtle' : 'border.default'), strokeBottomWidth: 'stroke.divider' }
     case 'ghost-rounded':
       return { fill: open ? c('surface.muted') : NONE, radius: 'radius.container' }
     case 'outline-rounded':
@@ -177,7 +177,8 @@ export const ACCORDION_ITEM: ComponentRecipe = {
     part({}, () => ({
       trigger: { paddingY: 'spacing.inset-surface', gap: 'spacing.gap-group' },
       icon: { width: 'icon.medium', height: 'icon.medium', text: c('content.secondary') },
-      label: { font: 'type.label', text: c('content.primary') },
+      // Figma binds the trigger label to the `heading-2xs` role (16/25), not `label` (comment 2007003612, 2026-11-16).
+      label: { font: 'type.heading-2xs', text: c('content.primary') },
       chevron: { width: 'icon.medium', height: 'icon.medium', text: c('content.secondary') },
       content: { font: 'type.body-md', text: c('content.secondary'), paddingBottom: 'spacing.inset-surface' },
     })),
