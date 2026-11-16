@@ -433,8 +433,9 @@ After adding or renaming a role:
 3. Renaming a stored role needs a store migration (append-only).
 4. \`npm test\` (catalogue, contrast matrix, recipe ↔ plugin parity, export
    audit, this skill's drift check) and \`npm run build\`.
-5. Read \`CLAUDE.md\` for the decision history behind a role before moving it —
-   most tones there were measured, not chosen.
+5. Search \`docs/history/CLAUDE-archive-2026-11-16.md\` and \`governance/ledger/\`
+   for the decision history behind a role before moving it — most tones there
+   were measured, not chosen.
 
 `
 

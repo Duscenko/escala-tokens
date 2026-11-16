@@ -10,7 +10,8 @@ The source of truth for a generated system is the live token payload, not this r
 - [Contracts](docs/agent-native/CONTRACTS.md): Frozen HTTP, schema versions, persist, color, naming
 - [Token JSON Schema](docs/agent-native/tokens.schema.json): Machine-readable `generateTokenJSON()` shape
 - [Get started (in-app Docs)](docs/agent-native/GET-STARTED-PLAN.md): Destinations (Figma / Code / AI), not file formats
-- [CLAUDE.md](CLAUDE.md): Deep reference — load by section, not as a system prompt
+- [CLAUDE.md](CLAUDE.md): Current rules, repo map and sources of truth (short)
+- [CLAUDE archive](docs/history/CLAUDE-archive-2026-11-16.md): Why each rule exists — search by keyword, never load whole
 - [Brand context](.impeccable.md): Users and aesthetic direction
 
 ## Knowledge
@@ -24,14 +25,11 @@ The source of truth for a generated system is the live token payload, not this r
 
 ## Live access (HTTP)
 
-- `GET https://escalatokens.com/api/mcp` — MCP discovery (tools + schema URL)
-- `POST https://escalatokens.com/api/mcp` — MCP JSON-RPC (`initialize`, `tools/list`, `tools/call`)
-- [MCP tools](docs/agent-native/MCP.md)
 - `GET https://www.escalatokens.com/docs/agent-native/tokens.schema.json` — Escala JSON Schema
 - `GET https://www.escalatokens.com/api/tokens?project=<slug>` — published Escala JSON (public read)
 - `POST https://www.escalatokens.com/api/tokens?project=<slug>` — publish from the configurator (same-origin + claim)
 
-`/api/tokens` is frozen. Agents query tokens through `/api/mcp`.
+`/api/tokens` is frozen. There is no hosted MCP (deleted 2026-10-20): read the published Escala JSON above, or use the offline agent package (Export → AI).
 
 ## Code (do not invent a second copy)
 
@@ -39,8 +37,7 @@ The source of truth for a generated system is the live token payload, not this r
 - `src/lib/aiContext.ts` — `agent-context/v1` envelope
 - `src/lib/agentBundle/` — TokenJSON → Skill files/zip (no store)
 - `src/lib/skillExport.ts` — store wrapper around agentBundle
-- `src/lib/agentAccess/` — MCP tools (no store)
-- `api/mcp.ts` — MCP HTTP + Blob read
+- `src/lib/agentAccess/` — resolve, catalogue, contrast helpers (no store)
 - `evals/agent-output/` — pass/fail corpus for the generated checker
 - `src/lib/componentCatalogue.ts` — components, props, a11y
 - `src/lib/color/apca.ts` — the only contrast math
