@@ -17,8 +17,9 @@ const withEscala: Decorator = (Story, ctx) => {
   const viewport = (ctx.globals.viewport ?? 'desktop') as GridViewport
   const t = resolvePreviewTokens(useDesignStore.getState(), BRAND, appearance, viewport)
   return (
-    // On a Documentation page the story sits in a block of its own: no full-screen height there.
-    <div className={appearance} style={{ background: t.surface, padding: 32, minHeight: ctx.viewMode === 'docs' ? undefined : '100vh' }}>
+    // On a Documentation page the story sits in a block of its own: no full-screen height there, and the page paint grows with a
+    // story wider than the block (the block scrolls sideways; the white would stop at the block's width and show the dark behind).
+    <div className={appearance} style={{ background: t.surface, padding: 32, minHeight: ctx.viewMode === 'docs' ? undefined : '100vh', minWidth: ctx.viewMode === 'docs' ? 'min-content' : undefined }}>
       <RecipeScope t={t}>
         <Story />
       </RecipeScope>
