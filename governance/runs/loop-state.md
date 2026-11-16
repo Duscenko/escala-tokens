@@ -34,15 +34,25 @@ Figma limits found: `figma.saveVersionHistoryAsync` is unavailable via `use_figm
 Resolve in Figma UI / reply `✅ Resolved …` only after merge + sync. None resolved yet.
 
 ## Queue C
-Auth: todo. Overlay, HeaderNavigation, SidebarNavigation, Marketing: todo (same flow, stacked PRs).
+| Piece | Status | Branch / PR |
+|---|---|---|
+| SocialLoginButton (prerequisite, rebuilt) | done | `loop/2026-11-16-social-login-button` · PR #19 |
+| Auth (12 blocks) | done, awaiting-approval | `loop/2026-11-16-sync-and-auth` · PR #20 (stacked) |
+| Overlay (15 sets, page `1027:146815`) | todo | next |
+| HeaderNavigation (5, `1059:2`) | todo | |
+| SidebarNavigation (2, `1064:2`) | todo | |
+| Marketing (6, `1066:2`) | todo | |
+Queue A PR: #18 (`loop/2026-11-16-a-tokens-recipes`, base `refactor/escala-v0.11`). Stack: #18 ← #19 ← #20; each next piece branches from the previous one.
+Block recipe used for Auth (reuse it): read the page with `use_figma` (instances, props, texts, padding bindings), write `blocks/<page>.tsx` (shell + blocks, CSS role vars via `cssVarOf`, `liftShadow` for card elevation), `blocks/<page>.contract.json`, `__tests__/<page>Blocks.test.ts`, stories `apps/storybook/stories/blocks/<Page><Name>.stories.tsx` (tag `stage:storybook`, Playground · Containers · States · Motion), registry entries. Measure motion in Storybook with a real click (programmatic `.click()` inside the iframe did not fire React).
 
 ## Open findings / issues
 #12 COL-002 · #13 COL-003 · #17 board comment · SNP-001 snapshot stale (`ahead` ledger) · CMP-005 InputTagChip radius (8→4, unverified vs Figma)
 
 ## Not yet verified
-Visual check of Queue A in Storybook (Light/Dark screenshots); `npm run build` and `npm run build-storybook` not run after the changes.
+`npm run build` and `npm run build-storybook` not run; Dark screenshots of the Auth blocks not taken; Figma node for each Auth block icon not read.
 
 ## Next step
-Run `npm run build-storybook` + screenshot Segmented, Switch, FeaturedIcon (gradient), DropdownMenu in Light/Dark; then start Queue C Auth (read Figma page `999:108478`).
+Overlay: read page `1027:146815` (15 single-variant sets: CartDrawer, ConfirmDialog, CookieConsent, DestructiveConfirm, ErrorModal, FeedbackRating, FilterDrawer, FilterModal, FormModal, QuickEditDialog, ReleaseModal, SessionTimeoutWarning, ShareModal, SuccessModal, WarningDialog), branch `loop/2026-11-16-overlay` from `loop/2026-11-16-sync-and-auth`.
+Also pending: Queue A A11 (FeaturedIcon doc boards, Figma write), Queue B replies/resolution after merge+sync, Code Connect (CC-001).
 
 Resume prompt: Continue the Escala loop: read governance/runs/loop-state.md and escala-loop-prompt.md, then resume from the next step.
