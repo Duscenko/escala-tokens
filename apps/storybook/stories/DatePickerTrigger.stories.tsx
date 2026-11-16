@@ -138,3 +138,17 @@ export const OpensTheCalendar: Story = {
     await expect(trigger).toHaveFocus()
   },
 }
+
+/** A range from the trigger: the popover carries the presets rail, two clicks pick the dates, Apply closes it and the trigger shows "from – to". */
+export const PickARange: Story = {
+  name: 'Pick a range',
+  render: () => <div style={{ minHeight: 520 }}><DatePicker mode="range" placeholderText="Select dates" style={{ width: 320 }} /></div>,
+  play: async ({ canvasElement }) => {
+    const trigger = canvasElement.querySelector<HTMLButtonElement>('[data-escala=DatePickerTrigger]')!
+    await userEvent.click(trigger)
+    await userEvent.click(await screen.findByRole('button', { name: / 10, \d{4}$/ }))
+    await userEvent.click(await screen.findByRole('button', { name: / 18, \d{4}$/ }))
+    await userEvent.click(await screen.findByRole('button', { name: 'Apply' }))
+    await waitFor(() => expect(trigger).toHaveTextContent(/10, \d{4} – .* 18, \d{4}/))
+  },
+}

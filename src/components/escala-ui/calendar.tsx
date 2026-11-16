@@ -191,10 +191,14 @@ export interface CalendarMonthProps extends Omit<React.ComponentProps<'div'>, 'c
   unavailableDays?: Date[]
   /** A day was pressed. */
   onDayClick?: (date: Date) => void
+  /** Range mode with only a first day picked: the day the pointer or focus is on previews the span from it. */
+  hoverDay?: Date | null
+  /** The pointer or focus entered a day (null: left the month). */
+  onDayHover?: (date: Date | null) => void
 }
 
 function CalendarMonth({
-  size = 'default', mode = 'single', variant = 'default', month, today, selected, range, disabledDays, unavailableDays, onDayClick, className, ...props
+  size = 'default', mode = 'single', variant = 'default', month, today, selected, range, disabledDays, unavailableDays, onDayClick, hoverDay, onDayHover, className, ...props
 }: CalendarMonthProps) {
   // Without a month it shows the file's sample (November 2026); with one, only the data it is given.
   const sample = !month
@@ -207,7 +211,10 @@ function CalendarMonth({
   const weeks = Math.ceil((lead + count) / 7)
   const todayKey = dayKey(today ?? (sample ? day0(y, m, 7) : new Date()))
   const picked = new Set((selected ?? (sample ? (mode === 'multiple' ? [4, 12, 19, 30] : [12]).map((d) => day0(y, m, d)) : [])).map(dayKey))
-  const span = mode === 'range' ? (range === undefined ? (sample ? { from: day0(y, m, 10), to: day0(y, m, 18) } : null) : range) : null
+  const ownSpan = mode === 'range' ? (range === undefined ? (sample ? { from: day0(y, m, 10), to: day0(y, m, 18) } : null) : range) : null
+  // A first day without a second: the hovered day previews the span, whichever side of the first it is.
+  const preview = ownSpan && !ownSpan.to && hoverDay && hoverDay.getTime() !== ownSpan.from.getTime()
+  const span = preview ? (hoverDay! < ownSpan!.from ? { from: hoverDay!, to: ownSpan!.from } : { from: ownSpan!.from, to: hoverDay! }) : ownSpan
   const from = span ? dayKey(span.from) : ''
   const to = span?.to ? dayKey(span.to) : ''
   const between = (d: Date) => !!span?.to && d.getTime() > span.from.getTime() && d.getTime() < span.to.getTime()
@@ -258,6 +265,8 @@ function CalendarMonth({
       data-variant={variant}
       className={cn('flex flex-col', className)}
       onKeyDown={onKeyDown}
+      onPointerLeave={onDayHover ? () => onDayHover(null) : undefined}
+      onBlur={onDayHover ? (e) => { if (!e.currentTarget.contains(e.relatedTarget as Node | null)) onDayHover(null) } : undefined}
       {...props}
     >
       <div data-part="CalendarMonth.weekdays" className="flex">
@@ -281,6 +290,8 @@ function CalendarMonth({
                 aria-label={fullDate(d)}
                 aria-pressed={st === 'Selected' || st === 'RangeStart' || st === 'RangeEnd' || st === 'RangeMiddle'}
                 onClick={onDayClick ? () => onDayClick(d) : undefined}
+                onPointerEnter={onDayHover ? () => onDayHover(d) : undefined}
+                onFocus={onDayHover ? () => onDayHover(d) : undefined}
               >
                 {d.getDate()}
               </CalendarDay>
@@ -447,6 +458,7 @@ function Calendar({
     : mode === 'range' ? { from: day0(2026, 10, 10), to: day0(2026, 10, 18) } : day0(2026, 10, 12)
   const [ownMonth, setOwnMonth] = React.useState<Date>(() => defaultMonth ?? (sample ? day0(2026, 10, 1) : new Date()))
   const [ownValue, setOwnValue] = React.useState<CalendarValue>(() => (sample ? sampleValue : defaultValue))
+  const [hoverDay, setHoverDay] = React.useState<Date | null>(null)
   const shown = month ?? ownMonth
   const current = value !== undefined ? value : ownValue
   const now = today ?? (sample ? day0(2026, 10, 7) : new Date())
@@ -516,6 +528,8 @@ function Calendar({
             disabledDays={off}
             unavailableDays={gone}
             onDayClick={pick}
+            hoverDay={hoverDay}
+            onDayHover={mode === 'range' ? setHoverDay : undefined}
           />
           {children}
         </div>
