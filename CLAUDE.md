@@ -140,7 +140,7 @@ One line each. Detail: search the archive or the plan named.
 - **Motion:** a foundation (24 roles, presets, choreographies, reduced motion); components read it
   through recipes. (`motion-foundation.md`)
 - **Icons:** Phosphor, weight per System Style; one component icon list; icon sizes are tokens.
-- **Components:** 70 in `escala-ui`, each the twin of a Figma set; contracts in
+- **Components:** the files in `escala-ui`, each the twin of a Figma set; contracts in
   `design-plans/*-contract.md`; Storybook grouped by family (one Figma page = one entry).
   (`button-figma-parity.md`, `storybook-families.md`, `figma-components-inventory.md`)
 - **Exports:** tokens.json · CSS (both appearances, viewport media blocks) · W3C = the five Figma
@@ -157,7 +157,8 @@ One line each. Detail: search the archive or the plan named.
 - **No Code Connect, and it cannot be added on the current plan**: the library is on Figma Professional and the
   API refuses mappings ("only in Organization or Enterprise plans", measured 2026-11-16). The bridge instead:
   an agent reading a Figma design finds the set name in `spec/contracts/index.json` and uses that contract's files.
-- 26 catalogue components have no set in the Figma snapshot and 25 have no story (see
-  `spec/contracts/index.json`: `figmaSet` / `story` null). Each needs a decision: add to Figma or retire.
+- Only Escala components (DEC-2026-11-16-008): the shadcn-only ones with no Figma twin were removed.
+  Label · Spinner · Card stay as parts others use, with no Figma set yet (`codeOnly`); the plugin still
+  builds the removed sets until it is cleaned.
 - Governance designed, not yet run: every registry piece is at stage `storybook`; no sync has run.
 - `AGENTS.md`'s router predates the deleted MCP in places — trust this file first.
