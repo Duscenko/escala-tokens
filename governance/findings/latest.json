@@ -134,6 +134,19 @@
       "firstSeen": "2026-11-16",
       "lastSeen": "2026-11-16",
       "regression": false
+    },
+    {
+      "id": "CMP-009:Navigation-content-assumed",
+      "rule": "CMP-002",
+      "severity": "info",
+      "side": "both",
+      "entity": "DualSidebar, AppHeader",
+      "evidence": "Item labels, icons and the theme-toggle glyphs inside DualSidebar groups and AppHeader actions were not all readable from Figma (instance children collapsed); plausible content and component-set icons were used. Verify against the file.",
+      "status": "Open",
+      "resolution": null,
+      "firstSeen": "2026-11-16",
+      "lastSeen": "2026-11-16",
+      "regression": false
     }
   ]
 }

@@ -316,5 +316,82 @@
     "lastAudit": "2026-11-16",
     "lastSyncSha": null,
     "codeConnect": null
+  },
+  "AnnouncementBar": {
+    "kind": "block",
+    "stage": "storybook",
+    "version": null,
+    "workshopPage": null,
+    "story": "blocks-navigation-announcementbar--playground",
+    "figmaNode": "1059:3",
+    "lastAudit": "2026-11-16",
+    "lastSyncSha": null,
+    "codeConnect": null
+  },
+  "UtilityBar": {
+    "kind": "block",
+    "stage": "storybook",
+    "version": null,
+    "workshopPage": null,
+    "story": "blocks-navigation-utilitybar--playground",
+    "figmaNode": "1059:27",
+    "lastAudit": "2026-11-16",
+    "lastSyncSha": null,
+    "codeConnect": null
+  },
+  "AppHeader": {
+    "kind": "block",
+    "stage": "storybook",
+    "version": null,
+    "workshopPage": null,
+    "story": "blocks-navigation-appheader--playground",
+    "figmaNode": "1061:433",
+    "lastAudit": "2026-11-16",
+    "lastSyncSha": null,
+    "codeConnect": null
+  },
+  "AppHeaderExtended": {
+    "kind": "block",
+    "stage": "storybook",
+    "version": null,
+    "workshopPage": null,
+    "story": "blocks-navigation-appheaderextended--playground",
+    "figmaNode": "1061:5849",
+    "lastAudit": "2026-11-16",
+    "lastSyncSha": null,
+    "codeConnect": null
+  },
+  "FloatingHeader": {
+    "kind": "block",
+    "stage": "storybook",
+    "version": null,
+    "workshopPage": null,
+    "story": "blocks-navigation-floatingheader--playground",
+    "figmaNode": "1061:6090",
+    "lastAudit": "2026-11-16",
+    "lastSyncSha": null,
+    "codeConnect": null
+  },
+  "DualSidebar": {
+    "kind": "block",
+    "stage": "storybook",
+    "version": null,
+    "workshopPage": null,
+    "story": "blocks-navigation-dualsidebar--playground",
+    "figmaNode": "1064:49",
+    "lastAudit": "2026-11-16",
+    "lastSyncSha": null,
+    "codeConnect": null
+  },
+  "SidebarStatCard": {
+    "kind": "block",
+    "stage": "storybook",
+    "version": null,
+    "workshopPage": null,
+    "story": "blocks-navigation-sidebarstatcard--playground",
+    "figmaNode": "1064:3",
+    "lastAudit": "2026-11-16",
+    "lastSyncSha": null,
+    "codeConnect": null
   }
 }
