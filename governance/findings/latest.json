@@ -108,6 +108,32 @@
       "firstSeen": "2026-11-16",
       "lastSeen": "2026-11-16",
       "regression": false
+    },
+    {
+      "id": "CMP-007:RadioCard-missing",
+      "rule": "PAR-002",
+      "severity": "warn",
+      "side": "code",
+      "entity": "RadioCard",
+      "evidence": "Figma has RadioCard (120 variants); code has no RadioCard nor Radio/RadioItem (ledger pending part of RadioGroup). FormModal visibility uses plain RadioGroup rows as a stand-in. Build RadioCard first, then swap.",
+      "status": "Open",
+      "resolution": null,
+      "firstSeen": "2026-11-16",
+      "lastSeen": "2026-11-16",
+      "regression": false
+    },
+    {
+      "id": "CMP-008:Overlay-drawers-on-Modal",
+      "rule": "CMP-002",
+      "severity": "info",
+      "side": "both",
+      "entity": "CartDrawer, FilterDrawer",
+      "evidence": "Figma draws both as Modal instances. A drawer is a Sheet/Drawer in code. Better: build them on the Sheet (side panel, own motion).",
+      "status": "Open",
+      "resolution": null,
+      "firstSeen": "2026-11-16",
+      "lastSeen": "2026-11-16",
+      "regression": false
     }
   ]
 }

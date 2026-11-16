@@ -14,6 +14,7 @@ import { Button } from '../button'
 import { Checkbox, CheckboxItem } from '../checkbox'
 import { Field } from '../field'
 import { glyph } from '../../../lib/icons'
+import { boxedGlyph } from './shared'
 import { Input } from '../input'
 import { InputOTP } from '../input-otp'
 import { ModalHeader } from '../modal'
@@ -235,7 +236,7 @@ export function AuthForgotPassword({ container, method = 'email', status = 'idle
         {email ? <Input type="email" placeholder="you@company.com" /> : <Input type="phone" placeholder="Phone number" />}
       </Field>
       <Button loading={busy(status)} onClick={onSubmit}>{email ? 'Send reset link' : 'Send reset code'}</Button>
-      <Button variant="secondary" leading={glyph('caret-left')} onClick={() => onNavigate?.('sign-in')}>Back to sign in</Button>
+      <Button variant="secondary" leading={boxedGlyph('caret-left')} onClick={() => onNavigate?.('sign-in')}>Back to sign in</Button>
     </AuthShell>
   )
 }

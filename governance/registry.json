@@ -151,5 +151,170 @@
     "lastAudit": "2026-11-16",
     "lastSyncSha": null,
     "note": "Appearance=gradient added (A4)"
+  },
+  "ConfirmDialog": {
+    "kind": "block",
+    "stage": "storybook",
+    "version": null,
+    "workshopPage": null,
+    "story": "blocks-overlay-confirmdialog--playground",
+    "figmaNode": "1054:6187",
+    "lastAudit": "2026-11-16",
+    "lastSyncSha": null,
+    "codeConnect": null
+  },
+  "DestructiveConfirm": {
+    "kind": "block",
+    "stage": "storybook",
+    "version": null,
+    "workshopPage": null,
+    "story": "blocks-overlay-destructiveconfirm--playground",
+    "figmaNode": "1054:6209",
+    "lastAudit": "2026-11-16",
+    "lastSyncSha": null,
+    "codeConnect": null
+  },
+  "FormModal": {
+    "kind": "block",
+    "stage": "storybook",
+    "version": null,
+    "workshopPage": null,
+    "story": "blocks-overlay-formmodal--playground",
+    "figmaNode": "1055:99",
+    "lastAudit": "2026-11-16",
+    "lastSyncSha": null,
+    "codeConnect": null
+  },
+  "SuccessModal": {
+    "kind": "block",
+    "stage": "storybook",
+    "version": null,
+    "workshopPage": null,
+    "story": "blocks-overlay-successmodal--playground",
+    "figmaNode": "1055:265",
+    "lastAudit": "2026-11-16",
+    "lastSyncSha": null,
+    "codeConnect": null
+  },
+  "ErrorModal": {
+    "kind": "block",
+    "stage": "storybook",
+    "version": null,
+    "workshopPage": null,
+    "story": "blocks-overlay-errormodal--playground",
+    "figmaNode": "1055:346",
+    "lastAudit": "2026-11-16",
+    "lastSyncSha": null,
+    "codeConnect": null
+  },
+  "FeedbackRating": {
+    "kind": "block",
+    "stage": "storybook",
+    "version": null,
+    "workshopPage": null,
+    "story": "blocks-overlay-feedbackrating--playground",
+    "figmaNode": "1055:404",
+    "lastAudit": "2026-11-16",
+    "lastSyncSha": null,
+    "codeConnect": null
+  },
+  "WarningDialog": {
+    "kind": "block",
+    "stage": "storybook",
+    "version": null,
+    "workshopPage": null,
+    "story": "blocks-overlay-warningdialog--playground",
+    "figmaNode": "1055:548",
+    "lastAudit": "2026-11-16",
+    "lastSyncSha": null,
+    "codeConnect": null
+  },
+  "ShareModal": {
+    "kind": "block",
+    "stage": "storybook",
+    "version": null,
+    "workshopPage": null,
+    "story": "blocks-overlay-sharemodal--playground",
+    "figmaNode": "1055:613",
+    "lastAudit": "2026-11-16",
+    "lastSyncSha": null,
+    "codeConnect": null
+  },
+  "SessionTimeoutWarning": {
+    "kind": "block",
+    "stage": "storybook",
+    "version": null,
+    "workshopPage": null,
+    "story": "blocks-overlay-sessiontimeoutwarning--playground",
+    "figmaNode": "1055:793",
+    "lastAudit": "2026-11-16",
+    "lastSyncSha": null,
+    "codeConnect": null
+  },
+  "CartDrawer": {
+    "kind": "block",
+    "stage": "storybook",
+    "version": null,
+    "workshopPage": null,
+    "story": "blocks-overlay-cartdrawer--playground",
+    "figmaNode": "1074:2954",
+    "lastAudit": "2026-11-16",
+    "lastSyncSha": null,
+    "codeConnect": null
+  },
+  "QuickEditDialog": {
+    "kind": "block",
+    "stage": "storybook",
+    "version": null,
+    "workshopPage": null,
+    "story": "blocks-overlay-quickeditdialog--playground",
+    "figmaNode": "1074:3374",
+    "lastAudit": "2026-11-16",
+    "lastSyncSha": null,
+    "codeConnect": null
+  },
+  "FilterDrawer": {
+    "kind": "block",
+    "stage": "storybook",
+    "version": null,
+    "workshopPage": null,
+    "story": "blocks-overlay-filterdrawer--playground",
+    "figmaNode": "1074:3445",
+    "lastAudit": "2026-11-16",
+    "lastSyncSha": null,
+    "codeConnect": null
+  },
+  "FilterModal": {
+    "kind": "block",
+    "stage": "storybook",
+    "version": null,
+    "workshopPage": null,
+    "story": "blocks-overlay-filtermodal--playground",
+    "figmaNode": "1074:3596",
+    "lastAudit": "2026-11-16",
+    "lastSyncSha": null,
+    "codeConnect": null
+  },
+  "ReleaseModal": {
+    "kind": "block",
+    "stage": "storybook",
+    "version": null,
+    "workshopPage": null,
+    "story": "blocks-overlay-releasemodal--playground",
+    "figmaNode": "1074:3824",
+    "lastAudit": "2026-11-16",
+    "lastSyncSha": null,
+    "codeConnect": null
+  },
+  "CookieConsent": {
+    "kind": "block",
+    "stage": "storybook",
+    "version": null,
+    "workshopPage": null,
+    "story": "blocks-overlay-cookieconsent--playground",
+    "figmaNode": "1074:3929",
+    "lastAudit": "2026-11-16",
+    "lastSyncSha": null,
+    "codeConnect": null
   }
 }
