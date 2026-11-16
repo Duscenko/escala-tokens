@@ -85,7 +85,7 @@ function CustomIcons() {
     }
     const notes: string[] = []
     if (stoppedAt !== null) {
-      notes.push(`${(list.length - stoppedAt).toLocaleString()} not added: the beta keeps ${MAX_CUSTOM_ICONS} icons (${formatKb(MAX_CUSTOM_ICON_BYTES)}) per design system.`)
+      notes.push(`${(list.length - stoppedAt).toLocaleString()} not added. Limit: ${MAX_CUSTOM_ICONS} icons.`)
     }
     if (rejected.length) notes.push(`Skipped: ${rejected.slice(0, 5).join(', ')}${rejected.length > 5 ? ` and ${rejected.length - 5} more` : ''}.`)
     if (notes.length) setError(notes.join(' '))
@@ -140,7 +140,7 @@ function CustomIcons() {
           <button
             onClick={() => fileRef.current?.click()}
             disabled={full}
-            title={full ? `The beta keeps ${MAX_CUSTOM_ICONS} icons (${formatKb(MAX_CUSTOM_ICON_BYTES)}) per design system` : undefined}
+            title={full ? `Limit reached: ${MAX_CUSTOM_ICONS} icons` : undefined}
             aria-label="Upload SVG icons"
             className="h-7 whitespace-nowrap rounded-lg px-2 text-caption font-medium bg-fg text-app transition-opacity hover:opacity-90 disabled:opacity-40 disabled:cursor-not-allowed focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50"
           >
@@ -150,27 +150,15 @@ function CustomIcons() {
       </div>
 
       {help && (
-        <div id="icons-limits-help" className="flex flex-col gap-1.5 rounded-lg border border-line bg-surface/60 p-3 text-caption leading-relaxed text-fg-muted">
-          <p className="font-medium text-fg">Your icons in the beta</p>
-          <p>
-            Each design system keeps up to <span className="text-fg">{MAX_CUSTOM_ICONS} icons</span> and{' '}
-            <span className="text-fg">{formatKb(MAX_CUSTOM_ICON_BYTES)}</span> in total, at most{' '}
-            {formatKb(MAX_SVG_BYTES)} per icon. You are using {budget.count.toLocaleString()} ({formatKb(budget.bytes)}).
-          </p>
-          <p>
-            They are for brand glyphs, logos and one-off marks. The full icon library is Phosphor ({PHOSPHOR_LIBRARY.count}), already included and not counted here.
-          </p>
-          <p>
-            Your icons travel with the system: your account, every saved copy, and the tokens file your Figma sync reads. The limit keeps all of them fast.
-          </p>
-          <p>Use <span className="text-fg">Select</span> to remove several at once. A larger allowance is planned for Pro.</p>
+        <div id="icons-limits-help" className="rounded-lg border border-line bg-surface/60 px-3 py-2.5 text-caption leading-snug">
+          <p className="font-medium text-fg">{MAX_CUSTOM_ICONS} icons · {formatKb(MAX_CUSTOM_ICON_BYTES)} per system</p>
+          <p className="mt-0.5 text-fg-muted">For logos and brand glyphs. Phosphor isn't counted.</p>
         </div>
       )}
 
       {over && (
-        <p className="px-1 text-caption leading-relaxed text-status-warning">
-          {budget.count.toLocaleString()} icons ({formatKb(budget.bytes)}). The beta keeps {MAX_CUSTOM_ICONS} icons
-          and {formatKb(MAX_CUSTOM_ICON_BYTES)} per design system — remove some to save it to your account and sync it.
+        <p className="px-1 text-caption leading-snug text-status-warning">
+          Over the limit. Remove some to save this system to your account.
         </p>
       )}
 
