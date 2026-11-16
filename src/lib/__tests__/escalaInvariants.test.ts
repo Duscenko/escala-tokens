@@ -139,9 +139,9 @@ describe('the default Escala system — roles picked by job', () => {
     }
   })
 
-  it('the control outline sits on the alpha ladder at Alpha/03, hover /04 (the Figma file, DEC-2026-11-16-004)', () => {
+  it('the control outline sits on the alpha ladder: Light Alpha/03, Dark Alpha/04, hover /04 (the Figma file, DEC-2026-11-16-004 and -006)', () => {
     expect([role('border.control', LIGHT), role('border.control-hover', LIGHT)]).toEqual([t.colors.primitiveAlpha['black-a-3'], t.colors.primitiveAlpha['black-a-4']])
-    expect([role('border.control', DARK), role('border.control-hover', DARK)]).toEqual([t.colors.primitiveAlpha['white-a-3'], t.colors.primitiveAlpha['white-a-4']])
+    expect([role('border.control', DARK), role('border.control-hover', DARK)]).toEqual([t.colors.primitiveAlpha['white-a-4'], t.colors.primitiveAlpha['white-a-4']])
   })
 })
 

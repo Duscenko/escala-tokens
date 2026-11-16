@@ -1,5 +1,5 @@
 import { buildStudioTokens } from '../../../src/lib/pluginStudio'
-import { FIGMA_FILE_PALETTE, applyFigmaFilePalette } from '../../../src/lib/figmaFilePalette'
+import { FIGMA_FILE_PALETTE, applyFigmaFilePalette, applyFigmaFileShadows } from '../../../src/lib/figmaFilePalette'
 import { useDesignStore } from '../../../src/store/useDesignStore'
 import { themeBrandRamp } from '../../../src/lib/themeSources'
 
@@ -16,6 +16,7 @@ const { themeOrder, themeSources } = useDesignStore.getState()
 /** The brand the stories paint with: the one the studio just minted. */
 export const BRAND = themeOrder.find((k) => themeSources?.[k]) ?? themeOrder[0]
 applyFigmaFilePalette(BRAND)
+applyFigmaFileShadows(BRAND)
 
 /** The Figma file every component and token page documents. */
 export const FIGMA_FILE = { key: '7j5zukN5HpihGVJMmyjA20', name: 'Escala Design System (Real)' } as const

@@ -305,7 +305,7 @@
   --color-elevation-shadow-key: #0000001a;
   --color-elevation-shadow-ambient: #0000000d;
   --color-elevation-shadow-ring: #ffffff0d;
-  --color-elevation-highlight: #ffffff26;
+  --color-elevation-highlight: #ffffff4d;
 
   /* Panel background — apply to surface-1: backdrop-filter: var(--panel-blur) */
   --panel-blur: none;
@@ -1244,7 +1244,7 @@
   --color-status-critical-surface-solid-hover: #852c23;
   --color-status-critical-surface-solid-pressed: #682820;
   --color-status-critical-on-solid: #fefdff;
-  --color-status-critical-content: #ffbcae;
+  --color-status-critical-content: #dd5141;
   --color-status-critical-border: #fe54365e;
   --color-status-critical-border-strong: #dd5141;
   --color-status-success-surface: #65f57f21;

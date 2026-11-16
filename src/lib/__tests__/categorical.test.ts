@@ -195,10 +195,9 @@ describe('the categorical catalogue is complete', () => {
     // dark, black-a in light. The dark-step assertions for it live in the
     // "decorative ladder" test above.
     expect(label('border', 'subtle')).toBe('white-a.1')
-    // All three severities share step 11 in dark. Critical read 10 until it was
-    // measured at |Lc| ~42.7 against its own tone-3 tint, ~17 short of the
-    // large-text floor — see the note in semanticArchitectures.ts.
-    expect(label('status', 'critical.content')).toBe('error.11')
+    // Warning and success share step 11 in dark. Critical is back at 10 because the Figma file pins it there (DEC-2026-11-16-006):
+    // |Lc| ~42.7 against its own tint, which the matrix audits as `pinned-status-text` (WCAG only) in Dark.
+    expect(label('status', 'critical.content')).toBe('error.10')
     expect(label('status', 'warning.content')).toBe('warning.11')
     expect(label('status', 'success.content')).toBe('success.11')
     // `surface-solid` is SOLVED in dark now, not pinned to 12. The pin put a
@@ -247,7 +246,8 @@ describe('the categorical catalogue is complete', () => {
     // a fill.
     // DEC-2026-11-16-004: the Figma file is the rule, so the field outline is the soft hairline again (Alpha/03, hover /04).
     expect(label('control')?.light.label).toBe('black-a.3')
-    expect(label('control')?.dark.label).toBe('white-a.3')
+    // DEC-2026-11-16-006: Dark moved to Alpha/04 in the file (the same step as its hover).
+    expect(label('control')?.dark.label).toBe('white-a.4')
     expect(label('control-hover')?.light.label).toBe('black-a.4')
     expect(label('control-hover')?.dark.label).toBe('white-a.4')
     // Emphasis keeps the stricter ui-component solve.

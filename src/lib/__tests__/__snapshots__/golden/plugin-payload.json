@@ -779,7 +779,7 @@
           },
           "critical.content": {
             "core--minimalist::light": "#b34134",
-            "core--minimalist::dark": "#ffbcae"
+            "core--minimalist::dark": "#dd5141"
           },
           "critical.border": {
             "core--minimalist::light": "#dc240469",
@@ -954,7 +954,7 @@
             "core--minimalist::dark": "#ffffff0d"
           },
           "highlight": {
-            "core--minimalist::light": "#ffffff26",
+            "core--minimalist::light": "#ffffff4d",
             "core--minimalist::dark": "#ffffff26"
           }
         }
@@ -31442,7 +31442,7 @@
       "border/brand-alt": "Brand border; turns gray in dark mode.",
       "border/error": "Error border — invalid inputs.",
       "border/error-subtle": "Subtle error border.",
-      "Elevation/highlight": "[ROLE: Solid Control Highlight] The inner 2px top highlight of a solid filled control (primary and destructive buttons, every state but disabled): box-shadow: inset 0 2px 0 var(--color-elevation-highlight). {white-a.3} in both themes. EFFECT colour only.",
+      "Elevation/highlight": "[ROLE: Solid Control Highlight] The inner 2px top highlight of a solid filled control (primary and destructive buttons, every state but disabled): box-shadow: inset 0 2px 0 var(--color-elevation-highlight). {white-a.5} in Light, {white-a.3} in Dark (DEC-2026-11-16-006, the Figma file is the rule). EFFECT colour only.",
       "Elevation/shadow-ring": "[ROLE: Shadow Ring] The 0 0 0 1px highlight edge every shadow and depth recipe starts with. EFFECT colour only. {white-a.1} in both themes: invisible on a light surface, the rim that buys elevation on a dark page.",
       "Elevation/shadow-ambient": "[ROLE: Shadow Ambient] The tight, secondary layer of the shadow and depth recipes. EFFECT colour only. {black-a.1} (5%) in Light, {black-a.4} (20%) in Dark.",
       "Elevation/shadow-key": "[ROLE: Shadow Key] The main, larger-offset layer of every Shadow/* and Depth/* recipe. EFFECT colour only, never a fill or stroke. {black-a.2} (10%) in Light, {black-a.6} (40%) in Dark, so one shadow style follows the theme.",
@@ -31486,7 +31486,7 @@
       "Status/success/surface-pressed": "[ROLE: Feedback Background Pressed] Affects a pressed success-tinted interactive surface. {success-a.4} in Light, {success-a.5} in Dark.",
       "Status/info/surface-pressed": "[ROLE: Feedback Background Pressed] Affects a pressed info-tinted interactive surface. {info-a.4} in Light, {info-a.5} in Dark.",
       "Status/critical/surface-solid": "[ROLE: Feedback Background Solid] Affects destructive badges, pills and buttons. Solid fill. Pair with status.critical.on-solid. {error.solid} in BOTH themes — solved per appearance so it lands near the anchor; the old dark {error.12} rendered a pale pink #ffddd5 because tone 12 is the near-white end of a dark ramp.",
-      "Status/critical/content": "[ROLE: Feedback Text] Affects the text and glyph inside an error alert, banner or toast. Ink on status.critical.surface. {error.11} in both themes — Radix's chromatic-text step, NOT tone 12 (which reads near-black on a pale tint and near-white on a dark one, losing the severity hue).",
+      "Status/critical/content": "[ROLE: Feedback Text] Affects the text and glyph inside an error alert, banner or toast. Ink on status.critical.surface. {error.11} in Light, {error.10} in Dark (DEC-2026-11-16-006, the Figma file is the rule) — Radix's chromatic-text steps, NOT tone 12 (which reads near-black on a pale tint and near-white on a dark one, losing the severity hue).",
       "Status/critical/on-solid": "[ROLE: Feedback Inverted Text] Label ink on status.critical.surface-solid. Solved per theme against that fill.",
       "Status/critical/surface-solid-hover": "[ROLE: Feedback Background Solid Hover] Hover of status.critical.surface-solid (a critical button). SOLVED ({step:error+1}) — one tone past the resolved solid that still carries status.critical.on-solid.",
       "Status/critical/surface-solid-pressed": "[ROLE: Feedback Background Solid Pressed] Pressed of status.critical.surface-solid. SOLVED ({step:error+2}).",
@@ -31518,7 +31518,7 @@
       "Status/info/border-strong": "[ROLE: Info Control Boundary] Affects informational-state form fields. Light {info.9} = 3.24:1/Lc59. Dark {info.10} = 7.15:1/Lc49 — info.9 fails APCA in dark (Lc 42), one step earlier than error needs.",
       "Border/subtle": "[ROLE: Decorative Border 1/3] Affects hairline dividers, table rules, the edge of a quiet grouping. Lightest neutral stroke — {black-a.1} in light, {white-a.1} in dark (the FIXED alpha ladder, so it composites correctly on any surface): 5 %, owner decision 2026-11-16 (DEC-2026-11-16-003). It measures APCA Lc 0 on the dark page, which is accepted: shadow and surface carry the separation. DECORATION: separates regions, carries no state, no contrast floor. If the stroke is the only thing telling the user a control is there, that is border.control.",
       "Border/default": "[ROLE: Decorative Border 2/3] Affects a card edge, a panel boundary, a grouping box. {black-a.2} / {white-a.2} (10 %, owner decision 2026-11-16, DEC-2026-11-16-003). DECORATION, no contrast floor. One step above border.subtle so a panel edge still outranks a hairline. Never the only boundary of a control.",
-      "Border/control": "[ROLE: Control Boundary] Affects the resting border of inputs, textareas, selects, checkboxes, radios, switch tracks and outline buttons. {black-a.3} in Light, {white-a.3} in Dark: a soft hairline, below the 3:1 of WCAG 1.4.11 BY OWNER DECISION (DEC-2026-11-16-004, the Figma file is the rule); a field is identified by its fill and its focus ring, not by this stroke alone.",
+      "Border/control": "[ROLE: Control Boundary] Affects the resting border of inputs, textareas, selects, checkboxes, radios, switch tracks and outline buttons. {black-a.3} in Light, {white-a.4} in Dark: a soft hairline, below the 3:1 of WCAG 1.4.11 BY OWNER DECISION (DEC-2026-11-16-004 and -006, the Figma file is the rule); a field is identified by its fill and its focus ring, not by this stroke alone.",
       "Border/control-hover": "[ROLE: Control Boundary Hover] Affects the hover state of a control's resting (border.control) border. One step past border.control: {black-a.4} in Light, {white-a.4} in Dark (DEC-2026-11-16-004).",
       "Border/strong": "[ROLE: Strong Border] Affects the edge of a grouping or a selected container that must read before its neighbours. Not the field outline — that is border.control. WCAG 1.4.11 + APCA Lc 45 against the page, SOLVED on the alpha ladder ({ui-a:…}): {black-a.7} in light, {white-a.8} in dark for the default system.",
       "Border/focus": "[ROLE: A11y Focus Ring] The keyboard focus-visible boundary on every interactive element of the default / accent variant. SOLVED per theme ({focus:accent.9}): the first accent tone from 9 that clears WCAG 1.4.11 (3:1) on the page — tone 9 in both themes for the default system. Severity, neutral and inverse variants take their own boundary (status.<sev>.border-strong, border.strong, border.inverse). The translucent halo outside it is border.ring.*.",
