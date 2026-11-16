@@ -106,6 +106,10 @@ export interface ComponentRecipe {
   dom?: { root: string; slots?: Record<string, string> }
   /** Transitions and choreographies (merged from `lib/recipes/motion.ts`). */
   motion?: RecipeMotion
+  /** Where the live `Hover` state comes from. `pointer` (default): CSS `:hover`. `highlight`: a row of a menu or a
+   *  listbox, whose ONE highlighted row (`[data-highlighted]`, set by Radix or the listbox for the pointer AND the arrow
+   *  keys) carries the fill — a `:hover` there would light a second row whenever the keys move away from the pointer. */
+  hover?: 'pointer' | 'highlight'
 }
 
 export type AxisValues = Record<string, string | undefined>

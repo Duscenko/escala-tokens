@@ -793,6 +793,7 @@ const COMBO_ITEM: Record<string, ListItemMetrics> = {
 
 export const COMBOBOX_ITEM: ComponentRecipe = {
   key: 'ComboboxItem',
+  hover: 'highlight',
   slots: ['root', 'icon', 'text', 'label', 'description', 'trailing', 'indicator'],
   defaults: { Size: 'default', State: 'Default' },
   parts: [

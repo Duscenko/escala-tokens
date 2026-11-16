@@ -29,12 +29,13 @@ const STATE_AXIS = 'State'
 const attr = (axis: string) => `data-${axis.toLowerCase()}`
 
 /** Root-selector suffixes for one state. `Default` has none: it is the base. */
-function stateSuffixes(key: string, state: string): string[] {
+function stateSuffixes(recipe: ComponentRecipe, state: string): string[] {
   const free = ':not([data-force-state]):not([aria-disabled="true"])'
   const forced = `[data-force-state="${state}"]`
   switch (state) {
     case 'Default': return ['']
-    case 'Hover': return [`:hover${free}`, forced]
+    // A menu / listbox row is lit by its highlight (`listItemRecipe` paints `[data-highlighted]`), never by `:hover`.
+    case 'Hover': return recipe.hover === 'highlight' ? [forced] : [`:hover${free}`, forced]
     case 'Pressed': return [`:active${free}`, forced]
     // The root itself (a button) or a wrapper around the focusable control.
     case 'Focused': return [`:focus-visible${free}`, `:has(:focus-visible)${free}`, forced]
@@ -281,7 +282,7 @@ export function recipeCss(recipe: ComponentRecipe): string {
         if (axis === STATE_AXIS) state = values[i]
         else base += `[${attr(axis)}="${values[i]}"]`
       })
-      const roots = stateSuffixes(recipe.key, state).map((s) => base + s)
+      const roots = stateSuffixes(recipe, state).map((s) => base + s)
       for (const [slotKey, props] of Object.entries(slots)) {
         const decl = declarations(props)
         if (!decl.length) continue

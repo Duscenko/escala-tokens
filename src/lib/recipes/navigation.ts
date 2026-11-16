@@ -453,6 +453,7 @@ export const DROPDOWN_MENU_LABEL: ComponentRecipe = {
 
 export const DROPDOWN_MENU_ITEM: ComponentRecipe = {
   key: 'DropdownMenuItem',
+  hover: 'highlight',
   slots: ['root', 'iconLeading', 'media', 'text', 'label', 'description', 'trailing', 'control', 'iconTrailing', 'indicator'],
   defaults: { Size: 'default', State: 'Default', Variant: 'default' },
   parts: [

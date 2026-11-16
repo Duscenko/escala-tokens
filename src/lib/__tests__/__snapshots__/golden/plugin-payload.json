@@ -13177,6 +13177,7 @@
     },
     "ComboboxItem": {
       "key": "ComboboxItem",
+      "hover": "highlight",
       "slots": [
         "root",
         "icon",
@@ -28951,6 +28952,7 @@
     },
     "DropdownMenuItem": {
       "key": "DropdownMenuItem",
+      "hover": "highlight",
       "slots": [
         "root",
         "iconLeading",
@@ -30118,7 +30120,15 @@
             }
           }
         }
-      ]
+      ],
+      "motion": {
+        "transitions": {
+          "root": {
+            "background-color": "use-hover",
+            "color": "use-hover"
+          }
+        }
+      }
     },
     "DropdownMenuFooter": {
       "key": "DropdownMenuFooter",

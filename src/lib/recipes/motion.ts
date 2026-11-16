@@ -59,6 +59,8 @@ export const RECIPE_MOTION: Record<string, RecipeMotion> = {
   InputTagOption: { transitions: { root: FIELD } },
   InputOTPSlot: { transitions: { root: FIELD } },
   Combobox: { transitions: { root: FIELD } },
+  // A menu row: the highlight crossfades from row to row on `use-hover` (Radix moves it for the pointer and the keys).
+  DropdownMenuItem: { transitions: { root: FILL } },
   ComboboxItem: { transitions: { root: states('background-color', 'border-color', 'box-shadow') } },
   Checkbox: { transitions: { root: states('background-color', 'border-color', 'box-shadow') } },
   RadioGroup: { transitions: { item: states('background-color', 'border-color', 'box-shadow') } },
