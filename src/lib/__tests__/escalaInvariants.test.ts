@@ -132,7 +132,8 @@ describe('the default Escala system — roles picked by job', () => {
       expect(role(`status.${sev}.on-solid`, LIGHT), sev).toBe(prim(accent, 1))
       // Critical stays light-inked in Dark; the others carry the dark page.
       expect(role(`status.${sev}.on-solid`, DARK), sev).toBe(sev === 'critical' ? prim(gray, 1) : prim(accent, 1, true))
-      expect(role(`status.${sev}.surface`, DARK), sev).toBe(alpha(fam, 4, true))
+      // Critical's tint is Alpha/03 in Dark (owner's choice, 2026-11-16); the other three keep 04.
+      expect(role(`status.${sev}.surface`, DARK), sev).toBe(alpha(fam, sev === 'critical' ? 3 : 4, true))
       expect(role(`status.${sev}.surface-pressed`, LIGHT), sev).toBe(alpha(fam, 4))
     }
   })

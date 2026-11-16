@@ -292,7 +292,7 @@
   --color-status-info-content: #0053bd;
   --color-status-info-border: #005ee769;
   --color-status-info-border-strong: #006df4;
-  --color-border-default: #00000026;
+  --color-border-default: #0000001a;
   --color-border-subtle: #00000026;
   --color-border-control: #d8d6dd;
   --color-border-control-hover: #bcb8c4;
@@ -1238,7 +1238,7 @@
   --color-surface-inverse: #e5e4e8;
   --color-surface-inverse-muted: #00000026;
   --color-surface-overlay: #00000099;
-  --color-status-critical-surface: #f4673a2e;
+  --color-status-critical-surface: #f3722e1c;
   --color-status-critical-surface-pressed: #f75f3942;
   --color-status-critical-surface-solid: #a82f23;
   --color-status-critical-surface-solid-hover: #852c23;
@@ -1274,7 +1274,7 @@
   --color-status-info-content: #a7cfff;
   --color-status-info-border: #3489ff63;
   --color-status-info-border-strong: #3c82ed;
-  --color-border-default: #ffffff26;
+  --color-border-default: #ffffff1a;
   --color-border-subtle: #ffffff0d;
   --color-border-control: #ffffff26;
   --color-border-control-hover: #ffffff4d;

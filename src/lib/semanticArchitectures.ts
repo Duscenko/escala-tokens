@@ -947,7 +947,7 @@ const CATEGORICAL_ROLES: { group: string; key: string; light: string; dark: stri
   //    while warning/success on 11 sat at ~73. One step is worth ~30 Lc on the
   //    dark ramp, so 10 was not a hue-vs-contrast trade, just a miss: 11 still
   //    reads as red, and all three severities now agree on the same step.
-  { group: 'status', key: 'critical.surface', light: '{error-a.3}', dark: '{error-a.4}' },
+  { group: 'status', key: 'critical.surface', light: '{error-a.3}', dark: '{error-a.3}' },
   { group: 'status', key: 'critical.content', light: '{error.11}',       dark: '{error.11}' },
   { group: 'status', key: 'warning.surface', light: '{warning-a.3}', dark: '{warning-a.4}' },
   // Warning content / border-strong / surface-solid can resolve to ONE hex.
@@ -1133,9 +1133,9 @@ const CATEGORICAL_ROLES: { group: string; key: string; light: string; dark: stri
   // APCA Lc 0 (below the algorithm's noise floor) via `check_contrast`.
   // Step 2 is the smallest lift that leaves that floor in light (Lc ~12)
   // while staying decoration — still under `border.strong` (step 7 / 8).
-  { group: 'border', key: 'default',  light: '{black-a.3}', dark: '{white-a.3}' },
+  { group: 'border', key: 'default',  light: '{black-a.2}', dark: '{white-a.2}' },
   // Lightest decorative rung — a hairline divider, a quiet grouping edge.
-  { group: 'border', key: 'subtle',   light: '{black-a.2}', dark: '{white-a.2}' },
+  { group: 'border', key: 'subtle',   light: '{black-a.1}', dark: '{white-a.1}' },
   // ── The control boundary — SOLVED on the alpha ladder (`{ui-a:…}` composites
   // each step over the page before measuring), not pinned. Measured: `black-a`
   // clears WCAG 1.4.11 + APCA Lc 45 against a light page at step 7, `white-a`
@@ -1346,8 +1346,8 @@ export const CATEGORICAL_ROLE_COMMENTS: Record<string, string> = {
   'status.warning.border-strong': '[ROLE: Warning Control Boundary] Affects form fields in a warning state. {warning.11} — the minimum tone clearing WCAG in light (tone 9 = 2.35, tone 10 = 2.74, both fail). Same step as warning.content / warning.surface-solid on every seed measured; the jobs stay distinct even when the hex does not.',
   'status.success.border-strong': '[ROLE: Success Control Boundary] Affects validated / success-state form fields. {success.10} — one step lighter than warning/critical; this ramp clears both metrics a full step earlier (3.32:1/Lc60 light, 8.21:1/Lc56 dark).',
   'status.info.border-strong': '[ROLE: Info Control Boundary] Affects informational-state form fields. Light {info.9} = 3.24:1/Lc59. Dark {info.10} = 7.15:1/Lc49 — info.9 fails APCA in dark (Lc 42), one step earlier than error needs.',
-  'border.subtle': '[ROLE: Decorative Border 1/3] Affects hairline dividers, table rules, the edge of a quiet grouping. Lightest neutral stroke — {black-a.2} in light, {white-a.2} in dark (the FIXED alpha ladder, so it composites correctly on any surface). One step above the 5% rung: that step measured APCA Lc 0 on the dark page. DECORATION: separates regions, carries no state, no contrast floor. If the stroke is the only thing telling the user a control is there, that is border.control.',
-  'border.default': '[ROLE: Decorative Border 2/3] Affects a card edge, a panel boundary, a grouping box. {black-a.3} / {white-a.3}. DECORATION, no contrast floor. One step above border.subtle so a panel edge still outranks a hairline.',
+  'border.subtle': '[ROLE: Decorative Border 1/3] Affects hairline dividers, table rules, the edge of a quiet grouping. Lightest neutral stroke — {black-a.1} in light, {white-a.1} in dark (the FIXED alpha ladder, so it composites correctly on any surface): 5 %, owner decision 2026-11-16 (DEC-2026-11-16-003). It measures APCA Lc 0 on the dark page, which is accepted: shadow and surface carry the separation. DECORATION: separates regions, carries no state, no contrast floor. If the stroke is the only thing telling the user a control is there, that is border.control.',
+  'border.default': '[ROLE: Decorative Border 2/3] Affects a card edge, a panel boundary, a grouping box. {black-a.2} / {white-a.2} (10 %, owner decision 2026-11-16, DEC-2026-11-16-003). DECORATION, no contrast floor. One step above border.subtle so a panel edge still outranks a hairline. Never the only boundary of a control.',
   'border.control': '[ROLE: Control Boundary] Affects the resting border of inputs, textareas, selects, checkboxes, radios, switch tracks and outline buttons. SOLVED on the alpha ladder ({ctl-a:…}) to the WCAG 1.4.11 control boundary (3:1) against the page: {black-a.7} in Light, {white-a.6} in Dark for the default system, so a field reads without a fill.',
   'border.control-hover': '[ROLE: Control Boundary Hover] Affects the hover state of a control\'s resting (border.control) border. One step past whatever border.control RESOLVED to ({ctl+a:…}), never a fixed step — pinning it would collapse it onto rest. {black-a.8} / {white-a.7} for the default system.',
   'border.strong': '[ROLE: Strong Border] Affects the edge of a grouping or a selected container that must read before its neighbours. Not the field outline — that is border.control. WCAG 1.4.11 + APCA Lc 45 against the page, SOLVED on the alpha ladder ({ui-a:…}): {black-a.7} in light, {white-a.8} in dark for the default system.',
