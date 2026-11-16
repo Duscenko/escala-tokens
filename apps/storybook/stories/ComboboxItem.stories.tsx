@@ -41,7 +41,8 @@ function render(a: ComboboxItemStoryArgs) {
 }
 
 const meta: Meta<ComboboxItemStoryArgs> = {
-  title: 'Forms/ComboboxItem',
+  title: 'Forms/Combobox',
+  tags: ['!autodocs', 'part'],
   render,
   args: {
     size: 'default', forceState: 'Default', label: 'Option', descriptionVisible: false, description: 'Secondary text',
@@ -63,10 +64,11 @@ const meta: Meta<ComboboxItemStoryArgs> = {
 export default meta
 type Story = StoryObj<ComboboxItemStoryArgs>
 
-export const Playground: Story = {}
+export const ComboboxItemPlayground: Story = { name: 'ComboboxItem · Playground' }
 
 /** Every Size × State, as the file's 12 variants. */
-export const AllCombinations: Story = {
+export const ComboboxItemAllCombinations: Story = {
+  name: 'ComboboxItem · All Combinations',
   render: (args) => (
     <div style={{ display: 'flex', flexWrap: 'wrap', gap: 16 }}>
       {COMBOBOX_SIZES.flatMap((size) => STATES.map((forceState) => (
@@ -77,7 +79,8 @@ export const AllCombinations: Story = {
 }
 
 /** A row under the pointer or the arrow keys (`highlighted`) takes the fill only; the ring is keyboard focus, shown by the pinned Focused row beside it. */
-export const HighlightedHasNoRing: Story = {
+export const ComboboxItemHighlightedHasNoRing: Story = {
+  name: 'ComboboxItem · Highlighted Has No Ring',
   render: (args) => (
     <div role="listbox" aria-label="Options" style={{ width: 256 }}>
       <ComboboxItem size={args.size} highlighted>Highlighted: fill, no ring</ComboboxItem>

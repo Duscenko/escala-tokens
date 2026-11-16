@@ -38,7 +38,8 @@ function render({ size, forceState, title, descriptionVisible, description, icon
 }
 
 const meta: Meta<FileUploadDropzoneStoryArgs> = {
-  title: 'Forms/FileUploadDropzone',
+  title: 'Forms/FileUpload',
+  tags: ['!autodocs', 'part'],
   render,
   args: {
     size: 'default',
@@ -62,10 +63,11 @@ const meta: Meta<FileUploadDropzoneStoryArgs> = {
 export default meta
 type Story = StoryObj<FileUploadDropzoneStoryArgs>
 
-export const Playground: Story = {}
+export const FileUploadDropzonePlayground: Story = { name: 'FileUploadDropzone · Playground' }
 
 /** Every Size × State, as the file's 15 variants. */
-export const AllCombinations: Story = {
+export const FileUploadDropzoneAllCombinations: Story = {
+  name: 'FileUploadDropzone · All Combinations',
   render: (args) => (
     <div style={{ display: 'flex', flexWrap: 'wrap', gap: 24, alignItems: 'flex-start' }}>
       {(['default', 'sm', 'lg'] as const).flatMap((size) => FILE_UPLOAD_DROPZONE_STATES.map((forceState) => (
@@ -75,7 +77,8 @@ export const AllCombinations: Story = {
   ),
 }
 
-export const Sizes: Story = {
+export const FileUploadDropzoneSizes: Story = {
+  name: 'FileUploadDropzone · Sizes',
   render: (args) => (
     <div style={{ display: 'flex', flexWrap: 'wrap', gap: 24, alignItems: 'flex-start' }}>
       {(['default', 'sm', 'lg'] as const).map((size) => <div key={size}>{render({ ...args, size })}</div>)}
@@ -83,7 +86,8 @@ export const Sizes: Story = {
   ),
 }
 
-export const States: Story = {
+export const FileUploadDropzoneStates: Story = {
+  name: 'FileUploadDropzone · States',
   render: (args) => (
     <div style={{ display: 'flex', flexWrap: 'wrap', gap: 24, alignItems: 'flex-start' }}>
       {FILE_UPLOAD_DROPZONE_STATES.map((forceState) => <div key={forceState}>{render({ ...args, forceState })}</div>)}

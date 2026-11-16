@@ -31,7 +31,8 @@ function render({ type, forceState, label, meta, badge, metaVisible }: InputTagO
 }
 
 const meta: Meta<InputTagOptionStoryArgs> = {
-  title: 'Forms/InputTagOption',
+  title: 'Forms/InputTag',
+  tags: ['!autodocs', 'part'],
   render,
   args: { type: 'option', forceState: 'Default', label: 'Design', meta: '12', badge: true, metaVisible: true },
   argTypes: {
@@ -46,10 +47,11 @@ const meta: Meta<InputTagOptionStoryArgs> = {
 export default meta
 type Story = StoryObj<InputTagOptionStoryArgs>
 
-export const Playground: Story = {}
+export const InputTagOptionPlayground: Story = { name: 'InputTagOption · Playground' }
 
 /** Every Type × State, as the file's 8 variants. */
-export const AllCombinations: Story = {
+export const InputTagOptionAllCombinations: Story = {
+  name: 'InputTagOption · All Combinations',
   render: (args) => (
     <div style={{ display: 'flex', flexWrap: 'wrap', gap: 16 }}>
       {TYPES.flatMap((type) => STATES.map((forceState) => (

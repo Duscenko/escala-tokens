@@ -33,7 +33,8 @@ function render(a: SwitchGroupStoryArgs) {
 }
 
 const meta: Meta<SwitchGroupStoryArgs> = {
-  title: 'Forms/SwitchGroup',
+  title: 'Forms/Switch',
+  tags: ['!autodocs', 'part'],
   render,
   args: {
     label: 'Email notifications', description: 'Receive a summary of activity in your inbox.', footer: 'Changes apply immediately.',
@@ -53,9 +54,10 @@ const meta: Meta<SwitchGroupStoryArgs> = {
 export default meta
 type Story = StoryObj<SwitchGroupStoryArgs>
 
-export const Playground: Story = {}
+export const SwitchGroupPlayground: Story = { name: 'SwitchGroup · Playground' }
 
-export const AllCombinations: Story = {
+export const SwitchGroupAllCombinations: Story = {
+  name: 'SwitchGroup · All Combinations',
   render: (args) => (
     <div style={{ display: 'flex', flexWrap: 'wrap', gap: 32, alignItems: 'flex-start' }}>
       {SWITCH_SIZES.flatMap((size) => SWITCH_GROUP_STATES.map((forceState) => (
@@ -65,7 +67,8 @@ export const AllCombinations: Story = {
   ),
 }
 
-export const Placements: Story = {
+export const SwitchGroupPlacements: Story = {
+  name: 'SwitchGroup · Placements',
   render: (args) => (
     <div style={{ display: 'flex', flexWrap: 'wrap', gap: 32, alignItems: 'flex-start' }}>
       {SWITCH_GROUP_PLACEMENTS.map((placement) => <div key={placement}>{render({ ...args, placement })}</div>)}

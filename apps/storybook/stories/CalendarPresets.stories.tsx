@@ -19,7 +19,8 @@ function render({ size, variant }: CalendarPresetsStoryArgs) {
 }
 
 const meta: Meta<CalendarPresetsStoryArgs> = {
-  title: 'Forms/CalendarPresets',
+  title: 'Forms/Calendar',
+  tags: ['!autodocs', 'part'],
   render,
   args: { size: 'default', variant: 'default' },
   argTypes: {
@@ -30,10 +31,11 @@ const meta: Meta<CalendarPresetsStoryArgs> = {
 export default meta
 type Story = StoryObj<CalendarPresetsStoryArgs>
 
-export const Playground: Story = {}
+export const CalendarPresetsPlayground: Story = { name: 'CalendarPresets · Playground' }
 
 /** The four variants of the file: Size × Variant. */
-export const AllCombinations: Story = {
+export const CalendarPresetsAllCombinations: Story = {
+  name: 'CalendarPresets · All Combinations',
   render: (args) => (
     <div style={{ display: 'flex', flexWrap: 'wrap', gap: 24, alignItems: 'flex-start' }}>
       {SIZES.flatMap((size) => VARIANTS.map((variant) => <div key={`${size}-${variant}`}>{render({ ...args, size, variant })}</div>))}

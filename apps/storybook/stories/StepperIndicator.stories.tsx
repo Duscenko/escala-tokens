@@ -17,7 +17,8 @@ const indicator = (a: IndicatorStoryArgs, key?: string) => (
 )
 
 const meta: Meta<IndicatorStoryArgs> = {
-  title: 'Navigation/StepperIndicator',
+  title: 'Navigation/Stepper',
+  tags: ['!autodocs', 'part'],
   render: (a) => indicator(a),
   args: { size: 'default', status: 'active', state: 'Default', orientation: 'vertical', lineVisible: true },
   argTypes: {
@@ -31,9 +32,10 @@ const meta: Meta<IndicatorStoryArgs> = {
 export default meta
 type Story = StoryObj<IndicatorStoryArgs>
 
-export const Playground: Story = {}
+export const StepperIndicatorPlayground: Story = { name: 'StepperIndicator · Playground' }
 
-export const AllCombinations: Story = {
+export const StepperIndicatorAllCombinations: Story = {
+  name: 'StepperIndicator · All Combinations',
   render: (a) => (
     <div style={{ display: 'flex', flexWrap: 'wrap', gap: 24, alignItems: 'flex-start' }}>
       {STEPPER_STATES.flatMap((state) => STEPPER_STATUSES.map((status) => indicator({ ...a, state, status }, status + state)))}
@@ -41,6 +43,7 @@ export const AllCombinations: Story = {
   ),
 }
 
-export const Sizes: Story = {
+export const StepperIndicatorSizes: Story = {
+  name: 'StepperIndicator · Sizes',
   render: (a) => <div style={{ display: 'flex', flexWrap: 'wrap', gap: 24, alignItems: 'flex-start' }}>{STEPPER_SIZES.map((size) => indicator({ ...a, size }, size))}</div>,
 }

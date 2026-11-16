@@ -33,7 +33,8 @@ function group(a: GroupStoryArgs) {
 }
 
 const meta: Meta<GroupStoryArgs> = {
-  title: 'Navigation/SidebarGroup',
+  title: 'Navigation/Sidebar',
+  tags: ['!autodocs', 'part'],
   render: (args) => group(args),
   args: { size: 'default', collapsed: false, labelVisible: true },
   argTypes: {
@@ -45,10 +46,11 @@ const meta: Meta<GroupStoryArgs> = {
 export default meta
 type Story = StoryObj<GroupStoryArgs>
 
-export const Playground: Story = {}
+export const SidebarGroupPlayground: Story = { name: 'SidebarGroup · Playground' }
 
 /** Every Size × Collapsed, as the file's 6 variants. */
-export const AllCombinations: Story = {
+export const SidebarGroupAllCombinations: Story = {
+  name: 'SidebarGroup · All Combinations',
   render: (args) => (
     <div style={{ display: 'flex', flexWrap: 'wrap', gap: 24, alignItems: 'flex-start' }}>
       {SIDEBAR_SIZES.flatMap((size) => [false, true].map((collapsed) => <div key={`${size}-${collapsed}`}>{group({ ...args, size, collapsed })}</div>))}

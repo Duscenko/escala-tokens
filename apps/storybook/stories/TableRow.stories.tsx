@@ -13,7 +13,8 @@ function Heads() {
 /** Story args = the Figma `TableRow` set: Content (cells) · Size · State · Dividers. */
 interface Args { size: TableSize; state: TableRowState; dividers: TableDividers }
 const meta: Meta<Args> = {
-  title: 'Content & Surfaces/TableRow',
+  title: 'Content & Surfaces/Table',
+  tags: ['!autodocs', 'part'],
   render: ({ size, state, dividers }) => (
     <div style={{ width: 800 }}>
       <Table appearance="ghost" size={size} dividers={dividers}>
@@ -30,8 +31,9 @@ const meta: Meta<Args> = {
 }
 export default meta
 type Story = StoryObj<Args>
-export const Playground: Story = {}
-export const States: Story = {
+export const TableRowPlayground: Story = { name: 'TableRow · Playground' }
+export const TableRowStates: Story = {
+  name: 'TableRow · States',
   render: ({ size, dividers }) => (
     <div style={{ width: 800 }}>
       <Table appearance="ghost" size={size} dividers={dividers}>

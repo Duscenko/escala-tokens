@@ -14,7 +14,8 @@ const link = (a: LinkStoryArgs, key?: string) => (
 )
 
 const meta: Meta<LinkStoryArgs> = {
-  title: 'Navigation/PaginationLink',
+  title: 'Navigation/Pagination',
+  tags: ['!autodocs', 'part'],
   render: (args) => <div role="group" style={{ display: 'flex', gap: 4 }}><PaginationScope size={args.size}>{link(args)}</PaginationScope></div>,
   args: { size: 'default', forceState: 'Default', active: false, label: '1' },
   argTypes: {
@@ -27,9 +28,10 @@ const meta: Meta<LinkStoryArgs> = {
 export default meta
 type Story = StoryObj<LinkStoryArgs>
 
-export const Playground: Story = {}
+export const PaginationLinkPlayground: Story = { name: 'PaginationLink · Playground' }
 
-export const States: Story = {
+export const PaginationLinkStates: Story = {
+  name: 'PaginationLink · States',
   render: (args) => (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
       {[false, true].map((active) => (
@@ -41,7 +43,8 @@ export const States: Story = {
   ),
 }
 
-export const Sizes: Story = {
+export const PaginationLinkSizes: Story = {
+  name: 'PaginationLink · Sizes',
   render: (args) => (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 12, alignItems: 'flex-start' }}>
       {PAGINATION_SIZES.map((size) => <div key={size} role="group" aria-label={`Size ${size}`} style={{ display: 'flex', gap: 4 }}><PaginationScope size={size}>{link({ ...args, size }, size)}</PaginationScope></div>)}
@@ -49,7 +52,8 @@ export const Sizes: Story = {
   ),
 }
 
-export const AllCombinations: Story = {
+export const PaginationLinkAllCombinations: Story = {
+  name: 'PaginationLink · All Combinations',
   render: (args) => (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
       {PAGINATION_SIZES.flatMap((size) => [false, true].map((active) => (

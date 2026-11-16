@@ -27,7 +27,8 @@ function footer({ layout, size, leadingVisible, leading, actionsVisible }: Popov
 }
 
 const meta: Meta<PopoverFooterStoryArgs> = {
-  title: 'Content & Surfaces/PopoverFooter',
+  title: 'Content & Surfaces/Popover',
+  tags: ['!autodocs', 'part'],
   render: footer,
   args: { layout: 'inline', size: 'default', leadingVisible: true, leading: 'Step 1 of 3', actionsVisible: true },
   argTypes: {
@@ -41,9 +42,10 @@ const meta: Meta<PopoverFooterStoryArgs> = {
 export default meta
 type Story = StoryObj<PopoverFooterStoryArgs>
 
-export const Playground: Story = {}
+export const PopoverFooterPlayground: Story = { name: 'PopoverFooter · Playground' }
 
-export const AllCombinations: Story = {
+export const PopoverFooterAllCombinations: Story = {
+  name: 'PopoverFooter · All Combinations',
   render: (args) => (
     <div style={{ display: 'flex', flexWrap: 'wrap', gap: 24 }}>
       {POPOVER_FOOTER_LAYOUTS.flatMap((layout) => POPOVER_SIZES.map((size) => <div key={layout + size}>{footer({ ...args, layout, size })}</div>))}

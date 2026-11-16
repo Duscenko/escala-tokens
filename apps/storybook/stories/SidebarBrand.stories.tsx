@@ -6,7 +6,8 @@ import { Sidebar, SidebarBrand } from '../../../src/components/escala-ui/sidebar
 interface BrandStoryArgs { collapsed: boolean; title: string; subtitleVisible: boolean; subtitle: string }
 
 const meta: Meta<BrandStoryArgs> = {
-  title: 'Navigation/SidebarBrand',
+  title: 'Navigation/Sidebar',
+  tags: ['!autodocs', 'part'],
   render: ({ collapsed, title, subtitleVisible, subtitle }) => (
     <Sidebar collapsed={collapsed} className="!h-auto !w-auto !border-0 !bg-transparent">
       <SidebarBrand
@@ -27,4 +28,4 @@ const meta: Meta<BrandStoryArgs> = {
 export default meta
 type Story = StoryObj<BrandStoryArgs>
 
-export const Playground: Story = {}
+export const SidebarBrandPlayground: Story = { name: 'SidebarBrand · Playground' }

@@ -31,7 +31,8 @@ function header({ icon, size, ...args }: ModalHeaderStoryArgs) {
 }
 
 const meta: Meta<ModalHeaderStoryArgs> = {
-  title: 'Content & Surfaces/ModalHeader',
+  title: 'Content & Surfaces/Modal',
+  tags: ['!autodocs', 'part'],
   render: header,
   args: { size: 'default', align: 'horizontal', title: 'System notification', descriptionVisible: true, description: 'Review the details and take action.', iconVisible: true, trailingVisible: false, closeClearance: false, icon: 'info' },
   argTypes: {
@@ -49,9 +50,10 @@ const meta: Meta<ModalHeaderStoryArgs> = {
 export default meta
 type Story = StoryObj<ModalHeaderStoryArgs>
 
-export const Playground: Story = {}
+export const ModalHeaderPlayground: Story = { name: 'ModalHeader · Playground' }
 
-export const AllCombinations: Story = {
+export const ModalHeaderAllCombinations: Story = {
+  name: 'ModalHeader · All Combinations',
   render: (args) => (
     <div style={{ display: 'flex', flexWrap: 'wrap', gap: 24 }}>
       {MODAL_SIZES.flatMap((size) => MODAL_HEADER_ALIGNS.map((align) => <div key={size + align}>{header({ ...args, size, align })}</div>))}

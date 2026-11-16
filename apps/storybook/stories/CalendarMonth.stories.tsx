@@ -21,7 +21,8 @@ function render({ size, mode, variant }: CalendarMonthStoryArgs) {
 }
 
 const meta: Meta<CalendarMonthStoryArgs> = {
-  title: 'Forms/CalendarMonth',
+  title: 'Forms/Calendar',
+  tags: ['!autodocs', 'part'],
   render,
   args: { size: 'default', mode: 'single', variant: 'default' },
   argTypes: {
@@ -33,10 +34,11 @@ const meta: Meta<CalendarMonthStoryArgs> = {
 export default meta
 type Story = StoryObj<CalendarMonthStoryArgs>
 
-export const Playground: Story = {}
+export const CalendarMonthPlayground: Story = { name: 'CalendarMonth · Playground' }
 
 /** The twelve variants of the file: Size × Mode × Variant. */
-export const AllCombinations: Story = {
+export const CalendarMonthAllCombinations: Story = {
+  name: 'CalendarMonth · All Combinations',
   render: (args) => (
     <div style={{ display: 'flex', flexWrap: 'wrap', gap: 24 }}>
       {SIZES.flatMap((size) => MODES.flatMap((mode) => VARIANTS.map((variant) => <div key={`${size}-${mode}-${variant}`}>{render({ ...args, size, mode, variant })}</div>)))}
@@ -44,7 +46,8 @@ export const AllCombinations: Story = {
   ),
 }
 
-export const Sizes: Story = {
+export const CalendarMonthSizes: Story = {
+  name: 'CalendarMonth · Sizes',
   render: (args) => (
     <div style={{ display: 'flex', gap: 24 }}>
       {SIZES.map((size) => <div key={size}>{render({ ...args, size })}</div>)}
@@ -52,7 +55,8 @@ export const Sizes: Story = {
   ),
 }
 
-export const Modes: Story = {
+export const CalendarMonthModes: Story = {
+  name: 'CalendarMonth · Modes',
   render: (args) => (
     <div style={{ display: 'flex', gap: 24 }}>
       {MODES.map((mode) => <div key={mode}>{render({ ...args, mode })}</div>)}

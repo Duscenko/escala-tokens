@@ -1,31 +1,24 @@
 import type { Decorator, Preview } from '@storybook/react-vite'
 import './storybook.css'
-import { RecipeScope } from '../../../src/components/configurator/docs/skeleton/scope'
-import { resolvePreviewTokens } from '../../../src/lib/previewTokens'
-import { useDesignStore } from '../../../src/store/useDesignStore'
 import type { GridViewport } from '../../../src/lib/layoutTokens'
-import { BRAND } from './escalaSystem'
 import { ComponentDocPage } from '../docs/ComponentDocPage'
 import { escalaDocsTheme } from './escalaTheme'
+import { EscalaScope } from './escalaScope'
 
-/** Every story paints with the system's real tokens: the recipe stylesheet
- *  reads `var(--…)`, RecipeScope supplies the values for the theme and the
- *  viewport picked in the toolbar — the Figma file's Color Semantics and
- *  Dimension Semantics modes. */
-const withEscala: Decorator = (Story, ctx) => {
-  const appearance = (ctx.globals.theme ?? 'light') as 'light' | 'dark'
-  const viewport = (ctx.globals.viewport ?? 'desktop') as GridViewport
-  const t = resolvePreviewTokens(useDesignStore.getState(), BRAND, appearance, viewport)
-  return (
-    // On a Documentation page the story sits in a block of its own: no full-screen height there, and the page paint grows with a
-    // story wider than the block (the block scrolls sideways; the white would stop at the block's width and show the dark behind).
-    <div className={appearance} style={{ background: t.surface, padding: 32, minHeight: ctx.viewMode === 'docs' ? undefined : '100vh', minWidth: ctx.viewMode === 'docs' ? 'min-content' : undefined }}>
-      <RecipeScope t={t}>
-        <Story />
-      </RecipeScope>
-    </div>
-  )
-}
+/** Every story paints with the system's real tokens for the theme and the viewport picked in the toolbar — the
+ *  Figma file's Color Semantics and Dimension Semantics modes. On a Documentation page the story sits in a block of
+ *  its own: no full-screen height there, and the page paint grows with a story wider than the block (the block scrolls
+ *  sideways; the white would stop at the block's width and show the dark behind). */
+const withEscala: Decorator = (Story, ctx) => (
+  <EscalaScope
+    appearance={(ctx.globals.theme ?? 'light') as 'light' | 'dark'}
+    viewport={(ctx.globals.viewport ?? 'desktop') as GridViewport}
+    fullHeight={ctx.viewMode !== 'docs'}
+    growWidth={ctx.viewMode === 'docs'}
+  >
+    <Story />
+  </EscalaScope>
+)
 
 const preview: Preview = {
   decorators: [withEscala],
@@ -58,7 +51,7 @@ const preview: Preview = {
       // Getting started, then the tokens (Variables), then the components by Figma page. A literal list: storySort must be
       // self-contained (Storybook evaluates it on its own). The Variables names are FOUNDATION_DOCS' labels.
       storySort: {
-        order: ['Getting started', ['Introduction'], 'Variables', ['Color', 'Font', 'Radius', 'Spacing', 'Shadow', 'Grid', 'Sizes', 'Stroke', 'Icons', 'Motion'], 'Buttons', 'Form Controls', 'Forms', 'Indicators', 'Content & Surfaces', 'Feedback', 'Navigation'],
+        order: ['Getting started', ['Introduction'], 'Variables', ['Color', 'Font', 'Radius', 'Spacing', 'Shadow', 'Grid', 'Sizes', 'Stroke', 'Icons', 'Motion'], 'Buttons', 'Forms', 'Indicators', 'Content & Surfaces', 'Feedback', 'Navigation'],
       },
     },
   },

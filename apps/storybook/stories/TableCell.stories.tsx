@@ -18,7 +18,8 @@ interface Args {
 }
 
 const meta: Meta<Args> = {
-  title: 'Content & Surfaces/TableCell',
+  title: 'Content & Surfaces/Table',
+  tags: ['!autodocs', 'part'],
   render: (a) => <Frame><TableCell {...a} /></Frame>,
   args: { size: 'default', align: 'start', pinned: 'none', state: 'Default', label: 'Cell text', labelVisible: true, description: 'Supporting text', descriptionVisible: false, leadingVisible: false, trailingVisible: false },
   argTypes: {
@@ -36,15 +37,17 @@ const meta: Meta<Args> = {
 }
 export default meta
 type Story = StoryObj<Args>
-export const Playground: Story = {}
-export const Sizes: Story = {
+export const TableCellPlayground: Story = { name: 'TableCell · Playground' }
+export const TableCellSizes: Story = {
+  name: 'TableCell · Sizes',
   render: (a) => (
     <div style={{ display: 'flex', flexWrap: 'wrap', gap: 16 }}>
       {(['default', 'xs', 'sm', 'lg'] as TableSize[]).map((size) => <Frame key={size}><TableCell {...a} size={size} leadingVisible trailingVisible descriptionVisible /></Frame>)}
     </div>
   ),
 }
-export const States: Story = {
+export const TableCellStates: Story = {
+  name: 'TableCell · States',
   render: (a) => (
     <div style={{ display: 'flex', flexWrap: 'wrap', gap: 16 }}>
       {(['Default', 'Disabled'] as const).map((state) => <Frame key={state}><TableCell {...a} state={state} leadingVisible trailingVisible /></Frame>)}

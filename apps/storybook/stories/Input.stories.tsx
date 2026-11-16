@@ -66,7 +66,7 @@ function render(a: InputStoryArgs) {
 }
 
 const meta: Meta<InputStoryArgs> = {
-  title: 'Form Controls/Input',
+  title: 'Forms/Input',
   render,
   args: {
     size: 'default', forceState: 'Default', type: 'default', value: 'placeholder',
@@ -135,7 +135,7 @@ export const RestingFocused: Story = {
 }
 
 /** Every Type, placeholder and filled, at the default size. */
-export const AllTypes: Story = {
+export const Types: Story = {
   render: () => (
     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 260px)', gap: 16 }}>
       {INPUT_TYPES.flatMap((type) => (['placeholder', 'filled'] as const).map((value) => (

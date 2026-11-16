@@ -1,11 +1,9 @@
-import * as React from 'react'
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import {
-  DatePickerPopover, DatePickerTrigger, formatPickedDate,
+  DatePickerPopover,
   type DatePickerPopoverMode, type DatePickerPopoverSize,
 } from '../../../src/components/escala-ui/date-picker'
 import { Calendar } from '../../../src/components/escala-ui/calendar'
-import { Popover, PopoverTrigger } from '../../../src/components/escala-ui/popover'
 
 const SIZES: DatePickerPopoverSize[] = ['default', 'sm']
 const MODES: DatePickerPopoverMode[] = ['single', 'range']
@@ -18,8 +16,6 @@ interface DatePickerPopoverStoryArgs {
   mode: DatePickerPopoverMode
 }
 
-const MONTH = new Date(2026, 10, 1)
-
 function Panel({ size, mode }: DatePickerPopoverStoryArgs) {
   return (
     <DatePickerPopover inline size={size} mode={mode}>
@@ -29,7 +25,8 @@ function Panel({ size, mode }: DatePickerPopoverStoryArgs) {
 }
 
 const meta: Meta<DatePickerPopoverStoryArgs> = {
-  title: 'Forms/DatePickerPopover',
+  title: 'Forms/DatePicker',
+  tags: ['!autodocs', 'part'],
   render: (args) => <div style={{ padding: 24 }}><Panel {...args} /></div>,
   args: { size: 'default', mode: 'single' },
   argTypes: {
@@ -40,10 +37,11 @@ const meta: Meta<DatePickerPopoverStoryArgs> = {
 export default meta
 type Story = StoryObj<DatePickerPopoverStoryArgs>
 
-export const Playground: Story = {}
+export const DatePickerPopoverPlayground: Story = { name: 'DatePickerPopover · Playground' }
 
 /** Every Size × Mode, as the file's 4 variants. */
-export const AllCombinations: Story = {
+export const DatePickerPopoverAllCombinations: Story = {
+  name: 'DatePickerPopover · All Combinations',
   render: (args) => (
     <div style={{ display: 'flex', flexWrap: 'wrap', gap: 48, padding: 24, alignItems: 'flex-start' }}>
       {SIZES.flatMap((size) => MODES.map((mode) => <Panel key={`${size}-${mode}`} {...args} size={size} mode={mode} />))}
@@ -51,7 +49,8 @@ export const AllCombinations: Story = {
   ),
 }
 
-export const Sizes: Story = {
+export const DatePickerPopoverSizes: Story = {
+  name: 'DatePickerPopover · Sizes',
   render: (args) => (
     <div style={{ display: 'flex', flexWrap: 'wrap', gap: 48, padding: 24, alignItems: 'flex-start' }}>
       {SIZES.map((size) => <Panel key={size} {...args} size={size} />)}
@@ -59,36 +58,11 @@ export const Sizes: Story = {
   ),
 }
 
-export const Modes: Story = {
+export const DatePickerPopoverModes: Story = {
+  name: 'DatePickerPopover · Modes',
   render: (args) => (
     <div style={{ display: 'flex', flexWrap: 'wrap', gap: 48, padding: 24, alignItems: 'flex-start' }}>
       {MODES.map((mode) => <Panel key={mode} {...args} mode={mode} />)}
     </div>
   ),
-}
-
-/** The real thing: a DatePickerTrigger that opens the popover 8px below it (Escape closes it;
- *  Apply closes it too, and the chosen day goes back into the trigger). */
-export const OpensFromTrigger: Story = {
-  name: 'Opens from DatePickerTrigger',
-  render: () => {
-    const [open, setOpen] = React.useState(true)
-    const [date, setDate] = React.useState<Date | undefined>(new Date(2026, 10, 12))
-    return (
-      <div style={{ minHeight: 480, padding: 24 }}>
-        <Popover open={open} onOpenChange={setOpen}>
-          <PopoverTrigger asChild>
-            <DatePickerTrigger valueText={date ? formatPickedDate(date) : undefined} style={{ width: 280 }} />
-          </PopoverTrigger>
-          <DatePickerPopover>
-            <Calendar
-              size="default" mode="single" footer defaultMonth={MONTH}
-              value={date} onValueChange={(d) => setDate(d instanceof Date ? d : undefined)}
-              onApply={() => setOpen(false)}
-            />
-          </DatePickerPopover>
-        </Popover>
-      </div>
-    )
-  },
 }

@@ -12,7 +12,8 @@ function render({ size, label }: ComboboxGroupLabelStoryArgs) {
 }
 
 const meta: Meta<ComboboxGroupLabelStoryArgs> = {
-  title: 'Forms/ComboboxGroupLabel',
+  title: 'Forms/Combobox',
+  tags: ['!autodocs', 'part'],
   render,
   args: { size: 'default', label: 'Group' },
   argTypes: {
@@ -23,10 +24,11 @@ const meta: Meta<ComboboxGroupLabelStoryArgs> = {
 export default meta
 type Story = StoryObj<ComboboxGroupLabelStoryArgs>
 
-export const Playground: Story = {}
+export const ComboboxGroupLabelPlayground: Story = { name: 'ComboboxGroupLabel · Playground' }
 
 /** The file's 3 variants. */
-export const AllSizes: Story = {
+export const ComboboxGroupLabelSizes: Story = {
+  name: 'ComboboxGroupLabel · Sizes',
   render: (args) => (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
       {COMBOBOX_SIZES.map((size) => <div key={size}>{render({ ...args, size })}</div>)}

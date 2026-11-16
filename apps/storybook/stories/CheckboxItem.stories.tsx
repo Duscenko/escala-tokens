@@ -37,7 +37,8 @@ function render(a: CheckboxItemStoryArgs) {
 }
 
 const meta: Meta<CheckboxItemStoryArgs> = {
-  title: 'Forms/CheckboxItem',
+  title: 'Forms/Checkbox',
+  tags: ['!autodocs', 'part'],
   render,
   args: {
     size: 'default', checked: 'false', forceState: 'Default', placement: 'left', variant: 'default',
@@ -57,10 +58,11 @@ const meta: Meta<CheckboxItemStoryArgs> = {
 export default meta
 type Story = StoryObj<CheckboxItemStoryArgs>
 
-export const Playground: Story = {}
+export const CheckboxItemPlayground: Story = { name: 'CheckboxItem · Playground' }
 
 /** Size × State × Placement, checked (Variant only colours the box, as in Checkbox). */
-export const AllCombinations: Story = {
+export const CheckboxItemAllCombinations: Story = {
+  name: 'CheckboxItem · All Combinations',
   render: (args) => (
     <div style={{ display: 'flex', flexWrap: 'wrap', gap: 24, alignItems: 'flex-start' }}>
       {CHECKBOX_ITEM_PLACEMENTS.flatMap((placement) => CHECKBOX_SIZES.flatMap((size) => CHECKBOX_ITEM_STATES.map((forceState) => (
@@ -70,7 +72,8 @@ export const AllCombinations: Story = {
   ),
 }
 
-export const Sizes: Story = {
+export const CheckboxItemSizes: Story = {
+  name: 'CheckboxItem · Sizes',
   render: (args) => (
     <div style={{ display: 'flex', flexWrap: 'wrap', gap: 24, alignItems: 'flex-start' }}>
       {CHECKBOX_SIZES.map((size) => <div key={size}>{render({ ...args, size })}</div>)}
@@ -78,7 +81,8 @@ export const Sizes: Story = {
   ),
 }
 
-export const States: Story = {
+export const CheckboxItemStates: Story = {
+  name: 'CheckboxItem · States',
   render: (args) => (
     <div style={{ display: 'flex', flexWrap: 'wrap', gap: 24, alignItems: 'flex-start' }}>
       {CHECKBOX_ITEM_STATES.map((forceState) => <div key={forceState}>{render({ ...args, forceState, checked: 'true' })}</div>)}

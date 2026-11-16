@@ -1,13 +1,17 @@
-// The "Documentation" page every component gets first in its sidebar folder (autodocs, preview.tsx `docs.page`).
-// Nothing here is written per component: the prose is the catalogue's (componentCatalogue.ts — description, usage,
-// props, accessibility), the Figma link and the measured spec are the component's contract (design-plans/<x>-contract.md),
-// and the playground and examples are the stories themselves. A part with no catalogue entry (BreadcrumbItem) reads
-// the component it belongs to.
-import { Controls, Markdown, Primary, Stories, useOf } from '@storybook/addon-docs/blocks'
+// The "Documentation" page of a FAMILY (autodocs, preview.tsx `docs.page`; design-plans/storybook-families.md): one
+// per Figma page. Nothing here is written per component: the prose is the catalogue's (componentCatalogue.ts —
+// description, usage, props, accessibility), the Figma link and the measured spec are the contracts
+// (design-plans/<x>-contract.md), the parts and their axes are spec/storybook-families.json + the Figma inventory, and
+// the playground, examples and part previews are the stories themselves.
+import { Component, createElement, useContext, useEffect, useState, type ReactNode } from 'react'
+import { Controls, DocsContext, Markdown, Primary, Stories, useOf } from '@storybook/addon-docs/blocks'
+import { GLOBALS_UPDATED } from 'storybook/internal/core-events'
+import type { GridViewport } from '../../../src/lib/layoutTokens'
+import { EscalaScope } from '../.storybook/escalaScope'
 import { Prose } from '../../../src/components/configurator/docs/blocks'
 import type { ComponentDef } from '../../../src/lib/componentCatalogue'
 import { DocsFrame, DocsHeader, DocsLink, DocsSection } from './DocsFrame'
-import { catalogueEntry, STORY_COMPONENTS, storyComponent } from './storyIndex'
+import { catalogueEntry, catalogueOf, familyByTitle, STORY_FAMILIES, type StoryPart } from './storyIndex'
 import { figmaNodeUrl } from '../.storybook/escalaSystem'
 
 const contracts = import.meta.glob<string>('../../../design-plans/*-contract.md', { eager: true, query: '?raw', import: 'default' })
@@ -64,57 +68,148 @@ function Chip({ children }: { children: string }) {
   return <span className="rounded-full border border-line bg-surface px-2 py-0.5 font-mono text-caption text-fg-muted">{children}</span>
 }
 
+/** The toolbar's two modes, as the docs page sees them (and follows when they change). */
+function useDocsGlobals(): { appearance: 'light' | 'dark'; viewport: GridViewport } {
+  const ctx = useContext(DocsContext)
+  const read = () => {
+    try { return ctx.getStoryContext(ctx.storyById()).globals } catch { return {} as Record<string, unknown> }
+  }
+  const [globals, setGlobals] = useState<Record<string, unknown>>(read)
+  useEffect(() => {
+    const on = ({ globals: g }: { globals: Record<string, unknown> }) => setGlobals(g)
+    ctx.channel.on(GLOBALS_UPDATED, on)
+    return () => { ctx.channel.off(GLOBALS_UPDATED, on) }
+  }, [ctx])
+  return { appearance: (globals.theme ?? 'light') as 'light' | 'dark', viewport: (globals.viewport ?? 'desktop') as GridViewport }
+}
+
+/** A preview that breaks never takes the Documentation page with it. */
+class PreviewBoundary extends Component<{ children: ReactNode }, { failed: boolean }> {
+  state = { failed: false }
+  static getDerivedStateFromError() { return { failed: true } }
+  render() { return this.state.failed ? <p className="text-caption text-fg-faint">The preview did not render here; open the playground.</p> : this.props.children }
+}
+
+/** A part's first story (its Playground), rendered with its own render function and args, in the toolbar's modes. */
+function PartRender({ part }: { part: StoryPart }) {
+  const meta = part.module?.default
+  const first = part.stories[0] && (part.module?.[part.stories[0].exportName] as { args?: Record<string, unknown>; render?: (a: Record<string, unknown>) => unknown } | undefined)
+  const render = first?.render ?? meta?.render
+  const args = { ...(meta?.args ?? {}), ...(first?.args ?? {}) }
+  if (render) return <>{render(args) as ReactNode}</>
+  if (meta?.component) return createElement(meta.component, args)
+  return null
+}
+
+function PartCard({ part, globals }: { part: StoryPart; globals: ReturnType<typeof useDocsGlobals> }) {
+  const own = catalogueOf(part.set)
+  const axes = Object.entries(part.figma?.axes ?? {})
+  return (
+    <div id={`part-${part.set}`} className="overflow-hidden rounded-xl border border-line bg-surface">
+      <div className="flex flex-wrap items-baseline justify-between gap-2 border-b border-line px-4 py-3">
+        <h3 className="font-mono text-strong font-semibold text-fg">{part.set}</h3>
+        <span className="text-caption text-fg-faint">
+          {part.figma?.variants ? `${part.figma.variants} variant${part.figma.variants === 1 ? '' : 's'} in Figma` : 'Not in the Figma snapshot yet'}
+        </span>
+      </div>
+      {part.missing ? (
+        <p className="px-4 py-3 text-body text-fg-muted">No story yet: {part.missing}.</p>
+      ) : (
+        <>
+          <div className="max-h-[420px] overflow-auto border-b border-line">
+            <PreviewBoundary>
+              <EscalaScope appearance={globals.appearance} viewport={globals.viewport} padding={24}>
+                <PartRender part={part} />
+              </EscalaScope>
+            </PreviewBoundary>
+          </div>
+          <div className="flex flex-col gap-3 px-4 py-3">
+            {own && <Prose className="text-body text-fg-muted" text={own.description} />}
+            {axes.length > 0 && (
+              <div className="flex flex-col gap-1.5">
+                {axes.map(([axis, values]) => (
+                  <div key={axis} className="flex flex-wrap items-center gap-1.5">
+                    <span className="w-24 shrink-0 text-caption font-medium text-fg-muted">{axis}</span>
+                    {values.split('|').map((v) => <Chip key={v}>{v}</Chip>)}
+                  </div>
+                ))}
+              </div>
+            )}
+            <div className="flex flex-wrap gap-2">
+              {part.stories.map((s, i) => (
+                <a key={s.id} href={s.href} target="_top"
+                  className={i === 0
+                    ? 'rounded-lg bg-accent-solid px-3 py-1.5 text-body font-medium text-accent-ink'
+                    : 'rounded-lg border border-line bg-app px-3 py-1.5 text-body text-fg hover:border-line-strong hover:bg-elevated'}>
+                  {i === 0 ? 'Open playground' : s.name.replace(`${part.set} · `, '')}
+                </a>
+              ))}
+            </div>
+          </div>
+        </>
+      )}
+    </div>
+  )
+}
+
 export function ComponentDocPage() {
   const resolved = useOf('meta', ['meta'])
   const title = resolved.type === 'meta' ? resolved.preparedMeta.title : ''
-  const name = title.split('/').pop() ?? title
+  const family = familyByTitle(title)
+  const globals = useDocsGlobals()
+  const name = family?.id ?? title.split('/').pop() ?? title
   const folder = title.split('/')[0]
-  const { entry, partOf } = catalogueEntry(name)
-  const owner = entry ?? partOf
-  const contract = contractFor(name, partOf?.key)
-  const node = figmaNode(contract?.text, name)
-    ?? Object.values(contracts).map((t) => figmaNode(t, name)).find(Boolean)
-    ?? (partOf ? figmaNode(contract?.text, partOf.key) : undefined)
-  // Related = the set's own family first (Breadcrumb · BreadcrumbItem · BreadcrumbSeparator…); a component with no
-  // family lists its catalogue category instead.
-  const root = STORY_COMPONENTS.map((c) => c.name).filter((n) => name.startsWith(n)).sort((a, b) => a.length - b.length)[0] ?? name
-  const family = STORY_COMPONENTS.filter((c) => c.name !== name && c.name.startsWith(root))
-  const related = family.length > 0 ? family
-    : STORY_COMPONENTS.filter((c) => c.name !== name && (owner ? catalogueEntry(c.name).entry?.category === owner.category : c.folder === folder)).slice(0, 10)
+  const entry = family ? catalogueEntry(family) : undefined
+  // A composed family (DatePicker, Tooltip) reads a part's catalogue entry for its prose, never for its name.
+  const ownEntry = entry && entry.key === (family?.root ?? name)
+  const label = ownEntry ? entry.label : name
+  const rootSet = family?.root ?? undefined
+  const parts = family?.parts ?? []
+  const contract = contractFor(rootSet ?? name, entry?.key)
+    ?? parts.map((p) => contractFor(p.set)).find(Boolean)
+  const node = figmaNode(contract?.text, rootSet ?? name)
+    ?? Object.values(contracts).map((t) => figmaNode(t, rootSet ?? name)).find(Boolean)
+    ?? parts.map((p) => figmaNode(contract?.text, p.set)).find(Boolean)
+  // Related = the families of the same catalogue category (or folder), never the family's own parts: those are Anatomy.
+  const related = STORY_FAMILIES.filter((f) => f.id !== name && (entry ? catalogueEntry(f)?.category === entry.category : f.folder === folder)).slice(0, 10)
 
   return (
     <>
       <DocsFrame>
         <DocsHeader
           eyebrow={folder}
-          title={entry?.label ?? name}
+          title={label}
           meta={
             <>
-              {partOf && <span>Part of <DocsLink href={storyComponent(partOf.key)?.href ?? '#'}>{partOf.label}</DocsLink> ·</span>}
-              <span>Figma set <code className="font-mono text-fg">{name}</code></span>
+              {rootSet ? <span>Figma set <code className="font-mono text-fg">{rootSet}</code></span>
+                : <span>Composed from {parts.map((p) => p.set).join(' + ')}</span>}
+              {parts.length > 0 && <span>· <DocsLink href="#anatomy">{parts.length} part{parts.length === 1 ? '' : 's'}</DocsLink></span>}
               {node && <>· <DocsLink href={figmaNodeUrl(node)}>Open in Figma ↗</DocsLink></>}
             </>
           }
         />
 
         <DocsSection title="What it is" lead={
-          entry ? <Prose text={entry.description} />
-            : partOf ? <Prose text={`A part of ${partOf.label}, built as its own Figma component set so a designer can place and swap it alone. ${partOf.description}`} />
-              : <p>A component of the Figma file, documented by its contract below.</p>
+          entry ? <Prose text={ownEntry ? entry.description : `${name} is ${parts.map((p) => p.set).join(' + ')} placed together. ${entry.description}`} />
+            : <p>A component of the Figma file, documented by its contract below.</p>
         } />
 
-        {owner?.usage && (
-          <DocsSection title="When & how to use it" lead={<Prose text={owner.usage} />} />
+        {entry?.usage && (
+          <DocsSection title="When & how to use it" lead={<Prose text={entry.usage} />} />
         )}
 
-        <DocsSection title="Playground" lead={<p>The controls are the Figma component's properties: same names, same order and the same defaults as its playground in Figma. The toolbar switches the Color Semantics mode (Escala Light · Escala Dark) and the Dimension Semantics · Typography mode (Desktop · Tablet · Mobile).</p>} />
+        <DocsSection title="Playground" lead={<p>
+          {rootSet
+            ? 'The controls are the Figma component’s properties: same names, same order and the same defaults as its playground in Figma.'
+            : `The Figma page has no ${name} set of its own: this playground puts its parts together as a designer places them. Each part keeps its own playground under Anatomy.`}
+          {' '}The toolbar switches the Color Semantics mode (Escala Light · Escala Dark) and the Dimension Semantics · Typography mode (Desktop · Tablet · Mobile).</p>} />
       </DocsFrame>
 
       <Primary />
       <Controls />
 
       <DocsFrame>
-        {entry && entry.axes.length > 0 && (
+        {entry && entry.axes.length > 0 && entry.key === rootSet && (
           <DocsSection title="Variants" lead={<p>The Figma set's variant axes, value for value.</p>}>
             <div className="flex flex-col gap-2">
               {entry.axes.map((axis) => (
@@ -128,21 +223,33 @@ export function ComponentDocPage() {
         )}
 
         {entry && entry.props.length > 0 && (
-          <DocsSection title="Properties" lead={<p>The React API of <code className="font-mono text-fg">{name}</code>.</p>}>
+          <DocsSection title="Properties" lead={<p>The React API of <code className="font-mono text-fg">{entry.key}</code>.</p>}>
             <PropsTable props={entry.props} />
           </DocsSection>
         )}
 
-        {owner?.accessibility && (
-          <DocsSection title="Accessibility" lead={<Prose text={owner.accessibility} />} />
+        {parts.length > 0 && (
+          <DocsSection id="anatomy" title="Anatomy" lead={<p>
+            The parts of {label}. Each is its own Figma component set, so a designer can place and swap it alone,
+            and each has its own playground here with the set's properties as controls. They live inside this entry of the
+            sidebar, hidden by default: tick <strong className="text-fg">part</strong> in the sidebar's tag filter to list them.
+          </p>}>
+            <div className="flex flex-col gap-4">
+              {parts.map((p) => <PartCard key={p.set} part={p} globals={globals} />)}
+            </div>
+          </DocsSection>
+        )}
+
+        {entry?.accessibility && (
+          <DocsSection title="Accessibility" lead={<Prose text={entry.accessibility} />} />
         )}
 
         {related.length > 0 && (
           <DocsSection title="Related components">
             <div className="flex flex-wrap gap-2">
-              {related.map((c) => (
-                <a key={c.title} href={c.href} target="_top" className="rounded-lg border border-line bg-surface px-3 py-1.5 text-body text-fg hover:border-line-strong hover:bg-elevated">
-                  {c.name}
+              {related.map((f) => (
+                <a key={f.title} href={f.href} target="_top" className="rounded-lg border border-line bg-surface px-3 py-1.5 text-body text-fg hover:border-line-strong hover:bg-elevated">
+                  {f.id}
                 </a>
               ))}
             </div>
@@ -154,7 +261,7 @@ export function ComponentDocPage() {
 
       {contract && (
         <DocsFrame>
-          <DocsSection title="Figma contract" lead={<p>The spec this component is built and measured against, read from the Figma file (<code className="font-mono text-fg">design-plans/{contract.file}</code>): API, geometry per size, colour per state, and what the file does that looks odd.</p>} />
+          <DocsSection title="Figma contract" lead={<p>The spec this family is built and measured against, read from the Figma file (<code className="font-mono text-fg">design-plans/{contract.file}</code>): API, geometry per size, colour per state, and what the file does that looks odd.</p>} />
         </DocsFrame>
       )}
       {contract && <ContractBody text={contract.text} />}

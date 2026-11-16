@@ -19,7 +19,8 @@ function Bar({ size, orientation, appearance, label }: BarStoryArgs & { label?: 
 }
 
 const meta: Meta<BarStoryArgs> = {
-  title: 'Content & Surfaces/ScrollBar',
+  title: 'Content & Surfaces/ScrollArea',
+  tags: ['!autodocs', 'part'],
   render: (a) => <Bar {...a} />,
   args: { size: 'default', orientation: 'vertical', appearance: 'filled' },
   argTypes: {
@@ -31,9 +32,10 @@ const meta: Meta<BarStoryArgs> = {
 export default meta
 type Story = StoryObj<BarStoryArgs>
 
-export const Playground: Story = {}
+export const ScrollBarPlayground: Story = { name: 'ScrollBar · Playground' }
 
-export const AllCombinations: Story = {
+export const ScrollBarAllCombinations: Story = {
+  name: 'ScrollBar · All Combinations',
   render: () => (
     <div style={{ display: 'flex', flexWrap: 'wrap', gap: 24, alignItems: 'flex-start' }}>
       {SCROLL_BAR_ORIENTATIONS.flatMap((orientation) => SCROLL_APPEARANCES.flatMap((appearance) => SCROLL_AREA_SIZES.map((size) => <Bar key={orientation + appearance + size} size={size} orientation={orientation} appearance={appearance} label={`${orientation} ${appearance} ${size}`} />)))}

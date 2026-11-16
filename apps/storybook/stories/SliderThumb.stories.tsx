@@ -17,7 +17,8 @@ function render({ size, forceState, variant }: ThumbStoryArgs) {
 }
 
 const meta: Meta<ThumbStoryArgs> = {
-  title: 'Forms/SliderThumb',
+  title: 'Forms/Slider',
+  tags: ['!autodocs', 'part'],
   render,
   args: { size: 'default', forceState: 'Default', variant: 'default' },
   argTypes: {
@@ -29,9 +30,10 @@ const meta: Meta<ThumbStoryArgs> = {
 export default meta
 type Story = StoryObj<ThumbStoryArgs>
 
-export const Playground: Story = {}
+export const SliderThumbPlayground: Story = { name: 'SliderThumb · Playground' }
 
-export const AllCombinations: Story = {
+export const SliderThumbAllCombinations: Story = {
+  name: 'SliderThumb · All Combinations',
   render: (args) => (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
       {SLIDER_VARIANTS.map((variant) => (

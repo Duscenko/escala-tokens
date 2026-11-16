@@ -13,7 +13,8 @@ interface TriggerStoryArgs {
 }
 
 const meta: Meta<TriggerStoryArgs> = {
-  title: 'Content & Surfaces/TooltipInfoTrigger',
+  title: 'Content & Surfaces/Tooltip',
+  tags: ['!autodocs', 'part'],
   render: ({ size, forceState, variant }) => <TooltipInfoTrigger size={size} forceState={forceState} variant={variant} aria-label="More information" />,
   args: { size: 'default', forceState: 'Default', variant: 'default' },
   argTypes: {
@@ -25,9 +26,10 @@ const meta: Meta<TriggerStoryArgs> = {
 export default meta
 type Story = StoryObj<TriggerStoryArgs>
 
-export const Playground: Story = {}
+export const TooltipInfoTriggerPlayground: Story = { name: 'TooltipInfoTrigger · Playground' }
 
-export const AllCombinations: Story = {
+export const TooltipInfoTriggerAllCombinations: Story = {
+  name: 'TooltipInfoTrigger · All Combinations',
   render: (args) => (
     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, auto)', gap: 16, justifyContent: 'start' }}>
       {TOOLTIP_VARIANTS.flatMap((variant) => TOOLTIP_TRIGGER_STATES.map((forceState) => (
@@ -38,7 +40,8 @@ export const AllCombinations: Story = {
 }
 
 /** The real pair: hover or focus the trigger; the bubble keeps the same Variant. */
-export const WithTooltip: Story = {
+export const TooltipInfoTriggerWithTooltip: Story = {
+  name: 'TooltipInfoTrigger · With Tooltip',
   render: (args) => (
     <TooltipProvider>
       <div style={{ padding: 80 }}>

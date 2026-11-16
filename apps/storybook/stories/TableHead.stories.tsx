@@ -18,7 +18,8 @@ interface Args {
 }
 
 const meta: Meta<Args> = {
-  title: 'Content & Surfaces/TableHead',
+  title: 'Content & Surfaces/Table',
+  tags: ['!autodocs', 'part'],
   render: ({ state, ...a }) => <Frame><TableHead {...a} forceState={state} /></Frame>,
   args: { size: 'default', align: 'start', pinned: 'none', sort: 'none', state: 'Default', label: 'Column', labelVisible: true, leadingVisible: false, resizerVisible: false },
   argTypes: {
@@ -35,8 +36,9 @@ const meta: Meta<Args> = {
 }
 export default meta
 type Story = StoryObj<Args>
-export const Playground: Story = {}
-export const Sorts: Story = {
+export const TableHeadPlayground: Story = { name: 'TableHead · Playground' }
+export const TableHeadSorts: Story = {
+  name: 'TableHead · Sorts',
   render: ({ state, ...a }) => (
     <div style={{ display: 'flex', flexWrap: 'wrap', gap: 16 }}>
       {(['none', 'ascending', 'descending'] as const).flatMap((sort) => (['Default', 'Hover'] as const).map((st) => <Frame key={sort + st}><TableHead {...a} sort={sort} forceState={st} /></Frame>))}

@@ -27,7 +27,8 @@ function footer({ layout, size, leadingVisible, leading, actionsVisible }: Foote
 }
 
 const meta: Meta<FooterStoryArgs> = {
-  title: 'Navigation/DropdownMenuFooter',
+  title: 'Navigation/DropdownMenu',
+  tags: ['!autodocs', 'part'],
   render: footer,
   args: { layout: 'inline', size: 'default', leadingVisible: true, leading: '12 of 40 selected', actionsVisible: true },
   argTypes: {
@@ -41,9 +42,10 @@ const meta: Meta<FooterStoryArgs> = {
 export default meta
 type Story = StoryObj<FooterStoryArgs>
 
-export const Playground: Story = {}
+export const DropdownMenuFooterPlayground: Story = { name: 'DropdownMenuFooter · Playground' }
 
-export const AllCombinations: Story = {
+export const DropdownMenuFooterAllCombinations: Story = {
+  name: 'DropdownMenuFooter · All Combinations',
   render: (args) => (
     <div style={{ display: 'flex', flexWrap: 'wrap', gap: 24 }}>
       {DROPDOWN_MENU_FOOTER_LAYOUTS.flatMap((layout) => DROPDOWN_MENU_SIZES.map((size) => <div key={layout + size}>{footer({ ...args, layout, size })}</div>))}

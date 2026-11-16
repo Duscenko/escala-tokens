@@ -29,7 +29,8 @@ function render({ size, forceState, variant, label, removable }: InputTagChipSto
 }
 
 const meta: Meta<InputTagChipStoryArgs> = {
-  title: 'Forms/InputTagChip',
+  title: 'Forms/InputTag',
+  tags: ['!autodocs', 'part'],
   render,
   args: { size: 'default', forceState: 'Default', variant: 'default', label: 'Design', removable: true },
   argTypes: {
@@ -43,10 +44,11 @@ const meta: Meta<InputTagChipStoryArgs> = {
 export default meta
 type Story = StoryObj<InputTagChipStoryArgs>
 
-export const Playground: Story = {}
+export const InputTagChipPlayground: Story = { name: 'InputTagChip · Playground' }
 
 /** Every Size × State × Variant, as the file's 40 variants. */
-export const AllCombinations: Story = {
+export const InputTagChipAllCombinations: Story = {
+  name: 'InputTagChip · All Combinations',
   render: (args) => (
     <div style={{ display: 'flex', flexWrap: 'wrap', gap: 16, alignItems: 'center' }}>
       {VARIANTS.flatMap((variant) => SIZES.flatMap((size) => STATES.map((forceState) => (

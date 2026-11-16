@@ -11,7 +11,8 @@ const render = ({ size, strength }: MeterArgs) => (
 )
 
 const meta: Meta<MeterArgs> = {
-  title: 'Forms/PasswordStrengthMeter',
+  title: 'Forms/PasswordStrength',
+  tags: ['!autodocs', 'part'],
   render,
   args: { size: 'default', strength: '0' },
   argTypes: {
@@ -22,10 +23,11 @@ const meta: Meta<MeterArgs> = {
 export default meta
 type Story = StoryObj<MeterArgs>
 
-export const Playground: Story = {}
+export const PasswordStrengthMeterPlayground: Story = { name: 'PasswordStrengthMeter · Playground' }
 
 /** Every Size × Strength, as the file's 18 variants. */
-export const AllCombinations: Story = {
+export const PasswordStrengthMeterAllCombinations: Story = {
+  name: 'PasswordStrengthMeter · All Combinations',
   render: (args) => (
     <div style={{ display: 'flex', flexWrap: 'wrap', gap: 24 }}>
       {PASSWORD_STRENGTH_SIZES.map((size) => (

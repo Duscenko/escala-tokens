@@ -31,7 +31,7 @@ type Story = StoryObj<AccordionStoryArgs>
 
 export const Playground: Story = {}
 
-export const AllVariants: Story = {
+export const AllCombinations: Story = {
   render: () => (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
       {ACCORDION_VARIANTS.map((variant) => <div key={variant}>{view({ variant }, ` (${variant})`)}</div>)}

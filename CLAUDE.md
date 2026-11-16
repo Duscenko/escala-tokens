@@ -986,6 +986,18 @@ explicitly out of scope. Individual components still adapt between `md` and `xl`
 > sends the Figma Dev link → read it (read-only) → contract → recipe + `escala-ui` component →
 > Storybook (controls 1:1 with Figma's playground) → out of the pending ledger. No plugin step.
 
+> **UPDATE (2026-11-16): the Storybook is organised by FAMILY — one Figma page = one sidebar entry = one
+> Documentation page.** Plan + state: `design-plans/storybook-families.md`. It used to give every component set its own
+> entry (110, Table alone 11). Now `spec/storybook-families.json` says, per Figma page, which set is the `root` and which
+> are `parts` (anatomy: CalendarDay, TableCell, BreadcrumbItem…); a part's story file shares its family's `title`
+> (Storybook merges same-title files), carries `tags: ['!autodocs', 'part']` (hidden in the sidebar by default,
+> `main.ts`) and prefixes its exports (`CalendarDayPlayground`). The family's Documentation has an **Anatomy** section
+> that previews each part live and links its playground. DatePicker and Tooltip have no root set in Figma: their root
+> story is composed from the parts. **Never type a title by hand**: add the set to the manifest, run
+> `node scripts/storybook/apply-families.mjs`; `storybookFamilies.test.ts` fails on a Figma set with no family, a
+> title off the manifest, an id collision, or an `All<X>` story name (the matrix is `AllCombinations`, an axis sweep is
+> the axis' plural). Folders: Buttons · Forms · Indicators · Content & Surfaces · Feedback · Navigation (no `Form Controls`).
+
 > **UPDATE (2026-11-12, owner's call): the Figma file's PALETTE wins over the generator.**
 > `Escala Design System (Real)` is curated and tested; for its accent (`#874fff`) the generator
 > differs on 99 of 120 solid steps and most alpha twins, so no rule reproduces it. The file's

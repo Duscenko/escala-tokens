@@ -37,7 +37,8 @@ function item({ size, forceState, label, iconLeadingVisible, iconLeadingIcon, tr
 }
 
 const meta: Meta<ItemStoryArgs> = {
-  title: 'Navigation/TabMenuItem',
+  title: 'Navigation/TabMenu',
+  tags: ['!autodocs', 'part'],
   render: (args) => <TabMenu variant="horizontal-button" size={args.size} aria-label="Item">{item(args)}</TabMenu>,
   args: { size: 'default', forceState: 'Default', label: 'Overview', iconLeadingVisible: false, iconLeadingIcon: 'home', trailingVisible: false, iconTrailingVisible: false, iconTrailingIcon: 'chevron-down' },
   argTypes: {
@@ -54,9 +55,10 @@ const meta: Meta<ItemStoryArgs> = {
 export default meta
 type Story = StoryObj<ItemStoryArgs>
 
-export const Playground: Story = {}
+export const TabMenuItemPlayground: Story = { name: 'TabMenuItem · Playground' }
 
-export const States: Story = {
+export const TabMenuItemStates: Story = {
+  name: 'TabMenuItem · States',
   render: (args) => (
     <TabMenu variant="horizontal-button" size={args.size} aria-label="States">
       {TAB_MENU_ITEM_STATES.map((s) => item({ ...args, forceState: s, label: s }, s))}
@@ -64,7 +66,8 @@ export const States: Story = {
   ),
 }
 
-export const Sizes: Story = {
+export const TabMenuItemSizes: Story = {
+  name: 'TabMenuItem · Sizes',
   render: (args) => (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 12, alignItems: 'flex-start' }}>
       {TAB_MENU_SIZES.map((size) => <TabMenu key={size} variant="horizontal-button" size={size} aria-label={`Size ${size}`}>{item({ ...args, size }, size)}</TabMenu>)}
@@ -72,7 +75,8 @@ export const Sizes: Story = {
   ),
 }
 
-export const AllCombinations: Story = {
+export const TabMenuItemAllCombinations: Story = {
+  name: 'TabMenuItem · All Combinations',
   render: (args) => (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 12, alignItems: 'flex-start' }}>
       {TAB_MENU_SIZES.map((size) => (

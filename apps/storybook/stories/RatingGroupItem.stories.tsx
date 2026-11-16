@@ -36,7 +36,8 @@ function render({ size, type, checked, forceState, icon }: ItemStoryArgs) {
 }
 
 const meta: Meta<ItemStoryArgs> = {
-  title: 'Indicators/RatingGroupItem',
+  title: 'Indicators/RatingGroup',
+  tags: ['!autodocs', 'part'],
   render,
   args: { size: 'default', type: 'star', checked: 'false', forceState: 'Default', icon: 'star' },
   argTypes: {
@@ -50,9 +51,10 @@ const meta: Meta<ItemStoryArgs> = {
 export default meta
 type Story = StoryObj<ItemStoryArgs>
 
-export const Playground: Story = {}
+export const RatingGroupItemPlayground: Story = { name: 'RatingGroupItem · Playground' }
 
-export const AllCombinations: Story = {
+export const RatingGroupItemAllCombinations: Story = {
+  name: 'RatingGroupItem · All Combinations',
   render: (args) => (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
       {RATING_GROUP_TYPES.flatMap((type) => CHECKED.map((checked) => (
@@ -64,7 +66,8 @@ export const AllCombinations: Story = {
   ),
 }
 
-export const Sizes: Story = {
+export const RatingGroupItemSizes: Story = {
+  name: 'RatingGroupItem · Sizes',
   render: (args) => (
     <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
       {RATING_GROUP_SIZES.map((size) => <span key={size}>{render({ ...args, size, checked: 'true' })}</span>)}

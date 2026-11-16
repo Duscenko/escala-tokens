@@ -41,7 +41,8 @@ function render({ size, checked, forceState, label, labelVisible, iconLeadingVis
 }
 
 const meta: Meta<ItemStoryArgs> = {
-  title: 'Navigation/SegmentedControlItem',
+  title: 'Navigation/SegmentedControl',
+  tags: ['!autodocs', 'part'],
   render,
   args: { size: 'default', checked: 'false', forceState: 'Default', label: 'Label', labelVisible: true, iconLeadingVisible: false, iconLeadingIcon: 'home' },
   argTypes: {
@@ -57,9 +58,10 @@ const meta: Meta<ItemStoryArgs> = {
 export default meta
 type Story = StoryObj<ItemStoryArgs>
 
-export const Playground: Story = {}
+export const SegmentedControlItemPlayground: Story = { name: 'SegmentedControlItem · Playground' }
 
-export const AllCombinations: Story = {
+export const SegmentedControlItemAllCombinations: Story = {
+  name: 'SegmentedControlItem · All Combinations',
   render: (args) => (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
       {CHECKED.map((checked) => (
@@ -71,7 +73,8 @@ export const AllCombinations: Story = {
   ),
 }
 
-export const Sizes: Story = {
+export const SegmentedControlItemSizes: Story = {
+  name: 'SegmentedControlItem · Sizes',
   render: (args) => (
     <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
       {SEGMENTED_CONTROL_SIZES.map((size) => <span key={size}>{render({ ...args, size, checked: 'true' })}</span>)}

@@ -41,7 +41,8 @@ function render({ layout, open, triggerLabel }: FABGroupStoryArgs) {
 }
 
 const meta: Meta<FABGroupStoryArgs> = {
-  title: 'Buttons/FABGroup',
+  title: 'Buttons/FABButton',
+  tags: ['!autodocs', 'part'],
   render,
   args: { layout: 'stack', open: true, triggerLabel: 'Create' },
   argTypes: {
@@ -53,11 +54,12 @@ const meta: Meta<FABGroupStoryArgs> = {
 export default meta
 type Story = StoryObj<FABGroupStoryArgs>
 
-export const Playground: Story = {}
+export const FABGroupPlayground: Story = { name: 'FABGroup · Playground' }
 
 /** The four Layouts, each opened, side by side — stack is labelled, the three fans are
  *  icon-only (measured `LabelVisible` per layout, fab-group-contract.md § API). */
-export const AllLayouts: Story = {
+export const FABGroupLayouts: Story = {
+  name: 'FABGroup · Layouts',
   render: (args) => (
     <div style={{ display: 'flex', gap: 96, alignItems: 'flex-end', flexWrap: 'wrap', padding: '0 0 160px' }}>
       {FAB_GROUP_LAYOUTS.map((layout) => (
@@ -71,7 +73,8 @@ export const AllLayouts: Story = {
 }
 
 /** Closed vs. open, at the default `stack` layout — click the trigger to toggle either. */
-export const OpenClosed: Story = {
+export const FABGroupOpenClosed: Story = {
+  name: 'FABGroup · Open Closed',
   render: (args) => (
     <div style={{ display: 'flex', gap: 96, alignItems: 'flex-end', padding: '0 0 160px' }}>
       <div>{render({ ...args, open: false })}</div>

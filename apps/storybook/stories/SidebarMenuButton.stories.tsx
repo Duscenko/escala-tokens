@@ -50,7 +50,8 @@ function row(a: MenuButtonStoryArgs, key?: string) {
 }
 
 const meta: Meta<MenuButtonStoryArgs> = {
-  title: 'Navigation/SidebarMenuButton',
+  title: 'Navigation/Sidebar',
+  tags: ['!autodocs', 'part'],
   render: (args) => row(args),
   args: {
     size: 'default', state: 'Default', collapsed: false, label: 'Dashboard', iconLeadingVisible: true, iconLeadingIcon: 'home',
@@ -73,10 +74,11 @@ const meta: Meta<MenuButtonStoryArgs> = {
 export default meta
 type Story = StoryObj<MenuButtonStoryArgs>
 
-export const Playground: Story = {}
+export const SidebarMenuButtonPlayground: Story = { name: 'SidebarMenuButton · Playground' }
 
 /** Every Size × State × Collapsed, as the file's 30 variants. */
-export const AllCombinations: Story = {
+export const SidebarMenuButtonAllCombinations: Story = {
+  name: 'SidebarMenuButton · All Combinations',
   render: (args) => (
     <div style={{ display: 'flex', flexWrap: 'wrap', gap: 16, alignItems: 'flex-start' }}>
       {SIDEBAR_SIZES.flatMap((size) => [false, true].flatMap((collapsed) => SIDEBAR_MENU_BUTTON_STATES.map((state) => (
@@ -87,7 +89,8 @@ export const AllCombinations: Story = {
 }
 
 /** Hovering a row fills it and draws no ring; the ring is keyboard focus (the pinned Focused row). */
-export const HoverHasNoRing: Story = {
+export const SidebarMenuButtonHoverHasNoRing: Story = {
+  name: 'SidebarMenuButton · Hover Has No Ring',
   render: (args) => (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
       {(['Hover', 'Focused'] as const).map((state) => row({ ...args, state, label: state === 'Hover' ? 'Hover: fill, no ring' : 'Focused: fill + ring' }, state))}
@@ -96,6 +99,7 @@ export const HoverHasNoRing: Story = {
 }
 
 /** The trend Badge (success up, critical down) and a trailing count. */
-export const WithTrendAndCount: Story = {
+export const SidebarMenuButtonWithTrendAndCount: Story = {
+  name: 'SidebarMenuButton · With Trend And Count',
   args: { trailingVisible: true, trendVisible: true },
 }

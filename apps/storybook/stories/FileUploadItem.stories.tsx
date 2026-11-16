@@ -31,7 +31,8 @@ function render({ size, status, name, icon, completedActions }: FileUploadItemSt
 }
 
 const meta: Meta<FileUploadItemStoryArgs> = {
-  title: 'Forms/FileUploadItem',
+  title: 'Forms/FileUpload',
+  tags: ['!autodocs', 'part'],
   render,
   args: { size: 'default', status: 'queued', name: 'Q3-financial-report.pdf', icon: 'FilePdf', completedActions: false },
   argTypes: {
@@ -45,10 +46,11 @@ const meta: Meta<FileUploadItemStoryArgs> = {
 export default meta
 type Story = StoryObj<FileUploadItemStoryArgs>
 
-export const Playground: Story = {}
+export const FileUploadItemPlayground: Story = { name: 'FileUploadItem · Playground' }
 
 /** Every Size × Status, as the file's 10 variants. */
-export const AllCombinations: Story = {
+export const FileUploadItemAllCombinations: Story = {
+  name: 'FileUploadItem · All Combinations',
   render: (args) => (
     <div style={{ display: 'flex', flexWrap: 'wrap', gap: 24, alignItems: 'flex-start' }}>
       {FILE_UPLOAD_ITEM_SIZES.flatMap((size) => FILE_UPLOAD_ITEM_STATUSES.map((status) => (
@@ -58,7 +60,8 @@ export const AllCombinations: Story = {
   ),
 }
 
-export const Sizes: Story = {
+export const FileUploadItemSizes: Story = {
+  name: 'FileUploadItem · Sizes',
   render: (args) => (
     <div style={{ display: 'flex', flexWrap: 'wrap', gap: 24, alignItems: 'flex-start' }}>
       {FILE_UPLOAD_ITEM_SIZES.map((size) => <div key={size}>{render({ ...args, size, status: 'uploading' })}</div>)}
@@ -66,7 +69,8 @@ export const Sizes: Story = {
   ),
 }
 
-export const Statuses: Story = {
+export const FileUploadItemStatuses: Story = {
+  name: 'FileUploadItem · Statuses',
   render: (args) => (
     <div style={{ display: 'flex', flexWrap: 'wrap', gap: 24, alignItems: 'flex-start' }}>
       {FILE_UPLOAD_ITEM_STATUSES.map((status) => <div key={status}>{render({ ...args, status, completedActions: status === 'completed' })}</div>)}

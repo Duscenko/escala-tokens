@@ -7,7 +7,8 @@ interface EllipsisStoryArgs {
 }
 
 const meta: Meta<EllipsisStoryArgs> = {
-  title: 'Navigation/PaginationEllipsis',
+  title: 'Navigation/Pagination',
+  tags: ['!autodocs', 'part'],
   render: ({ size }) => <div role="group" aria-label="Ellipsis" style={{ display: 'flex', gap: 4 }}><PaginationScope size={size}><PaginationEllipsis /></PaginationScope></div>,
   args: { size: 'default' },
   argTypes: { size: { name: 'Size', control: 'select', options: [...PAGINATION_SIZES] } },
@@ -15,9 +16,10 @@ const meta: Meta<EllipsisStoryArgs> = {
 export default meta
 type Story = StoryObj<EllipsisStoryArgs>
 
-export const Playground: Story = {}
+export const PaginationEllipsisPlayground: Story = { name: 'PaginationEllipsis · Playground' }
 
-export const Sizes: Story = {
+export const PaginationEllipsisSizes: Story = {
+  name: 'PaginationEllipsis · Sizes',
   render: () => (
     <div style={{ display: 'flex', gap: 16, alignItems: 'center' }}>
       {PAGINATION_SIZES.map((size) => <div key={size} role="group" aria-label={`Size ${size}`}><PaginationScope size={size}><PaginationEllipsis /></PaginationScope></div>)}

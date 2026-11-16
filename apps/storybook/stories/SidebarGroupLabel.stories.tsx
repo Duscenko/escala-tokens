@@ -5,7 +5,8 @@ import { Sidebar, SidebarGroup, SidebarGroupLabel, SIDEBAR_SIZES, type SidebarSi
 interface LabelStoryArgs { size: SidebarSize; label: string }
 
 const meta: Meta<LabelStoryArgs> = {
-  title: 'Navigation/SidebarGroupLabel',
+  title: 'Navigation/Sidebar',
+  tags: ['!autodocs', 'part'],
   render: ({ size, label }) => (
     <Sidebar className="!h-auto !w-auto !border-0 !bg-transparent">
       <SidebarGroup size={size} style={{ width: 256 }}><SidebarGroupLabel>{label}</SidebarGroupLabel></SidebarGroup>
@@ -20,4 +21,4 @@ const meta: Meta<LabelStoryArgs> = {
 export default meta
 type Story = StoryObj<LabelStoryArgs>
 
-export const Playground: Story = {}
+export const SidebarGroupLabelPlayground: Story = { name: 'SidebarGroupLabel · Playground' }

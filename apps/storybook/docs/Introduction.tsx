@@ -10,7 +10,7 @@ import { Button } from '../../../src/components/escala-ui/button'
 import { Badge } from '../../../src/components/escala-ui/badge'
 import { Breadcrumb, BreadcrumbItem, BreadcrumbList, BreadcrumbSeparator, BREADCRUMB_GLYPHS } from '../../../src/components/escala-ui/breadcrumb'
 import { Stepper, StepperItem } from '../../../src/components/escala-ui/stepper'
-import { STORY_COMPONENTS, STORY_FOLDERS } from './storyIndex'
+import { STORY_FAMILIES, STORY_FOLDERS } from './storyIndex'
 
 const snapshot = import.meta.glob<string>('../../../spec/figma-components.json', { eager: true, import: 'exportedAt' })
 const SNAPSHOT_DATE = Object.values(snapshot)[0]
@@ -112,7 +112,7 @@ export function Introduction() {
           <Tier step="Tier 2" title="Semantic roles" count={`${roles.length} colour roles`}
             body="What a value is FOR: surface · content · action · status · border · elevation, and the spacing, radius, size and type roles. Each resolves per mode."
             example={<>action.primary.default</>} />
-          <Tier step="Tier 3" title="Components" count={`${STORY_COMPONENTS.length} component pages`}
+          <Tier step="Tier 3" title="Components" count={`${STORY_FAMILIES.length} components · ${STORY_FAMILIES.reduce((n, f) => n + f.parts.length, 0)} parts`}
             body="One recipe per Figma component set: which role each part reads (fill, ink, edge, padding, radius, type), for every variant and state."
             example={<>Button · default · solid → fill</>} />
         </div>
@@ -133,10 +133,10 @@ export function Introduction() {
         </div>
       </DocsSection>
 
-      <DocsSection id="components" title="Components" lead={<p>Grouped as in the sidebar. Each opens on its Documentation: what it is, when to use it, the playground, its variants and its Figma contract.</p>}>
+      <DocsSection id="components" title="Components" lead={<p>Grouped as in the sidebar, one entry per Figma page. Each opens on its Documentation: what it is, when to use it, the playground, its variants, its anatomy (the parts, each with its own playground) and its Figma contract.</p>}>
         <div className="grid gap-4 md:grid-cols-2">
           {STORY_FOLDERS.map((folder) => {
-            const items = STORY_COMPONENTS.filter((c) => c.folder === folder)
+            const items = STORY_FAMILIES.filter((c) => c.folder === folder)
             return (
               <div key={folder} className="rounded-xl border border-line bg-surface p-4">
                 <div className="mb-2 flex items-baseline justify-between">
@@ -145,7 +145,7 @@ export function Introduction() {
                 </div>
                 <p className="flex flex-wrap gap-x-2 gap-y-1 text-body">
                   {items.map((c, i) => (
-                    <span key={c.title}><DocsLink href={c.href}>{c.name}</DocsLink>{i < items.length - 1 ? <span className="text-fg-faint"> ·</span> : null}</span>
+                    <span key={c.title}><DocsLink href={c.href}>{c.id}</DocsLink>{i < items.length - 1 ? <span className="text-fg-faint"> ·</span> : null}</span>
                   ))}
                 </p>
               </div>

@@ -257,7 +257,7 @@ for (const reduced of [false, true]) {
   const page = await ctx.newPage()
   const rows = []
   for (const [id, label] of [
-    ['form-controls-input--all-types', 'Input · every Type'], ['form-controls-input--sizes', 'Input · sm · default · lg'], ['forms-textarea--playground', 'Textarea'],
+    ['forms-input--types', 'Input · every Type'], ['forms-input--sizes', 'Input · sm · default · lg'], ['forms-textarea--playground', 'Textarea'],
     ['forms-combobox--sizes', 'Combobox · sm · default · lg'], ['forms-inputotp--sizes-and-lengths', 'InputOTP'], ['forms-numberinput--playground', 'NumberInput'],
     ['forms-inputtag--playground', 'InputTag'], ['blocks-auth-signinphone--playground', 'AuthSignInPhone (block)'],
   ]) {

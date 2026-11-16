@@ -24,7 +24,8 @@ interface ItemStoryArgs {
 const px = (size: BreadcrumbSize) => (size === 'default' ? ICON_PX.default : ICON_PX.sm)
 
 const meta: Meta<ItemStoryArgs> = {
-  title: 'Navigation/BreadcrumbItem',
+  title: 'Navigation/Breadcrumb',
+  tags: ['!autodocs', 'part'],
   render: ({ variant, appearance, size, forceState, label, iconLeadingVisible, iconLeadingIcon, iconTrailingVisible, iconTrailingIcon }) => (
     <ol style={{ margin: 0, padding: 0, listStyle: 'none', display: 'flex' }}>
       <BreadcrumbItem
@@ -61,9 +62,10 @@ const meta: Meta<ItemStoryArgs> = {
 export default meta
 type Story = StoryObj<ItemStoryArgs>
 
-export const Playground: Story = {}
+export const BreadcrumbItemPlayground: Story = { name: 'BreadcrumbItem · Playground' }
 
-export const AllCombinations: Story = {
+export const BreadcrumbItemAllCombinations: Story = {
+  name: 'BreadcrumbItem · All Combinations',
   render: (args) => (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
       {BREADCRUMB_VARIANTS.flatMap((variant) => BREADCRUMB_APPEARANCES.map((appearance) => (
@@ -77,7 +79,8 @@ export const AllCombinations: Story = {
   ),
 }
 
-export const Sizes: Story = {
+export const BreadcrumbItemSizes: Story = {
+  name: 'BreadcrumbItem · Sizes',
   render: (args) => (
     <ol style={{ margin: 0, padding: 0, listStyle: 'none', display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 12 }}>
       {BREADCRUMB_SIZES.map((size) => (
@@ -87,7 +90,8 @@ export const Sizes: Story = {
   ),
 }
 
-export const States: Story = {
+export const BreadcrumbItemStates: Story = {
+  name: 'BreadcrumbItem · States',
   render: (args) => (
     <ol style={{ margin: 0, padding: 0, listStyle: 'none', display: 'flex', flexWrap: 'wrap', gap: 12 }}>
       {BREADCRUMB_ITEM_STATES.map((state) => (
