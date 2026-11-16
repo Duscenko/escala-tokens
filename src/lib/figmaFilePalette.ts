@@ -10,6 +10,10 @@
  */
 import { useDesignStore, type ThemeSources } from '../store/useDesignStore'
 import { FIGMA_FILE_PALETTE, type FigmaPaletteSlot } from './figmaFilePalette.generated'
+import { BLACK_ALPHA_SCALE, WHITE_ALPHA_SCALE } from './colorUtils'
+import { categoricalRoleCatalogue } from './semanticArchitectures'
+import { SHADOW_RECIPES, type ElevationRole } from './elevationTokens'
+import { SHADOW_STEPS } from './shadowTokens'
 
 export { FIGMA_FILE_PALETTE }
 
@@ -44,4 +48,37 @@ export function applyFigmaFilePalette(brandKey: string): string[] {
     pinned.push(key)
   }
   return pinned
+}
+
+/** The colour of an Elevation role in one appearance, from the role table's own alpha-ladder ref (`{black-a.2}`). */
+function elevationColour(role: ElevationRole, appearance: 'light' | 'dark'): string {
+  const key = role === 'ring' ? 'shadow-ring' : `shadow-${role}`
+  const ref = categoricalRoleCatalogue().find((r) => r.group === 'elevation' && r.key === key)?.[appearance]
+  const m = /^\{(black|white)-a\.(\d+)\}$/.exec(ref ?? '')
+  if (!m) throw new Error(`Elevation role ${key} (${appearance}) is not on the alpha ladder: ${ref}`)
+  return (m[1] === 'black' ? BLACK_ALPHA_SCALE : WHITE_ALPHA_SCALE)[Number(m[2])]
+}
+
+const px = (n: number) => (n === 0 ? '0' : `${n}px`)
+
+/** The `--shadow-*` ramp of one appearance, as the file's `Shadow/*` effect styles draw it: ring + key/ambient drop shadows whose colours are the Elevation roles. */
+export function figmaFileShadows(appearance: 'light' | 'dark'): Record<string, string> {
+  const out: Record<string, string> = {}
+  for (const step of SHADOW_STEPS) {
+    out[step] = SHADOW_RECIPES[step].map((l) => `${px(l.x)} ${px(l.y)} ${px(l.blur)} ${px(l.spread)} ${elevationColour(l.role, appearance)}`).join(', ')
+  }
+  return out
+}
+
+/**
+ * Owner's call (2026-11-16, DEC-2026-11-16-006): the file's shadows win too. The default ramp keeps its own near-black
+ * `rgba(10,13,18,…)` colours and derives a dark twin; the file draws ring · key · ambient on the Elevation roles
+ * (Light key 10 % · ambient 5 %, Dark key 40 % · ambient 20 %). Pinned on the brand as its own Light and Dark ramp.
+ * Storybook only, like the palette: the web's default ramp is not touched without asking.
+ */
+export function applyFigmaFileShadows(brandKey: string): void {
+  const s = useDesignStore.getState()
+  if (!s.themes[brandKey]) return
+  const current = s.themeFoundations?.[brandKey] ?? {}
+  s.setThemeFoundations(brandKey, { ...current, shadows: figmaFileShadows('light'), shadowsDark: figmaFileShadows('dark') })
 }

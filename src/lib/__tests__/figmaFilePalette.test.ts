@@ -3,7 +3,7 @@ import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { beforeAll, describe, expect, it } from 'vitest'
 import { buildPaletteModule, parsePrimitiveGroups } from '../../../scripts/gen-figma-palette'
-import { applyFigmaFilePalette, FIGMA_FILE_PALETTE } from '../figmaFilePalette'
+import { applyFigmaFilePalette, applyFigmaFileShadows, figmaFileShadows, FIGMA_FILE_PALETTE } from '../figmaFilePalette'
 import { buildStudioTokens } from '../pluginStudio'
 import { resolvePreviewTokens } from '../previewTokens'
 import { useDesignStore } from '../../store/useDesignStore'
@@ -22,7 +22,7 @@ const hasInventory = existsSync(INVENTORY)
 
 /**
  * The owner changed these Color Semantics roles in the Figma file on 2026-11-16
- * (DEC-2026-11-16-003), after the inventory above was last saved. Until the plugin
+ * (DEC-2026-11-16-003, -004 and -006), after the inventory above was last saved. Until the plugin
  * repo's `figma-variables.txt` is regenerated, they override its lines so the
  * test holds the code to the file as it IS. Delete an entry the day the inventory
  * carries it.
@@ -30,9 +30,12 @@ const hasInventory = existsSync(INVENTORY)
 const SINCE_INVENTORY: Record<string, string> = {
   'Border/default': '{CP:Neutrals/Black Alpha/02} ; {CP:Neutrals/White Alpha/02}',
   'Border/subtle': '{CP:Neutrals/Black Alpha/01} ; {CP:Neutrals/White Alpha/01}',
-  'Border/control': '{CP:Neutrals/Black Alpha/03} ; {CP:Neutrals/White Alpha/03}',
+  'Border/control': '{CP:Neutrals/Black Alpha/03} ; {CP:Neutrals/White Alpha/04}',
   'Border/control-hover': '{CP:Neutrals/Black Alpha/04} ; {CP:Neutrals/White Alpha/04}',
   'Status/critical/surface': '{CP:States/EscalaDS/Error/Alpha/03} ; {CP:States/EscalaDS/Error Dark/Alpha/03}',
+  // DEC-2026-11-16-006: curated again in the file after DEC-004 — Dark critical text, Dark control border, Light highlight.
+  'Status/critical/content': '{CP:States/EscalaDS/Error/11} ; {CP:States/EscalaDS/Error Dark/10}',
+  'Elevation/highlight': '{CP:Neutrals/White Alpha/05} ; {CP:Neutrals/White Alpha/03}',
 }
 function inventoryText(): string {
   return readFileSync(INVENTORY, 'utf8').split('\n').map((line) => {
@@ -105,5 +108,23 @@ describe('a pinned alpha twin', () => {
     const fam = useDesignStore.getState().customColors.find((c) => c.key === key)!
     expect(fam.alpha).toBeUndefined()
     expect(fam.darkAlpha).toBeDefined()
+  })
+})
+
+describe('the shadows are the file\'s Shadow/* styles (DEC-2026-11-16-006)', () => {
+  it('draws ring · key · ambient in the Elevation role colours, Light and Dark', () => {
+    // Read from the file on 2026-11-16: Shadow/xl and Shadow/2xl, with Elevation/shadow-* bound per mode.
+    expect(figmaFileShadows('light').xl).toBe('0 0 0 1px #ffffff0d, 0 20px 24px -4px #0000001a, 0 8px 8px -4px #0000000d')
+    expect(figmaFileShadows('dark').xl).toBe('0 0 0 1px #ffffff0d, 0 20px 24px -4px #00000066, 0 8px 8px -4px #00000033')
+    expect(figmaFileShadows('light')['2xl']).toBe('0 0 0 1px #ffffff0d, 0 24px 48px -12px #0000001a, 0 24px 48px -12px #0000001a')
+    expect(figmaFileShadows('light').xs).toBe('0 0 0 1px #ffffff0d, 0 1px 2px 0 #0000000d')
+  })
+
+  it('reach what a story paints, in both appearances', () => {
+    const brand = buildFileSystem()
+    applyFigmaFileShadows(brand)
+    const s = useDesignStore.getState()
+    expect(resolvePreviewTokens(s, brand, 'light').shadows).toEqual(figmaFileShadows('light'))
+    expect(resolvePreviewTokens(s, brand, 'dark').shadows).toEqual(figmaFileShadows('dark'))
   })
 })

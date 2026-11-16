@@ -6055,3 +6055,15 @@ npm run bundle:plugin  # → public/escala-figma-plugin.zip + src/lib/pluginVers
 - [ ] Plugin: TextStyle creation for typography tokens
 - [ ] Plugin: Two-way sync — read Figma Variables → update configurator
 - [ ] Plugin: Diff view before import (show what changed)
+
+> **UPDATE (2026-11-16, DEC-2026-11-16-006): colours re-read from the Figma file, three roles and the shadows aligned.** A read-only
+> comparison of every `Color Semantics` role (83 × Light and Dark), the 341 `Color Primitives` and the 45 `Social Media Brands`
+> variables against Storybook found primitives and social colours identical and three roles out of step (the owner had curated
+> them again after DEC-004): `Status/critical/content` Dark → Error Dark/10 (`{error.10}`), `Border/control` Dark → White
+> Alpha/04, `Elevation/highlight` Light → White Alpha/05. Pinned in `CATEGORICAL_ROLES` (global, like DEC-004), listed in
+> `SINCE_INVENTORY` of `figmaFilePalette.test.ts` until the plugin repo's inventory is re-dumped. Dark critical text reads Lc ~42
+> on its own tint: audit intent `pinned-status-text` (WCAG 3:1 only, Dark only; `Pairing.themes` / `skipThemes`), exception
+> EXC-2026-11-16-002. In Dark `border.control` now equals `border.control-hover` — flagged, kept (the file is the rule).
+> **Shadows (Storybook only, like the palette):** `applyFigmaFileShadows` (`figmaFilePalette.ts`) pins the file's `Shadow/*` recipe
+> on the brand as its own Light and Dark `--shadow-*` ramp (ring · key · ambient in the Elevation role colours); the web's default
+> `Soft` ramp is untouched. Not compared: gradients (no story paints them), dimensions, type, motion, layer bindings.

@@ -158,7 +158,11 @@ export const ALGORITHMS: ColorAlgorithm[] = ['radix', 'tailwind', 'ant', 'defaul
 // `fgBackdrop` still throws, so a genuine ink-as-wash modelling error stays
 // loud. Defaults to `bg` — a border is measured for the contrast it creates
 // against the surface it sits on.
-export type Pairing = { fg: string; bg: string; intent: IntentClass; backdrop?: string; fgBackdrop?: string }
+export type Pairing = {
+  fg: string; bg: string; intent: IntentClass; backdrop?: string; fgBackdrop?: string
+  /** Audited only in these modes / skipped in these modes (a pair the Figma file pins differently per theme). */
+  themes?: readonly string[]; skipThemes?: readonly string[]
+}
 
 const OPAQUE_HEX = /^#[0-9a-f]{6}$/i
 const TRANSLUCENT_HEX = /^#[0-9a-f]{8}$/i
@@ -235,7 +239,9 @@ export const CURATED_PAIRINGS: Partial<Record<SemanticArchitecture, Pairing[]>> 
     { fg: 'status.warning.border-strong',  bg: 'surface.input', intent: 'control-boundary' },
     { fg: 'status.success.border-strong',  bg: 'surface.input', intent: 'control-boundary' },
     { fg: 'status.info.border-strong',     bg: 'surface.input', intent: 'control-boundary' },
-    { fg: 'status.critical.content', bg: 'status.critical.surface', intent: 'large-text' },
+    // Dark critical text is the file's own pin (DEC-2026-11-16-006): WCAG only there, the full `large-text` floor everywhere else.
+    { fg: 'status.critical.content', bg: 'status.critical.surface', intent: 'large-text', skipThemes: ['dark'] },
+    { fg: 'status.critical.content', bg: 'status.critical.surface', intent: 'pinned-status-text', themes: ['dark'] },
     { fg: 'status.warning.content',  bg: 'status.warning.surface',  intent: 'large-text' },
     { fg: 'status.success.content',  bg: 'status.success.surface',  intent: 'large-text' },
     { fg: 'status.info.content',     bg: 'status.info.surface',     intent: 'large-text' },
@@ -300,6 +306,8 @@ export function auditResolvedRoles(
   const out: ResolvedFinding[] = []
   for (const theme of modeKeys) {
     for (const p of pairings) {
+      if (p.themes && !p.themes.includes(theme)) continue
+      if (p.skipThemes?.includes(theme)) continue
       const fg = resolved.get(p.fg)?.[theme]
       const rawBg = resolved.get(p.bg)?.[theme]
       if (!fg || !rawBg) continue

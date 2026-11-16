@@ -15,6 +15,7 @@ function normalizeFamilyName(raw) {
   return FAMILY_RE.test(name) ? name : null;
 }
 function checkFontStylesheetUrl(raw) {
+  if (raw.trim().length > MAX_FONT_URL_LENGTH) return { ok: false, reason: "long" };
   let parsed;
   try {
     parsed = new URL(raw.trim());
@@ -72,7 +73,7 @@ function fontImportLines(sources, usedFamilies) {
   }
   return urls.map((url2) => `@import url("${url2}");`);
 }
-var FONT_CATEGORIES, ALLOWED_FONT_HOSTS, MAX_FONT_SOURCES, FAMILY_RE, SPEC_RE;
+var FONT_CATEGORIES, ALLOWED_FONT_HOSTS, MAX_FONT_SOURCES, FAMILY_RE, MAX_FONT_URL_LENGTH, SPEC_RE;
 var init_customFonts = __esm({
   "src/lib/customFonts.ts"() {
     FONT_CATEGORIES = ["Sans-serif", "Serif", "Mono"];
@@ -84,6 +85,7 @@ var init_customFonts = __esm({
     };
     MAX_FONT_SOURCES = 12;
     FAMILY_RE = /^[A-Za-z0-9][A-Za-z0-9 .\-]{0,59}$/;
+    MAX_FONT_URL_LENGTH = 600;
     SPEC_RE = /^[a-z,]+@[0-9.;,]+$/i;
   }
 });
@@ -912,6 +914,9 @@ var init_apca = __esm({
       // The field outline as the owner set it in the Figma file (DEC-2026-11-16-004): Border/control at Black / White Alpha 03,
       // a soft hairline BELOW the 3:1 of WCAG 1.4.11. A visibility floor only, so a regression to nothing still fails.
       "control-hairline": { wcag: 1.4, apcaLc: null },
+      // Critical text in Dark as the Figma file pins it (DEC-2026-11-16-006): `Status/critical/content` = Error Dark 10 (#fb493d), read on its
+      // own tint at Lc ~42 — under the 60 of `large-text`, over WCAG's 3:1. WCAG only, like `pressed-label`; Light keeps `large-text`.
+      "pinned-status-text": { wcag: 3, apcaLc: null },
       // A label on a PRESSED fill (a state held for ~100 ms under the pointer):
       // WCAG AA with no APCA term. The Escala file pins `action.secondary.pressed`
       // to gray 06, where `content.on-secondary` reads 4.5+ :1 but Lc 57–59.
@@ -8850,7 +8855,10 @@ var init_semanticArchitectures = __esm({
       //    dark ramp, so 10 was not a hue-vs-contrast trade, just a miss: 11 still
       //    reads as red, and all three severities now agree on the same step.
       { group: "status", key: "critical.surface", light: "{error-a.3}", dark: "{error-a.3}" },
-      { group: "status", key: "critical.content", light: "{error.11}", dark: "{error.11}" },
+      // OWNER DECISION 2026-11-16 (DEC-2026-11-16-006): the Figma file is the rule. `Status/critical/content` is Error/11 in Light and
+      // Error Dark/10 in Dark (#fb493d) — one step more saturated than the 11 this row held; it reads Lc ~42 on its own tint, under the
+      // `large-text` floor the matrix applies, and that is the file's choice, not a solver miss. Pinned to the file's steps.
+      { group: "status", key: "critical.content", light: "{error.11}", dark: "{error.10}" },
       { group: "status", key: "warning.surface", light: "{warning-a.3}", dark: "{warning-a.4}" },
       // Warning content / border-strong / surface-solid can resolve to ONE hex.
       // That is ramp geometry, not a schema defect — do not collapse the three
@@ -9061,7 +9069,8 @@ var init_semanticArchitectures = __esm({
       // neighbours — and keeps the ui-component solve (black-a.7 / white-a.8).
       // OWNER DECISION 2026-11-16 (DEC-2026-11-16-004): the Figma file is the rule. `Border/control` sits at Black Alpha/03 ·
       // White Alpha/03 and its hover at /04, a soft hairline below the 3:1 of WCAG 1.4.11. Pinned to the file's steps, not solved.
-      { group: "border", key: "control", light: "{black-a.3}", dark: "{white-a.3}" },
+      // DEC-2026-11-16-006: in the file Dark `Border/control` moved to White Alpha/04 (the same step as its hover, #ffffff33).
+      { group: "border", key: "control", light: "{black-a.3}", dark: "{white-a.4}" },
       { group: "border", key: "control-hover", light: "{black-a.4}", dark: "{white-a.4}" },
       { group: "border", key: "strong", light: "{ui-a:black-a.5}", dark: "{ui-a:white-a.5}" },
       // DECORATIVE brand emphasis — a tinted card edge or a grouping stroke. It is
@@ -9126,7 +9135,8 @@ var init_semanticArchitectures = __esm({
       { group: "elevation", key: "shadow-key", light: "{black-a.2}", dark: "{black-a.6}" },
       { group: "elevation", key: "shadow-ambient", light: "{black-a.1}", dark: "{black-a.4}" },
       { group: "elevation", key: "shadow-ring", light: "{white-a.1}", dark: "{white-a.1}" },
-      { group: "elevation", key: "highlight", light: "{white-a.3}", dark: "{white-a.3}" }
+      // DEC-2026-11-16-006: the file's Light highlight is White Alpha/05 (#ffffff4d); Dark stays at /03.
+      { group: "elevation", key: "highlight", light: "{white-a.5}", dark: "{white-a.3}" }
       // `border.critical` / `border.warning` / `border.success` moved to
       // `status.<sev>.border-strong` (audit F3 — a severity-family stroke belongs in
       // the `status` group, beside `status.<sev>.border`), and `info` joined them so
@@ -9146,7 +9156,7 @@ var init_semanticArchitectures = __esm({
       CATEGORICAL_ROLES.splice(0, CATEGORICAL_ROLES.length, ...rest.slice(0, first), ...status, ...rest.slice(first));
     }
     CATEGORICAL_ROLE_COMMENTS = {
-      "elevation.highlight": "[ROLE: Solid Control Highlight] The inner 2px top highlight of a solid filled control (primary and destructive buttons, every state but disabled): box-shadow: inset 0 2px 0 var(--color-elevation-highlight). {white-a.3} in both themes. EFFECT colour only.",
+      "elevation.highlight": "[ROLE: Solid Control Highlight] The inner 2px top highlight of a solid filled control (primary and destructive buttons, every state but disabled): box-shadow: inset 0 2px 0 var(--color-elevation-highlight). {white-a.5} in Light, {white-a.3} in Dark (DEC-2026-11-16-006, the Figma file is the rule). EFFECT colour only.",
       "elevation.shadow-ring": "[ROLE: Shadow Ring] The 0 0 0 1px highlight edge every shadow and depth recipe starts with. EFFECT colour only. {white-a.1} in both themes: invisible on a light surface, the rim that buys elevation on a dark page.",
       "elevation.shadow-ambient": "[ROLE: Shadow Ambient] The tight, secondary layer of the shadow and depth recipes. EFFECT colour only. {black-a.1} (5%) in Light, {black-a.4} (20%) in Dark.",
       "elevation.shadow-key": "[ROLE: Shadow Key] The main, larger-offset layer of every Shadow/* and Depth/* recipe. EFFECT colour only, never a fill or stroke. {black-a.2} (10%) in Light, {black-a.6} (40%) in Dark, so one shadow style follows the theme.",
@@ -9190,7 +9200,7 @@ var init_semanticArchitectures = __esm({
       "status.success.surface-pressed": "[ROLE: Feedback Background Pressed] Affects a pressed success-tinted interactive surface. {success-a.4} in Light, {success-a.5} in Dark.",
       "status.info.surface-pressed": "[ROLE: Feedback Background Pressed] Affects a pressed info-tinted interactive surface. {info-a.4} in Light, {info-a.5} in Dark.",
       "status.critical.surface-solid": "[ROLE: Feedback Background Solid] Affects destructive badges, pills and buttons. Solid fill. Pair with status.critical.on-solid. {error.solid} in BOTH themes \u2014 solved per appearance so it lands near the anchor; the old dark {error.12} rendered a pale pink #ffddd5 because tone 12 is the near-white end of a dark ramp.",
-      "status.critical.content": "[ROLE: Feedback Text] Affects the text and glyph inside an error alert, banner or toast. Ink on status.critical.surface. {error.11} in both themes \u2014 Radix's chromatic-text step, NOT tone 12 (which reads near-black on a pale tint and near-white on a dark one, losing the severity hue).",
+      "status.critical.content": "[ROLE: Feedback Text] Affects the text and glyph inside an error alert, banner or toast. Ink on status.critical.surface. {error.11} in Light, {error.10} in Dark (DEC-2026-11-16-006, the Figma file is the rule) \u2014 Radix's chromatic-text steps, NOT tone 12 (which reads near-black on a pale tint and near-white on a dark one, losing the severity hue).",
       "status.critical.on-solid": "[ROLE: Feedback Inverted Text] Label ink on status.critical.surface-solid. Solved per theme against that fill.",
       "status.critical.surface-solid-hover": "[ROLE: Feedback Background Solid Hover] Hover of status.critical.surface-solid (a critical button). SOLVED ({step:error+1}) \u2014 one tone past the resolved solid that still carries status.critical.on-solid.",
       "status.critical.surface-solid-pressed": "[ROLE: Feedback Background Solid Pressed] Pressed of status.critical.surface-solid. SOLVED ({step:error+2}).",
@@ -9222,7 +9232,7 @@ var init_semanticArchitectures = __esm({
       "status.info.border-strong": "[ROLE: Info Control Boundary] Affects informational-state form fields. Light {info.9} = 3.24:1/Lc59. Dark {info.10} = 7.15:1/Lc49 \u2014 info.9 fails APCA in dark (Lc 42), one step earlier than error needs.",
       "border.subtle": "[ROLE: Decorative Border 1/3] Affects hairline dividers, table rules, the edge of a quiet grouping. Lightest neutral stroke \u2014 {black-a.1} in light, {white-a.1} in dark (the FIXED alpha ladder, so it composites correctly on any surface): 5 %, owner decision 2026-11-16 (DEC-2026-11-16-003). It measures APCA Lc 0 on the dark page, which is accepted: shadow and surface carry the separation. DECORATION: separates regions, carries no state, no contrast floor. If the stroke is the only thing telling the user a control is there, that is border.control.",
       "border.default": "[ROLE: Decorative Border 2/3] Affects a card edge, a panel boundary, a grouping box. {black-a.2} / {white-a.2} (10 %, owner decision 2026-11-16, DEC-2026-11-16-003). DECORATION, no contrast floor. One step above border.subtle so a panel edge still outranks a hairline. Never the only boundary of a control.",
-      "border.control": "[ROLE: Control Boundary] Affects the resting border of inputs, textareas, selects, checkboxes, radios, switch tracks and outline buttons. {black-a.3} in Light, {white-a.3} in Dark: a soft hairline, below the 3:1 of WCAG 1.4.11 BY OWNER DECISION (DEC-2026-11-16-004, the Figma file is the rule); a field is identified by its fill and its focus ring, not by this stroke alone.",
+      "border.control": "[ROLE: Control Boundary] Affects the resting border of inputs, textareas, selects, checkboxes, radios, switch tracks and outline buttons. {black-a.3} in Light, {white-a.4} in Dark: a soft hairline, below the 3:1 of WCAG 1.4.11 BY OWNER DECISION (DEC-2026-11-16-004 and -006, the Figma file is the rule); a field is identified by its fill and its focus ring, not by this stroke alone.",
       "border.control-hover": "[ROLE: Control Boundary Hover] Affects the hover state of a control's resting (border.control) border. One step past border.control: {black-a.4} in Light, {white-a.4} in Dark (DEC-2026-11-16-004).",
       "border.strong": "[ROLE: Strong Border] Affects the edge of a grouping or a selected container that must read before its neighbours. Not the field outline \u2014 that is border.control. WCAG 1.4.11 + APCA Lc 45 against the page, SOLVED on the alpha ladder ({ui-a:\u2026}): {black-a.7} in light, {white-a.8} in dark for the default system.",
       "border.focus": "[ROLE: A11y Focus Ring] The keyboard focus-visible boundary on every interactive element of the default / accent variant. SOLVED per theme ({focus:accent.9}): the first accent tone from 9 that clears WCAG 1.4.11 (3:1) on the page \u2014 tone 9 in both themes for the default system. Severity, neutral and inverse variants take their own boundary (status.<sev>.border-strong, border.strong, border.inverse). The translucent halo outside it is border.ring.*.",
@@ -16216,6 +16226,10 @@ var init_useDesignStore = __esm({
             (state2) => state2.customIcons.some((i) => i.name === name) ? { customIcons: state2.customIcons.map((i) => i.name === name ? { name, svg } : i) } : { customIcons: [...state2.customIcons, { name, svg }] }
           ),
           removeCustomIcon: (name) => set((state2) => ({ customIcons: state2.customIcons.filter((i) => i.name !== name) })),
+          removeCustomIcons: (names) => {
+            const drop = new Set(names);
+            set((state2) => ({ customIcons: state2.customIcons.filter((i) => !drop.has(i.name)) }));
+          },
           // ── Multi design system registry ──
           savedSystems: [],
           upsertSavedSystem: (entry) => set((state2) => ({
