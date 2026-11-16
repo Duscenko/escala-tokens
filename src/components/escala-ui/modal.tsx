@@ -168,7 +168,8 @@ function ModalHeader({
       data-align={align}
       className={cn(
         'flex w-full',
-        horizontal ? 'flex-row items-center' : 'flex-col',
+        // Figma ModalHeader Align=horizontal: counter-axis MIN, the icon sits on the top of the title (965:81).
+        horizontal ? 'flex-row items-start' : 'flex-col',
         align === 'vertical-center' ? 'items-center' : align === 'vertical-left' ? 'items-start' : '',
         className,
       )}

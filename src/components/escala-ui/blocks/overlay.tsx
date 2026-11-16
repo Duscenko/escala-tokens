@@ -78,8 +78,10 @@ function OverlayShell({ block, inline = true, open = true, onOpenChange, title, 
     </Modal>
   )
 }
+// The Modal's `main` already pads the header and the Content slot (Spacing/inset-surface) and puts Spacing/gap-group between
+// them; the footer pads itself. The Content slot adds NO padding of its own (Figma 1054:6209), or it doubles.
 const body = (children: React.ReactNode, gap = 'spacing.gap-group') => (
-  <div data-part="content" style={{ padding: `0 ${v('spacing.inset-surface')} ${v('spacing.inset-surface')}`, ...col(gap) }}>{children}</div>
+  <div data-part="content" style={col(gap)}>{children}</div>
 )
 
 /** Figma `ConfirmDialog`. */
