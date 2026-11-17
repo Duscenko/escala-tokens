@@ -1883,6 +1883,16 @@ function boxRoles(lead) {
 function groupRoleValues(group, lead) {
   return group.derive ? group.derive(lead) : Object.fromEntries(group.roles.map((role) => [role, lead]));
 }
+function radiusAxisLadder(key2) {
+  return RADIUS_AXIS_LADDER[key2] ?? RADIUS_AXIS_STEPS;
+}
+function clampRadiusAxisStep(key2, step) {
+  const ladder = radiusAxisLadder(key2);
+  if (ladder === RADIUS_AXIS_STEPS || ladder.includes(step)) return step;
+  const px2 = roleValuePx(step, RADIUS_STANDARD);
+  if (px2 === null || !(step in RADIUS_STANDARD)) return step;
+  return ladder.reduce((best, s) => Math.abs((roleValuePx(s, RADIUS_STANDARD) ?? 0) - px2) < Math.abs((roleValuePx(best, RADIUS_STANDARD) ?? 0) - px2) ? s : best);
+}
 function applyRadiusGroup(group, roles, step) {
   const next = mergeLayoutRoles("radius", roles);
   Object.assign(next, groupRoleValues(group, step));
@@ -1892,7 +1902,7 @@ function radiusRolesFromGroups(picks) {
   let roles = defaultLayoutRoles("radius");
   for (const group of RADIUS_GROUPS) {
     const step = picks[group.key];
-    if (step) roles = applyRadiusGroup(group, roles, step);
+    if (step) roles = applyRadiusGroup(group, roles, clampRadiusAxisStep(group.key, step));
   }
   return roles;
 }
@@ -2175,7 +2185,16 @@ function moveRadiusLadderV151(state2) {
     }
   }
 }
-var ROLE_DIMENSION_PREFIX, SPACING_RESPONSIVE_FAMILIES, SPACING_RESPONSIVE_SIZES, SR, SPACING_RESPONSIVE_TABLE, SPACING_RESPONSIVE, SPACING_RESPONSIVE_KEYS, RADIUS_WORKING_STEPS, RADIUS_SCALE_RATIOS, RADIUS_STEPS, RADIUS_DEFAULT_LG, RADIUS_PRESETS, RADIUS_STANDARD, SPACING_STEPS, SPACING_DEFAULT_BASE, SPACING_STANDARD, PADDING_DEFAULT_STEP, PADDING_STANDARD, INSET_SURFACE_ROLE, SIZE_STEPS, SIZE_STANDARD, FIELD_MULTIPLIERS, SIZE_DEFAULT_BASE, SIZE_CONTROL_MIN_PX, FIELD_BASE_MIN, BASE_UNIT_RANGE, SELECTOR_STEPS, SELECTOR_MULTIPLIERS, SELECTOR_DEFAULT_BASE, SELECTOR_TO_SIZE_BASE, SELECTOR_STANDARD, inferSizeBase, STROKE_STEPS, STROKE_STANDARD, STROKE_SM_STOPS, BREAKPOINT_STEPS, BREAKPOINT_STANDARD, GRID_VIEWPORTS, GRID_COLUMN_STEPS, GRID_CONTAINER_STEPS, GRID_FRAME_FIELDS, GRID_FRAME_STANDARD, GRID_FRAME_LEGACY_STANDARD, GRID_STYLES, GRID_STANDARD, BOX_CONTAINER_PX, RADIUS_ROLES, RADIUS_GROUP_STEPS, RADIUS_GROUPS, RADIUS_ROLE_PRESETS, LEGACY_RADIUS_ROLE_RUNGS, LEGACY_RADIUS_LG_FACTOR, LEGACY_RADIUS_WORKING_STEPS, RADIUS_V77_RENAME, RADIUS_RESPONSIVE_STEPS, RADIUS_RESPONSIVE, SPACING_ROLES, INSET_ROLES, INSET_SIDES, INSET_SIDE_KEYS, INSET_SIDE_BY_KEY, SPACING_MODES, LEGACY_SPACING_ROLE_STEPS, SIZE_ROLES, SELECTOR_ROLES, STROKE_ROLES, BREAKPOINT_ROLES, LAYOUT_ROLES, PRIMITIVE_SET, GRID_MODE_STYLE;
+function capSelectorsRadiusV153(state2) {
+  if (!state2 || typeof state2 !== "object") return;
+  const above = RADIUS_STEPS.slice(RADIUS_STEPS.indexOf("md") + 1);
+  const cap = (roles) => {
+    if (roles && typeof roles === "object" && typeof roles.control === "string" && above.includes(roles.control)) roles.control = "md";
+  };
+  cap(state2.radiusRoles);
+  for (const own of Object.values(state2.themeFoundations ?? {})) cap(own?.radiusRoles);
+}
+var ROLE_DIMENSION_PREFIX, SPACING_RESPONSIVE_FAMILIES, SPACING_RESPONSIVE_SIZES, SR, SPACING_RESPONSIVE_TABLE, SPACING_RESPONSIVE, SPACING_RESPONSIVE_KEYS, RADIUS_WORKING_STEPS, RADIUS_SCALE_RATIOS, RADIUS_STEPS, RADIUS_DEFAULT_LG, RADIUS_PRESETS, RADIUS_STANDARD, SPACING_STEPS, SPACING_DEFAULT_BASE, SPACING_STANDARD, PADDING_DEFAULT_STEP, PADDING_STANDARD, INSET_SURFACE_ROLE, SIZE_STEPS, SIZE_STANDARD, FIELD_MULTIPLIERS, SIZE_DEFAULT_BASE, SIZE_CONTROL_MIN_PX, FIELD_BASE_MIN, BASE_UNIT_RANGE, SELECTOR_STEPS, SELECTOR_MULTIPLIERS, SELECTOR_DEFAULT_BASE, SELECTOR_TO_SIZE_BASE, SELECTOR_STANDARD, inferSizeBase, STROKE_STEPS, STROKE_STANDARD, STROKE_SM_STOPS, BREAKPOINT_STEPS, BREAKPOINT_STANDARD, GRID_VIEWPORTS, GRID_COLUMN_STEPS, GRID_CONTAINER_STEPS, GRID_FRAME_FIELDS, GRID_FRAME_STANDARD, GRID_FRAME_LEGACY_STANDARD, GRID_STYLES, GRID_STANDARD, BOX_CONTAINER_PX, RADIUS_ROLES, RADIUS_GROUP_STEPS, RADIUS_GROUPS, RADIUS_AXIS_STEPS, RADIUS_AXIS_LADDER, RADIUS_ROLE_PRESETS, LEGACY_RADIUS_ROLE_RUNGS, LEGACY_RADIUS_LG_FACTOR, LEGACY_RADIUS_WORKING_STEPS, RADIUS_V77_RENAME, RADIUS_RESPONSIVE_STEPS, RADIUS_RESPONSIVE, SPACING_ROLES, INSET_ROLES, INSET_SIDES, INSET_SIDE_KEYS, INSET_SIDE_BY_KEY, SPACING_MODES, LEGACY_SPACING_ROLE_STEPS, SIZE_ROLES, SELECTOR_ROLES, STROKE_ROLES, BREAKPOINT_ROLES, LAYOUT_ROLES, PRIMITIVE_SET, GRID_MODE_STYLE;
 var init_layoutTokens = __esm({
   "src/lib/layoutTokens.ts"() {
     init_dimensionCore();
@@ -2346,7 +2365,7 @@ var init_layoutTokens = __esm({
     GRID_STANDARD = buildGridStandard();
     BOX_CONTAINER_PX = "dimension-20";
     RADIUS_ROLES = [
-      { key: "control", label: "Control", description: "Checkbox, nested child, inner thumb.", group: "selectors", primitive: "sm" },
+      { key: "control", label: "Control", description: "Checkbox, slider, nested child, inner thumb. 0\u20136px: a checkbox stays a square.", group: "selectors", primitive: "sm" },
       { key: "item", label: "Item", description: "An element nested in a track or a flush list (a segment, a sidebar menu button) and the tag family: Badge rounded, Kbd, InputTagChip (DEC-2026-11-17-002). Never a row inside an overlay.", group: "items", primitive: "lg" },
       { key: "action", label: "Action", description: "Buttons, inputs, selects, OTP, tabs, rows inside an overlay.", group: "fields", primitive: "xl" },
       { key: "container", label: "Container", description: "Cards, accordion, inline alerts.", group: "boxes", primitive: BOX_CONTAINER_PX },
@@ -2360,6 +2379,13 @@ var init_layoutTokens = __esm({
       { key: "items", label: "Items", hint: "segment, sidebar menu button, badge, kbd, tag", roles: ["item"] },
       { key: "selectors", label: "Selectors", hint: "checkbox, slider, link focus ring", roles: ["control"] }
     ];
+    RADIUS_AXIS_STEPS = ["none", "sm", "md", "lg", "xl", "2xl", "3xl", "4xl", "5xl"];
+    RADIUS_AXIS_LADDER = {
+      boxes: RADIUS_AXIS_STEPS,
+      fields: RADIUS_AXIS_STEPS,
+      items: RADIUS_AXIS_STEPS,
+      selectors: ["none", "xs", "sm", "md"]
+    };
     RADIUS_ROLE_PRESETS = [
       { label: "Sharp", description: "Square corners everywhere \u2014 0 / 0 / 0.", picks: { boxes: "none", fields: "none", items: "none", selectors: "none" } },
       { label: "Soft", description: "A hint of rounding \u2014 boxes 8, fields 4, items 4, selectors 4.", picks: { boxes: "lg", fields: "sm", items: "sm", selectors: "sm" } },
@@ -2367,7 +2393,7 @@ var init_layoutTokens = __esm({
       // Boxes at 3xl (24): rounder than Rounded's 16, but a card or alert holding
       // tags and text keeps its shape — 32 rounded the corners past the content
       // and clipped it. The full pill look is the fields'.
-      { label: "Pill", description: "Pill fields \u2014 boxes 24, fields 32, items 8, selectors 8.", picks: { boxes: "3xl", fields: "4xl", items: "lg", selectors: "lg" } }
+      { label: "Pill", description: "Pill fields \u2014 boxes 24, fields 32, items 8, selectors 6.", picks: { boxes: "3xl", fields: "4xl", items: "lg", selectors: "md" } }
     ];
     LEGACY_RADIUS_ROLE_RUNGS = { control: "sm", action: "2xl", container: "3xl", overlay: "4xl", pill: "full" };
     LEGACY_RADIUS_LG_FACTOR = 2;
@@ -15586,7 +15612,7 @@ var init_useDesignStore = __esm({
         }),
         {
           name: "scalable-designs-store",
-          version: 152,
+          version: 153,
           migrate: (persisted, version) => {
             if (persisted) {
               delete persisted.styleDirection;
@@ -17464,6 +17490,12 @@ var init_useDesignStore = __esm({
                 for (const sys of persisted.savedSystems) liftSecondaryAboveLayer2V152(sys?.snapshot);
               }
             }
+            if (version < 153) {
+              capSelectorsRadiusV153(persisted);
+              if (Array.isArray(persisted.savedSystems)) {
+                for (const sys of persisted.savedSystems) capSelectorsRadiusV153(sys?.snapshot);
+              }
+            }
             if (version < 133) {
               const add2 = (state2) => {
                 if (!Array.isArray(state2?.selectedComponents)) return;
@@ -18444,7 +18476,13 @@ function studioOptions() {
       picks: p2.picks,
       px: radiusPresetPx(p2)
     })),
-    radiusGroups: RADIUS_GROUPS.map((g) => ({ key: g.key, label: g.label, hint: g.hint })),
+    // `steps` is additive: each axis's own ladder (Selectors stop at md, 6px).
+    radiusGroups: RADIUS_GROUPS.map((g) => ({
+      key: g.key,
+      label: g.label,
+      hint: g.hint,
+      steps: radiusAxisLadder(g.key).filter((step) => step === "xs" || step === "md" || RADIUS_GROUP_STEPS.includes(step))
+    })),
     radiusSteps: RADIUS_GROUP_STEPS.map((step) => ({ step, px: parseFloat(radius[step] ?? "0") || 0 })),
     spacingModes: SPACING_MODES.map((m) => ({
       id: m.id,
@@ -18574,6 +18612,8 @@ function buildStudioTokens(choices, tier) {
     for (const group of RADIUS_GROUPS) {
       const step = choices.radiusAxes[group.key];
       if (step && RADIUS_GROUP_STEPS.includes(step)) {
+        roles = applyRadiusGroup(group, roles, clampRadiusAxisStep(group.key, step));
+      } else if (step && radiusAxisLadder(group.key).includes(step)) {
         roles = applyRadiusGroup(group, roles, step);
       }
     }
@@ -18737,14 +18777,14 @@ function studioLook(choices) {
     };
     box = pxOf(c2.radiusAxes.boxes, box);
     field = pxOf(c2.radiusAxes.fields, field);
-    control = pxOf(c2.radiusAxes.selectors, control);
+    control = pxOf(c2.radiusAxes.selectors && clampRadiusAxisStep("selectors", c2.radiusAxes.selectors), control);
   } else if (c2.radiusPreset) {
     const hit = RADIUS_ROLE_PRESETS.find((p2) => p2.label === c2.radiusPreset);
     if (hit) {
       const px2 = radiusPresetPx(hit);
       box = px2[0];
       field = px2[1];
-      control = px2[2];
+      control = px2[3];
     }
   } else if (preset) {
     const summary = styleSummary(preset, RADIUS_STANDARD);

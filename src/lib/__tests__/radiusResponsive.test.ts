@@ -185,7 +185,7 @@ describe('radius presets are role bundles on the standard ramp', () => {
     }
     expect(sharp.radiusRoles.pill).toBe('full') // a circle is not an axis
     expect(sharp.radius).toEqual(RADIUS_STANDARD) // the ramp is the table, never regraded
-    expect(RADIUS_ROLE_PRESETS.map(radiusPresetPx)).toEqual([[0, 0, 0, 0], [8, 4, 4, 4], [20, 12, 8, 4], [24, 32, 8, 8]])
+    expect(RADIUS_ROLE_PRESETS.map(radiusPresetPx)).toEqual([[0, 0, 0, 0], [8, 4, 4, 4], [20, 12, 8, 4], [24, 32, 8, 6]])
     for (const p of RADIUS_ROLE_PRESETS) expect(matchRadiusRolePreset(radiusPresetPatch(p.label)!.radiusRoles)).toBe(p.label)
   })
 

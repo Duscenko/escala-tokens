@@ -9,7 +9,7 @@ import type { RailOption } from '../ui/RailSelect'
 
 export function radiusPresetOptions(): RailOption<string>[] {
   return RADIUS_ROLE_PRESETS.map((p) => {
-    const [boxes, fields, selectors] = radiusPresetPx(p)
+    const [boxes, fields, , selectors] = radiusPresetPx(p)
     return {
       value: p.label,
       label: p.label,

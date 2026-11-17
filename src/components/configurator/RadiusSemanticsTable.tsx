@@ -22,6 +22,7 @@ import { PLATFORM_LABELS } from '../../lib/platformAxis'
 import DimensionSelect from '../ui/DimensionSelect'
 import VariableSelect from '../ui/VariableSelect'
 import { usePreviewViewport } from './ViewportRail'
+import { useI18n } from '../../lib/i18n'
 import {
   RADIUS_RESPONSIVE,
   RADIUS_RESPONSIVE_STEPS,
@@ -141,6 +142,7 @@ export default function RadiusSemanticsTable({
   flashKey: string | null
   query: string
 }) {
+  const { t } = useI18n()
   const platformCtx = usePreviewViewport()
   const platform: GridViewport = platformCtx?.previewViewport ?? 'desktop'
   const onDesktop = platform === 'desktop'
@@ -248,6 +250,9 @@ export default function RadiusSemanticsTable({
                 {modified && <span className="w-1.5 h-1.5 rounded-full bg-accent-ui flex-shrink-0" title={vp ? `Set for ${VP_LABEL[platform]}` : 'Modified'} />}
               </span>
               <span className="text-caption text-fg-faint truncate" title={role.description}>{note}</span>
+              {/* The cap lives in the Checkbox recipe; say so where the role is
+                  edited by hand, so a bigger value is never a surprise. */}
+              {role.key === 'control' && <span className="text-caption text-fg-faint truncate">{t('Checkbox is capped at 6px — it stays a square.')}</span>}
             </div>
             <div className="flex items-center px-3 py-2 border-r border-line min-w-0">
               <RadiusTokenSelect

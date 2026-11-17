@@ -37,7 +37,7 @@ Corner roundness. Three INDEPENDENT axes (Boxes · Fields · Selectors) — roun
 
 | Role | CSS | Figma | Default step | Default px | Use |
 | --- | --- | --- | --- | --- | --- |
-| `radius.control` | `--radius-control` | `Radius/control` | `sm` | 4px | Checkbox, nested child, inner thumb. |
+| `radius.control` | `--radius-control` | `Radius/control` | `sm` | 4px | Checkbox, slider, nested child, inner thumb. 0–6px: a checkbox stays a square. |
 | `radius.pill` | `--radius-full` | `Radius/full` | `full` | 9999px | Badge, chip, avatar, switch, progress. |
 
 Static scale: `none` 0px · `xs` 2px · `sm` 4px · `md` 6px · `lg` 8px · `xl` 12px · `2xl` 16px · `3xl` 24px · `4xl` 32px · `5xl` 48px · `full` 9999px
