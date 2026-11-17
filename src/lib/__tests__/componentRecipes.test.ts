@@ -203,36 +203,41 @@ describe('focus', () => {
     critical: ['color.status.critical.border-strong', 'color.status.critical.border'],
   }
   it.each(['Button', 'IconButton'].flatMap((key) =>
-    Object.keys(FOCUS).flatMap((variant) => ['solid', 'outline', 'ghost', 'link'].map((appearance) => [key, variant, appearance]))),
+    Object.keys(FOCUS).flatMap((variant) => ['outline', 'ghost', 'link'].map((appearance) => [key, variant, appearance]))),
   )('%s %s · %s focuses with its intent\'s edge and halo, as the Figma file does', (key, variant, appearance) => {
     const root = resolveRecipe(COMPONENT_RECIPES[key], { Variant: variant, Appearance: appearance, Size: 'default', State: 'Focused' }).root
     expect(root.focus).toBe(FOCUS[variant][0])
     expect(root.ring).toBe(FOCUS[variant][1])
   })
 
-  // Every solid at rest, hover, pressed and loading strokes its fill OUTSIDE,
-  // 1px, in the intent's pressed tone (Button 4:5066, IconButton): that edge is
-  // what keeps a neutral secondary button from dissolving into the page.
-  // Focused trades it for the focus edge; Disabled has none.
-  it.each(['Button', 'IconButton'].flatMap((key) => [
-    [key, 'default', 'color.action.primary.pressed'],
-    [key, 'secondary', 'color.action.secondary.pressed'],
-    [key, 'critical', 'color.status.critical.surface-solid-pressed'],
-  ]))('%s %s · solid strokes outside in %s', (key, variant, edge) => {
-    for (const state of ['Default', 'Hover', 'Pressed', 'Loading']) {
-      const root = resolveRecipe(COMPONENT_RECIPES[key], { Variant: variant, Appearance: 'solid', Size: 'default', State: state }).root
-      expect(root.outerStroke, state).toBe(edge)
-      expect(root.outerStrokeWidth, state).toBe('stroke.control')
-    }
-    for (const state of ['Focused', 'Disabled']) {
-      const root = resolveRecipe(COMPONENT_RECIPES[key], { Variant: variant, Appearance: 'solid', Size: 'default', State: state }).root
-      expect(root.outerStroke ?? 'none', state).toBe('none')
-    }
+  // The SOLID buttons (Button 4:5066, IconButton 614:785) changed on 2026-11-17,
+  // after Create UI: no outside stroke in any state, the top highlight, and ONE
+  // focus ring, 2px, fully outside, in the colour of the intent. Nothing is drawn
+  // inside when focused. The Button's label carries `Shadow/text-2xs`; an IconButton has no label.
+  const SOLID_RING: Record<string, string> = {
+    default: 'color.border.ring.default',
+    secondary: 'color.border.strong',
+    critical: 'color.status.critical.ring',
+  }
+  it.each(['Button', 'IconButton'].flatMap((key) => Object.keys(SOLID_RING).map((variant) => [key, variant])))(
+    '%s %s · solid has no outside stroke and one outside focus ring',
+    (key, variant) => {
+      for (const state of ['Default', 'Hover', 'Pressed', 'Loading', 'Focused', 'Disabled']) {
+        const p = { Variant: variant, Appearance: 'solid', Size: 'default', State: state }
+        const root = resolveRecipe(COMPONENT_RECIPES[key], p).root
+        expect(root.outerStroke ?? 'none', state).toBe('none')
+        expect(root.focus ?? 'none', state).toBe('none')
+        expect(root.ring ?? 'none', state).toBe('none')
+        expect(root.halo ?? 'none', state).toBe(state === 'Focused' ? SOLID_RING[variant] : 'none')
+        const label = resolveRecipe(COMPONENT_RECIPES[key], p).label
+        expect(label?.textShadow, `${state} label shadow`).toBe(key !== 'Button' ? undefined : state === 'Disabled' ? 'none' : 'text-2xs')
+      }
+    })
+  it('the highlight and the focus ring compose in one box-shadow', () => {
+    expect(RECIPE_CSS).toContain('box-shadow: 0 0 0 ')
+    expect(RECIPE_CSS).toContain('text-shadow: 0 1px 0 rgb(0 0 0 / 0.15)')
   })
-  it('the outside stroke composes with the highlight in one box-shadow', () => {
-    const css = RECIPE_CSS
-    expect(css).toContain('box-shadow: 0 0 0 var(--stroke-control) var(--color-action-secondary-pressed), inset 0 var(--stroke-focus, 2px) 0 0 var(--color-elevation-highlight)')
-  })
+
 
   // Figma's render of the solid Button (4:2186), read pixel by pixel: the top
   // highlight fills the node's top 2 rows, and the DROP_SHADOW spread 1 paints

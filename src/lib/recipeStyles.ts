@@ -137,6 +137,7 @@ function declarations(props: SlotProps): string[] {
         if (ref === 'none' || composesShadow(props)) break // composed into that box-shadow
         out.push(`box-shadow: ${outerStrokeShadow(props, v)}`)
         break
+      case 'textShadow': out.push(ref === 'none' ? 'text-shadow: none' : 'text-shadow: 0 1px 0 rgb(0 0 0 / 0.15)'); break
       case 'fontLiteral': out.push(`font-size: ${ref}px`, 'line-height: 100%', 'font-weight: 500', 'letter-spacing: 0'); break
       // A halo fully outside the control (no edge): Figma's `focus-ring` frame,
       // `stroke.focus` wide, stroked OUTSIDE. The transparent outline is what

@@ -270,6 +270,8 @@ export function webCodeSyntax(id: string): string {
 
 export function scopesFor(id: string): string {
   if (id.startsWith('content.')) return '`TEXT_FILL`'
+  // An edge inside the action group (the primary solid's outside stroke) is a stroke.
+  if (id.startsWith('action.') && id.endsWith('.border')) return '`STROKE_COLOR`'
   if (id.startsWith('action.') || id.startsWith('surface.')) return '`FRAME_FILL`, `SHAPE_FILL`'
   if (id.endsWith('.content') || id.endsWith('.on-solid')) return '`TEXT_FILL`'
   if (id.startsWith('status.')) return '`FRAME_FILL`, `SHAPE_FILL`'

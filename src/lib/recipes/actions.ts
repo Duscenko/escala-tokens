@@ -57,7 +57,17 @@ const LINK: Record<string, [string, string]> = {
  *  Focused draws its 2px edge as an inset on top, so nothing shifts. */
 const strokeOf = (appearance: string) => (appearance === 'outline' ? 'stroke.control' : 'stroke.none')
 
-function buttonPaint(variant: string, appearance: string, state: string): SlotMap {
+/** The solid buttons' focus: ONE ring, 2px, fully outside the control, in the
+ *  colour of its intent (Figma 4:5066 and 614:785, owner's call 2026-11-17) —
+ *  the accent ring, the neutral strong edge, the critical ring. The solid has no
+ *  edge to turn into a focus edge, so nothing is drawn inside. */
+const SOLID_FOCUS_RING: Record<string, string> = {
+  default: 'border.ring.default',
+  secondary: 'border.strong',
+  critical: 'status.critical.ring',
+}
+
+function buttonPaint(variant: string, appearance: string, state: string, shadowLabel = false): SlotMap {
   const [focusEdge, focusRing] = focusPair(variant)
   const ring = state === 'Focused' ? c(focusRing) : NONE
   if (state === 'Disabled') {
@@ -71,26 +81,27 @@ function buttonPaint(variant: string, appearance: string, state: string): SlotMa
         highlight: NONE,
         strokeWidth: strokeOf(appearance),
       },
+      // A disabled label lies flat (the file puts no effect on it).
+      ...(shadowLabel && appearance === 'solid' ? { label: { textShadow: NONE } } : {}),
     }
   }
   const step = state === 'Pressed' ? 2 : state === 'Hover' ? 1 : 0
   const focused = state === 'Focused'
   if (appearance === 'solid') {
     const k = SOLID[variant]
-    // Every solid state but Disabled carries Figma's top highlight. (Its
-    // DROP_SHADOW 0 0 0 spread 1 paints nothing: Figma applies spread only to
-    // a frame that clips content — measured on the file's own render.)
-    // At rest, hover, pressed and loading the file strokes the fill OUTSIDE,
-    // 1px (Stroke/control), in the intent's PRESSED tone: that edge is what
-    // keeps a neutral secondary button from dissolving into the page. Focused
-    // swaps it for the 2px inside focus edge.
+    // Every solid state but Disabled carries the top highlight and, on a Button,
+    // the label's 0 1px 0 shadow (`Shadow/text-2xs`). No outside stroke any more
+    // (owner's call 2026-11-17, after Create UI): the fill is the control, and
+    // the hard edge round a vivid fill read as noise — a pale halo in Dark.
+    // (A DROP_SHADOW with spread paints nothing in Figma unless the frame clips
+    // content — measured on the file's own render — so the ring is a frame.)
     return {
       root: {
         fill: c(k.fill[step]), stroke: NONE, text: c(k.ink),
-        focus: focused ? c(focusEdge) : NONE, ring,
-        outerStroke: focused ? NONE : c(k.fill[2]), outerStrokeWidth: 'stroke.control',
+        focus: NONE, ring: NONE, halo: focused ? c(SOLID_FOCUS_RING[variant]) : NONE,
         highlight: c('elevation.highlight'), strokeWidth: strokeOf(appearance),
       },
+      ...(shadowLabel ? { label: { textShadow: 'text-2xs' } } : {}),
     }
   }
   if (appearance === 'link') {
@@ -130,7 +141,7 @@ export const BUTTON: ComponentRecipe = {
     part({ Size: BUTTON_SIZES }, (size) => ({
       root: { height: BUTTON_HEIGHT[size], paddingX: 'spacing.inset-control', gap: BUTTON_GAP[size] },
     })),
-    part({ Variant: BUTTON_VARIANTS, Appearance: BUTTON_APPEARANCES, State: BUTTON_STATES }, (v, a, s) => buttonPaint(v, a, s)),
+    part({ Variant: BUTTON_VARIANTS, Appearance: BUTTON_APPEARANCES, State: BUTTON_STATES }, (v, a, s) => buttonPaint(v, a, s, true)),
   ],
 }
 

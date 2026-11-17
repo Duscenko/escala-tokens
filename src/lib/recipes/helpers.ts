@@ -44,11 +44,14 @@ export const RECIPE_PROPS = [
   // A stroke drawn OUTSIDE the frame (Figma AvatarStatus: Surface/page, `strokeAlign` OUTSIDE): a colour
   // role plus its width (a stroke ref). CSS draws it as a 0-blur spread so the box does not grow.
   'outerStroke', 'outerStrokeWidth',
+  // The label's shadow on a solid fill (`Shadow/text-2xs` in the Figma file: 0 1px 0, black 15 %). A named
+  // step (`text-2xs`), not a token reference. Only the Button label carries it.
+  'textShadow',
   // A negative overlap between a row's items (AvatarGroup): a spacing role (`spacing.overlap-md`). CSS has no
   // negative gap, so it is a custom property (`--escala-overlap`) the component lays out as a margin.
   'overlap',
 ] as const
-export const NON_TOKEN_PROPS: readonly string[] = ['opacity', 'lift', 'fontLiteral', 'hairline']
+export const NON_TOKEN_PROPS: readonly string[] = ['opacity', 'lift', 'fontLiteral', 'hairline', 'textShadow']
 export type RecipeProp = (typeof RECIPE_PROPS)[number]
 export type SlotProps = Partial<Record<RecipeProp, TokenRef>>
 export type SlotMap = Record<string, SlotProps>
