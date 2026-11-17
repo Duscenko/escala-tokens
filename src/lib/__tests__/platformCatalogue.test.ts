@@ -17,9 +17,11 @@ const manifest = JSON.parse(readFileSync(join(ROOT, 'spec/storybook-families.jso
   noStory?: Record<string, string>
 }
 
-/** shadcn-era entries the Figma file and the Storybook do not have. */
+/** shadcn-era entries the Figma file and the Storybook do not have. Most were
+ *  removed from the catalogue (DEC-2026-11-16-008); they stay listed so none can
+ *  come back. Label · Spinner · Card have stories now and are families. */
 const HIDDEN = [
-  'Toggle', 'AppStoreBadge', 'InputGroup', 'Label', 'StatusBadge', 'Spinner', 'Icon', 'FileFormat', 'Card',
+  'Toggle', 'AppStoreBadge', 'InputGroup', 'StatusBadge', 'Icon', 'FileFormat',
   'Collapsible', 'AlertDialog', 'Drawer', 'HoverCard', 'Item', 'Attachment', 'Message', 'Bubble', 'Resizable',
   'Carousel', 'Chart', 'Skeleton', 'Empty', 'NavigationMenu', 'Command', 'Navbar',
 ]

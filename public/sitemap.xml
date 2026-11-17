@@ -20,6 +20,7 @@
   <url><loc>https://www.escalatokens.com/components/ButtonGroupDivider</loc></url>
   <url><loc>https://www.escalatokens.com/components/ButtonGroupItem</loc></url>
   <url><loc>https://www.escalatokens.com/components/Field</loc></url>
+  <url><loc>https://www.escalatokens.com/components/Label</loc></url>
   <url><loc>https://www.escalatokens.com/components/Input</loc></url>
   <url><loc>https://www.escalatokens.com/components/NumberInput</loc></url>
   <url><loc>https://www.escalatokens.com/components/Textarea</loc></url>
@@ -63,6 +64,7 @@
   <url><loc>https://www.escalatokens.com/components/AvatarStatus</loc></url>
   <url><loc>https://www.escalatokens.com/components/FeaturedIcon</loc></url>
   <url><loc>https://www.escalatokens.com/components/Image</loc></url>
+  <url><loc>https://www.escalatokens.com/components/Card</loc></url>
   <url><loc>https://www.escalatokens.com/components/Badge</loc></url>
   <url><loc>https://www.escalatokens.com/components/Chip</loc></url>
   <url><loc>https://www.escalatokens.com/components/Kbd</loc></url>
@@ -85,6 +87,7 @@
   <url><loc>https://www.escalatokens.com/components/Alert</loc></url>
   <url><loc>https://www.escalatokens.com/components/Toast</loc></url>
   <url><loc>https://www.escalatokens.com/components/ProgressLine</loc></url>
+  <url><loc>https://www.escalatokens.com/components/Spinner</loc></url>
   <url><loc>https://www.escalatokens.com/components/ProgressCircle</loc></url>
   <url><loc>https://www.escalatokens.com/components/Modal</loc></url>
   <url><loc>https://www.escalatokens.com/components/ModalFooter</loc></url>
