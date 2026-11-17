@@ -24,6 +24,8 @@ import {
 } from '../../../lib/componentCatalogue'
 import { PLATFORM_FAMILIES, PLATFORM_FOLDERS, PLATFORM_PAGES, familiesIn, familyOf, familyLabel } from '../../../lib/platformCatalogue'
 import { CatalogueSwitcher } from './CatalogueSwitcher'
+import { StorybookLinkButton } from './StorybookLinkButton'
+import { componentStorybookUrl } from '../../../lib/storybookLinks'
 import { FittedSpecimen } from './ComponentAvatars'
 import { useI18n } from '../../../lib/i18n'
 import { agentContextMarkdown } from '../../../lib/agentContext'
@@ -1196,6 +1198,8 @@ export function ComponentArticle({
     : undefined
 
   const heroCode = snippetFor(def, values, icons)
+  // The same page in the online Storybook (a part opens its family).
+  const storybookHref = componentStorybookUrl(def.key)
   // Prev / next walk Escala's own pages (family, then its parts), the
   // directory's order — never into a component the platform hides.
   const idx = PLATFORM_PAGES.findIndex((c) => c.key === def.key)
@@ -1238,12 +1242,15 @@ export function ComponentArticle({
         onOpenFoundation={onOpenFoundation}
         figmaCopy={figmaCopy}
         switcher={
-          <CatalogueSwitcher
+          <>
+            <CatalogueSwitcher
             noun="component"
             groups={PLATFORM_FOLDERS.map((folder) => ({ label: folder, items: familiesIn(folder).map((f) => ({ id: f.lead.key, label: familyLabel(f) })) }))}
             currentId={familyOf(def.key)?.lead.key ?? def.key}
             onPick={(key) => { const c = PLATFORM_PAGES.find((x) => x.key === key); if (c) onOpen(c) }}
-          />
+            />
+            {storybookHref && <StorybookLinkButton href={storybookHref} />}
+          </>
         }
       />
 

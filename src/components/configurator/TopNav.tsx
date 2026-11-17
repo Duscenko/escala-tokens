@@ -1,4 +1,6 @@
 import { Fragment, useEffect, useLayoutEffect, useRef, useState, type CSSProperties, type ReactNode, type RefObject } from 'react'
+import { STORYBOOK_URL } from '../../lib/storybookLinks'
+import { StorybookGlyph } from './docs/StorybookLinkButton'
 import { createPortal } from 'react-dom'
 import { LOCALES, useI18n } from '../../lib/i18n'
 import { FIGMA_PLUGIN_COMMUNITY } from '../../lib/utils'
@@ -339,6 +341,28 @@ const DOCS_MENU_PAGES: { key: DocsMenuPage; label: string; icon: ReactNode }[] =
   { key: 'beta', label: OPEN_BETA ? 'Open beta' : 'Pricing', icon: <BetaIcon /> },
 ]
 
+/** Docs → Storybook: the whole Escala design system in the online Storybook
+ *  (new tab). Its reference palette, not the visitor's brand — the caption
+ *  says whose system it is. */
+function StorybookMenuRow({ onPick }: { onPick: () => void }) {
+  const { t } = useI18n()
+  return (
+    <a
+      href={STORYBOOK_URL}
+      target="_blank"
+      rel="noopener noreferrer"
+      role="menuitem"
+      onClick={onPick}
+      title={t('The whole Escala system')}
+      className={`${COMPACT_MENU_ITEM} ${menuRowInk()}`}
+    >
+      <span className={MENU_ICON}><StorybookGlyph className="h-3.5 w-3.5" /></span>
+      Storybook
+      <span className="ml-auto text-fg-faint" aria-hidden>↗</span>
+    </a>
+  )
+}
+
 // The top-bar menus (☰, Language, Docs), after the reference the owner
 // supplied: a flat panel-coloured sheet with a 16px corner, 36px rows in
 // regular weight, groups split by FULL-WIDTH rules, sentence-case captions, and
@@ -539,6 +563,7 @@ function TopNavCompactMenu({
                   <span className={MENU_ICON}>{page.icon}</span>
                   {t(page.label)}
                 </button>
+                {page.key === 'figma' && <StorybookMenuRow onPick={close} />}
               </div>
             ))}
           </div>
@@ -654,6 +679,7 @@ export function DocsNavMenu({ active = false, onOpenDocsPage }: { active?: boole
               <span className={MENU_ICON}>{page.icon}</span>
               {t(page.label)}
             </button>
+            {page.key === 'figma' && <StorybookMenuRow onPick={() => setOpen(false)} />}
           </div>
         ))}
       </ChromeAnchoredDropdown>

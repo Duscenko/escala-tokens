@@ -23,6 +23,8 @@ import { RecipeScope } from './docs/skeleton/scope'
 import { FittedSpecimen } from './docs/ComponentAvatars'
 import { SectionHeading, BlockChrome } from './docs/blocks'
 import { CatalogueSwitcher } from './docs/CatalogueSwitcher'
+import { StorybookLinkButton } from './docs/StorybookLinkButton'
+import { blockStorybookUrl } from '../../lib/storybookLinks'
 import { CanvasBar, CanvasSidePanel, readInspectPref, writeInspectPref, type CanvasPanel } from './docs/componentArticle'
 import { PickerField } from '../ui/PickerField'
 import { InspectorModeProvider, InspectorOverlay, inspectGroupAttrs } from '../preview/artefacts/TokenInspector'
@@ -283,6 +285,7 @@ function BlockPage({ block, onSelect, previewTheme, onOpenComponent, onInspectRo
               currentId={block.id}
               onPick={(id) => { const b = BLOCK_GROUPS.flatMap((g) => blocksIn(g)).find((x) => x.id === id); if (b) onSelect(b) }}
             />
+            <StorybookLinkButton href={blockStorybookUrl(block.id)} />
             </span>
           </BlockChrome>
 
