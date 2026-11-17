@@ -62,6 +62,11 @@ import {
   RADIUS_GROUPS,
   radiusGroupStep,
   applyRadiusGroup,
+  RADIUS_AXIS_LADDER,
+  RADIUS_AXIS_STEPS,
+  radiusAxisStep,
+  clampRadiusAxisStep,
+  radiusRolesFromGroups,
 } from '../layoutTokens'
 
 const EVERY_BASE = (() => {
@@ -178,10 +183,40 @@ describe('layout primitives', () => {
     const boxes = RADIUS_GROUPS.find((g) => g.key === 'boxes')!
     const selectors = RADIUS_GROUPS.find((g) => g.key === 'selectors')!
     const base = defaultLayoutRoles('radius')
-    const next = applyRadiusGroup(selectors, base, '2xl')
-    expect(radiusGroupStep(selectors, next)).toBe('2xl')
-    expect(radiusGroupStep(boxes, next)).toBe(radiusGroupStep(boxes, base))
+    const next = applyRadiusGroup(boxes, base, '4xl')
+    expect(radiusGroupStep(boxes, next)).toBe('4xl')
+    expect(radiusGroupStep(selectors, next)).toBe(radiusGroupStep(selectors, base))
     expect(next.action).toBe(base.action)
+    const tight = applyRadiusGroup(selectors, base, 'md')
+    expect(radiusGroupStep(selectors, tight)).toBe('md')
+    expect(radiusGroupStep(boxes, tight)).toBe(radiusGroupStep(boxes, base))
+    expect(tight.action).toBe(base.action)
+  })
+
+  // §4.3 of design-plans/component-box-classification.md: the Selectors axis
+  // drives a 16px checkbox, so it stops at md (6px) on every surface.
+  it('the Selectors ladder stops at md; the other axes keep the full ladder', () => {
+    expect(RADIUS_AXIS_LADDER.selectors).toEqual(['none', 'xs', 'sm', 'md'])
+    for (const key of ['boxes', 'fields', 'items'] as const) expect(RADIUS_AXIS_LADDER[key]).toEqual(RADIUS_AXIS_STEPS)
+    const top = Math.max(...RADIUS_AXIS_LADDER.selectors.map((s) => parseFloat(RADIUS_STANDARD[s])))
+    expect(top).toBe(6)
+    const selectors = RADIUS_GROUPS.find((g) => g.key === 'selectors')!
+    const base = defaultLayoutRoles('radius')
+    // A step past the ladder reads Custom on the Selectors axis.
+    expect(radiusAxisStep(selectors, applyRadiusGroup(selectors, base, '2xl'))).toBeNull()
+    expect(radiusAxisStep(selectors, applyRadiusGroup(selectors, base, 'xs'))).toBe('xs')
+  })
+
+  it('clampRadiusAxisStep snaps a Selectors pick onto its ladder and leaves other axes alone', () => {
+    expect(clampRadiusAxisStep('selectors', '2xl')).toBe('md')
+    expect(clampRadiusAxisStep('selectors', 'lg')).toBe('md')
+    expect(clampRadiusAxisStep('selectors', 'full')).toBe('md')
+    expect(clampRadiusAxisStep('selectors', 'sm')).toBe('sm')
+    expect(clampRadiusAxisStep('selectors', 'none')).toBe('none')
+    expect(clampRadiusAxisStep('boxes', '4xl')).toBe('4xl')
+    expect(clampRadiusAxisStep('fields', 'full')).toBe('full')
+    // A System Style or mood that asks for a round selector gets md.
+    expect(radiusRolesFromGroups({ selectors: '2xl', boxes: '2xl' })).toMatchObject({ control: 'md', container: '2xl' })
   })
 
   // The migration's correctness in one assertion: the new rungs are exactly

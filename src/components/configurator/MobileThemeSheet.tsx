@@ -1036,7 +1036,7 @@ export function MobileGenerator() {
             />
             {!radiusPreset && <p className="m-0 mt-2 text-caption text-fg-faint">{t('This style has its own corners. Pick one to replace them.')}</p>}
             {radiusPreset && (() => {
-              const [boxes, fields, selectors] = radiusPresetPx(radiusPreset)
+              const [boxes, fields, , selectors] = radiusPresetPx(radiusPreset)
               return (
                 <dl className="m-0 mt-3 grid grid-cols-3 gap-2">
                   {([[t('Boxes'), boxes], [t('Fields'), fields], [t('Selectors'), selectors]] as const).map(([name, px]) => (

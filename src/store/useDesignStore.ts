@@ -75,6 +75,7 @@ import {
   isGradedRadiusRamp,
   radiusRolesAreLegacyDefault,
   moveRadiusLadderV151,
+  capSelectorsRadiusV153,
   LEGACY_RADIUS_ROLE_RUNGS,
   LEGACY_RADIUS_LG_FACTOR,
   type GridFrameModes,
@@ -2090,7 +2091,7 @@ export const useDesignStore = create<DesignStore>()(
     }),
     {
       name: 'scalable-designs-store',
-      version: 152,
+      version: 153,
       migrate: (persisted: any, version: number) => {
         if (persisted) {
           // v1→v2: remove styleDirection, rename selectedAtoms → selectedComponents
@@ -4501,6 +4502,14 @@ export const useDesignStore = create<DesignStore>()(
           liftSecondaryAboveLayer2V152(persisted)
           if (Array.isArray(persisted.savedSystems)) {
             for (const sys of persisted.savedSystems) liftSecondaryAboveLayer2V152(sys?.snapshot)
+          }
+        }
+        if (version < 153) {
+          // v152→v153: the Selectors radius axis stops at md (6px) so a checkbox
+          // stays a square; a `radius.control` above it moves down to md.
+          capSelectorsRadiusV153(persisted)
+          if (Array.isArray(persisted.savedSystems)) {
+            for (const sys of persisted.savedSystems) capSelectorsRadiusV153(sys?.snapshot)
           }
         }
         if (version < 133) {

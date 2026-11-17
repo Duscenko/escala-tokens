@@ -53,7 +53,7 @@ import {
   matchSpacingMode,
   type SpacingMode,
   RADIUS_GROUPS,
-  RADIUS_AXIS_STEPS,
+  radiusAxisLadder,
   RADIUS_ROLE_PRESETS,
   radiusPresetPx,
   matchRadiusRolePreset,
@@ -1579,16 +1579,16 @@ function RadiusCard({
         valueLabel={t('Custom')}
         leading={(() => {
           const preset = RADIUS_ROLE_PRESETS.find((p) => p.label === matched)
-          const [boxes, fields, selectors] = preset ? radiusPresetPx(preset) : [radiusPx('boxes'), radiusPx('fields'), radiusPx('selectors')]
+          const [boxes, fields, , selectors] = preset ? radiusPresetPx(preset) : [radiusPx('boxes'), radiusPx('fields'), radiusPx('items'), radiusPx('selectors')]
           return <RadiusPresetGlyph size="sm" boxes={boxes} fields={fields} selectors={selectors} />
         })()}
         options={RADIUS_ROLE_PRESETS.map((preset) => {
-          const [boxes, fields, selectors] = radiusPresetPx(preset)
+          const [boxes, fields, , selectors] = radiusPresetPx(preset)
           return { value: preset.label, label: preset.label, description: `${boxes} · ${fields} · ${selectors}px` }
         })}
         optionVisual={(label, selected) => {
           const preset = RADIUS_ROLE_PRESETS.find((p) => p.label === label)!
-          const [boxes, fields, selectors] = radiusPresetPx(preset)
+          const [boxes, fields, , selectors] = radiusPresetPx(preset)
           return <RadiusPresetGlyph boxes={boxes} fields={fields} selectors={selectors} selected={selected} />
         }}
         info={<InfoHint>{t("A preset sets boxes, fields and selectors together. The three sliders below round each one on its own.")}</InfoHint>}
@@ -1606,7 +1606,10 @@ function RadiusCard({
           const atStep = radiusRoleAt(radiusRoles, radiusRoleViewports, group.roles[0], platform)
           const px = Math.round(parseFloat(radius[atStep] ?? '') || 0)
           const overridden = platform !== 'desktop' && group.roles.some((role) => radiusRoleViewports?.[platform]?.[role] != null)
-          const stepPx = RADIUS_AXIS_STEPS.map((step) => Math.round(parseFloat(radius[radiusAtViewport(step, platform)] ?? '') || 0))
+          // Each axis offers its own ladder: Selectors stop at md (6px) so a
+          // checkbox never rounds into a radio (RADIUS_AXIS_LADDER).
+          const ladder = radiusAxisLadder(group.key)
+          const stepPx = ladder.map((step) => Math.round(parseFloat(radius[radiusAtViewport(step, platform)] ?? '') || 0))
           return (
             <div key={group.key} className="min-w-0">
               <div className="mb-1.5 flex min-w-0 items-center justify-between gap-2">
@@ -1620,15 +1623,15 @@ function RadiusCard({
               </div>
               <DotSlider
                 ariaLabel={`${group.label} radius`}
-                stops={RADIUS_AXIS_STEPS.map((_, i) => i)}
+                stops={ladder.map((_, i) => i)}
                 // A Custom axis (its roles disagree) seats the thumb on the
                 // step nearest what it resolves to, so a drag starts from there.
-                value={current ? RADIUS_AXIS_STEPS.indexOf(current) : stepPx.reduce((best, stepValue, i) => Math.abs(stepValue - px) < Math.abs(stepPx[best] - px) ? i : best, 0)}
-                format={(i) => `${RADIUS_AXIS_STEPS[i]} (${stepPx[i]}px)`}
-                renderValue={(i) => <><RadiusThumbCorner px={stepPx[i]} />{RADIUS_AXIS_STEPS[i]}</>}
+                value={current ? ladder.indexOf(current) : stepPx.reduce((best, stepValue, i) => Math.abs(stepValue - px) < Math.abs(stepPx[best] - px) ? i : best, 0)}
+                format={(i) => `${ladder[i]} (${stepPx[i]}px)`}
+                renderValue={(i) => <><RadiusThumbCorner px={stepPx[i]} />{ladder[i]}</>}
                 onScrubStart={onScrubStart}
                 onScrubEnd={onScrubEnd}
-                onChange={(i) => onRoles(applyRadiusGroup(group, radiusRoles, RADIUS_AXIS_STEPS[i]))}
+                onChange={(i) => onRoles(applyRadiusGroup(group, radiusRoles, ladder[i]))}
               />
             </div>
           )

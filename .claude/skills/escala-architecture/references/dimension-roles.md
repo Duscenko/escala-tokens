@@ -33,16 +33,16 @@ Corner roundness. Three INDEPENDENT axes (Boxes · Fields · Selectors) — roun
 | --- | --- | --- | --- | --- | --- |
 | `radius.item` | `--radius-item` | `Radius/item` | `lg` | 8px | An element nested in a track or a flush list: a segment, a sidebar menu button. Never a row inside an overlay. |
 
-### Selectors — Checkbox, radio, toggle, badge.
+### Selectors — Checkbox, badge, kbd.
 
 | Role | CSS | Figma | Default step | Default px | Use |
 | --- | --- | --- | --- | --- | --- |
-| `radius.control` | `--radius-control` | `Radius/control` | `sm` | 4px | Checkbox, nested child, inner thumb. |
+| `radius.control` | `--radius-control` | `Radius/control` | `sm` | 4px | Checkbox, badge, kbd, nested child. 0–6px: a checkbox stays a square. |
 | `radius.pill` | `--radius-full` | `Radius/full` | `full` | 9999px | Badge, chip, avatar, switch, progress. |
 
 Static scale: `none` 0px · `xs` 2px · `sm` 4px · `md` 6px · `lg` 8px · `xl` 12px · `2xl` 16px · `3xl` 24px · `4xl` 32px · `5xl` 48px · `full` 9999px
 
-**Axes.** Boxes (card, modal, alert) → `radius.container`, `radius.overlay`; Fields (button, input, select, tab, rows in an overlay) → `radius.action`; Items (segment in a track, sidebar menu button) → `radius.item`; Selectors (checkbox, radio, toggle, badge) → `radius.control`. `radius.pill` is not an axis: it means "a circle" and stays `full`.
+**Axes.** Boxes (card, modal, alert) → `radius.container`, `radius.overlay`; Fields (button, input, select, tab, rows in an overlay) → `radius.action`; Items (segment in a track, sidebar menu button) → `radius.item`; Selectors (checkbox, badge, kbd) → `radius.control`. `radius.pill` is not an axis: it means "a circle" and stays `full`.
 
 **Roles hold one value on every viewport** (the Escala Figma file): only a hand-set Tablet / Mobile value changes one. The `--radius-component-<step>` tokens are the opt-in responsive corners — each reads one rung smaller on Tablet and Mobile (two from 3xl up):
 
