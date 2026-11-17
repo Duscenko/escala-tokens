@@ -148,6 +148,14 @@ function declarations(props: SlotProps): string[] {
         out.push(`box-shadow: 0 0 0 ${HALO} ${v(ref)}${lit}`, `outline: ${HALO} solid transparent`)
         break
       }
+      // The Button / IconButton focus ring: 1px off the edge, the page in the gap
+      // (Figma's `focus-ring` frame, 1px larger than the button, stroked OUTSIDE).
+      // An outline follows the border radius plus its offset, so the corners stay
+      // concentric — and it is what forced-colors mode paints.
+      case 'gapRing':
+        if (ref === 'none') { out.push('outline: none'); break }
+        out.push(`outline: ${HALO} solid ${v(ref)}`, 'outline-offset: 1px')
+        break
       case 'stroke': out.push(`border-color: ${color(ref)}`); break
       case 'text': out.push(`color: ${color(ref)}`); break
       // A second colour a part's artwork reads (a file icon's page fill).

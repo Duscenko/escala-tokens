@@ -593,3 +593,12 @@ Decided with the owner, on a Figma experiment page first, then applied to Button
 - The Button story documents that the Dark default solid sits under WCAG 4.5 on purpose (`parameters.docs` + `a11y.context.exclude`), so the a11y panel does not read as a bug.
 - **Sweep the file's Color Semantics after any owner change**: read every role's alias per mode through `use_figma` (read-only) and diff it against `figma-variables.txt` + `SINCE_INVENTORY` in `figmaFilePalette.test.ts`. 2026-11-17 found `Surface/accent` Dark moving from Dark/02 to Dark/04, nothing else beyond the entries already listed.
 - `spec/figma-components.json` holds axes and props only; Button and IconButton axes were read live and are identical, so no refresh was needed (a full refresh drags in the rest of the file and is its own task).
+
+### Focus ring: one rule for every Button and IconButton (2026-11-17, owner decision)
+
+| Trap | What it looked like | The fix (where it lives) |
+|---|---|---|
+| Each appearance focused its own way (inside edge + halo on outline/ghost/link, one outside ring on solids) | The owner asked for one rule: "no podemos crearle a un botón una cosa y a los otros otra" | Every appearance = its Default look + ONE ring: 2px, 1px OUTSIDE the edge, page in the gap, radius + 1. Recipe prop `gapRing` (`FOCUS_RING` in `recipes/actions.ts`); CSS `outline: 2px solid <role>; outline-offset: 1px` (follows the radius, and forced-colors paints it) |
+| The mock-up's rings were bound to PRIMITIVES | Three of six picked the other mode's alpha twin (Dark twin in Light, Light twin in Dark) | A paint is bound to a ROLE, never a primitive: the role picks each mode's twin. Rings: `Border/ring/default` (Accent Alpha/06), `Border/ring/neutral` (Gray Alpha/06, new), `Status/critical/ring` (Error Alpha/06 — stays in `Status/critical` with its severity, by the owner's call) |
+| Figma geometry of the gap | — | The `focus-ring` frame (ABSOLUTE, constraints STRETCH) sits at x/y −1, size +2, radius = button + 1 (a literal: no radius role is button + 1), stroke 2px OUTSIDE. The variant's own strokes, padding and gap are copied from its Default sibling, so Focused and Default measure the same |
+| Verifying keyboard focus | `element.focus()` from a script does NOT set `:focus-visible` | Click the canvas, press Tab with the browser tool, then read `getComputedStyle` |

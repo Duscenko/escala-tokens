@@ -596,8 +596,8 @@ Links use \`content.link.default\` / \`.hover\`, not \`content.accent\`.
 | Resting outline of an input, select, checkbox, outline button | \`border.control\` → hover \`border.control-hover\` |
 | Invalid / warning / valid field | \`status.<sev>.border-strong\` |
 | Edge of an alert or banner | \`status.<sev>.border\` |
-| Keyboard focus on a field, outline / ghost / link button | \`border.focus\` (the boundary, inside) **plus** \`border.ring.default\` (the ring outside it) |
-| Keyboard focus on a SOLID button (default · secondary · critical, Button and IconButton) | ONE 2px ring fully outside, in the colour of the control: \`border.ring.default\` (accent), \`border.strong\` (neutral), \`status.critical.ring\` (critical). Nothing inside |
+| Keyboard focus on a field (Input, Select, Textarea…) | \`border.focus\` (the boundary, inside) **plus** \`border.ring.default\` (the ring outside it) |
+| Keyboard focus on a BUTTON (Button and IconButton, every appearance: solid · outline · ghost · link) | The Default look, unchanged, plus ONE ring: \`stroke.focus\` (2px) wide, 1px OUTSIDE the edge with the page in the gap, radius + 1. Colour by intent: \`border.ring.default\` (accent), \`border.ring.neutral\` (neutral), \`status.critical.ring\` (critical) — all Alpha/06. Nothing inside. CSS: \`outline: 2px solid <ring>; outline-offset: 1px\` |
 | Selected / brand-coloured stroke | \`border.accent\` |
 
 Width is a separate token: \`stroke.divider\`, \`stroke.control\`, \`stroke.focus\`.

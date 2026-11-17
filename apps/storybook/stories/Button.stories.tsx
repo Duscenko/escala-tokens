@@ -48,7 +48,8 @@ const meta: Meta<ButtonStoryArgs> = {
     docs: {
       description: {
         component:
-          'Solid buttons (default · secondary · critical) have no outside stroke: the fill is the control, with a top highlight, a `0 1px 0` label shadow, and ONE 2px focus ring outside, in the colour of the intent (`border.ring.default` · `border.strong` · `status.critical.ring`). Outline, ghost and link keep their inside edge + halo.\n\n' +
+          'Solid buttons (default · secondary · critical) have no outside stroke: the fill is the control, with a top highlight and a `0 1px 0` label shadow.\n\n' +
+          '**Focus is the same at every appearance** (solid · outline · ghost · link): the button keeps its Default look and gains ONE ring, 2px, 1px outside the edge with the page in the gap, in the colour of the intent — `border.ring.default` (accent) · `border.ring.neutral` (neutral) · `status.critical.ring` (critical), all Alpha/06.\n\n' +
           '**Contrast is intentional.** In Dark the brand label is light on the violet fill and is judged by perceived contrast (APCA Lc ≥ 60, intent `action-label-perceived`), not WCAG 4.5:1. The a11y panel therefore reports WCAG 4.1:1 (Default) and 3.4:1 (Hover) on the default solid: that is the owner\'s decision, not a bug. Strict WCAG is reserved for a future High contrast mode.',
       },
     },

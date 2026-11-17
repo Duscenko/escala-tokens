@@ -754,8 +754,8 @@
         },
         "status": {
           "critical.ring": {
-            "core--minimalist::light": "#d71a00a8",
-            "core--minimalist::dark": "#fe422ca3"
+            "core--minimalist::light": "#dc240469",
+            "core--minimalist::dark": "#fe54365e"
           },
           "critical.surface": {
             "core--minimalist::light": "#da350c24",
@@ -932,8 +932,12 @@
             "core--minimalist::dark": "#905cff"
           },
           "ring.default": {
-            "core--minimalist::light": "#3e00ff82",
-            "core--minimalist::dark": "#9163febf"
+            "core--minimalist::light": "#3005fc4f",
+            "core--minimalist::dark": "#9570fc6b"
+          },
+          "ring.neutral": {
+            "core--minimalist::light": "#12082938",
+            "core--minimalist::dark": "#f0f3f32b"
           },
           "rim-highlight": {
             "core--minimalist::light": "#ffffff0d",
@@ -5337,7 +5341,7 @@
                 "text": "color.content.on-action",
                 "focus": "none",
                 "ring": "none",
-                "halo": "none",
+                "gapRing": "none",
                 "highlight": "color.elevation.highlight",
                 "strokeWidth": "stroke.none"
               },
@@ -5352,7 +5356,7 @@
                 "text": "color.content.on-action",
                 "focus": "none",
                 "ring": "none",
-                "halo": "none",
+                "gapRing": "none",
                 "highlight": "color.elevation.highlight",
                 "strokeWidth": "stroke.none"
               },
@@ -5367,7 +5371,7 @@
                 "text": "color.content.on-action",
                 "focus": "none",
                 "ring": "none",
-                "halo": "none",
+                "gapRing": "none",
                 "highlight": "color.elevation.highlight",
                 "strokeWidth": "stroke.none"
               },
@@ -5382,7 +5386,7 @@
                 "text": "color.content.on-action",
                 "focus": "none",
                 "ring": "none",
-                "halo": "color.border.ring.default",
+                "gapRing": "color.border.ring.default",
                 "highlight": "color.elevation.highlight",
                 "strokeWidth": "stroke.none"
               },
@@ -5397,7 +5401,7 @@
                 "text": "color.content.on-action",
                 "focus": "none",
                 "ring": "none",
-                "halo": "none",
+                "gapRing": "none",
                 "highlight": "color.elevation.highlight",
                 "strokeWidth": "stroke.none"
               },
@@ -5412,6 +5416,7 @@
                 "text": "color.content.disabled",
                 "focus": "none",
                 "ring": "none",
+                "gapRing": "none",
                 "highlight": "none",
                 "strokeWidth": "stroke.none"
               },
@@ -5426,6 +5431,7 @@
                 "text": "color.content.accent",
                 "focus": "none",
                 "ring": "none",
+                "gapRing": "none",
                 "highlight": "none",
                 "strokeWidth": "stroke.control"
               }
@@ -5437,6 +5443,7 @@
                 "text": "color.content.accent",
                 "focus": "none",
                 "ring": "none",
+                "gapRing": "none",
                 "highlight": "none",
                 "strokeWidth": "stroke.control"
               }
@@ -5448,6 +5455,7 @@
                 "text": "color.content.accent",
                 "focus": "none",
                 "ring": "none",
+                "gapRing": "none",
                 "highlight": "none",
                 "strokeWidth": "stroke.control"
               }
@@ -5457,8 +5465,9 @@
                 "fill": "none",
                 "stroke": "color.border.accent",
                 "text": "color.content.accent",
-                "focus": "color.border.focus",
-                "ring": "color.border.ring.default",
+                "focus": "none",
+                "ring": "none",
+                "gapRing": "color.border.ring.default",
                 "highlight": "none",
                 "strokeWidth": "stroke.control"
               }
@@ -5470,6 +5479,7 @@
                 "text": "color.content.accent",
                 "focus": "none",
                 "ring": "none",
+                "gapRing": "none",
                 "highlight": "none",
                 "strokeWidth": "stroke.control"
               }
@@ -5481,6 +5491,7 @@
                 "text": "color.content.disabled",
                 "focus": "none",
                 "ring": "none",
+                "gapRing": "none",
                 "highlight": "none",
                 "strokeWidth": "stroke.control"
               }
@@ -5492,6 +5503,7 @@
                 "text": "color.content.accent",
                 "focus": "none",
                 "ring": "none",
+                "gapRing": "none",
                 "highlight": "none",
                 "strokeWidth": "stroke.none"
               }
@@ -5503,6 +5515,7 @@
                 "text": "color.content.accent",
                 "focus": "none",
                 "ring": "none",
+                "gapRing": "none",
                 "highlight": "none",
                 "strokeWidth": "stroke.none"
               }
@@ -5514,6 +5527,7 @@
                 "text": "color.content.accent",
                 "focus": "none",
                 "ring": "none",
+                "gapRing": "none",
                 "highlight": "none",
                 "strokeWidth": "stroke.none"
               }
@@ -5523,8 +5537,9 @@
                 "fill": "none",
                 "stroke": "none",
                 "text": "color.content.accent",
-                "focus": "color.border.focus",
-                "ring": "color.border.ring.default",
+                "focus": "none",
+                "ring": "none",
+                "gapRing": "color.border.ring.default",
                 "highlight": "none",
                 "strokeWidth": "stroke.none"
               }
@@ -5536,6 +5551,7 @@
                 "text": "color.content.accent",
                 "focus": "none",
                 "ring": "none",
+                "gapRing": "none",
                 "highlight": "none",
                 "strokeWidth": "stroke.none"
               }
@@ -5547,6 +5563,7 @@
                 "text": "color.content.disabled",
                 "focus": "none",
                 "ring": "none",
+                "gapRing": "none",
                 "highlight": "none",
                 "strokeWidth": "stroke.none"
               }
@@ -5558,6 +5575,7 @@
                 "text": "color.content.link.default",
                 "focus": "none",
                 "ring": "none",
+                "gapRing": "none",
                 "highlight": "none",
                 "strokeWidth": "stroke.none"
               }
@@ -5569,6 +5587,7 @@
                 "text": "color.content.link.hover",
                 "focus": "none",
                 "ring": "none",
+                "gapRing": "none",
                 "highlight": "none",
                 "strokeWidth": "stroke.none"
               }
@@ -5580,6 +5599,7 @@
                 "text": "color.content.link.hover",
                 "focus": "none",
                 "ring": "none",
+                "gapRing": "none",
                 "highlight": "none",
                 "strokeWidth": "stroke.none"
               }
@@ -5589,8 +5609,9 @@
                 "fill": "none",
                 "stroke": "none",
                 "text": "color.content.link.default",
-                "focus": "color.border.focus",
-                "ring": "color.border.ring.default",
+                "focus": "none",
+                "ring": "none",
+                "gapRing": "color.border.ring.default",
                 "highlight": "none",
                 "strokeWidth": "stroke.none"
               }
@@ -5602,6 +5623,7 @@
                 "text": "color.content.link.default",
                 "focus": "none",
                 "ring": "none",
+                "gapRing": "none",
                 "highlight": "none",
                 "strokeWidth": "stroke.none"
               }
@@ -5613,6 +5635,7 @@
                 "text": "color.content.disabled",
                 "focus": "none",
                 "ring": "none",
+                "gapRing": "none",
                 "highlight": "none",
                 "strokeWidth": "stroke.none"
               }
@@ -5624,7 +5647,7 @@
                 "text": "color.content.on-secondary",
                 "focus": "none",
                 "ring": "none",
-                "halo": "none",
+                "gapRing": "none",
                 "highlight": "color.elevation.highlight",
                 "strokeWidth": "stroke.none"
               },
@@ -5639,7 +5662,7 @@
                 "text": "color.content.on-secondary",
                 "focus": "none",
                 "ring": "none",
-                "halo": "none",
+                "gapRing": "none",
                 "highlight": "color.elevation.highlight",
                 "strokeWidth": "stroke.none"
               },
@@ -5654,7 +5677,7 @@
                 "text": "color.content.on-secondary",
                 "focus": "none",
                 "ring": "none",
-                "halo": "none",
+                "gapRing": "none",
                 "highlight": "color.elevation.highlight",
                 "strokeWidth": "stroke.none"
               },
@@ -5669,7 +5692,7 @@
                 "text": "color.content.on-secondary",
                 "focus": "none",
                 "ring": "none",
-                "halo": "color.border.strong",
+                "gapRing": "color.border.ring.neutral",
                 "highlight": "color.elevation.highlight",
                 "strokeWidth": "stroke.none"
               },
@@ -5684,7 +5707,7 @@
                 "text": "color.content.on-secondary",
                 "focus": "none",
                 "ring": "none",
-                "halo": "none",
+                "gapRing": "none",
                 "highlight": "color.elevation.highlight",
                 "strokeWidth": "stroke.none"
               },
@@ -5699,6 +5722,7 @@
                 "text": "color.content.disabled",
                 "focus": "none",
                 "ring": "none",
+                "gapRing": "none",
                 "highlight": "none",
                 "strokeWidth": "stroke.none"
               },
@@ -5713,6 +5737,7 @@
                 "text": "color.content.primary",
                 "focus": "none",
                 "ring": "none",
+                "gapRing": "none",
                 "highlight": "none",
                 "strokeWidth": "stroke.control"
               }
@@ -5724,6 +5749,7 @@
                 "text": "color.content.primary",
                 "focus": "none",
                 "ring": "none",
+                "gapRing": "none",
                 "highlight": "none",
                 "strokeWidth": "stroke.control"
               }
@@ -5735,6 +5761,7 @@
                 "text": "color.content.primary",
                 "focus": "none",
                 "ring": "none",
+                "gapRing": "none",
                 "highlight": "none",
                 "strokeWidth": "stroke.control"
               }
@@ -5744,8 +5771,9 @@
                 "fill": "none",
                 "stroke": "color.border.control",
                 "text": "color.content.primary",
-                "focus": "color.border.strong",
-                "ring": "color.border.subtle",
+                "focus": "none",
+                "ring": "none",
+                "gapRing": "color.border.ring.neutral",
                 "highlight": "none",
                 "strokeWidth": "stroke.control"
               }
@@ -5757,6 +5785,7 @@
                 "text": "color.content.primary",
                 "focus": "none",
                 "ring": "none",
+                "gapRing": "none",
                 "highlight": "none",
                 "strokeWidth": "stroke.control"
               }
@@ -5768,6 +5797,7 @@
                 "text": "color.content.disabled",
                 "focus": "none",
                 "ring": "none",
+                "gapRing": "none",
                 "highlight": "none",
                 "strokeWidth": "stroke.control"
               }
@@ -5779,6 +5809,7 @@
                 "text": "color.content.primary",
                 "focus": "none",
                 "ring": "none",
+                "gapRing": "none",
                 "highlight": "none",
                 "strokeWidth": "stroke.none"
               }
@@ -5790,6 +5821,7 @@
                 "text": "color.content.primary",
                 "focus": "none",
                 "ring": "none",
+                "gapRing": "none",
                 "highlight": "none",
                 "strokeWidth": "stroke.none"
               }
@@ -5801,6 +5833,7 @@
                 "text": "color.content.primary",
                 "focus": "none",
                 "ring": "none",
+                "gapRing": "none",
                 "highlight": "none",
                 "strokeWidth": "stroke.none"
               }
@@ -5810,8 +5843,9 @@
                 "fill": "none",
                 "stroke": "none",
                 "text": "color.content.primary",
-                "focus": "color.border.strong",
-                "ring": "color.border.subtle",
+                "focus": "none",
+                "ring": "none",
+                "gapRing": "color.border.ring.neutral",
                 "highlight": "none",
                 "strokeWidth": "stroke.none"
               }
@@ -5823,6 +5857,7 @@
                 "text": "color.content.primary",
                 "focus": "none",
                 "ring": "none",
+                "gapRing": "none",
                 "highlight": "none",
                 "strokeWidth": "stroke.none"
               }
@@ -5834,6 +5869,7 @@
                 "text": "color.content.disabled",
                 "focus": "none",
                 "ring": "none",
+                "gapRing": "none",
                 "highlight": "none",
                 "strokeWidth": "stroke.none"
               }
@@ -5845,6 +5881,7 @@
                 "text": "color.content.secondary",
                 "focus": "none",
                 "ring": "none",
+                "gapRing": "none",
                 "highlight": "none",
                 "strokeWidth": "stroke.none"
               }
@@ -5856,6 +5893,7 @@
                 "text": "color.content.primary",
                 "focus": "none",
                 "ring": "none",
+                "gapRing": "none",
                 "highlight": "none",
                 "strokeWidth": "stroke.none"
               }
@@ -5867,6 +5905,7 @@
                 "text": "color.content.primary",
                 "focus": "none",
                 "ring": "none",
+                "gapRing": "none",
                 "highlight": "none",
                 "strokeWidth": "stroke.none"
               }
@@ -5876,8 +5915,9 @@
                 "fill": "none",
                 "stroke": "none",
                 "text": "color.content.secondary",
-                "focus": "color.border.strong",
-                "ring": "color.border.subtle",
+                "focus": "none",
+                "ring": "none",
+                "gapRing": "color.border.ring.neutral",
                 "highlight": "none",
                 "strokeWidth": "stroke.none"
               }
@@ -5889,6 +5929,7 @@
                 "text": "color.content.secondary",
                 "focus": "none",
                 "ring": "none",
+                "gapRing": "none",
                 "highlight": "none",
                 "strokeWidth": "stroke.none"
               }
@@ -5900,6 +5941,7 @@
                 "text": "color.content.disabled",
                 "focus": "none",
                 "ring": "none",
+                "gapRing": "none",
                 "highlight": "none",
                 "strokeWidth": "stroke.none"
               }
@@ -5911,7 +5953,7 @@
                 "text": "color.status.critical.on-solid",
                 "focus": "none",
                 "ring": "none",
-                "halo": "none",
+                "gapRing": "none",
                 "highlight": "color.elevation.highlight",
                 "strokeWidth": "stroke.none"
               },
@@ -5926,7 +5968,7 @@
                 "text": "color.status.critical.on-solid",
                 "focus": "none",
                 "ring": "none",
-                "halo": "none",
+                "gapRing": "none",
                 "highlight": "color.elevation.highlight",
                 "strokeWidth": "stroke.none"
               },
@@ -5941,7 +5983,7 @@
                 "text": "color.status.critical.on-solid",
                 "focus": "none",
                 "ring": "none",
-                "halo": "none",
+                "gapRing": "none",
                 "highlight": "color.elevation.highlight",
                 "strokeWidth": "stroke.none"
               },
@@ -5956,7 +5998,7 @@
                 "text": "color.status.critical.on-solid",
                 "focus": "none",
                 "ring": "none",
-                "halo": "color.status.critical.ring",
+                "gapRing": "color.status.critical.ring",
                 "highlight": "color.elevation.highlight",
                 "strokeWidth": "stroke.none"
               },
@@ -5971,7 +6013,7 @@
                 "text": "color.status.critical.on-solid",
                 "focus": "none",
                 "ring": "none",
-                "halo": "none",
+                "gapRing": "none",
                 "highlight": "color.elevation.highlight",
                 "strokeWidth": "stroke.none"
               },
@@ -5986,6 +6028,7 @@
                 "text": "color.content.disabled",
                 "focus": "none",
                 "ring": "none",
+                "gapRing": "none",
                 "highlight": "none",
                 "strokeWidth": "stroke.none"
               },
@@ -6000,6 +6043,7 @@
                 "text": "color.status.critical.content",
                 "focus": "none",
                 "ring": "none",
+                "gapRing": "none",
                 "highlight": "none",
                 "strokeWidth": "stroke.control"
               }
@@ -6011,6 +6055,7 @@
                 "text": "color.status.critical.content",
                 "focus": "none",
                 "ring": "none",
+                "gapRing": "none",
                 "highlight": "none",
                 "strokeWidth": "stroke.control"
               }
@@ -6022,6 +6067,7 @@
                 "text": "color.status.critical.content",
                 "focus": "none",
                 "ring": "none",
+                "gapRing": "none",
                 "highlight": "none",
                 "strokeWidth": "stroke.control"
               }
@@ -6031,8 +6077,9 @@
                 "fill": "none",
                 "stroke": "color.status.critical.border-strong",
                 "text": "color.status.critical.content",
-                "focus": "color.status.critical.border-strong",
-                "ring": "color.status.critical.border",
+                "focus": "none",
+                "ring": "none",
+                "gapRing": "color.status.critical.ring",
                 "highlight": "none",
                 "strokeWidth": "stroke.control"
               }
@@ -6044,6 +6091,7 @@
                 "text": "color.status.critical.content",
                 "focus": "none",
                 "ring": "none",
+                "gapRing": "none",
                 "highlight": "none",
                 "strokeWidth": "stroke.control"
               }
@@ -6055,6 +6103,7 @@
                 "text": "color.content.disabled",
                 "focus": "none",
                 "ring": "none",
+                "gapRing": "none",
                 "highlight": "none",
                 "strokeWidth": "stroke.control"
               }
@@ -6066,6 +6115,7 @@
                 "text": "color.status.critical.content",
                 "focus": "none",
                 "ring": "none",
+                "gapRing": "none",
                 "highlight": "none",
                 "strokeWidth": "stroke.none"
               }
@@ -6077,6 +6127,7 @@
                 "text": "color.status.critical.content",
                 "focus": "none",
                 "ring": "none",
+                "gapRing": "none",
                 "highlight": "none",
                 "strokeWidth": "stroke.none"
               }
@@ -6088,6 +6139,7 @@
                 "text": "color.status.critical.content",
                 "focus": "none",
                 "ring": "none",
+                "gapRing": "none",
                 "highlight": "none",
                 "strokeWidth": "stroke.none"
               }
@@ -6097,8 +6149,9 @@
                 "fill": "none",
                 "stroke": "none",
                 "text": "color.status.critical.content",
-                "focus": "color.status.critical.border-strong",
-                "ring": "color.status.critical.border",
+                "focus": "none",
+                "ring": "none",
+                "gapRing": "color.status.critical.ring",
                 "highlight": "none",
                 "strokeWidth": "stroke.none"
               }
@@ -6110,6 +6163,7 @@
                 "text": "color.status.critical.content",
                 "focus": "none",
                 "ring": "none",
+                "gapRing": "none",
                 "highlight": "none",
                 "strokeWidth": "stroke.none"
               }
@@ -6121,6 +6175,7 @@
                 "text": "color.content.disabled",
                 "focus": "none",
                 "ring": "none",
+                "gapRing": "none",
                 "highlight": "none",
                 "strokeWidth": "stroke.none"
               }
@@ -6132,6 +6187,7 @@
                 "text": "color.status.critical.content",
                 "focus": "none",
                 "ring": "none",
+                "gapRing": "none",
                 "highlight": "none",
                 "strokeWidth": "stroke.none"
               }
@@ -6143,6 +6199,7 @@
                 "text": "color.status.critical.content",
                 "focus": "none",
                 "ring": "none",
+                "gapRing": "none",
                 "highlight": "none",
                 "strokeWidth": "stroke.none"
               }
@@ -6154,6 +6211,7 @@
                 "text": "color.status.critical.content",
                 "focus": "none",
                 "ring": "none",
+                "gapRing": "none",
                 "highlight": "none",
                 "strokeWidth": "stroke.none"
               }
@@ -6163,8 +6221,9 @@
                 "fill": "none",
                 "stroke": "none",
                 "text": "color.status.critical.content",
-                "focus": "color.status.critical.border-strong",
-                "ring": "color.status.critical.border",
+                "focus": "none",
+                "ring": "none",
+                "gapRing": "color.status.critical.ring",
                 "highlight": "none",
                 "strokeWidth": "stroke.none"
               }
@@ -6176,6 +6235,7 @@
                 "text": "color.status.critical.content",
                 "focus": "none",
                 "ring": "none",
+                "gapRing": "none",
                 "highlight": "none",
                 "strokeWidth": "stroke.none"
               }
@@ -6187,6 +6247,7 @@
                 "text": "color.content.disabled",
                 "focus": "none",
                 "ring": "none",
+                "gapRing": "none",
                 "highlight": "none",
                 "strokeWidth": "stroke.none"
               }
@@ -6294,7 +6355,7 @@
                 "text": "color.content.on-action",
                 "focus": "none",
                 "ring": "none",
-                "halo": "none",
+                "gapRing": "none",
                 "highlight": "color.elevation.highlight",
                 "strokeWidth": "stroke.none"
               }
@@ -6306,7 +6367,7 @@
                 "text": "color.content.on-action",
                 "focus": "none",
                 "ring": "none",
-                "halo": "none",
+                "gapRing": "none",
                 "highlight": "color.elevation.highlight",
                 "strokeWidth": "stroke.none"
               }
@@ -6318,7 +6379,7 @@
                 "text": "color.content.on-action",
                 "focus": "none",
                 "ring": "none",
-                "halo": "none",
+                "gapRing": "none",
                 "highlight": "color.elevation.highlight",
                 "strokeWidth": "stroke.none"
               }
@@ -6330,7 +6391,7 @@
                 "text": "color.content.on-action",
                 "focus": "none",
                 "ring": "none",
-                "halo": "color.border.ring.default",
+                "gapRing": "color.border.ring.default",
                 "highlight": "color.elevation.highlight",
                 "strokeWidth": "stroke.none"
               }
@@ -6342,7 +6403,7 @@
                 "text": "color.content.on-action",
                 "focus": "none",
                 "ring": "none",
-                "halo": "none",
+                "gapRing": "none",
                 "highlight": "color.elevation.highlight",
                 "strokeWidth": "stroke.none"
               }
@@ -6354,6 +6415,7 @@
                 "text": "color.content.disabled",
                 "focus": "none",
                 "ring": "none",
+                "gapRing": "none",
                 "highlight": "none",
                 "strokeWidth": "stroke.none"
               }
@@ -6365,6 +6427,7 @@
                 "text": "color.content.accent",
                 "focus": "none",
                 "ring": "none",
+                "gapRing": "none",
                 "highlight": "none",
                 "strokeWidth": "stroke.control"
               }
@@ -6376,6 +6439,7 @@
                 "text": "color.content.accent",
                 "focus": "none",
                 "ring": "none",
+                "gapRing": "none",
                 "highlight": "none",
                 "strokeWidth": "stroke.control"
               }
@@ -6387,6 +6451,7 @@
                 "text": "color.content.accent",
                 "focus": "none",
                 "ring": "none",
+                "gapRing": "none",
                 "highlight": "none",
                 "strokeWidth": "stroke.control"
               }
@@ -6396,8 +6461,9 @@
                 "fill": "none",
                 "stroke": "color.border.accent",
                 "text": "color.content.accent",
-                "focus": "color.border.focus",
-                "ring": "color.border.ring.default",
+                "focus": "none",
+                "ring": "none",
+                "gapRing": "color.border.ring.default",
                 "highlight": "none",
                 "strokeWidth": "stroke.control"
               }
@@ -6409,6 +6475,7 @@
                 "text": "color.content.accent",
                 "focus": "none",
                 "ring": "none",
+                "gapRing": "none",
                 "highlight": "none",
                 "strokeWidth": "stroke.control"
               }
@@ -6420,6 +6487,7 @@
                 "text": "color.content.disabled",
                 "focus": "none",
                 "ring": "none",
+                "gapRing": "none",
                 "highlight": "none",
                 "strokeWidth": "stroke.control"
               }
@@ -6431,6 +6499,7 @@
                 "text": "color.content.accent",
                 "focus": "none",
                 "ring": "none",
+                "gapRing": "none",
                 "highlight": "none",
                 "strokeWidth": "stroke.none"
               }
@@ -6442,6 +6511,7 @@
                 "text": "color.content.accent",
                 "focus": "none",
                 "ring": "none",
+                "gapRing": "none",
                 "highlight": "none",
                 "strokeWidth": "stroke.none"
               }
@@ -6453,6 +6523,7 @@
                 "text": "color.content.accent",
                 "focus": "none",
                 "ring": "none",
+                "gapRing": "none",
                 "highlight": "none",
                 "strokeWidth": "stroke.none"
               }
@@ -6462,8 +6533,9 @@
                 "fill": "none",
                 "stroke": "none",
                 "text": "color.content.accent",
-                "focus": "color.border.focus",
-                "ring": "color.border.ring.default",
+                "focus": "none",
+                "ring": "none",
+                "gapRing": "color.border.ring.default",
                 "highlight": "none",
                 "strokeWidth": "stroke.none"
               }
@@ -6475,6 +6547,7 @@
                 "text": "color.content.accent",
                 "focus": "none",
                 "ring": "none",
+                "gapRing": "none",
                 "highlight": "none",
                 "strokeWidth": "stroke.none"
               }
@@ -6486,6 +6559,7 @@
                 "text": "color.content.disabled",
                 "focus": "none",
                 "ring": "none",
+                "gapRing": "none",
                 "highlight": "none",
                 "strokeWidth": "stroke.none"
               }
@@ -6497,6 +6571,7 @@
                 "text": "color.content.link.default",
                 "focus": "none",
                 "ring": "none",
+                "gapRing": "none",
                 "highlight": "none",
                 "strokeWidth": "stroke.none"
               }
@@ -6508,6 +6583,7 @@
                 "text": "color.content.link.hover",
                 "focus": "none",
                 "ring": "none",
+                "gapRing": "none",
                 "highlight": "none",
                 "strokeWidth": "stroke.none"
               }
@@ -6519,6 +6595,7 @@
                 "text": "color.content.link.hover",
                 "focus": "none",
                 "ring": "none",
+                "gapRing": "none",
                 "highlight": "none",
                 "strokeWidth": "stroke.none"
               }
@@ -6528,8 +6605,9 @@
                 "fill": "none",
                 "stroke": "none",
                 "text": "color.content.link.default",
-                "focus": "color.border.focus",
-                "ring": "color.border.ring.default",
+                "focus": "none",
+                "ring": "none",
+                "gapRing": "color.border.ring.default",
                 "highlight": "none",
                 "strokeWidth": "stroke.none"
               }
@@ -6541,6 +6619,7 @@
                 "text": "color.content.link.default",
                 "focus": "none",
                 "ring": "none",
+                "gapRing": "none",
                 "highlight": "none",
                 "strokeWidth": "stroke.none"
               }
@@ -6552,6 +6631,7 @@
                 "text": "color.content.disabled",
                 "focus": "none",
                 "ring": "none",
+                "gapRing": "none",
                 "highlight": "none",
                 "strokeWidth": "stroke.none"
               }
@@ -6563,7 +6643,7 @@
                 "text": "color.content.on-secondary",
                 "focus": "none",
                 "ring": "none",
-                "halo": "none",
+                "gapRing": "none",
                 "highlight": "color.elevation.highlight",
                 "strokeWidth": "stroke.none"
               }
@@ -6575,7 +6655,7 @@
                 "text": "color.content.on-secondary",
                 "focus": "none",
                 "ring": "none",
-                "halo": "none",
+                "gapRing": "none",
                 "highlight": "color.elevation.highlight",
                 "strokeWidth": "stroke.none"
               }
@@ -6587,7 +6667,7 @@
                 "text": "color.content.on-secondary",
                 "focus": "none",
                 "ring": "none",
-                "halo": "none",
+                "gapRing": "none",
                 "highlight": "color.elevation.highlight",
                 "strokeWidth": "stroke.none"
               }
@@ -6599,7 +6679,7 @@
                 "text": "color.content.on-secondary",
                 "focus": "none",
                 "ring": "none",
-                "halo": "color.border.strong",
+                "gapRing": "color.border.ring.neutral",
                 "highlight": "color.elevation.highlight",
                 "strokeWidth": "stroke.none"
               }
@@ -6611,7 +6691,7 @@
                 "text": "color.content.on-secondary",
                 "focus": "none",
                 "ring": "none",
-                "halo": "none",
+                "gapRing": "none",
                 "highlight": "color.elevation.highlight",
                 "strokeWidth": "stroke.none"
               }
@@ -6623,6 +6703,7 @@
                 "text": "color.content.disabled",
                 "focus": "none",
                 "ring": "none",
+                "gapRing": "none",
                 "highlight": "none",
                 "strokeWidth": "stroke.none"
               }
@@ -6634,6 +6715,7 @@
                 "text": "color.content.primary",
                 "focus": "none",
                 "ring": "none",
+                "gapRing": "none",
                 "highlight": "none",
                 "strokeWidth": "stroke.control"
               }
@@ -6645,6 +6727,7 @@
                 "text": "color.content.primary",
                 "focus": "none",
                 "ring": "none",
+                "gapRing": "none",
                 "highlight": "none",
                 "strokeWidth": "stroke.control"
               }
@@ -6656,6 +6739,7 @@
                 "text": "color.content.primary",
                 "focus": "none",
                 "ring": "none",
+                "gapRing": "none",
                 "highlight": "none",
                 "strokeWidth": "stroke.control"
               }
@@ -6665,8 +6749,9 @@
                 "fill": "none",
                 "stroke": "color.border.control",
                 "text": "color.content.primary",
-                "focus": "color.border.strong",
-                "ring": "color.border.subtle",
+                "focus": "none",
+                "ring": "none",
+                "gapRing": "color.border.ring.neutral",
                 "highlight": "none",
                 "strokeWidth": "stroke.control"
               }
@@ -6678,6 +6763,7 @@
                 "text": "color.content.primary",
                 "focus": "none",
                 "ring": "none",
+                "gapRing": "none",
                 "highlight": "none",
                 "strokeWidth": "stroke.control"
               }
@@ -6689,6 +6775,7 @@
                 "text": "color.content.disabled",
                 "focus": "none",
                 "ring": "none",
+                "gapRing": "none",
                 "highlight": "none",
                 "strokeWidth": "stroke.control"
               }
@@ -6700,6 +6787,7 @@
                 "text": "color.content.primary",
                 "focus": "none",
                 "ring": "none",
+                "gapRing": "none",
                 "highlight": "none",
                 "strokeWidth": "stroke.none"
               }
@@ -6711,6 +6799,7 @@
                 "text": "color.content.primary",
                 "focus": "none",
                 "ring": "none",
+                "gapRing": "none",
                 "highlight": "none",
                 "strokeWidth": "stroke.none"
               }
@@ -6722,6 +6811,7 @@
                 "text": "color.content.primary",
                 "focus": "none",
                 "ring": "none",
+                "gapRing": "none",
                 "highlight": "none",
                 "strokeWidth": "stroke.none"
               }
@@ -6731,8 +6821,9 @@
                 "fill": "none",
                 "stroke": "none",
                 "text": "color.content.primary",
-                "focus": "color.border.strong",
-                "ring": "color.border.subtle",
+                "focus": "none",
+                "ring": "none",
+                "gapRing": "color.border.ring.neutral",
                 "highlight": "none",
                 "strokeWidth": "stroke.none"
               }
@@ -6744,6 +6835,7 @@
                 "text": "color.content.primary",
                 "focus": "none",
                 "ring": "none",
+                "gapRing": "none",
                 "highlight": "none",
                 "strokeWidth": "stroke.none"
               }
@@ -6755,6 +6847,7 @@
                 "text": "color.content.disabled",
                 "focus": "none",
                 "ring": "none",
+                "gapRing": "none",
                 "highlight": "none",
                 "strokeWidth": "stroke.none"
               }
@@ -6766,6 +6859,7 @@
                 "text": "color.content.secondary",
                 "focus": "none",
                 "ring": "none",
+                "gapRing": "none",
                 "highlight": "none",
                 "strokeWidth": "stroke.none"
               }
@@ -6777,6 +6871,7 @@
                 "text": "color.content.primary",
                 "focus": "none",
                 "ring": "none",
+                "gapRing": "none",
                 "highlight": "none",
                 "strokeWidth": "stroke.none"
               }
@@ -6788,6 +6883,7 @@
                 "text": "color.content.primary",
                 "focus": "none",
                 "ring": "none",
+                "gapRing": "none",
                 "highlight": "none",
                 "strokeWidth": "stroke.none"
               }
@@ -6797,8 +6893,9 @@
                 "fill": "none",
                 "stroke": "none",
                 "text": "color.content.secondary",
-                "focus": "color.border.strong",
-                "ring": "color.border.subtle",
+                "focus": "none",
+                "ring": "none",
+                "gapRing": "color.border.ring.neutral",
                 "highlight": "none",
                 "strokeWidth": "stroke.none"
               }
@@ -6810,6 +6907,7 @@
                 "text": "color.content.secondary",
                 "focus": "none",
                 "ring": "none",
+                "gapRing": "none",
                 "highlight": "none",
                 "strokeWidth": "stroke.none"
               }
@@ -6821,6 +6919,7 @@
                 "text": "color.content.disabled",
                 "focus": "none",
                 "ring": "none",
+                "gapRing": "none",
                 "highlight": "none",
                 "strokeWidth": "stroke.none"
               }
@@ -6832,7 +6931,7 @@
                 "text": "color.status.critical.on-solid",
                 "focus": "none",
                 "ring": "none",
-                "halo": "none",
+                "gapRing": "none",
                 "highlight": "color.elevation.highlight",
                 "strokeWidth": "stroke.none"
               }
@@ -6844,7 +6943,7 @@
                 "text": "color.status.critical.on-solid",
                 "focus": "none",
                 "ring": "none",
-                "halo": "none",
+                "gapRing": "none",
                 "highlight": "color.elevation.highlight",
                 "strokeWidth": "stroke.none"
               }
@@ -6856,7 +6955,7 @@
                 "text": "color.status.critical.on-solid",
                 "focus": "none",
                 "ring": "none",
-                "halo": "none",
+                "gapRing": "none",
                 "highlight": "color.elevation.highlight",
                 "strokeWidth": "stroke.none"
               }
@@ -6868,7 +6967,7 @@
                 "text": "color.status.critical.on-solid",
                 "focus": "none",
                 "ring": "none",
-                "halo": "color.status.critical.ring",
+                "gapRing": "color.status.critical.ring",
                 "highlight": "color.elevation.highlight",
                 "strokeWidth": "stroke.none"
               }
@@ -6880,7 +6979,7 @@
                 "text": "color.status.critical.on-solid",
                 "focus": "none",
                 "ring": "none",
-                "halo": "none",
+                "gapRing": "none",
                 "highlight": "color.elevation.highlight",
                 "strokeWidth": "stroke.none"
               }
@@ -6892,6 +6991,7 @@
                 "text": "color.content.disabled",
                 "focus": "none",
                 "ring": "none",
+                "gapRing": "none",
                 "highlight": "none",
                 "strokeWidth": "stroke.none"
               }
@@ -6903,6 +7003,7 @@
                 "text": "color.status.critical.content",
                 "focus": "none",
                 "ring": "none",
+                "gapRing": "none",
                 "highlight": "none",
                 "strokeWidth": "stroke.control"
               }
@@ -6914,6 +7015,7 @@
                 "text": "color.status.critical.content",
                 "focus": "none",
                 "ring": "none",
+                "gapRing": "none",
                 "highlight": "none",
                 "strokeWidth": "stroke.control"
               }
@@ -6925,6 +7027,7 @@
                 "text": "color.status.critical.content",
                 "focus": "none",
                 "ring": "none",
+                "gapRing": "none",
                 "highlight": "none",
                 "strokeWidth": "stroke.control"
               }
@@ -6934,8 +7037,9 @@
                 "fill": "none",
                 "stroke": "color.status.critical.border-strong",
                 "text": "color.status.critical.content",
-                "focus": "color.status.critical.border-strong",
-                "ring": "color.status.critical.border",
+                "focus": "none",
+                "ring": "none",
+                "gapRing": "color.status.critical.ring",
                 "highlight": "none",
                 "strokeWidth": "stroke.control"
               }
@@ -6947,6 +7051,7 @@
                 "text": "color.status.critical.content",
                 "focus": "none",
                 "ring": "none",
+                "gapRing": "none",
                 "highlight": "none",
                 "strokeWidth": "stroke.control"
               }
@@ -6958,6 +7063,7 @@
                 "text": "color.content.disabled",
                 "focus": "none",
                 "ring": "none",
+                "gapRing": "none",
                 "highlight": "none",
                 "strokeWidth": "stroke.control"
               }
@@ -6969,6 +7075,7 @@
                 "text": "color.status.critical.content",
                 "focus": "none",
                 "ring": "none",
+                "gapRing": "none",
                 "highlight": "none",
                 "strokeWidth": "stroke.none"
               }
@@ -6980,6 +7087,7 @@
                 "text": "color.status.critical.content",
                 "focus": "none",
                 "ring": "none",
+                "gapRing": "none",
                 "highlight": "none",
                 "strokeWidth": "stroke.none"
               }
@@ -6991,6 +7099,7 @@
                 "text": "color.status.critical.content",
                 "focus": "none",
                 "ring": "none",
+                "gapRing": "none",
                 "highlight": "none",
                 "strokeWidth": "stroke.none"
               }
@@ -7000,8 +7109,9 @@
                 "fill": "none",
                 "stroke": "none",
                 "text": "color.status.critical.content",
-                "focus": "color.status.critical.border-strong",
-                "ring": "color.status.critical.border",
+                "focus": "none",
+                "ring": "none",
+                "gapRing": "color.status.critical.ring",
                 "highlight": "none",
                 "strokeWidth": "stroke.none"
               }
@@ -7013,6 +7123,7 @@
                 "text": "color.status.critical.content",
                 "focus": "none",
                 "ring": "none",
+                "gapRing": "none",
                 "highlight": "none",
                 "strokeWidth": "stroke.none"
               }
@@ -7024,6 +7135,7 @@
                 "text": "color.content.disabled",
                 "focus": "none",
                 "ring": "none",
+                "gapRing": "none",
                 "highlight": "none",
                 "strokeWidth": "stroke.none"
               }
@@ -7035,6 +7147,7 @@
                 "text": "color.status.critical.content",
                 "focus": "none",
                 "ring": "none",
+                "gapRing": "none",
                 "highlight": "none",
                 "strokeWidth": "stroke.none"
               }
@@ -7046,6 +7159,7 @@
                 "text": "color.status.critical.content",
                 "focus": "none",
                 "ring": "none",
+                "gapRing": "none",
                 "highlight": "none",
                 "strokeWidth": "stroke.none"
               }
@@ -7057,6 +7171,7 @@
                 "text": "color.status.critical.content",
                 "focus": "none",
                 "ring": "none",
+                "gapRing": "none",
                 "highlight": "none",
                 "strokeWidth": "stroke.none"
               }
@@ -7066,8 +7181,9 @@
                 "fill": "none",
                 "stroke": "none",
                 "text": "color.status.critical.content",
-                "focus": "color.status.critical.border-strong",
-                "ring": "color.status.critical.border",
+                "focus": "none",
+                "ring": "none",
+                "gapRing": "color.status.critical.ring",
                 "highlight": "none",
                 "strokeWidth": "stroke.none"
               }
@@ -7079,6 +7195,7 @@
                 "text": "color.status.critical.content",
                 "focus": "none",
                 "ring": "none",
+                "gapRing": "none",
                 "highlight": "none",
                 "strokeWidth": "stroke.none"
               }
@@ -7090,6 +7207,7 @@
                 "text": "color.content.disabled",
                 "focus": "none",
                 "ring": "none",
+                "gapRing": "none",
                 "highlight": "none",
                 "strokeWidth": "stroke.none"
               }
@@ -31610,8 +31728,9 @@
       "Border/control-hover": "[ROLE: Control Boundary Hover] Affects the hover state of a control's resting (border.control) border. One step past border.control: {black-a.4} in Light, {white-a.4} in Dark (DEC-2026-11-16-004).",
       "Border/strong": "[ROLE: Strong Border] Affects the edge of a grouping or a selected container that must read before its neighbours. Not the field outline — that is border.control. WCAG 1.4.11 + APCA Lc 45 against the page, SOLVED on the alpha ladder ({ui-a:…}): {black-a.7} in light, {white-a.8} in dark for the default system.",
       "Border/focus": "[ROLE: A11y Focus Ring] The keyboard focus-visible boundary on every interactive element of the default / accent variant. SOLVED per theme ({focus:accent.9}): the first accent tone from 9 that clears WCAG 1.4.11 (3:1) on the page — tone 9 in both themes for the default system. Severity, neutral and inverse variants take their own boundary (status.<sev>.border-strong, border.strong, border.inverse). The translucent halo outside it is border.ring.*.",
-      "Border/ring/default": "[ROLE: Focus Ring] The translucent accent ring drawn OUTSIDE a focused control (a 2px outside stroke on the solid Button and IconButton; a field also turns its edge to border.focus). Accent Alpha/08. Never the only focus cue. Decoration, NOT a boundary — never measured for WCAG 1.4.11; border.focus is the contrast-bearing part. The neutral Button focuses with border.strong and the critical one with status.critical.ring: the ring wears the colour of the control it belongs to.",
-      "Status/critical/ring": "[ROLE: Critical Focus Ring] The translucent red ring outside a focused critical (destructive) button. Error Alpha/08, the red twin of border.ring.default. Decoration, never the only focus cue. Not the edge of an alert — that stays status.critical.border.",
+      "Border/ring/default": "[ROLE: Focus Ring · accent] The 2px focus ring drawn 1px OUTSIDE a focused control, with the page showing in the gap (owner decision 2026-11-17). Accent Alpha/06 in each mode. Used by every default-intent control. Decoration, never the only focus cue and never measured as a boundary; border.focus is the contrast-bearing edge of a field. Neutral controls use border.ring.neutral, critical ones status.critical.ring.",
+      "Border/ring/neutral": "[ROLE: Focus Ring · neutral] The 2px focus ring, 1px outside a focused neutral (secondary) control. Gray Alpha/06 in each mode, the neutral twin of border.ring.default.",
+      "Status/critical/ring": "[ROLE: Focus Ring · critical] The 2px focus ring, 1px outside a focused critical (destructive) control. Error Alpha/06 in each mode, the critical twin of border.ring.default and the same red as a field's error halo (status.critical.border).",
       "Border/rim-highlight": "[ROLE: Elevation Rim] 1px light rim along the top of an elevated surface in dark mode. Below a near-black page only ~5% of the luminance range is left to spend downward, so elevation has to be bought with light, not shadow — this is the token for the rim darkShadow() already paints.",
       "Border/accent": "[ROLE: Accent Border] Border painted in the brand accent — a selected card, a toggled button, any element that needs its stroke to read as the primary accent. For keyboard focus use border.focus."
     },

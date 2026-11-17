@@ -109,6 +109,7 @@ const PROP_LABEL: Record<RecipeProp, string> = {
   overlay: 'Overlay',
   overlay2: 'Overlay (second layer)',
   halo: 'Focus halo',
+  gapRing: 'Focus ring',
   opacity: 'Opacity',
   lift: 'Elevation',
   fontLiteral: 'Typography (literal)',
@@ -121,7 +122,7 @@ const PROP_LABEL: Record<RecipeProp, string> = {
 
 /** Display order inside a slot: paint first, then box, then type. */
 const PROP_ORDER: RecipeProp[] = [
-  'fill', 'fillMid', 'fillEnd', 'overlay', 'overlay2', 'text', 'stroke', 'outerStroke', 'strokeTop', 'focus', 'ring', 'halo', 'highlight', 'paint',
+  'fill', 'fillMid', 'fillEnd', 'overlay', 'overlay2', 'text', 'stroke', 'outerStroke', 'strokeTop', 'focus', 'ring', 'halo', 'gapRing', 'highlight', 'paint',
   'radius', 'radiusTop', 'radiusLeft', 'radiusRight', 'paddingX', 'paddingY', 'paddingTop', 'paddingBottom', 'paddingRight', 'gap', 'rowGap', 'overlap', 'height', 'minHeight', 'minWidth', 'maxWidth', 'width', 'travel',
   'strokeWidth', 'outerStrokeWidth', 'strokeTopWidth', 'strokeBottomWidth', 'strokeRightWidth', 'strokeLeftWidth', 'shadow', 'font', 'hit',
 ]

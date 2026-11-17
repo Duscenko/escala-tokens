@@ -35,6 +35,9 @@ const SINCE_INVENTORY: Record<string, string> = {
   'Status/critical/surface': '{CP:States/EscalaDS/Error/Alpha/03} ; {CP:States/EscalaDS/Error Dark/Alpha/03}',
   // DEC-2026-11-16-006: curated again in the file after DEC-004 — Dark critical text, Dark control border, Light highlight.
   'Status/critical/content': '{CP:States/EscalaDS/Error/11} ; {CP:States/EscalaDS/Error Dark/10}',
+  // 2026-11-17 (owner decision): the focus rings moved to Alpha/06 in each mode.
+  'Border/ring/default': '{CP:Accents/EscalaDS/Alpha/06} ; {CP:Accents/EscalaDS Dark/Alpha/06}',
+  'Status/critical/ring': '{CP:States/EscalaDS/Error/Alpha/06} ; {CP:States/EscalaDS/Error Dark/Alpha/06}',
   // 2026-11-17: Dark brand wash moved from Dark/02 to Dark/04 in the file.
   'Surface/accent': '{CP:Accents/EscalaDS/02} ; {CP:Accents/EscalaDS Dark/04}',
   'Elevation/highlight': '{CP:Neutrals/White Alpha/05} ; {CP:Neutrals/White Alpha/03}',
@@ -109,6 +112,18 @@ describe.skipIf(!hasInventory)('every Color Semantics role resolves to the Figma
     }
     expect(checked).toBeGreaterThan(150)
     expect(mismatches).toEqual([])
+  })
+})
+
+// `Border/ring/neutral` was created in the file on 2026-11-17 (owner decision), after the inventory above;
+// until it is re-dumped, this holds the role to the file's Gray Alpha/06 in each mode.
+describe('the neutral focus ring is the file\'s Gray Alpha/06', () => {
+  it('in Escala Light and Escala Dark', () => {
+    const brand = buildFileSystem()
+    const s = useDesignStore.getState()
+    const gray = FIGMA_FILE_PALETTE.families.gray as { alpha: Record<number, string>; darkAlpha: Record<number, string> }
+    expect(resolvePreviewTokens(s, brand, 'light').archTokens?.['border.ring.neutral']?.toLowerCase()).toBe(gray.alpha[6])
+    expect(resolvePreviewTokens(s, brand, 'dark').archTokens?.['border.ring.neutral']?.toLowerCase()).toBe(gray.darkAlpha[6])
   })
 })
 

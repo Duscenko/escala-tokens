@@ -24,6 +24,10 @@ export const RECIPE_PROPS = [
   // A focus ring fully OUTSIDE the control, `stroke.focus` wide, with no edge
   // of its own (Figma's CloseButton · soft / solid · Focused). A colour role.
   'halo',
+  // The focus ring of a Button / IconButton (owner decision 2026-11-17): `stroke.focus` wide, set 1px OFF the
+  // control's edge so the page shows in the gap (Figma: the `focus-ring` frame 1px larger than the button, stroked
+  // OUTSIDE, radius + 1). A colour role; CSS draws it as an outline with a 1px offset, so the corners stay concentric.
+  'gapRing',
   // A node opacity the Figma file sets by hand (TextLink's underline is drawn at
   // 40% until Hover). The ONE prop that is not a token reference: its value is a
   // plain number string (`'0.4'`), so every table that walks refs skips it

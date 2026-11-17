@@ -13,8 +13,8 @@ import { c, NONE, part, type ComponentRecipe, type SlotMap, type SlotProps, FOCU
 // is the variable the Figma variant binds, state by state. Disabled is a role
 // (action.disabled / content.disabled), never an opacity.
 //
-// Focus: `focus` is the edge the Figma variant strokes in its Focused state, `ring`
-// the halo outside it — exactly as each set has them (`focusPair`).
+// Focus: every Focused variant is its Default plus ONE ring (`gapRing`), 1px off
+// the edge, in the intent's colour (`FOCUS_RING`) — owner decision 2026-11-17.
 
 export const BUTTON_VARIANTS = ['default', 'secondary', 'critical'] as const
 export const BUTTON_APPEARANCES = ['solid', 'outline', 'ghost', 'link'] as const
@@ -28,17 +28,17 @@ const SOLID: Record<string, { fill: [string, string, string]; ink: string }> = {
   critical: { fill: ['status.critical.surface-solid', 'status.critical.surface-solid-hover', 'status.critical.surface-solid-pressed'], ink: 'status.critical.on-solid' },
 }
 
-/** The focus edge (2px, inside) and halo (2px `focus-ring` frame, outside), read
- *  from the Figma file (2026-11-16): the INTENT picks them, at every appearance,
- *  on Button and IconButton alike — default Border/focus + Border/ring/default,
- *  secondary Border/strong + Border/subtle, critical Status/critical/border-strong
- *  + Status/critical/border. Figma is the rule here. */
-const FOCUS_PAIR: Record<string, [string, string]> = {
-  default: ['border.focus', 'border.ring.default'],
-  secondary: ['border.strong', 'border.subtle'],
-  critical: ['status.critical.border-strong', 'status.critical.border'],
+/** The focus ring of every Button and IconButton (Figma 4:5066 · 614:785,
+ *  owner decision 2026-11-17): ONE ring, `stroke.focus` wide, 1px OUTSIDE the
+ *  control with the page in the gap, in the colour of the intent — the same at
+ *  every appearance. Nothing changes inside the control: a focused button looks
+ *  exactly like its Default, plus the ring. */
+const FOCUS_RING: Record<string, string> = {
+  default: 'border.ring.default',
+  secondary: 'border.ring.neutral',
+  critical: 'status.critical.ring',
 }
-const focusPair = (variant: string): [string, string] => FOCUS_PAIR[variant] ?? FOCUS_PAIR.default
+const focusRing = (variant: string, focused: boolean) => (focused ? c(FOCUS_RING[variant] ?? FOCUS_RING.default) : NONE)
 /** Outline / ghost: the intent's ink and the outline's edge. */
 const QUIET: Record<string, { ink: string; edge: string }> = {
   default: { ink: 'content.accent', edge: 'border.accent' },
@@ -57,19 +57,7 @@ const LINK: Record<string, [string, string]> = {
  *  Focused draws its 2px edge as an inset on top, so nothing shifts. */
 const strokeOf = (appearance: string) => (appearance === 'outline' ? 'stroke.control' : 'stroke.none')
 
-/** The solid buttons' focus: ONE ring, 2px, fully outside the control, in the
- *  colour of its intent (Figma 4:5066 and 614:785, owner's call 2026-11-17) —
- *  the accent ring, the neutral strong edge, the critical ring. The solid has no
- *  edge to turn into a focus edge, so nothing is drawn inside. */
-const SOLID_FOCUS_RING: Record<string, string> = {
-  default: 'border.ring.default',
-  secondary: 'border.strong',
-  critical: 'status.critical.ring',
-}
-
 function buttonPaint(variant: string, appearance: string, state: string, shadowLabel = false): SlotMap {
-  const [focusEdge, focusRing] = focusPair(variant)
-  const ring = state === 'Focused' ? c(focusRing) : NONE
   if (state === 'Disabled') {
     return {
       root: {
@@ -78,6 +66,7 @@ function buttonPaint(variant: string, appearance: string, state: string, shadowL
         text: c('content.disabled'),
         focus: NONE,
         ring: NONE,
+        gapRing: NONE,
         highlight: NONE,
         strokeWidth: strokeOf(appearance),
       },
@@ -86,19 +75,17 @@ function buttonPaint(variant: string, appearance: string, state: string, shadowL
     }
   }
   const step = state === 'Pressed' ? 2 : state === 'Hover' ? 1 : 0
-  const focused = state === 'Focused'
+  const gapRing = focusRing(variant, state === 'Focused')
   if (appearance === 'solid') {
     const k = SOLID[variant]
     // Every solid state but Disabled carries the top highlight and, on a Button,
     // the label's 0 1px 0 shadow (`Shadow/text-2xs`). No outside stroke any more
     // (owner's call 2026-11-17, after Create UI): the fill is the control, and
     // the hard edge round a vivid fill read as noise — a pale halo in Dark.
-    // (A DROP_SHADOW with spread paints nothing in Figma unless the frame clips
-    // content — measured on the file's own render — so the ring is a frame.)
     return {
       root: {
         fill: c(k.fill[step]), stroke: NONE, text: c(k.ink),
-        focus: NONE, ring: NONE, halo: focused ? c(SOLID_FOCUS_RING[variant]) : NONE,
+        focus: NONE, ring: NONE, gapRing,
         highlight: c('elevation.highlight'), strokeWidth: strokeOf(appearance),
       },
       ...(shadowLabel ? { label: { textShadow: 'text-2xs' } } : {}),
@@ -106,7 +93,7 @@ function buttonPaint(variant: string, appearance: string, state: string, shadowL
   }
   if (appearance === 'link') {
     const [rest, over] = LINK[variant]
-    return { root: { fill: NONE, stroke: NONE, text: c(step ? over : rest), focus: focused ? c(focusEdge) : NONE, ring, highlight: NONE, strokeWidth: strokeOf(appearance) } }
+    return { root: { fill: NONE, stroke: NONE, text: c(step ? over : rest), focus: NONE, ring: NONE, gapRing, highlight: NONE, strokeWidth: strokeOf(appearance) } }
   }
   const k = QUIET[variant]
   const wash = step === 2 ? c('action.ghost.pressed') : step === 1 ? c('action.ghost.hover') : NONE
@@ -115,8 +102,9 @@ function buttonPaint(variant: string, appearance: string, state: string, shadowL
       fill: wash,
       stroke: appearance === 'outline' ? c(k.edge) : NONE,
       text: c(k.ink),
-      focus: focused ? c(focusEdge) : NONE,
-      ring,
+      focus: NONE,
+      ring: NONE,
+      gapRing,
       highlight: NONE,
       strokeWidth: strokeOf(appearance),
     },

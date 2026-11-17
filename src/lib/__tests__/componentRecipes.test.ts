@@ -190,51 +190,39 @@ describe('focus', () => {
     }
   })
 
-  // The focus edge is the one each Figma variant strokes in its Focused state
-  // (design-plans/button-contract.md); every variant adds the border.ring.default
-  // halo. The edge is not one colour yet: the file strokes secondary · solid with
-  // border.strong and Button critical solid / outline with the critical border.
-  // The Figma file, re-read 2026-11-16: the INTENT picks the focus edge (2px,
-  // inside) and the `focus-ring` halo (2px, outside), at every appearance, on
-  // Button and IconButton alike.
-  const FOCUS: Record<string, [string, string]> = {
-    default: ['color.border.focus', 'color.border.ring.default'],
-    secondary: ['color.border.strong', 'color.border.subtle'],
-    critical: ['color.status.critical.border-strong', 'color.status.critical.border'],
-  }
-  it.each(['Button', 'IconButton'].flatMap((key) =>
-    Object.keys(FOCUS).flatMap((variant) => ['outline', 'ghost', 'link'].map((appearance) => [key, variant, appearance]))),
-  )('%s %s · %s focuses with its intent\'s edge and halo, as the Figma file does', (key, variant, appearance) => {
-    const root = resolveRecipe(COMPONENT_RECIPES[key], { Variant: variant, Appearance: appearance, Size: 'default', State: 'Focused' }).root
-    expect(root.focus).toBe(FOCUS[variant][0])
-    expect(root.ring).toBe(FOCUS[variant][1])
-  })
-
-  // The SOLID buttons (Button 4:5066, IconButton 614:785) changed on 2026-11-17,
-  // after Create UI: no outside stroke in any state, the top highlight, and ONE
-  // focus ring, 2px, fully outside, in the colour of the intent. Nothing is drawn
-  // inside when focused. The Button's label carries `Shadow/text-2xs`; an IconButton has no label.
-  const SOLID_RING: Record<string, string> = {
+  // Focus, owner decision 2026-11-17 (Button 4:5066, IconButton 614:785): EVERY
+  // appearance focuses the same way — the Default look plus ONE ring, 2px, 1px
+  // outside the edge, in the colour of the intent. Nothing is drawn inside, so a
+  // focused button only differs from its Default by the ring.
+  const RING: Record<string, string> = {
     default: 'color.border.ring.default',
-    secondary: 'color.border.strong',
+    secondary: 'color.border.ring.neutral',
     critical: 'color.status.critical.ring',
   }
-  it.each(['Button', 'IconButton'].flatMap((key) => Object.keys(SOLID_RING).map((variant) => [key, variant])))(
-    '%s %s · solid has no outside stroke and one outside focus ring',
+  it.each(['Button', 'IconButton'].flatMap((key) =>
+    Object.keys(RING).flatMap((variant) => ['solid', 'outline', 'ghost', 'link'].map((appearance) => [key, variant, appearance]))),
+  )('%s %s · %s focuses with one ring 1px off the edge, the Default look inside', (key, variant, appearance) => {
+    const r = (state: string) => resolveRecipe(COMPONENT_RECIPES[key], { Variant: variant, Appearance: appearance, Size: 'default', State: state }).root
+    const focused = r('Focused'), rest = r('Default')
+    expect(focused.gapRing).toBe(RING[variant])
+    for (const k of ['focus', 'ring', 'halo', 'outerStroke'] as const) expect(focused[k] ?? 'none', k).toBe('none')
+    expect({ ...focused, gapRing: undefined }).toEqual({ ...rest, gapRing: undefined })
+    for (const state of ['Default', 'Hover', 'Pressed', 'Loading', 'Disabled']) expect(r(state).gapRing ?? 'none', state).toBe('none')
+  })
+  it.each(['Button', 'IconButton'].flatMap((key) => Object.keys(RING).map((variant) => [key, variant])))(
+    '%s %s · solid has no outside stroke, and the Button label carries its shadow',
     (key, variant) => {
       for (const state of ['Default', 'Hover', 'Pressed', 'Loading', 'Focused', 'Disabled']) {
         const p = { Variant: variant, Appearance: 'solid', Size: 'default', State: state }
-        const root = resolveRecipe(COMPONENT_RECIPES[key], p).root
-        expect(root.outerStroke ?? 'none', state).toBe('none')
-        expect(root.focus ?? 'none', state).toBe('none')
-        expect(root.ring ?? 'none', state).toBe('none')
-        expect(root.halo ?? 'none', state).toBe(state === 'Focused' ? SOLID_RING[variant] : 'none')
+        expect(resolveRecipe(COMPONENT_RECIPES[key], p).root.outerStroke ?? 'none', state).toBe('none')
         const label = resolveRecipe(COMPONENT_RECIPES[key], p).label
         expect(label?.textShadow, `${state} label shadow`).toBe(key !== 'Button' ? undefined : state === 'Disabled' ? 'none' : 'text-2xs')
       }
     })
-  it('the highlight and the focus ring compose in one box-shadow', () => {
-    expect(RECIPE_CSS).toContain('box-shadow: 0 0 0 ')
+  it('the focus ring is an outline 1px off the edge', () => {
+    expect(RECIPE_CSS).toContain('outline-offset: 1px')
+  })
+  it('the label shadow is the file\'s Shadow/text-2xs', () => {
     expect(RECIPE_CSS).toContain('text-shadow: 0 1px 0 rgb(0 0 0 / 0.15)')
   })
 

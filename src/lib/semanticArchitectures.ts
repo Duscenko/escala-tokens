@@ -1054,11 +1054,12 @@ const CATEGORICAL_ROLES: { group: string; key: string; light: string; dark: stri
   // decision across all four" — and lands on the same light-9 / dark-10 shape as
   // error, one step earlier than error in dark because its ramp clears sooner.
   { group: 'status', key: 'critical.border-strong', light: '{error.9}',    dark: '{error.10}' },
-  // The focus ring of the critical (destructive) button: error Alpha/08, the red
-  // twin of `border.ring.default` (Figma file, 2026-11-17). `critical.border`
-  // stays the edge of an alert; borrowing it for the ring would have changed
-  // every alert's stroke.
-  { group: 'status', key: 'critical.ring', light: '{error-a.8}', dark: '{error-a.8}' },
+  // The focus ring of a critical (destructive) control: error Alpha/06, the red
+  // twin of `border.ring.default` (Figma file, owner decision 2026-11-17). It
+  // stays in `status.critical` with the rest of the severity, and resolves to
+  // the same red as `critical.border` today; it is its own role because the
+  // job differs (a focus ring vs the edge of an alert).
+  { group: 'status', key: 'critical.ring', light: '{error-a.6}', dark: '{error-a.6}' },
   { group: 'status', key: 'warning.border-strong',  light: '{warning.11}', dark: '{warning.11}' },
   { group: 'status', key: 'success.border-strong',  light: '{success.10}', dark: '{success.10}' },
   { group: 'status', key: 'info.border-strong',     light: '{info.9}',     dark: '{info.10}' },
@@ -1232,9 +1233,13 @@ const CATEGORICAL_ROLES: { group: string; key: string; light: string; dark: stri
   // were byte-identical to `status.<sev>.border` — deleted, not moved (audit F2).
   // A field showing an error border already has its coloured edge; the halo for
   // that state IS that same `status.critical.border` token.
-  // Alpha 08, one step more vivid than the old `{accent-a.6}` (Figma file,
-  // owner's call 2026-11-17): the ring has to read as THE accent, not as a haze.
-  { group: 'border', key: 'ring.default',  light: '{accent-a.8}',  dark: '{accent-a.8}' },
+  // FOCUS RINGS (owner decision 2026-11-17, Figma file): every focused control
+  // draws a 2px ring 1px OUTSIDE its edge, with the page showing in the gap,
+  // in the colour of its intent — accent (`ring.default`), neutral
+  // (`ring.neutral`) or critical (`status.critical.ring`). All three sit on the
+  // Alpha/06 step of their family, each mode on its own twin.
+  { group: 'border', key: 'ring.default',  light: '{accent-a.6}',  dark: '{accent-a.6}' },
+  { group: 'border', key: 'ring.neutral',  light: '{neutral-a.6}', dark: '{neutral-a.6}' },
   // The 1px light rim `darkShadow()` paints on every dark-mode elevation —
   // until now a bare `rgba(255,255,255,…)` computed inside that function with
   // no token anywhere. This does NOT change what `darkShadow` emits (its alpha
@@ -1382,8 +1387,9 @@ export const CATEGORICAL_ROLE_COMMENTS: Record<string, string> = {
   'border.control-hover': '[ROLE: Control Boundary Hover] Affects the hover state of a control\'s resting (border.control) border. One step past border.control: {black-a.4} in Light, {white-a.4} in Dark (DEC-2026-11-16-004).',
   'border.strong': '[ROLE: Strong Border] Affects the edge of a grouping or a selected container that must read before its neighbours. Not the field outline — that is border.control. WCAG 1.4.11 + APCA Lc 45 against the page, SOLVED on the alpha ladder ({ui-a:…}): {black-a.7} in light, {white-a.8} in dark for the default system.',
   'border.focus': '[ROLE: A11y Focus Ring] The keyboard focus-visible boundary on every interactive element of the default / accent variant. SOLVED per theme ({focus:accent.9}): the first accent tone from 9 that clears WCAG 1.4.11 (3:1) on the page — tone 9 in both themes for the default system. Severity, neutral and inverse variants take their own boundary (status.<sev>.border-strong, border.strong, border.inverse). The translucent halo outside it is border.ring.*.',
-  'border.ring.default': '[ROLE: Focus Ring] The translucent accent ring drawn OUTSIDE a focused control (a 2px outside stroke on the solid Button and IconButton; a field also turns its edge to border.focus). Accent Alpha/08. Never the only focus cue. Decoration, NOT a boundary — never measured for WCAG 1.4.11; border.focus is the contrast-bearing part. The neutral Button focuses with border.strong and the critical one with status.critical.ring: the ring wears the colour of the control it belongs to.',
-  'status.critical.ring': '[ROLE: Critical Focus Ring] The translucent red ring outside a focused critical (destructive) button. Error Alpha/08, the red twin of border.ring.default. Decoration, never the only focus cue. Not the edge of an alert — that stays status.critical.border.',
+  'border.ring.default': '[ROLE: Focus Ring · accent] The 2px focus ring drawn 1px OUTSIDE a focused control, with the page showing in the gap (owner decision 2026-11-17). Accent Alpha/06 in each mode. Used by every default-intent control. Decoration, never the only focus cue and never measured as a boundary; border.focus is the contrast-bearing edge of a field. Neutral controls use border.ring.neutral, critical ones status.critical.ring.',
+  'border.ring.neutral': '[ROLE: Focus Ring · neutral] The 2px focus ring, 1px outside a focused neutral (secondary) control. Gray Alpha/06 in each mode, the neutral twin of border.ring.default.',
+  'status.critical.ring': '[ROLE: Focus Ring · critical] The 2px focus ring, 1px outside a focused critical (destructive) control. Error Alpha/06 in each mode, the critical twin of border.ring.default and the same red as a field\'s error halo (status.critical.border).',
   'border.rim-highlight': '[ROLE: Elevation Rim] 1px light rim along the top of an elevated surface in dark mode. Below a near-black page only ~5% of the luminance range is left to spend downward, so elevation has to be bought with light, not shadow — this is the token for the rim darkShadow() already paints.',
   'border.accent': '[ROLE: Accent Border] Border painted in the brand accent — a selected card, a toggled button, any element that needs its stroke to read as the primary accent. For keyboard focus use border.focus.',
 }
