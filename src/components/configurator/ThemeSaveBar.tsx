@@ -9,7 +9,8 @@ import { goToLogin, useAccess } from '../../lib/access'
 import { useI18n } from '../../lib/i18n'
 import { SELECT_FOCUS, SELECT_LIST, SELECT_OPTION, SELECT_OPTION_OFF, SELECT_OPTION_FOCUS, SELECT_OPTION_ON, SELECT_SHELL, MENU_CHECK, SOFT_BUTTON_SURFACE, WORKSPACE_CHROME } from './themeWorkspaceLayout'
 import { PALETTE_LEVELS, getPaletteLevel, subscribePaletteLevel, writePaletteLevel, type PaletteLevel } from '../../lib/radixPalettes'
-import { TWO_COLOR_PAIRS, pairPalette, requestTwoColorPair, type PairStrength, type TwoColorPair } from '../../lib/twoColorPairs'
+import { TWO_COLOR_PAIRS, pairPalette, requestTwoColorPair, type PairStrength, type TwoColorPalette } from '../../lib/twoColorPairs'
+import { CURATED_COLORS, curatedPalette, requestCuratedColor } from '../../lib/curatedColors'
 import { SETUP_STEPS, advanceThemeSetup, finishThemeSetup, forgetUnsavedBrand, retreatThemeSetup, useSetupStep } from '../../lib/themeSetup'
 import { showToast } from '../ui/Toast'
 import { burstConfetti } from '../../lib/celebrate'
@@ -371,10 +372,29 @@ const LEVEL_COPY: Record<PaletteLevel, { label: string; hint: string }> = {
  *  Free (deep coloured dark pages), Soft with Bold (calm dark, off-white
  *  light). Picking one sets that level. The menu names them only: the tiles
  *  show what a pair is. */
-const PAIR_DECKS: { strength: PairStrength; level: PaletteLevel; label: string }[] = [
-  { strength: 'rich', level: 'liberal', label: 'Rich pairs' },
-  { strength: 'soft', level: 'bold', label: 'Soft pairs' },
+type DeckKey = 'curated' | PairStrength
+const PAIR_DECKS: { key: DeckKey; level?: PaletteLevel; label: string }[] = [
+  // Hand-picked accents — Create UI's eight, then HeroUI's sixteen
+  // (`curatedColors`). A pick sets no level: it is a colour, not a dare.
+  { key: 'curated', label: 'Curated colours' },
+  { key: 'rich', level: 'liberal', label: 'Rich pairs' },
+  { key: 'soft', level: 'bold', label: 'Soft pairs' },
 ]
+
+/** One tile of a deck: its id, what it paints, and how it is named. */
+interface DeckEntry { id: string; palette: TwoColorPalette; name?: string; pick: () => void }
+
+/** The tiles of a deck, built once per deck (palettes solve contrast). */
+const deckCache = new Map<DeckKey, Omit<DeckEntry, 'pick'>[]>()
+function deckTiles(key: DeckKey): Omit<DeckEntry, 'pick'>[] {
+  const hit = deckCache.get(key)
+  if (hit) return hit
+  const tiles = key === 'curated'
+    ? CURATED_COLORS.map((c) => ({ id: c.id, palette: curatedPalette(c), name: c.name }))
+    : TWO_COLOR_PAIRS.map((pair) => ({ id: pair.id, palette: pairPalette(pair, key) }))
+  deckCache.set(key, tiles)
+  return tiles
+}
 
 /** The level Random draws its colours at (`radixPalettes`), shared by every
  *  Random in this browser. */
@@ -393,19 +413,21 @@ const PAIRS_MENU_W = 256
 /** One pair as a tiny screen, in BOTH themes it ships: the dark page with
  *  the accent ("Aa" and a button), and a light strip below with the same
  *  accent adapted to it. These are the colours the board will get. */
-function PairTile({ pair, strength, picked, onPick, tabIndex, setRef }: {
-  pair: TwoColorPair
-  strength: PairStrength
+export function PairTile({ palette: p, name: colourName, picked, onPick, tabIndex, setRef }: {
+  palette: TwoColorPalette
+  /** A curated colour's name; a pair is named by its two hexes. */
+  name?: string
   picked: boolean
   onPick: () => void
   tabIndex: number
   setRef: (el: HTMLButtonElement | null) => void
 }) {
   const { t } = useI18n()
-  const p = pairPalette(pair, strength)
-  const name = t('Page {page}, accent {accent}', { page: p.neutral.toUpperCase(), accent: p.accent.toUpperCase() })
+  const name = colourName
+    ? `${t(colourName)}, ${p.accent.toUpperCase()}`
+    : t('Page {page}, accent {accent}', { page: p.neutral.toUpperCase(), accent: p.accent.toUpperCase() })
   return (
-    <HintTip label={`${p.neutral.toUpperCase()} · ${p.accent.toUpperCase()}`}>
+    <HintTip label={colourName ? `${t(colourName)} · ${p.accent.toUpperCase()}` : `${p.neutral.toUpperCase()} · ${p.accent.toUpperCase()}`}>
       <button
         ref={setRef}
         type="button"
@@ -431,13 +453,15 @@ function PairTile({ pair, strength, picked, onPick, tabIndex, setRef }: {
 }
 
 /** Three overlapping chips: a preview of the pairs behind the Bold row. */
-function PairStack({ strength }: { strength: PairStrength }) {
+function PairStack({ deck }: { deck: DeckKey }) {
+  // Curated: three accents as plain dots (one colour each); pairs: page | accent.
+  const picks = deck === 'curated' ? [0, 1, 3] : [0, 1, 2]
   return (
     <span aria-hidden className="flex flex-shrink-0 -space-x-1">
-      {TWO_COLOR_PAIRS.slice(0, 3).map((pair) => {
-        const p = pairPalette(pair, strength)
+      {picks.map((i) => {
+        const { id, palette: p } = deckTiles(deck)[i]
         return (
-          <span key={pair.id} className="h-3.5 w-3.5 rounded-full ring-1 ring-side-panel" style={{ background: `linear-gradient(135deg, ${p.pages.dark} 50%, ${p.accent} 50%)` }} />
+          <span key={id} className="h-3.5 w-3.5 rounded-full ring-1 ring-side-panel" style={{ background: deck === 'curated' ? p.accent : `linear-gradient(135deg, ${p.pages.dark} 50%, ${p.accent} 50%)` }} />
         )
       })}
     </span>
@@ -483,10 +507,11 @@ export function RandomLevelPicker({ chevron = false, onOpen }: {
   const options = useRef<(HTMLButtonElement | null)[]>([])
   // Bold's second door: the curated two-colour pairs, picked by hand.
   const [view, setView] = useState<'levels' | 'pairs'>('levels')
-  const [deck, setDeck] = useState<PairStrength>('soft')
+  const [deck, setDeck] = useState<DeckKey>('curated')
   const [picked, setPicked] = useState<string | null>(null)
   const deckRows = useRef<(HTMLButtonElement | null)[]>([])
-  const deckIndex = PAIR_DECKS.findIndex((d) => d.strength === deck)
+  const deckIndex = PAIR_DECKS.findIndex((d) => d.key === deck)
+  const entries = deckTiles(deck)
   const backToLevels = () => { setView('levels'); requestAnimationFrame(() => deckRows.current[deckIndex]?.focus()) }
   const tiles = useRef<(HTMLButtonElement | null)[]>([])
   const menuWidth = view === 'pairs' ? PAIRS_MENU_W : LEVEL_MENU_W
@@ -496,10 +521,17 @@ export function RandomLevelPicker({ chevron = false, onOpen }: {
     setView('levels')
     if (refocus) trigger.current?.focus()
   }
-  const pickPair = (pair: TwoColorPair) => {
-    writePaletteLevel(PAIR_DECKS[deckIndex].level)
-    setPicked(pair.id)
-    requestTwoColorPair(pair, deck)
+  const pickEntry = (id: string) => {
+    setPicked(id)
+    if (deck === 'curated') {
+      const color = CURATED_COLORS.find((c) => c.id === id)
+      if (color) requestCuratedColor(color)
+      return
+    }
+    const level = PAIR_DECKS[deckIndex].level
+    if (level) writePaletteLevel(level)
+    const pair = TWO_COLOR_PAIRS.find((p) => p.id === id)
+    if (pair) requestTwoColorPair(pair, deck)
   }
 
   // Measure on open and keep in step with resize. Scrolling the column under
@@ -538,7 +570,7 @@ export function RandomLevelPicker({ chevron = false, onOpen }: {
   useEffect(() => {
     if (!open) return
     if (view === 'pairs') {
-      const i = Math.max(0, TWO_COLOR_PAIRS.findIndex((p) => p.id === picked))
+      const i = Math.max(0, entries.findIndex((p) => p.id === picked))
       tiles.current[i]?.focus()
     }
     // `picked` is read once, on entering the view.
@@ -563,7 +595,7 @@ export function RandomLevelPicker({ chevron = false, onOpen }: {
   const onMenuKey = (event: React.KeyboardEvent) => {
     if (view === 'pairs') {
       const i = tiles.current.findIndex((el) => el === document.activeElement)
-      const n = TWO_COLOR_PAIRS.length
+      const n = entries.length
       const go = (to: number) => { event.preventDefault(); tiles.current[Math.max(0, Math.min(n - 1, to))]?.focus() }
       if (event.key === 'Escape') { event.preventDefault(); backToLevels() }
       else if (i < 0) return
@@ -684,13 +716,13 @@ export function RandomLevelPicker({ chevron = false, onOpen }: {
           <div className="-mx-1.5 mt-1 flex flex-col gap-0.5 border-t border-line px-1.5 pt-1.5">
           {PAIR_DECKS.map((d, i) => (
             <button
-              key={d.strength}
+              key={d.key}
               ref={(el) => { deckRows.current[i] = el }}
               type="button"
-              onClick={() => { setDeck(d.strength); setView('pairs') }}
+              onClick={() => { setDeck(d.key); setView('pairs') }}
               className={`${SELECT_OPTION} ${SELECT_OPTION_OFF} grid grid-cols-[auto_1fr_auto] items-center gap-x-2 ${SELECT_OPTION_FOCUS}`}
             >
-              <PairStack strength={d.strength} />
+              <PairStack deck={d.key} />
               <span className="min-w-0 truncate text-caption">{t(d.label)}</span>
               <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden className="text-fg-faint">
                 <path d="M6 4l4 4-4 4" />
@@ -713,15 +745,15 @@ export function RandomLevelPicker({ chevron = false, onOpen }: {
             <span className="min-w-0 flex-1 truncate text-caption font-medium text-fg">{t(PAIR_DECKS[deckIndex].label)}</span>
           </div>
           <div role="radiogroup" aria-label={t(PAIR_DECKS[deckIndex].label)} className="grid max-h-[min(184px,45vh)] grid-cols-6 gap-1 overflow-y-auto p-1">
-            {TWO_COLOR_PAIRS.map((pair, i) => {
-              const focusIndex = Math.max(0, TWO_COLOR_PAIRS.findIndex((p) => p.id === picked))
+            {entries.map((entry, i) => {
+              const focusIndex = Math.max(0, entries.findIndex((p) => p.id === picked))
               return (
                 <PairTile
-                  key={pair.id}
-                  pair={pair}
-                  strength={deck}
-                  picked={pair.id === picked}
-                  onPick={() => pickPair(pair)}
+                  key={entry.id}
+                  palette={entry.palette}
+                  name={entry.name}
+                  picked={entry.id === picked}
+                  onPick={() => pickEntry(entry.id)}
                   tabIndex={i === focusIndex ? 0 : -1}
                   setRef={(el) => { tiles.current[i] = el }}
                 />
