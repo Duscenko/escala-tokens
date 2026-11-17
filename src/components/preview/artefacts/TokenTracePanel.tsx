@@ -18,6 +18,7 @@
 import { useMemo, useState, type ReactNode } from 'react'
 import type { ElementTrace, TraceKind, TraceRow } from '../../../lib/tokenTrace'
 import { displayHex } from '../../../lib/tokenInspector'
+import { swatchPaint } from '../../../lib/swatchPaint'
 
 export const CHECKER: React.CSSProperties = {
   backgroundImage:
@@ -62,14 +63,20 @@ export function isAlpha(css: string): boolean {
 
 /** The glyph left of a value: a real swatch for colour, a drawn mark for a length.
  *  `lg` is the touch size (the About page's phone inspector). */
-export function ValueMark({ row, size = 'sm' }: { row: TraceRow; size?: 'sm' | 'lg' }) {
+export function ValueMark({ row, size = 'sm', page }: {
+  row: TraceRow
+  size?: 'sm' | 'lg'
+  /** The page of the appearance the value was resolved in: a translucent value
+   *  is drawn over it (`swatchPaint`), never over the chrome. */
+  page?: string
+}) {
   const lg = size === 'lg'
   const box = `flex flex-shrink-0 items-center justify-center ${lg ? 'h-9 w-9 rounded-lg bg-surface' : 'h-5 w-5'}`
   const glyph = lg ? 'h-4 w-4' : 'h-3.5 w-3.5'
   if (row.kind === 'color') {
     return (
-      <span className={`${lg ? 'h-9 w-9 rounded-lg' : 'h-5 w-5 rounded-md'} flex-shrink-0 overflow-hidden ring-1 ring-black/10 dark:ring-white/15`} style={isAlpha(row.value) ? CHECKER : undefined} aria-hidden>
-        <span className="block h-full w-full" style={{ background: row.value }} />
+      <span className={`${lg ? 'h-9 w-9 rounded-lg' : 'h-5 w-5 rounded-md'} flex-shrink-0 overflow-hidden ring-1 ring-black/10 dark:ring-white/15`} aria-hidden>
+        <span className="block h-full w-full" style={swatchPaint(row.value, page, lg ? 8 : 4)} />
       </span>
     )
   }
@@ -153,11 +160,12 @@ function VarChip({ name }: { name: string }) {
 }
 
 function Row({
-  row, lit, dim, onPick,
+  row, lit, dim, onPick, page,
 }: {
   row: TraceRow
   lit: boolean
   dim: boolean
+  page?: string
   onPick?: (row: TraceRow) => void
 }) {
   const editable = !!row.pickId && !!onPick
@@ -169,7 +177,7 @@ function Row({
   const body: ReactNode = (
     <>
       <span className="flex items-center gap-2">
-        <ValueMark row={row} />
+        <ValueMark row={row} page={page} />
         <span className={`min-w-0 flex-1 truncate text-caption ${lit ? 'text-fg' : 'text-fg-muted'}`}>
           {row.label}
           {row.state && (
@@ -213,9 +221,11 @@ function Row({
 }
 
 export function TokenTraceList({
-  trace, hitSlot, litIds, onPick,
+  trace, hitSlot, litIds, onPick, page,
 }: {
   trace: ElementTrace
+  /** The page of the appearance on screen, for translucent swatches. */
+  page?: string
   /** The anatomy slot under the pointer — its section lights up. */
   hitSlot?: string | null
   /** Pinned-group focus: only these role ids light. */
@@ -303,6 +313,7 @@ export function TokenTraceList({
                     lit={lit}
                     dim={!!litIds && !lit}
                     onPick={onPick}
+                    page={page}
                   />
                 )
               })}
