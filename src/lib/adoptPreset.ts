@@ -299,12 +299,16 @@ export function untouchedGuestSeed(state: SeedState = useDesignStore.getState())
   // Semantic edits: the overrides on this theme's modes must be the ones the
   // style itself writes on adopt, no more and no fewer.
   const modes = new Set([themeModeKey(key, 'light'), themeModeKey(key, 'dark')])
+  // Sorted at every level: the compare is about WHICH overrides, not the order
+  // they were written in. A role the default system already overrides (the
+  // secondary button) sits early in the store's object but late in the style's.
+  const sorted = <T,>(entries: [string, T][]) => entries.sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0))
   const own = (overrides: SeedState['architectureOverrides']) => Object.fromEntries(
-    Object.entries(overrides).map(([arch, tokens]) => [arch, Object.fromEntries(
-      Object.entries(tokens)
-        .map(([token, byMode]) => [token, Object.fromEntries(Object.entries(byMode).filter(([mode]) => modes.has(mode)))] as const)
-        .filter(([, byMode]) => Object.keys(byMode).length),
-    )]).filter(([, tokens]) => Object.keys(tokens).length),
+    sorted(Object.entries(overrides).map(([arch, tokens]) => [arch, Object.fromEntries(
+      sorted(Object.entries(tokens)
+        .map(([token, byMode]) => [token, Object.fromEntries(sorted(Object.entries(byMode).filter(([mode]) => modes.has(mode))))] as [string, Record<string, string>])
+        .filter(([, byMode]) => Object.keys(byMode).length)),
+    )] as [string, Record<string, Record<string, string>>]).filter(([, tokens]) => Object.keys(tokens).length)),
   )
   const expected = own(withStyleSemantics({}, preset.semantics, key))
   return JSON.stringify(own(state.architectureOverrides)) === JSON.stringify(expected) ? key : null

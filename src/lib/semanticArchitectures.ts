@@ -823,24 +823,18 @@ const CATEGORICAL_ROLES: { group: string; key: string; light: string; dark: stri
   // pin it replaces, which wasn't a state at all for those hues.
   { group: 'action', key: 'primary.hover',   light: '{step:accent+1}', dark: '{step:accent+1}' },
   { group: 'action', key: 'primary.pressed', light: '{step:accent+2}', dark: '{step:accent+2}' },
-  // `{neutral.4}`, not `{neutral.3}` (audit D2). Tone 3 IS `surface.layer-2` —
-  // a resting secondary button was pixel-identical to a floating popover. A
-  // control you click reads one step heavier than a passive surface; tone 4 is
-  // otherwise unreferenced by any neutral role, so this introduces no new
-  // collision. Label stays `content.primary` and its contrast only improves.
-  { group: 'action', key: 'secondary.default', light: '{neutral.4}',    dark: '{neutral-dark.4}' },
-  // Hover/pressed walk the same ramp one step each — the SAME shape as
-  // `action.primary.default → .hover → .pressed`, so a button tier always reads
-  // default / hover / pressed whatever its intent. Tones 5 and 6 were referenced
-  // by no fill role, so neither collides with a surface; the label stays
-  // `content.primary` (tone 12), which only gains contrast on a deeper fill.
-  { group: 'action', key: 'secondary.hover',   light: '{neutral.5}', dark: '{neutral-dark.5}' },
-  // Light pressed stops at tone 5 (shared with hover): the contrast audit
-  // measured tone 6 under the action-label APCA floor (Lc 55–59 against Lc 60)
-  // on every seed, while dark tone 6 clears it. Same shape as primary's
-  // documented residual — hover and pressed can share a tone and still be a
-  // real, legible state; a pressed fill that fails the label floor is not.
-  { group: 'action', key: 'secondary.pressed', light: '{neutral.6}', dark: '{neutral-dark.6}' },
+  // Two steps above `surface.layer-2` in both appearances (owner, 2026-11-17,
+  // decided in the Figma file first — DEC-2026-11-17-001). One step (tone 4
+  // on layer-2's tone 3) read 1.09–1.15:1 on a card in every style, so the
+  // button was only its top highlight. Light: the resting fill takes the tone
+  // hover used to have (5) and hover · pressed walk the ramp (6 · 7). Dark:
+  // 6 · 7 · 8. No border in either appearance: one rule for both.
+  { group: 'action', key: 'secondary.default', light: '{neutral.5}', dark: '{neutral-dark.6}' },
+  { group: 'action', key: 'secondary.hover',   light: '{neutral.6}', dark: '{neutral-dark.7}' },
+  // Light hover and pressed sit under the action-label APCA floor (Lc ~55 on
+  // 6, ~47 on 7, against 60): accepted by the owner for these brief states
+  // (DEC-2026-11-17-001). The resting state clears it (Lc 64–70).
+  { group: 'action', key: 'secondary.pressed', light: '{neutral.7}', dark: '{neutral-dark.8}' },
   // ALPHA wash, not `{neutral.2}` (audit D2). Tone 2 IS `surface.layer-1` — a
   // disabled button was pixel-identical to a card, the exact adjacency CLAUDE.md
   // warns about. "Disabled" means "barely a fill", which is what a 15% wash is,
@@ -1338,9 +1332,9 @@ export const CATEGORICAL_ROLE_COMMENTS: Record<string, string> = {
   'action.primary.default': '[ROLE: Primary CTA Default] Primary call-to-action fill. Inner text must always be content.on-action. Picked BY JOB: tone 9 with the light ink in Light, tone 10 with the dark ink in Dark (a dark-ink solid sits one step higher); falls back to the nearest tone that carries a label at AA when the hue cannot.',
   'action.primary.hover': '[ROLE: Primary CTA Hover] Hover of the primary button fill: one step AWAY from its ink ({step:accent+1}) — darker under a light ink (Light 10), lighter under a dark ink (Dark 11) — re-verified for label contrast.',
   'action.primary.pressed': '[ROLE: Primary CTA Pressed] Pressed / active primary fill: two steps away from the ink ({step:accent+2}) — Light 11, Dark 12 — re-verified for label contrast.',
-  'action.secondary.default': '[ROLE: Secondary CTA Default] Affects the resting fill of neutral / secondary buttons. {neutral.4} — one step heavier than surface.layer-2 so a control reads with more presence than a passive surface. Label text must be content.on-secondary, not content.on-action. Buttons and badges only — a track reads surface.muted.',
-  'action.secondary.hover': '[ROLE: Secondary CTA Hover] Affects the hover state of the neutral / secondary button fill. {neutral.5} — one step past action.secondary.default, the same default → hover → pressed shape action.primary follows. Label stays content.on-secondary.',
-  'action.secondary.pressed': '[ROLE: Secondary CTA Pressed] Pressed state of the neutral / secondary button fill. {neutral.6} — two steps past action.secondary.default. Label stays content.on-secondary.',
+  'action.secondary.default': '[ROLE: Secondary CTA Default] Affects the resting fill of neutral / secondary buttons. {neutral.5} in Light, {neutral-dark.6} in Dark — two steps heavier than surface.layer-2, so a control reads on a card as well as on the page (DEC-2026-11-17-001); never a border. Label text must be content.on-secondary, not content.on-action. Buttons and badges only — a track reads surface.muted.',
+  'action.secondary.hover': '[ROLE: Secondary CTA Hover] Affects the hover state of the neutral / secondary button fill. {neutral.6} in Light, {neutral-dark.7} in Dark — one step past action.secondary.default, the same default → hover → pressed shape action.primary follows. Label stays content.on-secondary.',
+  'action.secondary.pressed': '[ROLE: Secondary CTA Pressed] Pressed state of the neutral / secondary button fill. {neutral.7} in Light, {neutral-dark.8} in Dark — two steps past action.secondary.default. Label stays content.on-secondary.',
   'action.disabled.default': '[ROLE: Disabled Default]  Affects the fill of disabled buttons and controls. An ALPHA wash — {black-a.3} in light, {white-a.2} in dark — so it reads as "muted" over the page or over a card alike, and never collides with an opaque surface. No contrast floor: it communicates inactivity, not legibility.',
   'action.ghost.default': '[ROLE: Ghost Default] Resting fill of a borderless button — fully transparent (`{neutral-a.1}` — alpha-ladder step 1 is 0%, an existing primitive, so it still aliases in Figma), so the ghost tier reads default / hover / pressed like primary and secondary.',
   'action.ghost.hover': '[ROLE: Ghost Hover] Hover wash for a borderless button with no brand intent (toolbar icons, close buttons, menu items). Flips ink per appearance — {black-a.1} in light, {white-a.1} in dark — because a neutral wash has to darken a light page and lighten a dark one.',

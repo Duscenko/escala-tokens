@@ -139,6 +139,40 @@ describe('system style presets', () => {
     }
   })
 
+  // A secondary button is a control you click; a card or a popover is a passive
+  // surface it sits on. `DARK_DEPTH` lifting layer-2 to tone 4 once put it ON
+  // the secondary fill: a "View report" button on a stat card was the card's
+  // colour, only its top highlight drew an edge. And one step apart was not
+  // enough on a dark card (1.09:1), so in Dark the button sits TWO steps above
+  // layer-2 (DEC-2026-11-17-001, decided in the Figma file first).
+  it('never paints a secondary button the colour of the surface under it', () => {
+    for (const preset of THEME_STYLE_PRESETS) {
+      const get = resolve(preset)
+      for (const mode of ['light', 'dark'] as const) {
+        const fills = ['default', 'hover', 'pressed'].map((s) => get('action', `secondary.${s}`, mode).toLowerCase())
+        for (const layer of ['page', 'layer-1', 'layer-2'] as const) {
+          const surface = get('surface', layer, mode).toLowerCase()
+          expect(fills, `${preset.id} · ${mode}: a secondary fill equals surface.${layer} ${surface}`)
+            .not.toContain(surface)
+        }
+      }
+    }
+  })
+
+  it('keeps the secondary button two steps above layer-2 in every style, Light and Dark', () => {
+    const step = (ref: string) => Number(/^\{neutral(?:-dark)?\.(\d+)\}$/.exec(ref)?.[1] ?? NaN)
+    const schema = { light: { layer2: '{neutral.3}', fill: '{neutral.5}' }, dark: { layer2: '{neutral-dark.3}', fill: '{neutral-dark.6}' } }
+    for (const preset of THEME_STYLE_PRESETS) {
+      const sem = preset.semantics ?? {}
+      for (const mode of ['light', 'dark'] as const) {
+        const layer2 = step(sem['surface.layer-2']?.[mode] ?? schema[mode].layer2)
+        const fill = step(sem['action.secondary.default']?.[mode] ?? schema[mode].fill)
+        if (Number.isNaN(layer2) || Number.isNaN(fill)) continue
+        expect(fill - layer2, `${preset.id} · ${mode}: secondary ${fill} over layer-2 ${layer2}`).toBeGreaterThanOrEqual(2)
+      }
+    }
+  })
+
   // `content.subtle` is `{neutral.9}`, which reads 3.27–5.10:1 on a light page
   // and fell to 2.90–3.19:1 on a dark one before `DARK_DEPTH` moved it up.
   it('keeps subtle ink from being weaker in dark than in light', () => {

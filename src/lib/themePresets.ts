@@ -241,7 +241,9 @@ function moodShape(id: string) {
 // SUBTLE INK. `content.subtle` is `{neutral.9}`, which reads 3.27–5.10:1 on a
 // light page and only **2.90–3.19:1** on a dark one. One step up recovers it.
 //
-// Both are DARK-ONLY: light measured fine and is left on the schema.
+// Both are DARK-ONLY: light measured fine and is left on the schema. The
+// secondary button needs nothing here: the schema puts it on tone 6 in Dark,
+// two steps above this layer-2 (DEC-2026-11-17-001).
 const DARK_DEPTH = {
   'surface.layer-1': { dark: '{neutral-dark.3}' },
   'surface.layer-2': { dark: '{neutral-dark.4}' },
@@ -912,8 +914,16 @@ export const THEME_STYLE_PRESETS: ThemeStylePreset[] = [
     },
     // A vivid teal dark ramp compresses its low steps even more than the
     // others: `DARK_DEPTH`'s layer-2 on tone 4 lifted the inner card by
-    // ΔL 0.070 against light's 0.072. One more step restores it.
-    semantics: { ...softBorders, 'surface.layer-2': { dark: '{neutral-dark.5}' } },
+    // ΔL 0.070 against light's 0.072. One more step restores it — and the
+    // secondary button keeps two steps above it, as everywhere else
+    // (DEC-2026-11-17-001).
+    semantics: {
+      ...softBorders,
+      'surface.layer-2': { dark: '{neutral-dark.5}' },
+      'action.secondary.default': { dark: '{neutral-dark.7}' },
+      'action.secondary.hover': { dark: '{neutral-dark.8}' },
+      'action.secondary.pressed': { dark: '{neutral-dark.9}' },
+    },
   },
   {
     id: 'synthwave-night',

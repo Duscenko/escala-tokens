@@ -11,3 +11,10 @@
   rationale: "Owner decision DEC-2026-11-16-006: the Figma file is the rule. Dark critical text is Error Dark/10 (#fb493d), Lc ~42 on its own tint, under the 60 of large-text; WCAG 3:1 still holds (audit intent pinned-status-text)."
   owner: Cesar Durango
   reviewBy: 2027-02-16
+
+- id: EXC-2026-11-17-001
+  rule: COL-002
+  scope: Content/on-secondary on Action/secondary/hover and /pressed (Light)
+  rationale: "Owner decision DEC-2026-11-17-001: the secondary button walks its ramp two steps above the card (Light 05 · 06 · 07). On hover (Gray/06) the label keeps WCAG AA but reads Lc ~57; on pressed (Gray/07) it reads 4.2:1 in the default neutrals. Transient states, audited as pressed-label (WCAG 3:1, no APCA term); the resting state still clears AA and Lc 60."
+  owner: Cesar Durango
+  reviewBy: 2027-02-17

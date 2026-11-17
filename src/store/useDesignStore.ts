@@ -16,6 +16,31 @@ export function moveBorderStrongToControl(state: any): void {
   delete cat['border.strong']
 }
 
+/** Store v152: in Dark the secondary button sits two steps above the card it
+ *  sits on (DEC-2026-11-17-001). The schema now puts it on tone 6, which is two
+ *  above a style's lifted layer-2 (tone 4), so most brands need nothing. A brand
+ *  whose Dark layer-2 sits higher still (the teal style puts it on 5) and that
+ *  has no hand-picked secondary fill gets default · hover · pressed two, three
+ *  and four steps above it — what adopting that style now writes. A hand-picked
+ *  secondary fill is never touched. */
+export function liftSecondaryAboveLayer2V152(state: any): void {
+  const cat = state?.architectureOverrides?.categorical
+  if (!cat || typeof cat !== 'object') return
+  const layer2 = cat['surface.layer-2']
+  if (!layer2 || typeof layer2 !== 'object') return
+  for (const [mode, ref] of Object.entries(layer2)) {
+    if (!mode.endsWith('::dark') || typeof ref !== 'string') continue
+    const step = /^\{neutral-dark\.(\d+)\}$/.exec(ref)
+    if (!step || Number(step[1]) + 2 <= 6) continue
+    const states = ['default', 'hover', 'pressed'] as const
+    if (states.some((s) => cat[`action.secondary.${s}`]?.[mode])) continue
+    states.forEach((s, i) => {
+      const token = `action.secondary.${s}`
+      cat[token] = { ...(cat[token] ?? {}), [mode]: `{neutral-dark.${Math.min(12, Number(step[1]) + 2 + i)}}` }
+    })
+  }
+}
+
 /** Catalogue keys added by store v97 / v98 (shadcn phase 5). A migration adds
  *  them only to a selection that already held every earlier component. */
 const COMPONENTS_V97 = ['ToggleGroup', 'NativeSelect', 'Kbd', 'Collapsible', 'Table', 'Skeleton', 'Empty']
@@ -2065,7 +2090,7 @@ export const useDesignStore = create<DesignStore>()(
     }),
     {
       name: 'scalable-designs-store',
-      version: 151,
+      version: 152,
       migrate: (persisted: any, version: number) => {
         if (persisted) {
           // v1→v2: remove styleDirection, rename selectedAtoms → selectedComponents
@@ -4468,6 +4493,14 @@ export const useDesignStore = create<DesignStore>()(
           move(persisted)
           if (Array.isArray(persisted.savedSystems)) {
             for (const sys of persisted.savedSystems) move(sys?.snapshot)
+          }
+        }
+        if (version < 152) {
+          // v151→v152: in Dark, the secondary button sits two steps above the
+          // card it sits on (see `liftSecondaryAboveLayer2V152`).
+          liftSecondaryAboveLayer2V152(persisted)
+          if (Array.isArray(persisted.savedSystems)) {
+            for (const sys of persisted.savedSystems) liftSecondaryAboveLayer2V152(sys?.snapshot)
           }
         }
         if (version < 133) {

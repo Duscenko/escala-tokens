@@ -224,10 +224,13 @@ export const INTENT_THRESHOLDS: Record<IntentClass, Thresholds> = {
   // Critical text in Dark as the Figma file pins it (DEC-2026-11-16-006): `Status/critical/content` = Error Dark 10 (#fb493d), read on its
   // own tint at Lc ~42 — under the 60 of `large-text`, over WCAG's 3:1. WCAG only, like `pressed-label`; Light keeps `large-text`.
   'pinned-status-text': { wcag: 3.0, apcaLc: null },
-  // A label on a PRESSED fill (a state held for ~100 ms under the pointer):
-  // WCAG AA with no APCA term. The Escala file pins `action.secondary.pressed`
-  // to gray 06, where `content.on-secondary` reads 4.5+ :1 but Lc 57–59.
-  'pressed-label': { wcag: 4.5, apcaLc: null },
+  // A label on a TRANSIENT fill — pressed (held ~100 ms under the pointer) or
+  // hover: WCAG AA with no APCA term. The Escala file walks the secondary ramp
+  // two steps above the card (DEC-2026-11-17-001): Light hover on gray 06 and
+  // pressed on 07, where `content.on-secondary` reads Lc ~57 and, on pressed,
+  // 4.2:1 in the default neutrals. The floor is WCAG's 3:1 (the large-text row):
+  // a state the label is never READ in, only seen to react (EXC-2026-11-17-001).
+  'pressed-label': { wcag: 3.0, apcaLc: null },
   // A disabled label. WCAG 1.4.3 exempts inactive controls, so this is a
   // LEGIBILITY floor, not AA: 3:1 plus APCA's own minimum for disabled text
   // (Lc 30). Full AA would make a disabled outline / ghost / link button —

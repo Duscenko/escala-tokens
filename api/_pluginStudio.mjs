@@ -922,10 +922,13 @@ var init_apca = __esm({
       // Critical text in Dark as the Figma file pins it (DEC-2026-11-16-006): `Status/critical/content` = Error Dark 10 (#fb493d), read on its
       // own tint at Lc ~42 — under the 60 of `large-text`, over WCAG's 3:1. WCAG only, like `pressed-label`; Light keeps `large-text`.
       "pinned-status-text": { wcag: 3, apcaLc: null },
-      // A label on a PRESSED fill (a state held for ~100 ms under the pointer):
-      // WCAG AA with no APCA term. The Escala file pins `action.secondary.pressed`
-      // to gray 06, where `content.on-secondary` reads 4.5+ :1 but Lc 57–59.
-      "pressed-label": { wcag: 4.5, apcaLc: null },
+      // A label on a TRANSIENT fill — pressed (held ~100 ms under the pointer) or
+      // hover: WCAG AA with no APCA term. The Escala file walks the secondary ramp
+      // two steps above the card (DEC-2026-11-17-001): Light hover on gray 06 and
+      // pressed on 07, where `content.on-secondary` reads Lc ~57 and, on pressed,
+      // 4.2:1 in the default neutrals. The floor is WCAG's 3:1 (the large-text row):
+      // a state the label is never READ in, only seen to react (EXC-2026-11-17-001).
+      "pressed-label": { wcag: 3, apcaLc: null },
       // A disabled label. WCAG 1.4.3 exempts inactive controls, so this is a
       // LEGIBILITY floor, not AA: 3:1 plus APCA's own minimum for disabled text
       // (Lc 30). Full AA would make a disabled outline / ghost / link button —
@@ -3710,8 +3713,16 @@ var init_themePresets = __esm({
         },
         // A vivid teal dark ramp compresses its low steps even more than the
         // others: `DARK_DEPTH`'s layer-2 on tone 4 lifted the inner card by
-        // ΔL 0.070 against light's 0.072. One more step restores it.
-        semantics: { ...softBorders, "surface.layer-2": { dark: "{neutral-dark.5}" } }
+        // ΔL 0.070 against light's 0.072. One more step restores it — and the
+        // secondary button keeps two steps above it, as everywhere else
+        // (DEC-2026-11-17-001).
+        semantics: {
+          ...softBorders,
+          "surface.layer-2": { dark: "{neutral-dark.5}" },
+          "action.secondary.default": { dark: "{neutral-dark.7}" },
+          "action.secondary.hover": { dark: "{neutral-dark.8}" },
+          "action.secondary.pressed": { dark: "{neutral-dark.9}" }
+        }
       },
       {
         id: "synthwave-night",
@@ -8361,24 +8372,18 @@ var init_semanticArchitectures = __esm({
       // pin it replaces, which wasn't a state at all for those hues.
       { group: "action", key: "primary.hover", light: "{step:accent+1}", dark: "{step:accent+1}" },
       { group: "action", key: "primary.pressed", light: "{step:accent+2}", dark: "{step:accent+2}" },
-      // `{neutral.4}`, not `{neutral.3}` (audit D2). Tone 3 IS `surface.layer-2` —
-      // a resting secondary button was pixel-identical to a floating popover. A
-      // control you click reads one step heavier than a passive surface; tone 4 is
-      // otherwise unreferenced by any neutral role, so this introduces no new
-      // collision. Label stays `content.primary` and its contrast only improves.
-      { group: "action", key: "secondary.default", light: "{neutral.4}", dark: "{neutral-dark.4}" },
-      // Hover/pressed walk the same ramp one step each — the SAME shape as
-      // `action.primary.default → .hover → .pressed`, so a button tier always reads
-      // default / hover / pressed whatever its intent. Tones 5 and 6 were referenced
-      // by no fill role, so neither collides with a surface; the label stays
-      // `content.primary` (tone 12), which only gains contrast on a deeper fill.
-      { group: "action", key: "secondary.hover", light: "{neutral.5}", dark: "{neutral-dark.5}" },
-      // Light pressed stops at tone 5 (shared with hover): the contrast audit
-      // measured tone 6 under the action-label APCA floor (Lc 55–59 against Lc 60)
-      // on every seed, while dark tone 6 clears it. Same shape as primary's
-      // documented residual — hover and pressed can share a tone and still be a
-      // real, legible state; a pressed fill that fails the label floor is not.
-      { group: "action", key: "secondary.pressed", light: "{neutral.6}", dark: "{neutral-dark.6}" },
+      // Two steps above `surface.layer-2` in both appearances (owner, 2026-11-17,
+      // decided in the Figma file first — DEC-2026-11-17-001). One step (tone 4
+      // on layer-2's tone 3) read 1.09–1.15:1 on a card in every style, so the
+      // button was only its top highlight. Light: the resting fill takes the tone
+      // hover used to have (5) and hover · pressed walk the ramp (6 · 7). Dark:
+      // 6 · 7 · 8. No border in either appearance: one rule for both.
+      { group: "action", key: "secondary.default", light: "{neutral.5}", dark: "{neutral-dark.6}" },
+      { group: "action", key: "secondary.hover", light: "{neutral.6}", dark: "{neutral-dark.7}" },
+      // Light hover and pressed sit under the action-label APCA floor (Lc ~55 on
+      // 6, ~47 on 7, against 60): accepted by the owner for these brief states
+      // (DEC-2026-11-17-001). The resting state clears it (Lc 64–70).
+      { group: "action", key: "secondary.pressed", light: "{neutral.7}", dark: "{neutral-dark.8}" },
       // ALPHA wash, not `{neutral.2}` (audit D2). Tone 2 IS `surface.layer-1` — a
       // disabled button was pixel-identical to a card, the exact adjacency CLAUDE.md
       // warns about. "Disabled" means "barely a fill", which is what a 15% wash is,
@@ -8846,9 +8851,9 @@ var init_semanticArchitectures = __esm({
       "action.primary.default": "[ROLE: Primary CTA Default] Primary call-to-action fill. Inner text must always be content.on-action. Picked BY JOB: tone 9 with the light ink in Light, tone 10 with the dark ink in Dark (a dark-ink solid sits one step higher); falls back to the nearest tone that carries a label at AA when the hue cannot.",
       "action.primary.hover": "[ROLE: Primary CTA Hover] Hover of the primary button fill: one step AWAY from its ink ({step:accent+1}) \u2014 darker under a light ink (Light 10), lighter under a dark ink (Dark 11) \u2014 re-verified for label contrast.",
       "action.primary.pressed": "[ROLE: Primary CTA Pressed] Pressed / active primary fill: two steps away from the ink ({step:accent+2}) \u2014 Light 11, Dark 12 \u2014 re-verified for label contrast.",
-      "action.secondary.default": "[ROLE: Secondary CTA Default] Affects the resting fill of neutral / secondary buttons. {neutral.4} \u2014 one step heavier than surface.layer-2 so a control reads with more presence than a passive surface. Label text must be content.on-secondary, not content.on-action. Buttons and badges only \u2014 a track reads surface.muted.",
-      "action.secondary.hover": "[ROLE: Secondary CTA Hover] Affects the hover state of the neutral / secondary button fill. {neutral.5} \u2014 one step past action.secondary.default, the same default \u2192 hover \u2192 pressed shape action.primary follows. Label stays content.on-secondary.",
-      "action.secondary.pressed": "[ROLE: Secondary CTA Pressed] Pressed state of the neutral / secondary button fill. {neutral.6} \u2014 two steps past action.secondary.default. Label stays content.on-secondary.",
+      "action.secondary.default": "[ROLE: Secondary CTA Default] Affects the resting fill of neutral / secondary buttons. {neutral.5} in Light, {neutral-dark.6} in Dark \u2014 two steps heavier than surface.layer-2, so a control reads on a card as well as on the page (DEC-2026-11-17-001); never a border. Label text must be content.on-secondary, not content.on-action. Buttons and badges only \u2014 a track reads surface.muted.",
+      "action.secondary.hover": "[ROLE: Secondary CTA Hover] Affects the hover state of the neutral / secondary button fill. {neutral.6} in Light, {neutral-dark.7} in Dark \u2014 one step past action.secondary.default, the same default \u2192 hover \u2192 pressed shape action.primary follows. Label stays content.on-secondary.",
+      "action.secondary.pressed": "[ROLE: Secondary CTA Pressed] Pressed state of the neutral / secondary button fill. {neutral.7} in Light, {neutral-dark.8} in Dark \u2014 two steps past action.secondary.default. Label stays content.on-secondary.",
       "action.disabled.default": '[ROLE: Disabled Default]  Affects the fill of disabled buttons and controls. An ALPHA wash \u2014 {black-a.3} in light, {white-a.2} in dark \u2014 so it reads as "muted" over the page or over a card alike, and never collides with an opaque surface. No contrast floor: it communicates inactivity, not legibility.',
       "action.ghost.default": "[ROLE: Ghost Default] Resting fill of a borderless button \u2014 fully transparent (`{neutral-a.1}` \u2014 alpha-ladder step 1 is 0%, an existing primitive, so it still aliases in Figma), so the ghost tier reads default / hover / pressed like primary and secondary.",
       "action.ghost.hover": "[ROLE: Ghost Hover] Hover wash for a borderless button with no brand intent (toolbar icons, close buttons, menu items). Flips ink per appearance \u2014 {black-a.1} in light, {white-a.1} in dark \u2014 because a neutral wash has to darken a light page and lighten a dark one.",
@@ -14401,6 +14406,23 @@ function moveBorderStrongToControl(state2) {
   if (!cat["border.control"]) cat["border.control"] = cat["border.strong"];
   delete cat["border.strong"];
 }
+function liftSecondaryAboveLayer2V152(state2) {
+  const cat = state2?.architectureOverrides?.categorical;
+  if (!cat || typeof cat !== "object") return;
+  const layer2 = cat["surface.layer-2"];
+  if (!layer2 || typeof layer2 !== "object") return;
+  for (const [mode, ref] of Object.entries(layer2)) {
+    if (!mode.endsWith("::dark") || typeof ref !== "string") continue;
+    const step = /^\{neutral-dark\.(\d+)\}$/.exec(ref);
+    if (!step || Number(step[1]) + 2 <= 6) continue;
+    const states2 = ["default", "hover", "pressed"];
+    if (states2.some((s) => cat[`action.secondary.${s}`]?.[mode])) continue;
+    states2.forEach((s, i) => {
+      const token = `action.secondary.${s}`;
+      cat[token] = { ...cat[token] ?? {}, [mode]: `{neutral-dark.${Math.min(12, Number(step[1]) + 2 + i)}}` };
+    });
+  }
+}
 function renameSemanticKeys(map) {
   if (!map || typeof map !== "object") return map;
   const out = {};
@@ -15556,7 +15578,7 @@ var init_useDesignStore = __esm({
         }),
         {
           name: "scalable-designs-store",
-          version: 151,
+          version: 152,
           migrate: (persisted, version) => {
             if (persisted) {
               delete persisted.styleDirection;
@@ -17426,6 +17448,12 @@ var init_useDesignStore = __esm({
               move(persisted);
               if (Array.isArray(persisted.savedSystems)) {
                 for (const sys of persisted.savedSystems) move(sys?.snapshot);
+              }
+            }
+            if (version < 152) {
+              liftSecondaryAboveLayer2V152(persisted);
+              if (Array.isArray(persisted.savedSystems)) {
+                for (const sys of persisted.savedSystems) liftSecondaryAboveLayer2V152(sys?.snapshot);
               }
             }
             if (version < 133) {
