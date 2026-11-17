@@ -20,8 +20,8 @@ for role names.
 ## 1. Rules — never negotiable
 
 1. **Figma is the only rule.** Nothing outranks the file: not the plugin, not the web, not a convention
-   in CLAUDE.md, not an older plan. If two sets in the file disagree (IconButton keeps per-intent focus
-   rings, Button does not), the code copies BOTH.
+   in CLAUDE.md, not an older plan. If two sets in the file disagree, the code copies BOTH
+   (until 2026-11-17 IconButton and Button focused differently; the owner unified them in the file).
 2. **Never edit the Figma file.** Not to "fix" it, unify it, or finish its docs — not even for items an
    old plan lists as "pending in Figma". Every `use_figma` call in this skill is READ-ONLY. If something
    looks wrong, say it in one line and build from it as it is.
@@ -96,8 +96,10 @@ Read `references/lessons.md` before step 3. In short:
 - Tailwind in Storybook scans `src/` only through `apps/storybook/.storybook/storybook.css` (`@source`).
 - Storybook paints the Figma file's system: `buildStudioTokens` + `applyFigmaFilePalette` (palette as data).
 - Figma strokes sit INSIDE the frame; the CSS padding gives back `--escala-stroke-width`.
-- Focus: a control's edge is 2px inside + a 2px halo outside; a field keeps its 1px edge and the 2px
-  halo straddles it (`outline` + negative offset). Copy each set's own focus colours.
+- Focus: Button / IconButton (every appearance) = the Default look + ONE 2px ring 1px OUTSIDE the edge
+  (`gapRing`: `outline` + `outline-offset: 1px`), colour by intent. A control (Checkbox, Switch) = 2px edge
+  inside + 2px halo outside; a field keeps its 1px edge and the 2px halo straddles it (`outline` +
+  negative offset). Copy each set's own focus colours.
 - `get_design_context` Tailwind is lossy; trust `figma-read-set.js` — and a shadow's spread on a frame that
   does not clip content paints NOTHING in Figma (the script flags it). Pixels decide.
 - A stroke Figma does not draw must not exist in CSS either (`stroke.none`), or effects shift by its width.

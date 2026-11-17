@@ -170,7 +170,9 @@ decides its STRUCTURE; this skill decides every VALUE.
    Hover · Pressed · Focused · Disabled (only the ones the contract lists);
    each state binds its own role (`Action/primary/hover`,
    `Action/disabled/default` + `Content/disabled`, focus =
-   `Border/focus` + `Border/ring/default`). No opacity for a state.
+   `Border/focus` + `Border/ring/default` on a field or control; a Button /
+   IconButton keeps its Default look plus ONE ring 1px outside — see Borders).
+   No opacity for a state.
 5. **Contract vs Escala.** The contract owns anatomy, variants, properties,
    layer names and behaviour. Escala owns every colour, length and text style.
    If the contract needs a value no role covers, do not hard-code it: name it
@@ -222,7 +224,7 @@ After adding or renaming a role:
 
 - [ ] No hex, no primitive, no free px, no opacity-for-state in component code.
 - [ ] Every fill has its paired ink; every role name exists in the references.
-- [ ] Borders chosen by job; focus = `border.focus` + `border.ring.default`.
+- [ ] Borders chosen by job; field focus = `border.focus` + `border.ring.default`; button focus = one ring by intent (`border.ring.default` · `border.ring.neutral` · `status.critical.ring`), 1px outside.
 - [ ] Radius axis matches the element (box / field / selector / pill).
 - [ ] Gap vs inset vs size used for what they are.
 - [ ] Type set through a role, all facets together.
