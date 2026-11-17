@@ -139,6 +139,26 @@ describe('system style presets', () => {
     }
   })
 
+  // A secondary button is a control you click; a card or a popover is a passive
+  // surface it sits on. The schema keeps them one step apart (secondary on tone
+  // 4, layer-2 on 3, audit D2) and so does the Figma file (Gray Dark/04 vs /03).
+  // `DARK_DEPTH` lifting the surfaces a step put layer-2 ON tone 4 in Dark: a
+  // "View report" button on a stat card was the card's own colour, and only its
+  // top highlight drew an edge — a half border (owner, 2026-11-17).
+  it('never paints a secondary button the colour of the surface under it', () => {
+    for (const preset of THEME_STYLE_PRESETS) {
+      const get = resolve(preset)
+      for (const mode of ['light', 'dark'] as const) {
+        const fills = ['default', 'hover', 'pressed'].map((s) => get('action', `secondary.${s}`, mode).toLowerCase())
+        for (const layer of ['page', 'layer-1', 'layer-2'] as const) {
+          const surface = get('surface', layer, mode).toLowerCase()
+          expect(fills, `${preset.id} · ${mode}: a secondary fill equals surface.${layer} ${surface}`)
+            .not.toContain(surface)
+        }
+      }
+    }
+  })
+
   // `content.subtle` is `{neutral.9}`, which reads 3.27–5.10:1 on a light page
   // and fell to 2.90–3.19:1 on a dark one before `DARK_DEPTH` moved it up.
   it('keeps subtle ink from being weaker in dark than in light', () => {

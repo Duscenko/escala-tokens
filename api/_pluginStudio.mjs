@@ -3198,6 +3198,9 @@ var init_themePresets = __esm({
     DARK_DEPTH = {
       "surface.layer-1": { dark: "{neutral-dark.3}" },
       "surface.layer-2": { dark: "{neutral-dark.4}" },
+      "action.secondary.default": { dark: "{neutral-dark.5}" },
+      "action.secondary.hover": { dark: "{neutral-dark.6}" },
+      "action.secondary.pressed": { dark: "{neutral-dark.7}" },
       "content.subtle": { dark: "{neutral-dark.10}" }
     };
     A_DEFAULT_L = "{black-a.3}";
@@ -3710,8 +3713,15 @@ var init_themePresets = __esm({
         },
         // A vivid teal dark ramp compresses its low steps even more than the
         // others: `DARK_DEPTH`'s layer-2 on tone 4 lifted the inner card by
-        // ΔL 0.070 against light's 0.072. One more step restores it.
-        semantics: { ...softBorders, "surface.layer-2": { dark: "{neutral-dark.5}" } }
+        // ΔL 0.070 against light's 0.072. One more step restores it — and the
+        // secondary button keeps its step above it (see `DARK_DEPTH`).
+        semantics: {
+          ...softBorders,
+          "surface.layer-2": { dark: "{neutral-dark.5}" },
+          "action.secondary.default": { dark: "{neutral-dark.6}" },
+          "action.secondary.hover": { dark: "{neutral-dark.7}" },
+          "action.secondary.pressed": { dark: "{neutral-dark.8}" }
+        }
       },
       {
         id: "synthwave-night",
@@ -14401,6 +14411,23 @@ function moveBorderStrongToControl(state2) {
   if (!cat["border.control"]) cat["border.control"] = cat["border.strong"];
   delete cat["border.strong"];
 }
+function liftSecondaryAboveLayer2V152(state2) {
+  const cat = state2?.architectureOverrides?.categorical;
+  if (!cat || typeof cat !== "object") return;
+  const layer2 = cat["surface.layer-2"];
+  if (!layer2 || typeof layer2 !== "object") return;
+  for (const [mode, ref] of Object.entries(layer2)) {
+    if (!mode.endsWith("::dark") || typeof ref !== "string") continue;
+    const step = /^\{neutral-dark\.(\d+)\}$/.exec(ref);
+    if (!step) continue;
+    const states2 = ["default", "hover", "pressed"];
+    if (states2.some((s) => cat[`action.secondary.${s}`]?.[mode])) continue;
+    states2.forEach((s, i) => {
+      const token = `action.secondary.${s}`;
+      cat[token] = { ...cat[token] ?? {}, [mode]: `{neutral-dark.${Math.min(12, Number(step[1]) + 1 + i)}}` };
+    });
+  }
+}
 function renameSemanticKeys(map) {
   if (!map || typeof map !== "object") return map;
   const out = {};
@@ -15556,7 +15583,7 @@ var init_useDesignStore = __esm({
         }),
         {
           name: "scalable-designs-store",
-          version: 151,
+          version: 152,
           migrate: (persisted, version) => {
             if (persisted) {
               delete persisted.styleDirection;
@@ -17426,6 +17453,12 @@ var init_useDesignStore = __esm({
               move(persisted);
               if (Array.isArray(persisted.savedSystems)) {
                 for (const sys of persisted.savedSystems) move(sys?.snapshot);
+              }
+            }
+            if (version < 152) {
+              liftSecondaryAboveLayer2V152(persisted);
+              if (Array.isArray(persisted.savedSystems)) {
+                for (const sys of persisted.savedSystems) liftSecondaryAboveLayer2V152(sys?.snapshot);
               }
             }
             if (version < 133) {

@@ -675,15 +675,15 @@
           },
           "secondary.default": {
             "core--minimalist::light": "#e3e1e6",
-            "core--minimalist::dark": "#222223"
+            "core--minimalist::dark": "#2a292c"
           },
           "secondary.hover": {
             "core--minimalist::light": "#d8d6dd",
-            "core--minimalist::dark": "#2a292c"
+            "core--minimalist::dark": "#363539"
           },
           "secondary.pressed": {
             "core--minimalist::light": "#cac7d0",
-            "core--minimalist::dark": "#363539"
+            "core--minimalist::dark": "#424046"
           },
           "disabled.default": {
             "core--minimalist::light": "#00000026",

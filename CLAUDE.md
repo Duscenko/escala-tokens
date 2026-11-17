@@ -44,7 +44,7 @@ About + the phone generator (`MobileThemeSheet.tsx`, picks only, no free inputs)
 | What | Where |
 |---|---|
 | App shell | `src/pages/Configurator.tsx` (rail · canvas card · right inspector) |
-| Store (persisted, **version 151**) | `src/store/useDesignStore.ts` |
+| Store (persisted, **version 152**) | `src/store/useDesignStore.ts` |
 | Colour maths (DOM-free) | `src/lib/color/` (`apca.ts`, `gamut.ts`, `cvd.ts`, `audit.ts`), `src/lib/colorUtils.ts` |
 | Semantic roles (Categorical, the only architecture) | `src/lib/semanticArchitectures.ts` (`CATEGORICAL_ROLES`), `src/lib/roleNames.ts` |
 | Dimensions, radius, spacing, sizes, grid | `src/lib/dimensions.ts`, `src/lib/layoutTokens.ts` |
