@@ -428,12 +428,19 @@ Where each table lives — change the source, then regenerate:
 After adding or renaming a role:
 
 1. \`npm run gen:escala-skill\` — rewrites this skill.
-2. Mirror it in the Figma plugin (\`escala-figma-plugin\`) — the parity tests
+2. **Audit the colour DOCUMENTATION, every time — not only the tables.**
+   Docs · Color (\`src/components/configurator/docs/foundationDocs.tsx\`,
+   also Storybook's Variables › Color) renders the roles live, but its lead,
+   usage and section descriptions are prose: re-read them against the role
+   you touched (its group, its job, its focus ring, its alpha). A new GROUP
+   needs its own section. Never type a count or a group list — derive it
+   from \`categoricalRoleCatalogue()\`. \`colorDocs.test.ts\` must stay green.
+3. Mirror it in the Figma plugin (\`escala-figma-plugin\`) — the parity tests
    fail otherwise.
-3. Renaming a stored role needs a store migration (append-only).
-4. \`npm test\` (catalogue, contrast matrix, recipe ↔ plugin parity, export
+4. Renaming a stored role needs a store migration (append-only).
+5. \`npm test\` (catalogue, contrast matrix, recipe ↔ plugin parity, export
    audit, this skill's drift check) and \`npm run build\`.
-5. Read \`CLAUDE.md\` for the decision history behind a role before moving it —
+6. Read \`CLAUDE.md\` for the decision history behind a role before moving it —
    most tones there were measured, not chosen.
 
 `

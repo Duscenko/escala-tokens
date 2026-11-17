@@ -1086,7 +1086,8 @@ explicitly out of scope. Individual components still adapt between `md` and `xl`
 > viewport (AGENTS.md and llms.txt route to it). The references come from `CATEGORICAL_ROLES`
 > (`categoricalRoleCatalogue()`), the layout role tables, `iconSizing.ts` and `TYPE_ROLES`.
 > **After changing a role, a CSS / Figma name or the skill's prose, run
-> `npm run gen:escala-skill`** — `escalaArchitectureSkill.test.ts` fails when the committed skill
+> `npm run gen:escala-skill` AND re-read Docs · Color's prose (`foundationDocs.tsx`, guarded by
+> `colorDocs.test.ts`) — it shipped "sixteen" translucent roles and no Elevation section for months** — `escalaArchitectureSkill.test.ts` fails when the committed skill
 > drifts from the tables. A portable copy installed elsewhere is not updated by that; regenerate
 > it with `--portable`.
 

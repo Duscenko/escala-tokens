@@ -86,6 +86,11 @@ Copy `references/story-template.tsx` into `apps/storybook/stories/<Component>.st
 - Goldens (`exportAudit`) move when a recipe changes: read the diff, confirm it is only your change,
   then `npx vitest run src/lib/__tests__/exportAudit.test.ts -u`.
 - Recipe changed → `node scripts/build-plugin-studio.mjs` (committed bundle).
+- **A colour ROLE changed (new role, new alias, a mode re-pointed — a focus ring, a surface): audit the
+  colour documentation in the same change, always.** Docs · Color (`foundationDocs.tsx`, shown in the app
+  AND in Storybook › Variables › Color) has prose that does not follow the table by itself: re-read the
+  lead, usage and the section of the role's group; add a section for a new group; derive counts. Then
+  `npm run gen:escala-skill` and `colorDocs.test.ts`. A role shipped with stale docs is not done.
 - Remove the component from `spec/figma-components.status.json` → `pending`;
   `figmaComponentsParity.test.ts` must stay green.
 - Commit only your files; report what changed, what was measured, anything odd in the file.

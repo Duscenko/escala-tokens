@@ -29,8 +29,9 @@ import { toneLabel, readableInk, compositeOver, generateAlphaScale, BLACK_ALPHA_
 import {
   buildArchitectureView,
   CATEGORICAL_ROLE_COMMENTS,
+  categoricalRoleCatalogue,
 } from '../../../lib/semanticArchitectures'
-import { themeContextFromStore } from '../../../lib/tokenGenerator'
+import { themeContextFromStore, brandAppearanceProjection } from '../../../lib/tokenGenerator'
 import { TYPE_SCALE_KEYS, FONT_WEIGHT_BASES } from '../../../lib/typographyStandard'
 import { TYPE_ROLES, TYPE_ROLE_GROUPS, TYPE_VIEWPORTS, mergeTypeRoles, resolveTypeStyle, typeRolesInGroup } from '../../../lib/typeRoles'
 import {
@@ -193,6 +194,16 @@ function resolveCategoricalCategories(
 ): CategoricalCategoryDoc[] | undefined {
   if (store.semanticArchitecture !== 'categorical') return undefined
 
+  // One brand: read it in Light AND Dark (its two shipped columns). Without
+  // this both columns resolved the brand in its own kind and Dark repeated Light.
+  const brand = themeKey && (store.themes[themeKey] || store.themeKinds[themeKey])
+    ? brandAppearanceProjection(store, themeKey)
+    : null
+  if (brand) {
+    const view = buildArchitectureView('categorical', brand.input, store.errorColor, brand.overrides, brand.order)
+    if (view) return categoryDocs(view, brand.lightKey, brand.darkKey)
+  }
+
   const { themeNames, globalScales, resolvedPalettes } = themeContextFromStore(store)
   const modeKeys = themeKey
     ? [themeKey].filter((t) => store.themes[t] || store.themeKinds[t])
@@ -219,7 +230,14 @@ function resolveCategoricalCategories(
 
   const lightKey = modes.includes('light') ? 'light' : modes[0]
   const darkKey = modes.includes('dark') ? 'dark' : modes[modes.length - 1]
+  return categoryDocs(view, lightKey, darkKey)
+}
 
+function categoryDocs(
+  view: NonNullable<ReturnType<typeof buildArchitectureView>>,
+  lightKey: string,
+  darkKey: string,
+): CategoricalCategoryDoc[] {
   return view.categories.map((cat) => ({
     key: cat.key,
     label: cat.label,
@@ -825,14 +843,26 @@ export interface FoundationDoc {
   codeSection?: string
 }
 
+// Every number and group name the Color page's prose states is READ from the role
+// table, never typed: a role added to CATEGORICAL_ROLES must not leave the page
+// saying "sixteen" or listing five groups (it did, from 2026-08 to 2026-11-17).
+const COLOR_ROLES = categoricalRoleCatalogue()
+/** Categorical groups in table order — each has a section on the Color page. */
+export const COLOR_ROLE_GROUPS = [...new Set(COLOR_ROLES.map((r) => r.group))]
+const COLOR_ALPHA_ROLES = COLOR_ROLES.filter((r) => /-a\./.test(r.light) || /-a\./.test(r.dark)).length
+const groupList = (gs: string[]) => {
+  const names = gs.map((g) => g[0].toUpperCase() + g.slice(1))
+  return `${names.slice(0, -1).join(', ')} and ${names[names.length - 1]}`
+}
+
 export const FOUNDATION_DOCS: FoundationDoc[] = [
   // ── Color ──────────────────────────────────────────────────────────────────
   {
     key: 'color',
     label: 'Color',
-    lead: 'Two layers: twelve-step primitive ramps that hold the raw values, and a categorical semantic contract that names what each value is FOR — grouped as Content, Action, Surface, Status and Border with nested role ids like `content.primary` and `action.primary.default`. Designs reference the roles; only the roles reference the ramps.',
+    lead: `Two layers: twelve-step primitive ramps that hold the raw values, and a categorical semantic contract that names what each value is FOR — grouped as ${groupList(COLOR_ROLE_GROUPS)} with nested role ids like \`content.primary\` and \`action.primary.default\`. Designs reference the roles; only the roles reference the ramps.`,
     why: 'A hex in a component is a decision nobody can revisit. A role — `action.primary.default` — is a decision you can re-point once and have the whole system follow, in every theme at once. It is also the only way light and dark can be the same design rather than two hand-tuned ones: a role resolves to its own ramp per appearance, so `content.primary` means "the readable ink on this page" in both, and neither is a copy of the other.',
-    usage: 'Reach for a categorical semantic role first — `surface.*` for page and card levels, `action.*` for control fills, `status.*` for feedback, `content.*` for ink, `border.*` for edges. Use a primitive directly only when you are defining a new role. Steps are ordered by ROLE, not lightness: 1–2 page background · 3–5 component · 6–8 border · 9 the solid (your brand hex, verbatim) · 10 solid hover · 11–12 accessible text. Sixteen roles resolve to a TRANSLUCENT primitive instead of a solid tone — see Alpha below — so a semantic value can be 8-digit `#rrggbbaa`.',
+    usage: `Reach for a categorical semantic role first — \`surface.*\` for page and card levels, \`action.*\` for control fills, \`status.*\` for feedback, \`content.*\` for ink, \`border.*\` for edges, \`elevation.*\` for the colours inside a shadow. Use a primitive directly only when you are defining a new role. Steps are ordered by ROLE, not lightness: 1–2 page background · 3–5 component · 6–8 border · 9 the solid (your brand hex, verbatim) · 10 solid hover · 11–12 accessible text. ${COLOR_ALPHA_ROLES} of the ${COLOR_ROLES.length} roles resolve to a TRANSLUCENT primitive instead of a solid tone — see Alpha below — so a semantic value can be 8-digit \`#rrggbbaa\`.`,
     usageCode: `/* semantic — what it is FOR */
 background: var(--color-action-primary-default);
 color:      var(--color-content-on-action);
@@ -892,7 +922,7 @@ color:      var(--color-content-on-action);
       {
         id: 'action',
         title: 'Action',
-        description: 'Interactive element fills — primary and secondary buttons, disabled states, and the accent-tinted secondary fill.',
+        description: 'Interactive element fills — primary, secondary and ghost fills with their hover and pressed steps, and the disabled fill.',
         render: renderCategoricalCategory('action', (c) => c.roles.filter((r) => r.role.key.startsWith('action-') || r.role.key.startsWith('background-brand-'))),
       },
       {
@@ -904,14 +934,20 @@ color:      var(--color-content-on-action);
       {
         id: 'status',
         title: 'Status',
-        description: 'Feedback fg/bg pairs per severity — critical, warning and success, each with subtle surface, solid fill and on-solid ink.',
+        description: 'Feedback per severity — critical, warning, success and info — each with a subtle surface (+ pressed), a solid fill (+ hover, pressed) and its on-solid ink, the text colour, a border and a strong border. Critical also carries its focus ring (`status.critical.ring`), drawn 1px outside a focused destructive control.',
         render: renderCategoricalCategory('status', (c) => c.roles.filter((r) => ['error', 'warning', 'success', 'info'].includes(r.role.scale))),
       },
       {
         id: 'border',
         title: 'Border',
-        description: 'Strokes, focus rings and severity borders — from subtle dividers through component boundaries to validation states.',
+        description: 'Strokes and focus — decorative dividers (subtle · default · strong), the control boundary (control · control-hover), the contrast-bearing focus edge of a field (`border.focus`) and the focus rings drawn outside a control: `border.ring.default` (accent) and `border.ring.neutral` (neutral).',
         render: renderCategoricalCategory('border', borderRows),
+      },
+      {
+        id: 'elevation',
+        title: 'Elevation',
+        description: 'Effect colours only — the key and ambient layers of a shadow, its hairline ring and the top highlight of a raised control. Bound inside a Shadow / Depth effect style, never used as a fill or a stroke.',
+        render: renderCategoricalCategory('elevation', () => []),
       },
     ],
   },

@@ -604,3 +604,10 @@ Decided with the owner, on a Figma experiment page first, then applied to Button
 | Verifying keyboard focus | `element.focus()` from a script does NOT set `:focus-visible` | Click the canvas, press Tab with the browser tool, then read `getComputedStyle` |
 
 Measured in the built Storybook, 2026-11-17 (Button + IconButton, 3 intents × 4 appearances, forced Focused and real Tab): `outline: 2px solid`, `outline-offset: 1px`, and every other computed property equal to Default. Dark rings rgba(143,103,253,.44) · rgba(240,243,243,.17) · rgba(255,71,47,.42); Light rgba(48,5,252,.31) · rgba(18,8,41,.22) · rgba(237,32,0,.42). At Alpha/06 they read 1.6–2.0:1 on the page (under 1.4.11's 3:1) — open owner decision.
+
+### Colour roles changed, colour docs did not (found 2026-11-17)
+
+| Trap | What it looked like | The fix (where it lives) |
+|---|---|---|
+| Adding roles from the file (`border.ring.neutral`, `status.critical.ring`, the Elevation group, Dark `surface.accent`) without re-reading Docs · Color | The page still said "Sixteen roles resolve to a translucent primitive" (35 of 85 do), named five groups where six exist, described Status as "critical, warning and success" with no info, border or ring, and had NO Elevation section — its four roles were in the token count but never shown | Counts and the group list are derived from `categoricalRoleCatalogue()`; Elevation has its section; Status / Border / Action descriptions name what they hold; `colorDocs.test.ts` guards it. **Rule: a colour-role change audits the colour docs in the same commit** (SKILL.md Step 6, escala-architecture "After adding or renaming a role") |
+| Docs · Color for ONE brand (Storybook's Variables › Color, the app's brand Docs) | The Dark column repeated the Light value for every role (`border.ring.default` Dark read #3005FC4F, the Light twin): one brand key resolves only its own kind | `brandAppearanceProjection` (`tokenGenerator.ts`) reads the brand as `brand::light` + `brand::dark`, exactly like a Figma sync; `colorDocs.test.ts` asserts both columns equal the export. **Check BOTH columns of the docs, not only the tables' role list** |
