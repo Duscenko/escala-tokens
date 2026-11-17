@@ -2,7 +2,7 @@
  * Indicator recipes: Badge, StatusBadge, Chip, Progress, Spinner, Icon, Rating,
  * FileFormat, Avatar. Rules as in `componentRecipes.ts`.
  */
-import { c, NONE, part, KEYCAP_RADIUS, ROUNDED_SHAPE_RADIUS, type ComponentRecipe, type SlotMap, type SlotProps, FOCUS } from './helpers.js'
+import { c, NONE, part, KEYCAP_RADIUS, ROUNDED_SHAPE_RADIUS, TAG_ROUNDED_RADIUS, type ComponentRecipe, type SlotMap, type SlotProps, FOCUS } from './helpers.js'
 
 // ── Badge ──────────────────────────────────────────────────────────────────
 // The Figma set (design-plans/badge-contract.md, 383:176, 525 variants): Appearance soft · solid · outline · ghost
@@ -55,8 +55,9 @@ function badgeLayout(size: string, type: string, shape: string, appearance: stri
   const g = BADGE_GEOMETRY[size]
   // A stroke the file lays out (outline widens the badge by two hairlines).
   const lay = appearance === 'outline' ? '+stroke.control' : ''
-  // Rounded badges are the tag family: `Radius/item` in Figma (DEC-2026-11-17-002).
-  const radius = shape === 'pill' ? 'radius.pill' : 'radius.item'
+  // Rounded badges are the tag family: `Radius/item` in Figma (DEC-2026-11-17-002),
+  // capped per size so a small rounded badge never reads as its pill.
+  const radius = shape === 'pill' ? 'radius.pill' : TAG_ROUNDED_RADIUS[size]
   if (type === 'dot') return { root: { width: g.dot, height: g.dot, radius: 'radius.pill', paddingX: 'spacing.none', paddingY: 'spacing.none' } }
   const root: SlotProps = { height: g.h, radius, paddingY: 'spacing.none', font: g.font }
   if (type === 'icon') return { root: { ...root, width: g.h, paddingX: 'spacing.none' }, icon: { width: g.icon, height: g.icon } }

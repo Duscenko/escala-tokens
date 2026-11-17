@@ -218,7 +218,10 @@
     ],
     "radius": [
       "radius.item",
-      "radius.pill"
+      "radius.lg",
+      "radius.md",
+      "radius.pill",
+      "radius.sm"
     ],
     "size": [
       "size.xs"

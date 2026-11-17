@@ -1107,16 +1107,19 @@ button:focus-visible > .generator-cue-live {
 }
 
 
-/* A Select's list inside the component stage. The stage scales with CSS `zoom`;
-   Radix positions its popper wrapper in viewport pixels, which `zoom` then
-   scales again, so the list landed ~120px left of its trigger (audit
-   2026-11-05). The wrapper is zoomed back to 1 so its translate is true
-   pixels, and the list itself carries the stage's zoom so it still reads at
-   the specimen's scale. */
-[data-radix-popper-content-wrapper]:has(> [data-slot="select-content"]) {
+/* Every floating layer (Select list, DropdownMenu, Popover, Tooltip…) inside a
+   zoomed stage — the component stage and the Blocks stage both set
+   `--stage-zoom`. The stage scales with CSS `zoom`; Radix positions its popper
+   wrapper in viewport pixels, which `zoom` then scales again, so a list landed
+   ~120px left of its trigger (audit 2026-11-05) and the AppHeader account menu
+   opened at the top-left of the page (2026-11-17). The wrapper is zoomed back
+   to 1 so its translate is true pixels, and the layer itself carries the
+   stage's zoom so it still reads at the specimen's scale. Outside a stage the
+   variable is unset and both resolve to 1. */
+[data-radix-popper-content-wrapper] {
   zoom: calc(1 / var(--stage-zoom, 1));
 }
-[data-slot="select-content"] {
+[data-radix-popper-content-wrapper] > * {
   zoom: var(--stage-zoom, 1);
 }
 

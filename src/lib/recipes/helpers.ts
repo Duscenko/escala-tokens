@@ -165,6 +165,15 @@ export const SELECTOR_SQUARE_RADIUS = { default: 'min(radius.control,radius.md)'
  *  rounder than the file's 8px (`lg`), so no Items pick turns it into a pill. */
 export const KEYCAP_RADIUS = 'min(radius.item,radius.lg)'
 
+/** A rounded Badge (tag family, `Radius/item`): never as round as its pill. At
+ *  16px (xs) 8px IS a pill, so each size caps at ~25-33 % of its height:
+ *  xs 16 → ≤ 4 (`sm`), sm 20 → ≤ 6 (`md`), default 24 → ≤ 8 (`lg`, the file's value). */
+export const TAG_ROUNDED_RADIUS: Record<string, string> = {
+  xs: 'min(radius.item,radius.sm)',
+  sm: 'min(radius.item,radius.md)',
+  default: 'min(radius.item,radius.lg)',
+}
+
 /** A Gray box whose `Shape=rounded` must stay distinct from its `Shape=circle`
  *  (Avatar, FeaturedIcon) or a slot that must stay a box (InputOTPSlot): the
  *  Fields radius, never rounder than its Rounded default (12, `xl`). */

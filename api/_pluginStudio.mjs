@@ -9404,7 +9404,7 @@ function part(axes, build) {
   for (const combo of combos(axes)) values[combo.join("|")] = build(...combo);
   return { axes: Object.keys(axes), values };
 }
-var c, NONE, FOCUS, SELECTOR_SQUARE_RADIUS, KEYCAP_RADIUS, ROUNDED_SHAPE_RADIUS;
+var c, NONE, FOCUS, SELECTOR_SQUARE_RADIUS, KEYCAP_RADIUS, TAG_ROUNDED_RADIUS, ROUNDED_SHAPE_RADIUS;
 var init_helpers = __esm({
   "src/lib/recipes/helpers.ts"() {
     c = (role) => `color.${role}`;
@@ -9412,6 +9412,11 @@ var init_helpers = __esm({
     FOCUS = { focus: "color.border.focus", ring: "color.border.ring.default" };
     SELECTOR_SQUARE_RADIUS = { default: "min(radius.control,radius.md)", compact: "min(radius.control,radius.sm)" };
     KEYCAP_RADIUS = "min(radius.item,radius.lg)";
+    TAG_ROUNDED_RADIUS = {
+      xs: "min(radius.item,radius.sm)",
+      sm: "min(radius.item,radius.md)",
+      default: "min(radius.item,radius.lg)"
+    };
     ROUNDED_SHAPE_RADIUS = "min(radius.action,radius.xl)";
   }
 });
@@ -12195,7 +12200,7 @@ function badgeTone(variant, appearance) {
 function badgeLayout(size, type, shape, appearance) {
   const g = BADGE_GEOMETRY[size];
   const lay = appearance === "outline" ? "+stroke.control" : "";
-  const radius = shape === "pill" ? "radius.pill" : "radius.item";
+  const radius = shape === "pill" ? "radius.pill" : TAG_ROUNDED_RADIUS[size];
   if (type === "dot") return { root: { width: g.dot, height: g.dot, radius: "radius.pill", paddingX: "spacing.none", paddingY: "spacing.none" } };
   const root = { height: g.h, radius, paddingY: "spacing.none", font: g.font };
   if (type === "icon") return { root: { ...root, width: g.h, paddingX: "spacing.none" }, icon: { width: g.icon, height: g.icon } };
