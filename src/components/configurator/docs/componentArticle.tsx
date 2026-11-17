@@ -22,7 +22,8 @@ import {
   COMPONENT_KEYS, FIGMA_SAMPLE_KEYS, isInFigmaSample,
   type ComponentDef, type VariantAxis,
 } from '../../../lib/componentCatalogue'
-import { PLATFORM_FAMILIES, PLATFORM_PAGES, familyOf, familyLabel } from '../../../lib/platformCatalogue'
+import { PLATFORM_FAMILIES, PLATFORM_FOLDERS, PLATFORM_PAGES, familiesIn, familyOf, familyLabel } from '../../../lib/platformCatalogue'
+import { CatalogueSwitcher } from './CatalogueSwitcher'
 import { FittedSpecimen } from './ComponentAvatars'
 import { useI18n } from '../../../lib/i18n'
 import { agentContextMarkdown } from '../../../lib/agentContext'
@@ -575,8 +576,10 @@ function OverviewStage({ def, tokens, prefix }: { def: ComponentDef; tokens: Pre
 // once by the parent and passed down, is what makes that impossible again.
 export function ComponentCatalogueHero({
   def, tokens, values, onValuesChange, icons, leadingIcon, onLeadingIconChange, trailingIcon, onTrailingIconChange, snippet,
-  headerTrailing, appearance: appearanceProp, onInspectRole, previewTheme, buildContext, onOpenFoundation, figmaCopy,
+  headerTrailing, appearance: appearanceProp, onInspectRole, previewTheme, buildContext, onOpenFoundation, figmaCopy, switcher,
 }: {
+  /** The quick way to another component (`CatalogueSwitcher`), on the header row's right. */
+  switcher?: ReactNode
   /** What Copy for Figma ships; omitted = no Figma button. */
   figmaCopy?: FigmaCopyScope
   def: ComponentDef
@@ -725,6 +728,7 @@ export function ComponentCatalogueHero({
           }
         >
           <div className="flex items-center gap-1.5">
+            {switcher}
             {!headerTrailing && figmaCopy && <FigmaCopyButton label={def.label} build={buildFigma} />}
             {headerTrailing ?? (
               // Agent context lives in the right panel (filters, preview and
@@ -1233,6 +1237,14 @@ export function ComponentArticle({
         buildContext={buildContext}
         onOpenFoundation={onOpenFoundation}
         figmaCopy={figmaCopy}
+        switcher={
+          <CatalogueSwitcher
+            noun="component"
+            groups={PLATFORM_FOLDERS.map((folder) => ({ label: folder, items: familiesIn(folder).map((f) => ({ id: f.lead.key, label: familyLabel(f) })) }))}
+            currentId={familyOf(def.key)?.lead.key ?? def.key}
+            onPick={(key) => { const c = PLATFORM_PAGES.find((x) => x.key === key); if (c) onOpen(c) }}
+          />
+        }
       />
 
       {/* The stage above spans the card; the prose below keeps a reading
