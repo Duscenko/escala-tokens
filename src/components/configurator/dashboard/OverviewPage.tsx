@@ -461,7 +461,7 @@ export default function OverviewPage({
                   <span className="flex min-w-0 flex-1 flex-col">
                     <span className="truncate text-ui font-semibold text-fg">{card.origin ?? t('Custom')}</span>
                     <span className="truncate text-mini text-fg-faint">
-                      {t('{n} variables · {m} themes · {p} platforms', { n: card.total, m: card.themeIds.length, p: card.platforms })}
+                      {t(card.themeIds.length === 1 ? '{n} variables · {m} theme · {p} platforms' : '{n} variables · {m} themes · {p} platforms', { n: card.total, m: card.themeIds.length, p: card.platforms })}
                     </span>
                   </span>
                   <span aria-hidden className="flex-shrink-0 text-fg-faint transition-transform duration-150 ease-out group-hover:translate-x-0.5 motion-reduce:transition-none motion-reduce:group-hover:translate-x-0">
