@@ -324,6 +324,9 @@ function BlockPage({ block, onSelect, previewTheme, onOpenComponent, onInspectRo
                   className="mx-auto flex min-h-[420px] flex-col"
                   style={{
                     zoom: scale,
+                    // Read by index.css: a menu, popover or tooltip portaled in here is
+                    // positioned in true pixels and drawn at the stage's scale.
+                    '--stage-zoom': scale,
                     // Inside a zoomed box a percentage resolves in its own scale:
                     // 100 % at zoom 0.5 lays the section out twice as wide. The
                     // desktop frame stays the stage's width, only drawn smaller.
@@ -341,10 +344,13 @@ function BlockPage({ block, onSelect, previewTheme, onOpenComponent, onInspectRo
                     >
                       {block.mockup ? block.mockup(values, mockupLayout) : block.render(values)}
                     </div>
-                    {block.dialog?.({ open, onOpenChange: setOpen })}
                   </RecipeScope>
                 </div>
               </div>
+              {/* "Open as dialog" shows the block as the product would: at true
+                  size over the page, never at the stage's zoom (owner, 2026-11-17).
+                  Its own scope, so its layers portal outside the zoomed stage. */}
+              {block.dialog && <RecipeScope t={tokens}>{block.dialog({ open, onOpenChange: setOpen })}</RecipeScope>}
               <CanvasBar
                 panel={panel}
                 onPanel={setPanel}

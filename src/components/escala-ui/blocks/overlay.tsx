@@ -91,6 +91,9 @@ function SheetShell({ block, side = 'right', inline = true, open = true, onOpenC
         side={side}
         data-block={block}
         closeLabel="Close"
+        // A drawer of items opens on the panel itself, not on its first control (the cart's
+        // quantity stepper lit its focus ring on open): the title is announced, Tab walks the list.
+        onOpenAutoFocus={(e) => { e.preventDefault(); if (!inline) (e.currentTarget as HTMLElement).focus() }}
         header={<SheetHeader title={title} descriptionVisible={false} iconVisible={false} trailing={trailing} trailingVisible={Boolean(trailing)} closeClearance />}
         footer={footer ? <SheetFooter leading={leading} leadingVisible={Boolean(leading)}>{footer}</SheetFooter> : undefined}
       >

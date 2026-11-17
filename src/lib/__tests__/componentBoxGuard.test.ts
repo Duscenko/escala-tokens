@@ -83,6 +83,16 @@ describe('Black box: circles stay circles', () => {
     })
   }
 
+  it('a rounded Badge never becomes its pill (≤ a third of its height)', () => {
+    // Badge heights: xs `spacing.4` 16 · sm `spacing.5` 20 · default `size.xs` 24.
+    for (const [size, h] of [['xs', 16], ['sm', 20], ['default', 24]] as const) {
+      const map = resolveRecipe(COMPONENT_RECIPES.Badge, { Shape: 'rounded', Size: size, Type: 'default' })
+      for (const { label, roles } of PICKS) {
+        expect(px(map.root.radius as string, roles), `${size} · ${label}`).toBeLessThanOrEqual(h / 3)
+      }
+    }
+  })
+
   it('Kbd never becomes a pill', () => {
     const ref = resolveRecipe(COMPONENT_RECIPES.Kbd).root.radius as string
     for (const { label, roles } of PICKS) expect(px(ref, roles), label).toBeLessThanOrEqual(8)
