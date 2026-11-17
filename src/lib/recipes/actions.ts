@@ -96,7 +96,11 @@ function buttonPaint(variant: string, appearance: string, state: string, shadowL
     return { root: { fill: NONE, stroke: NONE, text: c(step ? over : rest), focus: NONE, ring: NONE, gapRing, highlight: NONE, strokeWidth: strokeOf(appearance) } }
   }
   const k = QUIET[variant]
-  const wash = step === 2 ? c('action.ghost.pressed') : step === 1 ? c('action.ghost.hover') : NONE
+  // Critical washes red, every other intent grey (Figma 4:5066 · 614:785, DEC-2026-11-17-003).
+  const [hoverWash, pressedWash] = variant === 'critical'
+    ? ['status.critical.surface', 'status.critical.surface-pressed']
+    : ['action.ghost.hover', 'action.ghost.pressed']
+  const wash = step === 2 ? c(pressedWash) : step === 1 ? c(hoverWash) : NONE
   return {
     root: {
       fill: wash,

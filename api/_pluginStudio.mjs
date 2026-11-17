@@ -8710,6 +8710,11 @@ var init_semanticArchitectures = __esm({
       // Form background — same tone as the page, named separately so a form field
       // has its own token to point at rather than reusing "page" by coincidence.
       { group: "surface", key: "input", light: "{neutral.1}", dark: "{neutral-dark.1}" },
+      // A part lifted above the track or surface it sits on — the selected segment
+      // of a SegmentedControl. Lighter than `surface.muted` in BOTH themes: Light
+      // takes the form tone (white on the grey track), Dark the secondary button's
+      // tone (`surface.input` sank below the track there). DEC-2026-11-17-003.
+      { group: "surface", key: "raised", light: "{neutral.1}", dark: "{neutral-dark.6}" },
       // Accent-tinted row/item selection — one step up from `surface.accent`,
       // the same tone `action.secondary` already uses for a component-level fill.
       // A selected row is the textbook alpha case: it can sit on the page OR on a
@@ -9091,6 +9096,7 @@ var init_semanticArchitectures = __esm({
       "surface.layer-1": "[ROLE: Container Background] Elevation level 1. Cards, panels, grouped content. Must read slightly distinct from surface.page.",
       "surface.layer-2": "[ROLE: Elevated Background] Elevation level 2. Popovers, dropdowns, modals. Pair with box-shadow in CSS \u2014 the color step alone does not convey floating.",
       "surface.input": "[ROLE: Form Background] Background for interactive data-entry fields. Ensures content.primary typed by the user stays legible. Same tone as surface.page by design \u2014 named separately so forms have their own token.",
+      "surface.raised": "[ROLE: Raised Surface] A part lifted above the track or surface it sits on: the selected segment of a SegmentedControl. Lighter than surface.muted in both themes (Light = surface.input's tone, Dark = action.secondary.default's tone). DEC-2026-11-17-003.",
       "surface.selected": "[ROLE: Active State Background] Subtle fill for mutual selection (e.g. a selected table row). Must guarantee 4.5:1 against content.primary on top.",
       "surface.selected-pressed": "[ROLE: Active State Background Pressed] A pressed soft brand control (Button Soft / Outline pressed). {accent-a.5}, two steps deeper than surface.selected \u2014 the brand twin of status.*.surface-pressed.",
       "surface.inverse": "[ROLE: Inverted Background] High-contrast background for tooltips, snackbars and inverse alerts or badges. Always pair with content.inverse (title) and content.inverse-secondary (body, icons). {neutral.12} in both themes: a dark chip in Light, a light one in Dark.",
@@ -9413,8 +9419,8 @@ var init_helpers = __esm({
     SELECTOR_SQUARE_RADIUS = { default: "min(radius.control,radius.md)", compact: "min(radius.control,radius.sm)" };
     KEYCAP_RADIUS = "min(radius.item,radius.lg)";
     TAG_ROUNDED_RADIUS = {
-      xs: "min(radius.item,radius.sm)",
-      sm: "min(radius.item,radius.md)",
+      xs: "min(radius.control,radius.sm)",
+      sm: "min(radius.control,radius.md)",
       default: "min(radius.item,radius.lg)"
     };
     ROUNDED_SHAPE_RADIUS = "min(radius.action,radius.xl)";
@@ -9462,7 +9468,8 @@ function buttonPaint(variant, appearance, state2, shadowLabel = false) {
     return { root: { fill: NONE, stroke: NONE, text: c(step ? over : rest), focus: NONE, ring: NONE, gapRing, highlight: NONE, strokeWidth: strokeOf(appearance) } };
   }
   const k = QUIET[variant];
-  const wash = step === 2 ? c("action.ghost.pressed") : step === 1 ? c("action.ghost.hover") : NONE;
+  const [hoverWash, pressedWash] = variant === "critical" ? ["status.critical.surface", "status.critical.surface-pressed"] : ["action.ghost.hover", "action.ghost.pressed"];
+  const wash = step === 2 ? c(pressedWash) : step === 1 ? c(hoverWash) : NONE;
   return {
     root: {
       fill: wash,
@@ -11538,9 +11545,9 @@ function tabMenuItemPaint(state2, line) {
 }
 function segmentPaint(checked, state2) {
   const on = checked === "true";
-  if (state2 === "Disabled") return { root: { fill: on ? c("surface.input") : NONE, text: c("content.disabled"), radius: "radius.item", ...on ? { highlight: NONE } : {} } };
+  if (state2 === "Disabled") return { root: { fill: on ? c("surface.raised") : NONE, text: c("content.disabled"), radius: "radius.item", ...on ? { highlight: NONE } : {} } };
   const focus = state2 === "Focused" ? { focus: c("border.focus"), ring: c("border.ring.default") } : {};
-  if (on) return { root: { fill: c("surface.input"), text: c("content.primary"), radius: "radius.item", shadow: "shadow.xs", ...focus } };
+  if (on) return { root: { fill: c("surface.raised"), text: c("content.primary"), radius: "radius.item", shadow: "shadow.xs", ...focus } };
   const fill = state2 === "Hover" ? c("action.ghost.hover") : state2 === "Pressed" ? c("action.ghost.pressed") : NONE;
   return { root: { fill, text: c(state2 === "Hover" || state2 === "Pressed" ? "content.primary" : "content.secondary"), radius: "radius.item", ...focus } };
 }

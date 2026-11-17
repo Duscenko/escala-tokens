@@ -109,12 +109,22 @@ There is ONE focus ring, also on an invalid field — focus wins over error.
   Selectors (`radius.control`). `radius.pill` means "a circle" (avatar,
   pill badge, switch). Never give a card the button's radius to "match".
 - **The tag family is on Items, not Selectors (DEC-2026-11-17-002).** Badge
-  `Shape=rounded`, Kbd (also inside Input) and InputTagChip bind
-  `Radius/item` / `radius.item`. `radius.control` is only for real
-  selectors (Checkbox, Slider thumb · track) plus link focus rings and media.
-  Never put a new badge-, tag- or key-like part on `radius.control`: the
-  Selectors axis would round the checkbox with it. Checkbox is also capped in
-  its recipe (≤ 25 % of its side), so it never turns into a circle.
+  `Shape=rounded` (default size), Kbd (also inside Input) and InputTagChip bind
+  `Radius/item` / `radius.item`. `radius.control` is for real selectors
+  (Checkbox, Slider thumb · track), link focus rings and media. Never put a new
+  badge-, tag- or key-like part on `radius.control`: the Selectors axis would
+  round the checkbox with it. Checkbox is capped in its recipe (≤ 25 % of its
+  side), so it never turns into a circle.
+- **Small rounded badges (DEC-2026-11-17-003).** Badge `Shape=rounded` xs · sm
+  bind `Radius/control` (4 px): at 16 px, 8 px is a pill. Every rounded Badge
+  is also capped at about a third of its height in the recipe, so rounded never
+  equals pill.
+- **A raised part sits on `surface.raised` (DEC-2026-11-17-003).** The
+  selected segment of a SegmentedControl: lighter than `surface.muted` in both
+  themes. Never `surface.input` for it — in Dark that sinks below the track.
+- **Critical washes red (DEC-2026-11-17-003).** Button / IconButton
+  `Variant=critical` outline and ghost: Hover `status.critical.surface`,
+  Pressed `status.critical.surface-pressed`; never the grey `action.ghost.*`.
 - **Nested radius:** a child flush inside a parent with padding p uses
   r = R − p. A button floating inside a card is not nested.
 - **Spacing = air, Size = object.** Gaps between siblings → `spacing.gap-*`

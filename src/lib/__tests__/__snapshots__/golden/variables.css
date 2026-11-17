@@ -251,6 +251,7 @@
   --color-surface-muted: #e3e1e6;
   --color-surface-muted-hover: #d8d6dd;
   --color-surface-input: #f5f4f6;
+  --color-surface-raised: #fefdff;
   --color-surface-selected: #220de11a;
   --color-surface-selected-pressed: #2808f638;
   --color-surface-inverse: #37343b;
@@ -1235,6 +1236,7 @@
   --color-surface-muted: #222223;
   --color-surface-muted-hover: #2a292c;
   --color-surface-input: #151515;
+  --color-surface-raised: #363539;
   --color-surface-selected: #a196f61c;
   --color-surface-selected-pressed: #9879ff47;
   --color-surface-inverse: #e5e4e8;

@@ -188,6 +188,8 @@
       "color.status.critical.content",
       "color.status.critical.on-solid",
       "color.status.critical.ring",
+      "color.status.critical.surface",
+      "color.status.critical.surface-pressed",
       "color.status.critical.surface-solid",
       "color.status.critical.surface-solid-hover",
       "color.status.critical.surface-solid-pressed"
