@@ -101,6 +101,8 @@ Read `references/lessons.md` before step 3. In short:
 - Tailwind in Storybook scans `src/` only through `apps/storybook/.storybook/storybook.css` (`@source`).
 - Storybook paints the Figma file's system: `buildStudioTokens` + `applyFigmaFilePalette` (palette as data).
 - Figma strokes sit INSIDE the frame; the CSS padding gives back `--escala-stroke-width`.
+- A colour SAMPLE (swatch, chip, plate in docs or a dashboard) paints through `swatchPaint(color, page)`, with the
+  page of the mode it shows: a translucent role on the chrome reads as a black smudge. Components are exempt.
 - Focus: Button / IconButton (every appearance) = the Default look + ONE 2px ring 1px OUTSIDE the edge
   (`gapRing`: `outline` + `outline-offset: 1px`), colour by intent. A control (Checkbox, Switch) = 2px edge
   inside + 2px halo outside; a field keeps its 1px edge and the 2px halo straddles it (`outline` +

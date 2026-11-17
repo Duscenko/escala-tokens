@@ -57,6 +57,7 @@ import {
 import { SHADOW_STEPS } from '../Step7_Shadow'
 import { RadiusResponsiveHero, RadiusTokenReference } from './RadiusResponsiveDoc'
 import { fontStack } from '../../../lib/fonts'
+import { swatchPaint } from '../../../lib/swatchPaint'
 import { PHOSPHOR_LIBRARY } from '../../../lib/iconLibraries'
 import { GLOBAL_FAMILY, scaleForFamily, type FamilySlot } from '../../../lib/themeSources'
 import { resolveThemeFoundations } from '../../../lib/themeFoundations'
@@ -433,11 +434,11 @@ export function useSystemDoc(scope: SystemDocScope = {}): SystemDoc {
 
 // ── Table primitives (moved verbatim from the old Design Rules sheet) ────────
 
-function Swatch({ hex, className = '' }: { hex: string; className?: string }) {
+function Swatch({ hex, page, className = '' }: { hex: string; page?: string; className?: string }) {
   return (
     <span
       className={`w-[18px] h-[18px] rounded-[5px] flex-shrink-0 ring-1 ring-black/10 dark:ring-white/15 ${className}`}
-      style={{ background: hex || 'transparent' }}
+      style={swatchPaint(hex, page)}
       aria-hidden
     />
   )
@@ -528,12 +529,7 @@ export function PrimitiveCard({ label, scale, naming, page }: {
   // One background per swatch, no wrappers. Alpha layers, top first: the wash,
   // the page over the upper-right half, the checker under all of it. The
   // checker is the page and a grey step off it, so it reads on either page.
-  const paint = (hex: string): CSSProperties => (page
-    ? {
-        backgroundImage: `linear-gradient(${hex}, ${hex}), linear-gradient(to top right, transparent 50%, ${page} 50%), repeating-conic-gradient(${page} 0% 25%, color-mix(in srgb, ${page} 82%, #808080) 0% 50%)`,
-        backgroundSize: 'auto, auto, 10px 10px',
-      }
-    : { background: hex })
+  const paint = (hex: string): CSSProperties => (page ? swatchPaint(hex, page, 10) : { background: hex })
   return (
     <div className="flex min-w-0 flex-col gap-2">
       <span className="truncate text-ui font-semibold text-fg">{label}</span>
@@ -567,10 +563,10 @@ export function PrimitiveCard({ label, scale, naming, page }: {
 
 /** A value cell — swatch + monospace text, the shape both the ref and hex
  *  columns use so the four columns of a semantic table read as one grid. */
-function ValueCell({ hex, label }: { hex: string; label: string }) {
+function ValueCell({ hex, label, page }: { hex: string; label: string; page?: string }) {
   return (
     <span className="flex items-center gap-2 min-w-0 px-2 h-7 rounded-md border border-line bg-surface">
-      <Swatch hex={hex} />
+      <Swatch hex={hex} page={page} />
       <span className="truncate text-caption font-mono text-fg-muted">{label}</span>
     </span>
   )
@@ -580,7 +576,7 @@ function ValueCell({ hex, label }: { hex: string; label: string }) {
 // hex(dark). The dark pair sits on a dark panel — the same trick the Figma
 // sheet uses, and the same reason the Token Details dialog paints its dark
 // card dark: a dark ramp's steps can only be judged on the page they ship on.
-function RoleTable({ rows }: { rows: ResolvedRole[] }) {
+function RoleTable({ rows, pages }: { rows: ResolvedRole[]; pages: Pages }) {
   if (!rows.length) return null
   return (
     <div className="overflow-x-auto">
@@ -617,13 +613,13 @@ function RoleTable({ rows }: { rows: ResolvedRole[] }) {
             {rows.map((r) => (
               <div key={r.role.key} className="grid items-center gap-x-3" style={{ gridTemplateColumns: '13rem 1fr 1fr 1fr 1fr' }}>
                 <span className="flex items-center gap-2 min-w-0">
-                  <Swatch hex={r.lightHex} />
+                  <Swatch hex={r.lightHex} page={pages.light} />
                   <span className="truncate text-body text-fg" title={r.role.key}>{r.role.key}</span>
                 </span>
-                <ValueCell hex={r.lightHex} label={r.lightRef} />
-                <ValueCell hex={r.lightHex} label={r.lightHex.toUpperCase() || '—'} />
-                <span className="dark pl-3"><ValueCell hex={r.darkHex} label={r.darkRef} /></span>
-                <span className="dark"><ValueCell hex={r.darkHex} label={r.darkHex.toUpperCase() || '—'} /></span>
+                <ValueCell hex={r.lightHex} label={r.lightRef} page={pages.light} />
+                <ValueCell hex={r.lightHex} label={r.lightHex.toUpperCase() || '—'} page={pages.light} />
+                <span className="dark pl-3"><ValueCell hex={r.darkHex} label={r.darkRef} page={pages.dark} /></span>
+                <span className="dark"><ValueCell hex={r.darkHex} label={r.darkHex.toUpperCase() || '—'} page={pages.dark} /></span>
               </div>
             ))}
           </div>
@@ -672,12 +668,12 @@ function RoleBand({ rows, page }: { rows: ResolvedRole[]; page: string }) {
   )
 }
 
-function RoleGroup({ rows, page }: { rows: ResolvedRole[]; page: string }) {
+function RoleGroup({ rows, page, pageDark }: { rows: ResolvedRole[]; page: string; pageDark: string }) {
   if (!rows.length) return null
   return (
     <>
       <RoleBand rows={rows} page={page} />
-      <RoleTable rows={rows} />
+      <RoleTable rows={rows} pages={{ light: page, dark: pageDark }} />
     </>
   )
 }
@@ -700,7 +696,9 @@ function CategoricalRoleBand({ rows, page }: { rows: ResolvedCategoricalToken[];
   )
 }
 
-function CategoricalRoleTable({ rows }: { rows: ResolvedCategoricalToken[] }) {
+type Pages = { light: string; dark: string }
+
+function CategoricalRoleTable({ rows, pages }: { rows: ResolvedCategoricalToken[]; pages: Pages }) {
   if (!rows.length) return null
   return (
     <div className="overflow-x-auto">
@@ -723,15 +721,15 @@ function CategoricalRoleTable({ rows }: { rows: ResolvedCategoricalToken[] }) {
               <div key={r.id} className="grid items-center gap-x-3" style={{ gridTemplateColumns: '13rem 1fr 1fr 1fr 1fr' }}>
                 <span className="flex flex-col gap-0.5 min-w-0">
                   <span className="flex items-center gap-2 min-w-0">
-                    <Swatch hex={r.lightHex} />
+                    <Swatch hex={r.lightHex} page={pages.light} />
                     <span className="truncate text-body text-fg" title={r.id}>{r.id}</span>
                   </span>
                   {r.role && <span className="text-mini text-fg-faint truncate pl-[26px]" title={r.role}>{r.role}</span>}
                 </span>
-                <ValueCell hex={r.lightHex} label={r.lightRef} />
-                <ValueCell hex={r.lightHex} label={r.lightHex.toUpperCase() || '—'} />
-                <span className="dark pl-3"><ValueCell hex={r.darkHex} label={r.darkRef} /></span>
-                <span className="dark"><ValueCell hex={r.darkHex} label={r.darkHex.toUpperCase() || '—'} /></span>
+                <ValueCell hex={r.lightHex} label={r.lightRef} page={pages.light} />
+                <ValueCell hex={r.lightHex} label={r.lightHex.toUpperCase() || '—'} page={pages.light} />
+                <span className="dark pl-3"><ValueCell hex={r.darkHex} label={r.darkRef} page={pages.dark} /></span>
+                <span className="dark"><ValueCell hex={r.darkHex} label={r.darkHex.toUpperCase() || '—'} page={pages.dark} /></span>
               </div>
             ))}
           </div>
@@ -741,12 +739,12 @@ function CategoricalRoleTable({ rows }: { rows: ResolvedCategoricalToken[] }) {
   )
 }
 
-function CategoricalRoleGroup({ rows, page }: { rows: ResolvedCategoricalToken[]; page: string }) {
+function CategoricalRoleGroup({ rows, page, pageDark }: { rows: ResolvedCategoricalToken[]; page: string; pageDark: string }) {
   if (!rows.length) return null
   return (
     <>
       <CategoricalRoleBand rows={rows} page={page} />
-      <CategoricalRoleTable rows={rows} />
+      <CategoricalRoleTable rows={rows} pages={{ light: page, dark: pageDark }} />
     </>
   )
 }
@@ -754,9 +752,9 @@ function CategoricalRoleGroup({ rows, page }: { rows: ResolvedCategoricalToken[]
 function renderCategoricalCategory(categoryKey: string, flatRows: (c: SystemDoc) => ResolvedRole[]) {
   return (c: SystemDoc) => {
     const cat = c.categoricalCategories?.find((x) => x.key === categoryKey)
-    if (cat?.tokens.length) return <CategoricalRoleGroup rows={cat.tokens} page={c.pageLight} />
+    if (cat?.tokens.length) return <CategoricalRoleGroup rows={cat.tokens} page={c.pageLight} pageDark={c.pageDark} />
     const rows = flatRows(c)
-    return rows.length ? <RoleGroup rows={rows} page={c.pageLight} /> : null
+    return rows.length ? <RoleGroup rows={rows} page={c.pageLight} pageDark={c.pageDark} /> : null
   }
 }
 
