@@ -17,7 +17,7 @@
 // themes pre-normalized onto their source ramps.
 
 import { motionModesFromTokens, motionW3CGroup } from './motion'
-import { BRAND_COLLECTION, figmaCollectionsW3C, MOTION_COLLECTION, type SnapshotToW3COptions } from './figmaCollections'
+import { BRAND_COLLECTION, figmaCollectionsW3C, MOTION_COLLECTION, stringifyW3C, type SnapshotToW3COptions } from './figmaCollections'
 import { brandSlugsOf } from './agentBundle/names'
 import { letterSpacingsFor } from './typographyStandard'
 import { generateTokenJSON, flattenScale } from './tokenGenerator'
@@ -458,11 +458,11 @@ export function buildWizardExport(sel: WizardSelection): WizardFile[] {
       const { $description, $extensions } = tree
       return groups.map((name) => ({
         name: `${name.toLowerCase().replace(/\s+/g, '-')}.tokens.json`,
-        content: JSON.stringify({ $description, $extensions, [name]: tree[name] }, null, 2),
+        content: stringifyW3C({ $description, $extensions, [name]: tree[name] }),
         language: 'json' as const,
       }))
     }
-    return [{ name: `${slug}.tokens.json`, content: JSON.stringify(tree, null, 2), language: 'json' }]
+    return [{ name: `${slug}.tokens.json`, content: stringifyW3C(tree), language: 'json' }]
   }
 
   // Markdown — delegate to the section builders so a slice reads identically
@@ -577,7 +577,7 @@ export function buildAlphaFamilyExport(
       keepPrimitive: (key, alpha) => alpha && splitFlat(key)[0] === base,
       project,
     })
-    return [{ name: `${slug}.tokens.json`, content: JSON.stringify(tree, null, 2), language: 'json' }]
+    return [{ name: `${slug}.tokens.json`, content: stringifyW3C(tree), language: 'json' }]
   }
 
   return []
