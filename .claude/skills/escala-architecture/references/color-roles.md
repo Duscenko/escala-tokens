@@ -2,7 +2,7 @@
 
 # Escala colour roles (Categorical)
 
-85 roles in 6 groups. Every role ships as:
+86 roles in 6 groups. Every role ships as:
 
 - **CSS** `--color-<group>-<key>` with dots turned into dashes (`action.primary.hover` → `--color-action-primary-hover`).
 - **Figma** collection `Color Semantics`, variable `<Group>/<key path>` (`Action/primary/hover`), one mode per theme (Light, Dark, a brand…).
@@ -58,6 +58,7 @@ Page and layer backgrounds. What things sit ON.
 | `surface.muted` | `--color-surface-muted` | `Surface/muted` | `{neutral.4}` | `{neutral-dark.4}` | pinned | **Control Track.** Neutral fill of a control's passive part — a Switch's off track, a Slider or Progress track, an OTP segment, a step connector. {neutral.4} in light. Not a button: a secondary CTA uses action.secondary.default. |
 | `surface.muted-hover` | `--color-surface-muted-hover` | `Surface/muted-hover` | `{neutral.5}` | `{neutral-dark.5}` | pinned | **Control Track Hover.** Hover twin of surface.muted (a hovered off Switch, a scrollbar thumb). {neutral.5} in light — one step past the track. |
 | `surface.input` | `--color-surface-input` | `Surface/input` | `{neutral.1}` | `{neutral-dark.1}` | pinned | **Form Background.** Background for interactive data-entry fields. Ensures content.primary typed by the user stays legible. Same tone as surface.page by design — named separately so forms have their own token. |
+| `surface.raised` | `--color-surface-raised` | `Surface/raised` | `{neutral.1}` | `{neutral-dark.6}` | pinned | **Raised Surface.** A part lifted above the track or surface it sits on: the selected segment of a SegmentedControl. Lighter than surface.muted in both themes (Light = surface.input's tone, Dark = action.secondary.default's tone). DEC-2026-11-17-003. |
 | `surface.selected` | `--color-surface-selected` | `Surface/selected` | `{accent-a.3}` | `{accent-a.3}` | pinned | **Active State Background.** Subtle fill for mutual selection (e.g. a selected table row). Must guarantee 4.5:1 against content.primary on top. |
 | `surface.selected-pressed` | `--color-surface-selected-pressed` | `Surface/selected-pressed` | `{accent-a.5}` | `{accent-a.5}` | pinned | **Active State Background Pressed.** A pressed soft brand control (Button Soft / Outline pressed). {accent-a.5}, two steps deeper than surface.selected — the brand twin of status.*.surface-pressed. |
 | `surface.inverse` | `--color-surface-inverse` | `Surface/inverse` | `{neutral.12}` | `{neutral-dark.12}` | pinned | **Inverted Background.** High-contrast background for tooltips, snackbars and inverse alerts or badges. Always pair with content.inverse (title) and content.inverse-secondary (body, icons). {neutral.12} in both themes: a dark chip in Light, a light one in Dark. |

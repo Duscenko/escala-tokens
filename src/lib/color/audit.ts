@@ -206,6 +206,7 @@ export const CURATED_PAIRINGS: Partial<Record<SemanticArchitecture, Pairing[]>> 
     { fg: 'content.primary',   bg: 'surface.layer-1', intent: 'body-text' },
     { fg: 'content.primary',   bg: 'surface.layer-2', intent: 'body-text' },
     { fg: 'content.primary',   bg: 'surface.input',   intent: 'body-text' },
+    { fg: 'content.primary',   bg: 'surface.raised',  intent: 'body-text' },
     { fg: 'content.primary',   bg: 'surface.selected', intent: 'body-text' },
     { fg: 'content.inverse',   bg: 'surface.inverse', intent: 'body-text' },
     // `content.inverse-secondary` is an alpha ink (white-a.9 / black-a.9); the

@@ -119,6 +119,9 @@ There is ONE focus ring, also on an invalid field — focus wins over error.
   bind `Radius/control` (4 px): at 16 px, 8 px is a pill. Every rounded Badge
   is also capped at about a third of its height in the recipe, so rounded never
   equals pill.
+- **A raised part sits on `surface.raised` (DEC-2026-11-17-003).** The
+  selected segment of a SegmentedControl: lighter than `surface.muted` in both
+  themes. Never `surface.input` for it — in Dark that sinks below the track.
 - **Critical washes red (DEC-2026-11-17-003).** Button / IconButton
   `Variant=critical` outline and ghost: Hover `status.critical.surface`,
   Pressed `status.critical.surface-pressed`; never the grey `action.ghost.*`.

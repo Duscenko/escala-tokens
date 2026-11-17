@@ -297,8 +297,10 @@
       "side": "figma",
       "entity": "SegmentedControlItem",
       "evidence": "Dark: selected Surface/input #100e13 sits darker than the track Surface/muted #252428 (reads as a hole). Approved: a new role; name pending from the owner. Board 2082:305.",
-      "status": "Open",
-      "resolution": null,
+      "status": "Decided",
+      "resolution": {
+        "ref": "DEC-2026-11-17-003"
+      },
       "figmaNode": "2082:305",
       "firstSeen": "2026-11-17",
       "lastSeen": "2026-11-17",

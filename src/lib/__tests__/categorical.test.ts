@@ -43,7 +43,7 @@ const amberView = buildArchitectureView('categorical', {
 } as never, amberSystem.errorSeed)!
 
 describe('the categorical catalogue is complete', () => {
-  it('ships 85 roles across six groups', () => {
+  it('ships 86 roles across six groups', () => {
     // Base 51 + 10 (phase 0) + 2 (phase 1 stroke split) = 63; then the
     // semantic-border audit re-homed the severity strokes:
     //
@@ -73,7 +73,8 @@ describe('the categorical catalogue is complete', () => {
     //  solid's outside edge (Dark no longer strokes the ramp's palest step) → 84.
     //  Same day the solids lost that edge (-1) and gained `status.critical.ring` (+1) → 84.
     //  +1 (2026-11-17, owner decision): `border.ring.neutral`, the neutral focus ring → 85.
-    expect(roleIds).toHaveLength(85)
+    //  +1 (2026-11-17, DEC-2026-11-17-003): `surface.raised`, the selected segment → 86.
+    expect(roleIds).toHaveLength(86)
     for (const group of ['content', 'action', 'surface', 'status', 'border', 'elevation']) {
       expect(view.categories.some((c) => c.key === group), group).toBe(true)
     }

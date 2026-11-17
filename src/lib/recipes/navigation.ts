@@ -159,10 +159,11 @@ const SEGMENT_ITEM: Record<string, { box: string; gap: string; icon: string }> =
 function segmentPaint(checked: string, state: string): SlotMap {
   const on = checked === 'true'
   // A disabled raised segment keeps the fill but loses Shadow/xs (the file draws no effect on it).
-  if (state === 'Disabled') return { root: { fill: on ? c('surface.input') : NONE, text: c('content.disabled'), radius: 'radius.item', ...(on ? { highlight: NONE } : {}) } }
+  if (state === 'Disabled') return { root: { fill: on ? c('surface.raised') : NONE, text: c('content.disabled'), radius: 'radius.item', ...(on ? { highlight: NONE } : {}) } }
   // A `focus` of none would clear the box-shadow the raised segment carries, so only Focused sets it.
   const focus = state === 'Focused' ? { focus: c('border.focus'), ring: c('border.ring.default') } : {}
-  if (on) return { root: { fill: c('surface.input'), text: c('content.primary'), radius: 'radius.item', shadow: 'shadow.xs', ...focus } }
+  // The raised segment: `Surface/raised` (Figma 1102:5087, DEC-2026-11-17-003) — lighter than the track in both themes.
+  if (on) return { root: { fill: c('surface.raised'), text: c('content.primary'), radius: 'radius.item', shadow: 'shadow.xs', ...focus } }
   const fill = state === 'Hover' ? c('action.ghost.hover') : state === 'Pressed' ? c('action.ghost.pressed') : NONE
   return { root: { fill, text: c(state === 'Hover' || state === 'Pressed' ? 'content.primary' : 'content.secondary'), radius: 'radius.item', ...focus } }
 }

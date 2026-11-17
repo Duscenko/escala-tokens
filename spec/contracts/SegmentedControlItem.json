@@ -140,7 +140,7 @@
       "color.content.disabled",
       "color.content.primary",
       "color.content.secondary",
-      "color.surface.input"
+      "color.surface.raised"
     ],
     "icon": [
       "icon.medium",

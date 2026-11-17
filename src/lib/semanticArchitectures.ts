@@ -901,6 +901,11 @@ const CATEGORICAL_ROLES: { group: string; key: string; light: string; dark: stri
   // Form background — same tone as the page, named separately so a form field
   // has its own token to point at rather than reusing "page" by coincidence.
   { group: 'surface', key: 'input', light: '{neutral.1}', dark: '{neutral-dark.1}' },
+  // A part lifted above the track or surface it sits on — the selected segment
+  // of a SegmentedControl. Lighter than `surface.muted` in BOTH themes: Light
+  // takes the form tone (white on the grey track), Dark the secondary button's
+  // tone (`surface.input` sank below the track there). DEC-2026-11-17-003.
+  { group: 'surface', key: 'raised', light: '{neutral.1}', dark: '{neutral-dark.6}' },
   // Accent-tinted row/item selection — one step up from `surface.accent`,
   // the same tone `action.secondary` already uses for a component-level fill.
   // A selected row is the textbook alpha case: it can sit on the page OR on a
@@ -1312,6 +1317,7 @@ export const CATEGORICAL_ROLE_COMMENTS: Record<string, string> = {
   'surface.layer-1': '[ROLE: Container Background] Elevation level 1. Cards, panels, grouped content. Must read slightly distinct from surface.page.',
   'surface.layer-2': '[ROLE: Elevated Background] Elevation level 2. Popovers, dropdowns, modals. Pair with box-shadow in CSS — the color step alone does not convey floating.',
   'surface.input': "[ROLE: Form Background] Background for interactive data-entry fields. Ensures content.primary typed by the user stays legible. Same tone as surface.page by design — named separately so forms have their own token.",
+  'surface.raised': "[ROLE: Raised Surface] A part lifted above the track or surface it sits on: the selected segment of a SegmentedControl. Lighter than surface.muted in both themes (Light = surface.input's tone, Dark = action.secondary.default's tone). DEC-2026-11-17-003.",
   'surface.selected': '[ROLE: Active State Background] Subtle fill for mutual selection (e.g. a selected table row). Must guarantee 4.5:1 against content.primary on top.',
   'surface.selected-pressed': '[ROLE: Active State Background Pressed] A pressed soft brand control (Button Soft / Outline pressed). {accent-a.5}, two steps deeper than surface.selected — the brand twin of status.*.surface-pressed.',
   'surface.inverse': '[ROLE: Inverted Background] High-contrast background for tooltips, snackbars and inverse alerts or badges. Always pair with content.inverse (title) and content.inverse-secondary (body, icons). {neutral.12} in both themes: a dark chip in Light, a light one in Dark.',
