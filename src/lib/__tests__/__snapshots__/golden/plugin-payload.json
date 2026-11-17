@@ -10104,7 +10104,7 @@
                 "fill": "color.surface.muted",
                 "stroke": "color.border.subtle",
                 "strokeWidth": "stroke.divider",
-                "radius": "radius.control",
+                "radius": "radius.item",
                 "paddingX": "spacing.gap-tight",
                 "text": "color.content.secondary",
                 "font": "type.caption"
@@ -11917,7 +11917,7 @@
             "xs|default|Default": {
               "root": {
                 "height": "spacing.4+spacing.0_5",
-                "radius": "radius.control",
+                "radius": "radius.item",
                 "gap": "spacing.gap-tight",
                 "font": "type.caption",
                 "text": "color.content.primary",
@@ -11937,7 +11937,7 @@
             "xs|default|Hover": {
               "root": {
                 "height": "spacing.4+spacing.0_5",
-                "radius": "radius.control",
+                "radius": "radius.item",
                 "gap": "spacing.gap-tight",
                 "font": "type.caption",
                 "text": "color.content.primary",
@@ -11957,7 +11957,7 @@
             "xs|default|Focused": {
               "root": {
                 "height": "spacing.4+spacing.0_5",
-                "radius": "radius.control",
+                "radius": "radius.item",
                 "gap": "spacing.gap-tight",
                 "font": "type.caption",
                 "text": "color.content.primary",
@@ -11979,7 +11979,7 @@
             "xs|default|Disabled": {
               "root": {
                 "height": "spacing.4+spacing.0_5",
-                "radius": "radius.control",
+                "radius": "radius.item",
                 "gap": "spacing.gap-tight",
                 "font": "type.caption",
                 "text": "color.content.disabled",
@@ -11999,7 +11999,7 @@
             "xs|critical|Default": {
               "root": {
                 "height": "spacing.4+spacing.0_5",
-                "radius": "radius.control",
+                "radius": "radius.item",
                 "gap": "spacing.gap-tight",
                 "font": "type.caption",
                 "text": "color.status.critical.content",
@@ -12021,7 +12021,7 @@
             "xs|critical|Hover": {
               "root": {
                 "height": "spacing.4+spacing.0_5",
-                "radius": "radius.control",
+                "radius": "radius.item",
                 "gap": "spacing.gap-tight",
                 "font": "type.caption",
                 "text": "color.status.critical.content",
@@ -12043,7 +12043,7 @@
             "xs|critical|Focused": {
               "root": {
                 "height": "spacing.4+spacing.0_5",
-                "radius": "radius.control",
+                "radius": "radius.item",
                 "gap": "spacing.gap-tight",
                 "font": "type.caption",
                 "text": "color.status.critical.content",
@@ -12065,7 +12065,7 @@
             "xs|critical|Disabled": {
               "root": {
                 "height": "spacing.4+spacing.0_5",
-                "radius": "radius.control",
+                "radius": "radius.item",
                 "gap": "spacing.gap-tight",
                 "font": "type.caption",
                 "text": "color.content.disabled",
@@ -12085,7 +12085,7 @@
             "sm|default|Default": {
               "root": {
                 "height": "spacing.5",
-                "radius": "radius.control",
+                "radius": "radius.item",
                 "gap": "spacing.gap-tight",
                 "font": "type.label",
                 "text": "color.content.primary",
@@ -12105,7 +12105,7 @@
             "sm|default|Hover": {
               "root": {
                 "height": "spacing.5",
-                "radius": "radius.control",
+                "radius": "radius.item",
                 "gap": "spacing.gap-tight",
                 "font": "type.label",
                 "text": "color.content.primary",
@@ -12125,7 +12125,7 @@
             "sm|default|Focused": {
               "root": {
                 "height": "spacing.5",
-                "radius": "radius.control",
+                "radius": "radius.item",
                 "gap": "spacing.gap-tight",
                 "font": "type.label",
                 "text": "color.content.primary",
@@ -12147,7 +12147,7 @@
             "sm|default|Disabled": {
               "root": {
                 "height": "spacing.5",
-                "radius": "radius.control",
+                "radius": "radius.item",
                 "gap": "spacing.gap-tight",
                 "font": "type.label",
                 "text": "color.content.disabled",
@@ -12167,7 +12167,7 @@
             "sm|critical|Default": {
               "root": {
                 "height": "spacing.5",
-                "radius": "radius.control",
+                "radius": "radius.item",
                 "gap": "spacing.gap-tight",
                 "font": "type.label",
                 "text": "color.status.critical.content",
@@ -12189,7 +12189,7 @@
             "sm|critical|Hover": {
               "root": {
                 "height": "spacing.5",
-                "radius": "radius.control",
+                "radius": "radius.item",
                 "gap": "spacing.gap-tight",
                 "font": "type.label",
                 "text": "color.status.critical.content",
@@ -12211,7 +12211,7 @@
             "sm|critical|Focused": {
               "root": {
                 "height": "spacing.5",
-                "radius": "radius.control",
+                "radius": "radius.item",
                 "gap": "spacing.gap-tight",
                 "font": "type.label",
                 "text": "color.status.critical.content",
@@ -12233,7 +12233,7 @@
             "sm|critical|Disabled": {
               "root": {
                 "height": "spacing.5",
-                "radius": "radius.control",
+                "radius": "radius.item",
                 "gap": "spacing.gap-tight",
                 "font": "type.label",
                 "text": "color.content.disabled",
@@ -12253,7 +12253,7 @@
             "default|default|Default": {
               "root": {
                 "height": "size.hit",
-                "radius": "radius.control",
+                "radius": "radius.item",
                 "gap": "spacing.1_5",
                 "font": "type.label",
                 "text": "color.content.primary",
@@ -12273,7 +12273,7 @@
             "default|default|Hover": {
               "root": {
                 "height": "size.hit",
-                "radius": "radius.control",
+                "radius": "radius.item",
                 "gap": "spacing.1_5",
                 "font": "type.label",
                 "text": "color.content.primary",
@@ -12293,7 +12293,7 @@
             "default|default|Focused": {
               "root": {
                 "height": "size.hit",
-                "radius": "radius.control",
+                "radius": "radius.item",
                 "gap": "spacing.1_5",
                 "font": "type.label",
                 "text": "color.content.primary",
@@ -12315,7 +12315,7 @@
             "default|default|Disabled": {
               "root": {
                 "height": "size.hit",
-                "radius": "radius.control",
+                "radius": "radius.item",
                 "gap": "spacing.1_5",
                 "font": "type.label",
                 "text": "color.content.disabled",
@@ -12335,7 +12335,7 @@
             "default|critical|Default": {
               "root": {
                 "height": "size.hit",
-                "radius": "radius.control",
+                "radius": "radius.item",
                 "gap": "spacing.1_5",
                 "font": "type.label",
                 "text": "color.status.critical.content",
@@ -12357,7 +12357,7 @@
             "default|critical|Hover": {
               "root": {
                 "height": "size.hit",
-                "radius": "radius.control",
+                "radius": "radius.item",
                 "gap": "spacing.1_5",
                 "font": "type.label",
                 "text": "color.status.critical.content",
@@ -12379,7 +12379,7 @@
             "default|critical|Focused": {
               "root": {
                 "height": "size.hit",
-                "radius": "radius.control",
+                "radius": "radius.item",
                 "gap": "spacing.1_5",
                 "font": "type.label",
                 "text": "color.status.critical.content",
@@ -12401,7 +12401,7 @@
             "default|critical|Disabled": {
               "root": {
                 "height": "size.hit",
-                "radius": "radius.control",
+                "radius": "radius.item",
                 "gap": "spacing.1_5",
                 "font": "type.label",
                 "text": "color.content.disabled",
@@ -12421,7 +12421,7 @@
             "lg|default|Default": {
               "root": {
                 "height": "spacing.6+spacing.1",
-                "radius": "radius.control",
+                "radius": "radius.item",
                 "gap": "spacing.1_5",
                 "font": "type.body-md",
                 "text": "color.content.primary",
@@ -12441,7 +12441,7 @@
             "lg|default|Hover": {
               "root": {
                 "height": "spacing.6+spacing.1",
-                "radius": "radius.control",
+                "radius": "radius.item",
                 "gap": "spacing.1_5",
                 "font": "type.body-md",
                 "text": "color.content.primary",
@@ -12461,7 +12461,7 @@
             "lg|default|Focused": {
               "root": {
                 "height": "spacing.6+spacing.1",
-                "radius": "radius.control",
+                "radius": "radius.item",
                 "gap": "spacing.1_5",
                 "font": "type.body-md",
                 "text": "color.content.primary",
@@ -12483,7 +12483,7 @@
             "lg|default|Disabled": {
               "root": {
                 "height": "spacing.6+spacing.1",
-                "radius": "radius.control",
+                "radius": "radius.item",
                 "gap": "spacing.1_5",
                 "font": "type.body-md",
                 "text": "color.content.disabled",
@@ -12503,7 +12503,7 @@
             "lg|critical|Default": {
               "root": {
                 "height": "spacing.6+spacing.1",
-                "radius": "radius.control",
+                "radius": "radius.item",
                 "gap": "spacing.1_5",
                 "font": "type.body-md",
                 "text": "color.status.critical.content",
@@ -12525,7 +12525,7 @@
             "lg|critical|Hover": {
               "root": {
                 "height": "spacing.6+spacing.1",
-                "radius": "radius.control",
+                "radius": "radius.item",
                 "gap": "spacing.1_5",
                 "font": "type.body-md",
                 "text": "color.status.critical.content",
@@ -12547,7 +12547,7 @@
             "lg|critical|Focused": {
               "root": {
                 "height": "spacing.6+spacing.1",
-                "radius": "radius.control",
+                "radius": "radius.item",
                 "gap": "spacing.1_5",
                 "font": "type.body-md",
                 "text": "color.status.critical.content",
@@ -12569,7 +12569,7 @@
             "lg|critical|Disabled": {
               "root": {
                 "height": "spacing.6+spacing.1",
-                "radius": "radius.control",
+                "radius": "radius.item",
                 "gap": "spacing.1_5",
                 "font": "type.body-md",
                 "text": "color.content.disabled",
@@ -12589,7 +12589,7 @@
             "xl|default|Default": {
               "root": {
                 "height": "size.compact",
-                "radius": "radius.control",
+                "radius": "radius.item",
                 "gap": "spacing.gap-control",
                 "font": "type.body-lg",
                 "text": "color.content.primary",
@@ -12609,7 +12609,7 @@
             "xl|default|Hover": {
               "root": {
                 "height": "size.compact",
-                "radius": "radius.control",
+                "radius": "radius.item",
                 "gap": "spacing.gap-control",
                 "font": "type.body-lg",
                 "text": "color.content.primary",
@@ -12629,7 +12629,7 @@
             "xl|default|Focused": {
               "root": {
                 "height": "size.compact",
-                "radius": "radius.control",
+                "radius": "radius.item",
                 "gap": "spacing.gap-control",
                 "font": "type.body-lg",
                 "text": "color.content.primary",
@@ -12651,7 +12651,7 @@
             "xl|default|Disabled": {
               "root": {
                 "height": "size.compact",
-                "radius": "radius.control",
+                "radius": "radius.item",
                 "gap": "spacing.gap-control",
                 "font": "type.body-lg",
                 "text": "color.content.disabled",
@@ -12671,7 +12671,7 @@
             "xl|critical|Default": {
               "root": {
                 "height": "size.compact",
-                "radius": "radius.control",
+                "radius": "radius.item",
                 "gap": "spacing.gap-control",
                 "font": "type.body-lg",
                 "text": "color.status.critical.content",
@@ -12693,7 +12693,7 @@
             "xl|critical|Hover": {
               "root": {
                 "height": "size.compact",
-                "radius": "radius.control",
+                "radius": "radius.item",
                 "gap": "spacing.gap-control",
                 "font": "type.body-lg",
                 "text": "color.status.critical.content",
@@ -12715,7 +12715,7 @@
             "xl|critical|Focused": {
               "root": {
                 "height": "size.compact",
-                "radius": "radius.control",
+                "radius": "radius.item",
                 "gap": "spacing.gap-control",
                 "font": "type.body-lg",
                 "text": "color.status.critical.content",
@@ -12737,7 +12737,7 @@
             "xl|critical|Disabled": {
               "root": {
                 "height": "size.compact",
-                "radius": "radius.control",
+                "radius": "radius.item",
                 "gap": "spacing.gap-control",
                 "font": "type.body-lg",
                 "text": "color.content.disabled",
@@ -17105,7 +17105,7 @@
             "xs|default|rounded|soft": {
               "root": {
                 "height": "spacing.4",
-                "radius": "radius.control",
+                "radius": "radius.item",
                 "paddingY": "spacing.none",
                 "font": "type.caption",
                 "paddingX": "spacing.gap-tight",
@@ -17126,7 +17126,7 @@
             "xs|default|rounded|solid": {
               "root": {
                 "height": "spacing.4",
-                "radius": "radius.control",
+                "radius": "radius.item",
                 "paddingY": "spacing.none",
                 "font": "type.caption",
                 "paddingX": "spacing.gap-tight",
@@ -17147,7 +17147,7 @@
             "xs|default|rounded|outline": {
               "root": {
                 "height": "spacing.4",
-                "radius": "radius.control",
+                "radius": "radius.item",
                 "paddingY": "spacing.none",
                 "font": "type.caption",
                 "paddingX": "spacing.gap-tight+stroke.control",
@@ -17168,7 +17168,7 @@
             "xs|default|rounded|ghost": {
               "root": {
                 "height": "spacing.4",
-                "radius": "radius.control",
+                "radius": "radius.item",
                 "paddingY": "spacing.none",
                 "font": "type.caption",
                 "paddingX": "spacing.gap-tight",
@@ -17273,7 +17273,7 @@
             "xs|icon|rounded|soft": {
               "root": {
                 "height": "spacing.4",
-                "radius": "radius.control",
+                "radius": "radius.item",
                 "paddingY": "spacing.none",
                 "font": "type.caption",
                 "width": "spacing.4",
@@ -17287,7 +17287,7 @@
             "xs|icon|rounded|solid": {
               "root": {
                 "height": "spacing.4",
-                "radius": "radius.control",
+                "radius": "radius.item",
                 "paddingY": "spacing.none",
                 "font": "type.caption",
                 "width": "spacing.4",
@@ -17301,7 +17301,7 @@
             "xs|icon|rounded|outline": {
               "root": {
                 "height": "spacing.4",
-                "radius": "radius.control",
+                "radius": "radius.item",
                 "paddingY": "spacing.none",
                 "font": "type.caption",
                 "width": "spacing.4",
@@ -17315,7 +17315,7 @@
             "xs|icon|rounded|ghost": {
               "root": {
                 "height": "spacing.4",
-                "radius": "radius.control",
+                "radius": "radius.item",
                 "paddingY": "spacing.none",
                 "font": "type.caption",
                 "width": "spacing.4",
@@ -17385,7 +17385,7 @@
             "xs|number|rounded|soft": {
               "root": {
                 "height": "spacing.4",
-                "radius": "radius.control",
+                "radius": "radius.item",
                 "paddingY": "spacing.none",
                 "font": "type.caption",
                 "minWidth": "spacing.4",
@@ -17398,7 +17398,7 @@
             "xs|number|rounded|solid": {
               "root": {
                 "height": "spacing.4",
-                "radius": "radius.control",
+                "radius": "radius.item",
                 "paddingY": "spacing.none",
                 "font": "type.caption",
                 "minWidth": "spacing.4",
@@ -17411,7 +17411,7 @@
             "xs|number|rounded|outline": {
               "root": {
                 "height": "spacing.4",
-                "radius": "radius.control",
+                "radius": "radius.item",
                 "paddingY": "spacing.none",
                 "font": "type.caption",
                 "minWidth": "spacing.4",
@@ -17424,7 +17424,7 @@
             "xs|number|rounded|ghost": {
               "root": {
                 "height": "spacing.4",
-                "radius": "radius.control",
+                "radius": "radius.item",
                 "paddingY": "spacing.none",
                 "font": "type.caption",
                 "minWidth": "spacing.4",
@@ -17561,7 +17561,7 @@
             "sm|default|rounded|soft": {
               "root": {
                 "height": "spacing.5",
-                "radius": "radius.control",
+                "radius": "radius.item",
                 "paddingY": "spacing.none",
                 "font": "type.label",
                 "paddingX": "spacing.gap-control",
@@ -17582,7 +17582,7 @@
             "sm|default|rounded|solid": {
               "root": {
                 "height": "spacing.5",
-                "radius": "radius.control",
+                "radius": "radius.item",
                 "paddingY": "spacing.none",
                 "font": "type.label",
                 "paddingX": "spacing.gap-control",
@@ -17603,7 +17603,7 @@
             "sm|default|rounded|outline": {
               "root": {
                 "height": "spacing.5",
-                "radius": "radius.control",
+                "radius": "radius.item",
                 "paddingY": "spacing.none",
                 "font": "type.label",
                 "paddingX": "spacing.gap-control+stroke.control",
@@ -17624,7 +17624,7 @@
             "sm|default|rounded|ghost": {
               "root": {
                 "height": "spacing.5",
-                "radius": "radius.control",
+                "radius": "radius.item",
                 "paddingY": "spacing.none",
                 "font": "type.label",
                 "paddingX": "spacing.gap-control",
@@ -17729,7 +17729,7 @@
             "sm|icon|rounded|soft": {
               "root": {
                 "height": "spacing.5",
-                "radius": "radius.control",
+                "radius": "radius.item",
                 "paddingY": "spacing.none",
                 "font": "type.label",
                 "width": "spacing.5",
@@ -17743,7 +17743,7 @@
             "sm|icon|rounded|solid": {
               "root": {
                 "height": "spacing.5",
-                "radius": "radius.control",
+                "radius": "radius.item",
                 "paddingY": "spacing.none",
                 "font": "type.label",
                 "width": "spacing.5",
@@ -17757,7 +17757,7 @@
             "sm|icon|rounded|outline": {
               "root": {
                 "height": "spacing.5",
-                "radius": "radius.control",
+                "radius": "radius.item",
                 "paddingY": "spacing.none",
                 "font": "type.label",
                 "width": "spacing.5",
@@ -17771,7 +17771,7 @@
             "sm|icon|rounded|ghost": {
               "root": {
                 "height": "spacing.5",
-                "radius": "radius.control",
+                "radius": "radius.item",
                 "paddingY": "spacing.none",
                 "font": "type.label",
                 "width": "spacing.5",
@@ -17841,7 +17841,7 @@
             "sm|number|rounded|soft": {
               "root": {
                 "height": "spacing.5",
-                "radius": "radius.control",
+                "radius": "radius.item",
                 "paddingY": "spacing.none",
                 "font": "type.label",
                 "minWidth": "spacing.5",
@@ -17854,7 +17854,7 @@
             "sm|number|rounded|solid": {
               "root": {
                 "height": "spacing.5",
-                "radius": "radius.control",
+                "radius": "radius.item",
                 "paddingY": "spacing.none",
                 "font": "type.label",
                 "minWidth": "spacing.5",
@@ -17867,7 +17867,7 @@
             "sm|number|rounded|outline": {
               "root": {
                 "height": "spacing.5",
-                "radius": "radius.control",
+                "radius": "radius.item",
                 "paddingY": "spacing.none",
                 "font": "type.label",
                 "minWidth": "spacing.5",
@@ -17880,7 +17880,7 @@
             "sm|number|rounded|ghost": {
               "root": {
                 "height": "spacing.5",
-                "radius": "radius.control",
+                "radius": "radius.item",
                 "paddingY": "spacing.none",
                 "font": "type.label",
                 "minWidth": "spacing.5",
@@ -18017,7 +18017,7 @@
             "default|default|rounded|soft": {
               "root": {
                 "height": "size.xs",
-                "radius": "radius.control",
+                "radius": "radius.item",
                 "paddingY": "spacing.none",
                 "font": "type.label",
                 "paddingX": "spacing.inset-control",
@@ -18038,7 +18038,7 @@
             "default|default|rounded|solid": {
               "root": {
                 "height": "size.xs",
-                "radius": "radius.control",
+                "radius": "radius.item",
                 "paddingY": "spacing.none",
                 "font": "type.label",
                 "paddingX": "spacing.inset-control",
@@ -18059,7 +18059,7 @@
             "default|default|rounded|outline": {
               "root": {
                 "height": "size.xs",
-                "radius": "radius.control",
+                "radius": "radius.item",
                 "paddingY": "spacing.none",
                 "font": "type.label",
                 "paddingX": "spacing.inset-control+stroke.control",
@@ -18080,7 +18080,7 @@
             "default|default|rounded|ghost": {
               "root": {
                 "height": "size.xs",
-                "radius": "radius.control",
+                "radius": "radius.item",
                 "paddingY": "spacing.none",
                 "font": "type.label",
                 "paddingX": "spacing.inset-control",
@@ -18185,7 +18185,7 @@
             "default|icon|rounded|soft": {
               "root": {
                 "height": "size.xs",
-                "radius": "radius.control",
+                "radius": "radius.item",
                 "paddingY": "spacing.none",
                 "font": "type.label",
                 "width": "size.xs",
@@ -18199,7 +18199,7 @@
             "default|icon|rounded|solid": {
               "root": {
                 "height": "size.xs",
-                "radius": "radius.control",
+                "radius": "radius.item",
                 "paddingY": "spacing.none",
                 "font": "type.label",
                 "width": "size.xs",
@@ -18213,7 +18213,7 @@
             "default|icon|rounded|outline": {
               "root": {
                 "height": "size.xs",
-                "radius": "radius.control",
+                "radius": "radius.item",
                 "paddingY": "spacing.none",
                 "font": "type.label",
                 "width": "size.xs",
@@ -18227,7 +18227,7 @@
             "default|icon|rounded|ghost": {
               "root": {
                 "height": "size.xs",
-                "radius": "radius.control",
+                "radius": "radius.item",
                 "paddingY": "spacing.none",
                 "font": "type.label",
                 "width": "size.xs",
@@ -18297,7 +18297,7 @@
             "default|number|rounded|soft": {
               "root": {
                 "height": "size.xs",
-                "radius": "radius.control",
+                "radius": "radius.item",
                 "paddingY": "spacing.none",
                 "font": "type.label",
                 "minWidth": "size.xs",
@@ -18310,7 +18310,7 @@
             "default|number|rounded|solid": {
               "root": {
                 "height": "size.xs",
-                "radius": "radius.control",
+                "radius": "radius.item",
                 "paddingY": "spacing.none",
                 "font": "type.label",
                 "minWidth": "size.xs",
@@ -18323,7 +18323,7 @@
             "default|number|rounded|outline": {
               "root": {
                 "height": "size.xs",
-                "radius": "radius.control",
+                "radius": "radius.item",
                 "paddingY": "spacing.none",
                 "font": "type.label",
                 "minWidth": "size.xs",
@@ -18336,7 +18336,7 @@
             "default|number|rounded|ghost": {
               "root": {
                 "height": "size.xs",
-                "radius": "radius.control",
+                "radius": "radius.item",
                 "paddingY": "spacing.none",
                 "font": "type.label",
                 "minWidth": "size.xs",
@@ -22893,7 +22893,7 @@
                 "stroke": "color.border.subtle",
                 "strokeWidth": "stroke.control",
                 "text": "color.content.secondary",
-                "radius": "radius.control",
+                "radius": "radius.item",
                 "gap": "spacing.gap-tight"
               }
             }
@@ -30246,7 +30246,7 @@
     },
     "Radius": {
       "role/control": "Checkbox, nested child, inner thumb.",
-      "role/item": "An element nested in a track or a flush list: a segment, a sidebar menu button. Never a row inside an overlay.",
+      "role/item": "An element nested in a track or a flush list (a segment, a sidebar menu button) and the tag family: Badge rounded, Kbd, InputTagChip (DEC-2026-11-17-002). Never a row inside an overlay.",
       "role/action": "Buttons, inputs, selects, OTP, tabs, rows inside an overlay.",
       "role/container": "Cards, accordion, inline alerts.",
       "role/overlay": "Modal, popover, command, dropdown.",

@@ -160,3 +160,7 @@ before / after for §4.4 is on the `🧪 Experiments` page:
 [proposal, not applied](https://www.figma.com/design/7j5zukN5HpihGVJMmyjA20/?node-id=2059-126) ·
 [inventory](https://www.figma.com/design/7j5zukN5HpihGVJMmyjA20/?node-id=2059-165).
 Finding `FIG-002:Radius/control-overloaded` (Open, waits for the owner).
+
+**§4.4 decided (2026-11-17, DEC-2026-11-17-002).** Owner chose option (a): Badge `Shape=rounded`, Kbd and
+InputTagChip moved to `Radius/item` in the Figma file, and the recipes followed. Q4 is answered too: the
+rounded Badge now lives on the Items axis. `Radius/control` keeps Checkbox, Slider, link focus rings and media.

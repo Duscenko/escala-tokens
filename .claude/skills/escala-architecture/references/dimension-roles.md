@@ -27,13 +27,13 @@ Corner roundness. Three INDEPENDENT axes (Boxes · Fields · Selectors) — roun
 | --- | --- | --- | --- | --- | --- |
 | `radius.action` | `--radius-action` | `Radius/action` | `xl` | 12px | Buttons, inputs, selects, OTP, tabs, rows inside an overlay. |
 
-### Items — Segment in a track, sidebar menu button.
+### Items — Segment, sidebar menu button, badge, kbd, tag.
 
 | Role | CSS | Figma | Default step | Default px | Use |
 | --- | --- | --- | --- | --- | --- |
-| `radius.item` | `--radius-item` | `Radius/item` | `lg` | 8px | An element nested in a track or a flush list: a segment, a sidebar menu button. Never a row inside an overlay. |
+| `radius.item` | `--radius-item` | `Radius/item` | `lg` | 8px | An element nested in a track or a flush list (a segment, a sidebar menu button) and the tag family: Badge rounded, Kbd, InputTagChip (DEC-2026-11-17-002). Never a row inside an overlay. |
 
-### Selectors — Checkbox, radio, toggle, badge.
+### Selectors — Checkbox, slider, link focus ring.
 
 | Role | CSS | Figma | Default step | Default px | Use |
 | --- | --- | --- | --- | --- | --- |
@@ -42,7 +42,7 @@ Corner roundness. Three INDEPENDENT axes (Boxes · Fields · Selectors) — roun
 
 Static scale: `none` 0px · `xs` 2px · `sm` 4px · `md` 6px · `lg` 8px · `xl` 12px · `2xl` 16px · `3xl` 24px · `4xl` 32px · `5xl` 48px · `full` 9999px
 
-**Axes.** Boxes (card, modal, alert) → `radius.container`, `radius.overlay`; Fields (button, input, select, tab, rows in an overlay) → `radius.action`; Items (segment in a track, sidebar menu button) → `radius.item`; Selectors (checkbox, radio, toggle, badge) → `radius.control`. `radius.pill` is not an axis: it means "a circle" and stays `full`.
+**Axes.** Boxes (card, modal, alert) → `radius.container`, `radius.overlay`; Fields (button, input, select, tab, rows in an overlay) → `radius.action`; Items (segment, sidebar menu button, badge, kbd, tag) → `radius.item`; Selectors (checkbox, slider, link focus ring) → `radius.control`. `radius.pill` is not an axis: it means "a circle" and stays `full`.
 
 **Roles hold one value on every viewport** (the Escala Figma file): only a hand-set Tablet / Mobile value changes one. The `--radius-component-<step>` tokens are the opt-in responsive corners — each reads one rung smaller on Tablet and Mobile (two from 3xl up):
 

@@ -55,7 +55,8 @@ function badgeLayout(size: string, type: string, shape: string, appearance: stri
   const g = BADGE_GEOMETRY[size]
   // A stroke the file lays out (outline widens the badge by two hairlines).
   const lay = appearance === 'outline' ? '+stroke.control' : ''
-  const radius = shape === 'pill' ? 'radius.pill' : 'radius.control'
+  // Rounded badges are the tag family: `Radius/item` in Figma (DEC-2026-11-17-002).
+  const radius = shape === 'pill' ? 'radius.pill' : 'radius.item'
   if (type === 'dot') return { root: { width: g.dot, height: g.dot, radius: 'radius.pill', paddingX: 'spacing.none', paddingY: 'spacing.none' } }
   const root: SlotProps = { height: g.h, radius, paddingY: 'spacing.none', font: g.font }
   if (type === 'icon') return { root: { ...root, width: g.h, paddingX: 'spacing.none' }, icon: { width: g.icon, height: g.icon } }
@@ -487,7 +488,7 @@ export const KBD: ComponentRecipe = {
     part({}, () => ({
       root: {
         fill: c('surface.muted'), stroke: c('border.subtle'), strokeWidth: 'stroke.control', text: c('content.secondary'),
-        radius: 'radius.control', gap: 'spacing.gap-tight',
+        radius: 'radius.item', gap: 'spacing.gap-tight',
       },
     })),
     part({ Size: KBD_SIZES }, (size) => ({

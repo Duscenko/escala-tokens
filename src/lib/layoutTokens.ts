@@ -1024,8 +1024,8 @@ export const LAYOUT_ROLE_GROUPS: Record<LayoutFamily, { id: string; label: strin
   radius: [
     { id: 'boxes', label: 'Boxes', hint: 'Card, modal, alert.' },
     { id: 'fields', label: 'Fields', hint: 'Button, input, select, tab, rows in an overlay.' },
-    { id: 'items', label: 'Items', hint: 'Segment in a track, sidebar menu button.' },
-    { id: 'selectors', label: 'Selectors', hint: 'Checkbox, radio, toggle, badge.' },
+    { id: 'items', label: 'Items', hint: 'Segment, sidebar menu button, badge, kbd, tag.' },
+    { id: 'selectors', label: 'Selectors', hint: 'Checkbox, slider, link focus ring.' },
   ],
   spacing: [
     { id: 'gap', label: 'Gap', hint: 'Space between siblings.' },
@@ -1098,7 +1098,7 @@ export const BOX_CONTAINER_PX = 'dimension-20'
  */
 export const RADIUS_ROLES: LayoutRole[] = [
   { key: 'control', label: 'Control', description: 'Checkbox, nested child, inner thumb.', group: 'selectors', primitive: 'sm' },
-  { key: 'item', label: 'Item', description: 'An element nested in a track or a flush list: a segment, a sidebar menu button. Never a row inside an overlay.', group: 'items', primitive: 'lg' },
+  { key: 'item', label: 'Item', description: 'An element nested in a track or a flush list (a segment, a sidebar menu button) and the tag family: Badge rounded, Kbd, InputTagChip (DEC-2026-11-17-002). Never a row inside an overlay.', group: 'items', primitive: 'lg' },
   { key: 'action', label: 'Action', description: 'Buttons, inputs, selects, OTP, tabs, rows inside an overlay.', group: 'fields', primitive: 'xl' },
   { key: 'container', label: 'Container', description: 'Cards, accordion, inline alerts.', group: 'boxes', primitive: BOX_CONTAINER_PX },
   { key: 'overlay', label: 'Overlay', description: 'Modal, popover, command, dropdown.', group: 'boxes', primitive: '3xl' },
@@ -1161,8 +1161,8 @@ function groupRoleValues(group: RadiusGroup, lead: string): Record<string, strin
 export const RADIUS_GROUPS: RadiusGroup[] = [
   { key: 'boxes', label: 'Boxes', hint: 'card, modal, alert', roles: ['container', 'overlay'], derive: boxRoles },
   { key: 'fields', label: 'Fields', hint: 'button, input, select, tab, rows in an overlay', roles: ['action'] },
-  { key: 'items', label: 'Items', hint: 'segment in a track, sidebar menu button', roles: ['item'] },
-  { key: 'selectors', label: 'Selectors', hint: 'checkbox, radio, toggle, badge', roles: ['control'] },
+  { key: 'items', label: 'Items', hint: 'segment, sidebar menu button, badge, kbd, tag', roles: ['item'] },
+  { key: 'selectors', label: 'Selectors', hint: 'checkbox, slider, link focus ring', roles: ['control'] },
 ]
 
 /** The step an axis is currently on, or `null` when its roles disagree or sit

@@ -211,7 +211,7 @@
       "color.surface.page"
     ],
     "radius": [
-      "radius.control",
+      "radius.item",
       "radius.pill"
     ],
     "size": [

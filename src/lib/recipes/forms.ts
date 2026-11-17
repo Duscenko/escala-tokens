@@ -64,7 +64,7 @@ export const INPUT: ComponentRecipe = {
       root: { radius: 'radius.action', strokeWidth: 'stroke.control', gap: 'spacing.gap-control', font: 'type.placeholder' },
       divider: { fill: c('border.subtle'), width: 'stroke.control' },
       kbd: {
-        fill: c('surface.muted'), stroke: c('border.subtle'), strokeWidth: 'stroke.divider', radius: 'radius.control',
+        fill: c('surface.muted'), stroke: c('border.subtle'), strokeWidth: 'stroke.divider', radius: 'radius.item',
         paddingX: 'spacing.gap-tight', text: c('content.secondary'), font: 'type.caption',
       },
     })),
@@ -575,7 +575,7 @@ function chipPaint(size: string, variant: string, state: string): SlotMap {
   const ink = disabled ? c('content.disabled') : c(critical ? 'status.critical.content' : 'content.primary')
   const edge = !disabled && (critical || state === 'Focused')
   const root: SlotProps = {
-    height: g.h, radius: 'radius.control', gap: g.gap, font: g.font, text: ink,
+    height: g.h, radius: 'radius.item', gap: g.gap, font: g.font, text: ink,
     // The stroke is laid out in the file: the content starts at padding + stroke.
     paddingX: edge ? `${g.padX}+stroke.control` : g.padX,
     strokeWidth: edge ? 'stroke.control' : 'stroke.none',
