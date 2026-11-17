@@ -4,6 +4,13 @@
   "key": "Switch",
   "label": "Switch",
   "category": "Form Controls",
+  "box": "black",
+  "locks": [
+    "shape",
+    "size",
+    "hit",
+    "motion"
+  ],
   "description": "Binary on/off control for a setting that applies immediately. The track alone: name it with SwitchGroup, a Label or a Field.",
   "owners": {
     "anatomy": "figma",

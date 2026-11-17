@@ -4,6 +4,8 @@
   "key": "CalendarFooter",
   "label": "Calendar Footer",
   "category": "Form Controls",
+  "box": "white",
+  "locks": [],
   "description": "The bar under a Calendar: a Today link at the start, Clear and Apply at the end, under a divider.",
   "owners": {
     "anatomy": "figma",

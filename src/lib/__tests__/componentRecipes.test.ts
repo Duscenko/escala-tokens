@@ -319,7 +319,7 @@ describe('Input (Figma)', () => {
     expect(at({ Size: 'lg' }).icon.width).toBe('icon.medium')
     expect(at({ Size: 'lg' })['icon[data-icon="chevron"]'].width).toBe('icon.small')
     expect(at({ Size: 'sm' }).kbd.height).toBe('icon.small')
-    expect(at({}).kbd).toMatchObject({ fill: 'color.surface.muted', stroke: 'color.border.subtle', text: 'color.content.secondary', radius: 'radius.control' })
+    expect(at({}).kbd).toMatchObject({ fill: 'color.surface.muted', stroke: 'color.border.subtle', text: 'color.content.secondary', radius: 'radius.item' })
     expect(at({}).divider).toMatchObject({ fill: 'color.border.subtle', width: 'stroke.control' })
   })
 })

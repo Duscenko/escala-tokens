@@ -4,6 +4,12 @@
   "key": "CalendarDay",
   "label": "Calendar Day",
   "category": "Form Controls",
+  "box": "gray",
+  "locks": [
+    "size",
+    "hit",
+    "motion"
+  ],
   "description": "One day cell of the Calendar: the date, a ghost cell that fills when selected, the range band behind it and the dash under today or a marked day.",
   "owners": {
     "anatomy": "figma",

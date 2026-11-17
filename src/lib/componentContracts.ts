@@ -16,7 +16,7 @@
  * `scripts/gen-component-contracts.ts` (`npm run gen:contracts`); a test fails
  * when the committed files drift from what this builds.
  */
-import { COMPONENTS, type ComponentDef } from './componentCatalogue'
+import { COMPONENTS, type ComponentBox, type ComponentDef, type ComponentLock } from './componentCatalogue'
 import { COMPONENT_RECIPES, recipeTokenRefs } from './componentRecipes'
 
 export const CONTRACT_SCHEMA = 'escala-component-contract/1'
@@ -48,6 +48,8 @@ export interface ComponentContract {
   key: string
   label: string
   category: string
+  box: ComponentBox
+  locks: ComponentLock[]
   description: string
   owners: { anatomy: 'figma'; foundations: 'figma'; behaviour: 'storybook' }
   figma: {
@@ -160,6 +162,8 @@ export function buildContract(def: ComponentDef, src: ContractSources): Componen
     key: def.key,
     label: def.label,
     category: def.category,
+    box: def.box,
+    locks: def.locks,
     description: def.description,
     owners: { anatomy: 'figma', foundations: 'figma', behaviour: 'storybook' },
     figma: {
@@ -187,6 +191,8 @@ export interface ContractIndexEntry {
   key: string
   label: string
   category: string
+  box: ComponentBox
+  locks: ComponentLock[]
   file: string
   figmaSet: string | null
   story: string | null
@@ -199,6 +205,8 @@ export function buildContracts(src: ContractSources): { contracts: ComponentCont
     key: c.key,
     label: c.label,
     category: c.category,
+    box: c.box,
+    locks: c.locks,
     file: `spec/contracts/${c.key}.json`,
     figmaSet: c.figma.set,
     story: c.code.story?.id ?? null,

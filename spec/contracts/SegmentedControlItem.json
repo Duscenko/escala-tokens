@@ -4,6 +4,12 @@
   "key": "SegmentedControlItem",
   "label": "Segmented Control Item",
   "category": "Navigation",
+  "box": "gray",
+  "locks": [
+    "size",
+    "hit",
+    "motion"
+  ],
   "description": "One option of a SegmentedControl. Checked shows a raised Surface/input thumb with Shadow/xs on the Surface/muted track.",
   "owners": {
     "anatomy": "figma",

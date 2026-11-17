@@ -1024,8 +1024,8 @@ export const LAYOUT_ROLE_GROUPS: Record<LayoutFamily, { id: string; label: strin
   radius: [
     { id: 'boxes', label: 'Boxes', hint: 'Card, modal, alert.' },
     { id: 'fields', label: 'Fields', hint: 'Button, input, select, tab, rows in an overlay.' },
-    { id: 'items', label: 'Items', hint: 'Segment in a track, sidebar menu button.' },
-    { id: 'selectors', label: 'Selectors', hint: 'Checkbox, radio, toggle, badge.' },
+    { id: 'items', label: 'Items', hint: 'Segment, sidebar menu button, badge, kbd, tag.' },
+    { id: 'selectors', label: 'Selectors', hint: 'Checkbox, slider, link focus ring.' },
   ],
   spacing: [
     { id: 'gap', label: 'Gap', hint: 'Space between siblings.' },
@@ -1097,8 +1097,8 @@ export const BOX_CONTAINER_PX = 'dimension-20'
  * ladder is now **selectors 8 · fields 12 · boxes 16**, all on the 4px grid.
  */
 export const RADIUS_ROLES: LayoutRole[] = [
-  { key: 'control', label: 'Control', description: 'Checkbox, nested child, inner thumb.', group: 'selectors', primitive: 'sm' },
-  { key: 'item', label: 'Item', description: 'An element nested in a track or a flush list: a segment, a sidebar menu button. Never a row inside an overlay.', group: 'items', primitive: 'lg' },
+  { key: 'control', label: 'Control', description: 'Checkbox, slider, nested child, inner thumb. 0–6px: a checkbox stays a square.', group: 'selectors', primitive: 'sm' },
+  { key: 'item', label: 'Item', description: 'An element nested in a track or a flush list (a segment, a sidebar menu button) and the tag family: Badge rounded, Kbd, InputTagChip (DEC-2026-11-17-002). Never a row inside an overlay.', group: 'items', primitive: 'lg' },
   { key: 'action', label: 'Action', description: 'Buttons, inputs, selects, OTP, tabs, rows inside an overlay.', group: 'fields', primitive: 'xl' },
   { key: 'container', label: 'Container', description: 'Cards, accordion, inline alerts.', group: 'boxes', primitive: BOX_CONTAINER_PX },
   { key: 'overlay', label: 'Overlay', description: 'Modal, popover, command, dropdown.', group: 'boxes', primitive: '3xl' },
@@ -1134,7 +1134,7 @@ export const RADIUS_ROLES: LayoutRole[] = [
  * from DaisyUI, whose selector axis also covers the badge.
  */
 export const RADIUS_GROUP_STEPS = ['none', 'sm', 'lg', 'xl', '2xl', '3xl', '4xl'] as const
-export type RadiusGroupStep = (typeof RADIUS_GROUP_STEPS)[number] | typeof BOX_CONTAINER_PX
+export type RadiusGroupStep = (typeof RADIUS_GROUP_STEPS)[number] | 'xs' | 'md' | typeof BOX_CONTAINER_PX
 
 export interface RadiusGroup {
   key: string
@@ -1161,12 +1161,13 @@ function groupRoleValues(group: RadiusGroup, lead: string): Record<string, strin
 export const RADIUS_GROUPS: RadiusGroup[] = [
   { key: 'boxes', label: 'Boxes', hint: 'card, modal, alert', roles: ['container', 'overlay'], derive: boxRoles },
   { key: 'fields', label: 'Fields', hint: 'button, input, select, tab, rows in an overlay', roles: ['action'] },
-  { key: 'items', label: 'Items', hint: 'segment in a track, sidebar menu button', roles: ['item'] },
-  { key: 'selectors', label: 'Selectors', hint: 'checkbox, radio, toggle, badge', roles: ['control'] },
+  { key: 'items', label: 'Items', hint: 'segment, sidebar menu button, badge, kbd, tag', roles: ['item'] },
+  { key: 'selectors', label: 'Selectors', hint: 'checkbox, slider, link focus ring', roles: ['control'] },
 ]
 
 /** The step an axis is currently on, or `null` when its roles disagree or sit
- *  on a step outside the ladder — a hand-picked alias, shown as Custom. */
+ *  on a step outside the ladder — a hand-picked alias, shown as Custom.
+ *  Selectors read their own ladder (`RADIUS_AXIS_LADDER.selectors`). */
 export function radiusGroupStep(
   group: RadiusGroup,
   roles: Record<string, string> | undefined,
@@ -1176,6 +1177,7 @@ export function radiusGroupStep(
   const expected = groupRoleValues(group, first)
   if (!group.roles.every((role) => merged[role] === expected[role])) return null
   if (first === BOX_CONTAINER_PX && group.key === 'boxes') return BOX_CONTAINER_PX
+  if (group.key === 'selectors') return (RADIUS_AXIS_LADDER.selectors as readonly string[]).includes(first) ? (first as RadiusGroupStep) : null
   return (RADIUS_GROUP_STEPS as readonly string[]).includes(first) ? (first as RadiusGroupStep) : null
 }
 
@@ -1186,7 +1188,42 @@ export function radiusGroupStep(
  * five — so an axis can sit on any token that steps down per viewport.
  */
 export const RADIUS_AXIS_STEPS = ['none', 'sm', 'md', 'lg', 'xl', '2xl', '3xl', '4xl', '5xl'] as const
-export type RadiusAxisStep = (typeof RADIUS_AXIS_STEPS)[number]
+/** A step an axis can sit on. `xs` (2px) is static — it has no responsive
+ *  token — and only the Selectors ladder offers it. */
+export type RadiusAxisStep = (typeof RADIUS_AXIS_STEPS)[number] | 'xs'
+export type RadiusAxisKey = 'boxes' | 'fields' | 'items' | 'selectors'
+
+/**
+ * The steps each axis offers, on every surface (quick rail, phone sheet, plugin
+ * studio, moods). Selectors stop at `md` (6px): `radius.control` draws a 16px
+ * checkbox, and anything past a quarter of the side reads as a radio
+ * (design-plans/component-box-classification.md §4.3). Radio and switch never
+ * move — they are `radius.pill`.
+ */
+export const RADIUS_AXIS_LADDER: Record<RadiusAxisKey, readonly RadiusAxisStep[]> = {
+  boxes: RADIUS_AXIS_STEPS,
+  fields: RADIUS_AXIS_STEPS,
+  items: RADIUS_AXIS_STEPS,
+  selectors: ['none', 'xs', 'sm', 'md'],
+}
+
+/** The ladder for an axis key (any unknown key gets the full ladder). */
+export function radiusAxisLadder(key: string): readonly RadiusAxisStep[] {
+  return RADIUS_AXIS_LADDER[key as RadiusAxisKey] ?? RADIUS_AXIS_STEPS
+}
+
+/** `step` snapped onto `key`'s ladder: kept when the ladder has it, else the
+ *  ladder step nearest in px on the standard ramp (a selectors pick of `2xl`
+ *  becomes `md`). Anything that is not a ramp step is kept as it is. */
+export function clampRadiusAxisStep<T extends string>(key: string, step: T): T | RadiusAxisStep {
+  const ladder = radiusAxisLadder(key)
+  // Only a narrowed ladder clamps; the full one keeps any pick (a pinned px, `xs`).
+  if (ladder === RADIUS_AXIS_STEPS || (ladder as readonly string[]).includes(step)) return step
+  const px = roleValuePx(step, RADIUS_STANDARD)
+  if (px === null || !(step in RADIUS_STANDARD)) return step
+  return ladder.reduce((best, s) =>
+    Math.abs((roleValuePx(s, RADIUS_STANDARD) ?? 0) - px) < Math.abs((roleValuePx(best, RADIUS_STANDARD) ?? 0) - px) ? s : best)
+}
 
 /** The responsive token an axis sits on, or `null` (roles disagree, or a
  *  pinned px / a step with no responsive token) — shown as Custom. */
@@ -1198,7 +1235,7 @@ export function radiusAxisStep(
   const first = merged[group.roles[0]]
   const expected = groupRoleValues(group, first)
   if (!group.roles.every((role) => merged[role] === expected[role])) return null
-  return (RADIUS_AXIS_STEPS as readonly string[]).includes(first) ? (first as RadiusAxisStep) : null
+  return (radiusAxisLadder(group.key) as readonly string[]).includes(first) ? (first as RadiusAxisStep) : null
 }
 
 /** Set every role on one axis to `step`, leaving the other axes alone. */
@@ -1219,7 +1256,7 @@ export function radiusRolesFromGroups(
   let roles = defaultLayoutRoles('radius')
   for (const group of RADIUS_GROUPS) {
     const step = picks[group.key]
-    if (step) roles = applyRadiusGroup(group, roles, step)
+    if (step) roles = applyRadiusGroup(group, roles, clampRadiusAxisStep(group.key, step))
   }
   return roles
 }
@@ -1251,7 +1288,7 @@ export const RADIUS_ROLE_PRESETS: RadiusRolePreset[] = [
   // Boxes at 3xl (24): rounder than Rounded's 16, but a card or alert holding
   // tags and text keeps its shape — 32 rounded the corners past the content
   // and clipped it. The full pill look is the fields'.
-  { label: 'Pill', description: 'Pill fields — boxes 24, fields 32, items 8, selectors 8.', picks: { boxes: '3xl', fields: '4xl', items: 'lg', selectors: 'lg' } },
+  { label: 'Pill', description: 'Pill fields — boxes 24, fields 32, items 8, selectors 6.', picks: { boxes: '3xl', fields: '4xl', items: 'lg', selectors: 'md' } },
 ]
 
 /** The role map a preset produces (the `pill` role and any role outside the
@@ -2168,4 +2205,22 @@ export function moveRadiusLadderV151(state: any): void {
       own.radiusRoles = { ...roles, ...Object.fromEntries(Object.entries(NEW).filter(([k]) => k in roles)) }
     }
   }
+}
+
+/**
+ * Store v153 (design-plans/component-box-classification.md §4.3): the Selectors
+ * axis stops at `md` (6px). A `radius.control` on any ramp step above it (the
+ * old Pill preset's `lg`, a System Style's `2xl`, `full`) moves down to `md`, on
+ * the system and on every brand's own roles. A pinned px or a step at or below
+ * `md` is left alone; nothing else is touched. Mutates `state`; the store
+ * migration calls it on the root and on every saved system.
+ */
+export function capSelectorsRadiusV153(state: any): void {
+  if (!state || typeof state !== 'object') return
+  const above = RADIUS_STEPS.slice(RADIUS_STEPS.indexOf('md') + 1) as readonly string[]
+  const cap = (roles: any) => {
+    if (roles && typeof roles === 'object' && typeof roles.control === 'string' && above.includes(roles.control)) roles.control = 'md'
+  }
+  cap(state.radiusRoles)
+  for (const own of Object.values<any>(state.themeFoundations ?? {})) cap(own?.radiusRoles)
 }

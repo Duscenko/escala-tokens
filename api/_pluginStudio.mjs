@@ -1883,6 +1883,16 @@ function boxRoles(lead) {
 function groupRoleValues(group, lead) {
   return group.derive ? group.derive(lead) : Object.fromEntries(group.roles.map((role) => [role, lead]));
 }
+function radiusAxisLadder(key2) {
+  return RADIUS_AXIS_LADDER[key2] ?? RADIUS_AXIS_STEPS;
+}
+function clampRadiusAxisStep(key2, step) {
+  const ladder = radiusAxisLadder(key2);
+  if (ladder === RADIUS_AXIS_STEPS || ladder.includes(step)) return step;
+  const px2 = roleValuePx(step, RADIUS_STANDARD);
+  if (px2 === null || !(step in RADIUS_STANDARD)) return step;
+  return ladder.reduce((best, s) => Math.abs((roleValuePx(s, RADIUS_STANDARD) ?? 0) - px2) < Math.abs((roleValuePx(best, RADIUS_STANDARD) ?? 0) - px2) ? s : best);
+}
 function applyRadiusGroup(group, roles, step) {
   const next = mergeLayoutRoles("radius", roles);
   Object.assign(next, groupRoleValues(group, step));
@@ -1892,7 +1902,7 @@ function radiusRolesFromGroups(picks) {
   let roles = defaultLayoutRoles("radius");
   for (const group of RADIUS_GROUPS) {
     const step = picks[group.key];
-    if (step) roles = applyRadiusGroup(group, roles, step);
+    if (step) roles = applyRadiusGroup(group, roles, clampRadiusAxisStep(group.key, step));
   }
   return roles;
 }
@@ -2175,7 +2185,16 @@ function moveRadiusLadderV151(state2) {
     }
   }
 }
-var ROLE_DIMENSION_PREFIX, SPACING_RESPONSIVE_FAMILIES, SPACING_RESPONSIVE_SIZES, SR, SPACING_RESPONSIVE_TABLE, SPACING_RESPONSIVE, SPACING_RESPONSIVE_KEYS, RADIUS_WORKING_STEPS, RADIUS_SCALE_RATIOS, RADIUS_STEPS, RADIUS_DEFAULT_LG, RADIUS_PRESETS, RADIUS_STANDARD, SPACING_STEPS, SPACING_DEFAULT_BASE, SPACING_STANDARD, PADDING_DEFAULT_STEP, PADDING_STANDARD, INSET_SURFACE_ROLE, SIZE_STEPS, SIZE_STANDARD, FIELD_MULTIPLIERS, SIZE_DEFAULT_BASE, SIZE_CONTROL_MIN_PX, FIELD_BASE_MIN, BASE_UNIT_RANGE, SELECTOR_STEPS, SELECTOR_MULTIPLIERS, SELECTOR_DEFAULT_BASE, SELECTOR_TO_SIZE_BASE, SELECTOR_STANDARD, inferSizeBase, STROKE_STEPS, STROKE_STANDARD, STROKE_SM_STOPS, BREAKPOINT_STEPS, BREAKPOINT_STANDARD, GRID_VIEWPORTS, GRID_COLUMN_STEPS, GRID_CONTAINER_STEPS, GRID_FRAME_FIELDS, GRID_FRAME_STANDARD, GRID_FRAME_LEGACY_STANDARD, GRID_STYLES, GRID_STANDARD, BOX_CONTAINER_PX, RADIUS_ROLES, RADIUS_GROUP_STEPS, RADIUS_GROUPS, RADIUS_ROLE_PRESETS, LEGACY_RADIUS_ROLE_RUNGS, LEGACY_RADIUS_LG_FACTOR, LEGACY_RADIUS_WORKING_STEPS, RADIUS_V77_RENAME, RADIUS_RESPONSIVE_STEPS, RADIUS_RESPONSIVE, SPACING_ROLES, INSET_ROLES, INSET_SIDES, INSET_SIDE_KEYS, INSET_SIDE_BY_KEY, SPACING_MODES, LEGACY_SPACING_ROLE_STEPS, SIZE_ROLES, SELECTOR_ROLES, STROKE_ROLES, BREAKPOINT_ROLES, LAYOUT_ROLES, PRIMITIVE_SET, GRID_MODE_STYLE;
+function capSelectorsRadiusV153(state2) {
+  if (!state2 || typeof state2 !== "object") return;
+  const above = RADIUS_STEPS.slice(RADIUS_STEPS.indexOf("md") + 1);
+  const cap = (roles) => {
+    if (roles && typeof roles === "object" && typeof roles.control === "string" && above.includes(roles.control)) roles.control = "md";
+  };
+  cap(state2.radiusRoles);
+  for (const own of Object.values(state2.themeFoundations ?? {})) cap(own?.radiusRoles);
+}
+var ROLE_DIMENSION_PREFIX, SPACING_RESPONSIVE_FAMILIES, SPACING_RESPONSIVE_SIZES, SR, SPACING_RESPONSIVE_TABLE, SPACING_RESPONSIVE, SPACING_RESPONSIVE_KEYS, RADIUS_WORKING_STEPS, RADIUS_SCALE_RATIOS, RADIUS_STEPS, RADIUS_DEFAULT_LG, RADIUS_PRESETS, RADIUS_STANDARD, SPACING_STEPS, SPACING_DEFAULT_BASE, SPACING_STANDARD, PADDING_DEFAULT_STEP, PADDING_STANDARD, INSET_SURFACE_ROLE, SIZE_STEPS, SIZE_STANDARD, FIELD_MULTIPLIERS, SIZE_DEFAULT_BASE, SIZE_CONTROL_MIN_PX, FIELD_BASE_MIN, BASE_UNIT_RANGE, SELECTOR_STEPS, SELECTOR_MULTIPLIERS, SELECTOR_DEFAULT_BASE, SELECTOR_TO_SIZE_BASE, SELECTOR_STANDARD, inferSizeBase, STROKE_STEPS, STROKE_STANDARD, STROKE_SM_STOPS, BREAKPOINT_STEPS, BREAKPOINT_STANDARD, GRID_VIEWPORTS, GRID_COLUMN_STEPS, GRID_CONTAINER_STEPS, GRID_FRAME_FIELDS, GRID_FRAME_STANDARD, GRID_FRAME_LEGACY_STANDARD, GRID_STYLES, GRID_STANDARD, BOX_CONTAINER_PX, RADIUS_ROLES, RADIUS_GROUP_STEPS, RADIUS_GROUPS, RADIUS_AXIS_STEPS, RADIUS_AXIS_LADDER, RADIUS_ROLE_PRESETS, LEGACY_RADIUS_ROLE_RUNGS, LEGACY_RADIUS_LG_FACTOR, LEGACY_RADIUS_WORKING_STEPS, RADIUS_V77_RENAME, RADIUS_RESPONSIVE_STEPS, RADIUS_RESPONSIVE, SPACING_ROLES, INSET_ROLES, INSET_SIDES, INSET_SIDE_KEYS, INSET_SIDE_BY_KEY, SPACING_MODES, LEGACY_SPACING_ROLE_STEPS, SIZE_ROLES, SELECTOR_ROLES, STROKE_ROLES, BREAKPOINT_ROLES, LAYOUT_ROLES, PRIMITIVE_SET, GRID_MODE_STYLE;
 var init_layoutTokens = __esm({
   "src/lib/layoutTokens.ts"() {
     init_dimensionCore();
@@ -2346,8 +2365,8 @@ var init_layoutTokens = __esm({
     GRID_STANDARD = buildGridStandard();
     BOX_CONTAINER_PX = "dimension-20";
     RADIUS_ROLES = [
-      { key: "control", label: "Control", description: "Checkbox, nested child, inner thumb.", group: "selectors", primitive: "sm" },
-      { key: "item", label: "Item", description: "An element nested in a track or a flush list: a segment, a sidebar menu button. Never a row inside an overlay.", group: "items", primitive: "lg" },
+      { key: "control", label: "Control", description: "Checkbox, slider, nested child, inner thumb. 0\u20136px: a checkbox stays a square.", group: "selectors", primitive: "sm" },
+      { key: "item", label: "Item", description: "An element nested in a track or a flush list (a segment, a sidebar menu button) and the tag family: Badge rounded, Kbd, InputTagChip (DEC-2026-11-17-002). Never a row inside an overlay.", group: "items", primitive: "lg" },
       { key: "action", label: "Action", description: "Buttons, inputs, selects, OTP, tabs, rows inside an overlay.", group: "fields", primitive: "xl" },
       { key: "container", label: "Container", description: "Cards, accordion, inline alerts.", group: "boxes", primitive: BOX_CONTAINER_PX },
       { key: "overlay", label: "Overlay", description: "Modal, popover, command, dropdown.", group: "boxes", primitive: "3xl" },
@@ -2357,9 +2376,16 @@ var init_layoutTokens = __esm({
     RADIUS_GROUPS = [
       { key: "boxes", label: "Boxes", hint: "card, modal, alert", roles: ["container", "overlay"], derive: boxRoles },
       { key: "fields", label: "Fields", hint: "button, input, select, tab, rows in an overlay", roles: ["action"] },
-      { key: "items", label: "Items", hint: "segment in a track, sidebar menu button", roles: ["item"] },
-      { key: "selectors", label: "Selectors", hint: "checkbox, radio, toggle, badge", roles: ["control"] }
+      { key: "items", label: "Items", hint: "segment, sidebar menu button, badge, kbd, tag", roles: ["item"] },
+      { key: "selectors", label: "Selectors", hint: "checkbox, slider, link focus ring", roles: ["control"] }
     ];
+    RADIUS_AXIS_STEPS = ["none", "sm", "md", "lg", "xl", "2xl", "3xl", "4xl", "5xl"];
+    RADIUS_AXIS_LADDER = {
+      boxes: RADIUS_AXIS_STEPS,
+      fields: RADIUS_AXIS_STEPS,
+      items: RADIUS_AXIS_STEPS,
+      selectors: ["none", "xs", "sm", "md"]
+    };
     RADIUS_ROLE_PRESETS = [
       { label: "Sharp", description: "Square corners everywhere \u2014 0 / 0 / 0.", picks: { boxes: "none", fields: "none", items: "none", selectors: "none" } },
       { label: "Soft", description: "A hint of rounding \u2014 boxes 8, fields 4, items 4, selectors 4.", picks: { boxes: "lg", fields: "sm", items: "sm", selectors: "sm" } },
@@ -2367,7 +2393,7 @@ var init_layoutTokens = __esm({
       // Boxes at 3xl (24): rounder than Rounded's 16, but a card or alert holding
       // tags and text keeps its shape — 32 rounded the corners past the content
       // and clipped it. The full pill look is the fields'.
-      { label: "Pill", description: "Pill fields \u2014 boxes 24, fields 32, items 8, selectors 8.", picks: { boxes: "3xl", fields: "4xl", items: "lg", selectors: "lg" } }
+      { label: "Pill", description: "Pill fields \u2014 boxes 24, fields 32, items 8, selectors 6.", picks: { boxes: "3xl", fields: "4xl", items: "lg", selectors: "md" } }
     ];
     LEGACY_RADIUS_ROLE_RUNGS = { control: "sm", action: "2xl", container: "3xl", overlay: "4xl", pill: "full" };
     LEGACY_RADIUS_LG_FACTOR = 2;
@@ -3998,6 +4024,8 @@ var init_componentCatalogue = __esm({
         key: "Button",
         label: "Button",
         category: "Button & Actions",
+        box: "gray",
+        locks: ["size", "hit", "motion"],
         description: "Triggers an action or navigation. Variant is the intent \u2014 default (brand), secondary (neutral), critical (destructive) \u2014 and Appearance the style \u2014 solid, outline, ghost, link \u2014 in all 12 combinations, four sizes and six states.",
         usage: "Use default \xB7 solid for the single most important action on a surface (one per view); secondary for the rest; critical \xB7 solid for an irreversible action and critical \xB7 outline for a risky one next to a safe one. Icon-only actions are IconButton.",
         // The Figma file's axes, value for value (spec/figma-components.json). State is
@@ -4026,6 +4054,8 @@ var init_componentCatalogue = __esm({
         key: "IconButton",
         label: "Icon Button",
         category: "Button & Actions",
+        box: "gray",
+        locks: ["size", "hit", "motion"],
         description: "An action with a single icon and no visible label: a square at the Button heights. Same Variant \xD7 Appearance grammar as Button, four sizes and six states, with an optional badge for a count or a dot.",
         usage: "Use in toolbars, table rows and dialog headers where the icon is unambiguous. Always give it an aria-label; an action that needs words is a Button.",
         axes: [
@@ -4051,6 +4081,8 @@ var init_componentCatalogue = __esm({
         key: "CloseButton",
         label: "Close Button",
         category: "Button & Actions",
+        box: "gray",
+        locks: ["size", "hit", "motion"],
         description: "The dismiss control for alerts, toasts, dialogs and tags: one X in a square. Soft by default, with solid, outline and ghost; rounded, pill or square corners; five sizes; and an inverse variant for a dark chip.",
         usage: 'Use in the corner of anything the person can put away. Always give it an aria-label (it defaults to "Close"); use the inverse variant on an inverse surface such as a tooltip or snackbar. A dismiss that needs words is a Button.',
         // The Figma file's axes, value for value, in the file's own option order
@@ -4079,6 +4111,8 @@ var init_componentCatalogue = __esm({
         key: "TextLink",
         label: "Text Link",
         category: "Button & Actions",
+        box: "gray",
+        locks: ["radius", "size", "hit", "motion"],
         description: "An inline link for navigation and in-flow actions: a label with an optional icon on either side and a 1px underline. Six variants (brand, neutral, inverse and three status), four sizes and six states.",
         usage: "Use inside running copy and next to a field or a card for a destination or a small action. Give it a descriptive label; an icon-only link needs an aria-label. Hover and Pressed always show the underline; the underline can be turned off at rest. An action with its own surface is a Button.",
         // The Figma file's axes, value for value, in the file's own option order
@@ -4105,6 +4139,8 @@ var init_componentCatalogue = __esm({
         key: "FABButton",
         label: "FAB Button",
         category: "Button & Actions",
+        box: "gray",
+        locks: ["size", "hit", "motion"],
         description: "The floating action button: a leading icon and an optional label on a surface that lifts. Brand, neutral or inverse, solid or soft, rounded or pill, at 48 and 56 px, with the elevation rising on hover and settling on press.",
         usage: "Use for the one primary action of a screen that floats over its content (create, compose, add). Give an icon-only FAB an aria-label. A FAB inside a row of actions is a Button; several floating actions together are a FAB Group.",
         // The Figma file's axes, value for value, in the file's own option order
@@ -4133,6 +4169,8 @@ var init_componentCatalogue = __esm({
         key: "FABGroup",
         label: "FAB Group",
         category: "Button & Actions",
+        box: "gray",
+        locks: ["size", "hit", "motion"],
         description: "A speed-dial: one trigger FABButton that opens up to five action items. Stack lists them vertically with labels; the three fan layouts open them on an arc of icon-only FABs, centered, left or right of the trigger.",
         usage: "Use where several floating actions share one entry point (create \u2192 photo, edit, share\u2026). The trigger's icon swaps plus \u2192 close when open. Give every icon-only item an accessible name.",
         // The Figma file's axes, value for value, in the file's own option order
@@ -4160,6 +4198,8 @@ var init_componentCatalogue = __esm({
         key: "ButtonGroup",
         label: "Button Group",
         category: "Button & Actions",
+        box: "gray",
+        locks: ["size", "hit", "motion"],
         description: "A joined row or column of up to five ButtonGroupItem segments sharing one surface, outer radius and Shadow/xs. The group sets every segment's Variant and Size and puts a ButtonGroupDivider between them.",
         usage: "Use for 2\u20135 related actions or views that read as one control (Previous \xB7 Today \xB7 Next, Day \xB7 Week \xB7 Month). Mark the selected segment with active. Shape pill is horizontal only.",
         // The Figma file's axes, value for value, in the file's option order
@@ -4184,6 +4224,8 @@ var init_componentCatalogue = __esm({
         key: "ButtonGroupItem",
         label: "Button Group Item",
         category: "Button & Actions",
+        box: "gray",
+        locks: ["size", "hit", "motion"],
         description: "One segment of a ButtonGroup: a selectable action with no radius or border of its own (the group clips the corners and draws the shared edge).",
         usage: "Only inside a ButtonGroup. active marks the selected segment (aria-pressed); iconOnly makes it square.",
         axes: [
@@ -4210,6 +4252,8 @@ var init_componentCatalogue = __esm({
         key: "ButtonGroupDivider",
         label: "Button Group Divider",
         category: "Button & Actions",
+        box: "gray",
+        locks: ["size", "hit", "motion"],
         description: "The 1px line between two ButtonGroupItems (Stroke/divider), painted per Variant. ButtonGroup inserts it.",
         usage: "Private to ButtonGroup \u2014 the group draws it between segments. Orientation horizontal is the vertical line of a row.",
         axes: [
@@ -4227,6 +4271,8 @@ var init_componentCatalogue = __esm({
         key: "SocialLoginButton",
         label: "Social Login Button",
         category: "Button & Actions",
+        box: "gray",
+        locks: ["size", "hit", "motion"],
         description: "Sign-in button carrying a provider mark: white (a bordered control) or in the provider's own colour, full width or icon-only.",
         usage: "Stack vertically above the email form, or lay the icon-only form in a row. Keep provider order consistent across screens.",
         // The Figma file's axes, value for value (SocialLoginButton, 364:20).
@@ -4253,6 +4299,8 @@ var init_componentCatalogue = __esm({
         key: "Input",
         label: "Input",
         category: "Form Controls",
+        box: "gray",
+        locks: ["size", "hit", "motion"],
         description: "The text field: a box with the field inside it, at three sizes on the Size roles (sm 32 \xB7 default 40 \xB7 lg 48). Eleven types compose their own parts \u2014 phone and currency-select open a select, currency, url and tag carry a prefix, password a show / hide toggle, upload a Browse button, copy-link a Copy button, search the \u2318 K shortcut.",
         usage: "Wrap it in a Field with a FieldLabel. Pick the type for the value it holds (phone, currency, password, url\u2026); any other HTML type works on the default layout. For an add-on the types do not cover, use Input Group.",
         // The Figma file's axes, value for value, in the file's own order
@@ -4284,6 +4332,8 @@ var init_componentCatalogue = __esm({
         key: "Textarea",
         label: "Textarea",
         category: "Form Controls",
+        box: "gray",
+        locks: ["radius", "size", "hit", "motion"],
         description: "Multi-line text field for free-form input with an optional resize glyph. Invalid shows a warning glyph and Loading a spinner in the top-right corner.",
         usage: "Use for free-form text over one line (messages, descriptions, notes). Labels, hints and error text come from Field. Show the resize glyph when the expected length varies.",
         // The Figma file's axes, value for value (design-plans/textarea-contract.md).
@@ -4306,6 +4356,8 @@ var init_componentCatalogue = __esm({
         key: "InputOTP",
         label: "Input OTP",
         category: "Form Controls",
+        box: "gray",
+        locks: ["size", "hit", "motion"],
         description: "A one-time code field: a row of InputOTPSlots over one hidden input, with a separator between the halves of a 6- or 8-digit code. Paste fills every slot.",
         usage: "Use for one-time codes (sign-in, verification). Set length to the code length; labels and the error text come from Field.",
         // The Figma file's axes, value for value (design-plans/input-otp-contract.md).
@@ -4330,6 +4382,8 @@ var init_componentCatalogue = __esm({
         key: "InputOTPSlot",
         label: "Input OTP Slot",
         category: "Form Controls",
+        box: "gray",
+        locks: ["radius", "size", "hit", "motion"],
         description: "One box of an InputOTP: a digit, or the caret while it is the active empty slot. InputOTP draws it; it reads the code from it.",
         usage: "Used by InputOTP. Compose it yourself (index) only when you need a custom layout.",
         axes: [
@@ -4349,6 +4403,8 @@ var init_componentCatalogue = __esm({
         key: "NumberInput",
         label: "Number Input",
         category: "Form Controls",
+        box: "gray",
+        locks: ["size", "hit", "motion"],
         description: "A number field with decrement and increment buttons, also a quantity stepper. The value is a spinbutton; the buttons are ghost IconButtons that disable at the min and max.",
         usage: "Use for small numeric ranges (quantities, counts, seats). For wide ranges prefer Slider or a plain Input. Labels and hints come from Field.",
         // The Figma file's axes, value for value (design-plans/number-input-contract.md).
@@ -4371,6 +4427,8 @@ var init_componentCatalogue = __esm({
         key: "InputTag",
         label: "Input Tag",
         category: "Form Controls",
+        box: "gray",
+        locks: ["size", "hit", "motion"],
         description: "A multi-value text field that turns entries into removable tag chips, inline or stacked outside the field.",
         usage: "Use for open-ended multi-values (emails, labels). For a known list, prefer Combobox. Keep a visible label (Field) and expose the error text through aria-describedby.",
         // The Figma file's axes, value for value (design-plans/input-tag-contract.md).
@@ -4396,6 +4454,8 @@ var init_componentCatalogue = __esm({
         key: "InputTagChip",
         label: "Input Tag Chip",
         category: "Form Controls",
+        box: "gray",
+        locks: ["size", "hit", "motion"],
         description: "One removable tag of an InputTag; the critical variant marks tags past the maximum.",
         usage: "Used by InputTag. Use it alone only where a removable tag is needed outside the field.",
         axes: [
@@ -4417,6 +4477,8 @@ var init_componentCatalogue = __esm({
         key: "InputTagOption",
         label: "Input Tag Option",
         category: "Form Controls",
+        box: "gray",
+        locks: ["size", "hit", "motion"],
         description: "A suggestion row of the InputTag dropdown: an existing option or a create-new action.",
         usage: "Compose the InputTag dropdown from it. Render the list as a listbox with arrow-key navigation.",
         axes: [
@@ -4436,6 +4498,8 @@ var init_componentCatalogue = __esm({
         key: "DatePickerTrigger",
         label: "Date Picker Trigger",
         category: "Form Controls",
+        box: "gray",
+        locks: ["size", "hit", "motion"],
         description: "An input-styled button that opens the date picker popover: the calendar glyph and the placeholder or the formatted date.",
         usage: "Use to pick one date without leaving the form. Pair it with a Label (Field), open DatePickerPopover from it and put the chosen date back as its value.",
         // The Figma file\'s axes, value for value (design-plans/date-picker-trigger-contract.md).
@@ -4458,6 +4522,8 @@ var init_componentCatalogue = __esm({
         key: "DatePickerPopover",
         label: "Date Picker Popover",
         category: "Form Controls",
+        box: "white",
+        locks: [],
         description: "The panel DatePickerTrigger opens: a Calendar with Radius/overlay and the Shadow/lg lift, 8 px below the trigger. Size default / sm, Mode single / range (range adds the presets rail).",
         usage: "Use as the content of a Popover whose trigger is DatePickerTrigger. Put the Calendar inside it; use the Calendar alone when the panel is always visible.",
         // The Figma file\'s axes, value for value (design-plans/date-picker-popover-contract.md).
@@ -4478,6 +4544,8 @@ var init_componentCatalogue = __esm({
         key: "CalendarDay",
         label: "Calendar Day",
         category: "Form Controls",
+        box: "gray",
+        locks: ["size", "hit", "motion"],
         description: "One day cell of the Calendar: the date, a ghost cell that fills when selected, the range band behind it and the dash under today or a marked day.",
         usage: "Use inside Calendar for each date of the month grid. Pin Selected, RangeStart, RangeMiddle or RangeEnd for the chosen days, Today for today and Outside for the neighbouring months.",
         // The Figma file\'s axes, value for value (design-plans/calendar-day-contract.md).
@@ -4501,6 +4569,8 @@ var init_componentCatalogue = __esm({
         key: "CalendarHeader",
         label: "Calendar Header",
         category: "Form Controls",
+        box: "gray",
+        locks: ["size", "hit", "motion"],
         description: "The row above the days of a Calendar: previous and next month arrows flanking the month and year, as a combined chip, two chips or a plain heading.",
         usage: "Use at the top of Calendar. single opens one month-and-year picker, multiple opens the month and the year separately, plain is a static heading for a calendar with no picker.",
         // The Figma file\'s axes, value for value (design-plans/calendar-header-contract.md).
@@ -4523,6 +4593,8 @@ var init_componentCatalogue = __esm({
         key: "CalendarMonth",
         label: "Calendar Month",
         category: "Form Controls",
+        box: "white",
+        locks: [],
         description: "One visible month of a Calendar: the weekday row over the weeks of day cells, Sunday first.",
         usage: "Use inside Calendar below the header. single and multiple mark chosen days, range marks a span with its band; secondary swaps the selected look for the inverse one.",
         // The Figma file\'s axes, value for value (design-plans/calendar-month-contract.md).
@@ -4547,6 +4619,8 @@ var init_componentCatalogue = __esm({
         key: "CalendarPresets",
         label: "Calendar Presets",
         category: "Form Controls",
+        box: "gray",
+        locks: ["size", "hit", "motion"],
         description: 'The rail beside a range Calendar: a "PRESETS" label over quick ranges, the one matching the selection tinted like the range.',
         usage: "Use on the left of a range Calendar for common spans (Today, Last 7 days\u2026). Pick the Variant that matches the CalendarDay cells next to it.",
         // The Figma file\'s axes, value for value (design-plans/calendar-presets-contract.md).
@@ -4569,6 +4643,8 @@ var init_componentCatalogue = __esm({
         key: "CalendarFooter",
         label: "Calendar Footer",
         category: "Form Controls",
+        box: "white",
+        locks: [],
         description: "The bar under a Calendar: a Today link at the start, Clear and Apply at the end, under a divider.",
         usage: "Use at the bottom of a Calendar that confirms its choice (a date picker popover). Apply commits the selection, Clear empties it, Today jumps to the current date.",
         // The Figma file\'s axes, value for value (design-plans/calendar-footer-contract.md).
@@ -4587,6 +4663,8 @@ var init_componentCatalogue = __esm({
         key: "Calendar",
         label: "Calendar",
         category: "Form Controls",
+        box: "white",
+        locks: [],
         description: "The date panel: a month with its header, an optional presets rail beside it and an optional Today \xB7 Clear \xB7 Apply footer.",
         usage: "Use to pick a date when the day of the week matters, several dates, or a range. DatePickerPopover wraps it under a DatePickerTrigger. For a known date (a birthday) a text field with a format is faster.",
         // The Figma file\'s axes, value for value (design-plans/calendar-contract.md).
@@ -4613,6 +4691,8 @@ var init_componentCatalogue = __esm({
         key: "Combobox",
         label: "Combobox",
         category: "Form Controls",
+        box: "gray",
+        locks: ["size", "hit", "motion"],
         description: "Text input trigger that opens a filterable listbox, with optional leading icon, clear button and trailing chevron.",
         usage: "Use when options exceed ~10 items or need search. For short lists, plain Select is enough. Keep a visible label (Field) and expose the error text through aria-describedby.",
         // The Figma file's axes, value for value (design-plans/combobox-contract.md).
@@ -4643,6 +4723,8 @@ var init_componentCatalogue = __esm({
         key: "ComboboxPopover",
         label: "Combobox Popover",
         category: "Form Controls",
+        box: "white",
+        locks: [],
         description: "Floating listbox panel for the Combobox with list, grouped or empty content and an optional footer.",
         usage: "Opened by Combobox 8px below the trigger, aligned to its start; closes on Escape. Compose it from ComboboxItem and ComboboxGroupLabel.",
         axes: [
@@ -4662,6 +4744,8 @@ var init_componentCatalogue = __esm({
         key: "ComboboxItem",
         label: "Combobox Item",
         category: "Form Controls",
+        box: "gray",
+        locks: ["size", "hit", "motion"],
         description: "Option row in the Combobox listbox with optional leading icon, description, trailing value and selection indicator.",
         usage: "Used by Combobox and ComboboxPopover. Keep labels short; put detail in the description.",
         axes: [
@@ -4681,6 +4765,8 @@ var init_componentCatalogue = __esm({
         key: "ComboboxGroupLabel",
         label: "Combobox Group Label",
         category: "Form Controls",
+        box: "gray",
+        locks: ["size", "hit", "motion"],
         description: "Heading for a group of options inside the Combobox popover.",
         usage: "One per group in a grouped list, above its options.",
         axes: [{ name: "Size", values: ["sm", "default", "lg"] }],
@@ -4695,6 +4781,8 @@ var init_componentCatalogue = __esm({
         key: "Checkbox",
         label: "Checkbox",
         category: "Form Controls",
+        box: "black",
+        locks: ["shape", "radius", "size", "hit", "motion"],
         description: "Single checkbox for an independent boolean or a parent row summarising a partial selection (indeterminate). The box alone: label it with CheckboxItem.",
         usage: "Use for independent on/off choices and multi-select lists; indeterminate for a parent whose children are partly checked. For an instant setting, use Switch. Variant colours the checked box (default accent, secondary neutral, status colours, inverse on dark surfaces).",
         // The Figma file's axes, value for value (design-plans/checkbox-contract.md).
@@ -4719,6 +4807,8 @@ var init_componentCatalogue = __esm({
         key: "CheckboxItem",
         label: "Checkbox Item",
         category: "Form Controls",
+        box: "black",
+        locks: ["shape", "size", "hit", "motion"],
         description: "Checkbox with a visible label and optional description; the whole row toggles the checkbox.",
         usage: "Use standalone (terms, opt-ins) or as a row of a CheckboxGroup. Placement right for settings lists where the label leads. The description explains the consequence; keep the label short.",
         // The Figma file's axes, value for value (design-plans/checkbox-item-contract.md).
@@ -4744,6 +4834,8 @@ var init_componentCatalogue = __esm({
         key: "CheckboxGroup",
         label: "Checkbox Group",
         category: "Form Controls",
+        box: "white",
+        locks: [],
         description: "Labelled multi-select: group label, CheckboxItem rows and an optional footer (helper or error). Each checkbox stays independent.",
         usage: "Use for several independent options under one question. Invalid shows the footer as the error; Disabled mutes the whole group. Size, Placement, State and Variant cascade to every row.",
         // The Figma file's axes, value for value (design-plans/checkbox-group-contract.md).
@@ -4767,6 +4859,8 @@ var init_componentCatalogue = __esm({
         key: "RadioGroup",
         label: "Radio Group",
         category: "Form Controls",
+        box: "black",
+        locks: ["shape", "size", "hit", "motion"],
         description: "shadcn/ui Radio Group: RadioGroup with RadioGroupItems, each labelled by a horizontal Field. A checked item is filled with the primary colour.",
         usage: "Use for one choice among 2\u20135 visible options. For more, use Select.",
         axes: [],
@@ -4781,6 +4875,8 @@ var init_componentCatalogue = __esm({
         key: "Switch",
         label: "Switch",
         category: "Form Controls",
+        box: "black",
+        locks: ["shape", "size", "hit", "motion"],
         description: "Binary on/off control for a setting that applies immediately. The track alone: name it with SwitchGroup, a Label or a Field.",
         usage: "Use for a setting that applies at once. For a choice submitted with a form, use Checkbox. Thumb long makes a wider, pill-shaped thumb; the I / O marks and a thumb glyph help where colour alone is not enough.",
         // The Figma file's axes, value for value (design-plans/switch-contract.md).
@@ -4806,6 +4902,8 @@ var init_componentCatalogue = __esm({
         key: "SwitchGroup",
         label: "Switch Group",
         category: "Form Controls",
+        box: "white",
+        locks: [],
         description: "Switch with a label, an optional description and a footer; Placement sets the side the switch sits on, Invalid shows critical helper text and Loading replaces the switch with a spinner.",
         usage: "Use for one labelled setting. The whole row is a label, so clicking the text toggles the switch.",
         axes: [
@@ -4827,6 +4925,8 @@ var init_componentCatalogue = __esm({
         key: "Slider",
         label: "Slider",
         category: "Form Controls",
+        box: "gray",
+        locks: ["size", "hit", "motion"],
         description: "Single or range value with an optional tooltip above the thumbs and tick marks under the track.",
         usage: "Use when the precise value matters less than the position in a range. Show the value (tooltip) when it matters. Range picks two ends.",
         // The Figma file's axes, value for value (design-plans/slider-contract.md).
@@ -4851,6 +4951,8 @@ var init_componentCatalogue = __esm({
         key: "SliderThumb",
         label: "Slider Thumb",
         category: "Form Controls",
+        box: "black",
+        locks: ["shape", "size", "hit", "motion"],
         description: "The thumb of a Slider: a white square with an edge in the variant colour; Hover, Focused, Dragging and Disabled states.",
         usage: "Only inside a Slider.",
         axes: [
@@ -4869,6 +4971,8 @@ var init_componentCatalogue = __esm({
         key: "FileUpload",
         label: "File Upload",
         category: "Form Controls",
+        box: "white",
+        locks: [],
         description: "Managed file upload: a FileUploadDropzone (or a single trigger Button) above a list of FileUploadItem rows; Size sets row density and cascades to every item.",
         usage: "Use where people attach several files and need to follow each one. Layout dropzone when files are the task, trigger in a dense form. Keep the live region announcing completed, removed and failed files, and move focus to a neighbouring row when one is removed.",
         // The Figma file's axes, value for value (design-plans/file-upload-contract.md).
@@ -4891,6 +4995,8 @@ var init_componentCatalogue = __esm({
         key: "FileUploadItem",
         label: "File Upload Item",
         category: "Form Controls",
+        box: "gray",
+        locks: ["size", "hit", "motion"],
         description: "One file row in FileUpload with format icon, name, status, size readout, progress and row actions.",
         usage: "One row per file under a FileUploadDropzone. Status follows the upload: queued, uploading (progress), paused, completed, error (with its reason). sm for dense lists.",
         // The Figma file's axes, value for value (design-plans/file-upload-item-contract.md).
@@ -4915,6 +5021,8 @@ var init_componentCatalogue = __esm({
         key: "FileUploadDropzone",
         label: "File Upload Dropzone",
         category: "Form Controls",
+        box: "white",
+        locks: [],
         description: "Drop area that opens the file picker on click and accepts dragged files; the Choose file trigger is a Button.",
         usage: "Use at the top of a FileUpload, or alone where files are the whole task. lg for an empty page, default in a form, sm in a dense row. Dragging tints it accent; Invalid needs a visible message (it replaces the title).",
         // The Figma file's axes, value for value (design-plans/file-upload-dropzone-contract.md).
@@ -4940,6 +5048,8 @@ var init_componentCatalogue = __esm({
         key: "Field",
         label: "Field",
         category: "Form Controls",
+        box: "gray",
+        locks: ["size", "hit", "motion"],
         description: "A labelled form field: a label with an optional required marker and trailing link, one form control, and helper or error text. Field never draws the control \u2014 it wires the Input (or Textarea, Combobox, NumberInput, InputTag, DatePickerTrigger, InputOTP) you give it.",
         usage: "Wrap a form control that needs a visible label. Use a bare control only where no visible label is needed (search). Match the control to the Field size; Invalid shows the error, Disabled disables the control and dims the texts.",
         // The Figma file's axes, value for value (design-plans/field-contract.md).
@@ -4964,6 +5074,8 @@ var init_componentCatalogue = __esm({
         key: "Label",
         label: "Label",
         category: "Form Controls",
+        box: "gray",
+        locks: ["size", "hit", "motion"],
         description: "Label: the accessible name of a control, the label part of Field (Radix Label).",
         usage: "Inside a form, prefer FieldLabel. Mark required fields in the text, not with colour alone.",
         axes: [],
@@ -4977,6 +5089,8 @@ var init_componentCatalogue = __esm({
         key: "PasswordStrength",
         label: "Password Strength",
         category: "Form Controls",
+        box: "white",
+        locks: [],
         description: "A card that scores a password: the rules checklist, a five-segment PasswordStrengthMeter and the level label (Too Weak \xB7 Weak \xB7 Fair \xB7 Strong \xB7 Very Strong).",
         usage: "Show it under a password field and update it as the user types. Keep the rules visible when the requirements are not obvious; hide them for a compact card.",
         // The Figma file's axes, value for value (design-plans/password-strength-contract.md).
@@ -4998,6 +5112,8 @@ var init_componentCatalogue = __esm({
         key: "PasswordStrengthMeter",
         label: "Password Strength Meter",
         category: "Form Controls",
+        box: "black",
+        locks: ["shape", "size", "hit", "motion"],
         description: "Five pill segments; Strength n fills the first n \u2014 critical, warning, warning pressed, success pressed, success.",
         usage: "Used by PasswordStrength; on its own where only the bar fits.",
         axes: [
@@ -5015,6 +5131,8 @@ var init_componentCatalogue = __esm({
         key: "PasswordStrengthRule",
         label: "Password Strength Rule",
         category: "Form Controls",
+        box: "gray",
+        locks: ["size", "hit", "motion"],
         description: "One requirement of a password: a success check when met, an empty ring when not, and its label.",
         usage: "Used by PasswordStrength's checklist.",
         axes: [
@@ -5034,6 +5152,8 @@ var init_componentCatalogue = __esm({
         key: "Badge",
         label: "Badge",
         category: "Indicators",
+        box: "gray",
+        locks: ["size", "hit", "motion"],
         description: "A small non-interactive label for statuses, counts and categories. Variant is the severity; Appearance soft, solid, outline or ghost; Type default, icon, number or dot.",
         usage: 'Use to label or count (a plan, a status, "+5 more"). For presence (online / away), use Status Badge. Never as a button. An icon-only badge needs an accessible name.',
         // The Figma file's axes, value for value (design-plans/badge-contract.md).
@@ -5057,6 +5177,8 @@ var init_componentCatalogue = __esm({
         key: "Chip",
         label: "Chip",
         category: "Indicators",
+        box: "gray",
+        locks: ["size", "hit", "motion"],
         description: "A compact tag for filter, selection or input values with an optional leading icon and close action.",
         usage: "Use for filters and applied selections. For static status, use Badge. When the close control is on it needs an accessible name (Remove plus the label) and the chip must be keyboard operable.",
         // The Figma file's axes, value for value (design-plans/chip-contract.md).
@@ -5082,6 +5204,8 @@ var init_componentCatalogue = __esm({
         key: "ProgressLine",
         label: "Progress Line",
         category: "Indicators",
+        box: "black",
+        locks: ["shape", "size", "hit", "motion"],
         description: "A horizontal progress indicator for a value from 0 to 100: a muted track and a bar that is solid or a gradient of the primary action.",
         usage: "Use for operations that take more than a couple of seconds and report how far along they are. Pair it with a label and the percentage in the surrounding UI. For an unknown duration use Spinner.",
         // The Figma file's axes, value for value (design-plans/progress-contract.md).
@@ -5101,6 +5225,8 @@ var init_componentCatalogue = __esm({
         key: "ProgressCircle",
         label: "Progress Circle",
         category: "Indicators",
+        box: "black",
+        locks: ["shape", "size", "hit", "motion"],
         description: "A circular progress indicator for a value from 0 to 100: a muted ring and an arc from the top, with round or butt ends.",
         usage: "Use where a bar does not fit (a button, a card corner, an avatar). Show the percentage next to it when it matters.",
         axes: [
@@ -5120,6 +5246,8 @@ var init_componentCatalogue = __esm({
         key: "Spinner",
         label: "Spinner",
         category: "Indicators",
+        box: "black",
+        locks: ["shape", "size", "hit", "motion"],
         description: "Spinner: the Loading glyph of Button, Switch, Textarea, InputTag and DatePicker \u2014 a spinning loader glyph in the ink of the text around it. No variants; size it with a class.",
         usage: "Prefer skeleton screens for content loading. Use Spinner for action feedback.",
         axes: [],
@@ -5134,6 +5262,8 @@ var init_componentCatalogue = __esm({
         key: "FeaturedIcon",
         label: "Featured Icon",
         category: "Indicators",
+        box: "gray",
+        locks: ["radius", "size", "hit", "motion"],
         description: "A decorative glyph in a tinted or solid shape: cards, empty states, dialogs, feature lists.",
         usage: "Always decorative; the nearby title carries the meaning. A dialog header nests it (default or lg, soft, circle).",
         // The Figma file's axes, value for value (design-plans/featured-icon-contract.md).
@@ -5154,6 +5284,8 @@ var init_componentCatalogue = __esm({
         key: "Kbd",
         label: "Kbd",
         category: "Indicators",
+        box: "black",
+        locks: ["shape", "radius", "size", "hit", "motion"],
         description: "A keyboard key hint for shortcuts and navigation legends (\u2318, K, Esc, \u2191, \u2193, \u21B5); KbdGroup spaces several keys.",
         usage: "Size follows the icon of the control it sits in: xs in menus and a small Input, sm in a default or large Input and in tooltips, default in standalone shortcut lists. One Kbd per key, never a whole shortcut string.",
         // The Figma file's axes, value for value (design-plans/kbd-contract.md).
@@ -5170,6 +5302,8 @@ var init_componentCatalogue = __esm({
         key: "RatingGroup",
         label: "Rating Group",
         category: "Indicators",
+        box: "gray",
+        locks: ["size", "hit", "motion"],
         description: "Single-choice scale of 5 items. Type star for scores, emoji for sentiment; Size cascades to every item.",
         usage: "Use to collect a 1\u20135 score or a sentiment. Use SegmentedControl for labelled options and Slider for a continuous value.",
         // The Figma file's axes, value for value (design-plans/rating-group-contract.md).
@@ -5189,6 +5323,8 @@ var init_componentCatalogue = __esm({
         key: "RatingGroupItem",
         label: "Rating Group Item",
         category: "Indicators",
+        box: "black",
+        locks: ["shape", "size", "hit", "motion"],
         description: "One option of a RatingGroup. A checked star fills in Content/accent; an emoji keeps its glyph and marks the choice with Surface/selected.",
         usage: "Always inside a RatingGroup; give every item an aria-label.",
         axes: [
@@ -5211,6 +5347,8 @@ var init_componentCatalogue = __esm({
         key: "Avatar",
         label: "Avatar",
         category: "Content & Surfaces",
+        box: "gray",
+        locks: ["radius", "size", "hit", "motion"],
         description: "A person or entity as a photo, initials or an icon, in seven sizes, with an optional selection ring and presence dot.",
         usage: "Use one size per context. Stack people with AvatarGroup. A photo avatar has no colour variants; initials and icon take Variant and Appearance.",
         // The Figma file's axes, value for value (design-plans/avatar-contract.md).
@@ -5235,6 +5373,8 @@ var init_componentCatalogue = __esm({
         key: "AvatarStatus",
         label: "Avatar Status",
         category: "Content & Surfaces",
+        box: "black",
+        locks: ["shape", "size", "hit", "motion"],
         description: "The presence dot of an Avatar: online, busy, away, offline or do-not-disturb, with an outside Surface/page edge.",
         usage: "Always on an Avatar (bottom-right); never rely on colour alone.",
         axes: [
@@ -5251,6 +5391,8 @@ var init_componentCatalogue = __esm({
         key: "AvatarGroup",
         label: "Avatar Group",
         category: "Content & Surfaces",
+        box: "gray",
+        locks: ["size", "hit", "motion"],
         description: "An overlapping stack of avatars, each in a Surface/page ring, ending in a +N tile.",
         usage: 'Show who is part of something; label the +N tile ("4 more people").',
         axes: [
@@ -5269,6 +5411,8 @@ var init_componentCatalogue = __esm({
         key: "Card",
         label: "Card",
         category: "Content & Surfaces",
+        box: "white",
+        locks: [],
         description: "Contained surface for grouping related content and actions. Fill \u2192 card/bg \u2192 surface/1.",
         usage: "Use consistent padding within a layout. Avoid nesting cards more than 1 level.",
         axes: [{ name: "Size", values: ["default", "sm"] }],
@@ -5285,6 +5429,8 @@ var init_componentCatalogue = __esm({
         key: "Separator",
         label: "Separator",
         category: "Content & Surfaces",
+        box: "black",
+        locks: ["shape", "size", "hit", "motion"],
         description: "Thin rule that divides content, horizontal or vertical, solid or dashed, with an optional label at its start, centre or end.",
         usage: "Use sparingly \u2014 whitespace is usually sufficient. Add a label only for section breaks (the classic \xABOR\xBB).",
         axes: [
@@ -5305,6 +5451,8 @@ var init_componentCatalogue = __esm({
         key: "Accordion",
         label: "Accordion",
         category: "Content & Surfaces",
+        box: "white",
+        locks: [],
         description: "A stack of AccordionItem sharing one Variant. The first item is open by default; items open and close independently.",
         usage: "Use for several stacked sections (FAQ, settings). For a single expandable region use Collapsible.",
         // The Figma file's axes, value for value (design-plans/accordion-contract.md).
@@ -5321,6 +5469,8 @@ var init_componentCatalogue = __esm({
         key: "AccordionItem",
         label: "Accordion Item",
         category: "Content & Surfaces",
+        box: "white",
+        locks: [],
         description: "One section: a trigger (optional icon, label, a chevron that flips when open) and collapsible content.",
         usage: "Always inside an Accordion; give every item a value.",
         axes: [
@@ -5339,6 +5489,8 @@ var init_componentCatalogue = __esm({
         key: "Image",
         label: "Image",
         category: "Content & Surfaces",
+        box: "white",
+        locks: [],
         description: "A photo or illustration cropped to a fixed ratio (object-fit: cover), on Surface/muted while it loads. Ratio auto fills its parent.",
         usage: 'Wrap media so layouts never shift while content loads. Use Shape square inside a slot that already clips its corners. Always give alt text (alt="" when decorative).',
         // The Figma file's axes, value for value (design-plans/image-contract.md).
@@ -5359,6 +5511,8 @@ var init_componentCatalogue = __esm({
         key: "Modal",
         label: "Modal",
         category: "Content & Surfaces",
+        box: "white",
+        locks: [],
         description: "Dialog card that interrupts the flow for a decision or a short task: a header, a content slot and a footer over a scrim.",
         usage: "Use for a decision or a short task that needs full attention (a confirmation, a small form). Not for notifications: use a Toast or an Alert.",
         axes: [
@@ -5378,6 +5532,8 @@ var init_componentCatalogue = __esm({
         key: "ModalHeader",
         label: "Modal Header",
         category: "Content & Surfaces",
+        box: "gray",
+        locks: ["size", "hit", "motion"],
         description: "Header row of the Modal: an optional icon, the title and description, and an optional trailing slot.",
         usage: "Inside a Modal. Align sets the layout; vertical-center suits confirmations and has no trailing slot. Never hide the title: it is the dialog name.",
         axes: [
@@ -5397,6 +5553,8 @@ var init_componentCatalogue = __esm({
         key: "ModalFooter",
         label: "Modal Footer",
         category: "Content & Surfaces",
+        box: "gray",
+        locks: ["size", "hit", "motion"],
         description: "Action tray below the Modal content, divided by a Border/subtle rule.",
         usage: "Inline puts the actions at the end, primary last; stacked gives full-width buttons for narrow viewports.",
         axes: [
@@ -5415,6 +5573,8 @@ var init_componentCatalogue = __esm({
         key: "Sheet",
         label: "Sheet",
         category: "Content & Surfaces",
+        box: "white",
+        locks: [],
         description: "An edge-anchored panel on the Modal surface: a desktop drawer from the right or left, a mobile sheet from the bottom.",
         usage: "Use for secondary tasks that keep the page in context (filters, a cart, details, settings). For a blocking decision use Modal or Alert Dialog; for a list of choices tied to a field use Popover.",
         axes: [
@@ -5434,6 +5594,8 @@ var init_componentCatalogue = __esm({
         key: "Popover",
         label: "Popover",
         category: "Content & Surfaces",
+        box: "white",
+        locks: [],
         description: "Non-modal floating panel anchored to a trigger for rich, interactive content: optional media, a title, a description, a content slot and a footer.",
         usage: "Open on click, not hover. Side is the trigger edge it opens from. Keep one primary action inside at most.",
         axes: [
@@ -5454,6 +5616,8 @@ var init_componentCatalogue = __esm({
         key: "PopoverFooter",
         label: "Popover Footer",
         category: "Content & Surfaces",
+        box: "gray",
+        locks: ["size", "hit", "motion"],
         description: "Action row below the Popover body, divided by a Border/subtle rule: status text and buttons.",
         usage: "Inline puts the text first and the buttons at the end; stacked gives full-width buttons. Size follows the Popover.",
         axes: [
@@ -5472,6 +5636,8 @@ var init_componentCatalogue = __esm({
         key: "TooltipContent",
         label: "Tooltip",
         category: "Content & Surfaces",
+        box: "gray",
+        locks: ["size", "hit", "motion"],
         description: "Short hint bubble on hover or focus: an optional title, the text and an arrow on the edge opposite to Side.",
         usage: "Use for a short label or hint that never carries the only copy of information or an action. Variant must match its trigger.",
         axes: [
@@ -5492,6 +5658,8 @@ var init_componentCatalogue = __esm({
         key: "TooltipInfoTrigger",
         label: "Tooltip Info Trigger",
         category: "Content & Surfaces",
+        box: "black",
+        locks: ["shape", "size", "hit", "motion"],
         description: "Info-circle button that opens a tooltip.",
         usage: "Next to a label or field that needs an explanation. Variant must match the bubble it opens.",
         axes: [
@@ -5511,6 +5679,8 @@ var init_componentCatalogue = __esm({
         key: "ScrollArea",
         label: "Scroll Area",
         category: "Content & Surfaces",
+        box: "white",
+        locks: [],
         description: "Scrollable viewport with overlay ScrollBars and an optional fade at the scroll end. Size and Appearance cascade to the bars.",
         usage: "Use inside panels and menus with bounded height or width. Never trap page scroll; give the viewport an accessible name when it holds primary content.",
         axes: [
@@ -5530,6 +5700,8 @@ var init_componentCatalogue = __esm({
         key: "ScrollBar",
         label: "Scroll Bar",
         category: "Content & Surfaces",
+        box: "black",
+        locks: ["shape", "size", "hit", "motion"],
         description: "Overlay scrollbar of a ScrollArea: a Radius/full thumb on a Surface/muted track (filled) or on nothing (ghost).",
         usage: "Inside a ScrollArea (it places its own); use it standalone only for custom scrollbar placement.",
         axes: [
@@ -5545,6 +5717,8 @@ var init_componentCatalogue = __esm({
         key: "Table",
         label: "Table",
         category: "Content & Surfaces",
+        box: "white",
+        locks: [],
         description: "Data table root: a header, rows and an optional footer; Size and Dividers cascade to every row and cell.",
         usage: "Use for tabular data people compare across columns. For a list of items with one action each prefer a list; Pagination sits outside the table.",
         // The Figma page «❖ Table», value for value (design-plans/table-contract.md).
@@ -5564,6 +5738,8 @@ var init_componentCatalogue = __esm({
         key: "TableCell",
         label: "TableCell",
         category: "Content & Surfaces",
+        box: "gray",
+        locks: ["size", "hit", "motion"],
         description: "Body cell: a label with optional description, a leading slot (Checkbox, Avatar, Badge) and a trailing slot (overflow IconButton or Badge).",
         usage: "Use inside a TableRow. Align end is the numeric column. For a thumbnail use TableMediaCell, for a value with a delta TableTrendCell.",
         // The Figma page «❖ Table», value for value (design-plans/table-contract.md).
@@ -5585,6 +5761,8 @@ var init_componentCatalogue = __esm({
         key: "TableHead",
         label: "TableHead",
         category: "Content & Surfaces",
+        box: "gray",
+        locks: ["size", "hit", "motion"],
         description: "Column header cell: a label, an optional leading slot (select-all Checkbox), a sort arrow and a resizer.",
         usage: "Use inside a TableHeader, one per column. Make a column sortable with onSort; hover only exists for sortable columns.",
         // The Figma page «❖ Table», value for value (design-plans/table-contract.md).
@@ -5607,6 +5785,8 @@ var init_componentCatalogue = __esm({
         key: "TableMediaCell",
         label: "TableMediaCell",
         category: "Content & Surfaces",
+        box: "gray",
+        locks: ["size", "hit", "motion"],
         description: "Media cell: a thumbnail at 1:1 or 2:1 with an optional label and description.",
         usage: "Use for rows that lead with a picture (products, people, files). Give the image alt text, or empty alt when the label already names it.",
         // The Figma page «❖ Table», value for value (design-plans/table-contract.md).
@@ -5627,6 +5807,8 @@ var init_componentCatalogue = __esm({
         key: "TableTrendCell",
         label: "TableTrendCell",
         category: "Content & Surfaces",
+        box: "gray",
+        locks: ["size", "hit", "motion"],
         description: "Trend cell: a right-aligned value with a delta whose arrow and colour carry the direction.",
         usage: 'Use for metrics that moved (revenue, signups). Direction is never colour alone: the cell reads e.g. "up 12.4%".',
         // The Figma page «❖ Table», value for value (design-plans/table-contract.md).
@@ -5646,6 +5828,8 @@ var init_componentCatalogue = __esm({
         key: "TableResizer",
         label: "TableResizer",
         category: "Content & Surfaces",
+        box: "black",
+        locks: ["shape", "size", "hit", "motion"],
         description: "Column resize handle on the end edge of a TableHead.",
         usage: "Use inside a TableHead (ResizerVisible). Invisible at rest, strong on hover, accent while dragging.",
         // The Figma page «❖ Table», value for value (design-plans/table-contract.md).
@@ -5662,6 +5846,8 @@ var init_componentCatalogue = __esm({
         key: "TableRow",
         label: "TableRow",
         category: "Content & Surfaces",
+        box: "gray",
+        locks: ["size", "hit", "motion"],
         description: "Body row: a strip of TableCell instances with a hairline under it and its own states.",
         usage: "Use inside a TableBody. Hover and focus exist only on a selectable or actionable row (interactive / onClick).",
         // The Figma page «❖ Table», value for value (design-plans/table-contract.md).
@@ -5681,6 +5867,8 @@ var init_componentCatalogue = __esm({
         key: "TableHeader",
         label: "TableHeader",
         category: "Content & Surfaces",
+        box: "gray",
+        locks: ["size", "hit", "motion"],
         description: "Header row of a Table: a strip of TableHead cells on Surface/muted.",
         usage: "Use once per Table, first. Keep it sticky in scroll containers.",
         // The Figma page «❖ Table», value for value (design-plans/table-contract.md).
@@ -5699,6 +5887,8 @@ var init_componentCatalogue = __esm({
         key: "TableFooter",
         label: "TableFooter",
         category: "Content & Surfaces",
+        box: "gray",
+        locks: ["size", "hit", "motion"],
         description: "Totals row of a Table: TableCell values in Type/label on Surface/muted.",
         usage: "Use for totals and summaries. Dividers follows the Table.",
         // The Figma page «❖ Table», value for value (design-plans/table-contract.md).
@@ -5716,6 +5906,8 @@ var init_componentCatalogue = __esm({
         key: "TableCaption",
         label: "TableCaption",
         category: "Content & Surfaces",
+        box: "gray",
+        locks: ["size", "hit", "motion"],
         description: "The title and description of a table.",
         usage: "Use to name the table for everyone; the visible heading and the accessible name are one.",
         // The Figma page «❖ Table», value for value (design-plans/table-contract.md).
@@ -5730,6 +5922,8 @@ var init_componentCatalogue = __esm({
         key: "TableDropIndicator",
         label: "TableDropIndicator",
         category: "Content & Surfaces",
+        box: "black",
+        locks: ["shape", "size", "hit", "motion"],
         description: "The 2px line that shows where a dragged row will land.",
         usage: "Use between rows while a row is being dragged.",
         // The Figma page «❖ Table», value for value (design-plans/table-contract.md).
@@ -5744,6 +5938,8 @@ var init_componentCatalogue = __esm({
         key: "TableEmpty",
         label: "TableEmpty",
         category: "Content & Surfaces",
+        box: "gray",
+        locks: ["size", "hit", "motion"],
         description: "The empty state of a table: icon, title, description and an action.",
         usage: "Use when a table has no rows. Say why and offer the next step.",
         // The Figma page «❖ Table», value for value (design-plans/table-contract.md).
@@ -5758,6 +5954,8 @@ var init_componentCatalogue = __esm({
         key: "TableLoading",
         label: "TableLoading",
         category: "Content & Surfaces",
+        box: "gray",
+        locks: ["size", "hit", "motion"],
         description: "A spinner and a label shown while rows load.",
         usage: "Use as the body of a table that is fetching, or under it while more rows load.",
         // The Figma page «❖ Table», value for value (design-plans/table-contract.md).
@@ -5772,6 +5970,8 @@ var init_componentCatalogue = __esm({
         key: "TableLoadMore",
         label: "TableLoadMore",
         category: "Content & Surfaces",
+        box: "gray",
+        locks: ["size", "hit", "motion"],
         description: "The Load more row under a table, and its loading state.",
         usage: "Use when rows are fetched in pages and the end is not reached.",
         // The Figma page «❖ Table», value for value (design-plans/table-contract.md).
@@ -5789,6 +5989,8 @@ var init_componentCatalogue = __esm({
         key: "Toast",
         label: "Toast",
         category: "Feedback",
+        box: "gray",
+        locks: ["size", "hit", "motion"],
         description: "A short, non-blocking confirmation over the page that dismisses itself: an icon told apart by severity, a title, an optional description, actions, a close and a progress hairline.",
         usage: "Use for transient feedback (saved, copied, undone). Keep the title under six words; an action such as Undo needs a second way to be reached because the toast times out. For a persistent notice use Alert, for form validation Field.",
         // The Figma file's axes, value for value (design-plans/toast-contract.md).
@@ -5809,6 +6011,8 @@ var init_componentCatalogue = __esm({
         key: "Alert",
         label: "Alert",
         category: "Feedback",
+        box: "gray",
+        locks: ["size", "hit", "motion"],
         description: "A message bar for app-wide notices, subscription warnings, announcements and global errors: an icon, a description, optional actions and a close.",
         usage: "Use for a message about the product or the page around it. Horizontal is the full-width banner above or below the header, vertical a boxed message in content. For auto-dismissing feedback use Toast, for form validation Field.",
         // The Figma file's axes, value for value (design-plans/alert-contract.md).
@@ -5833,6 +6037,8 @@ var init_componentCatalogue = __esm({
         key: "TabMenu",
         label: "Tab Menu",
         category: "Navigation",
+        box: "gray",
+        locks: ["size", "hit", "motion"],
         description: "Group of buttons that switches between sibling views or routes: a line layout (hairline track and accent bar) or a button layout (selected item filled), horizontal or vertical.",
         usage: "Use for page-level sections or routes. Exactly one item is selected; use Tabs when the panels swap in place.",
         axes: [
@@ -5852,6 +6058,8 @@ var init_componentCatalogue = __esm({
         key: "TabMenuItem",
         label: "Tab Menu Item",
         category: "Navigation",
+        box: "gray",
+        locks: ["size", "hit", "motion"],
         description: "Button tab of a TabMenu: optional leading icon, label and a trailing count badge. Selected fills Surface/selected.",
         usage: "Inside a button-variant TabMenu.",
         axes: [
@@ -5869,6 +6077,8 @@ var init_componentCatalogue = __esm({
         key: "TabMenuLineItem",
         label: "Tab Menu Line Item",
         category: "Navigation",
+        box: "gray",
+        locks: ["size", "hit", "motion"],
         description: "Line tab of a TabMenu: the selected item carries a 2px accent bar on its bottom or left edge.",
         usage: "Inside a line-variant TabMenu.",
         axes: [
@@ -5887,6 +6097,8 @@ var init_componentCatalogue = __esm({
         key: "NavItem",
         label: "Nav Item",
         category: "Navigation",
+        box: "gray",
+        locks: ["size", "hit", "motion"],
         description: "Header navigation link or menu trigger: label, optional leading icon, count Badge and trailing caret.",
         usage: "In a header or navbar. Current marks the page you are on; with a trailing caret it opens a NavigationMenu. Tabs inside a view use TabMenuItem.",
         axes: [
@@ -5905,6 +6117,8 @@ var init_componentCatalogue = __esm({
         key: "Brand",
         label: "Brand",
         category: "Navigation",
+        box: "gray",
+        locks: ["size", "hit", "motion"],
         description: "Product logo, name and an optional version Badge.",
         usage: 'sm in app headers, default in marketing headers and footers. Wrap it in a link with an accessible name such as "Escala home".',
         axes: [{ name: "Size", values: ["default", "sm"] }],
@@ -5919,6 +6133,8 @@ var init_componentCatalogue = __esm({
         key: "AccountMenuTrigger",
         label: "Account Menu Trigger",
         category: "Navigation",
+        box: "gray",
+        locks: ["size", "hit", "motion"],
         description: "Opens the user menu: an Avatar, an optional name and a caret, on ghost button roles.",
         usage: "In a header or sidebar footer, as the trigger of a DropdownMenu.",
         axes: [
@@ -5936,6 +6152,8 @@ var init_componentCatalogue = __esm({
         key: "SegmentedControl",
         label: "Segmented Control",
         category: "Navigation",
+        box: "gray",
+        locks: ["size", "hit", "motion"],
         description: "Single choice between 2 to 5 short options shown as one track; the checked segment is raised on it. Size cascades to every segment.",
         usage: "Use for 2\u20135 exclusive options of the same data (e.g. Day / Week / Month). Use RadioGroup for long labels or more options, TabMenu to switch views, ButtonGroup for independent actions.",
         // The Figma file's axes, value for value (design-plans/segmented-control-contract.md).
@@ -5953,6 +6171,8 @@ var init_componentCatalogue = __esm({
         key: "SegmentedControlItem",
         label: "Segmented Control Item",
         category: "Navigation",
+        box: "gray",
+        locks: ["size", "hit", "motion"],
         description: "One option of a SegmentedControl. Checked shows a raised Surface/input thumb with Shadow/xs on the Surface/muted track.",
         usage: "Always inside a SegmentedControl. With LabelVisible false give the segment an aria-label.",
         axes: [
@@ -5974,6 +6194,8 @@ var init_componentCatalogue = __esm({
         key: "Breadcrumb",
         label: "Breadcrumbs",
         category: "Navigation",
+        box: "gray",
+        locks: ["size", "hit", "motion"],
         description: "Navigation trail of items, separators and an optional ellipsis that collapses the start of a long trail.",
         usage: "Only use when hierarchy is 3+ levels deep. Don't duplicate primary navigation. The last item is the current page.",
         axes: [
@@ -5993,6 +6215,8 @@ var init_componentCatalogue = __esm({
         key: "BreadcrumbItem",
         label: "Breadcrumb Item",
         category: "Navigation",
+        box: "gray",
+        locks: ["size", "hit", "motion"],
         description: "One segment of a breadcrumb trail, rendered as a link (or the current page).",
         usage: "Inside a Breadcrumb. Mark the last item current and keep it non-interactive.",
         axes: [
@@ -6013,6 +6237,8 @@ var init_componentCatalogue = __esm({
         key: "BreadcrumbEllipsis",
         label: "Breadcrumb Ellipsis",
         category: "Navigation",
+        box: "gray",
+        locks: ["size", "hit", "motion"],
         description: "Collapsed middle of a long breadcrumb trail that opens a menu of the hidden segments.",
         usage: "Replace the first segments of a trail longer than four items.",
         axes: [
@@ -6032,6 +6258,8 @@ var init_componentCatalogue = __esm({
         key: "BreadcrumbSeparator",
         label: "Breadcrumb Separator",
         category: "Navigation",
+        box: "gray",
+        locks: ["size", "hit", "motion"],
         description: "Decorative divider between breadcrumb items: chevron, slash or dot.",
         usage: "Between items; the same Size as the items.",
         axes: [
@@ -6049,6 +6277,8 @@ var init_componentCatalogue = __esm({
         key: "Pagination",
         label: "Pagination",
         category: "Navigation",
+        box: "gray",
+        locks: ["size", "hit", "motion"],
         description: "Page navigation: First / Previous, numbered links with ellipses, Next / Last. Joined like a ButtonGroup or as ghost buttons apart.",
         usage: "Use for result sets over one page. Disable First / Previous on page 1 and Next / Last on the last page; never mark the current page with colour alone.",
         axes: [
@@ -6068,6 +6298,8 @@ var init_componentCatalogue = __esm({
         key: "PaginationLink",
         label: "Pagination Link",
         category: "Navigation",
+        box: "gray",
+        locks: ["size", "hit", "motion"],
         description: "Numbered page link: ghost when inactive, outlined (or filled in a grouped Pagination) when Active.",
         usage: "Inside a Pagination.",
         axes: [
@@ -6085,6 +6317,8 @@ var init_componentCatalogue = __esm({
         key: "PaginationEllipsis",
         label: "Pagination Ellipsis",
         category: "Navigation",
+        box: "gray",
+        locks: ["size", "hit", "motion"],
         description: "Non-interactive gap marker between page ranges.",
         usage: "Between two ranges of PaginationLinks.",
         axes: [{ name: "Size", values: ["default", "xs", "sm", "lg"] }],
@@ -6096,6 +6330,8 @@ var init_componentCatalogue = __esm({
         key: "Stepper",
         label: "Stepper",
         category: "Navigation",
+        box: "gray",
+        locks: ["size", "hit", "motion"],
         description: "Ordered list of steps: a marker joined to the next by a line, with a title and an optional description. Vertical or horizontal.",
         usage: "Use for a short, linear flow. One step is active; completed and error markers announce themselves.",
         axes: [
@@ -6114,6 +6350,8 @@ var init_componentCatalogue = __esm({
         key: "StepperItem",
         label: "Stepper Item",
         category: "Navigation",
+        box: "gray",
+        locks: ["size", "hit", "motion"],
         description: "One step of a Stepper: marker and connector with a title and an optional description, coloured by status.",
         usage: "Inside a Stepper.",
         axes: [
@@ -6134,6 +6372,8 @@ var init_componentCatalogue = __esm({
         key: "StepperIndicator",
         label: "Stepper Indicator",
         category: "Navigation",
+        box: "black",
+        locks: ["shape", "size", "hit", "motion"],
         description: "Marker column or row of a Stepper step: a StepperIcon and the connector line tinted by status.",
         usage: "Inside a StepperItem; hide the line on the last step.",
         axes: [
@@ -6153,6 +6393,8 @@ var init_componentCatalogue = __esm({
         key: "StepperIcon",
         label: "Stepper Icon",
         category: "Navigation",
+        box: "black",
+        locks: ["shape", "size", "hit", "motion"],
         description: "Round step marker: the number (or an icon) on active and locked steps, an automatic check or warning on completed and error ones.",
         usage: "Inside a StepperIndicator.",
         axes: [
@@ -6171,6 +6413,8 @@ var init_componentCatalogue = __esm({
         key: "DropdownMenu",
         label: "Dropdown Menu",
         category: "Navigation",
+        box: "white",
+        locks: [],
         description: "Floating menu of commands opened from a trigger (a Button or IconButton): an optional search header, labelled groups of items and an optional footer.",
         usage: 'Use for 3+ secondary actions behind a "\u22EF" or button. Destructive items go last, after a separator. Size cascades to every label and item.',
         axes: [
@@ -6190,6 +6434,8 @@ var init_componentCatalogue = __esm({
         key: "DropdownMenuLabel",
         label: "Dropdown Menu Label",
         category: "Navigation",
+        box: "gray",
+        locks: ["size", "hit", "motion"],
         description: "Overline heading for a group of items inside the DropdownMenu.",
         usage: "Label a group of related items. It is skipped by arrow-key navigation.",
         axes: [
@@ -6206,6 +6452,8 @@ var init_componentCatalogue = __esm({
         key: "DropdownMenuItem",
         label: "Dropdown Menu Item",
         category: "Navigation",
+        box: "gray",
+        locks: ["size", "hit", "motion"],
         description: "A command row: optional leading icon, media, description, shortcut, control, caret and a selection check; destructive for irreversible commands.",
         usage: "One command per row. Put irreversible commands last as a destructive variant.",
         axes: [
@@ -6226,6 +6474,8 @@ var init_componentCatalogue = __esm({
         key: "DropdownMenuFooter",
         label: "Dropdown Menu Footer",
         category: "Navigation",
+        box: "gray",
+        locks: ["size", "hit", "motion"],
         description: "Divided action bar pinned below the menu list: status text and buttons.",
         usage: "Clear / Apply or a single action. Inline puts the text first and the buttons at the end; stacked gives full-width buttons.",
         axes: [
@@ -6243,6 +6493,8 @@ var init_componentCatalogue = __esm({
         key: "Sidebar",
         label: "Sidebar",
         category: "Navigation",
+        box: "white",
+        locks: [],
         description: "App navigation rail: a header (SidebarBrand and a trigger), a scrollable content of SidebarGroups and an optional footer. Collapsed is the 48 px icon rail.",
         usage: "Use for app-level sections when destinations exceed what a navbar holds. Keep at most one row marked as the current page.",
         axes: [{ name: "Collapsed", values: ["false", "true"] }],
@@ -6259,6 +6511,8 @@ var init_componentCatalogue = __esm({
         key: "SidebarMenuButton",
         label: "Sidebar Menu Button",
         category: "Navigation",
+        box: "gray",
+        locks: ["size", "hit", "motion"],
         description: "A navigation row of the Sidebar: leading icon, label, trailing count, trend Badge and trailing icon. Current marks the page you are on.",
         usage: "One row per destination. Collapsed comes from the Sidebar, not from the row.",
         axes: [
@@ -6279,6 +6533,8 @@ var init_componentCatalogue = __esm({
         key: "SidebarGroup",
         label: "Sidebar Group",
         category: "Navigation",
+        box: "white",
+        locks: [],
         description: "A labelled section of the Sidebar: a SidebarGroupLabel and a SidebarMenu. Size cascades to every row.",
         usage: "Group related destinations under one label.",
         axes: [
@@ -6295,6 +6551,8 @@ var init_componentCatalogue = __esm({
         key: "SidebarGroupLabel",
         label: "Sidebar Group Label",
         category: "Navigation",
+        box: "white",
+        locks: [],
         description: "The heading of a group of SidebarMenuButtons; hidden while the Sidebar is collapsed. A twin of DropdownMenuLabel.",
         usage: "Name the group in one or two words.",
         axes: [{ name: "Size", values: ["default", "sm", "lg"] }],
@@ -6306,6 +6564,8 @@ var init_componentCatalogue = __esm({
         key: "SidebarBrand",
         label: "Sidebar Brand",
         category: "Navigation",
+        box: "gray",
+        locks: ["size", "hit", "motion"],
         description: "The brand block at the top of the Sidebar: a logo with a title and an optional subtitle; collapses to the logo only.",
         usage: "Wrap it in a link to the home route.",
         axes: [{ name: "Collapsed", values: ["false", "true"] }],
@@ -9144,12 +9404,15 @@ function part(axes, build) {
   for (const combo of combos(axes)) values[combo.join("|")] = build(...combo);
   return { axes: Object.keys(axes), values };
 }
-var c, NONE, FOCUS;
+var c, NONE, FOCUS, SELECTOR_SQUARE_RADIUS, KEYCAP_RADIUS, ROUNDED_SHAPE_RADIUS;
 var init_helpers = __esm({
   "src/lib/recipes/helpers.ts"() {
     c = (role) => `color.${role}`;
     NONE = "none";
     FOCUS = { focus: "color.border.focus", ring: "color.border.ring.default" };
+    SELECTOR_SQUARE_RADIUS = { default: "min(radius.control,radius.md)", compact: "min(radius.control,radius.sm)" };
+    KEYCAP_RADIUS = "min(radius.item,radius.lg)";
+    ROUNDED_SHAPE_RADIUS = "min(radius.action,radius.xl)";
   }
 });
 
@@ -9840,7 +10103,7 @@ function chipPaint(size, variant, state2) {
   const edge = !disabled && (critical || state2 === "Focused");
   const root = {
     height: g.h,
-    radius: "radius.control",
+    radius: "radius.item",
     gap: g.gap,
     font: g.font,
     text: ink,
@@ -10021,7 +10284,7 @@ var init_forms = __esm({
             fill: c("surface.muted"),
             stroke: c("border.subtle"),
             strokeWidth: "stroke.divider",
-            radius: "radius.control",
+            radius: "radius.item",
             paddingX: "spacing.gap-tight",
             text: c("content.secondary"),
             font: "type.caption"
@@ -10472,7 +10735,7 @@ var init_forms = __esm({
           const [w, h] = OTP_SLOT_BOX[size];
           return { root: { width: w, height: h }, digit: { font: OTP_SLOT_FONT[size] }, caret: { height: OTP_CARET[size] } };
         }),
-        part({ Variant: INPUT_OTP_VARIANTS }, (variant) => variant === "underline" ? { root: { radius: "radius.none", strokeWidth: "stroke.none", strokeBottomWidth: "stroke.control" } } : { root: { radius: "radius.action", strokeWidth: "stroke.control" } }),
+        part({ Variant: INPUT_OTP_VARIANTS }, (variant) => variant === "underline" ? { root: { radius: "radius.none", strokeWidth: "stroke.none", strokeBottomWidth: "stroke.control" } } : { root: { radius: ROUNDED_SHAPE_RADIUS, strokeWidth: "stroke.control" } }),
         part({ Variant: INPUT_OTP_VARIANTS, State: INPUT_OTP_SLOT_STATES }, (variant, state2) => ({
           root: otpSlotRoot(variant, state2),
           ...state2 === "Disabled" ? { digit: { text: c("content.disabled") } } : {}
@@ -10497,10 +10760,15 @@ var init_forms = __esm({
       defaults: { Size: "default", Checked: "false", State: "Default", Variant: "default" },
       parts: [
         part({}, () => ({
-          root: { radius: "radius.control", strokeWidth: "stroke.control", hit: "size.hit" }
+          root: { strokeWidth: "stroke.control", hit: "size.hit" }
         })),
         part({ Size: CHECKBOX_SIZES }, (size) => ({
-          root: { height: size === "default" ? "selector.control" : "selector.compact", width: size === "default" ? "selector.control" : "selector.compact" },
+          // Black box: Radius/control, capped so the box stays a square (SELECTOR_SQUARE_RADIUS).
+          root: {
+            radius: size === "default" ? SELECTOR_SQUARE_RADIUS.default : SELECTOR_SQUARE_RADIUS.compact,
+            height: size === "default" ? "selector.control" : "selector.compact",
+            width: size === "default" ? "selector.control" : "selector.compact"
+          },
           indicator: { width: size === "default" ? "icon.small" : "spacing.3", height: size === "default" ? "icon.small" : "spacing.3" }
         })),
         part({ Checked: CHECKBOX_CHECKED, State: CHECKBOX_STATES, Variant: CHECKBOX_VARIANTS }, checkPaint)
@@ -11927,7 +12195,7 @@ function badgeTone(variant, appearance) {
 function badgeLayout(size, type, shape, appearance) {
   const g = BADGE_GEOMETRY[size];
   const lay = appearance === "outline" ? "+stroke.control" : "";
-  const radius = shape === "pill" ? "radius.pill" : "radius.control";
+  const radius = shape === "pill" ? "radius.pill" : "radius.item";
   if (type === "dot") return { root: { width: g.dot, height: g.dot, radius: "radius.pill", paddingX: "spacing.none", paddingY: "spacing.none" } };
   const root = { height: g.h, radius, paddingY: "spacing.none", font: g.font };
   if (type === "icon") return { root: { ...root, width: g.h, paddingX: "spacing.none" }, icon: { width: g.icon, height: g.icon } };
@@ -12144,7 +12412,7 @@ var init_indicators = __esm({
           ring: { stroke: c("border.accent"), strokeWidth: "stroke.md" }
         })),
         part({ Shape: AVATAR_SHAPES }, (shape) => {
-          const radius = shape === "circle" ? "radius.pill" : "radius.action";
+          const radius = shape === "circle" ? "radius.pill" : ROUNDED_SHAPE_RADIUS;
           return { root: { radius }, image: { radius }, stroke: { radius }, ring: { radius } };
         }),
         part({ Size: AVATAR_SIZES }, (size) => {
@@ -12220,7 +12488,7 @@ var init_indicators = __esm({
           };
         }),
         part({ Shape: AVATAR_SHAPES }, (shape) => {
-          const radius = shape === "circle" ? "radius.pill" : "radius.action";
+          const radius = shape === "circle" ? "radius.pill" : ROUNDED_SHAPE_RADIUS;
           return { item: { radius }, action: { radius } };
         })
       ]
@@ -12251,7 +12519,7 @@ var init_indicators = __esm({
           root: { width: FEATURED_ICON_GEOMETRY[size].box, height: FEATURED_ICON_GEOMETRY[size].box },
           icon: { width: FEATURED_ICON_GEOMETRY[size].icon, height: FEATURED_ICON_GEOMETRY[size].icon }
         })),
-        part({ Shape: AVATAR_SHAPES }, (shape) => ({ root: { radius: shape === "circle" ? "radius.pill" : "radius.action" } })),
+        part({ Shape: AVATAR_SHAPES }, (shape) => ({ root: { radius: shape === "circle" ? "radius.pill" : ROUNDED_SHAPE_RADIUS } })),
         part({ Variant: FEATURED_ICON_VARIANTS, Appearance: FEATURED_ICON_APPEARANCES }, (variant, appearance) => {
           if (appearance === "gradient") {
             const g = FEATURED_ICON_GRADIENT[variant];
@@ -12279,7 +12547,7 @@ var init_indicators = __esm({
             stroke: c("border.subtle"),
             strokeWidth: "stroke.control",
             text: c("content.secondary"),
-            radius: "radius.control",
+            radius: KEYCAP_RADIUS,
             gap: "spacing.gap-tight"
           }
         })),
@@ -15578,7 +15846,7 @@ var init_useDesignStore = __esm({
         }),
         {
           name: "scalable-designs-store",
-          version: 152,
+          version: 153,
           migrate: (persisted, version) => {
             if (persisted) {
               delete persisted.styleDirection;
@@ -17456,6 +17724,12 @@ var init_useDesignStore = __esm({
                 for (const sys of persisted.savedSystems) liftSecondaryAboveLayer2V152(sys?.snapshot);
               }
             }
+            if (version < 153) {
+              capSelectorsRadiusV153(persisted);
+              if (Array.isArray(persisted.savedSystems)) {
+                for (const sys of persisted.savedSystems) capSelectorsRadiusV153(sys?.snapshot);
+              }
+            }
             if (version < 133) {
               const add2 = (state2) => {
                 if (!Array.isArray(state2?.selectedComponents)) return;
@@ -18436,7 +18710,13 @@ function studioOptions() {
       picks: p2.picks,
       px: radiusPresetPx(p2)
     })),
-    radiusGroups: RADIUS_GROUPS.map((g) => ({ key: g.key, label: g.label, hint: g.hint })),
+    // `steps` is additive: each axis's own ladder (Selectors stop at md, 6px).
+    radiusGroups: RADIUS_GROUPS.map((g) => ({
+      key: g.key,
+      label: g.label,
+      hint: g.hint,
+      steps: radiusAxisLadder(g.key).filter((step) => step === "xs" || step === "md" || RADIUS_GROUP_STEPS.includes(step))
+    })),
     radiusSteps: RADIUS_GROUP_STEPS.map((step) => ({ step, px: parseFloat(radius[step] ?? "0") || 0 })),
     spacingModes: SPACING_MODES.map((m) => ({
       id: m.id,
@@ -18566,6 +18846,8 @@ function buildStudioTokens(choices, tier) {
     for (const group of RADIUS_GROUPS) {
       const step = choices.radiusAxes[group.key];
       if (step && RADIUS_GROUP_STEPS.includes(step)) {
+        roles = applyRadiusGroup(group, roles, clampRadiusAxisStep(group.key, step));
+      } else if (step && radiusAxisLadder(group.key).includes(step)) {
         roles = applyRadiusGroup(group, roles, step);
       }
     }
@@ -18729,14 +19011,14 @@ function studioLook(choices) {
     };
     box = pxOf(c2.radiusAxes.boxes, box);
     field = pxOf(c2.radiusAxes.fields, field);
-    control = pxOf(c2.radiusAxes.selectors, control);
+    control = pxOf(c2.radiusAxes.selectors && clampRadiusAxisStep("selectors", c2.radiusAxes.selectors), control);
   } else if (c2.radiusPreset) {
     const hit = RADIUS_ROLE_PRESETS.find((p2) => p2.label === c2.radiusPreset);
     if (hit) {
       const px2 = radiusPresetPx(hit);
       box = px2[0];
       field = px2[1];
-      control = px2[2];
+      control = px2[3];
     }
   } else if (preset) {
     const summary = styleSummary(preset, RADIUS_STANDARD);

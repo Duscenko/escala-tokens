@@ -32,7 +32,7 @@
 // Kept DOM-free and store-free: `themePresets` builds System Styles from these
 // moods, and `randomTheme` builds the Random recipe from them.
 
-import { RADIUS_GROUP_STEPS, type RadiusGroupStep } from './layoutTokens'
+import { RADIUS_GROUP_STEPS, clampRadiusAxisStep, type RadiusGroupStep } from './layoutTokens'
 import { NEUTRAL_TINTS, type NeutralTint } from './colorUtils'
 import { hexToOklch, oklchToHex } from './color/gamut'
 import { tailwindFamilyOklch } from './color/tailwind'
@@ -291,7 +291,7 @@ export function proceduralMoodSpec(rng: Rng = Math.random): MoodSpec {
     warning: tw(pick(['yellow', 'amber', 'orange'], rng), stateShade),
     error: tw(pick(['red', 'pink', 'rose'], rng), stateShade),
     radius: {
-      selectors: pick(RADIUS_GROUP_STEPS, rng),
+      selectors: clampRadiusAxisStep('selectors', pick(RADIUS_GROUP_STEPS, rng)) as RadiusGroupStep,
       fields: pick(RADIUS_GROUP_STEPS, rng),
       boxes: pick(RADIUS_GROUP_STEPS, rng),
     },

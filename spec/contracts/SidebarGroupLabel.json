@@ -4,6 +4,8 @@
   "key": "SidebarGroupLabel",
   "label": "Sidebar Group Label",
   "category": "Navigation",
+  "box": "white",
+  "locks": [],
   "description": "The heading of a group of SidebarMenuButtons; hidden while the Sidebar is collapsed. A twin of DropdownMenuLabel.",
   "owners": {
     "anatomy": "figma",

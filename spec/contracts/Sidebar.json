@@ -4,6 +4,8 @@
   "key": "Sidebar",
   "label": "Sidebar",
   "category": "Navigation",
+  "box": "white",
+  "locks": [],
   "description": "App navigation rail: a header (SidebarBrand and a trigger), a scrollable content of SidebarGroups and an optional footer. Collapsed is the 48 px icon rail.",
   "owners": {
     "anatomy": "figma",

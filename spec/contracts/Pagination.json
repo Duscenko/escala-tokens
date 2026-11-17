@@ -4,6 +4,12 @@
   "key": "Pagination",
   "label": "Pagination",
   "category": "Navigation",
+  "box": "gray",
+  "locks": [
+    "size",
+    "hit",
+    "motion"
+  ],
   "description": "Page navigation: First / Previous, numbered links with ellipses, Next / Last. Joined like a ButtonGroup or as ghost buttons apart.",
   "owners": {
     "anatomy": "figma",

@@ -4,6 +4,8 @@
   "key": "FileUpload",
   "label": "File Upload",
   "category": "Form Controls",
+  "box": "white",
+  "locks": [],
   "description": "Managed file upload: a FileUploadDropzone (or a single trigger Button) above a list of FileUploadItem rows; Size sets row density and cascades to every item.",
   "owners": {
     "anatomy": "figma",

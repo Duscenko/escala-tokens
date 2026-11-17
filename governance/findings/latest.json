@@ -1,5 +1,5 @@
 {
-  "generated": "2026-11-16",
+  "generated": "2026-11-17",
   "findings": [
     {
       "id": "COL-002:Border/control",
@@ -65,11 +65,13 @@
       "severity": "info",
       "side": "both",
       "entity": "InputTagChip",
-      "evidence": "Radius moved 8 → 4 with radius.control (not in A3). Check against Figma.",
-      "status": "Open",
-      "resolution": null,
+      "evidence": "Radius moved 8 → 4 with radius.control (not in A3). Check against Figma. 2026-11-17: Figma bound Radius/control (code matched); both now move to Radius/item.",
+      "status": "Decided",
+      "resolution": {
+        "ref": "DEC-2026-11-17-002"
+      },
       "firstSeen": "2026-11-16",
-      "lastSeen": "2026-11-16",
+      "lastSeen": "2026-11-17",
       "regression": false
     },
     {
@@ -264,6 +266,29 @@
       "lastSeen": "2026-11-16",
       "regression": false,
       "ticket": 34
+    },
+    {
+      "id": "FIG-002:Radius/control-overloaded",
+      "rule": "DEPARTURE",
+      "severity": "warn",
+      "side": "figma",
+      "entity": "Radius/control",
+      "evidence": "Radius/control (4 px, all viewports) is bound by ~45 sets with unrelated jobs: Checkbox family (must stay square), the tag family (Badge Shape=rounded, Kbd, InputTagChip, InputTag tag, Input/AppHeader Kbd, Field trailing), TextLink and Breadcrumb focus rings, Slider (SliderThumb, track, fill, thumb, tooltip), media (AvatarGroup, _AvatarPhoto, ScrollArea image, TableMediaCell). The generator's Selectors axis drives it, so raising it for badges turns a 16 px checkbox into a circle (reads as Radio) from 8 px up. Code caps Checkbox at 25 % of its side in the recipe (box classification §4.2), which makes it harmless; the split itself is Figma's call (names are Figma's). Options: (a) move the tag family to the existing Radius/item; (b) add a new tag role in the file; (c) keep as is and rely on the code cap. Recommended: (a). Board: 🧪 Experiments page.",
+      "status": "Decided",
+      "resolution": {
+        "ref": "DEC-2026-11-17-002"
+      },
+      "figmaNode": "2059:172",
+      "links": {
+        "board": "https://www.figma.com/design/7j5zukN5HpihGVJMmyjA20/?node-id=2059-172",
+        "checkboxBeforeAfter": "https://www.figma.com/design/7j5zukN5HpihGVJMmyjA20/?node-id=2059-12",
+        "proposal": "https://www.figma.com/design/7j5zukN5HpihGVJMmyjA20/?node-id=2059-126",
+        "inventory": "https://www.figma.com/design/7j5zukN5HpihGVJMmyjA20/?node-id=2059-165",
+        "plan": "design-plans/component-box-classification.md#44-untangle-the-overloaded-role-needs-the-owner--figma-first"
+      },
+      "firstSeen": "2026-11-17",
+      "lastSeen": "2026-11-17",
+      "regression": false
     }
   ]
 }

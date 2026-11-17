@@ -4,6 +4,8 @@
   "key": "Accordion",
   "label": "Accordion",
   "category": "Content & Surfaces",
+  "box": "white",
+  "locks": [],
   "description": "A stack of AccordionItem sharing one Variant. The first item is open by default; items open and close independently.",
   "owners": {
     "anatomy": "figma",

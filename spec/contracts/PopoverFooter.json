@@ -4,6 +4,12 @@
   "key": "PopoverFooter",
   "label": "Popover Footer",
   "category": "Content & Surfaces",
+  "box": "gray",
+  "locks": [
+    "size",
+    "hit",
+    "motion"
+  ],
   "description": "Action row below the Popover body, divided by a Border/subtle rule: status text and buttons.",
   "owners": {
     "anatomy": "figma",

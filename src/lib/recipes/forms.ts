@@ -7,7 +7,7 @@
  */
 import { groupLabelRecipe } from './groupLabel.js'
 import { listItemRecipe, type ListItemMetrics } from './listItem.js'
-import { c, NONE, part, PANEL_RADIUS, PANEL_ROW_RADIUS, type ComponentRecipe, type SlotMap, type SlotProps, FOCUS } from './helpers.js'
+import { c, NONE, part, PANEL_RADIUS, PANEL_ROW_RADIUS, ROUNDED_SHAPE_RADIUS, SELECTOR_SQUARE_RADIUS, type ComponentRecipe, type SlotMap, type SlotProps, FOCUS } from './helpers.js'
 
 // ── Shared field chrome ────────────────────────────────────────────────────
 
@@ -64,7 +64,7 @@ export const INPUT: ComponentRecipe = {
       root: { radius: 'radius.action', strokeWidth: 'stroke.control', gap: 'spacing.gap-control', font: 'type.placeholder' },
       divider: { fill: c('border.subtle'), width: 'stroke.control' },
       kbd: {
-        fill: c('surface.muted'), stroke: c('border.subtle'), strokeWidth: 'stroke.divider', radius: 'radius.control',
+        fill: c('surface.muted'), stroke: c('border.subtle'), strokeWidth: 'stroke.divider', radius: 'radius.item',
         paddingX: 'spacing.gap-tight', text: c('content.secondary'), font: 'type.caption',
       },
     })),
@@ -575,7 +575,7 @@ function chipPaint(size: string, variant: string, state: string): SlotMap {
   const ink = disabled ? c('content.disabled') : c(critical ? 'status.critical.content' : 'content.primary')
   const edge = !disabled && (critical || state === 'Focused')
   const root: SlotProps = {
-    height: g.h, radius: 'radius.control', gap: g.gap, font: g.font, text: ink,
+    height: g.h, radius: 'radius.item', gap: g.gap, font: g.font, text: ink,
     // The stroke is laid out in the file: the content starts at padding + stroke.
     paddingX: edge ? `${g.padX}+stroke.control` : g.padX,
     strokeWidth: edge ? 'stroke.control' : 'stroke.none',
@@ -845,7 +845,7 @@ export const INPUT_OTP_SLOT: ComponentRecipe = {
     }),
     part({ Variant: INPUT_OTP_VARIANTS }, (variant) => (variant === 'underline'
       ? { root: { radius: 'radius.none', strokeWidth: 'stroke.none', strokeBottomWidth: 'stroke.control' } }
-      : { root: { radius: 'radius.action', strokeWidth: 'stroke.control' } })),
+      : { root: { radius: ROUNDED_SHAPE_RADIUS, strokeWidth: 'stroke.control' } })),
     part({ Variant: INPUT_OTP_VARIANTS, State: INPUT_OTP_SLOT_STATES }, (variant, state): SlotMap => ({
       root: otpSlotRoot(variant, state),
       ...(state === 'Disabled' ? { digit: { text: c('content.disabled') } } : {}),
@@ -900,10 +900,14 @@ export const CHECKBOX: ComponentRecipe = {
   defaults: { Size: 'default', Checked: 'false', State: 'Default', Variant: 'default' },
   parts: [
     part({}, () => ({
-      root: { radius: 'radius.control', strokeWidth: 'stroke.control', hit: 'size.hit' },
+      root: { strokeWidth: 'stroke.control', hit: 'size.hit' },
     })),
     part({ Size: CHECKBOX_SIZES }, (size) => ({
-      root: { height: size === 'default' ? 'selector.control' : 'selector.compact', width: size === 'default' ? 'selector.control' : 'selector.compact' },
+      // Black box: Radius/control, capped so the box stays a square (SELECTOR_SQUARE_RADIUS).
+      root: {
+        radius: size === 'default' ? SELECTOR_SQUARE_RADIUS.default : SELECTOR_SQUARE_RADIUS.compact,
+        height: size === 'default' ? 'selector.control' : 'selector.compact', width: size === 'default' ? 'selector.control' : 'selector.compact',
+      },
       indicator: { width: size === 'default' ? 'icon.small' : 'spacing.3', height: size === 'default' ? 'icon.small' : 'spacing.3' },
     })),
     part({ Checked: CHECKBOX_CHECKED, State: CHECKBOX_STATES, Variant: CHECKBOX_VARIANTS }, checkPaint),

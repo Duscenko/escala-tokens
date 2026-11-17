@@ -618,3 +618,9 @@ Measured in the built Storybook, 2026-11-17 (Button + IconButton, 3 intents × 4
 |---|---|---|
 | A swatch / chip / plate painting an alpha colour with a bare `background` (or over the chrome's own `CHECKER`) | In dark Storybook, every Light alpha role (`status.*.surface`, `border.ring.*`, `error-a.*`) showed as a near-black smudge — "enmascarado" | `swatchPaint(color, page)` (`src/lib/swatchPaint.ts`): opaque paints as itself; translucent is drawn over ITS OWN page (upper-right) + a checker cut from that page (lower-left). Used by Docs · Color, PrimitiveCard, the dashboard `Swatch` / ColorVariableMap (`SystemRoles.pageOf`). **A new colour sample uses `swatchPaint` and passes the page of the mode it shows — never the chrome.** Components themselves are exempt: inside a component, an alpha fill over its real page is what ships |
 
+
+# Lessons from the Radius/control split (2026-11-17)
+| Trap | What it looked like | The fix (where it lives) |
+|---|---|---|
+| One role for unrelated jobs: `Radius/control` drove Checkbox **and** Badge rounded, Kbd, InputTagChip | Raising Selectors for rounder badges turned a 16 px checkbox into a circle (reads as Radio) | Figma moved the tag family to `Radius/item`; recipes `BADGE` (rounded), `KBD`, `INPUT` › `kbd`, `INPUT_TAG_CHIP` read `radius.item` (DEC-2026-11-17-002) |
+| A new tag-, key- or badge-like part | Tempting to copy the checkbox's `Radius/control` | Bind `Radius/item`; read the role from the Figma node, never from a sibling |

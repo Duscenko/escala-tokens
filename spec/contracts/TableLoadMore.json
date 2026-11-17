@@ -4,6 +4,12 @@
   "key": "TableLoadMore",
   "label": "TableLoadMore",
   "category": "Content & Surfaces",
+  "box": "gray",
+  "locks": [
+    "size",
+    "hit",
+    "motion"
+  ],
   "description": "The Load more row under a table, and its loading state.",
   "owners": {
     "anatomy": "figma",

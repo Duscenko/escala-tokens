@@ -4,6 +4,12 @@
   "key": "ModalHeader",
   "label": "Modal Header",
   "category": "Content & Surfaces",
+  "box": "gray",
+  "locks": [
+    "size",
+    "hit",
+    "motion"
+  ],
   "description": "Header row of the Modal: an optional icon, the title and description, and an optional trailing slot.",
   "owners": {
     "anatomy": "figma",

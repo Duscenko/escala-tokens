@@ -4,6 +4,13 @@
   "key": "CheckboxItem",
   "label": "Checkbox Item",
   "category": "Form Controls",
+  "box": "black",
+  "locks": [
+    "shape",
+    "size",
+    "hit",
+    "motion"
+  ],
   "description": "Checkbox with a visible label and optional description; the whole row toggles the checkbox.",
   "owners": {
     "anatomy": "figma",

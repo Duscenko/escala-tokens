@@ -4,6 +4,12 @@
   "key": "DatePickerTrigger",
   "label": "Date Picker Trigger",
   "category": "Form Controls",
+  "box": "gray",
+  "locks": [
+    "size",
+    "hit",
+    "motion"
+  ],
   "description": "An input-styled button that opens the date picker popover: the calendar glyph and the placeholder or the formatted date.",
   "owners": {
     "anatomy": "figma",

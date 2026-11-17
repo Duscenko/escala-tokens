@@ -153,7 +153,7 @@ describe('plugin studio build', () => {
     const pill = studioLook({ radiusPreset: 'Pill', spacingMode: 'quiet', accent: '#9522e9', kind: 'light', shadow: 'Strong' })
     expect(pill.box).toBe(24) // boxes 3xl: rounder than Rounded, a card with tags keeps its shape
     expect(pill.field).toBe(32)
-    expect(pill.control).toBe(8)
+    expect(pill.control).toBe(6) // selectors md: a checkbox stays a square
     expect(pill.controlH).toBe(40)
     expect(pill.pad).toBe(20)
     expect(pill.accentRamp).toHaveLength(12)

@@ -4,6 +4,12 @@
   "key": "Stepper",
   "label": "Stepper",
   "category": "Navigation",
+  "box": "gray",
+  "locks": [
+    "size",
+    "hit",
+    "motion"
+  ],
   "description": "Ordered list of steps: a marker joined to the next by a line, with a title and an optional description. Vertical or horizontal.",
   "owners": {
     "anatomy": "figma",

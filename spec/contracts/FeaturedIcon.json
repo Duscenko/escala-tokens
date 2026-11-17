@@ -4,6 +4,13 @@
   "key": "FeaturedIcon",
   "label": "Featured Icon",
   "category": "Indicators",
+  "box": "gray",
+  "locks": [
+    "radius",
+    "size",
+    "hit",
+    "motion"
+  ],
   "description": "A decorative glyph in a tinted or solid shape: cards, empty states, dialogs, feature lists.",
   "owners": {
     "anatomy": "figma",
@@ -163,7 +170,8 @@
     ],
     "radius": [
       "radius.action",
-      "radius.pill"
+      "radius.pill",
+      "radius.xl"
     ],
     "size": [
       "size.lg",

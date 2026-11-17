@@ -4,6 +4,14 @@
   "key": "Checkbox",
   "label": "Checkbox",
   "category": "Form Controls",
+  "box": "black",
+  "locks": [
+    "shape",
+    "radius",
+    "size",
+    "hit",
+    "motion"
+  ],
   "description": "Single checkbox for an independent boolean or a parent row summarising a partial selection (indeterminate). The box alone: label it with CheckboxItem.",
   "owners": {
     "anatomy": "figma",
@@ -175,7 +183,9 @@
       "icon.small"
     ],
     "radius": [
-      "radius.control"
+      "radius.control",
+      "radius.md",
+      "radius.sm"
     ],
     "selector": [
       "selector.compact",

@@ -4,6 +4,12 @@
   "key": "DropdownMenuItem",
   "label": "Dropdown Menu Item",
   "category": "Navigation",
+  "box": "gray",
+  "locks": [
+    "size",
+    "hit",
+    "motion"
+  ],
   "description": "A command row: optional leading icon, media, description, shortcut, control, caret and a selection check; destructive for irreversible commands.",
   "owners": {
     "anatomy": "figma",

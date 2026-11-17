@@ -4,6 +4,12 @@
   "key": "IconButton",
   "label": "Icon Button",
   "category": "Button & Actions",
+  "box": "gray",
+  "locks": [
+    "size",
+    "hit",
+    "motion"
+  ],
   "description": "An action with a single icon and no visible label: a square at the Button heights. Same Variant × Appearance grammar as Button, four sizes and six states, with an optional badge for a count or a dot.",
   "owners": {
     "anatomy": "figma",

@@ -29,7 +29,7 @@ import { PHOSPHOR_WEIGHTS, type PhosphorWeight } from './phosphorIcons'
 import {
   INSET_SURFACE_ROLE, RADIUS_GROUPS, RADIUS_GROUP_STEPS, RADIUS_ROLE_PRESETS, RADIUS_STANDARD,
   SPACING_DEFAULT_BASE, SPACING_MODES, SPACING_STEPS, STROKE_SM_STOPS, applyRadiusGroup, buildSizesFromBase, insetSurfacePadding,
-  radiusPresetPatch, radiusPresetPx, matchSpacingMode, mergeLayoutRoles, type RadiusGroupStep, type SpacingMode,
+  radiusPresetPatch, radiusPresetPx, radiusAxisLadder, clampRadiusAxisStep, matchSpacingMode, mergeLayoutRoles, type RadiusGroupStep, type SpacingMode,
 } from './layoutTokens'
 import { slugify } from './utils'
 import { ACTION_LABEL_TARGET, backgroundFromBase, brandSolidPair, darkShadow, darkShadowMap, generateColorScale, generateStatusScale, generateLightNeutralScale, generateDarkColorScale, generateFamilyDarkScale, type NeutralTint } from './colorUtils'
@@ -111,7 +111,11 @@ export function studioOptions() {
       picks: p.picks,
       px: radiusPresetPx(p),
     })),
-    radiusGroups: RADIUS_GROUPS.map((g) => ({ key: g.key, label: g.label, hint: g.hint })),
+    // `steps` is additive: each axis's own ladder (Selectors stop at md, 6px).
+    radiusGroups: RADIUS_GROUPS.map((g) => ({
+      key: g.key, label: g.label, hint: g.hint,
+      steps: radiusAxisLadder(g.key).filter((step) => step === 'xs' || step === 'md' || (RADIUS_GROUP_STEPS as readonly string[]).includes(step)),
+    })),
     radiusSteps: RADIUS_GROUP_STEPS.map((step) => ({ step, px: parseFloat(radius[step] ?? '0') || 0 })),
     spacingModes: SPACING_MODES.map((m) => ({
       id: m.id, label: m.label, description: m.description, fieldBase: m.fieldBase, insetStep: m.insetStep, border: m.border,
@@ -277,6 +281,9 @@ export function buildStudioTokens(
     for (const group of RADIUS_GROUPS) {
       const step = choices.radiusAxes[group.key as 'boxes' | 'fields' | 'selectors']
       if (step && (RADIUS_GROUP_STEPS as readonly string[]).includes(step)) {
+        // A step past the axis's ladder (a Selectors 2xl from an older plugin) snaps onto it.
+        roles = applyRadiusGroup(group, roles, clampRadiusAxisStep(group.key, step as RadiusGroupStep))
+      } else if (step && (radiusAxisLadder(group.key) as readonly string[]).includes(step)) {
         roles = applyRadiusGroup(group, roles, step as RadiusGroupStep)
       }
     }
@@ -528,10 +535,10 @@ export function studioLook(choices: StudioChoices | null | undefined): StudioLoo
     }
     box = pxOf(c.radiusAxes.boxes, box)
     field = pxOf(c.radiusAxes.fields, field)
-    control = pxOf(c.radiusAxes.selectors, control)
+    control = pxOf(c.radiusAxes.selectors && clampRadiusAxisStep('selectors', c.radiusAxes.selectors), control)
   } else if (c.radiusPreset) {
     const hit = RADIUS_ROLE_PRESETS.find((p) => p.label === c.radiusPreset)
-    if (hit) { const px = radiusPresetPx(hit); box = px[0]; field = px[1]; control = px[2] }
+    if (hit) { const px = radiusPresetPx(hit); box = px[0]; field = px[1]; control = px[3] }
   } else if (preset) {
     const summary = styleSummary(preset, RADIUS_STANDARD as Record<string, string>)
     box = summary.radius.boxes

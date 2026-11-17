@@ -4,6 +4,8 @@
   "key": "CalendarMonth",
   "label": "Calendar Month",
   "category": "Form Controls",
+  "box": "white",
+  "locks": [],
   "description": "One visible month of a Calendar: the weekday row over the weeks of day cells, Sunday first.",
   "owners": {
     "anatomy": "figma",

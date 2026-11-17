@@ -4,6 +4,12 @@
   "key": "TableLoading",
   "label": "TableLoading",
   "category": "Content & Surfaces",
+  "box": "gray",
+  "locks": [
+    "size",
+    "hit",
+    "motion"
+  ],
   "description": "A spinner and a label shown while rows load.",
   "owners": {
     "anatomy": "figma",

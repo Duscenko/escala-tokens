@@ -4,6 +4,8 @@
   "key": "CheckboxGroup",
   "label": "Checkbox Group",
   "category": "Form Controls",
+  "box": "white",
+  "locks": [],
   "description": "Labelled multi-select: group label, CheckboxItem rows and an optional footer (helper or error). Each checkbox stays independent.",
   "owners": {
     "anatomy": "figma",

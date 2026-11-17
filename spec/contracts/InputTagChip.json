@@ -4,6 +4,12 @@
   "key": "InputTagChip",
   "label": "Input Tag Chip",
   "category": "Form Controls",
+  "box": "gray",
+  "locks": [
+    "size",
+    "hit",
+    "motion"
+  ],
   "description": "One removable tag of an InputTag; the critical variant marks tags past the maximum.",
   "owners": {
     "anatomy": "figma",
@@ -138,7 +144,7 @@
       "icon.small"
     ],
     "radius": [
-      "radius.control"
+      "radius.item"
     ],
     "size": [
       "size.compact",

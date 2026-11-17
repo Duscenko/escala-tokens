@@ -201,13 +201,20 @@ export interface SidebarMenuButtonProps extends Omit<React.ComponentProps<'butto
   children?: React.ReactNode
   /** Figma TrailingVisible + Trailing (a count). */
   trailing?: React.ReactNode
-  /** Figma TrendVisible: an exposed Badge, soft, success for `up`, critical for `down`. */
-  trend?: 'up' | 'down'
+  /** Figma TrendVisible: an exposed Badge, soft, success for `up`, critical for `down`, secondary (Minus) for `flat`. */
+  trend?: 'up' | 'down' | 'flat'
   /** The text of the trend Badge (an icon-only Badge when omitted). */
   trendLabel?: React.ReactNode
   /** Figma IconTrailingVisible + IconTrailingIcon. */
   iconTrailing?: React.ReactNode
 }
+
+/** The trend Badge per direction, as the Figma file's Watchlist rows draw it. */
+const TREND = {
+  up: { variant: 'success', icon: 'trend-up', name: 'Trending up' },
+  down: { variant: 'critical', icon: 'trend-down', name: 'Trending down' },
+  flat: { variant: 'secondary', icon: 'minus', name: 'No change' },
+} as const
 
 const iconBox = 'inline-flex shrink-0 items-center justify-center [&>svg]:size-full'
 
@@ -251,10 +258,10 @@ function SidebarMenuButton({
             appearance="soft"
             shape="pill"
             size="xs"
-            variant={trend === 'up' ? 'success' : 'critical'}
+            variant={TREND[trend].variant}
             {...(trendLabel != null
-              ? { iconLeading: glyph(trend === 'up' ? 'trend-up' : 'trend-down'), children: trendLabel }
-              : { type: 'icon' as const, icon: glyph(trend === 'up' ? 'trend-up' : 'trend-down'), 'aria-label': trend === 'up' ? 'Trending up' : 'Trending down' })}
+              ? { iconLeading: glyph(TREND[trend].icon), children: trendLabel }
+              : { type: 'icon' as const, icon: glyph(TREND[trend].icon), 'aria-label': TREND[trend].name })}
           />
         </span>
       )}

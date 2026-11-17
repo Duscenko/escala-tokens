@@ -77,6 +77,11 @@ const LIFT: Record<string, (key: string, ambient: string, ring: string) => strin
   'popover-lg': (k, a, r) => [`0 0 0 1px ${r}`, `0 12px 16px -4px ${k}`, `0 4px 6px -2px ${a}`],
   // The Chip being dragged: Shadow/sm without its spreads (Figma paints none on a frame that does not clip).
   drag: (k, a) => [`0 1px 3px ${k}`, `0 1px 2px ${a}`],
+  // The SidebarStatCard's Shadow/sm on a frame that does not clip: no ring, no spreads, both drops on the key colour
+  // (the file binds Shadow/key to both, measured on SidebarNavigation · Prototype).
+  'card-sm': (k) => [`0 1px 3px ${k}`, `0 1px 2px ${k}`],
+  // The FloatingHeader's Shadow/md on a frame that does not clip: no ring, no spreads.
+  'floating-md': (k, a) => [`0 4px 6px ${k}`, `0 2px 4px ${a}`],
 }
 /** A named elevation as one CSS `box-shadow` value on the Elevation roles (a block's card draws the Modal's `modal`). */
 export function liftShadow(name: keyof typeof LIFT): string {

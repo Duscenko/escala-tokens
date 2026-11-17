@@ -4,6 +4,13 @@
   "key": "ProgressCircle",
   "label": "Progress Circle",
   "category": "Indicators",
+  "box": "black",
+  "locks": [
+    "shape",
+    "size",
+    "hit",
+    "motion"
+  ],
   "description": "A circular progress indicator for a value from 0 to 100: a muted ring and an arc from the top, with round or butt ends.",
   "owners": {
     "anatomy": "figma",

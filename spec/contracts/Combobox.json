@@ -4,6 +4,12 @@
   "key": "Combobox",
   "label": "Combobox",
   "category": "Form Controls",
+  "box": "gray",
+  "locks": [
+    "size",
+    "hit",
+    "motion"
+  ],
   "description": "Text input trigger that opens a filterable listbox, with optional leading icon, clear button and trailing chevron.",
   "owners": {
     "anatomy": "figma",
