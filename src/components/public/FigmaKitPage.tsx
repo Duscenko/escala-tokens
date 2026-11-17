@@ -6,7 +6,7 @@
 // text column and loads only when it scrolls near the screen (Figma's embed is
 // heavy and should not block the first paint).
 
-import { useEffect, useState, type ReactNode } from 'react'
+import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { PublicHeader } from './PublicReadingPage'
 import { applyDocumentHead } from '../../lib/documentHead'
 import { useI18n } from '../../lib/i18n'
@@ -16,6 +16,8 @@ import {
   FIGMA_KIT_PRICE, figmaKitPurchased,
 } from '../../lib/figmaKit'
 import { FigmaGlyph } from '../ui/icons'
+import { StorybookGlyph } from '../configurator/docs/StorybookLinkButton'
+import { STORYBOOK_URL } from '../../lib/storybookLinks'
 
 export const FIGMA_KIT_TITLE = 'Escala Design System for Figma'
 export const FIGMA_KIT_DESCRIPTION =
@@ -54,9 +56,9 @@ function Faq({ q, children }: { q: string; children: ReactNode }) {
 }
 
 /** The buy action. With no checkout link yet it says so instead of a dead button. */
-function BuyButton({ wide = false }: { wide?: boolean }) {
+function BuyButton({ wide = false, small = false }: { wide?: boolean; small?: boolean }) {
   const { t } = useI18n()
-  const size = wide ? 'h-14 w-full justify-between px-7' : 'h-10 justify-center gap-1.5 px-5'
+  const size = wide ? 'h-14 w-full justify-between px-7' : small ? 'h-8 justify-center gap-1.5 px-4' : 'h-10 justify-center gap-1.5 px-5'
   if (!FIGMA_KIT_CHECKOUT_URL) {
     return (
       <span
@@ -72,7 +74,7 @@ function BuyButton({ wide = false }: { wide?: boolean }) {
       href={FIGMA_KIT_CHECKOUT_URL}
       className={`inline-flex items-center gap-3 rounded-full bg-fg text-ui font-medium text-app transition-opacity hover:opacity-90 ${size} ${FOCUS}`}
     >
-      {FIGMA_KIT_PRICE != null ? t('Buy for ${price}', { price: String(FIGMA_KIT_PRICE) }) : t('Buy now')}
+      {FIGMA_KIT_PRICE != null ? t('Buy for ${price}', { price: String(FIGMA_KIT_PRICE) }) : t('Get the kit')}
       <Arrow />
     </a>
   )
@@ -81,6 +83,16 @@ function BuyButton({ wide = false }: { wide?: boolean }) {
 export function FigmaKitPage() {
   const { t } = useI18n()
   const [purchased] = useState(() => figmaKitPurchased(window.location.search))
+  // The sticky bar shows once the hero's buttons have scrolled out of view.
+  const heroCta = useRef<HTMLDivElement>(null)
+  const [barShown, setBarShown] = useState(false)
+  useEffect(() => {
+    const el = heroCta.current
+    if (!el || typeof IntersectionObserver === 'undefined') return
+    const io = new IntersectionObserver(([e]) => setBarShown(!e.isIntersecting && e.boundingClientRect.top < 0))
+    io.observe(el)
+    return () => io.disconnect()
+  }, [])
 
   useEffect(() => {
     applyDocumentHead({
@@ -113,6 +125,23 @@ export function FigmaKitPage() {
     <div className="flex h-screen flex-col bg-app text-fg">
       <PublicHeader />
       <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain">
+        {/* Zero-height sticky anchor: the bar overlays the page instead of
+            pushing it down while hidden. */}
+        <div className="sticky top-0 z-10 h-0">
+        <div
+          aria-hidden={!barShown}
+          inert={!barShown}
+          className={`border-b border-line bg-app/90 backdrop-blur transition-[opacity,transform] duration-200 ${barShown ? 'translate-y-0 opacity-100' : 'pointer-events-none -translate-y-full opacity-0'}`}
+        >
+          <div className="mx-auto flex h-14 w-full max-w-5xl items-center justify-between gap-4 px-4 md:px-8">
+            <span className="flex min-w-0 items-center gap-2 text-ui font-medium text-fg">
+              <FigmaGlyph size={14} />
+              <span className="truncate">{t(FIGMA_KIT_TITLE)}</span>
+            </span>
+            <BuyButton small />
+          </div>
+        </div>
+        </div>
         <main className="mx-auto flex w-full max-w-5xl flex-col gap-16 px-4 py-14 md:px-8">
           {purchased && (
             <div role="status" className="rounded-2xl border border-status-success/30 bg-status-success/10 px-5 py-4 text-ui text-fg">
@@ -130,9 +159,13 @@ export function FigmaKitPage() {
               {t('The Escala Design System, ready in Figma.')}
             </h1>
             <p className="max-w-2xl text-ui leading-relaxed text-fg-muted">
-              {t('An editable Figma file with every component bound to real variables, plus an Escala Pro licence for the web and the plugin. Explore the file below before you buy.')}
+              {t('An editable Figma file with every component bound to real variables, plus an Escala Pro licence for the web and the plugin. Explore the file below, or every component in Storybook.')}
             </p>
-            <div className="mt-2 flex flex-wrap items-center justify-center gap-3">
+            {/* No price up front (owner, 2026-11-17): buying leads, without a
+                number, and the two ways to look (the file in Figma, every
+                component in Storybook) sit beside it. When this row scrolls
+                away, the sticky bar above keeps "Get the kit" in reach. */}
+            <div ref={heroCta} className="mt-2 flex flex-wrap items-center justify-center gap-3">
               <BuyButton />
               <a
                 href={FIGMA_KIT_FILE_URL}
@@ -142,6 +175,15 @@ export function FigmaKitPage() {
               >
                 <FigmaGlyph size={14} />
                 {t('Open in Figma')}
+              </a>
+              <a
+                href={STORYBOOK_URL}
+                target="_blank"
+                rel="noopener noreferrer"
+                className={`inline-flex h-10 items-center gap-1.5 rounded-full border border-line px-5 text-ui font-medium text-fg transition-colors hover:bg-elevated ${FOCUS}`}
+              >
+                <StorybookGlyph className="h-3.5 w-3.5" />
+                {t('View Storybook')}
               </a>
             </div>
           </section>
