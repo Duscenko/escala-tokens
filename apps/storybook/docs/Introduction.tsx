@@ -1,7 +1,7 @@
 // Getting started · Introduction. Every number and colour on this page is read from what Storybook holds (the store
 // built from the Figma file, the story files, the Figma snapshot): nothing is typed by hand, so the page cannot drift.
 import { useSystemDoc, FOUNDATION_DOCS } from '../../../src/components/configurator/docs/foundationDocs'
-import { BRAND, FIGMA_FILE, brandRamp, figmaNodeUrl } from '../.storybook/escalaSystem'
+import { BRAND, brandRamp, figmaNodeUrl } from '../.storybook/escalaSystem'
 import { DocsFrame, DocsLink, DocsSection } from './DocsFrame'
 import { RecipeScope } from '../../../src/components/configurator/docs/skeleton/scope'
 import { resolvePreviewTokens } from '../../../src/lib/previewTokens'
@@ -89,7 +89,7 @@ export function Introduction() {
             <h1 className="text-[38px] font-semibold leading-[1.1] tracking-tight text-fg">Escala Design System</h1>
             <p className="about-copy max-w-[46ch]">
               Every component in this Storybook is the twin of a component set in the Figma file
-              {' '}<DocsLink href={figmaNodeUrl()}>{FIGMA_FILE.name}</DocsLink>: same name, same properties, same values, measured.
+              {' '}<DocsLink href={figmaNodeUrl()}>Escala Design System</DocsLink>: same name, same properties, same values, measured.
               They paint with the file's own variables in Light and Dark, on Desktop, Tablet and Mobile.
             </p>
             {SNAPSHOT_DATE && <span className="w-fit rounded-full border border-line bg-elevated px-3 py-1 text-caption text-fg-muted">Figma snapshot · {SNAPSHOT_DATE}</span>}
@@ -156,14 +156,14 @@ export function Introduction() {
 
       <DocsSection id="links" title="Quick links">
         <ul className="flex flex-col gap-3">
-          <li><DocsLink href={figmaNodeUrl()} className="text-strong font-semibold">Figma file →</DocsLink><p className="about-copy">{FIGMA_FILE.name}: the only rule for every component and variable here.</p></li>
+          <li><DocsLink href={figmaNodeUrl()} className="text-strong font-semibold">Figma file →</DocsLink><p className="about-copy">Escala Design System (Preview): the only rule for every component and variable here.</p></li>
           <li><DocsLink href="https://www.escalatokens.com" className="text-strong font-semibold">Escala generator →</DocsLink><p className="about-copy">Build your own system from the same model and export it to CSS, Figma and agents.</p></li>
           <li><DocsLink href="https://www.escalatokens.com/docs" className="text-strong font-semibold">Docs →</DocsLink><p className="about-copy">The foundations and the component catalogue on escalatokens.com.</p></li>
         </ul>
       </DocsSection>
 
       <footer className="mt-14 border-t border-line pt-4 text-center text-caption text-fg-faint">
-        Built from the Figma file {FIGMA_FILE.name}{SNAPSHOT_DATE ? ` · snapshot ${SNAPSHOT_DATE}` : ''}
+        Built from the Figma file Escala Design System{SNAPSHOT_DATE ? ` · snapshot ${SNAPSHOT_DATE}` : ''}
       </footer>
     </DocsFrame>
   )

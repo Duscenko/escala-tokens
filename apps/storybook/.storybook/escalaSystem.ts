@@ -2,6 +2,7 @@ import { buildStudioTokens } from '../../../src/lib/pluginStudio'
 import { FIGMA_FILE_PALETTE, applyFigmaFilePalette, applyFigmaFileShadows } from '../../../src/lib/figmaFilePalette'
 import { useDesignStore } from '../../../src/store/useDesignStore'
 import { themeBrandRamp } from '../../../src/lib/themeSources'
+import { figmaPreviewUrl } from '../../../src/lib/figmaKit'
 
 // The system the Figma file `Escala Design System (Real)` holds: a brand minted
 // from the file's accent (the plugin's own build), then carrying the file's
@@ -20,8 +21,11 @@ applyFigmaFileShadows(BRAND)
 
 /** The Figma file every component and token page documents. */
 export const FIGMA_FILE = { key: '7j5zukN5HpihGVJMmyjA20', name: 'Escala Design System (Real)' } as const
-export const figmaNodeUrl = (nodeId?: string) =>
-  `https://www.figma.com/design/${FIGMA_FILE.key}/Escala-Design-System--Real-${nodeId ? `?node-id=${nodeId.replace(':', '-')}&m=dev` : ''}`
+/** Every "Open in Figma" link in Storybook (public) lands on the PREVIEW
+ *  library, never on the Real file (owner, 2026-11-17: one link for the design
+ *  system). The Real file stays the source of truth for the build and the
+ *  daily review; it is just not what a visitor is sent to. */
+export const figmaNodeUrl = (nodeId?: string) => figmaPreviewUrl(nodeId)
 
 /** The brand's accent ramp (tone 1 → 12) in one appearance — the family the brand reads, not the system root's. */
 export function brandRamp(kind: 'light' | 'dark') {
