@@ -30,7 +30,7 @@ const PRICING_DESCRIPTION =
   'Escala is free to build and export. Pro adds what runs on our servers: the complete UI Kit in Figma and more than 10 modes per file.'
 
 const FOCUS = 'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50'
-const PLAN_CTA = `flex h-14 w-full items-center justify-between gap-3 rounded-full px-7 text-ui font-medium transition-[opacity,background-color] ${FOCUS}`
+const PLAN_CTA = `flex h-14 w-full items-center justify-between gap-3 rounded-cta px-7 text-ui font-medium transition-[opacity,background-color] ${FOCUS}`
 
 function Arrow() {
   return (
@@ -276,7 +276,7 @@ export function PricingPage() {
                     t('Offline agent skill, GitHub push, CLI'),
                   ]} />
                 </div>
-                <a href="/" className={`${PLAN_CTA} mt-auto raised-control border border-transparent text-fg`}>
+                <a href="/" className={`${PLAN_CTA} mt-auto chip-control text-fg`}>
                   {t('Open the configurator')}<Arrow />
                 </a>
               </div>

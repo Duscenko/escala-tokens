@@ -99,11 +99,16 @@ export function CuratedColorStrip({ appearance, currentAccent, onPick, label, hi
         </button>
       </div>
       <div role="radiogroup" aria-label={label} onKeyDown={onKey}>
-        <div className="grid grid-cols-8 gap-y-2 py-1">{dots.slice(0, COLS).map(dot)}</div>
+        {/* `justify-items-center`: each grid item is the HintTip wrapper, not the dot, so the
+            dot's own `justify-self-center` never applied and the first column's picked ring
+            (4px outside the dot) was clipped by the panel edge. */}
+        <div className="grid grid-cols-8 justify-items-center gap-y-2 pt-1.5">{dots.slice(0, COLS).map(dot)}</div>
         <AnimatePresence initial={false}>
           {open && rest > 0 && (
             <motion.div key="rest" {...inspectorFoldMotion(reduce)} className="overflow-hidden">
-              <div className="grid grid-cols-8 gap-y-2 pb-1 pt-1">{dots.slice(COLS).map((d, i) => dot(d, i + COLS))}</div>
+              {/* The fold clips (`overflow-hidden`, for its height animation), so its first row
+                  needs the room for a picked ring INSIDE it: 8px on top = the rows' gap. */}
+              <div className="grid grid-cols-8 justify-items-center gap-y-2 pb-1.5 pt-2">{dots.slice(COLS).map((d, i) => dot(d, i + COLS))}</div>
             </motion.div>
           )}
         </AnimatePresence>

@@ -55,7 +55,7 @@ const FIELD = `h-12 w-full rounded-2xl border border-line bg-surface px-4 text-u
 const NAV_LINK = 'rounded-md px-0.5 py-1 text-ui font-medium whitespace-nowrap text-fg-faint transition-colors hover:text-fg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50 focus-visible:ring-offset-2 focus-visible:ring-offset-app'
 const LINK = `rounded-sm text-fg-muted underline-offset-2 transition-colors hover:text-fg hover:underline ${FOCUS}`
 /** The page's one filled action: the inverse of the page (light in dark chrome). */
-const PRIMARY = `flex h-12 w-full items-center justify-center rounded-2xl bg-fg px-4 text-ui font-semibold text-app transition-opacity hover:opacity-90 disabled:opacity-60 ${FOCUS}`
+const PRIMARY = `flex h-12 w-full items-center justify-center rounded-cta bg-fg px-4 text-ui font-semibold text-app transition-opacity hover:opacity-90 disabled:opacity-60 ${FOCUS}`
 
 function GithubMark() {
   return (
@@ -375,7 +375,7 @@ export function LoginPage() {
                               type="button"
                               onClick={() => void social(p)}
                               aria-label={p === 'google' ? t('Continue with Google') : t('Continue with GitHub')}
-                              className={`flex h-12 items-center justify-center gap-2.5 rounded-2xl text-ui font-medium ${SOFT_BUTTON_SURFACE} ${FOCUS}`}
+                              className={`flex h-12 items-center justify-center gap-2.5 rounded-cta text-ui font-medium ${SOFT_BUTTON_SURFACE} ${FOCUS}`}
                             >
                               {p === 'google' ? <GoogleMark /> : <GithubMark />}
                               {p === 'google' ? 'Google' : 'GitHub'}

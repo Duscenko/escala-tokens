@@ -1207,9 +1207,9 @@ export function AboutHome({
   // The desktop demo waits for the headline's sweep (see `DemoVideo hold`).
   const [headlineDone, setHeadlineDone] = useState(false)
   const isPhone = useIsPhone()
-
+  // The secondary CTA: the top bar's chip look (`chip-control`) on the one CTA corner (`rounded-cta`).
   const secondaryCta =
-    'inline-flex h-10 items-center gap-1.5 raised-control rounded-[13px] border border-transparent px-5 text-ui font-semibold text-fg transition-[background-color,box-shadow] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50'
+    'inline-flex h-10 items-center gap-1.5 chip-control rounded-cta px-5 text-ui font-semibold text-fg transition-[background-color,box-shadow] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50'
 
   return (
     <div
@@ -1255,7 +1255,7 @@ export function AboutHome({
                 it can do: the playground just below. */}
             <RainbowButton
               asChild
-              className="h-10 px-5 rounded-[13px] gap-1.5 text-ui font-semibold"
+              className="h-10 px-5 rounded-cta gap-1.5 text-ui font-semibold"
             >
               <a
                 {...(isPhone
@@ -1309,7 +1309,10 @@ export function AboutHome({
           whileInView="show"
           viewport={{ once: true, amount: 0.5 }}
           variants={statsContainer}
-          className="mx-6 grid grid-cols-2 gap-6 border-b border-line pb-14 sm:grid-cols-3"
+          // Three across at every width (two columns left the third alone on a
+          // phone). On a phone it follows the generator's border, so it takes
+          // the same 48px above that the section leaves below.
+          className={`mx-6 grid grid-cols-3 gap-4 border-b border-line pb-14 sm:gap-6 ${isPhone ? 'pt-12' : ''}`}
         >
           <Stat value={foundationCount} label={t('Foundations you configure')} delay={0} />
           <Stat value={COMPONENT_KEYS.length} label={t('Components in the catalogue')} delay={0.08} />
@@ -1459,7 +1462,7 @@ export function AboutHome({
               <div className="mt-2 flex flex-wrap items-center justify-center gap-3">
                 <RainbowButton
                   asChild
-                  className="h-10 px-5 rounded-[13px] gap-1.5 text-ui font-semibold"
+                  className="h-10 px-5 rounded-cta gap-1.5 text-ui font-semibold"
                 >
                   <a {...appLink(START_PATH, onStart)}>
                     {t('Start building')}

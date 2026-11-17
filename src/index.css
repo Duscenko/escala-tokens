@@ -166,6 +166,7 @@
     to {
       transform: rotate(360deg);
     }
+
   }
   /* Token Inspector — dashed stroke travels the selection perimeter. */
   --animate-inspect-march: inspect-march 0.9s linear infinite;
@@ -226,6 +227,15 @@
   --text-title: 17px;    /* modal / panel H2 */
   --text-heading: 20px;  /* large numeric readouts */
   --text-display: 26px;  /* About stat figures */
+}
+
+/* The platform's call-to-action corner: one radius for every Escala button on
+   About and the public pages (Try it here · Start building, Preview in Figma,
+   pricing, login, account, contact, plugin connect…). Owner, 2026-11-17, from a
+   reference: a plain round 12px — about a quarter of a 48px button, a third of
+   a 40px one. `rounded-cta` / `var(--radius-cta)`. */
+@theme {
+  --radius-cta: 12px;
 }
 
 :root {
@@ -320,20 +330,26 @@
    opposite light — a white fill can't be lifted by a white highlight, so it
    gets a hairline ring + a 1px contact shadow instead. This rule is UNLAYERED
    (it has to beat the `bg-chip-rest` utility), so it also states its own hover:
-   a layered `hover:shadow-*` utility can never reach it. */
-header[data-top-nav] .bg-chip-rest {
+   a layered `hover:shadow-*` utility can never reach it. `.chip-control` is the
+   same look outside the header: every secondary Escala button (About, public
+   pages) wears it, so a secondary CTA and the top bar's controls are one family. */
+header[data-top-nav] .bg-chip-rest,
+.chip-control {
   background-color: var(--chrome-control);
   background-image: linear-gradient(180deg, #fff 0%, color-mix(in srgb, var(--chrome-control) 94%, var(--fg)) 100%);
   box-shadow: 0 0 0 0.5px rgba(0, 0, 0, 0.1), 0 1px 2px rgba(0, 0, 0, 0.06), inset 0 1px 0 rgba(255, 255, 255, 0.9);
 }
-header[data-top-nav] .bg-chip-rest:hover {
+header[data-top-nav] .bg-chip-rest:hover,
+.chip-control:hover {
   box-shadow: 0 0 0 0.5px rgba(0, 0, 0, 0.14), 0 1px 3px rgba(0, 0, 0, 0.08), inset 0 0 0 9999px rgba(0, 0, 0, 0.03);
 }
-.dark header[data-top-nav] .bg-chip-rest {
+.dark header[data-top-nav] .bg-chip-rest,
+.dark .chip-control {
   background-image: linear-gradient(135deg, color-mix(in srgb, var(--fg) 5%, transparent) 18%, transparent 71%);
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08);
 }
-.dark header[data-top-nav] .bg-chip-rest:hover {
+.dark header[data-top-nav] .bg-chip-rest:hover,
+.dark .chip-control:hover {
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08), inset 0 0 0 9999px rgba(255, 255, 255, 0.07);
 }
 

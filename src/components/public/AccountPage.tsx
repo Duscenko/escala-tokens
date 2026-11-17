@@ -39,7 +39,7 @@ import { NAV_ROW_OFF, NAV_ROW_ON } from '../configurator/themeWorkspaceLayout'
 
 const FOCUS = 'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-fg/40'
 const FIELD = `h-12 w-full rounded-2xl border border-line bg-transparent px-4 dark:border-white/[0.08] text-ui text-fg placeholder:text-fg-faint transition-colors hover:border-line-strong focus:border-line-strong ${FOCUS}`
-const PRIMARY = `inline-flex h-10 items-center justify-center self-start rounded-xl bg-fg px-4 text-ui font-semibold text-app transition-opacity hover:opacity-90 disabled:opacity-60 ${FOCUS}`
+const PRIMARY = `inline-flex h-10 items-center justify-center self-start rounded-cta bg-fg px-4 text-ui font-semibold text-app transition-opacity hover:opacity-90 disabled:opacity-60 ${FOCUS}`
 
 function ArrowLeft() {
   return (

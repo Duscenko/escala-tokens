@@ -14,6 +14,7 @@
 // playground AND the doc's preview/code block at once, so the snippet you copy
 // is the snippet for the variant on screen — which neither half could claim.
 
+import { FigmaGlyph } from '../../ui/icons'
 import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from 'react'
 import { SELECT_LIST, SELECT_OPTION, SELECT_OPTION_OFF, SELECT_OPTION_FOCUS } from '../themeWorkspaceLayout'
 import { NavIcon } from '../FoundationIconRail'
@@ -1055,17 +1056,6 @@ export function FigmaShipList({ component }: { component: ComponentDef }) {
   )
 }
 
-function FigmaGlyph({ className }: { className?: string }) {
-  return (
-    <svg width="10" height="14" viewBox="0 0 38 57" fill="currentColor" className={className} aria-hidden>
-      <path d="M9.5 57C14.7467 57 19 52.7467 19 47.5V38H9.5C4.25329 38 0 42.2533 0 47.5C0 52.7467 4.25329 57 9.5 57Z" />
-      <path d="M0 28.5C0 23.2533 4.25329 19 9.5 19H19V38H9.5C4.25329 38 0 33.7467 0 28.5Z" />
-      <path d="M0 9.5C0 4.25329 4.25329 0 9.5 0H19V19H9.5C4.25329 19 0 14.7467 0 9.5Z" />
-      <path d="M19 0H28.5C33.7467 0 38 4.25329 38 9.5C38 14.7467 33.7467 19 28.5 19H19V0Z" />
-      <path d="M38 28.5C38 33.7467 33.7467 38 28.5 38C23.2533 38 19 33.7467 19 28.5C19 23.2533 23.2533 19 28.5 19C33.7467 19 38 23.2533 38 28.5Z" />
-    </svg>
-  )
-}
 
 function RelatedComponents({ def, onOpen }: { def: ComponentDef; onOpen: (c: ComponentDef) => void }) {
   const { t } = useI18n()

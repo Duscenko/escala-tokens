@@ -171,7 +171,7 @@ export function FigmaKitPage() {
                 href={FIGMA_KIT_FILE_URL}
                 target="_blank"
                 rel="noopener noreferrer"
-                className={`inline-flex h-10 items-center gap-1.5 rounded-full border border-line px-5 text-ui font-medium text-fg transition-colors hover:bg-elevated ${FOCUS}`}
+                className={`inline-flex h-10 items-center gap-1.5 chip-control rounded-cta px-5 text-ui font-medium text-fg transition-[background-color,box-shadow] ${FOCUS}`}
               >
                 <FigmaGlyph size={14} />
                 {t('Open in Figma')}
@@ -180,7 +180,7 @@ export function FigmaKitPage() {
                 href={STORYBOOK_URL}
                 target="_blank"
                 rel="noopener noreferrer"
-                className={`inline-flex h-10 items-center gap-1.5 rounded-full border border-line px-5 text-ui font-medium text-fg transition-colors hover:bg-elevated ${FOCUS}`}
+                className={`inline-flex h-10 items-center gap-1.5 chip-control rounded-cta px-5 text-ui font-medium text-fg transition-[background-color,box-shadow] ${FOCUS}`}
               >
                 <StorybookGlyph className="h-3.5 w-3.5" />
                 {t('View Storybook')}
