@@ -16,12 +16,13 @@ export function moveBorderStrongToControl(state: any): void {
   delete cat['border.strong']
 }
 
-/** Store v152: a style that lifts `surface.layer-2` in Dark (`DARK_DEPTH` in
- *  `themePresets.ts`) put it on the secondary button's own tone, so a
- *  secondary button on a card or popover was the card's colour. Where a brand's
- *  Dark carries that lifted layer-2 and no hand-picked secondary fill, the
- *  secondary default · hover · pressed take the three steps above it — what
- *  adopting the style now writes. A hand-picked secondary fill is never touched. */
+/** Store v152: in Dark the secondary button sits two steps above the card it
+ *  sits on (DEC-2026-11-17-001). The schema now puts it on tone 6, which is two
+ *  above a style's lifted layer-2 (tone 4), so most brands need nothing. A brand
+ *  whose Dark layer-2 sits higher still (the teal style puts it on 5) and that
+ *  has no hand-picked secondary fill gets default · hover · pressed two, three
+ *  and four steps above it — what adopting that style now writes. A hand-picked
+ *  secondary fill is never touched. */
 export function liftSecondaryAboveLayer2V152(state: any): void {
   const cat = state?.architectureOverrides?.categorical
   if (!cat || typeof cat !== 'object') return
@@ -30,12 +31,12 @@ export function liftSecondaryAboveLayer2V152(state: any): void {
   for (const [mode, ref] of Object.entries(layer2)) {
     if (!mode.endsWith('::dark') || typeof ref !== 'string') continue
     const step = /^\{neutral-dark\.(\d+)\}$/.exec(ref)
-    if (!step) continue
+    if (!step || Number(step[1]) + 2 <= 6) continue
     const states = ['default', 'hover', 'pressed'] as const
     if (states.some((s) => cat[`action.secondary.${s}`]?.[mode])) continue
     states.forEach((s, i) => {
       const token = `action.secondary.${s}`
-      cat[token] = { ...(cat[token] ?? {}), [mode]: `{neutral-dark.${Math.min(12, Number(step[1]) + 1 + i)}}` }
+      cat[token] = { ...(cat[token] ?? {}), [mode]: `{neutral-dark.${Math.min(12, Number(step[1]) + 2 + i)}}` }
     })
   }
 }
@@ -4495,7 +4496,7 @@ export const useDesignStore = create<DesignStore>()(
           }
         }
         if (version < 152) {
-          // v151→v152: in Dark, the secondary button steps back above the
+          // v151→v152: in Dark, the secondary button sits two steps above the
           // card it sits on (see `liftSecondaryAboveLayer2V152`).
           liftSecondaryAboveLayer2V152(persisted)
           if (Array.isArray(persisted.savedSystems)) {

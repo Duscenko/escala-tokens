@@ -9,21 +9,30 @@ const migrate = (state: any) => {
   return state
 }
 
-describe('store v152: the secondary button steps back above the card in Dark', () => {
-  it('lifts the secondary fill three steps above a lifted layer-2', () => {
+// DEC-2026-11-17-001: in Dark the secondary button sits two steps above the
+// card. The schema's tone 6 already does that over a lifted layer-2 on tone 4.
+describe('store v152: the secondary button sits two steps above the card in Dark', () => {
+  it('leaves a brand alone when the schema already clears its layer-2', () => {
     const state = migrate({
       architectureOverrides: { categorical: { 'surface.layer-2': { 'core--minimalist::dark': '{neutral-dark.4}' } } },
     })
+    expect(state.architectureOverrides.categorical['action.secondary.default']).toBeUndefined()
+  })
+
+  it('lifts the fill two steps above a layer-2 the schema does not clear', () => {
+    const state = migrate({
+      architectureOverrides: { categorical: { 'surface.layer-2': { 'abyss::dark': '{neutral-dark.5}' } } },
+    })
     const cat = state.architectureOverrides.categorical
-    expect(cat['action.secondary.default']).toEqual({ 'core--minimalist::dark': '{neutral-dark.5}' })
-    expect(cat['action.secondary.hover']).toEqual({ 'core--minimalist::dark': '{neutral-dark.6}' })
-    expect(cat['action.secondary.pressed']).toEqual({ 'core--minimalist::dark': '{neutral-dark.7}' })
+    expect(cat['action.secondary.default']).toEqual({ 'abyss::dark': '{neutral-dark.7}' })
+    expect(cat['action.secondary.hover']).toEqual({ 'abyss::dark': '{neutral-dark.8}' })
+    expect(cat['action.secondary.pressed']).toEqual({ 'abyss::dark': '{neutral-dark.9}' })
   })
 
   it('never touches a hand-picked secondary fill', () => {
     const state = migrate({
       architectureOverrides: { categorical: {
-        'surface.layer-2': { 'a::dark': '{neutral-dark.4}' },
+        'surface.layer-2': { 'a::dark': '{neutral-dark.5}' },
         'action.secondary.hover': { 'a::dark': '{accent-dark.3}' },
       } },
     })
@@ -34,7 +43,7 @@ describe('store v152: the secondary button steps back above the card in Dark', (
 
   it('leaves Light and non-neutral layer-2 refs alone', () => {
     const state = migrate({
-      architectureOverrides: { categorical: { 'surface.layer-2': { 'a::light': '{neutral.4}', 'b::dark': '{white-a.2}' } } },
+      architectureOverrides: { categorical: { 'surface.layer-2': { 'a::light': '{neutral.6}', 'b::dark': '{white-a.2}' } } },
     })
     expect(state.architectureOverrides.categorical['action.secondary.default']).toBeUndefined()
   })
@@ -45,7 +54,7 @@ describe('store v152: the secondary button steps back above the card in Dark', (
       savedSystems: [{ snapshot: { architectureOverrides: { categorical: { 'surface.layer-2': { 'x::dark': '{neutral-dark.5}' } } } } }],
     })
     expect(state.savedSystems[0].snapshot.architectureOverrides.categorical['action.secondary.default'])
-      .toEqual({ 'x::dark': '{neutral-dark.6}' })
+      .toEqual({ 'x::dark': '{neutral-dark.7}' })
   })
 
   // A brand adopted before v152 must end up exactly where adopting the style

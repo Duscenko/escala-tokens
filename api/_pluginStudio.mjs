@@ -3198,9 +3198,6 @@ var init_themePresets = __esm({
     DARK_DEPTH = {
       "surface.layer-1": { dark: "{neutral-dark.3}" },
       "surface.layer-2": { dark: "{neutral-dark.4}" },
-      "action.secondary.default": { dark: "{neutral-dark.5}" },
-      "action.secondary.hover": { dark: "{neutral-dark.6}" },
-      "action.secondary.pressed": { dark: "{neutral-dark.7}" },
       "content.subtle": { dark: "{neutral-dark.10}" }
     };
     A_DEFAULT_L = "{black-a.3}";
@@ -3714,13 +3711,14 @@ var init_themePresets = __esm({
         // A vivid teal dark ramp compresses its low steps even more than the
         // others: `DARK_DEPTH`'s layer-2 on tone 4 lifted the inner card by
         // ΔL 0.070 against light's 0.072. One more step restores it — and the
-        // secondary button keeps its step above it (see `DARK_DEPTH`).
+        // secondary button keeps two steps above it, as everywhere else
+        // (DEC-2026-11-17-001).
         semantics: {
           ...softBorders,
           "surface.layer-2": { dark: "{neutral-dark.5}" },
-          "action.secondary.default": { dark: "{neutral-dark.6}" },
-          "action.secondary.hover": { dark: "{neutral-dark.7}" },
-          "action.secondary.pressed": { dark: "{neutral-dark.8}" }
+          "action.secondary.default": { dark: "{neutral-dark.7}" },
+          "action.secondary.hover": { dark: "{neutral-dark.8}" },
+          "action.secondary.pressed": { dark: "{neutral-dark.9}" }
         }
       },
       {
@@ -8376,19 +8374,23 @@ var init_semanticArchitectures = __esm({
       // control you click reads one step heavier than a passive surface; tone 4 is
       // otherwise unreferenced by any neutral role, so this introduces no new
       // collision. Label stays `content.primary` and its contrast only improves.
-      { group: "action", key: "secondary.default", light: "{neutral.4}", dark: "{neutral-dark.4}" },
+      // DARK goes to tone 6 (owner, 2026-11-17, Figma first — DEC-2026-11-17-001).
+      // On a dark card one step was not enough: tone 4 on layer-2 (tone 3) read
+      // 1.09:1, and the button was only its top highlight. Tone 6 reads 1.38:1 on
+      // layer-2 and 1.58:1 on the page; hover and pressed walk on to 7 and 8.
+      { group: "action", key: "secondary.default", light: "{neutral.4}", dark: "{neutral-dark.6}" },
       // Hover/pressed walk the same ramp one step each — the SAME shape as
       // `action.primary.default → .hover → .pressed`, so a button tier always reads
       // default / hover / pressed whatever its intent. Tones 5 and 6 were referenced
       // by no fill role, so neither collides with a surface; the label stays
       // `content.primary` (tone 12), which only gains contrast on a deeper fill.
-      { group: "action", key: "secondary.hover", light: "{neutral.5}", dark: "{neutral-dark.5}" },
+      { group: "action", key: "secondary.hover", light: "{neutral.5}", dark: "{neutral-dark.7}" },
       // Light pressed stops at tone 5 (shared with hover): the contrast audit
       // measured tone 6 under the action-label APCA floor (Lc 55–59 against Lc 60)
       // on every seed, while dark tone 6 clears it. Same shape as primary's
       // documented residual — hover and pressed can share a tone and still be a
       // real, legible state; a pressed fill that fails the label floor is not.
-      { group: "action", key: "secondary.pressed", light: "{neutral.6}", dark: "{neutral-dark.6}" },
+      { group: "action", key: "secondary.pressed", light: "{neutral.6}", dark: "{neutral-dark.8}" },
       // ALPHA wash, not `{neutral.2}` (audit D2). Tone 2 IS `surface.layer-1` — a
       // disabled button was pixel-identical to a card, the exact adjacency CLAUDE.md
       // warns about. "Disabled" means "barely a fill", which is what a 15% wash is,
@@ -8856,9 +8858,9 @@ var init_semanticArchitectures = __esm({
       "action.primary.default": "[ROLE: Primary CTA Default] Primary call-to-action fill. Inner text must always be content.on-action. Picked BY JOB: tone 9 with the light ink in Light, tone 10 with the dark ink in Dark (a dark-ink solid sits one step higher); falls back to the nearest tone that carries a label at AA when the hue cannot.",
       "action.primary.hover": "[ROLE: Primary CTA Hover] Hover of the primary button fill: one step AWAY from its ink ({step:accent+1}) \u2014 darker under a light ink (Light 10), lighter under a dark ink (Dark 11) \u2014 re-verified for label contrast.",
       "action.primary.pressed": "[ROLE: Primary CTA Pressed] Pressed / active primary fill: two steps away from the ink ({step:accent+2}) \u2014 Light 11, Dark 12 \u2014 re-verified for label contrast.",
-      "action.secondary.default": "[ROLE: Secondary CTA Default] Affects the resting fill of neutral / secondary buttons. {neutral.4} \u2014 one step heavier than surface.layer-2 so a control reads with more presence than a passive surface. Label text must be content.on-secondary, not content.on-action. Buttons and badges only \u2014 a track reads surface.muted.",
-      "action.secondary.hover": "[ROLE: Secondary CTA Hover] Affects the hover state of the neutral / secondary button fill. {neutral.5} \u2014 one step past action.secondary.default, the same default \u2192 hover \u2192 pressed shape action.primary follows. Label stays content.on-secondary.",
-      "action.secondary.pressed": "[ROLE: Secondary CTA Pressed] Pressed state of the neutral / secondary button fill. {neutral.6} \u2014 two steps past action.secondary.default. Label stays content.on-secondary.",
+      "action.secondary.default": "[ROLE: Secondary CTA Default] Affects the resting fill of neutral / secondary buttons. {neutral.4} in Light \u2014 one step heavier than surface.layer-2 so a control reads with more presence than a passive surface; {neutral-dark.6} in Dark, where one step on a dark card read 1.09:1 (DEC-2026-11-17-001). Label text must be content.on-secondary, not content.on-action. Buttons and badges only \u2014 a track reads surface.muted.",
+      "action.secondary.hover": "[ROLE: Secondary CTA Hover] Affects the hover state of the neutral / secondary button fill. {neutral.5} in Light, {neutral-dark.7} in Dark \u2014 one step past action.secondary.default, the same default \u2192 hover \u2192 pressed shape action.primary follows. Label stays content.on-secondary.",
+      "action.secondary.pressed": "[ROLE: Secondary CTA Pressed] Pressed state of the neutral / secondary button fill. {neutral.6} in Light, {neutral-dark.8} in Dark \u2014 two steps past action.secondary.default. Label stays content.on-secondary.",
       "action.disabled.default": '[ROLE: Disabled Default]  Affects the fill of disabled buttons and controls. An ALPHA wash \u2014 {black-a.3} in light, {white-a.2} in dark \u2014 so it reads as "muted" over the page or over a card alike, and never collides with an opaque surface. No contrast floor: it communicates inactivity, not legibility.',
       "action.ghost.default": "[ROLE: Ghost Default] Resting fill of a borderless button \u2014 fully transparent (`{neutral-a.1}` \u2014 alpha-ladder step 1 is 0%, an existing primitive, so it still aliases in Figma), so the ghost tier reads default / hover / pressed like primary and secondary.",
       "action.ghost.hover": "[ROLE: Ghost Hover] Hover wash for a borderless button with no brand intent (toolbar icons, close buttons, menu items). Flips ink per appearance \u2014 {black-a.1} in light, {white-a.1} in dark \u2014 because a neutral wash has to darken a light page and lighten a dark one.",
@@ -14419,12 +14421,12 @@ function liftSecondaryAboveLayer2V152(state2) {
   for (const [mode, ref] of Object.entries(layer2)) {
     if (!mode.endsWith("::dark") || typeof ref !== "string") continue;
     const step = /^\{neutral-dark\.(\d+)\}$/.exec(ref);
-    if (!step) continue;
+    if (!step || Number(step[1]) + 2 <= 6) continue;
     const states2 = ["default", "hover", "pressed"];
     if (states2.some((s) => cat[`action.secondary.${s}`]?.[mode])) continue;
     states2.forEach((s, i) => {
       const token = `action.secondary.${s}`;
-      cat[token] = { ...cat[token] ?? {}, [mode]: `{neutral-dark.${Math.min(12, Number(step[1]) + 1 + i)}}` };
+      cat[token] = { ...cat[token] ?? {}, [mode]: `{neutral-dark.${Math.min(12, Number(step[1]) + 2 + i)}}` };
     });
   }
 }

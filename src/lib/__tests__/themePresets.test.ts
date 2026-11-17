@@ -140,11 +140,11 @@ describe('system style presets', () => {
   })
 
   // A secondary button is a control you click; a card or a popover is a passive
-  // surface it sits on. The schema keeps them one step apart (secondary on tone
-  // 4, layer-2 on 3, audit D2) and so does the Figma file (Gray Dark/04 vs /03).
-  // `DARK_DEPTH` lifting the surfaces a step put layer-2 ON tone 4 in Dark: a
-  // "View report" button on a stat card was the card's own colour, and only its
-  // top highlight drew an edge — a half border (owner, 2026-11-17).
+  // surface it sits on. `DARK_DEPTH` lifting layer-2 to tone 4 once put it ON
+  // the secondary fill: a "View report" button on a stat card was the card's
+  // colour, only its top highlight drew an edge. And one step apart was not
+  // enough on a dark card (1.09:1), so in Dark the button sits TWO steps above
+  // layer-2 (DEC-2026-11-17-001, decided in the Figma file first).
   it('never paints a secondary button the colour of the surface under it', () => {
     for (const preset of THEME_STYLE_PRESETS) {
       const get = resolve(preset)
@@ -156,6 +156,17 @@ describe('system style presets', () => {
             .not.toContain(surface)
         }
       }
+    }
+  })
+
+  it('keeps the Dark secondary button two steps above layer-2 in every style', () => {
+    const step = (ref: string) => Number(/^\{neutral-dark\.(\d+)\}$/.exec(ref)?.[1] ?? NaN)
+    for (const preset of THEME_STYLE_PRESETS) {
+      const sem = preset.semantics ?? {}
+      const layer2 = step(sem['surface.layer-2']?.dark ?? '{neutral-dark.3}')
+      const fill = step(sem['action.secondary.default']?.dark ?? '{neutral-dark.6}')
+      if (Number.isNaN(layer2) || Number.isNaN(fill)) continue
+      expect(fill - layer2, `${preset.id}: secondary ${fill} over layer-2 ${layer2}`).toBeGreaterThanOrEqual(2)
     }
   })
 

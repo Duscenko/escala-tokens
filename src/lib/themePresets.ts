@@ -241,19 +241,12 @@ function moodShape(id: string) {
 // SUBTLE INK. `content.subtle` is `{neutral.9}`, which reads 3.27–5.10:1 on a
 // light page and only **2.90–3.19:1** on a dark one. One step up recovers it.
 //
-// SECONDARY FILL. The schema keeps a secondary button one step above layer-2
-// (audit D2: a control you click reads heavier than the surface it sits on).
-// Lifting layer-2 to tone 4 put it ON the secondary fill: a "View report"
-// button on a stat card was the card's colour, and only its top highlight drew
-// an edge (owner, 2026-11-17). The button walks up with the surfaces.
-//
-// All DARK-ONLY: light measured fine and is left on the schema.
+// Both are DARK-ONLY: light measured fine and is left on the schema. The
+// secondary button needs nothing here: the schema puts it on tone 6 in Dark,
+// two steps above this layer-2 (DEC-2026-11-17-001).
 const DARK_DEPTH = {
   'surface.layer-1': { dark: '{neutral-dark.3}' },
   'surface.layer-2': { dark: '{neutral-dark.4}' },
-  'action.secondary.default': { dark: '{neutral-dark.5}' },
-  'action.secondary.hover': { dark: '{neutral-dark.6}' },
-  'action.secondary.pressed': { dark: '{neutral-dark.7}' },
   'content.subtle': { dark: '{neutral-dark.10}' },
 } satisfies ThemeStyleSemantics
 
@@ -922,13 +915,14 @@ export const THEME_STYLE_PRESETS: ThemeStylePreset[] = [
     // A vivid teal dark ramp compresses its low steps even more than the
     // others: `DARK_DEPTH`'s layer-2 on tone 4 lifted the inner card by
     // ΔL 0.070 against light's 0.072. One more step restores it — and the
-    // secondary button keeps its step above it (see `DARK_DEPTH`).
+    // secondary button keeps two steps above it, as everywhere else
+    // (DEC-2026-11-17-001).
     semantics: {
       ...softBorders,
       'surface.layer-2': { dark: '{neutral-dark.5}' },
-      'action.secondary.default': { dark: '{neutral-dark.6}' },
-      'action.secondary.hover': { dark: '{neutral-dark.7}' },
-      'action.secondary.pressed': { dark: '{neutral-dark.8}' },
+      'action.secondary.default': { dark: '{neutral-dark.7}' },
+      'action.secondary.hover': { dark: '{neutral-dark.8}' },
+      'action.secondary.pressed': { dark: '{neutral-dark.9}' },
     },
   },
   {
