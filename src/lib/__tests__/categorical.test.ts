@@ -347,7 +347,7 @@ describe('the categorical catalogue is complete', () => {
       }
     }
     const label = (k: string) => action.tokens.find((t) => t.key === k)?.modes.light.label
-    expect([label('secondary.default'), label('secondary.hover'), label('secondary.pressed')]).toEqual(['neutral.4', 'neutral.5', 'neutral.6'])
+    expect([label('secondary.default'), label('secondary.hover'), label('secondary.pressed')]).toEqual(['neutral.5', 'neutral.6', 'neutral.7'])
   })
 })
 

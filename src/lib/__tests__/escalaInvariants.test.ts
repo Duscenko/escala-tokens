@@ -118,12 +118,12 @@ describe('the default Escala system — roles picked by job', () => {
     expect(role('content.on-action', DARK)).toBe(prim(accent, 1))
   })
 
-  it('links 11, focus 09, secondary pressed 06, inverse 12', () => {
+  it('links 11, focus 09, secondary pressed 07, inverse 12', () => {
     expect(role('content.link.default', LIGHT)).toBe(prim(accent, 11))
     expect(role('content.link.default', DARK)).toBe(prim(accent, 11, true))
     expect(role('border.focus', LIGHT)).toBe(prim(accent, 9))
     expect(role('border.focus', DARK)).toBe(prim(accent, 9, true))
-    expect(role('action.secondary.pressed', LIGHT)).toBe(prim(gray, 6))
+    expect(role('action.secondary.pressed', LIGHT)).toBe(prim(gray, 7))
     expect(role('surface.inverse', DARK)).toBe(prim(gray, 12, true))
   })
 

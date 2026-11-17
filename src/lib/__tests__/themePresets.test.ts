@@ -159,14 +159,17 @@ describe('system style presets', () => {
     }
   })
 
-  it('keeps the Dark secondary button two steps above layer-2 in every style', () => {
-    const step = (ref: string) => Number(/^\{neutral-dark\.(\d+)\}$/.exec(ref)?.[1] ?? NaN)
+  it('keeps the secondary button two steps above layer-2 in every style, Light and Dark', () => {
+    const step = (ref: string) => Number(/^\{neutral(?:-dark)?\.(\d+)\}$/.exec(ref)?.[1] ?? NaN)
+    const schema = { light: { layer2: '{neutral.3}', fill: '{neutral.5}' }, dark: { layer2: '{neutral-dark.3}', fill: '{neutral-dark.6}' } }
     for (const preset of THEME_STYLE_PRESETS) {
       const sem = preset.semantics ?? {}
-      const layer2 = step(sem['surface.layer-2']?.dark ?? '{neutral-dark.3}')
-      const fill = step(sem['action.secondary.default']?.dark ?? '{neutral-dark.6}')
-      if (Number.isNaN(layer2) || Number.isNaN(fill)) continue
-      expect(fill - layer2, `${preset.id}: secondary ${fill} over layer-2 ${layer2}`).toBeGreaterThanOrEqual(2)
+      for (const mode of ['light', 'dark'] as const) {
+        const layer2 = step(sem['surface.layer-2']?.[mode] ?? schema[mode].layer2)
+        const fill = step(sem['action.secondary.default']?.[mode] ?? schema[mode].fill)
+        if (Number.isNaN(layer2) || Number.isNaN(fill)) continue
+        expect(fill - layer2, `${preset.id} · ${mode}: secondary ${fill} over layer-2 ${layer2}`).toBeGreaterThanOrEqual(2)
+      }
     }
   })
 

@@ -237,9 +237,9 @@
   --color-action-primary-default: #874fff;
   --color-action-primary-hover: #784ddd;
   --color-action-primary-pressed: #7252c9;
-  --color-action-secondary-default: #e3e1e6;
-  --color-action-secondary-hover: #d8d6dd;
-  --color-action-secondary-pressed: #cac7d0;
+  --color-action-secondary-default: #d8d6dd;
+  --color-action-secondary-hover: #cac7d0;
+  --color-action-secondary-pressed: #bcb8c4;
   --color-action-disabled-default: #00000026;
   --color-action-ghost-default: #00000000;
   --color-action-ghost-hover: #0000000d;

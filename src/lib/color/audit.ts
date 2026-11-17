@@ -199,7 +199,9 @@ export const CURATED_PAIRINGS: Partial<Record<SemanticArchitecture, Pairing[]>> 
     // body copy is what pushed every dark-theme solid onto a near-white pastel.
     { fg: 'content.on-action', bg: 'action.primary.default',  intent: 'action-label', intentDark: 'action-label-perceived' },
     { fg: 'content.on-secondary', bg: 'action.secondary.default', intent: 'action-label' },
-    { fg: 'content.on-secondary', bg: 'action.secondary.hover',   intent: 'action-label' },
+    // Hover is a transient state like pressed (DEC-2026-11-17-001): the Light
+    // ramp puts it on gray 06, WCAG AA but Lc 57–59. Same intent as pressed.
+    { fg: 'content.on-secondary', bg: 'action.secondary.hover',   intent: 'pressed-label' },
     { fg: 'content.on-secondary', bg: 'action.secondary.pressed', intent: 'pressed-label' },
     { fg: 'content.primary',   bg: 'surface.layer-1', intent: 'body-text' },
     { fg: 'content.primary',   bg: 'surface.layer-2', intent: 'body-text' },
