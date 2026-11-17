@@ -220,3 +220,31 @@ export function snapshotToW3C(snap: CollectionsSnapshot, meta: W3CMeta, opts: Sn
   }
   return out
 }
+
+// ── Serialising ─────────────────────────────────────────────────────────────
+// A JS object lists its integer-like keys ("10", "11", "12") BEFORE every other
+// key, whatever order they were added in. A ramp named `01 … 12` therefore
+// serialised as 10, 11, 12, 01, 02 … 09 — the file held all twelve steps and
+// read as a broken ramp. `JSON.stringify` cannot be told otherwise, so a group
+// whose keys are all numbers (`01`…`12`, `25`…`950`, `0_5`, `columns/…`) is
+// written in numeric order here; every other group keeps the order it has.
+const NUMERIC_KEY = /^\d+(?:_\d+)?$/
+const numericKey = (k: string) => parseFloat(k.replace('_', '.'))
+
+/** `JSON.stringify(tree, null, space)`, with numeric groups in numeric order. */
+export function stringifyW3C(tree: unknown, space = 2): string {
+  const pad = (depth: number) => ' '.repeat(space * depth)
+  const write = (value: unknown, depth: number): string => {
+    if (value === null || typeof value !== 'object') return JSON.stringify(value) ?? 'null'
+    if (Array.isArray(value)) {
+      if (!value.length) return '[]'
+      return `[\n${value.map((v) => pad(depth + 1) + write(v, depth + 1)).join(',\n')}\n${pad(depth)}]`
+    }
+    let keys = Object.keys(value as Record<string, unknown>).filter((k) => (value as Record<string, unknown>)[k] !== undefined)
+    if (!keys.length) return '{}'
+    if (keys.every((k) => NUMERIC_KEY.test(k))) keys = [...keys].sort((a, b) => numericKey(a) - numericKey(b))
+    const rows = keys.map((k) => `${pad(depth + 1)}${JSON.stringify(k)}: ${write((value as Record<string, unknown>)[k], depth + 1)}`)
+    return `{\n${rows.join(',\n')}\n${pad(depth)}}`
+  }
+  return write(tree, 0)
+}
