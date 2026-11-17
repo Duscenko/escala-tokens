@@ -22,6 +22,7 @@ import { isPlatformComponent } from '../../lib/platformCatalogue'
 import { RecipeScope } from './docs/skeleton/scope'
 import { FittedSpecimen } from './docs/ComponentAvatars'
 import { SectionHeading, BlockChrome } from './docs/blocks'
+import { CatalogueSwitcher } from './docs/CatalogueSwitcher'
 import { CanvasBar, CanvasSidePanel, readInspectPref, writeInspectPref, type CanvasPanel } from './docs/componentArticle'
 import { PickerField } from '../ui/PickerField'
 import { InspectorModeProvider, InspectorOverlay, inspectGroupAttrs } from '../preview/artefacts/TokenInspector'
@@ -34,6 +35,8 @@ const THUMB_LAYOUT_WIDTH = 1200
 /** Frame widths per viewport: the Grid's mobile and tablet frames. */
 const FRAME_WIDTH: Record<GridViewport, number | null> = { desktop: null, tablet: 768, mobile: 390 }
 const VIEWPORTS: GridViewport[] = ['desktop', 'tablet', 'mobile']
+/** What a block stage's "100 %" draws at: half true size. */
+const BLOCK_STAGE_BASE = 0.5
 
 export default function BlocksView({
   previewTheme = 'light', active, onSelect, onOpenComponent, onInspectRole, onOpenFoundation, search = '', onClearSearch,
@@ -63,7 +66,7 @@ export default function BlocksView({
         className="pb-8"
       >
         {active
-          ? <BlockPage block={active} previewTheme={previewTheme} onOpenComponent={onOpenComponent} onInspectRole={onInspectRole} onOpenFoundation={onOpenFoundation} />
+          ? <BlockPage block={active} onSelect={onSelect} previewTheme={previewTheme} onOpenComponent={onOpenComponent} onInspectRole={onInspectRole} onOpenFoundation={onOpenFoundation} />
           : <BlocksIndex previewTheme={previewTheme} onSelect={onSelect} search={search} onClearSearch={onClearSearch} />}
       </motion.div>
     </div>
@@ -208,8 +211,9 @@ function useInspectMarkers(ref: RefObject<HTMLElement | null>, on: boolean) {
   }, [ref, on])
 }
 
-function BlockPage({ block, previewTheme, onOpenComponent, onInspectRole, onOpenFoundation }: {
+function BlockPage({ block, onSelect, previewTheme, onOpenComponent, onInspectRole, onOpenFoundation }: {
   block: BlockDef
+  onSelect: (b: BlockDef) => void
   previewTheme: string
   onOpenComponent?: (c: ComponentDef) => void
   onInspectRole?: (roleId: string) => void
@@ -237,9 +241,12 @@ function BlockPage({ block, previewTheme, onOpenComponent, onInspectRole, onOpen
   }
   const [editing, setEditing] = useState<{ id: string; css: string; appearance: ThemeAppearance } | null>(null)
   const [selection, setSelection] = useState<string | null>(null)
-  // A block is drawn at its true size (100 %); − / + shrink a wide section to
-  // see it whole, or enlarge a detail.
+  // The stage's 100 % is HALF true size (`BLOCK_STAGE_BASE`, owner's call
+  // 2026-11-17): at 1:1 a sign-in card filled the canvas and sat in the
+  // reader's face. − / + step relative to it, like a component page's stage;
+  // 200 % is true pixel size.
   const [zoom, setZoom] = useState(1)
+  const scale = zoom * BLOCK_STAGE_BASE
   const canvasRef = useRef<HTMLDivElement>(null)
   const stageRef = useRef<HTMLDivElement>(null)
   useInspectMarkers(stageRef, inspecting)
@@ -260,6 +267,7 @@ function BlockPage({ block, previewTheme, onOpenComponent, onInspectRole, onOpen
               </span>
             }
           >
+            <span className="flex items-center gap-1.5">
             {block.dialog && (
               <button
                 type="button"
@@ -269,6 +277,13 @@ function BlockPage({ block, previewTheme, onOpenComponent, onInspectRole, onOpen
                 {t('Open as dialog')}
               </button>
             )}
+            <CatalogueSwitcher
+              noun="block"
+              groups={BLOCK_GROUPS.map((g) => ({ label: g, items: blocksIn(g).map((b) => ({ id: b.id, label: b.name })) }))}
+              currentId={block.id}
+              onPick={(id) => { const b = BLOCK_GROUPS.flatMap((g) => blocksIn(g)).find((x) => x.id === id); if (b) onSelect(b) }}
+            />
+            </span>
           </BlockChrome>
 
           <InspectorModeProvider active={inspecting}>
@@ -287,7 +302,7 @@ function BlockPage({ block, previewTheme, onOpenComponent, onInspectRole, onOpen
                 <div
                   className="mx-auto flex min-h-[420px] flex-col"
                   style={{
-                    zoom,
+                    zoom: scale,
                     // Inside a zoomed box a percentage resolves in its own scale:
                     // 100 % at zoom 0.5 lays the section out twice as wide. The
                     // desktop frame stays the stage's width, only drawn smaller.
