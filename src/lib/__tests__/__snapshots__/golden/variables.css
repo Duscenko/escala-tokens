@@ -256,6 +256,7 @@
   --color-surface-inverse: #37343b;
   --color-surface-inverse-muted: #ffffff26;
   --color-surface-overlay: #00000099;
+  --color-status-critical-ring: #dc240469;
   --color-status-critical-surface: #da350c24;
   --color-status-critical-surface-pressed: #dd2b0336;
   --color-status-critical-surface-solid: #d92d20;
@@ -300,6 +301,7 @@
   --color-border-accent: #9c7cff;
   --color-border-focus: #874fff;
   --color-border-ring-default: #3005fc4f;
+  --color-border-ring-neutral: #12082938;
   --color-border-rim-highlight: #ffffff0d;
   --color-border-inverse: #ffffff4d;
   --color-elevation-shadow-key: #0000001a;
@@ -1209,16 +1211,16 @@
   --color-content-secondary: #cdcbd3;
   --color-content-subtle: #716e77;
   --color-content-accent: #d2c4ff;
-  --color-content-on-action: #100e13;
+  --color-content-on-action: #fefdff;
   --color-content-on-secondary: #e5e4e8;
   --color-content-inverse: #100e13;
   --color-content-inverse-secondary: #000000b3;
   --color-content-disabled: #716e77;
   --color-content-link-default: #d2c4ff;
   --color-content-link-hover: #e8e0ff;
-  --color-action-primary-default: #9a75fd;
-  --color-action-primary-hover: #d2c4ff;
-  --color-action-primary-pressed: #e8e0ff;
+  --color-action-primary-default: #905cff;
+  --color-action-primary-hover: #9a75fd;
+  --color-action-primary-pressed: #714ec3;
   --color-action-secondary-default: #222223;
   --color-action-secondary-hover: #2a292c;
   --color-action-secondary-pressed: #363539;
@@ -1229,7 +1231,7 @@
   --color-surface-page: #100e13;
   --color-surface-layer-1: #1b1b1c;
   --color-surface-layer-2: #222223;
-  --color-surface-accent: #17161d;
+  --color-surface-accent: #2a243f;
   --color-surface-muted: #222223;
   --color-surface-muted-hover: #2a292c;
   --color-surface-input: #151515;
@@ -1238,6 +1240,7 @@
   --color-surface-inverse: #e5e4e8;
   --color-surface-inverse-muted: #00000026;
   --color-surface-overlay: #00000099;
+  --color-status-critical-ring: #fe54365e;
   --color-status-critical-surface: #f3722e1c;
   --color-status-critical-surface-pressed: #f75f3942;
   --color-status-critical-surface-solid: #a82f23;
@@ -1282,6 +1285,7 @@
   --color-border-accent: #714ec3;
   --color-border-focus: #905cff;
   --color-border-ring-default: #9570fc6b;
+  --color-border-ring-neutral: #f0f3f32b;
   --color-border-rim-highlight: #ffffff0d;
   --color-border-inverse: #0000004d;
   --color-elevation-shadow-key: #00000066;

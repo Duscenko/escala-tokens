@@ -190,35 +190,42 @@ describe('focus', () => {
     }
   })
 
-  // The focus edge and halo each Figma variant strokes in its Focused state, read live
-  // 2026-11-16 (Button 4:5066, IconButton 614:785): one pair per Variant, the same in
-  // every Appearance and in both sets.
-  const FOCUS: Record<string, [string, string]> = {
-    default: ['color.border.focus', 'color.border.ring.default'],
-    secondary: ['color.border.strong', 'color.border.subtle'],
-    critical: ['color.status.critical.border-strong', 'color.status.critical.border'],
+  // Focus, owner decision 2026-11-17 (Button 4:5066, IconButton 614:785): EVERY
+  // appearance focuses the same way — the Default look plus ONE ring, 2px, 1px
+  // outside the edge, in the colour of the intent. Nothing is drawn inside, so a
+  // focused button only differs from its Default by the ring.
+  const RING: Record<string, string> = {
+    default: 'color.border.ring.default',
+    secondary: 'color.border.ring.neutral',
+    critical: 'color.status.critical.ring',
   }
-  it.each(['Button', 'IconButton'].flatMap((key) => Object.keys(FOCUS).flatMap((variant) =>
-    ['solid', 'outline', 'ghost', 'link'].map((appearance) => [key, variant, appearance]))))(
-    '%s %s · %s focuses on its variant\'s edge and halo (Figma)', (key, variant, appearance) => {
-      const root = resolveRecipe(COMPONENT_RECIPES[key], { Variant: variant, Appearance: appearance, Size: 'default', State: 'Focused' }).root
-      expect(root.focus).toBe(FOCUS[variant][0])
-      expect(root.ring).toBe(FOCUS[variant][1])
-    })
-
-  // A solid carries a 1px stroke OUTSIDE in its pressed fill (Stroke/control) at rest, hover,
-  // pressed and loading; Focused swaps it for the focus edge, Disabled has none (Figma, 2026-11-16).
-  it.each(['Button', 'IconButton'].flatMap((key) => ['Default', 'Hover', 'Pressed', 'Loading', 'Focused', 'Disabled'].map((state) => [key, state])))(
-    '%s solid · %s rim', (key, state) => {
-      const root = resolveRecipe(COMPONENT_RECIPES[key], { Variant: 'critical', Appearance: 'solid', Size: 'default', State: state }).root
-      const on = !['Focused', 'Disabled'].includes(state)
-      expect(root.outerStroke ?? 'none').toBe(on ? 'color.status.critical.surface-solid-pressed' : 'none')
-      if (on) expect(root.outerStrokeWidth).toBe('stroke.control')
-    })
-  it('composes the rim under the top highlight in one box-shadow', () => {
-    const css = recipeCss(COMPONENT_RECIPES.Button)
-    expect(css).toContain('box-shadow: inset 0 var(--stroke-focus, 2px) 0 0 var(--color-elevation-highlight), 0 0 0 var(--stroke-control) var(--color-action-primary-pressed)')
+  it.each(['Button', 'IconButton'].flatMap((key) =>
+    Object.keys(RING).flatMap((variant) => ['solid', 'outline', 'ghost', 'link'].map((appearance) => [key, variant, appearance]))),
+  )('%s %s · %s focuses with one ring 1px off the edge, the Default look inside', (key, variant, appearance) => {
+    const r = (state: string) => resolveRecipe(COMPONENT_RECIPES[key], { Variant: variant, Appearance: appearance, Size: 'default', State: state }).root
+    const focused = r('Focused'), rest = r('Default')
+    expect(focused.gapRing).toBe(RING[variant])
+    for (const k of ['focus', 'ring', 'halo', 'outerStroke'] as const) expect(focused[k] ?? 'none', k).toBe('none')
+    expect({ ...focused, gapRing: undefined }).toEqual({ ...rest, gapRing: undefined })
+    for (const state of ['Default', 'Hover', 'Pressed', 'Loading', 'Disabled']) expect(r(state).gapRing ?? 'none', state).toBe('none')
   })
+  it.each(['Button', 'IconButton'].flatMap((key) => Object.keys(RING).map((variant) => [key, variant])))(
+    '%s %s · solid has no outside stroke, and the Button label carries its shadow',
+    (key, variant) => {
+      for (const state of ['Default', 'Hover', 'Pressed', 'Loading', 'Focused', 'Disabled']) {
+        const p = { Variant: variant, Appearance: 'solid', Size: 'default', State: state }
+        expect(resolveRecipe(COMPONENT_RECIPES[key], p).root.outerStroke ?? 'none', state).toBe('none')
+        const label = resolveRecipe(COMPONENT_RECIPES[key], p).label
+        expect(label?.textShadow, `${state} label shadow`).toBe(key !== 'Button' ? undefined : state === 'Disabled' ? 'none' : 'text-2xs')
+      }
+    })
+  it('the focus ring is an outline 1px off the edge', () => {
+    expect(RECIPE_CSS).toContain('outline-offset: 1px')
+  })
+  it('the label shadow is the file\'s Shadow/text-2xs', () => {
+    expect(RECIPE_CSS).toContain('text-shadow: 0 1px 0 rgb(0 0 0 / 0.15)')
+  })
+
 
   // Figma's render of the solid Button (4:2186), read pixel by pixel: the top
   // highlight fills the node's top 2 rows, and the DROP_SHADOW spread 1 paints
@@ -240,6 +247,7 @@ describe('focus', () => {
         expect(root.strokeWidth, key).toBe(stroke)
       }
     })
+
 
   it('the ring clears WCAG 1.4.11 against the page it is set off onto, in both themes', () => {
     for (const mode of ['light', 'dark']) {

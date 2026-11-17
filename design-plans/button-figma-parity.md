@@ -125,4 +125,8 @@ panel) se retira. El Button se da por terminado tal como está en el archivo: su
 combinaciones enfocan con `Border/focus` + `Border/ring/default`; IconButton conserva
 `Border/strong` + `Border/subtle` (secondary · solid) y `Status/critical/border-strong` +
 `Status/critical/border` (critical · solid). La receta copia ambos (`focusPair`).
+**SUPERADO (2026-11-17, decisión del dueño, aplicada en Figma):** Button e IconButton enfocan
+igual en las 12 combinaciones — aspecto Default + un anillo de 2 px a 1 px del borde
+(`border.ring.default` · `border.ring.neutral` · `status.critical.ring`, Alpha/06). `focusPair`
+ya no existe; receta `gapRing`. Ver `design-plans/button-contract.md`.
 

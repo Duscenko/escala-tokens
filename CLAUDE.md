@@ -98,6 +98,8 @@ Deploy: `npx vercel --prod` (web); Storybook is its own Vercel project `escala-s
 6. **Generated files are never hand-edited:** `*Reference.ts`, `*.generated.ts`, `src/generated/*`,
    `spec/figma-components.json`, `spec/contracts/`, `src/lib/pluginVersion.ts`, `api/_pluginStudio.mjs`,
    `.claude/skills/escala-architecture/`. Regenerate with its `npm run gen:*`.
+   After changing a role, also re-read Docs · Color's prose (`foundationDocs.tsx`, guarded by
+   `colorDocs.test.ts`) — it once shipped a stale translucent-role count and no Elevation section.
 7. **Store:** a new persisted field bumps `version` with an append-only migration; design fields
    also go into `DesignSnapshot` / `makeDesignDefaults()`.
 8. **tokens.json is additive.** Never rename a key; components field is `atoms`. Bump

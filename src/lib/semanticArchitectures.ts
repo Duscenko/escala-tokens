@@ -562,8 +562,18 @@ function solidStepRef(
  * contrast search below (`brandSolidPair`), so the invariant always holds.
  */
 type InkSide = 'light' | 'dark'
-const SOLID_JOB: Record<string, Record<'light' | 'dark', { tone: number; ink: InkSide }>> = {
-  accent: { light: { tone: 9, ink: 'light' }, dark: { tone: 10, ink: 'dark' } },
+/**
+ * `perceived` accepts the pair on APCA alone (Lc 60, the `action-label` floor)
+ * instead of WCAG AA (owner's call 2026-11-17: a light label on a vivid Dark
+ * accent reads well — Lc 73 on the Escala violet — while its WCAG 2 ratio is
+ * 4.1:1; the strict ratio is left to a future High-contrast mode). A hue that
+ * fails even that (green, yellow, orange) falls through to the contrast
+ * search, which picks the dark ink — so the label is white OR black by contrast.
+ * `states` are the hover / pressed offsets in tone steps when they are not both
+ * "away from the ink": the Dark accent lifts on hover (+1) and sinks on press (−1).
+ */
+const SOLID_JOB: Record<string, Record<'light' | 'dark', { tone: number; ink: InkSide; perceived?: boolean; states?: [number, number] }>> = {
+  accent: { light: { tone: 9, ink: 'light' }, dark: { tone: 9, ink: 'light', perceived: true, states: [1, -1] } },
   error: { light: { tone: 9, ink: 'light' }, dark: { tone: 8, ink: 'light' } },
   success: { light: { tone: 9, ink: 'light' }, dark: { tone: 9, ink: 'dark' } },
   warning: { light: { tone: 9, ink: 'light' }, dark: { tone: 10, ink: 'dark' } },
@@ -593,7 +603,10 @@ function curatedRefs(
   // its own ink can flip the label colour mid-interaction. `used` is the set of
   // tones this family's interaction states have already claimed, so pressed
   // cannot land on hover.
-  const solids = new Map<string, { tone: number; ink: string; inkRef: string; used: Set<number>; dir?: number }>()
+  const solids = new Map<string, { tone: number; ink: string; inkRef: string; used: Set<number>; dir?: number; perceived?: boolean; states?: [number, number] }>()
+  /** The job's label floor: AA, or APCA Lc 60 alone when the job says `perceived`. */
+  const carries = (ink: string, fill: string, perceived?: boolean): boolean =>
+    perceived ? Math.abs(apcaLc(ink, fill)) >= (ACTION_LABEL_TARGET.apcaLc ?? 60) : checkContrast(ink, fill) >= WCAG_AA
   const solidFor = (fam: string) => {
     let s = solids.get(fam)
     if (s === undefined) {
@@ -606,11 +619,11 @@ function curatedRefs(
         const m = REF_RE.exec(inkRef)
         const ink = m ? look(m[1], Number(m[2])) : undefined
         const fill = ramp[job.tone]
-        if (ink && fill && checkContrast(ink, fill) >= WCAG_AA) {
+        if (ink && fill && carries(ink, fill, job.perceived)) {
           // Away from the ink: a light ink darkens the fill (up a Light ramp,
           // down a Dark one); a dark ink lightens it.
           const dir = (job.ink === 'light') === (kind === 'light') ? 1 : -1
-          s = { tone: job.tone, ink, inkRef, used: new Set([job.tone]), dir }
+          s = { tone: job.tone, ink, inkRef, used: new Set([job.tone]), dir, perceived: job.perceived, states: job.states }
           solids.set(fam, s)
           return s
         }
@@ -631,9 +644,9 @@ function curatedRefs(
   const jobStep = (fam: string, n: number): string | null => {
     const s = solidFor(fam)
     if (s.dir === undefined) return null
-    const t = s.tone + s.dir * n
+    const t = s.tone + (s.states ? s.states[n - 1] : s.dir * n)
     const fill = look(fam, t)
-    if (t < 1 || t > 12 || !fill || s.used.has(t) || checkContrast(s.ink, fill) < WCAG_AA) return null
+    if (t < 1 || t > 12 || !fill || s.used.has(t) || !carries(s.ink, fill, s.perceived)) return null
     s.used.add(t)
     return `{${fam}.${t}}`
   }
@@ -880,7 +893,10 @@ const CATEGORICAL_ROLES: { group: string; key: string; light: string; dark: stri
   { group: 'surface', key: 'page',    light: '{neutral.1}',  dark: '{neutral-dark.1}' },
   { group: 'surface', key: 'layer-1', light: '{neutral.2}',  dark: '{neutral-dark.2}' },
   { group: 'surface', key: 'layer-2', light: '{neutral.3}',  dark: '{neutral-dark.3}' },
-  { group: 'surface', key: 'accent',  light: '{accent.2}',   dark: '{accent.2}' },
+  // OWNER DECISION 2026-11-17: the Figma file is the rule. `Surface/accent` is Accents/EscalaDS/02 in Light and Dark/04 in Dark (a
+  // brand wash needs a step more to read on the dark page). Pinned to the file's steps; `content.accent` (#b29bf9) reads on it at WCAG 6.3 · Lc 52 (the
+  // file's own pair).
+  { group: 'surface', key: 'accent',  light: '{accent.2}',   dark: '{accent.4}' },
   // The neutral fill of a control's passive part — a Switch's off track, a
   // Slider or Progress track, an OTP segment, a scrollbar thumb. Tone 4/5,
   // what those parts read off `action.secondary` before it became the
@@ -1038,6 +1054,12 @@ const CATEGORICAL_ROLES: { group: string; key: string; light: string; dark: stri
   // decision across all four" — and lands on the same light-9 / dark-10 shape as
   // error, one step earlier than error in dark because its ramp clears sooner.
   { group: 'status', key: 'critical.border-strong', light: '{error.9}',    dark: '{error.10}' },
+  // The focus ring of a critical (destructive) control: error Alpha/06, the red
+  // twin of `border.ring.default` (Figma file, owner decision 2026-11-17). It
+  // stays in `status.critical` with the rest of the severity, and resolves to
+  // the same red as `critical.border` today; it is its own role because the
+  // job differs (a focus ring vs the edge of an alert).
+  { group: 'status', key: 'critical.ring', light: '{error-a.6}', dark: '{error-a.6}' },
   { group: 'status', key: 'warning.border-strong',  light: '{warning.11}', dark: '{warning.11}' },
   { group: 'status', key: 'success.border-strong',  light: '{success.10}', dark: '{success.10}' },
   { group: 'status', key: 'info.border-strong',     light: '{info.9}',     dark: '{info.10}' },
@@ -1211,7 +1233,13 @@ const CATEGORICAL_ROLES: { group: string; key: string; light: string; dark: stri
   // were byte-identical to `status.<sev>.border` — deleted, not moved (audit F2).
   // A field showing an error border already has its coloured edge; the halo for
   // that state IS that same `status.critical.border` token.
+  // FOCUS RINGS (owner decision 2026-11-17, Figma file): every focused control
+  // draws a 2px ring 1px OUTSIDE its edge, with the page showing in the gap,
+  // in the colour of its intent — accent (`ring.default`), neutral
+  // (`ring.neutral`) or critical (`status.critical.ring`). All three sit on the
+  // Alpha/06 step of their family, each mode on its own twin.
   { group: 'border', key: 'ring.default',  light: '{accent-a.6}',  dark: '{accent-a.6}' },
+  { group: 'border', key: 'ring.neutral',  light: '{neutral-a.6}', dark: '{neutral-a.6}' },
   // The 1px light rim `darkShadow()` paints on every dark-mode elevation —
   // until now a bare `rgba(255,255,255,…)` computed inside that function with
   // no token anywhere. This does NOT change what `darkShadow` emits (its alpha
@@ -1294,7 +1322,7 @@ export const CATEGORICAL_ROLE_COMMENTS: Record<string, string> = {
   'surface.selected-pressed': '[ROLE: Active State Background Pressed] A pressed soft brand control (Button Soft / Outline pressed). {accent-a.5}, two steps deeper than surface.selected — the brand twin of status.*.surface-pressed.',
   'surface.inverse': '[ROLE: Inverted Background] High-contrast background for tooltips, snackbars and inverse alerts or badges. Always pair with content.inverse (title) and content.inverse-secondary (body, icons). {neutral.12} in both themes: a dark chip in Light, a light one in Dark.',
   'surface.overlay': '[ROLE: Scrim] Semi-transparent layer over surface.page to focus attention on modals (layer-2 surfaces). Ships at 60% black alpha (`{black-a.8}`), same in both themes.',
-  'surface.accent': '[ROLE: Accent Wash] Ambient brand-tinted background — a section that leans brand without being an interactive fill.',
+  'surface.accent': '[ROLE: Accent Wash] Ambient brand-tinted background — a section that leans brand without being an interactive fill. {accent.2} in Light, {accent.4} in Dark (the Figma file is the rule, 2026-11-17).',
   'surface.muted': "[ROLE: Control Track] Neutral fill of a control's passive part — a Switch's off track, a Slider or Progress track, an OTP segment, a step connector. {neutral.4} in light. Not a button: a secondary CTA uses action.secondary.default.",
   'surface.muted-hover': '[ROLE: Control Track Hover] Hover twin of surface.muted (a hovered off Switch, a scrollbar thumb). {neutral.5} in light — one step past the track.',
   'content.primary': '[ROLE: High Contrast Text] Main body and headings. STRICT: must pass WCAG AA (4.5:1) against surface.page and surface.layer-1.',
@@ -1359,7 +1387,9 @@ export const CATEGORICAL_ROLE_COMMENTS: Record<string, string> = {
   'border.control-hover': '[ROLE: Control Boundary Hover] Affects the hover state of a control\'s resting (border.control) border. One step past border.control: {black-a.4} in Light, {white-a.4} in Dark (DEC-2026-11-16-004).',
   'border.strong': '[ROLE: Strong Border] Affects the edge of a grouping or a selected container that must read before its neighbours. Not the field outline — that is border.control. WCAG 1.4.11 + APCA Lc 45 against the page, SOLVED on the alpha ladder ({ui-a:…}): {black-a.7} in light, {white-a.8} in dark for the default system.',
   'border.focus': '[ROLE: A11y Focus Ring] The keyboard focus-visible boundary on every interactive element of the default / accent variant. SOLVED per theme ({focus:accent.9}): the first accent tone from 9 that clears WCAG 1.4.11 (3:1) on the page — tone 9 in both themes for the default system. Severity, neutral and inverse variants take their own boundary (status.<sev>.border-strong, border.strong, border.inverse). The translucent halo outside it is border.ring.*.',
-  'border.ring.default': '[ROLE: Focus Halo] Translucent glow outside border.focus. Paired with border.focus on EVERY focused control (shadcn border-ring + ring-[3px]): the edge turns to border.focus, this halo sits outside it. Never the only focus cue. Decoration, NOT a boundary — never measured for WCAG 1.4.11; border.focus is the contrast-bearing part. Replaces a hardcoded 40% alpha in the preview specimens. A field in an error/success state reuses status.<sev>.border for its halo — there is no separate per-severity ring role.',
+  'border.ring.default': '[ROLE: Focus Ring · accent] The 2px focus ring drawn 1px OUTSIDE a focused control, with the page showing in the gap (owner decision 2026-11-17). Accent Alpha/06 in each mode. Used by every default-intent control. Decoration, never the only focus cue and never measured as a boundary; border.focus is the contrast-bearing edge of a field. Neutral controls use border.ring.neutral, critical ones status.critical.ring.',
+  'border.ring.neutral': '[ROLE: Focus Ring · neutral] The 2px focus ring, 1px outside a focused neutral (secondary) control. Gray Alpha/06 in each mode, the neutral twin of border.ring.default.',
+  'status.critical.ring': '[ROLE: Focus Ring · critical] The 2px focus ring, 1px outside a focused critical (destructive) control. Error Alpha/06 in each mode, the critical twin of border.ring.default and the same red as a field\'s error halo (status.critical.border).',
   'border.rim-highlight': '[ROLE: Elevation Rim] 1px light rim along the top of an elevated surface in dark mode. Below a near-black page only ~5% of the luminance range is left to spend downward, so elevation has to be bought with light, not shadow — this is the token for the rim darkShadow() already paints.',
   'border.accent': '[ROLE: Accent Border] Border painted in the brand accent — a selected card, a toggled button, any element that needs its stroke to read as the primary accent. For keyboard focus use border.focus.',
 }

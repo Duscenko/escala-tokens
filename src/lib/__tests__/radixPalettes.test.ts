@@ -1,3 +1,4 @@
+import { labelOnSolidClears } from '../color/apca'
 import { describe, expect, it } from 'vitest'
 import chroma from 'chroma-js'
 import {
@@ -94,7 +95,7 @@ describe('Radix palettes for Random', () => {
         expect(body, `${p.level} ${p.accentFamily} ${mode} body`).toBeGreaterThanOrEqual(4.5)
         const fill = get('action', 'primary.default', mode)
         const label = get('content', 'on-action', mode)
-        if (fill && label) expect(checkContrast(label, fill), `${p.level} ${p.accentFamily} ${mode} button`).toBeGreaterThanOrEqual(4.5)
+        if (fill && label) expect(labelOnSolidClears(label, fill, mode), `${p.level} ${p.accentFamily} ${mode} button`).toBe(true)
         for (const sev of ['critical', 'warning', 'success', 'info']) {
           const solid = get('status', `${sev}.surface-solid`, mode)
           const ink = get('status', `${sev}.on-solid`, mode)

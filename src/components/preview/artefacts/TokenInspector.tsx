@@ -47,6 +47,7 @@
 // click on the canvas is swallowed: in inspector mode a click means inspect, so
 // it must not also drag the Slider or switch the TabMenu underneath.
 
+import { swatchPaint } from '../../../lib/swatchPaint'
 import {
   createContext,
   useCallback,
@@ -177,15 +178,6 @@ function rectOf(el: Element): DOMRect | null {
   }
   if (left === Infinity) return null
   return new DOMRect(left, top, right - left, bottom - top)
-}
-
-/** Checkerboard behind a translucent swatch — the same cue every other alpha
- *  surface in the app uses, so an 8-digit role can't read as a solid. */
-const CHECKER: React.CSSProperties = {
-  backgroundImage:
-    'linear-gradient(45deg,#0000001a 25%,transparent 25%),linear-gradient(-45deg,#0000001a 25%,transparent 25%),linear-gradient(45deg,transparent 75%,#0000001a 75%),linear-gradient(-45deg,transparent 75%,#0000001a 75%)',
-  backgroundSize: '6px 6px',
-  backgroundPosition: '0 0,0 3px,3px -3px,-3px 0',
 }
 
 /** The Themes-hub view glyph left unreferenced when the Variables view was
@@ -847,6 +839,7 @@ export function InspectorOverlay({
             {a11yBlock}
             <TokenTraceList
               trace={trace}
+              page={tokensByAppearance[target.appearance === 'dark' ? 'dark' : 'light']?.surface}
               hitSlot={target.hitSlot}
               onPick={onPick ? (row) => {
                 if (!row.pickId) return
@@ -902,10 +895,9 @@ export function InspectorOverlay({
                           : (
                             <span
                               className="h-4 w-4 flex-shrink-0 overflow-hidden rounded ring-1 ring-black/10 dark:ring-white/15"
-                              style={role.css.length > 7 ? CHECKER : undefined}
                               aria-hidden
                             >
-                              <span className="block h-full w-full" style={{ background: role.css }} />
+                              <span className="block h-full w-full" style={swatchPaint(role.css, tokensByAppearance[target.appearance === 'dark' ? 'dark' : 'light']?.surface, 4)} />
                             </span>
                           )}
                         <span className={`min-w-0 flex-1 truncate font-mono text-mini ${isLit ? 'text-fg' : 'text-fg-muted'}`}>{role.id}</span>

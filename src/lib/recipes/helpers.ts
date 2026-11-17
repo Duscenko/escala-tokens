@@ -24,6 +24,10 @@ export const RECIPE_PROPS = [
   // A focus ring fully OUTSIDE the control, `stroke.focus` wide, with no edge
   // of its own (Figma's CloseButton · soft / solid · Focused). A colour role.
   'halo',
+  // The focus ring of a Button / IconButton (owner decision 2026-11-17): `stroke.focus` wide, set 1px OFF the
+  // control's edge so the page shows in the gap (Figma: the `focus-ring` frame 1px larger than the button, stroked
+  // OUTSIDE, radius + 1). A colour role; CSS draws it as an outline with a 1px offset, so the corners stay concentric.
+  'gapRing',
   // A node opacity the Figma file sets by hand (TextLink's underline is drawn at
   // 40% until Hover). The ONE prop that is not a token reference: its value is a
   // plain number string (`'0.4'`), so every table that walks refs skips it
@@ -44,11 +48,14 @@ export const RECIPE_PROPS = [
   // A stroke drawn OUTSIDE the frame (Figma AvatarStatus: Surface/page, `strokeAlign` OUTSIDE): a colour
   // role plus its width (a stroke ref). CSS draws it as a 0-blur spread so the box does not grow.
   'outerStroke', 'outerStrokeWidth',
+  // The label's shadow on a solid fill (`Shadow/text-2xs` in the Figma file: 0 1px 0, black 15 %). A named
+  // step (`text-2xs`), not a token reference. Only the Button label carries it.
+  'textShadow',
   // A negative overlap between a row's items (AvatarGroup): a spacing role (`spacing.overlap-md`). CSS has no
   // negative gap, so it is a custom property (`--escala-overlap`) the component lays out as a margin.
   'overlap',
 ] as const
-export const NON_TOKEN_PROPS: readonly string[] = ['opacity', 'lift', 'fontLiteral', 'hairline']
+export const NON_TOKEN_PROPS: readonly string[] = ['opacity', 'lift', 'fontLiteral', 'hairline', 'textShadow']
 export type RecipeProp = (typeof RECIPE_PROPS)[number]
 export type SlotProps = Partial<Record<RecipeProp, TokenRef>>
 export type SlotMap = Record<string, SlotProps>

@@ -29,8 +29,9 @@ import { toneLabel, readableInk, compositeOver, generateAlphaScale, BLACK_ALPHA_
 import {
   buildArchitectureView,
   CATEGORICAL_ROLE_COMMENTS,
+  categoricalRoleCatalogue,
 } from '../../../lib/semanticArchitectures'
-import { themeContextFromStore } from '../../../lib/tokenGenerator'
+import { themeContextFromStore, brandAppearanceProjection } from '../../../lib/tokenGenerator'
 import { TYPE_SCALE_KEYS, FONT_WEIGHT_BASES } from '../../../lib/typographyStandard'
 import { TYPE_ROLES, TYPE_ROLE_GROUPS, TYPE_VIEWPORTS, mergeTypeRoles, resolveTypeStyle, typeRolesInGroup } from '../../../lib/typeRoles'
 import {
@@ -56,6 +57,7 @@ import {
 import { SHADOW_STEPS } from '../Step7_Shadow'
 import { RadiusResponsiveHero, RadiusTokenReference } from './RadiusResponsiveDoc'
 import { fontStack } from '../../../lib/fonts'
+import { swatchPaint } from '../../../lib/swatchPaint'
 import { PHOSPHOR_LIBRARY } from '../../../lib/iconLibraries'
 import { GLOBAL_FAMILY, scaleForFamily, type FamilySlot } from '../../../lib/themeSources'
 import { resolveThemeFoundations } from '../../../lib/themeFoundations'
@@ -193,6 +195,16 @@ function resolveCategoricalCategories(
 ): CategoricalCategoryDoc[] | undefined {
   if (store.semanticArchitecture !== 'categorical') return undefined
 
+  // One brand: read it in Light AND Dark (its two shipped columns). Without
+  // this both columns resolved the brand in its own kind and Dark repeated Light.
+  const brand = themeKey && (store.themes[themeKey] || store.themeKinds[themeKey])
+    ? brandAppearanceProjection(store, themeKey)
+    : null
+  if (brand) {
+    const view = buildArchitectureView('categorical', brand.input, store.errorColor, brand.overrides, brand.order)
+    if (view) return categoryDocs(view, brand.lightKey, brand.darkKey)
+  }
+
   const { themeNames, globalScales, resolvedPalettes } = themeContextFromStore(store)
   const modeKeys = themeKey
     ? [themeKey].filter((t) => store.themes[t] || store.themeKinds[t])
@@ -219,7 +231,14 @@ function resolveCategoricalCategories(
 
   const lightKey = modes.includes('light') ? 'light' : modes[0]
   const darkKey = modes.includes('dark') ? 'dark' : modes[modes.length - 1]
+  return categoryDocs(view, lightKey, darkKey)
+}
 
+function categoryDocs(
+  view: NonNullable<ReturnType<typeof buildArchitectureView>>,
+  lightKey: string,
+  darkKey: string,
+): CategoricalCategoryDoc[] {
   return view.categories.map((cat) => ({
     key: cat.key,
     label: cat.label,
@@ -415,11 +434,11 @@ export function useSystemDoc(scope: SystemDocScope = {}): SystemDoc {
 
 // ── Table primitives (moved verbatim from the old Design Rules sheet) ────────
 
-function Swatch({ hex, className = '' }: { hex: string; className?: string }) {
+function Swatch({ hex, page, className = '' }: { hex: string; page?: string; className?: string }) {
   return (
     <span
       className={`w-[18px] h-[18px] rounded-[5px] flex-shrink-0 ring-1 ring-black/10 dark:ring-white/15 ${className}`}
-      style={{ background: hex || 'transparent' }}
+      style={swatchPaint(hex, page)}
       aria-hidden
     />
   )
@@ -510,12 +529,7 @@ export function PrimitiveCard({ label, scale, naming, page }: {
   // One background per swatch, no wrappers. Alpha layers, top first: the wash,
   // the page over the upper-right half, the checker under all of it. The
   // checker is the page and a grey step off it, so it reads on either page.
-  const paint = (hex: string): CSSProperties => (page
-    ? {
-        backgroundImage: `linear-gradient(${hex}, ${hex}), linear-gradient(to top right, transparent 50%, ${page} 50%), repeating-conic-gradient(${page} 0% 25%, color-mix(in srgb, ${page} 82%, #808080) 0% 50%)`,
-        backgroundSize: 'auto, auto, 10px 10px',
-      }
-    : { background: hex })
+  const paint = (hex: string): CSSProperties => (page ? swatchPaint(hex, page, 10) : { background: hex })
   return (
     <div className="flex min-w-0 flex-col gap-2">
       <span className="truncate text-ui font-semibold text-fg">{label}</span>
@@ -549,10 +563,10 @@ export function PrimitiveCard({ label, scale, naming, page }: {
 
 /** A value cell — swatch + monospace text, the shape both the ref and hex
  *  columns use so the four columns of a semantic table read as one grid. */
-function ValueCell({ hex, label }: { hex: string; label: string }) {
+function ValueCell({ hex, label, page }: { hex: string; label: string; page?: string }) {
   return (
     <span className="flex items-center gap-2 min-w-0 px-2 h-7 rounded-md border border-line bg-surface">
-      <Swatch hex={hex} />
+      <Swatch hex={hex} page={page} />
       <span className="truncate text-caption font-mono text-fg-muted">{label}</span>
     </span>
   )
@@ -562,7 +576,7 @@ function ValueCell({ hex, label }: { hex: string; label: string }) {
 // hex(dark). The dark pair sits on a dark panel — the same trick the Figma
 // sheet uses, and the same reason the Token Details dialog paints its dark
 // card dark: a dark ramp's steps can only be judged on the page they ship on.
-function RoleTable({ rows }: { rows: ResolvedRole[] }) {
+function RoleTable({ rows, pages }: { rows: ResolvedRole[]; pages: Pages }) {
   if (!rows.length) return null
   return (
     <div className="overflow-x-auto">
@@ -599,13 +613,13 @@ function RoleTable({ rows }: { rows: ResolvedRole[] }) {
             {rows.map((r) => (
               <div key={r.role.key} className="grid items-center gap-x-3" style={{ gridTemplateColumns: '13rem 1fr 1fr 1fr 1fr' }}>
                 <span className="flex items-center gap-2 min-w-0">
-                  <Swatch hex={r.lightHex} />
+                  <Swatch hex={r.lightHex} page={pages.light} />
                   <span className="truncate text-body text-fg" title={r.role.key}>{r.role.key}</span>
                 </span>
-                <ValueCell hex={r.lightHex} label={r.lightRef} />
-                <ValueCell hex={r.lightHex} label={r.lightHex.toUpperCase() || '—'} />
-                <span className="dark pl-3"><ValueCell hex={r.darkHex} label={r.darkRef} /></span>
-                <span className="dark"><ValueCell hex={r.darkHex} label={r.darkHex.toUpperCase() || '—'} /></span>
+                <ValueCell hex={r.lightHex} label={r.lightRef} page={pages.light} />
+                <ValueCell hex={r.lightHex} label={r.lightHex.toUpperCase() || '—'} page={pages.light} />
+                <span className="dark pl-3"><ValueCell hex={r.darkHex} label={r.darkRef} page={pages.dark} /></span>
+                <span className="dark"><ValueCell hex={r.darkHex} label={r.darkHex.toUpperCase() || '—'} page={pages.dark} /></span>
               </div>
             ))}
           </div>
@@ -654,12 +668,12 @@ function RoleBand({ rows, page }: { rows: ResolvedRole[]; page: string }) {
   )
 }
 
-function RoleGroup({ rows, page }: { rows: ResolvedRole[]; page: string }) {
+function RoleGroup({ rows, page, pageDark }: { rows: ResolvedRole[]; page: string; pageDark: string }) {
   if (!rows.length) return null
   return (
     <>
       <RoleBand rows={rows} page={page} />
-      <RoleTable rows={rows} />
+      <RoleTable rows={rows} pages={{ light: page, dark: pageDark }} />
     </>
   )
 }
@@ -682,7 +696,9 @@ function CategoricalRoleBand({ rows, page }: { rows: ResolvedCategoricalToken[];
   )
 }
 
-function CategoricalRoleTable({ rows }: { rows: ResolvedCategoricalToken[] }) {
+type Pages = { light: string; dark: string }
+
+function CategoricalRoleTable({ rows, pages }: { rows: ResolvedCategoricalToken[]; pages: Pages }) {
   if (!rows.length) return null
   return (
     <div className="overflow-x-auto">
@@ -705,15 +721,15 @@ function CategoricalRoleTable({ rows }: { rows: ResolvedCategoricalToken[] }) {
               <div key={r.id} className="grid items-center gap-x-3" style={{ gridTemplateColumns: '13rem 1fr 1fr 1fr 1fr' }}>
                 <span className="flex flex-col gap-0.5 min-w-0">
                   <span className="flex items-center gap-2 min-w-0">
-                    <Swatch hex={r.lightHex} />
+                    <Swatch hex={r.lightHex} page={pages.light} />
                     <span className="truncate text-body text-fg" title={r.id}>{r.id}</span>
                   </span>
                   {r.role && <span className="text-mini text-fg-faint truncate pl-[26px]" title={r.role}>{r.role}</span>}
                 </span>
-                <ValueCell hex={r.lightHex} label={r.lightRef} />
-                <ValueCell hex={r.lightHex} label={r.lightHex.toUpperCase() || '—'} />
-                <span className="dark pl-3"><ValueCell hex={r.darkHex} label={r.darkRef} /></span>
-                <span className="dark"><ValueCell hex={r.darkHex} label={r.darkHex.toUpperCase() || '—'} /></span>
+                <ValueCell hex={r.lightHex} label={r.lightRef} page={pages.light} />
+                <ValueCell hex={r.lightHex} label={r.lightHex.toUpperCase() || '—'} page={pages.light} />
+                <span className="dark pl-3"><ValueCell hex={r.darkHex} label={r.darkRef} page={pages.dark} /></span>
+                <span className="dark"><ValueCell hex={r.darkHex} label={r.darkHex.toUpperCase() || '—'} page={pages.dark} /></span>
               </div>
             ))}
           </div>
@@ -723,12 +739,12 @@ function CategoricalRoleTable({ rows }: { rows: ResolvedCategoricalToken[] }) {
   )
 }
 
-function CategoricalRoleGroup({ rows, page }: { rows: ResolvedCategoricalToken[]; page: string }) {
+function CategoricalRoleGroup({ rows, page, pageDark }: { rows: ResolvedCategoricalToken[]; page: string; pageDark: string }) {
   if (!rows.length) return null
   return (
     <>
       <CategoricalRoleBand rows={rows} page={page} />
-      <CategoricalRoleTable rows={rows} />
+      <CategoricalRoleTable rows={rows} pages={{ light: page, dark: pageDark }} />
     </>
   )
 }
@@ -736,9 +752,9 @@ function CategoricalRoleGroup({ rows, page }: { rows: ResolvedCategoricalToken[]
 function renderCategoricalCategory(categoryKey: string, flatRows: (c: SystemDoc) => ResolvedRole[]) {
   return (c: SystemDoc) => {
     const cat = c.categoricalCategories?.find((x) => x.key === categoryKey)
-    if (cat?.tokens.length) return <CategoricalRoleGroup rows={cat.tokens} page={c.pageLight} />
+    if (cat?.tokens.length) return <CategoricalRoleGroup rows={cat.tokens} page={c.pageLight} pageDark={c.pageDark} />
     const rows = flatRows(c)
-    return rows.length ? <RoleGroup rows={rows} page={c.pageLight} /> : null
+    return rows.length ? <RoleGroup rows={rows} page={c.pageLight} pageDark={c.pageDark} /> : null
   }
 }
 
@@ -825,14 +841,26 @@ export interface FoundationDoc {
   codeSection?: string
 }
 
+// Every number and group name the Color page's prose states is READ from the role
+// table, never typed: a role added to CATEGORICAL_ROLES must not leave the page
+// saying "sixteen" or listing five groups (it did, from 2026-08 to 2026-11-17).
+const COLOR_ROLES = categoricalRoleCatalogue()
+/** Categorical groups in table order — each has a section on the Color page. */
+export const COLOR_ROLE_GROUPS = [...new Set(COLOR_ROLES.map((r) => r.group))]
+const COLOR_ALPHA_ROLES = COLOR_ROLES.filter((r) => /-a\./.test(r.light) || /-a\./.test(r.dark)).length
+const groupList = (gs: string[]) => {
+  const names = gs.map((g) => g[0].toUpperCase() + g.slice(1))
+  return `${names.slice(0, -1).join(', ')} and ${names[names.length - 1]}`
+}
+
 export const FOUNDATION_DOCS: FoundationDoc[] = [
   // ── Color ──────────────────────────────────────────────────────────────────
   {
     key: 'color',
     label: 'Color',
-    lead: 'Two layers: twelve-step primitive ramps that hold the raw values, and a categorical semantic contract that names what each value is FOR — grouped as Content, Action, Surface, Status and Border with nested role ids like `content.primary` and `action.primary.default`. Designs reference the roles; only the roles reference the ramps.',
+    lead: `Two layers: twelve-step primitive ramps that hold the raw values, and a categorical semantic contract that names what each value is FOR — grouped as ${groupList(COLOR_ROLE_GROUPS)} with nested role ids like \`content.primary\` and \`action.primary.default\`. Designs reference the roles; only the roles reference the ramps.`,
     why: 'A hex in a component is a decision nobody can revisit. A role — `action.primary.default` — is a decision you can re-point once and have the whole system follow, in every theme at once. It is also the only way light and dark can be the same design rather than two hand-tuned ones: a role resolves to its own ramp per appearance, so `content.primary` means "the readable ink on this page" in both, and neither is a copy of the other.',
-    usage: 'Reach for a categorical semantic role first — `surface.*` for page and card levels, `action.*` for control fills, `status.*` for feedback, `content.*` for ink, `border.*` for edges. Use a primitive directly only when you are defining a new role. Steps are ordered by ROLE, not lightness: 1–2 page background · 3–5 component · 6–8 border · 9 the solid (your brand hex, verbatim) · 10 solid hover · 11–12 accessible text. Sixteen roles resolve to a TRANSLUCENT primitive instead of a solid tone — see Alpha below — so a semantic value can be 8-digit `#rrggbbaa`.',
+    usage: `Reach for a categorical semantic role first — \`surface.*\` for page and card levels, \`action.*\` for control fills, \`status.*\` for feedback, \`content.*\` for ink, \`border.*\` for edges, \`elevation.*\` for the colours inside a shadow. Use a primitive directly only when you are defining a new role. Steps are ordered by ROLE, not lightness: 1–2 page background · 3–5 component · 6–8 border · 9 the solid (your brand hex, verbatim) · 10 solid hover · 11–12 accessible text. ${COLOR_ALPHA_ROLES} of the ${COLOR_ROLES.length} roles resolve to a TRANSLUCENT primitive instead of a solid tone — see Alpha below — so a semantic value can be 8-digit \`#rrggbbaa\`.`,
     usageCode: `/* semantic — what it is FOR */
 background: var(--color-action-primary-default);
 color:      var(--color-content-on-action);
@@ -892,7 +920,7 @@ color:      var(--color-content-on-action);
       {
         id: 'action',
         title: 'Action',
-        description: 'Interactive element fills — primary and secondary buttons, disabled states, and the accent-tinted secondary fill.',
+        description: 'Interactive element fills — primary, secondary and ghost fills with their hover and pressed steps, and the disabled fill.',
         render: renderCategoricalCategory('action', (c) => c.roles.filter((r) => r.role.key.startsWith('action-') || r.role.key.startsWith('background-brand-'))),
       },
       {
@@ -904,14 +932,20 @@ color:      var(--color-content-on-action);
       {
         id: 'status',
         title: 'Status',
-        description: 'Feedback fg/bg pairs per severity — critical, warning and success, each with subtle surface, solid fill and on-solid ink.',
+        description: 'Feedback per severity — critical, warning, success and info — each with a subtle surface (+ pressed), a solid fill (+ hover, pressed) and its on-solid ink, the text colour, a border and a strong border. Critical also carries its focus ring (`status.critical.ring`), drawn 1px outside a focused destructive control.',
         render: renderCategoricalCategory('status', (c) => c.roles.filter((r) => ['error', 'warning', 'success', 'info'].includes(r.role.scale))),
       },
       {
         id: 'border',
         title: 'Border',
-        description: 'Strokes, focus rings and severity borders — from subtle dividers through component boundaries to validation states.',
+        description: 'Strokes and focus — decorative dividers (subtle · default · strong), the control boundary (control · control-hover), the contrast-bearing focus edge of a field (`border.focus`) and the focus rings drawn outside a control: `border.ring.default` (accent) and `border.ring.neutral` (neutral).',
         render: renderCategoricalCategory('border', borderRows),
+      },
+      {
+        id: 'elevation',
+        title: 'Elevation',
+        description: 'Effect colours only — the key and ambient layers of a shadow, its hairline ring and the top highlight of a raised control. Bound inside a Shadow / Depth effect style, never used as a fill or a stroke.',
+        render: renderCategoricalCategory('elevation', () => []),
       },
     ],
   },
@@ -1458,8 +1492,8 @@ grid-template-columns: repeat(var(--grid-columns), 1fr);
     key: 'stroke',
     label: 'Stroke',
     lead: 'Line weight — not paint. A 4-step primitive ramp (none · sm · md · lg = 0 / 1 / 2 / 4px) and intent aliases for divider, control border and focus-ring width. Color stays on `border.*`.',
-    why: 'Border width and focus-ring spread used to be leftover 1px / 1.5px / 2px / 3px in components. That is four answers to "how thick is a line." One even grid plus named jobs means an outline button and an input share `stroke-control`, and the focus ring is a WCAG 2.4.13 2px edge (`stroke-focus`) plus a halo one hairline wider, whose paint is still `border.focus`.',
-    usage: 'Compose width and color: `border: var(--stroke-control) solid var(--color-border-strong)`. Dividers use `stroke-divider`. Focus: `box-shadow: inset 0 0 0 var(--stroke-focus) var(--color-border-focus), 0 0 0 calc(var(--stroke-focus) + var(--stroke-control)) var(--color-border-ring-default)`. Never put a hex in a stroke token.',
+    why: 'Border width and focus-ring spread used to be leftover 1px / 1.5px / 2px / 3px in components. That is four answers to "how thick is a line." One even grid plus named jobs means an outline button and an input share `stroke-control`, and a field focuses with a WCAG 2.4.13 2px edge (`stroke-focus`, paint `border.focus`) plus a halo one hairline wider. A Button or IconButton draws ONE `stroke-focus` ring instead, 1px outside its edge, in the ring colour of its intent (`border.ring.default` · `border.ring.neutral` · `status.critical.ring`).',
+    usage: 'Compose width and color: `border: var(--stroke-control) solid var(--color-border-strong)`. Dividers use `stroke-divider`. Focus: `box-shadow: inset 0 0 0 var(--stroke-focus) var(--color-border-focus), 0 0 0 calc(var(--stroke-focus) + var(--stroke-control)) var(--color-border-ring-default)` on a field; `outline: var(--stroke-focus) solid var(--color-border-ring-default); outline-offset: 1px` on a button. Never put a hex in a stroke token.',
     usageCode: `border: var(--stroke-control) solid var(--color-border-strong);
 
 .hr { border-top: var(--stroke-divider) solid var(--color-border-subtle); }

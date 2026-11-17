@@ -428,12 +428,19 @@ Where each table lives — change the source, then regenerate:
 After adding or renaming a role:
 
 1. \`npm run gen:escala-skill\` — rewrites this skill.
-2. Mirror it in the Figma plugin (\`escala-figma-plugin\`) — the parity tests
+2. **Audit the colour DOCUMENTATION, every time — not only the tables.**
+   Docs · Color (\`src/components/configurator/docs/foundationDocs.tsx\`,
+   also Storybook's Variables › Color) renders the roles live, but its lead,
+   usage and section descriptions are prose: re-read them against the role
+   you touched (its group, its job, its focus ring, its alpha). A new GROUP
+   needs its own section. Never type a count or a group list — derive it
+   from \`categoricalRoleCatalogue()\`. \`colorDocs.test.ts\` must stay green.
+3. Mirror it in the Figma plugin (\`escala-figma-plugin\`) — the parity tests
    fail otherwise.
-3. Renaming a stored role needs a store migration (append-only).
-4. \`npm test\` (catalogue, contrast matrix, recipe ↔ plugin parity, export
+4. Renaming a stored role needs a store migration (append-only).
+5. \`npm test\` (catalogue, contrast matrix, recipe ↔ plugin parity, export
    audit, this skill's drift check) and \`npm run build\`.
-5. Search \`docs/history/CLAUDE-archive-2026-11-16.md\` and \`governance/ledger/\`
+6. Search \`docs/history/CLAUDE-archive-2026-11-16.md\` and \`governance/ledger/\`
    for the decision history behind a role before moving it — most tones there
    were measured, not chosen.
 
@@ -476,7 +483,9 @@ decides its STRUCTURE; this skill decides every VALUE.
    Hover · Pressed · Focused · Disabled (only the ones the contract lists);
    each state binds its own role (\`Action/primary/hover\`,
    \`Action/disabled/default\` + \`Content/disabled\`, focus =
-   \`Border/focus\` + \`Border/ring/default\`). No opacity for a state.
+   \`Border/focus\` + \`Border/ring/default\` on a field or control; a Button /
+   IconButton keeps its Default look plus ONE ring 1px outside — see Borders).
+   No opacity for a state.
 5. **Contract vs Escala.** The contract owns anatomy, variants, properties,
    layer names and behaviour. Escala owns every colour, length and text style.
    If the contract needs a value no role covers, do not hard-code it: name it
@@ -572,7 +581,7 @@ Naming, everywhere:
 | Fill | Ink on it |
 |---|---|
 | \`surface.page\` / \`surface.layer-1\` / \`surface.layer-2\` | \`content.primary\`, \`content.secondary\` |
-| \`action.primary.default\\|hover\\|pressed\` | \`content.on-action\` (solved: may be near-black — never assume white) |
+| \`action.primary.default\\|hover\\|pressed\` | \`content.on-action\` (solved per theme: a light label on a vivid Dark accent — judged on perceived contrast, APCA Lc ≥ 60 — or the near-black ink when the hue cannot carry it. Green, yellow and orange take the dark ink; never assume white) |
 | \`action.secondary.default\\|hover\\|pressed\` | \`content.on-secondary\` |
 | \`action.ghost.*\`, outline buttons | \`content.primary\` |
 | \`action.disabled.default\` | \`content.disabled\` |
@@ -597,11 +606,14 @@ Links use \`content.link.default\` / \`.hover\`, not \`content.accent\`.
 | Resting outline of an input, select, checkbox, outline button | \`border.control\` → hover \`border.control-hover\` |
 | Invalid / warning / valid field | \`status.<sev>.border-strong\` |
 | Edge of an alert or banner | \`status.<sev>.border\` |
-| Keyboard focus | \`border.focus\` (the boundary) **plus** \`border.ring.default\` (the halo outside it) |
+| Keyboard focus on a field (Input, Select, Textarea…) | \`border.focus\` (the boundary, inside) **plus** \`border.ring.default\` (the ring outside it) |
+| Keyboard focus on a BUTTON (Button and IconButton, every appearance: solid · outline · ghost · link) | The Default look, unchanged, plus ONE ring: \`stroke.focus\` (2px) wide, 1px OUTSIDE the edge with the page in the gap, radius + 1. Colour by intent: \`border.ring.default\` (accent), \`border.ring.neutral\` (neutral), \`status.critical.ring\` (critical) — all Alpha/06. Nothing inside. CSS: \`outline: 2px solid <ring>; outline-offset: 1px\` |
 | Selected / brand-coloured stroke | \`border.accent\` |
 
 Width is a separate token: \`stroke.divider\`, \`stroke.control\`, \`stroke.focus\`.
 There is ONE focus ring, also on an invalid field — focus wins over error.
+
+**Solid buttons have no outside stroke.** The fill is the control. Depth comes from the top highlight (\`elevation.highlight\`, 2px inside) and, on a Button, the label's text shadow (0 1px 0, black 15 %). A hard edge round a vivid fill reads as noise — in Dark it drew a pale halo. If a design needs a stronger edge for accessibility, that is a High-contrast mode, not a stroke on the default.
 
 ### Dimensions
 
@@ -654,7 +666,7 @@ ${repo ? REPO_SECTION : ''}## Before you finish
 
 - [ ] No hex, no primitive, no free px, no opacity-for-state in component code.
 - [ ] Every fill has its paired ink; every role name exists in the references.
-- [ ] Borders chosen by job; focus = \`border.focus\` + \`border.ring.default\`.
+- [ ] Borders chosen by job; field focus = \`border.focus\` + \`border.ring.default\`; button focus = one ring by intent (\`border.ring.default\` · \`border.ring.neutral\` · \`status.critical.ring\`), 1px outside.
 - [ ] Radius axis matches the element (box / field / selector / pill).
 - [ ] Gap vs inset vs size used for what they are.
 - [ ] Type set through a role, all facets together.

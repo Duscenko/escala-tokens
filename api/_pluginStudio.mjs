@@ -901,6 +901,11 @@ var init_apca = __esm({
       "body-text": { wcag: 4.5, apcaLc: 75 },
       "large-text": { wcag: 3, apcaLc: 60 },
       "action-label": { wcag: 4.5, apcaLc: 60 },
+      // A label on a vivid SOLID in Dark, judged on perceived contrast alone (owner's call
+      // 2026-11-17): a light label on the Escala violet reads at Lc 73 while its WCAG 2
+      // ratio is 4.1:1. The strict ratio is left to a future High-contrast mode. A hue
+      // where even this fails takes the dark ink (see `SOLID_JOB` in semanticArchitectures).
+      "action-label-perceived": { wcag: null, apcaLc: 60 },
       "ui-component": { wcag: 3, apcaLc: 45 },
       // A control's BOUNDARY: the resting outline of a field / select / checkbox
       // / outline button (`border.control`), the focus ring's boundary
@@ -8105,6 +8110,7 @@ function inkRefOf(side, kind) {
 function curatedRefs(roles, kind, look, accentHex = "#000000") {
   const chartSlots = chartPalette(accentHex);
   const solids = /* @__PURE__ */ new Map();
+  const carries = (ink, fill, perceived) => perceived ? Math.abs(apcaLc(ink, fill)) >= (ACTION_LABEL_TARGET.apcaLc ?? 60) : checkContrast(ink, fill) >= WCAG_AA;
   const solidFor = (fam) => {
     let s = solids.get(fam);
     if (s === void 0) {
@@ -8115,9 +8121,9 @@ function curatedRefs(roles, kind, look, accentHex = "#000000") {
         const m = REF_RE.exec(inkRef);
         const ink = m ? look(m[1], Number(m[2])) : void 0;
         const fill = ramp[job.tone];
-        if (ink && fill && checkContrast(ink, fill) >= WCAG_AA) {
+        if (ink && fill && carries(ink, fill, job.perceived)) {
           const dir = job.ink === "light" === (kind === "light") ? 1 : -1;
-          s = { tone: job.tone, ink, inkRef, used: /* @__PURE__ */ new Set([job.tone]), dir };
+          s = { tone: job.tone, ink, inkRef, used: /* @__PURE__ */ new Set([job.tone]), dir, perceived: job.perceived, states: job.states };
           solids.set(fam, s);
           return s;
         }
@@ -8132,9 +8138,9 @@ function curatedRefs(roles, kind, look, accentHex = "#000000") {
   const jobStep = (fam, n) => {
     const s = solidFor(fam);
     if (s.dir === void 0) return null;
-    const t = s.tone + s.dir * n;
+    const t = s.tone + (s.states ? s.states[n - 1] : s.dir * n);
     const fill = look(fam, t);
-    if (t < 1 || t > 12 || !fill || s.used.has(t) || checkContrast(s.ink, fill) < WCAG_AA) return null;
+    if (t < 1 || t > 12 || !fill || s.used.has(t) || !carries(s.ink, fill, s.perceived)) return null;
     s.used.add(t);
     return `{${fam}.${t}}`;
   };
@@ -8286,7 +8292,7 @@ var init_semanticArchitectures = __esm({
     APCA_DISABLED = INTENT_THRESHOLDS["disabled-text"].apcaLc ?? 30;
     OPAQUE6 = /^#[0-9a-f]{6}$/i;
     SOLID_JOB = {
-      accent: { light: { tone: 9, ink: "light" }, dark: { tone: 10, ink: "dark" } },
+      accent: { light: { tone: 9, ink: "light" }, dark: { tone: 9, ink: "light", perceived: true, states: [1, -1] } },
       error: { light: { tone: 9, ink: "light" }, dark: { tone: 8, ink: "light" } },
       success: { light: { tone: 9, ink: "light" }, dark: { tone: 9, ink: "dark" } },
       warning: { light: { tone: 9, ink: "light" }, dark: { tone: 10, ink: "dark" } },
@@ -8425,7 +8431,10 @@ var init_semanticArchitectures = __esm({
       { group: "surface", key: "page", light: "{neutral.1}", dark: "{neutral-dark.1}" },
       { group: "surface", key: "layer-1", light: "{neutral.2}", dark: "{neutral-dark.2}" },
       { group: "surface", key: "layer-2", light: "{neutral.3}", dark: "{neutral-dark.3}" },
-      { group: "surface", key: "accent", light: "{accent.2}", dark: "{accent.2}" },
+      // OWNER DECISION 2026-11-17: the Figma file is the rule. `Surface/accent` is Accents/EscalaDS/02 in Light and Dark/04 in Dark (a
+      // brand wash needs a step more to read on the dark page). Pinned to the file's steps; `content.accent` (#b29bf9) reads on it at WCAG 6.3 · Lc 52 (the
+      // file's own pair).
+      { group: "surface", key: "accent", light: "{accent.2}", dark: "{accent.4}" },
       // The neutral fill of a control's passive part — a Switch's off track, a
       // Slider or Progress track, an OTP segment, a scrollbar thumb. Tone 4/5,
       // what those parts read off `action.secondary` before it became the
@@ -8583,6 +8592,12 @@ var init_semanticArchitectures = __esm({
       // decision across all four" — and lands on the same light-9 / dark-10 shape as
       // error, one step earlier than error in dark because its ramp clears sooner.
       { group: "status", key: "critical.border-strong", light: "{error.9}", dark: "{error.10}" },
+      // The focus ring of a critical (destructive) control: error Alpha/06, the red
+      // twin of `border.ring.default` (Figma file, owner decision 2026-11-17). It
+      // stays in `status.critical` with the rest of the severity, and resolves to
+      // the same red as `critical.border` today; it is its own role because the
+      // job differs (a focus ring vs the edge of an alert).
+      { group: "status", key: "critical.ring", light: "{error-a.6}", dark: "{error-a.6}" },
       { group: "status", key: "warning.border-strong", light: "{warning.11}", dark: "{warning.11}" },
       { group: "status", key: "success.border-strong", light: "{success.10}", dark: "{success.10}" },
       { group: "status", key: "info.border-strong", light: "{info.9}", dark: "{info.10}" },
@@ -8756,7 +8771,13 @@ var init_semanticArchitectures = __esm({
       // were byte-identical to `status.<sev>.border` — deleted, not moved (audit F2).
       // A field showing an error border already has its coloured edge; the halo for
       // that state IS that same `status.critical.border` token.
+      // FOCUS RINGS (owner decision 2026-11-17, Figma file): every focused control
+      // draws a 2px ring 1px OUTSIDE its edge, with the page showing in the gap,
+      // in the colour of its intent — accent (`ring.default`), neutral
+      // (`ring.neutral`) or critical (`status.critical.ring`). All three sit on the
+      // Alpha/06 step of their family, each mode on its own twin.
       { group: "border", key: "ring.default", light: "{accent-a.6}", dark: "{accent-a.6}" },
+      { group: "border", key: "ring.neutral", light: "{neutral-a.6}", dark: "{neutral-a.6}" },
       // The 1px light rim `darkShadow()` paints on every dark-mode elevation —
       // until now a bare `rgba(255,255,255,…)` computed inside that function with
       // no token anywhere. This does NOT change what `darkShadow` emits (its alpha
@@ -8809,7 +8830,7 @@ var init_semanticArchitectures = __esm({
       "surface.selected-pressed": "[ROLE: Active State Background Pressed] A pressed soft brand control (Button Soft / Outline pressed). {accent-a.5}, two steps deeper than surface.selected \u2014 the brand twin of status.*.surface-pressed.",
       "surface.inverse": "[ROLE: Inverted Background] High-contrast background for tooltips, snackbars and inverse alerts or badges. Always pair with content.inverse (title) and content.inverse-secondary (body, icons). {neutral.12} in both themes: a dark chip in Light, a light one in Dark.",
       "surface.overlay": "[ROLE: Scrim] Semi-transparent layer over surface.page to focus attention on modals (layer-2 surfaces). Ships at 60% black alpha (`{black-a.8}`), same in both themes.",
-      "surface.accent": "[ROLE: Accent Wash] Ambient brand-tinted background \u2014 a section that leans brand without being an interactive fill.",
+      "surface.accent": "[ROLE: Accent Wash] Ambient brand-tinted background \u2014 a section that leans brand without being an interactive fill. {accent.2} in Light, {accent.4} in Dark (the Figma file is the rule, 2026-11-17).",
       "surface.muted": "[ROLE: Control Track] Neutral fill of a control's passive part \u2014 a Switch's off track, a Slider or Progress track, an OTP segment, a step connector. {neutral.4} in light. Not a button: a secondary CTA uses action.secondary.default.",
       "surface.muted-hover": "[ROLE: Control Track Hover] Hover twin of surface.muted (a hovered off Switch, a scrollbar thumb). {neutral.5} in light \u2014 one step past the track.",
       "content.primary": "[ROLE: High Contrast Text] Main body and headings. STRICT: must pass WCAG AA (4.5:1) against surface.page and surface.layer-1.",
@@ -8874,7 +8895,9 @@ var init_semanticArchitectures = __esm({
       "border.control-hover": "[ROLE: Control Boundary Hover] Affects the hover state of a control's resting (border.control) border. One step past border.control: {black-a.4} in Light, {white-a.4} in Dark (DEC-2026-11-16-004).",
       "border.strong": "[ROLE: Strong Border] Affects the edge of a grouping or a selected container that must read before its neighbours. Not the field outline \u2014 that is border.control. WCAG 1.4.11 + APCA Lc 45 against the page, SOLVED on the alpha ladder ({ui-a:\u2026}): {black-a.7} in light, {white-a.8} in dark for the default system.",
       "border.focus": "[ROLE: A11y Focus Ring] The keyboard focus-visible boundary on every interactive element of the default / accent variant. SOLVED per theme ({focus:accent.9}): the first accent tone from 9 that clears WCAG 1.4.11 (3:1) on the page \u2014 tone 9 in both themes for the default system. Severity, neutral and inverse variants take their own boundary (status.<sev>.border-strong, border.strong, border.inverse). The translucent halo outside it is border.ring.*.",
-      "border.ring.default": "[ROLE: Focus Halo] Translucent glow outside border.focus. Paired with border.focus on EVERY focused control (shadcn border-ring + ring-[3px]): the edge turns to border.focus, this halo sits outside it. Never the only focus cue. Decoration, NOT a boundary \u2014 never measured for WCAG 1.4.11; border.focus is the contrast-bearing part. Replaces a hardcoded 40% alpha in the preview specimens. A field in an error/success state reuses status.<sev>.border for its halo \u2014 there is no separate per-severity ring role.",
+      "border.ring.default": "[ROLE: Focus Ring \xB7 accent] The 2px focus ring drawn 1px OUTSIDE a focused control, with the page showing in the gap (owner decision 2026-11-17). Accent Alpha/06 in each mode. Used by every default-intent control. Decoration, never the only focus cue and never measured as a boundary; border.focus is the contrast-bearing edge of a field. Neutral controls use border.ring.neutral, critical ones status.critical.ring.",
+      "border.ring.neutral": "[ROLE: Focus Ring \xB7 neutral] The 2px focus ring, 1px outside a focused neutral (secondary) control. Gray Alpha/06 in each mode, the neutral twin of border.ring.default.",
+      "status.critical.ring": "[ROLE: Focus Ring \xB7 critical] The 2px focus ring, 1px outside a focused critical (destructive) control. Error Alpha/06 in each mode, the critical twin of border.ring.default and the same red as a field's error halo (status.critical.border).",
       "border.rim-highlight": "[ROLE: Elevation Rim] 1px light rim along the top of an elevated surface in dark mode. Below a near-black page only ~5% of the luminance range is left to spend downward, so elevation has to be bought with light, not shadow \u2014 this is the token for the rim darkShadow() already paints.",
       "border.accent": "[ROLE: Accent Border] Border painted in the brand accent \u2014 a selected card, a toggled button, any element that needs its stroke to read as the primary accent. For keyboard focus use border.focus."
     };
@@ -9126,14 +9149,7 @@ var init_helpers = __esm({
 });
 
 // src/lib/recipes/actions.ts
-function focusPair(variant) {
-  if (variant === "secondary") return ["border.strong", "border.subtle"];
-  if (variant === "critical") return ["status.critical.border-strong", "status.critical.border"];
-  return ["border.focus", "border.ring.default"];
-}
-function buttonPaint(variant, appearance, state2) {
-  const [focusEdge, focusRing] = focusPair(variant);
-  const ring = state2 === "Focused" ? c(focusRing) : NONE;
+function buttonPaint(variant, appearance, state2, shadowLabel = false) {
   if (state2 === "Disabled") {
     return {
       root: {
@@ -9142,21 +9158,35 @@ function buttonPaint(variant, appearance, state2) {
         text: c("content.disabled"),
         focus: NONE,
         ring: NONE,
+        gapRing: NONE,
         highlight: NONE,
         strokeWidth: strokeOf(appearance)
-      }
+      },
+      // A disabled label lies flat (the file puts no effect on it).
+      ...shadowLabel && appearance === "solid" ? { label: { textShadow: NONE } } : {}
     };
   }
   const step = state2 === "Pressed" ? 2 : state2 === "Hover" ? 1 : 0;
-  const focused = state2 === "Focused";
+  const gapRing = focusRing(variant, state2 === "Focused");
   if (appearance === "solid") {
     const k2 = SOLID[variant];
-    const rim = focused ? NONE : c(k2.fill[2]);
-    return { root: { fill: c(k2.fill[step]), stroke: NONE, text: c(k2.ink), focus: focused ? c(focusEdge) : NONE, ring, highlight: c("elevation.highlight"), strokeWidth: strokeOf(appearance), outerStroke: rim, outerStrokeWidth: focused ? "stroke.none" : "stroke.control" } };
+    return {
+      root: {
+        fill: c(k2.fill[step]),
+        stroke: NONE,
+        text: c(k2.ink),
+        focus: NONE,
+        ring: NONE,
+        gapRing,
+        highlight: c("elevation.highlight"),
+        strokeWidth: strokeOf(appearance)
+      },
+      ...shadowLabel ? { label: { textShadow: "text-2xs" } } : {}
+    };
   }
   if (appearance === "link") {
     const [rest, over] = LINK[variant];
-    return { root: { fill: NONE, stroke: NONE, text: c(step ? over : rest), focus: focused ? c(focusEdge) : NONE, ring, highlight: NONE, strokeWidth: strokeOf(appearance) } };
+    return { root: { fill: NONE, stroke: NONE, text: c(step ? over : rest), focus: NONE, ring: NONE, gapRing, highlight: NONE, strokeWidth: strokeOf(appearance) } };
   }
   const k = QUIET[variant];
   const wash = step === 2 ? c("action.ghost.pressed") : step === 1 ? c("action.ghost.hover") : NONE;
@@ -9165,8 +9195,9 @@ function buttonPaint(variant, appearance, state2) {
       fill: wash,
       stroke: appearance === "outline" ? c(k.edge) : NONE,
       text: c(k.ink),
-      focus: focused ? c(focusEdge) : NONE,
-      ring,
+      focus: NONE,
+      ring: NONE,
+      gapRing,
       highlight: NONE,
       strokeWidth: strokeOf(appearance)
     }
@@ -9275,7 +9306,7 @@ function socialPaint(appearance, brand, state2) {
   };
   return { root, label: { text: `social.${id}.content.on-action` } };
 }
-var BUTTON_VARIANTS, BUTTON_APPEARANCES, BUTTON_SIZES, BUTTON_STATES, SOLID, QUIET, LINK, strokeOf, BUTTON_HEIGHT, BUTTON_GAP, BUTTON, ICON_BUTTON_GLYPH, ICON_BUTTON, CLOSE_BUTTON_APPEARANCES, CLOSE_BUTTON_SHAPES, CLOSE_BUTTON_SIZES, CLOSE_BUTTON_VARIANTS, CLOSE_STATES, same3, NO_OVER, MUTED, CLOSE, CLOSE_SIZE, CLOSE_RADIUS, CLOSE_BUTTON, TEXT_LINK_VARIANTS, TEXT_LINK_SIZES, TEXT_LINK_STATES, LINK_INK, LINK_FOCUS, LINK_FONT, LINK_ICON, LINK_GAP, TEXT_LINK, FAB_APPEARANCES, FAB_SHAPES, FAB_SIZES, FAB_VARIANTS, FAB_STATES, FAB_MUTED, FAB, FAB_SIZE, FAB_BUTTON, FAB_GROUP_LAYOUTS, FAB_GROUP, BUTTON_GROUP_VARIANTS, BUTTON_GROUP_SHAPES, BUTTON_GROUP_ORIENTATIONS, BUTTON_GROUP_ITEM_SIZES, BUTTON_GROUP_ITEM_STATES, GROUP_RADIUS, BUTTON_GROUP, ITEM_SOLID, MUTED_INV, ITEM_GEOMETRY, BUTTON_GROUP_ITEM, DIVIDER_FILL, BUTTON_GROUP_DIVIDER, SOCIAL_BRAND_NAMES, SOCIAL_APPEARANCES, SOCIAL_SIZES, SOCIAL_STATES, SOCIAL_GEOMETRY, SOCIAL_LOGIN_BUTTON;
+var BUTTON_VARIANTS, BUTTON_APPEARANCES, BUTTON_SIZES, BUTTON_STATES, SOLID, FOCUS_RING, focusRing, QUIET, LINK, strokeOf, BUTTON_HEIGHT, BUTTON_GAP, BUTTON, ICON_BUTTON_GLYPH, ICON_BUTTON, CLOSE_BUTTON_APPEARANCES, CLOSE_BUTTON_SHAPES, CLOSE_BUTTON_SIZES, CLOSE_BUTTON_VARIANTS, CLOSE_STATES, same3, NO_OVER, MUTED, CLOSE, CLOSE_SIZE, CLOSE_RADIUS, CLOSE_BUTTON, TEXT_LINK_VARIANTS, TEXT_LINK_SIZES, TEXT_LINK_STATES, LINK_INK, LINK_FOCUS, LINK_FONT, LINK_ICON, LINK_GAP, TEXT_LINK, FAB_APPEARANCES, FAB_SHAPES, FAB_SIZES, FAB_VARIANTS, FAB_STATES, FAB_MUTED, FAB, FAB_SIZE, FAB_BUTTON, FAB_GROUP_LAYOUTS, FAB_GROUP, BUTTON_GROUP_VARIANTS, BUTTON_GROUP_SHAPES, BUTTON_GROUP_ORIENTATIONS, BUTTON_GROUP_ITEM_SIZES, BUTTON_GROUP_ITEM_STATES, GROUP_RADIUS, BUTTON_GROUP, ITEM_SOLID, MUTED_INV, ITEM_GEOMETRY, BUTTON_GROUP_ITEM, DIVIDER_FILL, BUTTON_GROUP_DIVIDER, SOCIAL_BRAND_NAMES, SOCIAL_APPEARANCES, SOCIAL_SIZES, SOCIAL_STATES, SOCIAL_GEOMETRY, SOCIAL_LOGIN_BUTTON;
 var init_actions = __esm({
   "src/lib/recipes/actions.ts"() {
     init_helpers();
@@ -9288,6 +9319,12 @@ var init_actions = __esm({
       secondary: { fill: ["action.secondary.default", "action.secondary.hover", "action.secondary.pressed"], ink: "content.on-secondary" },
       critical: { fill: ["status.critical.surface-solid", "status.critical.surface-solid-hover", "status.critical.surface-solid-pressed"], ink: "status.critical.on-solid" }
     };
+    FOCUS_RING = {
+      default: "border.ring.default",
+      secondary: "border.ring.neutral",
+      critical: "status.critical.ring"
+    };
+    focusRing = (variant, focused) => focused ? c(FOCUS_RING[variant] ?? FOCUS_RING.default) : NONE;
     QUIET = {
       default: { ink: "content.accent", edge: "border.accent" },
       secondary: { ink: "content.primary", edge: "border.control" },
@@ -9312,7 +9349,7 @@ var init_actions = __esm({
         part({ Size: BUTTON_SIZES }, (size) => ({
           root: { height: BUTTON_HEIGHT[size], paddingX: "spacing.inset-control", gap: BUTTON_GAP[size] }
         })),
-        part({ Variant: BUTTON_VARIANTS, Appearance: BUTTON_APPEARANCES, State: BUTTON_STATES }, (v, a2, s) => buttonPaint(v, a2, s))
+        part({ Variant: BUTTON_VARIANTS, Appearance: BUTTON_APPEARANCES, State: BUTTON_STATES }, (v, a2, s) => buttonPaint(v, a2, s, true))
       ]
     };
     ICON_BUTTON_GLYPH = { xs: "icon.small", sm: "icon.small", default: "icon.medium", lg: "icon.large" };

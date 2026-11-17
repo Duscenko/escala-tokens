@@ -84,19 +84,21 @@ export function liftShadow(name: keyof typeof LIFT): string {
   return LIFT[name](v('color.elevation.shadow-key'), v('color.elevation.shadow-ambient'), v('color.elevation.shadow-ring')).join(', ')
 }
 
-/** A stroke drawn OUTSIDE the frame: a 0-blur spread, so the box does not grow. */
+/** A stroke drawn OUTSIDE the frame (Figma `strokeAlign: OUTSIDE`): a 0-blur
+ *  spread, so the box does not grow. */
 const outerStrokeShadow = (props: SlotProps, v: (ref: string) => string) =>
   `0 0 0 ${props.outerStrokeWidth && props.outerStrokeWidth !== 'none' ? v(props.outerStrokeWidth) : '1px'} ${v(props.outerStroke!)}`
 
-/** The surface effects a slot carries: its lift, the top highlight, then an outside stroke. */
+/** The surface effects a slot carries: its lift, its outside stroke, then the top highlight. */
 function surfaceShadows(props: SlotProps, v: (ref: string) => string): string[] {
   const lift = props.lift && LIFT[props.lift] ? LIFT[props.lift](v('color.elevation.shadow-key'), v('color.elevation.shadow-ambient'), v('color.elevation.shadow-ring')) : []
-  return [
-    ...lift,
-    ...(props.highlight && props.highlight !== 'none' ? [highlightShadow(v(props.highlight))] : []),
-    ...(props.outerStroke && props.outerStroke !== 'none' ? [outerStrokeShadow(props, v)] : []),
-  ]
+  const outer = props.outerStroke && props.outerStroke !== 'none' ? [outerStrokeShadow(props, v)] : []
+  return [...lift, ...outer, ...(props.highlight && props.highlight !== 'none' ? [highlightShadow(v(props.highlight))] : [])]
 }
+/** A slot whose box-shadow is written by `focus`, `halo`, `lift` or `highlight`
+ *  (each composes `surfaceShadows`), so `outerStroke` must not write its own. */
+const composesShadow = (props: SlotProps) =>
+  [props.focus, props.halo, props.lift, props.highlight].some((r) => r && r !== 'none')
 
 /** The element's own border width, for its padding to give back. Registered
  *  non-inherited, so a child never subtracts its parent's border. */
@@ -131,14 +133,11 @@ function declarations(props: SlotProps): string[] {
       case 'opacity': out.push(`opacity: ${ref}`); break
       // An unbound text style (Avatar initials): literal px, Medium, line height 100%.
       case 'hairline': out.push(`border-width: ${ref}px`, 'border-style: solid', `${STROKE_WIDTH_VAR}: ${ref}px`); break
-      // Alone (AvatarStatus) it is the box-shadow; beside a highlight, lift, focus or halo it is
-      // composed into theirs by `surfaceShadows` (a solid Button's rim under its top highlight).
-      case 'outerStroke': {
-        if ('highlight' in props || props.lift || (props.focus && props.focus !== 'none') || (props.halo && props.halo !== 'none')) break
-        if (ref === 'none') break
+      case 'outerStroke':
+        if (ref === 'none' || composesShadow(props)) break // composed into that box-shadow
         out.push(`box-shadow: ${outerStrokeShadow(props, v)}`)
         break
-      }
+      case 'textShadow': out.push(ref === 'none' ? 'text-shadow: none' : 'text-shadow: 0 1px 0 rgb(0 0 0 / 0.15)'); break
       case 'fontLiteral': out.push(`font-size: ${ref}px`, 'line-height: 100%', 'font-weight: 500', 'letter-spacing: 0'); break
       // A halo fully outside the control (no edge): Figma's `focus-ring` frame,
       // `stroke.focus` wide, stroked OUTSIDE. The transparent outline is what
@@ -149,6 +148,14 @@ function declarations(props: SlotProps): string[] {
         out.push(`box-shadow: 0 0 0 ${HALO} ${v(ref)}${lit}`, `outline: ${HALO} solid transparent`)
         break
       }
+      // The Button / IconButton focus ring: 1px off the edge, the page in the gap
+      // (Figma's `focus-ring` frame, 1px larger than the button, stroked OUTSIDE).
+      // An outline follows the border radius plus its offset, so the corners stay
+      // concentric — and it is what forced-colors mode paints.
+      case 'gapRing':
+        if (ref === 'none') { out.push('outline: none'); break }
+        out.push(`outline: ${HALO} solid ${v(ref)}`, 'outline-offset: 1px')
+        break
       case 'stroke': out.push(`border-color: ${color(ref)}`); break
       case 'text': out.push(`color: ${color(ref)}`); break
       // A second colour a part's artwork reads (a file icon's page fill).

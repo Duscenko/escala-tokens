@@ -20,8 +20,8 @@ for role names.
 ## 1. Rules — never negotiable
 
 1. **Figma is the only rule.** Nothing outranks the file: not the plugin, not the web, not a convention
-   in CLAUDE.md, not an older plan. If two sets in the file disagree (IconButton keeps per-intent focus
-   rings, Button does not), the code copies BOTH.
+   in CLAUDE.md, not an older plan. If two sets in the file disagree, the code copies BOTH
+   (until 2026-11-17 IconButton and Button focused differently; the owner unified them in the file).
 2. **Never edit the Figma file.** Not to "fix" it, unify it, or finish its docs — not even for items an
    old plan lists as "pending in Figma". Every `use_figma` call in this skill is READ-ONLY. If something
    looks wrong, say it in one line and build from it as it is.
@@ -86,6 +86,11 @@ Copy `references/story-template.tsx` into `apps/storybook/stories/<Component>.st
 - Goldens (`exportAudit`) move when a recipe changes: read the diff, confirm it is only your change,
   then `npx vitest run src/lib/__tests__/exportAudit.test.ts -u`.
 - Recipe changed → `node scripts/build-plugin-studio.mjs` (committed bundle).
+- **A colour ROLE changed (new role, new alias, a mode re-pointed — a focus ring, a surface): audit the
+  colour documentation in the same change, always.** Docs · Color (`foundationDocs.tsx`, shown in the app
+  AND in Storybook › Variables › Color) has prose that does not follow the table by itself: re-read the
+  lead, usage and the section of the role's group; add a section for a new group; derive counts. Then
+  `npm run gen:escala-skill` and `colorDocs.test.ts`. A role shipped with stale docs is not done.
 - Remove the component from `spec/figma-components.status.json` → `pending`;
   `figmaComponentsParity.test.ts` must stay green.
 - Commit only your files; report what changed, what was measured, anything odd in the file.
@@ -96,8 +101,12 @@ Read `references/lessons.md` before step 3. In short:
 - Tailwind in Storybook scans `src/` only through `apps/storybook/.storybook/storybook.css` (`@source`).
 - Storybook paints the Figma file's system: `buildStudioTokens` + `applyFigmaFilePalette` (palette as data).
 - Figma strokes sit INSIDE the frame; the CSS padding gives back `--escala-stroke-width`.
-- Focus: a control's edge is 2px inside + a 2px halo outside; a field keeps its 1px edge and the 2px
-  halo straddles it (`outline` + negative offset). Copy each set's own focus colours.
+- A colour SAMPLE (swatch, chip, plate in docs or a dashboard) paints through `swatchPaint(color, page)`, with the
+  page of the mode it shows: a translucent role on the chrome reads as a black smudge. Components are exempt.
+- Focus: Button / IconButton (every appearance) = the Default look + ONE 2px ring 1px OUTSIDE the edge
+  (`gapRing`: `outline` + `outline-offset: 1px`), colour by intent. A control (Checkbox, Switch) = 2px edge
+  inside + 2px halo outside; a field keeps its 1px edge and the 2px halo straddles it (`outline` +
+  negative offset). Copy each set's own focus colours.
 - `get_design_context` Tailwind is lossy; trust `figma-read-set.js` — and a shadow's spread on a frame that
   does not clip content paints NOTHING in Figma (the script flags it). Pixels decide.
 - A stroke Figma does not draw must not exist in CSS either (`stroke.none`), or effects shift by its width.

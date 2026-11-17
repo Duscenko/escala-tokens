@@ -30,6 +30,7 @@ import VariableCollectionRail from './VariableCollectionRail'
 import { useNeedsProForAnotherTheme } from '../../lib/access'
 import { UpgradeToProDialog } from './UpgradeToProNotice'
 import { useI18n } from '../../lib/i18n'
+import { swatchPaint } from '../../lib/swatchPaint'
 
 // Role catalogue + tone helpers live in lib/semanticRoles.ts (shared with the
 // token export so exported values always resolve to a tone of their ramp).
@@ -146,12 +147,6 @@ const FOCUS_ICON: Record<SemanticFocus, ReactNode> = {
 export const archIconFor = (key: string): ReactNode => {
   const focus = focusForNavKey(key)
   return focus ? FOCUS_ICON[focus] : CATEGORY_ICON.all
-}
-
-// Checkerboard under alpha swatches so transparency reads visually (vibrancy).
-export const CHECKER_STYLE: React.CSSProperties = {
-  backgroundImage: 'repeating-conic-gradient(rgba(127,127,127,0.35) 0% 25%, transparent 0% 50%)',
-  backgroundSize: '8px 8px',
 }
 
 /** Dynamic read-only value cell for projected architectures. Adapts to the
@@ -394,15 +389,18 @@ function TokenCell({
   fallback,
   onEdit,
   edited,
+  page,
 }: {
   v: ArchTokenValue
   kind: SemanticArchitecture
   fallback?: ArchTokenValue
+  /** This column's own `surface.page`: a translucent value is drawn over it
+   *  (`swatchPaint`), never over the chrome. */
+  page?: string
   /** Present when the value is a primitive ref and can therefore be re-pointed. */
   onEdit?: () => void
   edited?: boolean
 }) {
-  const hasAlpha = /\/\s*0\./.test(v.css)
   const Chip = onEdit ? 'button' : 'span'
   return (
     <span className="flex flex-col items-start gap-1 min-w-0 max-w-full">
@@ -413,8 +411,7 @@ function TokenCell({
         } ${onEdit ? 'hover:border-line-strong hover:text-fg transition-colors cursor-pointer' : ''}`}
       >
         <span className={`relative overflow-hidden ${VALUE_SWATCH}`}>
-          {hasAlpha && <span className="absolute inset-0" style={CHECKER_STYLE} aria-hidden />}
-          <span className="absolute inset-0" style={{ background: v.css }} />
+          <span className="absolute inset-0" style={swatchPaint(v.css, page, 4)} />
         </span>
         <span className="truncate tabular-nums" title={v.label}>{v.label}</span>
       </Chip>
@@ -1266,6 +1263,11 @@ export default function Step3_SemanticTokens({
   // track count follows `modeKeys` — 2 for Vibrancy/Tonal (fixed), N for
   // Categorical (one per theme, so "+ Theme" actually grows the table).
   const archModeKeys = archView?.modeKeys ?? visibleArchThemeCols
+  /** Each column's own page (`surface.page`), for its translucent swatches. */
+  const archPageOf = useMemo<Record<string, string | undefined>>(() => {
+    const page = archView?.categories.find((c) => c.key === 'surface')?.tokens.find((t) => t.key === 'page')
+    return Object.fromEntries(Object.entries(page?.modes ?? {}).map(([m, v]) => [m, v.css]))
+  }, [archView])
   /**
    * The heading for one value column. A PER_THEME architecture's columns ARE
    * the project's themes, so they take the user's own theme names; a fixed-mode
@@ -1520,6 +1522,7 @@ export default function Step3_SemanticTokens({
                         >
                           <TokenCell
                             v={t.modes[mode]}
+                            page={archPageOf[mode]}
                             kind={semanticArchitecture}
                             fallback={t.fallback?.[mode]}
                             edited={Boolean(t.edited?.[mode])}
