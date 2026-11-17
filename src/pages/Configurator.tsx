@@ -2486,6 +2486,8 @@ export default function Configurator() {
         active={activeBlock}
         onSelect={selectBlock}
         onOpenComponent={selectComponent}
+        onInspectRole={(roleId) => openTokenInVariables(roleId, true)}
+        onOpenFoundation={selectFoundation}
         search={blockSearch}
         onClearSearch={() => setBlockSearch('')}
       />
@@ -3292,6 +3294,7 @@ export default function Configurator() {
               onOpenIndex={() => setActiveBlock(null)}
               search={blockSearch}
               onSearch={setBlockSearch}
+              onInspectorSlot={setComponentsSlot}
             />
           )}
           {componentsCanvas && tab === 'components' && (

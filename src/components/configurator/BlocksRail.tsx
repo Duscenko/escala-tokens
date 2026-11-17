@@ -28,8 +28,11 @@ function Chevron({ open }: { open: boolean }) {
  * then every group as an accordion, the open block's group expanded.
  */
 export default function BlocksRail({
-  icons, active, onSelect, onOpenIndex, search = '', onSearch,
+  icons, active, onSelect, onOpenIndex, search = '', onSearch, onInspectorSlot,
 }: {
+  /** Where a block page's panels dock (Block settings, Edit theme, a pinned
+   *  token list): the same slot the Components rail offers. */
+  onInspectorSlot?: (el: HTMLElement | null) => void
   icons: Record<string, ComponentType>
   /** null = the index is open. */
   active: BlockDef | null
@@ -188,6 +191,10 @@ export default function BlocksRail({
         })}
       </nav>
       <WorkspaceSaveBar statusOnly />
+      {/* Where a block page's panels dock (InspectorPortal). They cover the
+          directory; ‹ back on them brings the list back. `contents`: the
+          panel positions itself against the aside. */}
+      <div ref={onInspectorSlot} className="contents" />
     </aside>
   )
 }
