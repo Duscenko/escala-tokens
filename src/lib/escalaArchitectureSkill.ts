@@ -617,10 +617,17 @@ There is ONE focus ring, also on an invalid field — focus wins over error.
 
 ### Dimensions
 
-- **Radius has three independent axes.** Boxes (\`radius.container\`,
-  \`radius.overlay\`), Fields (\`radius.action\`), Selectors (\`radius.control\`).
-  \`radius.pill\` means "a circle" (avatar, badge, switch). Never give a card
-  the button's radius to "match".
+- **Radius has four independent axes.** Boxes (\`radius.container\`,
+  \`radius.overlay\`), Fields (\`radius.action\`), Items (\`radius.item\`),
+  Selectors (\`radius.control\`). \`radius.pill\` means "a circle" (avatar,
+  pill badge, switch). Never give a card the button's radius to "match".
+- **The tag family is on Items, not Selectors (DEC-2026-11-17-002).** Badge
+  \`Shape=rounded\`, Kbd (also inside Input) and InputTagChip bind
+  \`Radius/item\` / \`radius.item\`. \`radius.control\` is only for real
+  selectors (Checkbox, Slider thumb · track) plus link focus rings and media.
+  Never put a new badge-, tag- or key-like part on \`radius.control\`: the
+  Selectors axis would round the checkbox with it. Checkbox is also capped in
+  its recipe (≤ 25 % of its side), so it never turns into a circle.
 - **Nested radius:** a child flush inside a parent with padding p uses
   r = R − p. A button floating inside a card is not nested.
 - **Spacing = air, Size = object.** Gaps between siblings → \`spacing.gap-*\`
