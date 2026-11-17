@@ -44,7 +44,9 @@ export const FIGMA_KIT_CHECKOUT_URL: string | null =
 /** Price as shown on the page, in USD, taxes included. Null hides the number.
  *  Must match the Polar product — the page never states a price the checkout
  *  disagrees with. */
-export const FIGMA_KIT_PRICE: number | null = 85
+// Hidden (owner, 2026-11-17): the page leads with Open in Figma and View
+// Storybook, not a number. The Polar product still costs $85; checkout shows it.
+export const FIGMA_KIT_PRICE: number | null = null
 
 /** Set this as the checkout link's Success URL in Polar. */
 export const FIGMA_KIT_SUCCESS_URL = `https://www.escalatokens.com${FIGMA_KIT_PATH}?purchased=1`
