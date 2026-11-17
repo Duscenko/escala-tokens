@@ -48,24 +48,41 @@ en las sólidas, borde `border.control` en las outline, ink `content.disabled`.
 
 | Variant · Appearance | Default | Hover | Pressed | Foco (borde) |
 |---|---|---|---|---|
-| default · solid | fill `action.primary.default` · ink `content.on-action` | `action.primary.hover` | `action.primary.pressed` | `border.focus` |
+| default · solid | fill `action.primary.default` · ink `content.on-action` (+ `text-shadow 0 1px 0` negro 15 %, solo Button) | `action.primary.hover` | `action.primary.pressed` | un anillo de 2 px fuera: `border.ring.default` |
 | default · outline | stroke `border.accent` · ink `content.accent` | + fill `action.ghost.hover` | + `action.ghost.pressed` | `border.focus` |
 | default · ghost | ink `content.accent` | fill `action.ghost.hover` | `action.ghost.pressed` | `border.focus` |
 | default · link | ink `content.link.default` | ink `content.link.hover` | ink `content.link.hover` | `border.focus` |
-| secondary · solid | fill `action.secondary.default` · ink `content.on-secondary` | `.hover` | `.pressed` | Button `border.focus` · IconButton **`border.strong`** + halo `border.subtle` |
+| secondary · solid | fill `action.secondary.default` · ink `content.on-secondary` | `.hover` | `.pressed` | un anillo de 2 px fuera: `border.strong` |
 | secondary · outline | stroke `border.control` · ink `content.primary` | + fill `action.ghost.hover` | + `action.ghost.pressed` | `border.focus` |
 | secondary · ghost | ink `content.primary` | fill `action.ghost.hover` | `action.ghost.pressed` | `border.focus` |
 | secondary · link | ink `content.secondary` | ink `content.primary` | ink `content.primary` | `border.focus` |
-| critical · solid | fill `status.critical.surface-solid` · ink `status.critical.on-solid` | `-hover` | `-pressed` | Button `border.focus` · IconButton **`status.critical.border-strong`** + halo `status.critical.border` |
+| critical · solid | fill `status.critical.surface-solid` · ink `status.critical.on-solid` | `-hover` | `-pressed` | un anillo de 2 px fuera: `status.critical.ring` |
 | critical · outline | stroke `status.critical.border-strong` · ink `status.critical.content` | + fill `action.ghost.hover` | + `action.ghost.pressed` | `border.focus` |
 | critical · ghost | ink `status.critical.content` | fill `action.ghost.hover` | `action.ghost.pressed` | `border.focus` |
 | critical · link | ink `status.critical.content` | + subrayado | + subrayado | `border.focus` |
 
-Todas las variantes en foco añaden el halo `border.ring.default` fuera del borde, salvo las
-dos de IconButton marcadas arriba. Así está en el archivo (2026-11-12) y así lo copia el código.
+Outline, ghost y link en foco: borde 2 px por dentro de la intención + halo fuera (`border.ring.default`,
+el de la intención en IconButton). Las TRES sólidas (Button e IconButton) ya no tienen ese par: ver
+«Sólidas, estilo Create UI» abajo. Así está en el archivo y así lo copia el código.
 Loading = Default con spinner en lugar del icono inicial.
 
 **Regla:** el código copia el archivo tal cual; Figma no se edita para hacerlo coherente.
+
+## Sólidas, estilo Create UI (2026-11-17, decisión del dueño)
+
+Button 4:5066 e IconButton 614:785, `Appearance = solid`, las tres intenciones:
+- **Sin trazo exterior en ningún estado** (antes: 1 px en el tono Pressed). El relleno es el control.
+- Brillo superior `elevation.highlight` (2 px, inset) en todo estado menos Disabled.
+- **Foco = UN anillo de 2 px fuera**, del color de la intención (`border.ring.default` · `border.strong` ·
+  `status.critical.ring`, rol nuevo, error Alpha/08). Nada se dibuja por dentro. Receta: `halo`.
+- La etiqueta del Button lleva `text-shadow 0 1px 0 rgb(0 0 0 / .15)` (`Shadow/text-2xs`; receta `textShadow`,
+  la etiqueta es `<span data-part="Button.label">`). Disabled, plano. IconButton no tiene etiqueta.
+- Dark del primario: relleno Dark/09 → Hover 10 → Pressed 08 (sube al pasar, baja al presionar); la etiqueta
+  clara se juzga por contraste PERCIBIDO (APCA Lc ≥ 60, intención `action-label-perceived`), no por WCAG 4,5.
+  Medido: Default 4,1:1 y Hover 3,4:1 en WCAG — **intencional**; el WCAG estricto queda para un futuro modo
+  High contrast. Si el matiz no llega (verde, amarillo, naranja) toma tinta oscura. Light no cambia.
+- Outline, ghost y link NO cambian: borde interior + halo.
+- Verificado en Storybook (Dark y Light) con `getComputedStyle`; ver `lessons.md`.
 
 ## No cubierto por el contrato (registrado, no bloquea)
 

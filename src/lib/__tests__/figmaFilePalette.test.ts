@@ -35,6 +35,8 @@ const SINCE_INVENTORY: Record<string, string> = {
   'Status/critical/surface': '{CP:States/EscalaDS/Error/Alpha/03} ; {CP:States/EscalaDS/Error Dark/Alpha/03}',
   // DEC-2026-11-16-006: curated again in the file after DEC-004 — Dark critical text, Dark control border, Light highlight.
   'Status/critical/content': '{CP:States/EscalaDS/Error/11} ; {CP:States/EscalaDS/Error Dark/10}',
+  // 2026-11-17: Dark brand wash moved from Dark/02 to Dark/04 in the file.
+  'Surface/accent': '{CP:Accents/EscalaDS/02} ; {CP:Accents/EscalaDS Dark/04}',
   'Elevation/highlight': '{CP:Neutrals/White Alpha/05} ; {CP:Neutrals/White Alpha/03}',
 }
 function inventoryText(): string {

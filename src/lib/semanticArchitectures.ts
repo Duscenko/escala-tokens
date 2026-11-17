@@ -893,7 +893,10 @@ const CATEGORICAL_ROLES: { group: string; key: string; light: string; dark: stri
   { group: 'surface', key: 'page',    light: '{neutral.1}',  dark: '{neutral-dark.1}' },
   { group: 'surface', key: 'layer-1', light: '{neutral.2}',  dark: '{neutral-dark.2}' },
   { group: 'surface', key: 'layer-2', light: '{neutral.3}',  dark: '{neutral-dark.3}' },
-  { group: 'surface', key: 'accent',  light: '{accent.2}',   dark: '{accent.2}' },
+  // OWNER DECISION 2026-11-17: the Figma file is the rule. `Surface/accent` is Accents/EscalaDS/02 in Light and Dark/04 in Dark (a
+  // brand wash needs a step more to read on the dark page). Pinned to the file's steps; `content.accent` (#b29bf9) reads on it at WCAG 6.3 · Lc 52 (the
+  // file's own pair).
+  { group: 'surface', key: 'accent',  light: '{accent.2}',   dark: '{accent.4}' },
   // The neutral fill of a control's passive part — a Switch's off track, a
   // Slider or Progress track, an OTP segment, a scrollbar thumb. Tone 4/5,
   // what those parts read off `action.secondary` before it became the
@@ -1314,7 +1317,7 @@ export const CATEGORICAL_ROLE_COMMENTS: Record<string, string> = {
   'surface.selected-pressed': '[ROLE: Active State Background Pressed] A pressed soft brand control (Button Soft / Outline pressed). {accent-a.5}, two steps deeper than surface.selected — the brand twin of status.*.surface-pressed.',
   'surface.inverse': '[ROLE: Inverted Background] High-contrast background for tooltips, snackbars and inverse alerts or badges. Always pair with content.inverse (title) and content.inverse-secondary (body, icons). {neutral.12} in both themes: a dark chip in Light, a light one in Dark.',
   'surface.overlay': '[ROLE: Scrim] Semi-transparent layer over surface.page to focus attention on modals (layer-2 surfaces). Ships at 60% black alpha (`{black-a.8}`), same in both themes.',
-  'surface.accent': '[ROLE: Accent Wash] Ambient brand-tinted background — a section that leans brand without being an interactive fill.',
+  'surface.accent': '[ROLE: Accent Wash] Ambient brand-tinted background — a section that leans brand without being an interactive fill. {accent.2} in Light, {accent.4} in Dark (the Figma file is the rule, 2026-11-17).',
   'surface.muted': "[ROLE: Control Track] Neutral fill of a control's passive part — a Switch's off track, a Slider or Progress track, an OTP segment, a step connector. {neutral.4} in light. Not a button: a secondary CTA uses action.secondary.default.",
   'surface.muted-hover': '[ROLE: Control Track Hover] Hover twin of surface.muted (a hovered off Switch, a scrollbar thumb). {neutral.5} in light — one step past the track.',
   'content.primary': '[ROLE: High Contrast Text] Main body and headings. STRICT: must pass WCAG AA (4.5:1) against surface.page and surface.layer-1.',

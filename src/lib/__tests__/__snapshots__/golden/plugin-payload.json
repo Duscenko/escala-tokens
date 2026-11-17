@@ -717,7 +717,7 @@
           },
           "accent": {
             "core--minimalist::light": "#f3f1fd",
-            "core--minimalist::dark": "#17161d"
+            "core--minimalist::dark": "#2a243f"
           },
           "muted": {
             "core--minimalist::light": "#e3e1e6",
@@ -31545,7 +31545,7 @@
       "Surface/selected-pressed": "[ROLE: Active State Background Pressed] A pressed soft brand control (Button Soft / Outline pressed). {accent-a.5}, two steps deeper than surface.selected — the brand twin of status.*.surface-pressed.",
       "Surface/inverse": "[ROLE: Inverted Background] High-contrast background for tooltips, snackbars and inverse alerts or badges. Always pair with content.inverse (title) and content.inverse-secondary (body, icons). {neutral.12} in both themes: a dark chip in Light, a light one in Dark.",
       "Surface/overlay": "[ROLE: Scrim] Semi-transparent layer over surface.page to focus attention on modals (layer-2 surfaces). Ships at 60% black alpha (`{black-a.8}`), same in both themes.",
-      "Surface/accent": "[ROLE: Accent Wash] Ambient brand-tinted background — a section that leans brand without being an interactive fill.",
+      "Surface/accent": "[ROLE: Accent Wash] Ambient brand-tinted background — a section that leans brand without being an interactive fill. {accent.2} in Light, {accent.4} in Dark (the Figma file is the rule, 2026-11-17).",
       "Surface/muted": "[ROLE: Control Track] Neutral fill of a control's passive part — a Switch's off track, a Slider or Progress track, an OTP segment, a step connector. {neutral.4} in light. Not a button: a secondary CTA uses action.secondary.default.",
       "Surface/muted-hover": "[ROLE: Control Track Hover] Hover twin of surface.muted (a hovered off Switch, a scrollbar thumb). {neutral.5} in light — one step past the track.",
       "Content/primary": "[ROLE: High Contrast Text] Main body and headings. STRICT: must pass WCAG AA (4.5:1) against surface.page and surface.layer-1.",

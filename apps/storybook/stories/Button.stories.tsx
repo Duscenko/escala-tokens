@@ -44,6 +44,17 @@ function render({ variant, appearance, size, forceState, label, iconLeadingVisib
 const meta: Meta<ButtonStoryArgs> = {
   title: 'Buttons/Button',
   render,
+  parameters: {
+    docs: {
+      description: {
+        component:
+          'Solid buttons (default · secondary · critical) have no outside stroke: the fill is the control, with a top highlight, a `0 1px 0` label shadow, and ONE 2px focus ring outside, in the colour of the intent (`border.ring.default` · `border.strong` · `status.critical.ring`). Outline, ghost and link keep their inside edge + halo.\n\n' +
+          '**Contrast is intentional.** In Dark the brand label is light on the violet fill and is judged by perceived contrast (APCA Lc ≥ 60, intent `action-label-perceived`), not WCAG 4.5:1. The a11y panel therefore reports WCAG 4.1:1 (Default) and 3.4:1 (Hover) on the default solid: that is the owner\'s decision, not a bug. Strict WCAG is reserved for a future High contrast mode.',
+      },
+    },
+    // The default solid is the one pair the owner pins below WCAG 4.5:1 in Dark (see the description above).
+    a11y: { context: { exclude: ['[data-variant="default"][data-appearance="solid"]'] } },
+  },
   args: {
     variant: 'default',
     appearance: 'solid',
