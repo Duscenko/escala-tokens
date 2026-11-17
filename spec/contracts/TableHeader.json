@@ -4,6 +4,12 @@
   "key": "TableHeader",
   "label": "TableHeader",
   "category": "Content & Surfaces",
+  "box": "gray",
+  "locks": [
+    "size",
+    "hit",
+    "motion"
+  ],
   "description": "Header row of a Table: a strip of TableHead cells on Surface/muted.",
   "owners": {
     "anatomy": "figma",

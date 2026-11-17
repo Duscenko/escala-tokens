@@ -4,6 +4,12 @@
   "key": "BreadcrumbItem",
   "label": "Breadcrumb Item",
   "category": "Navigation",
+  "box": "gray",
+  "locks": [
+    "size",
+    "hit",
+    "motion"
+  ],
   "description": "One segment of a breadcrumb trail, rendered as a link (or the current page).",
   "owners": {
     "anatomy": "figma",

@@ -4,6 +4,13 @@
   "key": "Textarea",
   "label": "Textarea",
   "category": "Form Controls",
+  "box": "gray",
+  "locks": [
+    "radius",
+    "size",
+    "hit",
+    "motion"
+  ],
   "description": "Multi-line text field for free-form input with an optional resize glyph. Invalid shows a warning glyph and Loading a spinner in the top-right corner.",
   "owners": {
     "anatomy": "figma",

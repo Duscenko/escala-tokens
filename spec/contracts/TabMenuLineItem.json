@@ -4,6 +4,12 @@
   "key": "TabMenuLineItem",
   "label": "Tab Menu Line Item",
   "category": "Navigation",
+  "box": "gray",
+  "locks": [
+    "size",
+    "hit",
+    "motion"
+  ],
   "description": "Line tab of a TabMenu: the selected item carries a 2px accent bar on its bottom or left edge.",
   "owners": {
     "anatomy": "figma",

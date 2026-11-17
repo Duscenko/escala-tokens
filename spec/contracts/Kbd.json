@@ -4,6 +4,14 @@
   "key": "Kbd",
   "label": "Kbd",
   "category": "Indicators",
+  "box": "black",
+  "locks": [
+    "shape",
+    "radius",
+    "size",
+    "hit",
+    "motion"
+  ],
   "description": "A keyboard key hint for shortcuts and navigation legends (⌘, K, Esc, ↑, ↓, ↵); KbdGroup spaces several keys.",
   "owners": {
     "anatomy": "figma",

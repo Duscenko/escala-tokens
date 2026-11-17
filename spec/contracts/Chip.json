@@ -4,6 +4,12 @@
   "key": "Chip",
   "label": "Chip",
   "category": "Indicators",
+  "box": "gray",
+  "locks": [
+    "size",
+    "hit",
+    "motion"
+  ],
   "description": "A compact tag for filter, selection or input values with an optional leading icon and close action.",
   "owners": {
     "anatomy": "figma",

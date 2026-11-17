@@ -4,6 +4,13 @@
   "key": "TooltipInfoTrigger",
   "label": "Tooltip Info Trigger",
   "category": "Content & Surfaces",
+  "box": "black",
+  "locks": [
+    "shape",
+    "size",
+    "hit",
+    "motion"
+  ],
   "description": "Info-circle button that opens a tooltip.",
   "owners": {
     "anatomy": "figma",

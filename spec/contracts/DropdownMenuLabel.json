@@ -4,6 +4,12 @@
   "key": "DropdownMenuLabel",
   "label": "Dropdown Menu Label",
   "category": "Navigation",
+  "box": "gray",
+  "locks": [
+    "size",
+    "hit",
+    "motion"
+  ],
   "description": "Overline heading for a group of items inside the DropdownMenu.",
   "owners": {
     "anatomy": "figma",

@@ -4,6 +4,8 @@
   "key": "DatePickerPopover",
   "label": "Date Picker Popover",
   "category": "Form Controls",
+  "box": "white",
+  "locks": [],
   "description": "The panel DatePickerTrigger opens: a Calendar with Radius/overlay and the Shadow/lg lift, 8 px below the trigger. Size default / sm, Mode single / range (range adds the presets rail).",
   "owners": {
     "anatomy": "figma",

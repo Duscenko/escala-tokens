@@ -4,6 +4,13 @@
   "key": "TableResizer",
   "label": "TableResizer",
   "category": "Content & Surfaces",
+  "box": "black",
+  "locks": [
+    "shape",
+    "size",
+    "hit",
+    "motion"
+  ],
   "description": "Column resize handle on the end edge of a TableHead.",
   "owners": {
     "anatomy": "figma",

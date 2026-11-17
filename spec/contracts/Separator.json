@@ -4,6 +4,13 @@
   "key": "Separator",
   "label": "Separator",
   "category": "Content & Surfaces",
+  "box": "black",
+  "locks": [
+    "shape",
+    "size",
+    "hit",
+    "motion"
+  ],
   "description": "Thin rule that divides content, horizontal or vertical, solid or dashed, with an optional label at its start, centre or end.",
   "owners": {
     "anatomy": "figma",

@@ -4,6 +4,8 @@
   "key": "Modal",
   "label": "Modal",
   "category": "Content & Surfaces",
+  "box": "white",
+  "locks": [],
   "description": "Dialog card that interrupts the flow for a decision or a short task: a header, a content slot and a footer over a scrim.",
   "owners": {
     "anatomy": "figma",

@@ -4,6 +4,12 @@
   "key": "TableCaption",
   "label": "TableCaption",
   "category": "Content & Surfaces",
+  "box": "gray",
+  "locks": [
+    "size",
+    "hit",
+    "motion"
+  ],
   "description": "The title and description of a table.",
   "owners": {
     "anatomy": "figma",

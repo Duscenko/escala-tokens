@@ -4,6 +4,12 @@
   "key": "Slider",
   "label": "Slider",
   "category": "Form Controls",
+  "box": "gray",
+  "locks": [
+    "size",
+    "hit",
+    "motion"
+  ],
   "description": "Single or range value with an optional tooltip above the thumbs and tick marks under the track.",
   "owners": {
     "anatomy": "figma",

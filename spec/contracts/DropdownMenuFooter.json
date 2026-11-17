@@ -4,6 +4,12 @@
   "key": "DropdownMenuFooter",
   "label": "Dropdown Menu Footer",
   "category": "Navigation",
+  "box": "gray",
+  "locks": [
+    "size",
+    "hit",
+    "motion"
+  ],
   "description": "Divided action bar pinned below the menu list: status text and buttons.",
   "owners": {
     "anatomy": "figma",

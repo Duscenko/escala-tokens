@@ -4,6 +4,12 @@
   "key": "StepperItem",
   "label": "Stepper Item",
   "category": "Navigation",
+  "box": "gray",
+  "locks": [
+    "size",
+    "hit",
+    "motion"
+  ],
   "description": "One step of a Stepper: marker and connector with a title and an optional description, coloured by status.",
   "owners": {
     "anatomy": "figma",

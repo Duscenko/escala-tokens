@@ -4,6 +4,12 @@
   "key": "FileUploadItem",
   "label": "File Upload Item",
   "category": "Form Controls",
+  "box": "gray",
+  "locks": [
+    "size",
+    "hit",
+    "motion"
+  ],
   "description": "One file row in FileUpload with format icon, name, status, size readout, progress and row actions.",
   "owners": {
     "anatomy": "figma",

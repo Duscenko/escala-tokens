@@ -4,6 +4,13 @@
   "key": "ProgressLine",
   "label": "Progress Line",
   "category": "Indicators",
+  "box": "black",
+  "locks": [
+    "shape",
+    "size",
+    "hit",
+    "motion"
+  ],
   "description": "A horizontal progress indicator for a value from 0 to 100: a muted track and a bar that is solid or a gradient of the primary action.",
   "owners": {
     "anatomy": "figma",

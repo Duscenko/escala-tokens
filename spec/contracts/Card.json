@@ -4,6 +4,8 @@
   "key": "Card",
   "label": "Card",
   "category": "Content & Surfaces",
+  "box": "white",
+  "locks": [],
   "description": "Contained surface for grouping related content and actions. Fill → card/bg → surface/1.",
   "owners": {
     "anatomy": "figma",

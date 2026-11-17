@@ -4,6 +4,12 @@
   "key": "Breadcrumb",
   "label": "Breadcrumbs",
   "category": "Navigation",
+  "box": "gray",
+  "locks": [
+    "size",
+    "hit",
+    "motion"
+  ],
   "description": "Navigation trail of items, separators and an optional ellipsis that collapses the start of a long trail.",
   "owners": {
     "anatomy": "figma",

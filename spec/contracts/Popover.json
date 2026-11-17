@@ -4,6 +4,8 @@
   "key": "Popover",
   "label": "Popover",
   "category": "Content & Surfaces",
+  "box": "white",
+  "locks": [],
   "description": "Non-modal floating panel anchored to a trigger for rich, interactive content: optional media, a title, a description, a content slot and a footer.",
   "owners": {
     "anatomy": "figma",

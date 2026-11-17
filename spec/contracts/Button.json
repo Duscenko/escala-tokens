@@ -4,6 +4,12 @@
   "key": "Button",
   "label": "Button",
   "category": "Button & Actions",
+  "box": "gray",
+  "locks": [
+    "size",
+    "hit",
+    "motion"
+  ],
   "description": "Triggers an action or navigation. Variant is the intent — default (brand), secondary (neutral), critical (destructive) — and Appearance the style — solid, outline, ghost, link — in all 12 combinations, four sizes and six states.",
   "owners": {
     "anatomy": "figma",

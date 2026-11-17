@@ -4,6 +4,12 @@
   "key": "Badge",
   "label": "Badge",
   "category": "Indicators",
+  "box": "gray",
+  "locks": [
+    "size",
+    "hit",
+    "motion"
+  ],
   "description": "A small non-interactive label for statuses, counts and categories. Variant is the severity; Appearance soft, solid, outline or ghost; Type default, icon, number or dot.",
   "owners": {
     "anatomy": "figma",

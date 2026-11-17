@@ -4,6 +4,8 @@
   "key": "Calendar",
   "label": "Calendar",
   "category": "Form Controls",
+  "box": "white",
+  "locks": [],
   "description": "The date panel: a month with its header, an optional presets rail beside it and an optional Today · Clear · Apply footer.",
   "owners": {
     "anatomy": "figma",

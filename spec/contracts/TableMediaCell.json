@@ -4,6 +4,12 @@
   "key": "TableMediaCell",
   "label": "TableMediaCell",
   "category": "Content & Surfaces",
+  "box": "gray",
+  "locks": [
+    "size",
+    "hit",
+    "motion"
+  ],
   "description": "Media cell: a thumbnail at 1:1 or 2:1 with an optional label and description.",
   "owners": {
     "anatomy": "figma",

@@ -4,6 +4,12 @@
   "key": "PaginationLink",
   "label": "Pagination Link",
   "category": "Navigation",
+  "box": "gray",
+  "locks": [
+    "size",
+    "hit",
+    "motion"
+  ],
   "description": "Numbered page link: ghost when inactive, outlined (or filled in a grouped Pagination) when Active.",
   "owners": {
     "anatomy": "figma",

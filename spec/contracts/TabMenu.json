@@ -4,6 +4,12 @@
   "key": "TabMenu",
   "label": "Tab Menu",
   "category": "Navigation",
+  "box": "gray",
+  "locks": [
+    "size",
+    "hit",
+    "motion"
+  ],
   "description": "Group of buttons that switches between sibling views or routes: a line layout (hairline track and accent bar) or a button layout (selected item filled), horizontal or vertical.",
   "owners": {
     "anatomy": "figma",

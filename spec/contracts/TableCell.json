@@ -4,6 +4,12 @@
   "key": "TableCell",
   "label": "TableCell",
   "category": "Content & Surfaces",
+  "box": "gray",
+  "locks": [
+    "size",
+    "hit",
+    "motion"
+  ],
   "description": "Body cell: a label with optional description, a leading slot (Checkbox, Avatar, Badge) and a trailing slot (overflow IconButton or Badge).",
   "owners": {
     "anatomy": "figma",

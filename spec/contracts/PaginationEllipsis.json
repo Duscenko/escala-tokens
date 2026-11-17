@@ -4,6 +4,12 @@
   "key": "PaginationEllipsis",
   "label": "Pagination Ellipsis",
   "category": "Navigation",
+  "box": "gray",
+  "locks": [
+    "size",
+    "hit",
+    "motion"
+  ],
   "description": "Non-interactive gap marker between page ranges.",
   "owners": {
     "anatomy": "figma",

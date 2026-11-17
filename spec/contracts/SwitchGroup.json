@@ -4,6 +4,8 @@
   "key": "SwitchGroup",
   "label": "Switch Group",
   "category": "Form Controls",
+  "box": "white",
+  "locks": [],
   "description": "Switch with a label, an optional description and a footer; Placement sets the side the switch sits on, Invalid shows critical helper text and Loading replaces the switch with a spinner.",
   "owners": {
     "anatomy": "figma",

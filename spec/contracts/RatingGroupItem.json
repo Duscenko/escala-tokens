@@ -4,6 +4,13 @@
   "key": "RatingGroupItem",
   "label": "Rating Group Item",
   "category": "Indicators",
+  "box": "black",
+  "locks": [
+    "shape",
+    "size",
+    "hit",
+    "motion"
+  ],
   "description": "One option of a RatingGroup. A checked star fills in Content/accent; an emoji keeps its glyph and marks the choice with Surface/selected.",
   "owners": {
     "anatomy": "figma",

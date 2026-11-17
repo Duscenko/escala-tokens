@@ -4,6 +4,12 @@
   "key": "InputOTP",
   "label": "Input OTP",
   "category": "Form Controls",
+  "box": "gray",
+  "locks": [
+    "size",
+    "hit",
+    "motion"
+  ],
   "description": "A one-time code field: a row of InputOTPSlots over one hidden input, with a separator between the halves of a 6- or 8-digit code. Paste fills every slot.",
   "owners": {
     "anatomy": "figma",

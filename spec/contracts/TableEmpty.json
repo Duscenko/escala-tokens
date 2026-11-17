@@ -4,6 +4,12 @@
   "key": "TableEmpty",
   "label": "TableEmpty",
   "category": "Content & Surfaces",
+  "box": "gray",
+  "locks": [
+    "size",
+    "hit",
+    "motion"
+  ],
   "description": "The empty state of a table: icon, title, description and an action.",
   "owners": {
     "anatomy": "figma",

@@ -4,6 +4,12 @@
   "key": "NavItem",
   "label": "Nav Item",
   "category": "Navigation",
+  "box": "gray",
+  "locks": [
+    "size",
+    "hit",
+    "motion"
+  ],
   "description": "Header navigation link or menu trigger: label, optional leading icon, count Badge and trailing caret.",
   "owners": {
     "anatomy": "figma",

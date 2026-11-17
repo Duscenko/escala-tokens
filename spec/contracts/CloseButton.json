@@ -4,6 +4,12 @@
   "key": "CloseButton",
   "label": "Close Button",
   "category": "Button & Actions",
+  "box": "gray",
+  "locks": [
+    "size",
+    "hit",
+    "motion"
+  ],
   "description": "The dismiss control for alerts, toasts, dialogs and tags: one X in a square. Soft by default, with solid, outline and ghost; rounded, pill or square corners; five sizes; and an inverse variant for a dark chip.",
   "owners": {
     "anatomy": "figma",

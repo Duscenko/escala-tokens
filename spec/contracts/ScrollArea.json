@@ -4,6 +4,8 @@
   "key": "ScrollArea",
   "label": "Scroll Area",
   "category": "Content & Surfaces",
+  "box": "white",
+  "locks": [],
   "description": "Scrollable viewport with overlay ScrollBars and an optional fade at the scroll end. Size and Appearance cascade to the bars.",
   "owners": {
     "anatomy": "figma",

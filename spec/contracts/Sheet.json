@@ -4,6 +4,8 @@
   "key": "Sheet",
   "label": "Sheet",
   "category": "Content & Surfaces",
+  "box": "white",
+  "locks": [],
   "description": "An edge-anchored panel on the Modal surface: a desktop drawer from the right or left, a mobile sheet from the bottom.",
   "owners": {
     "anatomy": "figma",

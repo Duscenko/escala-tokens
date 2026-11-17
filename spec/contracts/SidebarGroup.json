@@ -4,6 +4,8 @@
   "key": "SidebarGroup",
   "label": "Sidebar Group",
   "category": "Navigation",
+  "box": "white",
+  "locks": [],
   "description": "A labelled section of the Sidebar: a SidebarGroupLabel and a SidebarMenu. Size cascades to every row.",
   "owners": {
     "anatomy": "figma",

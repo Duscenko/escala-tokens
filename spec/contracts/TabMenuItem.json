@@ -4,6 +4,12 @@
   "key": "TabMenuItem",
   "label": "Tab Menu Item",
   "category": "Navigation",
+  "box": "gray",
+  "locks": [
+    "size",
+    "hit",
+    "motion"
+  ],
   "description": "Button tab of a TabMenu: optional leading icon, label and a trailing count badge. Selected fills Surface/selected.",
   "owners": {
     "anatomy": "figma",

@@ -4,6 +4,8 @@
   "key": "DropdownMenu",
   "label": "Dropdown Menu",
   "category": "Navigation",
+  "box": "white",
+  "locks": [],
   "description": "Floating menu of commands opened from a trigger (a Button or IconButton): an optional search header, labelled groups of items and an optional footer.",
   "owners": {
     "anatomy": "figma",

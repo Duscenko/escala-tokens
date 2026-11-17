@@ -4,6 +4,13 @@
   "key": "ScrollBar",
   "label": "Scroll Bar",
   "category": "Content & Surfaces",
+  "box": "black",
+  "locks": [
+    "shape",
+    "size",
+    "hit",
+    "motion"
+  ],
   "description": "Overlay scrollbar of a ScrollArea: a Radius/full thumb on a Surface/muted track (filled) or on nothing (ghost).",
   "owners": {
     "anatomy": "figma",

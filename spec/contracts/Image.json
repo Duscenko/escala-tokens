@@ -4,6 +4,8 @@
   "key": "Image",
   "label": "Image",
   "category": "Content & Surfaces",
+  "box": "white",
+  "locks": [],
   "description": "A photo or illustration cropped to a fixed ratio (object-fit: cover), on Surface/muted while it loads. Ratio auto fills its parent.",
   "owners": {
     "anatomy": "figma",

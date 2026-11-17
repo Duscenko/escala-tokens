@@ -3,6 +3,12 @@
     "key": "Button",
     "label": "Button",
     "category": "Button & Actions",
+    "box": "gray",
+    "locks": [
+      "size",
+      "hit",
+      "motion"
+    ],
     "file": "spec/contracts/Button.json",
     "figmaSet": "Button",
     "story": "buttons-button--playground",
@@ -12,6 +18,12 @@
     "key": "IconButton",
     "label": "Icon Button",
     "category": "Button & Actions",
+    "box": "gray",
+    "locks": [
+      "size",
+      "hit",
+      "motion"
+    ],
     "file": "spec/contracts/IconButton.json",
     "figmaSet": "IconButton",
     "story": "buttons-iconbutton--playground",
@@ -21,6 +33,12 @@
     "key": "CloseButton",
     "label": "Close Button",
     "category": "Button & Actions",
+    "box": "gray",
+    "locks": [
+      "size",
+      "hit",
+      "motion"
+    ],
     "file": "spec/contracts/CloseButton.json",
     "figmaSet": "CloseButton",
     "story": "buttons-closebutton--playground",
@@ -30,6 +48,13 @@
     "key": "TextLink",
     "label": "Text Link",
     "category": "Button & Actions",
+    "box": "gray",
+    "locks": [
+      "radius",
+      "size",
+      "hit",
+      "motion"
+    ],
     "file": "spec/contracts/TextLink.json",
     "figmaSet": "TextLink",
     "story": "buttons-textlink--playground",
@@ -39,6 +64,12 @@
     "key": "FABButton",
     "label": "FAB Button",
     "category": "Button & Actions",
+    "box": "gray",
+    "locks": [
+      "size",
+      "hit",
+      "motion"
+    ],
     "file": "spec/contracts/FABButton.json",
     "figmaSet": "FABButton",
     "story": "buttons-fabbutton--playground",
@@ -48,6 +79,12 @@
     "key": "FABGroup",
     "label": "FAB Group",
     "category": "Button & Actions",
+    "box": "gray",
+    "locks": [
+      "size",
+      "hit",
+      "motion"
+    ],
     "file": "spec/contracts/FABGroup.json",
     "figmaSet": "FABGroup",
     "story": "buttons-fabbutton--fab-group-playground",
@@ -57,6 +94,12 @@
     "key": "ButtonGroup",
     "label": "Button Group",
     "category": "Button & Actions",
+    "box": "gray",
+    "locks": [
+      "size",
+      "hit",
+      "motion"
+    ],
     "file": "spec/contracts/ButtonGroup.json",
     "figmaSet": "ButtonGroup",
     "story": "buttons-buttongroup--playground",
@@ -66,6 +109,12 @@
     "key": "ButtonGroupItem",
     "label": "Button Group Item",
     "category": "Button & Actions",
+    "box": "gray",
+    "locks": [
+      "size",
+      "hit",
+      "motion"
+    ],
     "file": "spec/contracts/ButtonGroupItem.json",
     "figmaSet": "ButtonGroupItem",
     "story": "buttons-buttongroup--button-group-item-playground",
@@ -75,6 +124,12 @@
     "key": "ButtonGroupDivider",
     "label": "Button Group Divider",
     "category": "Button & Actions",
+    "box": "gray",
+    "locks": [
+      "size",
+      "hit",
+      "motion"
+    ],
     "file": "spec/contracts/ButtonGroupDivider.json",
     "figmaSet": "ButtonGroupDivider",
     "story": "buttons-buttongroup--button-group-divider-playground",
@@ -84,6 +139,12 @@
     "key": "SocialLoginButton",
     "label": "Social Login Button",
     "category": "Button & Actions",
+    "box": "gray",
+    "locks": [
+      "size",
+      "hit",
+      "motion"
+    ],
     "file": "spec/contracts/SocialLoginButton.json",
     "figmaSet": "SocialLoginButton",
     "story": "buttons-socialloginbutton--playground",
@@ -93,6 +154,12 @@
     "key": "Input",
     "label": "Input",
     "category": "Form Controls",
+    "box": "gray",
+    "locks": [
+      "size",
+      "hit",
+      "motion"
+    ],
     "file": "spec/contracts/Input.json",
     "figmaSet": "Input",
     "story": "forms-input--playground",
@@ -102,6 +169,13 @@
     "key": "Textarea",
     "label": "Textarea",
     "category": "Form Controls",
+    "box": "gray",
+    "locks": [
+      "radius",
+      "size",
+      "hit",
+      "motion"
+    ],
     "file": "spec/contracts/Textarea.json",
     "figmaSet": "Textarea",
     "story": "forms-textarea--playground",
@@ -111,6 +185,12 @@
     "key": "InputOTP",
     "label": "Input OTP",
     "category": "Form Controls",
+    "box": "gray",
+    "locks": [
+      "size",
+      "hit",
+      "motion"
+    ],
     "file": "spec/contracts/InputOTP.json",
     "figmaSet": "InputOTP",
     "story": "forms-inputotp--playground",
@@ -120,6 +200,13 @@
     "key": "InputOTPSlot",
     "label": "Input OTP Slot",
     "category": "Form Controls",
+    "box": "gray",
+    "locks": [
+      "radius",
+      "size",
+      "hit",
+      "motion"
+    ],
     "file": "spec/contracts/InputOTPSlot.json",
     "figmaSet": "InputOTPSlot",
     "story": "forms-inputotp--input-otp-slot-playground",
@@ -129,6 +216,12 @@
     "key": "NumberInput",
     "label": "Number Input",
     "category": "Form Controls",
+    "box": "gray",
+    "locks": [
+      "size",
+      "hit",
+      "motion"
+    ],
     "file": "spec/contracts/NumberInput.json",
     "figmaSet": "NumberInput",
     "story": "forms-numberinput--playground",
@@ -138,6 +231,12 @@
     "key": "InputTag",
     "label": "Input Tag",
     "category": "Form Controls",
+    "box": "gray",
+    "locks": [
+      "size",
+      "hit",
+      "motion"
+    ],
     "file": "spec/contracts/InputTag.json",
     "figmaSet": "InputTag",
     "story": "forms-inputtag--playground",
@@ -147,6 +246,12 @@
     "key": "InputTagChip",
     "label": "Input Tag Chip",
     "category": "Form Controls",
+    "box": "gray",
+    "locks": [
+      "size",
+      "hit",
+      "motion"
+    ],
     "file": "spec/contracts/InputTagChip.json",
     "figmaSet": "InputTagChip",
     "story": "forms-inputtag--input-tag-chip-playground",
@@ -156,6 +261,12 @@
     "key": "InputTagOption",
     "label": "Input Tag Option",
     "category": "Form Controls",
+    "box": "gray",
+    "locks": [
+      "size",
+      "hit",
+      "motion"
+    ],
     "file": "spec/contracts/InputTagOption.json",
     "figmaSet": "InputTagOption",
     "story": "forms-inputtag--input-tag-option-playground",
@@ -165,6 +276,12 @@
     "key": "DatePickerTrigger",
     "label": "Date Picker Trigger",
     "category": "Form Controls",
+    "box": "gray",
+    "locks": [
+      "size",
+      "hit",
+      "motion"
+    ],
     "file": "spec/contracts/DatePickerTrigger.json",
     "figmaSet": "DatePickerTrigger",
     "story": "forms-datepicker--date-picker-trigger-playground",
@@ -174,6 +291,8 @@
     "key": "DatePickerPopover",
     "label": "Date Picker Popover",
     "category": "Form Controls",
+    "box": "white",
+    "locks": [],
     "file": "spec/contracts/DatePickerPopover.json",
     "figmaSet": "DatePickerPopover",
     "story": "forms-datepicker--date-picker-popover-playground",
@@ -183,6 +302,12 @@
     "key": "CalendarDay",
     "label": "Calendar Day",
     "category": "Form Controls",
+    "box": "gray",
+    "locks": [
+      "size",
+      "hit",
+      "motion"
+    ],
     "file": "spec/contracts/CalendarDay.json",
     "figmaSet": "CalendarDay",
     "story": "forms-calendar--calendar-day-playground",
@@ -192,6 +317,12 @@
     "key": "CalendarHeader",
     "label": "Calendar Header",
     "category": "Form Controls",
+    "box": "gray",
+    "locks": [
+      "size",
+      "hit",
+      "motion"
+    ],
     "file": "spec/contracts/CalendarHeader.json",
     "figmaSet": "CalendarHeader",
     "story": "forms-calendar--calendar-header-playground",
@@ -201,6 +332,8 @@
     "key": "CalendarMonth",
     "label": "Calendar Month",
     "category": "Form Controls",
+    "box": "white",
+    "locks": [],
     "file": "spec/contracts/CalendarMonth.json",
     "figmaSet": "CalendarMonth",
     "story": "forms-calendar--calendar-month-playground",
@@ -210,6 +343,12 @@
     "key": "CalendarPresets",
     "label": "Calendar Presets",
     "category": "Form Controls",
+    "box": "gray",
+    "locks": [
+      "size",
+      "hit",
+      "motion"
+    ],
     "file": "spec/contracts/CalendarPresets.json",
     "figmaSet": "CalendarPresets",
     "story": "forms-calendar--calendar-presets-playground",
@@ -219,6 +358,8 @@
     "key": "CalendarFooter",
     "label": "Calendar Footer",
     "category": "Form Controls",
+    "box": "white",
+    "locks": [],
     "file": "spec/contracts/CalendarFooter.json",
     "figmaSet": "CalendarFooter",
     "story": "forms-calendar--calendar-footer-playground",
@@ -228,6 +369,8 @@
     "key": "Calendar",
     "label": "Calendar",
     "category": "Form Controls",
+    "box": "white",
+    "locks": [],
     "file": "spec/contracts/Calendar.json",
     "figmaSet": "Calendar",
     "story": "forms-calendar--playground",
@@ -237,6 +380,12 @@
     "key": "Combobox",
     "label": "Combobox",
     "category": "Form Controls",
+    "box": "gray",
+    "locks": [
+      "size",
+      "hit",
+      "motion"
+    ],
     "file": "spec/contracts/Combobox.json",
     "figmaSet": "Combobox",
     "story": "forms-combobox--playground",
@@ -246,6 +395,8 @@
     "key": "ComboboxPopover",
     "label": "Combobox Popover",
     "category": "Form Controls",
+    "box": "white",
+    "locks": [],
     "file": "spec/contracts/ComboboxPopover.json",
     "figmaSet": "ComboboxPopover",
     "story": "forms-combobox--combobox-popover-playground",
@@ -255,6 +406,12 @@
     "key": "ComboboxItem",
     "label": "Combobox Item",
     "category": "Form Controls",
+    "box": "gray",
+    "locks": [
+      "size",
+      "hit",
+      "motion"
+    ],
     "file": "spec/contracts/ComboboxItem.json",
     "figmaSet": "ComboboxItem",
     "story": "forms-combobox--combobox-item-playground",
@@ -264,6 +421,12 @@
     "key": "ComboboxGroupLabel",
     "label": "Combobox Group Label",
     "category": "Form Controls",
+    "box": "gray",
+    "locks": [
+      "size",
+      "hit",
+      "motion"
+    ],
     "file": "spec/contracts/ComboboxGroupLabel.json",
     "figmaSet": "ComboboxGroupLabel",
     "story": "forms-combobox--combobox-group-label-playground",
@@ -273,6 +436,14 @@
     "key": "Checkbox",
     "label": "Checkbox",
     "category": "Form Controls",
+    "box": "black",
+    "locks": [
+      "shape",
+      "radius",
+      "size",
+      "hit",
+      "motion"
+    ],
     "file": "spec/contracts/Checkbox.json",
     "figmaSet": "Checkbox",
     "story": "forms-checkbox--playground",
@@ -282,6 +453,13 @@
     "key": "CheckboxItem",
     "label": "Checkbox Item",
     "category": "Form Controls",
+    "box": "black",
+    "locks": [
+      "shape",
+      "size",
+      "hit",
+      "motion"
+    ],
     "file": "spec/contracts/CheckboxItem.json",
     "figmaSet": "CheckboxItem",
     "story": "forms-checkbox--checkbox-item-playground",
@@ -291,6 +469,8 @@
     "key": "CheckboxGroup",
     "label": "Checkbox Group",
     "category": "Form Controls",
+    "box": "white",
+    "locks": [],
     "file": "spec/contracts/CheckboxGroup.json",
     "figmaSet": "CheckboxGroup",
     "story": "forms-checkbox--checkbox-group-playground",
@@ -300,6 +480,13 @@
     "key": "RadioGroup",
     "label": "Radio Group",
     "category": "Form Controls",
+    "box": "black",
+    "locks": [
+      "shape",
+      "size",
+      "hit",
+      "motion"
+    ],
     "file": "spec/contracts/RadioGroup.json",
     "figmaSet": "RadioGroup",
     "story": "forms-radiogroup--playground",
@@ -309,6 +496,13 @@
     "key": "Switch",
     "label": "Switch",
     "category": "Form Controls",
+    "box": "black",
+    "locks": [
+      "shape",
+      "size",
+      "hit",
+      "motion"
+    ],
     "file": "spec/contracts/Switch.json",
     "figmaSet": "Switch",
     "story": "forms-switch--playground",
@@ -318,6 +512,8 @@
     "key": "SwitchGroup",
     "label": "Switch Group",
     "category": "Form Controls",
+    "box": "white",
+    "locks": [],
     "file": "spec/contracts/SwitchGroup.json",
     "figmaSet": "SwitchGroup",
     "story": "forms-switch--switch-group-playground",
@@ -327,6 +523,12 @@
     "key": "Slider",
     "label": "Slider",
     "category": "Form Controls",
+    "box": "gray",
+    "locks": [
+      "size",
+      "hit",
+      "motion"
+    ],
     "file": "spec/contracts/Slider.json",
     "figmaSet": "Slider",
     "story": "forms-slider--playground",
@@ -336,6 +538,13 @@
     "key": "SliderThumb",
     "label": "Slider Thumb",
     "category": "Form Controls",
+    "box": "black",
+    "locks": [
+      "shape",
+      "size",
+      "hit",
+      "motion"
+    ],
     "file": "spec/contracts/SliderThumb.json",
     "figmaSet": "SliderThumb",
     "story": "forms-slider--slider-thumb-playground",
@@ -345,6 +554,8 @@
     "key": "FileUpload",
     "label": "File Upload",
     "category": "Form Controls",
+    "box": "white",
+    "locks": [],
     "file": "spec/contracts/FileUpload.json",
     "figmaSet": "FileUpload",
     "story": "forms-fileupload--playground",
@@ -354,6 +565,12 @@
     "key": "FileUploadItem",
     "label": "File Upload Item",
     "category": "Form Controls",
+    "box": "gray",
+    "locks": [
+      "size",
+      "hit",
+      "motion"
+    ],
     "file": "spec/contracts/FileUploadItem.json",
     "figmaSet": "FileUploadItem",
     "story": "forms-fileupload--file-upload-item-playground",
@@ -363,6 +580,8 @@
     "key": "FileUploadDropzone",
     "label": "File Upload Dropzone",
     "category": "Form Controls",
+    "box": "white",
+    "locks": [],
     "file": "spec/contracts/FileUploadDropzone.json",
     "figmaSet": "FileUploadDropzone",
     "story": "forms-fileupload--file-upload-dropzone-playground",
@@ -372,6 +591,12 @@
     "key": "Field",
     "label": "Field",
     "category": "Form Controls",
+    "box": "gray",
+    "locks": [
+      "size",
+      "hit",
+      "motion"
+    ],
     "file": "spec/contracts/Field.json",
     "figmaSet": "Field",
     "story": "forms-field--playground",
@@ -381,6 +606,12 @@
     "key": "Label",
     "label": "Label",
     "category": "Form Controls",
+    "box": "gray",
+    "locks": [
+      "size",
+      "hit",
+      "motion"
+    ],
     "file": "spec/contracts/Label.json",
     "figmaSet": null,
     "story": "forms-label--playground",
@@ -390,6 +621,8 @@
     "key": "PasswordStrength",
     "label": "Password Strength",
     "category": "Form Controls",
+    "box": "white",
+    "locks": [],
     "file": "spec/contracts/PasswordStrength.json",
     "figmaSet": "PasswordStrength",
     "story": "forms-passwordstrength--playground",
@@ -399,6 +632,13 @@
     "key": "PasswordStrengthMeter",
     "label": "Password Strength Meter",
     "category": "Form Controls",
+    "box": "black",
+    "locks": [
+      "shape",
+      "size",
+      "hit",
+      "motion"
+    ],
     "file": "spec/contracts/PasswordStrengthMeter.json",
     "figmaSet": "PasswordStrengthMeter",
     "story": "forms-passwordstrength--password-strength-meter-playground",
@@ -408,6 +648,12 @@
     "key": "PasswordStrengthRule",
     "label": "Password Strength Rule",
     "category": "Form Controls",
+    "box": "gray",
+    "locks": [
+      "size",
+      "hit",
+      "motion"
+    ],
     "file": "spec/contracts/PasswordStrengthRule.json",
     "figmaSet": "PasswordStrengthRule",
     "story": "forms-passwordstrength--password-strength-rule-playground",
@@ -417,6 +663,12 @@
     "key": "Badge",
     "label": "Badge",
     "category": "Indicators",
+    "box": "gray",
+    "locks": [
+      "size",
+      "hit",
+      "motion"
+    ],
     "file": "spec/contracts/Badge.json",
     "figmaSet": "Badge",
     "story": "indicators-badge--playground",
@@ -426,6 +678,12 @@
     "key": "Chip",
     "label": "Chip",
     "category": "Indicators",
+    "box": "gray",
+    "locks": [
+      "size",
+      "hit",
+      "motion"
+    ],
     "file": "spec/contracts/Chip.json",
     "figmaSet": "Chip",
     "story": "indicators-chip--playground",
@@ -435,6 +693,13 @@
     "key": "ProgressLine",
     "label": "Progress Line",
     "category": "Indicators",
+    "box": "black",
+    "locks": [
+      "shape",
+      "size",
+      "hit",
+      "motion"
+    ],
     "file": "spec/contracts/ProgressLine.json",
     "figmaSet": "ProgressLine",
     "story": "indicators-progressline--playground",
@@ -444,6 +709,13 @@
     "key": "ProgressCircle",
     "label": "Progress Circle",
     "category": "Indicators",
+    "box": "black",
+    "locks": [
+      "shape",
+      "size",
+      "hit",
+      "motion"
+    ],
     "file": "spec/contracts/ProgressCircle.json",
     "figmaSet": "ProgressCircle",
     "story": "indicators-progresscircle--playground",
@@ -453,6 +725,13 @@
     "key": "Spinner",
     "label": "Spinner",
     "category": "Indicators",
+    "box": "black",
+    "locks": [
+      "shape",
+      "size",
+      "hit",
+      "motion"
+    ],
     "file": "spec/contracts/Spinner.json",
     "figmaSet": null,
     "story": "feedback-spinner--playground",
@@ -462,6 +741,13 @@
     "key": "FeaturedIcon",
     "label": "Featured Icon",
     "category": "Indicators",
+    "box": "gray",
+    "locks": [
+      "radius",
+      "size",
+      "hit",
+      "motion"
+    ],
     "file": "spec/contracts/FeaturedIcon.json",
     "figmaSet": "FeaturedIcon",
     "story": "indicators-featuredicon--playground",
@@ -471,6 +757,14 @@
     "key": "Kbd",
     "label": "Kbd",
     "category": "Indicators",
+    "box": "black",
+    "locks": [
+      "shape",
+      "radius",
+      "size",
+      "hit",
+      "motion"
+    ],
     "file": "spec/contracts/Kbd.json",
     "figmaSet": "Kbd",
     "story": "indicators-kbd--playground",
@@ -480,6 +774,12 @@
     "key": "RatingGroup",
     "label": "Rating Group",
     "category": "Indicators",
+    "box": "gray",
+    "locks": [
+      "size",
+      "hit",
+      "motion"
+    ],
     "file": "spec/contracts/RatingGroup.json",
     "figmaSet": "RatingGroup",
     "story": "indicators-ratinggroup--playground",
@@ -489,6 +789,13 @@
     "key": "RatingGroupItem",
     "label": "Rating Group Item",
     "category": "Indicators",
+    "box": "black",
+    "locks": [
+      "shape",
+      "size",
+      "hit",
+      "motion"
+    ],
     "file": "spec/contracts/RatingGroupItem.json",
     "figmaSet": "RatingGroupItem",
     "story": "indicators-ratinggroup--rating-group-item-playground",
@@ -498,6 +805,13 @@
     "key": "Avatar",
     "label": "Avatar",
     "category": "Content & Surfaces",
+    "box": "gray",
+    "locks": [
+      "radius",
+      "size",
+      "hit",
+      "motion"
+    ],
     "file": "spec/contracts/Avatar.json",
     "figmaSet": "Avatar",
     "story": "content-surfaces-avatar--playground",
@@ -507,6 +821,13 @@
     "key": "AvatarStatus",
     "label": "Avatar Status",
     "category": "Content & Surfaces",
+    "box": "black",
+    "locks": [
+      "shape",
+      "size",
+      "hit",
+      "motion"
+    ],
     "file": "spec/contracts/AvatarStatus.json",
     "figmaSet": "AvatarStatus",
     "story": "content-surfaces-avatar--avatar-status-playground",
@@ -516,6 +837,12 @@
     "key": "AvatarGroup",
     "label": "Avatar Group",
     "category": "Content & Surfaces",
+    "box": "gray",
+    "locks": [
+      "size",
+      "hit",
+      "motion"
+    ],
     "file": "spec/contracts/AvatarGroup.json",
     "figmaSet": "AvatarGroup",
     "story": "content-surfaces-avatar--avatar-group-playground",
@@ -525,6 +852,8 @@
     "key": "Card",
     "label": "Card",
     "category": "Content & Surfaces",
+    "box": "white",
+    "locks": [],
     "file": "spec/contracts/Card.json",
     "figmaSet": null,
     "story": "content-surfaces-card--playground",
@@ -534,6 +863,13 @@
     "key": "Separator",
     "label": "Separator",
     "category": "Content & Surfaces",
+    "box": "black",
+    "locks": [
+      "shape",
+      "size",
+      "hit",
+      "motion"
+    ],
     "file": "spec/contracts/Separator.json",
     "figmaSet": "Separator",
     "story": "content-surfaces-separator--playground",
@@ -543,6 +879,8 @@
     "key": "Accordion",
     "label": "Accordion",
     "category": "Content & Surfaces",
+    "box": "white",
+    "locks": [],
     "file": "spec/contracts/Accordion.json",
     "figmaSet": "Accordion",
     "story": "content-surfaces-accordion--playground",
@@ -552,6 +890,8 @@
     "key": "AccordionItem",
     "label": "Accordion Item",
     "category": "Content & Surfaces",
+    "box": "white",
+    "locks": [],
     "file": "spec/contracts/AccordionItem.json",
     "figmaSet": "AccordionItem",
     "story": "content-surfaces-accordion--accordion-item-playground",
@@ -561,6 +901,8 @@
     "key": "Image",
     "label": "Image",
     "category": "Content & Surfaces",
+    "box": "white",
+    "locks": [],
     "file": "spec/contracts/Image.json",
     "figmaSet": "Image",
     "story": "content-surfaces-image--playground",
@@ -570,6 +912,8 @@
     "key": "Modal",
     "label": "Modal",
     "category": "Content & Surfaces",
+    "box": "white",
+    "locks": [],
     "file": "spec/contracts/Modal.json",
     "figmaSet": "Modal",
     "story": "content-surfaces-modal--playground",
@@ -579,6 +923,12 @@
     "key": "ModalHeader",
     "label": "Modal Header",
     "category": "Content & Surfaces",
+    "box": "gray",
+    "locks": [
+      "size",
+      "hit",
+      "motion"
+    ],
     "file": "spec/contracts/ModalHeader.json",
     "figmaSet": "ModalHeader",
     "story": "content-surfaces-modal--modal-header-playground",
@@ -588,6 +938,12 @@
     "key": "ModalFooter",
     "label": "Modal Footer",
     "category": "Content & Surfaces",
+    "box": "gray",
+    "locks": [
+      "size",
+      "hit",
+      "motion"
+    ],
     "file": "spec/contracts/ModalFooter.json",
     "figmaSet": "ModalFooter",
     "story": "content-surfaces-modal--modal-footer-playground",
@@ -597,6 +953,8 @@
     "key": "Sheet",
     "label": "Sheet",
     "category": "Content & Surfaces",
+    "box": "white",
+    "locks": [],
     "file": "spec/contracts/Sheet.json",
     "figmaSet": "Sheet",
     "story": "content-surfaces-sheet--playground",
@@ -606,6 +964,8 @@
     "key": "Popover",
     "label": "Popover",
     "category": "Content & Surfaces",
+    "box": "white",
+    "locks": [],
     "file": "spec/contracts/Popover.json",
     "figmaSet": "Popover",
     "story": "content-surfaces-popover--playground",
@@ -615,6 +975,12 @@
     "key": "PopoverFooter",
     "label": "Popover Footer",
     "category": "Content & Surfaces",
+    "box": "gray",
+    "locks": [
+      "size",
+      "hit",
+      "motion"
+    ],
     "file": "spec/contracts/PopoverFooter.json",
     "figmaSet": "PopoverFooter",
     "story": "content-surfaces-popover--popover-footer-playground",
@@ -624,6 +990,12 @@
     "key": "TooltipContent",
     "label": "Tooltip",
     "category": "Content & Surfaces",
+    "box": "gray",
+    "locks": [
+      "size",
+      "hit",
+      "motion"
+    ],
     "file": "spec/contracts/TooltipContent.json",
     "figmaSet": "TooltipContent",
     "story": "content-surfaces-tooltip--tooltip-content-playground",
@@ -633,6 +1005,13 @@
     "key": "TooltipInfoTrigger",
     "label": "Tooltip Info Trigger",
     "category": "Content & Surfaces",
+    "box": "black",
+    "locks": [
+      "shape",
+      "size",
+      "hit",
+      "motion"
+    ],
     "file": "spec/contracts/TooltipInfoTrigger.json",
     "figmaSet": "TooltipInfoTrigger",
     "story": "content-surfaces-tooltip--tooltip-info-trigger-playground",
@@ -642,6 +1021,8 @@
     "key": "ScrollArea",
     "label": "Scroll Area",
     "category": "Content & Surfaces",
+    "box": "white",
+    "locks": [],
     "file": "spec/contracts/ScrollArea.json",
     "figmaSet": "ScrollArea",
     "story": "content-surfaces-scrollarea--playground",
@@ -651,6 +1032,13 @@
     "key": "ScrollBar",
     "label": "Scroll Bar",
     "category": "Content & Surfaces",
+    "box": "black",
+    "locks": [
+      "shape",
+      "size",
+      "hit",
+      "motion"
+    ],
     "file": "spec/contracts/ScrollBar.json",
     "figmaSet": "ScrollBar",
     "story": "content-surfaces-scrollarea--scroll-bar-playground",
@@ -660,6 +1048,8 @@
     "key": "Table",
     "label": "Table",
     "category": "Content & Surfaces",
+    "box": "white",
+    "locks": [],
     "file": "spec/contracts/Table.json",
     "figmaSet": "Table",
     "story": "content-surfaces-table--playground",
@@ -669,6 +1059,12 @@
     "key": "TableCell",
     "label": "TableCell",
     "category": "Content & Surfaces",
+    "box": "gray",
+    "locks": [
+      "size",
+      "hit",
+      "motion"
+    ],
     "file": "spec/contracts/TableCell.json",
     "figmaSet": "TableCell",
     "story": "content-surfaces-table--table-cell-playground",
@@ -678,6 +1074,12 @@
     "key": "TableHead",
     "label": "TableHead",
     "category": "Content & Surfaces",
+    "box": "gray",
+    "locks": [
+      "size",
+      "hit",
+      "motion"
+    ],
     "file": "spec/contracts/TableHead.json",
     "figmaSet": "TableHead",
     "story": "content-surfaces-table--table-head-playground",
@@ -687,6 +1089,12 @@
     "key": "TableMediaCell",
     "label": "TableMediaCell",
     "category": "Content & Surfaces",
+    "box": "gray",
+    "locks": [
+      "size",
+      "hit",
+      "motion"
+    ],
     "file": "spec/contracts/TableMediaCell.json",
     "figmaSet": "TableMediaCell",
     "story": "content-surfaces-table--table-media-cell-playground",
@@ -696,6 +1104,12 @@
     "key": "TableTrendCell",
     "label": "TableTrendCell",
     "category": "Content & Surfaces",
+    "box": "gray",
+    "locks": [
+      "size",
+      "hit",
+      "motion"
+    ],
     "file": "spec/contracts/TableTrendCell.json",
     "figmaSet": "TableTrendCell",
     "story": "content-surfaces-table--table-trend-cell-playground",
@@ -705,6 +1119,13 @@
     "key": "TableResizer",
     "label": "TableResizer",
     "category": "Content & Surfaces",
+    "box": "black",
+    "locks": [
+      "shape",
+      "size",
+      "hit",
+      "motion"
+    ],
     "file": "spec/contracts/TableResizer.json",
     "figmaSet": "TableResizer",
     "story": "content-surfaces-table--table-resizer-playground",
@@ -714,6 +1135,12 @@
     "key": "TableRow",
     "label": "TableRow",
     "category": "Content & Surfaces",
+    "box": "gray",
+    "locks": [
+      "size",
+      "hit",
+      "motion"
+    ],
     "file": "spec/contracts/TableRow.json",
     "figmaSet": "TableRow",
     "story": "content-surfaces-table--table-row-playground",
@@ -723,6 +1150,12 @@
     "key": "TableHeader",
     "label": "TableHeader",
     "category": "Content & Surfaces",
+    "box": "gray",
+    "locks": [
+      "size",
+      "hit",
+      "motion"
+    ],
     "file": "spec/contracts/TableHeader.json",
     "figmaSet": "TableHeader",
     "story": "content-surfaces-table--table-header-playground",
@@ -732,6 +1165,12 @@
     "key": "TableFooter",
     "label": "TableFooter",
     "category": "Content & Surfaces",
+    "box": "gray",
+    "locks": [
+      "size",
+      "hit",
+      "motion"
+    ],
     "file": "spec/contracts/TableFooter.json",
     "figmaSet": "TableFooter",
     "story": "content-surfaces-table--table-footer-playground",
@@ -741,6 +1180,12 @@
     "key": "TableCaption",
     "label": "TableCaption",
     "category": "Content & Surfaces",
+    "box": "gray",
+    "locks": [
+      "size",
+      "hit",
+      "motion"
+    ],
     "file": "spec/contracts/TableCaption.json",
     "figmaSet": "TableCaption",
     "story": "content-surfaces-table--table-caption-playground",
@@ -750,6 +1195,13 @@
     "key": "TableDropIndicator",
     "label": "TableDropIndicator",
     "category": "Content & Surfaces",
+    "box": "black",
+    "locks": [
+      "shape",
+      "size",
+      "hit",
+      "motion"
+    ],
     "file": "spec/contracts/TableDropIndicator.json",
     "figmaSet": "TableDropIndicator",
     "story": "content-surfaces-table--table-drop-indicator-playground",
@@ -759,6 +1211,12 @@
     "key": "TableEmpty",
     "label": "TableEmpty",
     "category": "Content & Surfaces",
+    "box": "gray",
+    "locks": [
+      "size",
+      "hit",
+      "motion"
+    ],
     "file": "spec/contracts/TableEmpty.json",
     "figmaSet": "TableEmpty",
     "story": "content-surfaces-table--table-empty-playground",
@@ -768,6 +1226,12 @@
     "key": "TableLoading",
     "label": "TableLoading",
     "category": "Content & Surfaces",
+    "box": "gray",
+    "locks": [
+      "size",
+      "hit",
+      "motion"
+    ],
     "file": "spec/contracts/TableLoading.json",
     "figmaSet": "TableLoading",
     "story": "content-surfaces-table--table-loading-playground",
@@ -777,6 +1241,12 @@
     "key": "TableLoadMore",
     "label": "TableLoadMore",
     "category": "Content & Surfaces",
+    "box": "gray",
+    "locks": [
+      "size",
+      "hit",
+      "motion"
+    ],
     "file": "spec/contracts/TableLoadMore.json",
     "figmaSet": "TableLoadMore",
     "story": "content-surfaces-table--table-load-more-playground",
@@ -786,6 +1256,12 @@
     "key": "Toast",
     "label": "Toast",
     "category": "Feedback",
+    "box": "gray",
+    "locks": [
+      "size",
+      "hit",
+      "motion"
+    ],
     "file": "spec/contracts/Toast.json",
     "figmaSet": "Toast",
     "story": "feedback-toast--playground",
@@ -795,6 +1271,12 @@
     "key": "Alert",
     "label": "Alert",
     "category": "Feedback",
+    "box": "gray",
+    "locks": [
+      "size",
+      "hit",
+      "motion"
+    ],
     "file": "spec/contracts/Alert.json",
     "figmaSet": "Alert",
     "story": "feedback-alert--playground",
@@ -804,6 +1286,12 @@
     "key": "TabMenu",
     "label": "Tab Menu",
     "category": "Navigation",
+    "box": "gray",
+    "locks": [
+      "size",
+      "hit",
+      "motion"
+    ],
     "file": "spec/contracts/TabMenu.json",
     "figmaSet": "TabMenu",
     "story": "navigation-tabmenu--playground",
@@ -813,6 +1301,12 @@
     "key": "TabMenuItem",
     "label": "Tab Menu Item",
     "category": "Navigation",
+    "box": "gray",
+    "locks": [
+      "size",
+      "hit",
+      "motion"
+    ],
     "file": "spec/contracts/TabMenuItem.json",
     "figmaSet": "TabMenuItem",
     "story": "navigation-tabmenu--tab-menu-item-playground",
@@ -822,6 +1316,12 @@
     "key": "TabMenuLineItem",
     "label": "Tab Menu Line Item",
     "category": "Navigation",
+    "box": "gray",
+    "locks": [
+      "size",
+      "hit",
+      "motion"
+    ],
     "file": "spec/contracts/TabMenuLineItem.json",
     "figmaSet": "TabMenuLineItem",
     "story": "navigation-tabmenu--tab-menu-line-item-playground",
@@ -831,6 +1331,12 @@
     "key": "NavItem",
     "label": "Nav Item",
     "category": "Navigation",
+    "box": "gray",
+    "locks": [
+      "size",
+      "hit",
+      "motion"
+    ],
     "file": "spec/contracts/NavItem.json",
     "figmaSet": "NavItem",
     "story": "navigation-navitem--playground",
@@ -840,6 +1346,12 @@
     "key": "Brand",
     "label": "Brand",
     "category": "Navigation",
+    "box": "gray",
+    "locks": [
+      "size",
+      "hit",
+      "motion"
+    ],
     "file": "spec/contracts/Brand.json",
     "figmaSet": "Brand",
     "story": "navigation-brand--playground",
@@ -849,6 +1361,12 @@
     "key": "AccountMenuTrigger",
     "label": "Account Menu Trigger",
     "category": "Navigation",
+    "box": "gray",
+    "locks": [
+      "size",
+      "hit",
+      "motion"
+    ],
     "file": "spec/contracts/AccountMenuTrigger.json",
     "figmaSet": "AccountMenuTrigger",
     "story": "navigation-accountmenutrigger--playground",
@@ -858,6 +1376,12 @@
     "key": "SegmentedControl",
     "label": "Segmented Control",
     "category": "Navigation",
+    "box": "gray",
+    "locks": [
+      "size",
+      "hit",
+      "motion"
+    ],
     "file": "spec/contracts/SegmentedControl.json",
     "figmaSet": "SegmentedControl",
     "story": "navigation-segmentedcontrol--playground",
@@ -867,6 +1391,12 @@
     "key": "SegmentedControlItem",
     "label": "Segmented Control Item",
     "category": "Navigation",
+    "box": "gray",
+    "locks": [
+      "size",
+      "hit",
+      "motion"
+    ],
     "file": "spec/contracts/SegmentedControlItem.json",
     "figmaSet": "SegmentedControlItem",
     "story": "navigation-segmentedcontrol--segmented-control-item-playground",
@@ -876,6 +1406,12 @@
     "key": "Breadcrumb",
     "label": "Breadcrumbs",
     "category": "Navigation",
+    "box": "gray",
+    "locks": [
+      "size",
+      "hit",
+      "motion"
+    ],
     "file": "spec/contracts/Breadcrumb.json",
     "figmaSet": "Breadcrumb",
     "story": "navigation-breadcrumb--playground",
@@ -885,6 +1421,12 @@
     "key": "BreadcrumbItem",
     "label": "Breadcrumb Item",
     "category": "Navigation",
+    "box": "gray",
+    "locks": [
+      "size",
+      "hit",
+      "motion"
+    ],
     "file": "spec/contracts/BreadcrumbItem.json",
     "figmaSet": "BreadcrumbItem",
     "story": "navigation-breadcrumb--breadcrumb-item-playground",
@@ -894,6 +1436,12 @@
     "key": "BreadcrumbEllipsis",
     "label": "Breadcrumb Ellipsis",
     "category": "Navigation",
+    "box": "gray",
+    "locks": [
+      "size",
+      "hit",
+      "motion"
+    ],
     "file": "spec/contracts/BreadcrumbEllipsis.json",
     "figmaSet": "BreadcrumbEllipsis",
     "story": "navigation-breadcrumb--breadcrumb-ellipsis-playground",
@@ -903,6 +1451,12 @@
     "key": "BreadcrumbSeparator",
     "label": "Breadcrumb Separator",
     "category": "Navigation",
+    "box": "gray",
+    "locks": [
+      "size",
+      "hit",
+      "motion"
+    ],
     "file": "spec/contracts/BreadcrumbSeparator.json",
     "figmaSet": "BreadcrumbSeparator",
     "story": "navigation-breadcrumb--breadcrumb-separator-playground",
@@ -912,6 +1466,12 @@
     "key": "Pagination",
     "label": "Pagination",
     "category": "Navigation",
+    "box": "gray",
+    "locks": [
+      "size",
+      "hit",
+      "motion"
+    ],
     "file": "spec/contracts/Pagination.json",
     "figmaSet": "Pagination",
     "story": "navigation-pagination--playground",
@@ -921,6 +1481,12 @@
     "key": "PaginationLink",
     "label": "Pagination Link",
     "category": "Navigation",
+    "box": "gray",
+    "locks": [
+      "size",
+      "hit",
+      "motion"
+    ],
     "file": "spec/contracts/PaginationLink.json",
     "figmaSet": "PaginationLink",
     "story": "navigation-pagination--pagination-link-playground",
@@ -930,6 +1496,12 @@
     "key": "PaginationEllipsis",
     "label": "Pagination Ellipsis",
     "category": "Navigation",
+    "box": "gray",
+    "locks": [
+      "size",
+      "hit",
+      "motion"
+    ],
     "file": "spec/contracts/PaginationEllipsis.json",
     "figmaSet": "PaginationEllipsis",
     "story": "navigation-pagination--pagination-ellipsis-playground",
@@ -939,6 +1511,12 @@
     "key": "Stepper",
     "label": "Stepper",
     "category": "Navigation",
+    "box": "gray",
+    "locks": [
+      "size",
+      "hit",
+      "motion"
+    ],
     "file": "spec/contracts/Stepper.json",
     "figmaSet": "Stepper",
     "story": "navigation-stepper--playground",
@@ -948,6 +1526,12 @@
     "key": "StepperItem",
     "label": "Stepper Item",
     "category": "Navigation",
+    "box": "gray",
+    "locks": [
+      "size",
+      "hit",
+      "motion"
+    ],
     "file": "spec/contracts/StepperItem.json",
     "figmaSet": "StepperItem",
     "story": "navigation-stepper--stepper-item-playground",
@@ -957,6 +1541,13 @@
     "key": "StepperIndicator",
     "label": "Stepper Indicator",
     "category": "Navigation",
+    "box": "black",
+    "locks": [
+      "shape",
+      "size",
+      "hit",
+      "motion"
+    ],
     "file": "spec/contracts/StepperIndicator.json",
     "figmaSet": "StepperIndicator",
     "story": "navigation-stepper--stepper-indicator-playground",
@@ -966,6 +1557,13 @@
     "key": "StepperIcon",
     "label": "Stepper Icon",
     "category": "Navigation",
+    "box": "black",
+    "locks": [
+      "shape",
+      "size",
+      "hit",
+      "motion"
+    ],
     "file": "spec/contracts/StepperIcon.json",
     "figmaSet": "StepperIcon",
     "story": "navigation-stepper--stepper-icon-playground",
@@ -975,6 +1573,8 @@
     "key": "DropdownMenu",
     "label": "Dropdown Menu",
     "category": "Navigation",
+    "box": "white",
+    "locks": [],
     "file": "spec/contracts/DropdownMenu.json",
     "figmaSet": "DropdownMenu",
     "story": "navigation-dropdownmenu--playground",
@@ -984,6 +1584,12 @@
     "key": "DropdownMenuLabel",
     "label": "Dropdown Menu Label",
     "category": "Navigation",
+    "box": "gray",
+    "locks": [
+      "size",
+      "hit",
+      "motion"
+    ],
     "file": "spec/contracts/DropdownMenuLabel.json",
     "figmaSet": "DropdownMenuLabel",
     "story": "navigation-dropdownmenu--dropdown-menu-label-playground",
@@ -993,6 +1599,12 @@
     "key": "DropdownMenuItem",
     "label": "Dropdown Menu Item",
     "category": "Navigation",
+    "box": "gray",
+    "locks": [
+      "size",
+      "hit",
+      "motion"
+    ],
     "file": "spec/contracts/DropdownMenuItem.json",
     "figmaSet": "DropdownMenuItem",
     "story": "navigation-dropdownmenu--dropdown-menu-item-playground",
@@ -1002,6 +1614,12 @@
     "key": "DropdownMenuFooter",
     "label": "Dropdown Menu Footer",
     "category": "Navigation",
+    "box": "gray",
+    "locks": [
+      "size",
+      "hit",
+      "motion"
+    ],
     "file": "spec/contracts/DropdownMenuFooter.json",
     "figmaSet": "DropdownMenuFooter",
     "story": "navigation-dropdownmenu--dropdown-menu-footer-playground",
@@ -1011,6 +1629,8 @@
     "key": "Sidebar",
     "label": "Sidebar",
     "category": "Navigation",
+    "box": "white",
+    "locks": [],
     "file": "spec/contracts/Sidebar.json",
     "figmaSet": "Sidebar",
     "story": "navigation-sidebar--playground",
@@ -1020,6 +1640,12 @@
     "key": "SidebarMenuButton",
     "label": "Sidebar Menu Button",
     "category": "Navigation",
+    "box": "gray",
+    "locks": [
+      "size",
+      "hit",
+      "motion"
+    ],
     "file": "spec/contracts/SidebarMenuButton.json",
     "figmaSet": "SidebarMenuButton",
     "story": "navigation-sidebar--sidebar-menu-button-playground",
@@ -1029,6 +1655,8 @@
     "key": "SidebarGroup",
     "label": "Sidebar Group",
     "category": "Navigation",
+    "box": "white",
+    "locks": [],
     "file": "spec/contracts/SidebarGroup.json",
     "figmaSet": "SidebarGroup",
     "story": "navigation-sidebar--sidebar-group-playground",
@@ -1038,6 +1666,8 @@
     "key": "SidebarGroupLabel",
     "label": "Sidebar Group Label",
     "category": "Navigation",
+    "box": "white",
+    "locks": [],
     "file": "spec/contracts/SidebarGroupLabel.json",
     "figmaSet": "SidebarGroupLabel",
     "story": "navigation-sidebar--sidebar-group-label-playground",
@@ -1047,6 +1677,12 @@
     "key": "SidebarBrand",
     "label": "Sidebar Brand",
     "category": "Navigation",
+    "box": "gray",
+    "locks": [
+      "size",
+      "hit",
+      "motion"
+    ],
     "file": "spec/contracts/SidebarBrand.json",
     "figmaSet": "SidebarBrand",
     "story": "navigation-sidebar--sidebar-brand-playground",

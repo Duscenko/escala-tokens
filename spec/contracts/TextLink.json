@@ -4,6 +4,13 @@
   "key": "TextLink",
   "label": "Text Link",
   "category": "Button & Actions",
+  "box": "gray",
+  "locks": [
+    "radius",
+    "size",
+    "hit",
+    "motion"
+  ],
   "description": "An inline link for navigation and in-flow actions: a label with an optional icon on either side and a 1px underline. Six variants (brand, neutral, inverse and three status), four sizes and six states.",
   "owners": {
     "anatomy": "figma",

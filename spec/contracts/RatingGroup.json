@@ -4,6 +4,12 @@
   "key": "RatingGroup",
   "label": "Rating Group",
   "category": "Indicators",
+  "box": "gray",
+  "locks": [
+    "size",
+    "hit",
+    "motion"
+  ],
   "description": "Single-choice scale of 5 items. Type star for scores, emoji for sentiment; Size cascades to every item.",
   "owners": {
     "anatomy": "figma",

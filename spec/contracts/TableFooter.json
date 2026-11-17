@@ -4,6 +4,12 @@
   "key": "TableFooter",
   "label": "TableFooter",
   "category": "Content & Surfaces",
+  "box": "gray",
+  "locks": [
+    "size",
+    "hit",
+    "motion"
+  ],
   "description": "Totals row of a Table: TableCell values in Type/label on Surface/muted.",
   "owners": {
     "anatomy": "figma",

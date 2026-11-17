@@ -4,6 +4,12 @@
   "key": "Label",
   "label": "Label",
   "category": "Form Controls",
+  "box": "gray",
+  "locks": [
+    "size",
+    "hit",
+    "motion"
+  ],
   "description": "Label: the accessible name of a control, the label part of Field (Radix Label).",
   "owners": {
     "anatomy": "figma",

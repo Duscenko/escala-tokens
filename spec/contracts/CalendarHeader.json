@@ -4,6 +4,12 @@
   "key": "CalendarHeader",
   "label": "Calendar Header",
   "category": "Form Controls",
+  "box": "gray",
+  "locks": [
+    "size",
+    "hit",
+    "motion"
+  ],
   "description": "The row above the days of a Calendar: previous and next month arrows flanking the month and year, as a combined chip, two chips or a plain heading.",
   "owners": {
     "anatomy": "figma",
