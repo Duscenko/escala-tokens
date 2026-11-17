@@ -4,6 +4,8 @@
   "key": "AccordionItem",
   "label": "Accordion Item",
   "category": "Content & Surfaces",
+  "box": "white",
+  "locks": [],
   "description": "One section: a trigger (optional icon, label, a chevron that flips when open) and collapsible content.",
   "owners": {
     "anatomy": "figma",

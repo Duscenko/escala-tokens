@@ -4,6 +4,13 @@
   "key": "Spinner",
   "label": "Spinner",
   "category": "Indicators",
+  "box": "black",
+  "locks": [
+    "shape",
+    "size",
+    "hit",
+    "motion"
+  ],
   "description": "Spinner: the Loading glyph of Button, Switch, Textarea, InputTag and DatePicker — a spinning loader glyph in the ink of the text around it. No variants; size it with a class.",
   "owners": {
     "anatomy": "figma",

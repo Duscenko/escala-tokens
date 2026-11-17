@@ -4,6 +4,13 @@
   "key": "SliderThumb",
   "label": "Slider Thumb",
   "category": "Form Controls",
+  "box": "black",
+  "locks": [
+    "shape",
+    "size",
+    "hit",
+    "motion"
+  ],
   "description": "The thumb of a Slider: a white square with an edge in the variant colour; Hover, Focused, Dragging and Disabled states.",
   "owners": {
     "anatomy": "figma",

@@ -4,6 +4,12 @@
   "key": "SegmentedControl",
   "label": "Segmented Control",
   "category": "Navigation",
+  "box": "gray",
+  "locks": [
+    "size",
+    "hit",
+    "motion"
+  ],
   "description": "Single choice between 2 to 5 short options shown as one track; the checked segment is raised on it. Size cascades to every segment.",
   "owners": {
     "anatomy": "figma",

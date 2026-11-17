@@ -4,6 +4,12 @@
   "key": "BreadcrumbEllipsis",
   "label": "Breadcrumb Ellipsis",
   "category": "Navigation",
+  "box": "gray",
+  "locks": [
+    "size",
+    "hit",
+    "motion"
+  ],
   "description": "Collapsed middle of a long breadcrumb trail that opens a menu of the hidden segments.",
   "owners": {
     "anatomy": "figma",

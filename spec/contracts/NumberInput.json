@@ -4,6 +4,12 @@
   "key": "NumberInput",
   "label": "Number Input",
   "category": "Form Controls",
+  "box": "gray",
+  "locks": [
+    "size",
+    "hit",
+    "motion"
+  ],
   "description": "A number field with decrement and increment buttons, also a quantity stepper. The value is a spinbutton; the buttons are ghost IconButtons that disable at the min and max.",
   "owners": {
     "anatomy": "figma",

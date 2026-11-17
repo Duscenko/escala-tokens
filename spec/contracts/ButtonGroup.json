@@ -4,6 +4,12 @@
   "key": "ButtonGroup",
   "label": "Button Group",
   "category": "Button & Actions",
+  "box": "gray",
+  "locks": [
+    "size",
+    "hit",
+    "motion"
+  ],
   "description": "A joined row or column of up to five ButtonGroupItem segments sharing one surface, outer radius and Shadow/xs. The group sets every segment's Variant and Size and puts a ButtonGroupDivider between them.",
   "owners": {
     "anatomy": "figma",

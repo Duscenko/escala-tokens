@@ -4,6 +4,12 @@
   "key": "Brand",
   "label": "Brand",
   "category": "Navigation",
+  "box": "gray",
+  "locks": [
+    "size",
+    "hit",
+    "motion"
+  ],
   "description": "Product logo, name and an optional version Badge.",
   "owners": {
     "anatomy": "figma",

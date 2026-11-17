@@ -4,6 +4,13 @@
   "key": "TableDropIndicator",
   "label": "TableDropIndicator",
   "category": "Content & Surfaces",
+  "box": "black",
+  "locks": [
+    "shape",
+    "size",
+    "hit",
+    "motion"
+  ],
   "description": "The 2px line that shows where a dragged row will land.",
   "owners": {
     "anatomy": "figma",

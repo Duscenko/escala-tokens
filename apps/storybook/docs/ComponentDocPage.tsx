@@ -9,7 +9,7 @@ import { GLOBALS_UPDATED } from 'storybook/internal/core-events'
 import type { GridViewport } from '../../../src/lib/layoutTokens'
 import { EscalaScope } from '../.storybook/escalaScope'
 import { Prose } from '../../../src/components/configurator/docs/blocks'
-import type { ComponentDef } from '../../../src/lib/componentCatalogue'
+import { COMPONENT_BOX_LABELS, type ComponentDef } from '../../../src/lib/componentCatalogue'
 import { DocsFrame, DocsHeader, DocsLink, DocsSection } from './DocsFrame'
 import { catalogueEntry, catalogueOf, familyByTitle, STORY_FAMILIES, type StoryPart } from './storyIndex'
 import { figmaNodeUrl } from '../.storybook/escalaSystem'
@@ -66,6 +66,16 @@ function PropsTable({ props }: { props: ComponentDef['props'] }) {
 
 function Chip({ children }: { children: string }) {
   return <span className="rounded-full border border-line bg-surface px-2 py-0.5 font-mono text-caption text-fg-muted">{children}</span>
+}
+
+/** Black · Gray · White box in one line (design-plans/component-box-classification.md), with what it locks. */
+function BoxBadge({ entry }: { entry: ComponentDef }) {
+  return (
+    <p className="mt-4 flex flex-wrap items-center gap-2 text-caption text-fg-muted">
+      <span className="rounded-full border border-line bg-surface px-2 py-0.5 font-medium text-fg">{COMPONENT_BOX_LABELS[entry.box]}</span>
+      {entry.locks.length > 0 && <span>Locked: {entry.locks.join(' · ')}</span>}
+    </p>
+  )
 }
 
 /** The toolbar's two modes, as the docs page sees them (and follows when they change). */
@@ -188,6 +198,7 @@ export function ComponentDocPage() {
             </>
           }
         />
+        {entry && ownEntry && <BoxBadge entry={entry} />}
 
         {/* The playground is what a reader opens this page for: the description in one paragraph, then the component. */}
         <div className="mt-6 mb-5 max-w-[64ch] text-body leading-relaxed text-fg-muted">

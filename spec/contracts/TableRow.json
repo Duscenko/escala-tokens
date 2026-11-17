@@ -4,6 +4,12 @@
   "key": "TableRow",
   "label": "TableRow",
   "category": "Content & Surfaces",
+  "box": "gray",
+  "locks": [
+    "size",
+    "hit",
+    "motion"
+  ],
   "description": "Body row: a strip of TableCell instances with a hairline under it and its own states.",
   "owners": {
     "anatomy": "figma",

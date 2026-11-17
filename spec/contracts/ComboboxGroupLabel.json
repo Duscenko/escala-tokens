@@ -4,6 +4,12 @@
   "key": "ComboboxGroupLabel",
   "label": "Combobox Group Label",
   "category": "Form Controls",
+  "box": "gray",
+  "locks": [
+    "size",
+    "hit",
+    "motion"
+  ],
   "description": "Heading for a group of options inside the Combobox popover.",
   "owners": {
     "anatomy": "figma",

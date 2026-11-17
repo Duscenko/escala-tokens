@@ -4,6 +4,12 @@
   "key": "TooltipContent",
   "label": "Tooltip",
   "category": "Content & Surfaces",
+  "box": "gray",
+  "locks": [
+    "size",
+    "hit",
+    "motion"
+  ],
   "description": "Short hint bubble on hover or focus: an optional title, the text and an arrow on the edge opposite to Side.",
   "owners": {
     "anatomy": "figma",

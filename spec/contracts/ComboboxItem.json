@@ -4,6 +4,12 @@
   "key": "ComboboxItem",
   "label": "Combobox Item",
   "category": "Form Controls",
+  "box": "gray",
+  "locks": [
+    "size",
+    "hit",
+    "motion"
+  ],
   "description": "Option row in the Combobox listbox with optional leading icon, description, trailing value and selection indicator.",
   "owners": {
     "anatomy": "figma",

@@ -4,6 +4,12 @@
   "key": "ModalFooter",
   "label": "Modal Footer",
   "category": "Content & Surfaces",
+  "box": "gray",
+  "locks": [
+    "size",
+    "hit",
+    "motion"
+  ],
   "description": "Action tray below the Modal content, divided by a Border/subtle rule.",
   "owners": {
     "anatomy": "figma",

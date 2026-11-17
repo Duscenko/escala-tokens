@@ -4,6 +4,13 @@
   "key": "RadioGroup",
   "label": "Radio Group",
   "category": "Form Controls",
+  "box": "black",
+  "locks": [
+    "shape",
+    "size",
+    "hit",
+    "motion"
+  ],
   "description": "shadcn/ui Radio Group: RadioGroup with RadioGroupItems, each labelled by a horizontal Field. A checked item is filled with the primary colour.",
   "owners": {
     "anatomy": "figma",

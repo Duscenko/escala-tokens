@@ -4,6 +4,12 @@
   "key": "AvatarGroup",
   "label": "Avatar Group",
   "category": "Content & Surfaces",
+  "box": "gray",
+  "locks": [
+    "size",
+    "hit",
+    "motion"
+  ],
   "description": "An overlapping stack of avatars, each in a Surface/page ring, ending in a +N tile.",
   "owners": {
     "anatomy": "figma",

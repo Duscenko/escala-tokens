@@ -4,6 +4,12 @@
   "key": "Toast",
   "label": "Toast",
   "category": "Feedback",
+  "box": "gray",
+  "locks": [
+    "size",
+    "hit",
+    "motion"
+  ],
   "description": "A short, non-blocking confirmation over the page that dismisses itself: an icon told apart by severity, a title, an optional description, actions, a close and a progress hairline.",
   "owners": {
     "anatomy": "figma",

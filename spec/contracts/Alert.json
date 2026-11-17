@@ -4,6 +4,12 @@
   "key": "Alert",
   "label": "Alert",
   "category": "Feedback",
+  "box": "gray",
+  "locks": [
+    "size",
+    "hit",
+    "motion"
+  ],
   "description": "A message bar for app-wide notices, subscription warnings, announcements and global errors: an icon, a description, optional actions and a close.",
   "owners": {
     "anatomy": "figma",

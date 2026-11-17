@@ -4,6 +4,12 @@
   "key": "SidebarBrand",
   "label": "Sidebar Brand",
   "category": "Navigation",
+  "box": "gray",
+  "locks": [
+    "size",
+    "hit",
+    "motion"
+  ],
   "description": "The brand block at the top of the Sidebar: a logo with a title and an optional subtitle; collapses to the logo only.",
   "owners": {
     "anatomy": "figma",

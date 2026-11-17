@@ -4,6 +4,12 @@
   "key": "Input",
   "label": "Input",
   "category": "Form Controls",
+  "box": "gray",
+  "locks": [
+    "size",
+    "hit",
+    "motion"
+  ],
   "description": "The text field: a box with the field inside it, at three sizes on the Size roles (sm 32 · default 40 · lg 48). Eleven types compose their own parts — phone and currency-select open a select, currency, url and tag carry a prefix, password a show / hide toggle, upload a Browse button, copy-link a Copy button, search the ⌘ K shortcut.",
   "owners": {
     "anatomy": "figma",

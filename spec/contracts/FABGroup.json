@@ -4,6 +4,12 @@
   "key": "FABGroup",
   "label": "FAB Group",
   "category": "Button & Actions",
+  "box": "gray",
+  "locks": [
+    "size",
+    "hit",
+    "motion"
+  ],
   "description": "A speed-dial: one trigger FABButton that opens up to five action items. Stack lists them vertically with labels; the three fan layouts open them on an arc of icon-only FABs, centered, left or right of the trigger.",
   "owners": {
     "anatomy": "figma",

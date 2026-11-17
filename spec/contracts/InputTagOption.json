@@ -4,6 +4,12 @@
   "key": "InputTagOption",
   "label": "Input Tag Option",
   "category": "Form Controls",
+  "box": "gray",
+  "locks": [
+    "size",
+    "hit",
+    "motion"
+  ],
   "description": "A suggestion row of the InputTag dropdown: an existing option or a create-new action.",
   "owners": {
     "anatomy": "figma",

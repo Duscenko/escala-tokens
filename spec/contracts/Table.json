@@ -4,6 +4,8 @@
   "key": "Table",
   "label": "Table",
   "category": "Content & Surfaces",
+  "box": "white",
+  "locks": [],
   "description": "Data table root: a header, rows and an optional footer; Size and Dividers cascade to every row and cell.",
   "owners": {
     "anatomy": "figma",

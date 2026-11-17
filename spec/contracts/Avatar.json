@@ -4,6 +4,13 @@
   "key": "Avatar",
   "label": "Avatar",
   "category": "Content & Surfaces",
+  "box": "gray",
+  "locks": [
+    "radius",
+    "size",
+    "hit",
+    "motion"
+  ],
   "description": "A person or entity as a photo, initials or an icon, in seven sizes, with an optional selection ring and presence dot.",
   "owners": {
     "anatomy": "figma",

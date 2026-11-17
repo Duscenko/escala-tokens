@@ -4,6 +4,12 @@
   "key": "TableTrendCell",
   "label": "TableTrendCell",
   "category": "Content & Surfaces",
+  "box": "gray",
+  "locks": [
+    "size",
+    "hit",
+    "motion"
+  ],
   "description": "Trend cell: a right-aligned value with a delta whose arrow and colour carry the direction.",
   "owners": {
     "anatomy": "figma",

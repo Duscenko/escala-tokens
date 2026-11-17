@@ -4,6 +4,13 @@
   "key": "StepperIndicator",
   "label": "Stepper Indicator",
   "category": "Navigation",
+  "box": "black",
+  "locks": [
+    "shape",
+    "size",
+    "hit",
+    "motion"
+  ],
   "description": "Marker column or row of a Stepper step: a StepperIcon and the connector line tinted by status.",
   "owners": {
     "anatomy": "figma",

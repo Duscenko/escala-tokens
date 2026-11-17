@@ -24,11 +24,33 @@ export interface VariantAxis {
   values: string[]
 }
 
+/**
+ * Box class (design-plans/component-box-classification.md §2–3):
+ * - black — immutable shape carrying meaning (checkbox square, radio circle, switch track). No slots.
+ * - gray  — locked skeleton with named slots (Button, Input, Badge, Avatar…).
+ * - white — a frame around free content (Card, Modal, Popover…). White ⊃ Gray ⊃ Black.
+ */
+export type ComponentBox = 'black' | 'gray' | 'white'
+
+/** What never follows a generator axis. `radius` = the radius is capped (`min(role, cap)`). */
+export type ComponentLock = 'shape' | 'size' | 'hit' | 'radius' | 'motion'
+
+/** One-line meaning of each class, shown on Storybook docs pages and read by agents. */
+export const COMPONENT_BOX_LABELS: Record<ComponentBox, string> = {
+  black: 'Black box — shape fixed by convention',
+  gray: 'Gray box — named slots, locked skeleton',
+  white: 'White box — free content',
+}
+
 export interface ComponentDef {
   key: string
   label: string
   /** Category — mirrors the plugin's "❖ Category" divider pages in Figma. */
   category: string
+  /** Black · Gray · White box. Required: no unclassified component ships. */
+  box: ComponentBox
+  /** Black: shape+size+hit+motion · Gray: size+hit+motion (+radius where capped) · White: none. */
+  locks: ComponentLock[]
   description: string
   usage: string
   /** Variant matrix as generated in Figma. Empty array = single component. */
@@ -45,6 +67,8 @@ export const COMPONENTS: ComponentDef[] = [
     key: 'Button',
     label: 'Button',
     category: 'Button & Actions',
+    box: 'gray',
+    locks: ['size', 'hit', 'motion'],
     description:
       'Triggers an action or navigation. Variant is the intent — default (brand), secondary (neutral), critical (destructive) — and Appearance the style — solid, outline, ghost, link — in all 12 combinations, four sizes and six states.',
     usage: 'Use default · solid for the single most important action on a surface (one per view); secondary for the rest; critical · solid for an irreversible action and critical · outline for a risky one next to a safe one. Icon-only actions are IconButton.',
@@ -74,6 +98,8 @@ export const COMPONENTS: ComponentDef[] = [
     key: 'IconButton',
     label: 'Icon Button',
     category: 'Button & Actions',
+    box: 'gray',
+    locks: ['size', 'hit', 'motion'],
     description:
       'An action with a single icon and no visible label: a square at the Button heights. Same Variant × Appearance grammar as Button, four sizes and six states, with an optional badge for a count or a dot.',
     usage: 'Use in toolbars, table rows and dialog headers where the icon is unambiguous. Always give it an aria-label; an action that needs words is a Button.',
@@ -100,6 +126,8 @@ export const COMPONENTS: ComponentDef[] = [
     key: 'CloseButton',
     label: 'Close Button',
     category: 'Button & Actions',
+    box: 'gray',
+    locks: ['size', 'hit', 'motion'],
     description:
       'The dismiss control for alerts, toasts, dialogs and tags: one X in a square. Soft by default, with solid, outline and ghost; rounded, pill or square corners; five sizes; and an inverse variant for a dark chip.',
     usage: 'Use in the corner of anything the person can put away. Always give it an aria-label (it defaults to "Close"); use the inverse variant on an inverse surface such as a tooltip or snackbar. A dismiss that needs words is a Button.',
@@ -129,6 +157,8 @@ export const COMPONENTS: ComponentDef[] = [
     key: 'TextLink',
     label: 'Text Link',
     category: 'Button & Actions',
+    box: 'gray',
+    locks: ['radius', 'size', 'hit', 'motion'],
     description:
       'An inline link for navigation and in-flow actions: a label with an optional icon on either side and a 1px underline. Six variants (brand, neutral, inverse and three status), four sizes and six states.',
     usage: 'Use inside running copy and next to a field or a card for a destination or a small action. Give it a descriptive label; an icon-only link needs an aria-label. Hover and Pressed always show the underline; the underline can be turned off at rest. An action with its own surface is a Button.',
@@ -156,6 +186,8 @@ export const COMPONENTS: ComponentDef[] = [
     key: 'FABButton',
     label: 'FAB Button',
     category: 'Button & Actions',
+    box: 'gray',
+    locks: ['size', 'hit', 'motion'],
     description:
       'The floating action button: a leading icon and an optional label on a surface that lifts. Brand, neutral or inverse, solid or soft, rounded or pill, at 48 and 56 px, with the elevation rising on hover and settling on press.',
     usage: 'Use for the one primary action of a screen that floats over its content (create, compose, add). Give an icon-only FAB an aria-label. A FAB inside a row of actions is a Button; several floating actions together are a FAB Group.',
@@ -185,6 +217,8 @@ export const COMPONENTS: ComponentDef[] = [
     key: 'FABGroup',
     label: 'FAB Group',
     category: 'Button & Actions',
+    box: 'gray',
+    locks: ['size', 'hit', 'motion'],
     description:
       'A speed-dial: one trigger FABButton that opens up to five action items. Stack lists them vertically with labels; the three fan layouts open them on an arc of icon-only FABs, centered, left or right of the trigger.',
     usage: 'Use where several floating actions share one entry point (create → photo, edit, share…). The trigger\'s icon swaps plus → close when open. Give every icon-only item an accessible name.',
@@ -213,6 +247,8 @@ export const COMPONENTS: ComponentDef[] = [
     key: 'ButtonGroup',
     label: 'Button Group',
     category: 'Button & Actions',
+    box: 'gray',
+    locks: ['size', 'hit', 'motion'],
     description:
       'A joined row or column of up to five ButtonGroupItem segments sharing one surface, outer radius and Shadow/xs. The group sets every segment\'s Variant and Size and puts a ButtonGroupDivider between them.',
     usage: 'Use for 2–5 related actions or views that read as one control (Previous · Today · Next, Day · Week · Month). Mark the selected segment with active. Shape pill is horizontal only.',
@@ -238,6 +274,8 @@ export const COMPONENTS: ComponentDef[] = [
     key: 'ButtonGroupItem',
     label: 'Button Group Item',
     category: 'Button & Actions',
+    box: 'gray',
+    locks: ['size', 'hit', 'motion'],
     description: 'One segment of a ButtonGroup: a selectable action with no radius or border of its own (the group clips the corners and draws the shared edge).',
     usage: 'Only inside a ButtonGroup. active marks the selected segment (aria-pressed); iconOnly makes it square.',
     axes: [
@@ -264,6 +302,8 @@ export const COMPONENTS: ComponentDef[] = [
     key: 'ButtonGroupDivider',
     label: 'Button Group Divider',
     category: 'Button & Actions',
+    box: 'gray',
+    locks: ['size', 'hit', 'motion'],
     description: 'The 1px line between two ButtonGroupItems (Stroke/divider), painted per Variant. ButtonGroup inserts it.',
     usage: 'Private to ButtonGroup — the group draws it between segments. Orientation horizontal is the vertical line of a row.',
     axes: [
@@ -281,6 +321,8 @@ export const COMPONENTS: ComponentDef[] = [
     key: 'SocialLoginButton',
     label: 'Social Login Button',
     category: 'Button & Actions',
+    box: 'gray',
+    locks: ['size', 'hit', 'motion'],
     description: 'Sign-in button carrying a provider mark: white (a bordered control) or in the provider\'s own colour, full width or icon-only.',
     usage: 'Stack vertically above the email form, or lay the icon-only form in a row. Keep provider order consistent across screens.',
     // The Figma file's axes, value for value (SocialLoginButton, 364:20).
@@ -307,6 +349,8 @@ export const COMPONENTS: ComponentDef[] = [
     key: 'Input',
     label: 'Input',
     category: 'Form Controls',
+    box: 'gray',
+    locks: ['size', 'hit', 'motion'],
     description: 'The text field: a box with the field inside it, at three sizes on the Size roles (sm 32 · default 40 · lg 48). Eleven types compose their own parts — phone and currency-select open a select, currency, url and tag carry a prefix, password a show / hide toggle, upload a Browse button, copy-link a Copy button, search the ⌘ K shortcut.',
     usage: 'Wrap it in a Field with a FieldLabel. Pick the type for the value it holds (phone, currency, password, url…); any other HTML type works on the default layout. For an add-on the types do not cover, use Input Group.',
     // The Figma file's axes, value for value, in the file's own order
@@ -338,6 +382,8 @@ export const COMPONENTS: ComponentDef[] = [
     key: 'Textarea',
     label: 'Textarea',
     category: 'Form Controls',
+    box: 'gray',
+    locks: ['radius', 'size', 'hit', 'motion'],
     description: 'Multi-line text field for free-form input with an optional resize glyph. Invalid shows a warning glyph and Loading a spinner in the top-right corner.',
     usage: 'Use for free-form text over one line (messages, descriptions, notes). Labels, hints and error text come from Field. Show the resize glyph when the expected length varies.',
     // The Figma file's axes, value for value (design-plans/textarea-contract.md).
@@ -360,6 +406,8 @@ export const COMPONENTS: ComponentDef[] = [
     key: 'InputOTP',
     label: 'Input OTP',
     category: 'Form Controls',
+    box: 'gray',
+    locks: ['size', 'hit', 'motion'],
     description: 'A one-time code field: a row of InputOTPSlots over one hidden input, with a separator between the halves of a 6- or 8-digit code. Paste fills every slot.',
     usage: 'Use for one-time codes (sign-in, verification). Set length to the code length; labels and the error text come from Field.',
     // The Figma file's axes, value for value (design-plans/input-otp-contract.md).
@@ -384,6 +432,8 @@ export const COMPONENTS: ComponentDef[] = [
     key: 'InputOTPSlot',
     label: 'Input OTP Slot',
     category: 'Form Controls',
+    box: 'gray',
+    locks: ['radius', 'size', 'hit', 'motion'],
     description: 'One box of an InputOTP: a digit, or the caret while it is the active empty slot. InputOTP draws it; it reads the code from it.',
     usage: 'Used by InputOTP. Compose it yourself (index) only when you need a custom layout.',
     axes: [
@@ -403,6 +453,8 @@ export const COMPONENTS: ComponentDef[] = [
     key: 'NumberInput',
     label: 'Number Input',
     category: 'Form Controls',
+    box: 'gray',
+    locks: ['size', 'hit', 'motion'],
     description: 'A number field with decrement and increment buttons, also a quantity stepper. The value is a spinbutton; the buttons are ghost IconButtons that disable at the min and max.',
     usage: 'Use for small numeric ranges (quantities, counts, seats). For wide ranges prefer Slider or a plain Input. Labels and hints come from Field.',
     // The Figma file's axes, value for value (design-plans/number-input-contract.md).
@@ -425,6 +477,8 @@ export const COMPONENTS: ComponentDef[] = [
     key: 'InputTag',
     label: 'Input Tag',
     category: 'Form Controls',
+    box: 'gray',
+    locks: ['size', 'hit', 'motion'],
     description: 'A multi-value text field that turns entries into removable tag chips, inline or stacked outside the field.',
     usage: 'Use for open-ended multi-values (emails, labels). For a known list, prefer Combobox. Keep a visible label (Field) and expose the error text through aria-describedby.',
     // The Figma file's axes, value for value (design-plans/input-tag-contract.md).
@@ -450,6 +504,8 @@ export const COMPONENTS: ComponentDef[] = [
     key: 'InputTagChip',
     label: 'Input Tag Chip',
     category: 'Form Controls',
+    box: 'gray',
+    locks: ['size', 'hit', 'motion'],
     description: 'One removable tag of an InputTag; the critical variant marks tags past the maximum.',
     usage: 'Used by InputTag. Use it alone only where a removable tag is needed outside the field.',
     axes: [
@@ -471,6 +527,8 @@ export const COMPONENTS: ComponentDef[] = [
     key: 'InputTagOption',
     label: 'Input Tag Option',
     category: 'Form Controls',
+    box: 'gray',
+    locks: ['size', 'hit', 'motion'],
     description: 'A suggestion row of the InputTag dropdown: an existing option or a create-new action.',
     usage: 'Compose the InputTag dropdown from it. Render the list as a listbox with arrow-key navigation.',
     axes: [
@@ -490,6 +548,8 @@ export const COMPONENTS: ComponentDef[] = [
     key: 'DatePickerTrigger',
     label: 'Date Picker Trigger',
     category: 'Form Controls',
+    box: 'gray',
+    locks: ['size', 'hit', 'motion'],
     description: 'An input-styled button that opens the date picker popover: the calendar glyph and the placeholder or the formatted date.',
     usage: 'Use to pick one date without leaving the form. Pair it with a Label (Field), open DatePickerPopover from it and put the chosen date back as its value.',
     // The Figma file\'s axes, value for value (design-plans/date-picker-trigger-contract.md).
@@ -512,6 +572,8 @@ export const COMPONENTS: ComponentDef[] = [
     key: 'DatePickerPopover',
     label: 'Date Picker Popover',
     category: 'Form Controls',
+    box: 'white',
+    locks: [],
     description: 'The panel DatePickerTrigger opens: a Calendar with Radius/overlay and the Shadow/lg lift, 8 px below the trigger. Size default / sm, Mode single / range (range adds the presets rail).',
     usage: 'Use as the content of a Popover whose trigger is DatePickerTrigger. Put the Calendar inside it; use the Calendar alone when the panel is always visible.',
     // The Figma file\'s axes, value for value (design-plans/date-picker-popover-contract.md).
@@ -532,6 +594,8 @@ export const COMPONENTS: ComponentDef[] = [
     key: 'CalendarDay',
     label: 'Calendar Day',
     category: 'Form Controls',
+    box: 'gray',
+    locks: ['size', 'hit', 'motion'],
     description: 'One day cell of the Calendar: the date, a ghost cell that fills when selected, the range band behind it and the dash under today or a marked day.',
     usage: 'Use inside Calendar for each date of the month grid. Pin Selected, RangeStart, RangeMiddle or RangeEnd for the chosen days, Today for today and Outside for the neighbouring months.',
     // The Figma file\'s axes, value for value (design-plans/calendar-day-contract.md).
@@ -555,6 +619,8 @@ export const COMPONENTS: ComponentDef[] = [
     key: 'CalendarHeader',
     label: 'Calendar Header',
     category: 'Form Controls',
+    box: 'gray',
+    locks: ['size', 'hit', 'motion'],
     description: 'The row above the days of a Calendar: previous and next month arrows flanking the month and year, as a combined chip, two chips or a plain heading.',
     usage: 'Use at the top of Calendar. single opens one month-and-year picker, multiple opens the month and the year separately, plain is a static heading for a calendar with no picker.',
     // The Figma file\'s axes, value for value (design-plans/calendar-header-contract.md).
@@ -577,6 +643,8 @@ export const COMPONENTS: ComponentDef[] = [
     key: 'CalendarMonth',
     label: 'Calendar Month',
     category: 'Form Controls',
+    box: 'white',
+    locks: [],
     description: 'One visible month of a Calendar: the weekday row over the weeks of day cells, Sunday first.',
     usage: 'Use inside Calendar below the header. single and multiple mark chosen days, range marks a span with its band; secondary swaps the selected look for the inverse one.',
     // The Figma file\'s axes, value for value (design-plans/calendar-month-contract.md).
@@ -601,6 +669,8 @@ export const COMPONENTS: ComponentDef[] = [
     key: 'CalendarPresets',
     label: 'Calendar Presets',
     category: 'Form Controls',
+    box: 'gray',
+    locks: ['size', 'hit', 'motion'],
     description: 'The rail beside a range Calendar: a "PRESETS" label over quick ranges, the one matching the selection tinted like the range.',
     usage: 'Use on the left of a range Calendar for common spans (Today, Last 7 days…). Pick the Variant that matches the CalendarDay cells next to it.',
     // The Figma file\'s axes, value for value (design-plans/calendar-presets-contract.md).
@@ -623,6 +693,8 @@ export const COMPONENTS: ComponentDef[] = [
     key: 'CalendarFooter',
     label: 'Calendar Footer',
     category: 'Form Controls',
+    box: 'white',
+    locks: [],
     description: 'The bar under a Calendar: a Today link at the start, Clear and Apply at the end, under a divider.',
     usage: 'Use at the bottom of a Calendar that confirms its choice (a date picker popover). Apply commits the selection, Clear empties it, Today jumps to the current date.',
     // The Figma file\'s axes, value for value (design-plans/calendar-footer-contract.md).
@@ -641,6 +713,8 @@ export const COMPONENTS: ComponentDef[] = [
     key: 'Calendar',
     label: 'Calendar',
     category: 'Form Controls',
+    box: 'white',
+    locks: [],
     description: 'The date panel: a month with its header, an optional presets rail beside it and an optional Today · Clear · Apply footer.',
     usage: 'Use to pick a date when the day of the week matters, several dates, or a range. DatePickerPopover wraps it under a DatePickerTrigger. For a known date (a birthday) a text field with a format is faster.',
     // The Figma file\'s axes, value for value (design-plans/calendar-contract.md).
@@ -667,6 +741,8 @@ export const COMPONENTS: ComponentDef[] = [
     key: 'Combobox',
     label: 'Combobox',
     category: 'Form Controls',
+    box: 'gray',
+    locks: ['size', 'hit', 'motion'],
     description: 'Text input trigger that opens a filterable listbox, with optional leading icon, clear button and trailing chevron.',
     usage: 'Use when options exceed ~10 items or need search. For short lists, plain Select is enough. Keep a visible label (Field) and expose the error text through aria-describedby.',
     // The Figma file's axes, value for value (design-plans/combobox-contract.md).
@@ -697,6 +773,8 @@ export const COMPONENTS: ComponentDef[] = [
     key: 'ComboboxPopover',
     label: 'Combobox Popover',
     category: 'Form Controls',
+    box: 'white',
+    locks: [],
     description: 'Floating listbox panel for the Combobox with list, grouped or empty content and an optional footer.',
     usage: 'Opened by Combobox 8px below the trigger, aligned to its start; closes on Escape. Compose it from ComboboxItem and ComboboxGroupLabel.',
     axes: [
@@ -716,6 +794,8 @@ export const COMPONENTS: ComponentDef[] = [
     key: 'ComboboxItem',
     label: 'Combobox Item',
     category: 'Form Controls',
+    box: 'gray',
+    locks: ['size', 'hit', 'motion'],
     description: 'Option row in the Combobox listbox with optional leading icon, description, trailing value and selection indicator.',
     usage: 'Used by Combobox and ComboboxPopover. Keep labels short; put detail in the description.',
     axes: [
@@ -735,6 +815,8 @@ export const COMPONENTS: ComponentDef[] = [
     key: 'ComboboxGroupLabel',
     label: 'Combobox Group Label',
     category: 'Form Controls',
+    box: 'gray',
+    locks: ['size', 'hit', 'motion'],
     description: 'Heading for a group of options inside the Combobox popover.',
     usage: 'One per group in a grouped list, above its options.',
     axes: [{ name: 'Size', values: ['sm', 'default', 'lg'] }],
@@ -749,6 +831,8 @@ export const COMPONENTS: ComponentDef[] = [
     key: 'Checkbox',
     label: 'Checkbox',
     category: 'Form Controls',
+    box: 'black',
+    locks: ['shape', 'radius', 'size', 'hit', 'motion'],
     description: 'Single checkbox for an independent boolean or a parent row summarising a partial selection (indeterminate). The box alone: label it with CheckboxItem.',
     usage: 'Use for independent on/off choices and multi-select lists; indeterminate for a parent whose children are partly checked. For an instant setting, use Switch. Variant colours the checked box (default accent, secondary neutral, status colours, inverse on dark surfaces).',
     // The Figma file's axes, value for value (design-plans/checkbox-contract.md).
@@ -773,6 +857,8 @@ export const COMPONENTS: ComponentDef[] = [
     key: 'CheckboxItem',
     label: 'Checkbox Item',
     category: 'Form Controls',
+    box: 'black',
+    locks: ['shape', 'size', 'hit', 'motion'],
     description: 'Checkbox with a visible label and optional description; the whole row toggles the checkbox.',
     usage: 'Use standalone (terms, opt-ins) or as a row of a CheckboxGroup. Placement right for settings lists where the label leads. The description explains the consequence; keep the label short.',
     // The Figma file's axes, value for value (design-plans/checkbox-item-contract.md).
@@ -798,6 +884,8 @@ export const COMPONENTS: ComponentDef[] = [
     key: 'CheckboxGroup',
     label: 'Checkbox Group',
     category: 'Form Controls',
+    box: 'white',
+    locks: [],
     description: 'Labelled multi-select: group label, CheckboxItem rows and an optional footer (helper or error). Each checkbox stays independent.',
     usage: 'Use for several independent options under one question. Invalid shows the footer as the error; Disabled mutes the whole group. Size, Placement, State and Variant cascade to every row.',
     // The Figma file's axes, value for value (design-plans/checkbox-group-contract.md).
@@ -821,6 +909,8 @@ export const COMPONENTS: ComponentDef[] = [
     key: 'RadioGroup',
     label: 'Radio Group',
     category: 'Form Controls',
+    box: 'black',
+    locks: ['shape', 'size', 'hit', 'motion'],
     description: 'shadcn/ui Radio Group: RadioGroup with RadioGroupItems, each labelled by a horizontal Field. A checked item is filled with the primary colour.',
     usage: 'Use for one choice among 2–5 visible options. For more, use Select.',
     axes: [],
@@ -835,6 +925,8 @@ export const COMPONENTS: ComponentDef[] = [
     key: 'Switch',
     label: 'Switch',
     category: 'Form Controls',
+    box: 'black',
+    locks: ['shape', 'size', 'hit', 'motion'],
     description: 'Binary on/off control for a setting that applies immediately. The track alone: name it with SwitchGroup, a Label or a Field.',
     usage: 'Use for a setting that applies at once. For a choice submitted with a form, use Checkbox. Thumb long makes a wider, pill-shaped thumb; the I / O marks and a thumb glyph help where colour alone is not enough.',
     // The Figma file's axes, value for value (design-plans/switch-contract.md).
@@ -860,6 +952,8 @@ export const COMPONENTS: ComponentDef[] = [
     key: 'SwitchGroup',
     label: 'Switch Group',
     category: 'Form Controls',
+    box: 'white',
+    locks: [],
     description: 'Switch with a label, an optional description and a footer; Placement sets the side the switch sits on, Invalid shows critical helper text and Loading replaces the switch with a spinner.',
     usage: 'Use for one labelled setting. The whole row is a label, so clicking the text toggles the switch.',
     axes: [
@@ -881,6 +975,8 @@ export const COMPONENTS: ComponentDef[] = [
     key: 'Slider',
     label: 'Slider',
     category: 'Form Controls',
+    box: 'gray',
+    locks: ['size', 'hit', 'motion'],
     description: 'Single or range value with an optional tooltip above the thumbs and tick marks under the track.',
     usage: 'Use when the precise value matters less than the position in a range. Show the value (tooltip) when it matters. Range picks two ends.',
     // The Figma file's axes, value for value (design-plans/slider-contract.md).
@@ -905,6 +1001,8 @@ export const COMPONENTS: ComponentDef[] = [
     key: 'SliderThumb',
     label: 'Slider Thumb',
     category: 'Form Controls',
+    box: 'black',
+    locks: ['shape', 'size', 'hit', 'motion'],
     description: 'The thumb of a Slider: a white square with an edge in the variant colour; Hover, Focused, Dragging and Disabled states.',
     usage: 'Only inside a Slider.',
     axes: [
@@ -923,6 +1021,8 @@ export const COMPONENTS: ComponentDef[] = [
     key: 'FileUpload',
     label: 'File Upload',
     category: 'Form Controls',
+    box: 'white',
+    locks: [],
     description: 'Managed file upload: a FileUploadDropzone (or a single trigger Button) above a list of FileUploadItem rows; Size sets row density and cascades to every item.',
     usage: 'Use where people attach several files and need to follow each one. Layout dropzone when files are the task, trigger in a dense form. Keep the live region announcing completed, removed and failed files, and move focus to a neighbouring row when one is removed.',
     // The Figma file's axes, value for value (design-plans/file-upload-contract.md).
@@ -945,6 +1045,8 @@ export const COMPONENTS: ComponentDef[] = [
     key: 'FileUploadItem',
     label: 'File Upload Item',
     category: 'Form Controls',
+    box: 'gray',
+    locks: ['size', 'hit', 'motion'],
     description: 'One file row in FileUpload with format icon, name, status, size readout, progress and row actions.',
     usage: 'One row per file under a FileUploadDropzone. Status follows the upload: queued, uploading (progress), paused, completed, error (with its reason). sm for dense lists.',
     // The Figma file's axes, value for value (design-plans/file-upload-item-contract.md).
@@ -969,6 +1071,8 @@ export const COMPONENTS: ComponentDef[] = [
     key: 'FileUploadDropzone',
     label: 'File Upload Dropzone',
     category: 'Form Controls',
+    box: 'white',
+    locks: [],
     description: 'Drop area that opens the file picker on click and accepts dragged files; the Choose file trigger is a Button.',
     usage: 'Use at the top of a FileUpload, or alone where files are the whole task. lg for an empty page, default in a form, sm in a dense row. Dragging tints it accent; Invalid needs a visible message (it replaces the title).',
     // The Figma file's axes, value for value (design-plans/file-upload-dropzone-contract.md).
@@ -994,6 +1098,8 @@ export const COMPONENTS: ComponentDef[] = [
     key: 'Field',
     label: 'Field',
     category: 'Form Controls',
+    box: 'gray',
+    locks: ['size', 'hit', 'motion'],
     description:
       'A labelled form field: a label with an optional required marker and trailing link, one form control, and helper or error text. Field never draws the control — it wires the Input (or Textarea, Combobox, NumberInput, InputTag, DatePickerTrigger, InputOTP) you give it.',
     usage: 'Wrap a form control that needs a visible label. Use a bare control only where no visible label is needed (search). Match the control to the Field size; Invalid shows the error, Disabled disables the control and dims the texts.',
@@ -1019,6 +1125,8 @@ export const COMPONENTS: ComponentDef[] = [
     key: 'Label',
     label: 'Label',
     category: 'Form Controls',
+    box: 'gray',
+    locks: ['size', 'hit', 'motion'],
     description: 'Label: the accessible name of a control, the label part of Field (Radix Label).',
     usage: 'Inside a form, prefer FieldLabel. Mark required fields in the text, not with colour alone.',
     axes: [],
@@ -1032,6 +1140,8 @@ export const COMPONENTS: ComponentDef[] = [
     key: 'PasswordStrength',
     label: 'Password Strength',
     category: 'Form Controls',
+    box: 'white',
+    locks: [],
     description: 'A card that scores a password: the rules checklist, a five-segment PasswordStrengthMeter and the level label (Too Weak · Weak · Fair · Strong · Very Strong).',
     usage: 'Show it under a password field and update it as the user types. Keep the rules visible when the requirements are not obvious; hide them for a compact card.',
     // The Figma file's axes, value for value (design-plans/password-strength-contract.md).
@@ -1053,6 +1163,8 @@ export const COMPONENTS: ComponentDef[] = [
     key: 'PasswordStrengthMeter',
     label: 'Password Strength Meter',
     category: 'Form Controls',
+    box: 'black',
+    locks: ['shape', 'size', 'hit', 'motion'],
     description: 'Five pill segments; Strength n fills the first n — critical, warning, warning pressed, success pressed, success.',
     usage: 'Used by PasswordStrength; on its own where only the bar fits.',
     axes: [
@@ -1070,6 +1182,8 @@ export const COMPONENTS: ComponentDef[] = [
     key: 'PasswordStrengthRule',
     label: 'Password Strength Rule',
     category: 'Form Controls',
+    box: 'gray',
+    locks: ['size', 'hit', 'motion'],
     description: 'One requirement of a password: a success check when met, an empty ring when not, and its label.',
     usage: 'Used by PasswordStrength\'s checklist.',
     axes: [
@@ -1089,6 +1203,8 @@ export const COMPONENTS: ComponentDef[] = [
     key: 'Badge',
     label: 'Badge',
     category: 'Indicators',
+    box: 'gray',
+    locks: ['size', 'hit', 'motion'],
     description: 'A small non-interactive label for statuses, counts and categories. Variant is the severity; Appearance soft, solid, outline or ghost; Type default, icon, number or dot.',
     usage: 'Use to label or count (a plan, a status, "+5 more"). For presence (online / away), use Status Badge. Never as a button. An icon-only badge needs an accessible name.',
     // The Figma file's axes, value for value (design-plans/badge-contract.md).
@@ -1112,6 +1228,8 @@ export const COMPONENTS: ComponentDef[] = [
     key: 'Chip',
     label: 'Chip',
     category: 'Indicators',
+    box: 'gray',
+    locks: ['size', 'hit', 'motion'],
     description: 'A compact tag for filter, selection or input values with an optional leading icon and close action.',
     usage: 'Use for filters and applied selections. For static status, use Badge. When the close control is on it needs an accessible name (Remove plus the label) and the chip must be keyboard operable.',
     // The Figma file's axes, value for value (design-plans/chip-contract.md).
@@ -1137,6 +1255,8 @@ export const COMPONENTS: ComponentDef[] = [
     key: 'ProgressLine',
     label: 'Progress Line',
     category: 'Indicators',
+    box: 'black',
+    locks: ['shape', 'size', 'hit', 'motion'],
     description: 'A horizontal progress indicator for a value from 0 to 100: a muted track and a bar that is solid or a gradient of the primary action.',
     usage: 'Use for operations that take more than a couple of seconds and report how far along they are. Pair it with a label and the percentage in the surrounding UI. For an unknown duration use Spinner.',
     // The Figma file's axes, value for value (design-plans/progress-contract.md).
@@ -1156,6 +1276,8 @@ export const COMPONENTS: ComponentDef[] = [
     key: 'ProgressCircle',
     label: 'Progress Circle',
     category: 'Indicators',
+    box: 'black',
+    locks: ['shape', 'size', 'hit', 'motion'],
     description: 'A circular progress indicator for a value from 0 to 100: a muted ring and an arc from the top, with round or butt ends.',
     usage: 'Use where a bar does not fit (a button, a card corner, an avatar). Show the percentage next to it when it matters.',
     axes: [
@@ -1175,6 +1297,8 @@ export const COMPONENTS: ComponentDef[] = [
     key: 'Spinner',
     label: 'Spinner',
     category: 'Indicators',
+    box: 'black',
+    locks: ['shape', 'size', 'hit', 'motion'],
     description: 'Spinner: the Loading glyph of Button, Switch, Textarea, InputTag and DatePicker — a spinning loader glyph in the ink of the text around it. No variants; size it with a class.',
     usage: 'Prefer skeleton screens for content loading. Use Spinner for action feedback.',
     axes: [],
@@ -1189,6 +1313,8 @@ export const COMPONENTS: ComponentDef[] = [
     key: 'FeaturedIcon',
     label: 'Featured Icon',
     category: 'Indicators',
+    box: 'gray',
+    locks: ['radius', 'size', 'hit', 'motion'],
     description: 'A decorative glyph in a tinted or solid shape: cards, empty states, dialogs, feature lists.',
     usage: 'Always decorative; the nearby title carries the meaning. A dialog header nests it (default or lg, soft, circle).',
     // The Figma file's axes, value for value (design-plans/featured-icon-contract.md).
@@ -1209,6 +1335,8 @@ export const COMPONENTS: ComponentDef[] = [
     key: 'Kbd',
     label: 'Kbd',
     category: 'Indicators',
+    box: 'black',
+    locks: ['shape', 'radius', 'size', 'hit', 'motion'],
     description: 'A keyboard key hint for shortcuts and navigation legends (⌘, K, Esc, ↑, ↓, ↵); KbdGroup spaces several keys.',
     usage: 'Size follows the icon of the control it sits in: xs in menus and a small Input, sm in a default or large Input and in tooltips, default in standalone shortcut lists. One Kbd per key, never a whole shortcut string.',
     // The Figma file's axes, value for value (design-plans/kbd-contract.md).
@@ -1225,6 +1353,8 @@ export const COMPONENTS: ComponentDef[] = [
     key: 'RatingGroup',
     label: 'Rating Group',
     category: 'Indicators',
+    box: 'gray',
+    locks: ['size', 'hit', 'motion'],
     description: 'Single-choice scale of 5 items. Type star for scores, emoji for sentiment; Size cascades to every item.',
     usage: 'Use to collect a 1–5 score or a sentiment. Use SegmentedControl for labelled options and Slider for a continuous value.',
     // The Figma file's axes, value for value (design-plans/rating-group-contract.md).
@@ -1244,6 +1374,8 @@ export const COMPONENTS: ComponentDef[] = [
     key: 'RatingGroupItem',
     label: 'Rating Group Item',
     category: 'Indicators',
+    box: 'black',
+    locks: ['shape', 'size', 'hit', 'motion'],
     description: 'One option of a RatingGroup. A checked star fills in Content/accent; an emoji keeps its glyph and marks the choice with Surface/selected.',
     usage: 'Always inside a RatingGroup; give every item an aria-label.',
     axes: [
@@ -1266,6 +1398,8 @@ export const COMPONENTS: ComponentDef[] = [
     key: 'Avatar',
     label: 'Avatar',
     category: 'Content & Surfaces',
+    box: 'gray',
+    locks: ['radius', 'size', 'hit', 'motion'],
     description: 'A person or entity as a photo, initials or an icon, in seven sizes, with an optional selection ring and presence dot.',
     usage: 'Use one size per context. Stack people with AvatarGroup. A photo avatar has no colour variants; initials and icon take Variant and Appearance.',
     // The Figma file's axes, value for value (design-plans/avatar-contract.md).
@@ -1290,6 +1424,8 @@ export const COMPONENTS: ComponentDef[] = [
     key: 'AvatarStatus',
     label: 'Avatar Status',
     category: 'Content & Surfaces',
+    box: 'black',
+    locks: ['shape', 'size', 'hit', 'motion'],
     description: 'The presence dot of an Avatar: online, busy, away, offline or do-not-disturb, with an outside Surface/page edge.',
     usage: 'Always on an Avatar (bottom-right); never rely on colour alone.',
     axes: [
@@ -1306,6 +1442,8 @@ export const COMPONENTS: ComponentDef[] = [
     key: 'AvatarGroup',
     label: 'Avatar Group',
     category: 'Content & Surfaces',
+    box: 'gray',
+    locks: ['size', 'hit', 'motion'],
     description: 'An overlapping stack of avatars, each in a Surface/page ring, ending in a +N tile.',
     usage: 'Show who is part of something; label the +N tile ("4 more people").',
     axes: [
@@ -1324,6 +1462,8 @@ export const COMPONENTS: ComponentDef[] = [
     key: 'Card',
     label: 'Card',
     category: 'Content & Surfaces',
+    box: 'white',
+    locks: [],
     description: 'Contained surface for grouping related content and actions. Fill → card/bg → surface/1.',
     usage: 'Use consistent padding within a layout. Avoid nesting cards more than 1 level.',
     axes: [{ name: 'Size', values: ['default', 'sm'] }],
@@ -1340,6 +1480,8 @@ export const COMPONENTS: ComponentDef[] = [
     key: 'Separator',
     label: 'Separator',
     category: 'Content & Surfaces',
+    box: 'black',
+    locks: ['shape', 'size', 'hit', 'motion'],
     description: 'Thin rule that divides content, horizontal or vertical, solid or dashed, with an optional label at its start, centre or end.',
     usage: 'Use sparingly — whitespace is usually sufficient. Add a label only for section breaks (the classic «OR»).',
     axes: [
@@ -1360,6 +1502,8 @@ export const COMPONENTS: ComponentDef[] = [
     key: 'Accordion',
     label: 'Accordion',
     category: 'Content & Surfaces',
+    box: 'white',
+    locks: [],
     description: 'A stack of AccordionItem sharing one Variant. The first item is open by default; items open and close independently.',
     usage: 'Use for several stacked sections (FAQ, settings). For a single expandable region use Collapsible.',
     // The Figma file's axes, value for value (design-plans/accordion-contract.md).
@@ -1376,6 +1520,8 @@ export const COMPONENTS: ComponentDef[] = [
     key: 'AccordionItem',
     label: 'Accordion Item',
     category: 'Content & Surfaces',
+    box: 'white',
+    locks: [],
     description: 'One section: a trigger (optional icon, label, a chevron that flips when open) and collapsible content.',
     usage: 'Always inside an Accordion; give every item a value.',
     axes: [
@@ -1394,6 +1540,8 @@ export const COMPONENTS: ComponentDef[] = [
     key: 'Image',
     label: 'Image',
     category: 'Content & Surfaces',
+    box: 'white',
+    locks: [],
     description: 'A photo or illustration cropped to a fixed ratio (object-fit: cover), on Surface/muted while it loads. Ratio auto fills its parent.',
     usage: 'Wrap media so layouts never shift while content loads. Use Shape square inside a slot that already clips its corners. Always give alt text (alt="" when decorative).',
     // The Figma file's axes, value for value (design-plans/image-contract.md).
@@ -1414,6 +1562,8 @@ export const COMPONENTS: ComponentDef[] = [
     key: 'Modal',
     label: 'Modal',
     category: 'Content & Surfaces',
+    box: 'white',
+    locks: [],
     description: 'Dialog card that interrupts the flow for a decision or a short task: a header, a content slot and a footer over a scrim.',
     usage: 'Use for a decision or a short task that needs full attention (a confirmation, a small form). Not for notifications: use a Toast or an Alert.',
     axes: [
@@ -1433,6 +1583,8 @@ export const COMPONENTS: ComponentDef[] = [
     key: 'ModalHeader',
     label: 'Modal Header',
     category: 'Content & Surfaces',
+    box: 'gray',
+    locks: ['size', 'hit', 'motion'],
     description: 'Header row of the Modal: an optional icon, the title and description, and an optional trailing slot.',
     usage: 'Inside a Modal. Align sets the layout; vertical-center suits confirmations and has no trailing slot. Never hide the title: it is the dialog name.',
     axes: [
@@ -1452,6 +1604,8 @@ export const COMPONENTS: ComponentDef[] = [
     key: 'ModalFooter',
     label: 'Modal Footer',
     category: 'Content & Surfaces',
+    box: 'gray',
+    locks: ['size', 'hit', 'motion'],
     description: 'Action tray below the Modal content, divided by a Border/subtle rule.',
     usage: 'Inline puts the actions at the end, primary last; stacked gives full-width buttons for narrow viewports.',
     axes: [
@@ -1470,6 +1624,8 @@ export const COMPONENTS: ComponentDef[] = [
     key: 'Sheet',
     label: 'Sheet',
     category: 'Content & Surfaces',
+    box: 'white',
+    locks: [],
     description: 'An edge-anchored panel on the Modal surface: a desktop drawer from the right or left, a mobile sheet from the bottom.',
     usage: 'Use for secondary tasks that keep the page in context (filters, a cart, details, settings). For a blocking decision use Modal or Alert Dialog; for a list of choices tied to a field use Popover.',
     axes: [
@@ -1489,6 +1645,8 @@ export const COMPONENTS: ComponentDef[] = [
     key: 'Popover',
     label: 'Popover',
     category: 'Content & Surfaces',
+    box: 'white',
+    locks: [],
     description: 'Non-modal floating panel anchored to a trigger for rich, interactive content: optional media, a title, a description, a content slot and a footer.',
     usage: 'Open on click, not hover. Side is the trigger edge it opens from. Keep one primary action inside at most.',
     axes: [
@@ -1509,6 +1667,8 @@ export const COMPONENTS: ComponentDef[] = [
     key: 'PopoverFooter',
     label: 'Popover Footer',
     category: 'Content & Surfaces',
+    box: 'gray',
+    locks: ['size', 'hit', 'motion'],
     description: 'Action row below the Popover body, divided by a Border/subtle rule: status text and buttons.',
     usage: 'Inline puts the text first and the buttons at the end; stacked gives full-width buttons. Size follows the Popover.',
     axes: [
@@ -1527,6 +1687,8 @@ export const COMPONENTS: ComponentDef[] = [
     key: 'TooltipContent',
     label: 'Tooltip',
     category: 'Content & Surfaces',
+    box: 'gray',
+    locks: ['size', 'hit', 'motion'],
     description: 'Short hint bubble on hover or focus: an optional title, the text and an arrow on the edge opposite to Side.',
     usage: 'Use for a short label or hint that never carries the only copy of information or an action. Variant must match its trigger.',
     axes: [
@@ -1547,6 +1709,8 @@ export const COMPONENTS: ComponentDef[] = [
     key: 'TooltipInfoTrigger',
     label: 'Tooltip Info Trigger',
     category: 'Content & Surfaces',
+    box: 'black',
+    locks: ['shape', 'size', 'hit', 'motion'],
     description: 'Info-circle button that opens a tooltip.',
     usage: 'Next to a label or field that needs an explanation. Variant must match the bubble it opens.',
     axes: [
@@ -1566,6 +1730,8 @@ export const COMPONENTS: ComponentDef[] = [
     key: 'ScrollArea',
     label: 'Scroll Area',
     category: 'Content & Surfaces',
+    box: 'white',
+    locks: [],
     description: 'Scrollable viewport with overlay ScrollBars and an optional fade at the scroll end. Size and Appearance cascade to the bars.',
     usage: 'Use inside panels and menus with bounded height or width. Never trap page scroll; give the viewport an accessible name when it holds primary content.',
     axes: [
@@ -1585,6 +1751,8 @@ export const COMPONENTS: ComponentDef[] = [
     key: 'ScrollBar',
     label: 'Scroll Bar',
     category: 'Content & Surfaces',
+    box: 'black',
+    locks: ['shape', 'size', 'hit', 'motion'],
     description: 'Overlay scrollbar of a ScrollArea: a Radius/full thumb on a Surface/muted track (filled) or on nothing (ghost).',
     usage: 'Inside a ScrollArea (it places its own); use it standalone only for custom scrollbar placement.',
     axes: [
@@ -1600,6 +1768,8 @@ export const COMPONENTS: ComponentDef[] = [
     key: 'Table',
     label: 'Table',
     category: 'Content & Surfaces',
+    box: 'white',
+    locks: [],
     description: 'Data table root: a header, rows and an optional footer; Size and Dividers cascade to every row and cell.',
     usage: 'Use for tabular data people compare across columns. For a list of items with one action each prefer a list; Pagination sits outside the table.',
     // The Figma page «❖ Table», value for value (design-plans/table-contract.md).
@@ -1619,6 +1789,8 @@ export const COMPONENTS: ComponentDef[] = [
     key: 'TableCell',
     label: 'TableCell',
     category: 'Content & Surfaces',
+    box: 'gray',
+    locks: ['size', 'hit', 'motion'],
     description: 'Body cell: a label with optional description, a leading slot (Checkbox, Avatar, Badge) and a trailing slot (overflow IconButton or Badge).',
     usage: 'Use inside a TableRow. Align end is the numeric column. For a thumbnail use TableMediaCell, for a value with a delta TableTrendCell.',
     // The Figma page «❖ Table», value for value (design-plans/table-contract.md).
@@ -1640,6 +1812,8 @@ export const COMPONENTS: ComponentDef[] = [
     key: 'TableHead',
     label: 'TableHead',
     category: 'Content & Surfaces',
+    box: 'gray',
+    locks: ['size', 'hit', 'motion'],
     description: 'Column header cell: a label, an optional leading slot (select-all Checkbox), a sort arrow and a resizer.',
     usage: 'Use inside a TableHeader, one per column. Make a column sortable with onSort; hover only exists for sortable columns.',
     // The Figma page «❖ Table», value for value (design-plans/table-contract.md).
@@ -1662,6 +1836,8 @@ export const COMPONENTS: ComponentDef[] = [
     key: 'TableMediaCell',
     label: 'TableMediaCell',
     category: 'Content & Surfaces',
+    box: 'gray',
+    locks: ['size', 'hit', 'motion'],
     description: 'Media cell: a thumbnail at 1:1 or 2:1 with an optional label and description.',
     usage: 'Use for rows that lead with a picture (products, people, files). Give the image alt text, or empty alt when the label already names it.',
     // The Figma page «❖ Table», value for value (design-plans/table-contract.md).
@@ -1682,6 +1858,8 @@ export const COMPONENTS: ComponentDef[] = [
     key: 'TableTrendCell',
     label: 'TableTrendCell',
     category: 'Content & Surfaces',
+    box: 'gray',
+    locks: ['size', 'hit', 'motion'],
     description: 'Trend cell: a right-aligned value with a delta whose arrow and colour carry the direction.',
     usage: 'Use for metrics that moved (revenue, signups). Direction is never colour alone: the cell reads e.g. "up 12.4%".',
     // The Figma page «❖ Table», value for value (design-plans/table-contract.md).
@@ -1701,6 +1879,8 @@ export const COMPONENTS: ComponentDef[] = [
     key: 'TableResizer',
     label: 'TableResizer',
     category: 'Content & Surfaces',
+    box: 'black',
+    locks: ['shape', 'size', 'hit', 'motion'],
     description: 'Column resize handle on the end edge of a TableHead.',
     usage: 'Use inside a TableHead (ResizerVisible). Invisible at rest, strong on hover, accent while dragging.',
     // The Figma page «❖ Table», value for value (design-plans/table-contract.md).
@@ -1717,6 +1897,8 @@ export const COMPONENTS: ComponentDef[] = [
     key: 'TableRow',
     label: 'TableRow',
     category: 'Content & Surfaces',
+    box: 'gray',
+    locks: ['size', 'hit', 'motion'],
     description: 'Body row: a strip of TableCell instances with a hairline under it and its own states.',
     usage: 'Use inside a TableBody. Hover and focus exist only on a selectable or actionable row (interactive / onClick).',
     // The Figma page «❖ Table», value for value (design-plans/table-contract.md).
@@ -1736,6 +1918,8 @@ export const COMPONENTS: ComponentDef[] = [
     key: 'TableHeader',
     label: 'TableHeader',
     category: 'Content & Surfaces',
+    box: 'gray',
+    locks: ['size', 'hit', 'motion'],
     description: 'Header row of a Table: a strip of TableHead cells on Surface/muted.',
     usage: 'Use once per Table, first. Keep it sticky in scroll containers.',
     // The Figma page «❖ Table», value for value (design-plans/table-contract.md).
@@ -1754,6 +1938,8 @@ export const COMPONENTS: ComponentDef[] = [
     key: 'TableFooter',
     label: 'TableFooter',
     category: 'Content & Surfaces',
+    box: 'gray',
+    locks: ['size', 'hit', 'motion'],
     description: 'Totals row of a Table: TableCell values in Type/label on Surface/muted.',
     usage: 'Use for totals and summaries. Dividers follows the Table.',
     // The Figma page «❖ Table», value for value (design-plans/table-contract.md).
@@ -1771,6 +1957,8 @@ export const COMPONENTS: ComponentDef[] = [
     key: 'TableCaption',
     label: 'TableCaption',
     category: 'Content & Surfaces',
+    box: 'gray',
+    locks: ['size', 'hit', 'motion'],
     description: 'The title and description of a table.',
     usage: 'Use to name the table for everyone; the visible heading and the accessible name are one.',
     // The Figma page «❖ Table», value for value (design-plans/table-contract.md).
@@ -1785,6 +1973,8 @@ export const COMPONENTS: ComponentDef[] = [
     key: 'TableDropIndicator',
     label: 'TableDropIndicator',
     category: 'Content & Surfaces',
+    box: 'black',
+    locks: ['shape', 'size', 'hit', 'motion'],
     description: 'The 2px line that shows where a dragged row will land.',
     usage: 'Use between rows while a row is being dragged.',
     // The Figma page «❖ Table», value for value (design-plans/table-contract.md).
@@ -1799,6 +1989,8 @@ export const COMPONENTS: ComponentDef[] = [
     key: 'TableEmpty',
     label: 'TableEmpty',
     category: 'Content & Surfaces',
+    box: 'gray',
+    locks: ['size', 'hit', 'motion'],
     description: 'The empty state of a table: icon, title, description and an action.',
     usage: 'Use when a table has no rows. Say why and offer the next step.',
     // The Figma page «❖ Table», value for value (design-plans/table-contract.md).
@@ -1813,6 +2005,8 @@ export const COMPONENTS: ComponentDef[] = [
     key: 'TableLoading',
     label: 'TableLoading',
     category: 'Content & Surfaces',
+    box: 'gray',
+    locks: ['size', 'hit', 'motion'],
     description: 'A spinner and a label shown while rows load.',
     usage: 'Use as the body of a table that is fetching, or under it while more rows load.',
     // The Figma page «❖ Table», value for value (design-plans/table-contract.md).
@@ -1827,6 +2021,8 @@ export const COMPONENTS: ComponentDef[] = [
     key: 'TableLoadMore',
     label: 'TableLoadMore',
     category: 'Content & Surfaces',
+    box: 'gray',
+    locks: ['size', 'hit', 'motion'],
     description: 'The Load more row under a table, and its loading state.',
     usage: 'Use when rows are fetched in pages and the end is not reached.',
     // The Figma page «❖ Table», value for value (design-plans/table-contract.md).
@@ -1844,6 +2040,8 @@ export const COMPONENTS: ComponentDef[] = [
     key: 'Toast',
     label: 'Toast',
     category: 'Feedback',
+    box: 'gray',
+    locks: ['size', 'hit', 'motion'],
     description: 'A short, non-blocking confirmation over the page that dismisses itself: an icon told apart by severity, a title, an optional description, actions, a close and a progress hairline.',
     usage: 'Use for transient feedback (saved, copied, undone). Keep the title under six words; an action such as Undo needs a second way to be reached because the toast times out. For a persistent notice use Alert, for form validation Field.',
     // The Figma file's axes, value for value (design-plans/toast-contract.md).
@@ -1864,6 +2062,8 @@ export const COMPONENTS: ComponentDef[] = [
     key: 'Alert',
     label: 'Alert',
     category: 'Feedback',
+    box: 'gray',
+    locks: ['size', 'hit', 'motion'],
     description: 'A message bar for app-wide notices, subscription warnings, announcements and global errors: an icon, a description, optional actions and a close.',
     usage: 'Use for a message about the product or the page around it. Horizontal is the full-width banner above or below the header, vertical a boxed message in content. For auto-dismissing feedback use Toast, for form validation Field.',
     // The Figma file's axes, value for value (design-plans/alert-contract.md).
@@ -1888,6 +2088,8 @@ export const COMPONENTS: ComponentDef[] = [
     key: 'TabMenu',
     label: 'Tab Menu',
     category: 'Navigation',
+    box: 'gray',
+    locks: ['size', 'hit', 'motion'],
     description: 'Group of buttons that switches between sibling views or routes: a line layout (hairline track and accent bar) or a button layout (selected item filled), horizontal or vertical.',
     usage: 'Use for page-level sections or routes. Exactly one item is selected; use Tabs when the panels swap in place.',
     axes: [
@@ -1907,6 +2109,8 @@ export const COMPONENTS: ComponentDef[] = [
     key: 'TabMenuItem',
     label: 'Tab Menu Item',
     category: 'Navigation',
+    box: 'gray',
+    locks: ['size', 'hit', 'motion'],
     description: 'Button tab of a TabMenu: optional leading icon, label and a trailing count badge. Selected fills Surface/selected.',
     usage: 'Inside a button-variant TabMenu.',
     axes: [
@@ -1924,6 +2128,8 @@ export const COMPONENTS: ComponentDef[] = [
     key: 'TabMenuLineItem',
     label: 'Tab Menu Line Item',
     category: 'Navigation',
+    box: 'gray',
+    locks: ['size', 'hit', 'motion'],
     description: 'Line tab of a TabMenu: the selected item carries a 2px accent bar on its bottom or left edge.',
     usage: 'Inside a line-variant TabMenu.',
     axes: [
@@ -1942,6 +2148,8 @@ export const COMPONENTS: ComponentDef[] = [
     key: 'NavItem',
     label: 'Nav Item',
     category: 'Navigation',
+    box: 'gray',
+    locks: ['size', 'hit', 'motion'],
     description: 'Header navigation link or menu trigger: label, optional leading icon, count Badge and trailing caret.',
     usage: 'In a header or navbar. Current marks the page you are on; with a trailing caret it opens a NavigationMenu. Tabs inside a view use TabMenuItem.',
     axes: [
@@ -1960,6 +2168,8 @@ export const COMPONENTS: ComponentDef[] = [
     key: 'Brand',
     label: 'Brand',
     category: 'Navigation',
+    box: 'gray',
+    locks: ['size', 'hit', 'motion'],
     description: 'Product logo, name and an optional version Badge.',
     usage: 'sm in app headers, default in marketing headers and footers. Wrap it in a link with an accessible name such as "Escala home".',
     axes: [{ name: 'Size', values: ['default', 'sm'] }],
@@ -1974,6 +2184,8 @@ export const COMPONENTS: ComponentDef[] = [
     key: 'AccountMenuTrigger',
     label: 'Account Menu Trigger',
     category: 'Navigation',
+    box: 'gray',
+    locks: ['size', 'hit', 'motion'],
     description: 'Opens the user menu: an Avatar, an optional name and a caret, on ghost button roles.',
     usage: 'In a header or sidebar footer, as the trigger of a DropdownMenu.',
     axes: [
@@ -1991,6 +2203,8 @@ export const COMPONENTS: ComponentDef[] = [
     key: 'SegmentedControl',
     label: 'Segmented Control',
     category: 'Navigation',
+    box: 'gray',
+    locks: ['size', 'hit', 'motion'],
     description: 'Single choice between 2 to 5 short options shown as one track; the checked segment is raised on it. Size cascades to every segment.',
     usage: 'Use for 2–5 exclusive options of the same data (e.g. Day / Week / Month). Use RadioGroup for long labels or more options, TabMenu to switch views, ButtonGroup for independent actions.',
     // The Figma file's axes, value for value (design-plans/segmented-control-contract.md).
@@ -2008,6 +2222,8 @@ export const COMPONENTS: ComponentDef[] = [
     key: 'SegmentedControlItem',
     label: 'Segmented Control Item',
     category: 'Navigation',
+    box: 'gray',
+    locks: ['size', 'hit', 'motion'],
     description: 'One option of a SegmentedControl. Checked shows a raised Surface/input thumb with Shadow/xs on the Surface/muted track.',
     usage: 'Always inside a SegmentedControl. With LabelVisible false give the segment an aria-label.',
     axes: [
@@ -2029,6 +2245,8 @@ export const COMPONENTS: ComponentDef[] = [
     key: 'Breadcrumb',
     label: 'Breadcrumbs',
     category: 'Navigation',
+    box: 'gray',
+    locks: ['size', 'hit', 'motion'],
     description: "Navigation trail of items, separators and an optional ellipsis that collapses the start of a long trail.",
     usage: "Only use when hierarchy is 3+ levels deep. Don't duplicate primary navigation. The last item is the current page.",
     axes: [
@@ -2048,6 +2266,8 @@ export const COMPONENTS: ComponentDef[] = [
     key: 'BreadcrumbItem',
     label: 'Breadcrumb Item',
     category: 'Navigation',
+    box: 'gray',
+    locks: ['size', 'hit', 'motion'],
     description: 'One segment of a breadcrumb trail, rendered as a link (or the current page).',
     usage: 'Inside a Breadcrumb. Mark the last item current and keep it non-interactive.',
     axes: [
@@ -2068,6 +2288,8 @@ export const COMPONENTS: ComponentDef[] = [
     key: 'BreadcrumbEllipsis',
     label: 'Breadcrumb Ellipsis',
     category: 'Navigation',
+    box: 'gray',
+    locks: ['size', 'hit', 'motion'],
     description: 'Collapsed middle of a long breadcrumb trail that opens a menu of the hidden segments.',
     usage: 'Replace the first segments of a trail longer than four items.',
     axes: [
@@ -2087,6 +2309,8 @@ export const COMPONENTS: ComponentDef[] = [
     key: 'BreadcrumbSeparator',
     label: 'Breadcrumb Separator',
     category: 'Navigation',
+    box: 'gray',
+    locks: ['size', 'hit', 'motion'],
     description: 'Decorative divider between breadcrumb items: chevron, slash or dot.',
     usage: 'Between items; the same Size as the items.',
     axes: [
@@ -2104,6 +2328,8 @@ export const COMPONENTS: ComponentDef[] = [
     key: 'Pagination',
     label: 'Pagination',
     category: 'Navigation',
+    box: 'gray',
+    locks: ['size', 'hit', 'motion'],
     description: 'Page navigation: First / Previous, numbered links with ellipses, Next / Last. Joined like a ButtonGroup or as ghost buttons apart.',
     usage: 'Use for result sets over one page. Disable First / Previous on page 1 and Next / Last on the last page; never mark the current page with colour alone.',
     axes: [
@@ -2123,6 +2349,8 @@ export const COMPONENTS: ComponentDef[] = [
     key: 'PaginationLink',
     label: 'Pagination Link',
     category: 'Navigation',
+    box: 'gray',
+    locks: ['size', 'hit', 'motion'],
     description: 'Numbered page link: ghost when inactive, outlined (or filled in a grouped Pagination) when Active.',
     usage: 'Inside a Pagination.',
     axes: [
@@ -2140,6 +2368,8 @@ export const COMPONENTS: ComponentDef[] = [
     key: 'PaginationEllipsis',
     label: 'Pagination Ellipsis',
     category: 'Navigation',
+    box: 'gray',
+    locks: ['size', 'hit', 'motion'],
     description: 'Non-interactive gap marker between page ranges.',
     usage: 'Between two ranges of PaginationLinks.',
     axes: [{ name: 'Size', values: ['default', 'xs', 'sm', 'lg'] }],
@@ -2151,6 +2381,8 @@ export const COMPONENTS: ComponentDef[] = [
     key: 'Stepper',
     label: 'Stepper',
     category: 'Navigation',
+    box: 'gray',
+    locks: ['size', 'hit', 'motion'],
     description: 'Ordered list of steps: a marker joined to the next by a line, with a title and an optional description. Vertical or horizontal.',
     usage: 'Use for a short, linear flow. One step is active; completed and error markers announce themselves.',
     axes: [
@@ -2169,6 +2401,8 @@ export const COMPONENTS: ComponentDef[] = [
     key: 'StepperItem',
     label: 'Stepper Item',
     category: 'Navigation',
+    box: 'gray',
+    locks: ['size', 'hit', 'motion'],
     description: 'One step of a Stepper: marker and connector with a title and an optional description, coloured by status.',
     usage: 'Inside a Stepper.',
     axes: [
@@ -2189,6 +2423,8 @@ export const COMPONENTS: ComponentDef[] = [
     key: 'StepperIndicator',
     label: 'Stepper Indicator',
     category: 'Navigation',
+    box: 'black',
+    locks: ['shape', 'size', 'hit', 'motion'],
     description: 'Marker column or row of a Stepper step: a StepperIcon and the connector line tinted by status.',
     usage: 'Inside a StepperItem; hide the line on the last step.',
     axes: [
@@ -2208,6 +2444,8 @@ export const COMPONENTS: ComponentDef[] = [
     key: 'StepperIcon',
     label: 'Stepper Icon',
     category: 'Navigation',
+    box: 'black',
+    locks: ['shape', 'size', 'hit', 'motion'],
     description: 'Round step marker: the number (or an icon) on active and locked steps, an automatic check or warning on completed and error ones.',
     usage: 'Inside a StepperIndicator.',
     axes: [
@@ -2226,6 +2464,8 @@ export const COMPONENTS: ComponentDef[] = [
     key: 'DropdownMenu',
     label: 'Dropdown Menu',
     category: 'Navigation',
+    box: 'white',
+    locks: [],
     description: 'Floating menu of commands opened from a trigger (a Button or IconButton): an optional search header, labelled groups of items and an optional footer.',
     usage: 'Use for 3+ secondary actions behind a "⋯" or button. Destructive items go last, after a separator. Size cascades to every label and item.',
     axes: [
@@ -2245,6 +2485,8 @@ export const COMPONENTS: ComponentDef[] = [
     key: 'DropdownMenuLabel',
     label: 'Dropdown Menu Label',
     category: 'Navigation',
+    box: 'gray',
+    locks: ['size', 'hit', 'motion'],
     description: 'Overline heading for a group of items inside the DropdownMenu.',
     usage: 'Label a group of related items. It is skipped by arrow-key navigation.',
     axes: [
@@ -2261,6 +2503,8 @@ export const COMPONENTS: ComponentDef[] = [
     key: 'DropdownMenuItem',
     label: 'Dropdown Menu Item',
     category: 'Navigation',
+    box: 'gray',
+    locks: ['size', 'hit', 'motion'],
     description: 'A command row: optional leading icon, media, description, shortcut, control, caret and a selection check; destructive for irreversible commands.',
     usage: 'One command per row. Put irreversible commands last as a destructive variant.',
     axes: [
@@ -2281,6 +2525,8 @@ export const COMPONENTS: ComponentDef[] = [
     key: 'DropdownMenuFooter',
     label: 'Dropdown Menu Footer',
     category: 'Navigation',
+    box: 'gray',
+    locks: ['size', 'hit', 'motion'],
     description: 'Divided action bar pinned below the menu list: status text and buttons.',
     usage: 'Clear / Apply or a single action. Inline puts the text first and the buttons at the end; stacked gives full-width buttons.',
     axes: [
@@ -2298,6 +2544,8 @@ export const COMPONENTS: ComponentDef[] = [
     key: 'Sidebar',
     label: 'Sidebar',
     category: 'Navigation',
+    box: 'white',
+    locks: [],
     description: 'App navigation rail: a header (SidebarBrand and a trigger), a scrollable content of SidebarGroups and an optional footer. Collapsed is the 48 px icon rail.',
     usage: 'Use for app-level sections when destinations exceed what a navbar holds. Keep at most one row marked as the current page.',
     axes: [{ name: 'Collapsed', values: ['false', 'true'] }],
@@ -2314,6 +2562,8 @@ export const COMPONENTS: ComponentDef[] = [
     key: 'SidebarMenuButton',
     label: 'Sidebar Menu Button',
     category: 'Navigation',
+    box: 'gray',
+    locks: ['size', 'hit', 'motion'],
     description: 'A navigation row of the Sidebar: leading icon, label, trailing count, trend Badge and trailing icon. Current marks the page you are on.',
     usage: 'One row per destination. Collapsed comes from the Sidebar, not from the row.',
     axes: [
@@ -2334,6 +2584,8 @@ export const COMPONENTS: ComponentDef[] = [
     key: 'SidebarGroup',
     label: 'Sidebar Group',
     category: 'Navigation',
+    box: 'white',
+    locks: [],
     description: 'A labelled section of the Sidebar: a SidebarGroupLabel and a SidebarMenu. Size cascades to every row.',
     usage: 'Group related destinations under one label.',
     axes: [
@@ -2350,6 +2602,8 @@ export const COMPONENTS: ComponentDef[] = [
     key: 'SidebarGroupLabel',
     label: 'Sidebar Group Label',
     category: 'Navigation',
+    box: 'white',
+    locks: [],
     description: 'The heading of a group of SidebarMenuButtons; hidden while the Sidebar is collapsed. A twin of DropdownMenuLabel.',
     usage: 'Name the group in one or two words.',
     axes: [{ name: 'Size', values: ['default', 'sm', 'lg'] }],
@@ -2361,6 +2615,8 @@ export const COMPONENTS: ComponentDef[] = [
     key: 'SidebarBrand',
     label: 'Sidebar Brand',
     category: 'Navigation',
+    box: 'gray',
+    locks: ['size', 'hit', 'motion'],
     description: 'The brand block at the top of the Sidebar: a logo with a title and an optional subtitle; collapses to the logo only.',
     usage: 'Wrap it in a link to the home route.',
     axes: [{ name: 'Collapsed', values: ['false', 'true'] }],

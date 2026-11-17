@@ -4,6 +4,12 @@
   "key": "SocialLoginButton",
   "label": "Social Login Button",
   "category": "Button & Actions",
+  "box": "gray",
+  "locks": [
+    "size",
+    "hit",
+    "motion"
+  ],
   "description": "Sign-in button carrying a provider mark: white (a bordered control) or in the provider's own colour, full width or icon-only.",
   "owners": {
     "anatomy": "figma",

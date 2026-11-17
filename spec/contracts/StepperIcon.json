@@ -4,6 +4,13 @@
   "key": "StepperIcon",
   "label": "Stepper Icon",
   "category": "Navigation",
+  "box": "black",
+  "locks": [
+    "shape",
+    "size",
+    "hit",
+    "motion"
+  ],
   "description": "Round step marker: the number (or an icon) on active and locked steps, an automatic check or warning on completed and error ones.",
   "owners": {
     "anatomy": "figma",

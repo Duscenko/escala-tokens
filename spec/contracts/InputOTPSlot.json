@@ -4,6 +4,13 @@
   "key": "InputOTPSlot",
   "label": "Input OTP Slot",
   "category": "Form Controls",
+  "box": "gray",
+  "locks": [
+    "radius",
+    "size",
+    "hit",
+    "motion"
+  ],
   "description": "One box of an InputOTP: a digit, or the caret while it is the active empty slot. InputOTP draws it; it reads the code from it.",
   "owners": {
     "anatomy": "figma",

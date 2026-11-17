@@ -4,6 +4,8 @@
   "key": "ComboboxPopover",
   "label": "Combobox Popover",
   "category": "Form Controls",
+  "box": "white",
+  "locks": [],
   "description": "Floating listbox panel for the Combobox with list, grouped or empty content and an optional footer.",
   "owners": {
     "anatomy": "figma",

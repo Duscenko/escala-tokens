@@ -4,6 +4,13 @@
   "key": "AvatarStatus",
   "label": "Avatar Status",
   "category": "Content & Surfaces",
+  "box": "black",
+  "locks": [
+    "shape",
+    "size",
+    "hit",
+    "motion"
+  ],
   "description": "The presence dot of an Avatar: online, busy, away, offline or do-not-disturb, with an outside Surface/page edge.",
   "owners": {
     "anatomy": "figma",

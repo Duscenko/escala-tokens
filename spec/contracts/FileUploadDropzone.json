@@ -4,6 +4,8 @@
   "key": "FileUploadDropzone",
   "label": "File Upload Dropzone",
   "category": "Form Controls",
+  "box": "white",
+  "locks": [],
   "description": "Drop area that opens the file picker on click and accepts dragged files; the Choose file trigger is a Button.",
   "owners": {
     "anatomy": "figma",
