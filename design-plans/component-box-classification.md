@@ -147,3 +147,16 @@ Figma file**, not a code change: either the badge/chip/kbd family moves to an ex
 2. SliderThumb and Slider track on `radius.control` — is that what the Figma file binds, or a code drift?
 3. Does Switch ever need a square variant (some brands ship them)? If yes it becomes a Figma Shape axis, never an axis of the generator.
 4. Badge *Shape=rounded*: keep it on the Selectors axis (DaisyUI) or move it to Items?
+
+**Figma answer to Q2 (read from the library, 2026-11-17).** Not a drift: the file binds `Radius/control`
+on SliderThumb (the set root, 14 / 16 / 20 px, so today a 4 px-rounded square, not a circle) and on
+Slider's `track`, `fill`, `thumb` and `tooltip`. `SLIDER_THUMB` and `SLIDER` in `recipes/forms.ts` read
+the same role, so code is the twin. Consequence: Slider sits on the Selectors axis too and rounds with it
+(harmless: a thumb may become a circle). The same scan lists every set that binds `Radius/control`
+(≈45, in five jobs: checkbox family · tag family · text focus rings · Slider · media) and the
+before / after for §4.4 is on the `🧪 Experiments` page:
+[board](https://www.figma.com/design/7j5zukN5HpihGVJMmyjA20/?node-id=2059-172) ·
+[Checkbox today vs cap](https://www.figma.com/design/7j5zukN5HpihGVJMmyjA20/?node-id=2059-12) ·
+[proposal, not applied](https://www.figma.com/design/7j5zukN5HpihGVJMmyjA20/?node-id=2059-126) ·
+[inventory](https://www.figma.com/design/7j5zukN5HpihGVJMmyjA20/?node-id=2059-165).
+Finding `FIG-002:Radius/control-overloaded` (Open, waits for the owner).
