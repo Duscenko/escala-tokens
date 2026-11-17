@@ -117,17 +117,17 @@ function OptionSwitch({ label, checked, onChange }: { label: string; checked: bo
 
 const INSPECT_PREF_KEY = 'sd-playground-inspect'
 
-function readInspectPref(): boolean {
+export function readInspectPref(): boolean {
   try { return localStorage.getItem(INSPECT_PREF_KEY) !== 'off' } catch { return true }
 }
 
-function writeInspectPref(on: boolean) {
+export function writeInspectPref(on: boolean) {
   try { localStorage.setItem(INSPECT_PREF_KEY, on ? 'on' : 'off') } catch { /* private mode: this session only */ }
 }
 
 /** Inspector on / off. The name stays "Inspect" and `aria-pressed` carries
  *  the state, so a screen reader hears one answer, not two. */
-type CanvasPanel = 'theme' | 'settings' | 'context'
+export type CanvasPanel = 'theme' | 'settings' | 'context'
 
 const BAR_ICON = 'relative flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-md transition-colors duration-150 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui motion-reduce:transition-none'
 // Pressed: full white glyph on the raised pill, so "on" can't be mistaken
@@ -311,9 +311,16 @@ const STAGE_BASE = 2 / 3
  *  150 % is the true pixel size. */
 const ZOOM_STEPS = [0.5, 0.75, 1, 1.25, 1.5, 2, 3]
 
-function CanvasBar({
+export function CanvasBar({
   panel, onPanel, inspecting, onInspect, appearance, onAppearance, hasSettings, zoom, onZoom,
+  hasContext = true, settingsLabel, toolbarLabel,
 }: {
+  /** Shows the Agent context button (a block has no brief yet). */
+  hasContext?: boolean
+  /** The settings panel's name ("Component settings", "Block settings"). */
+  settingsLabel?: string
+  /** The toolbar's accessible name. */
+  toolbarLabel?: string
   /** The stage's scale: − / + step it, the readout puts it back to 100 %. */
   zoom: number
   onZoom: (z: number) => void
@@ -337,7 +344,7 @@ function CanvasBar({
     <div data-inspect-exempt="" className="pointer-events-none sticky bottom-4 z-30 -mt-14 mb-4 flex items-center justify-center px-4">
       <div
         role="toolbar"
-        aria-label={t('Component tools')}
+        aria-label={toolbarLabel ?? t('Component tools')}
         className="dark pointer-events-auto flex h-10 items-center gap-0.5 rounded-xl border border-white/[0.12] bg-[#050506] p-1 shadow-[0_8px_24px_-6px_rgba(0,0,0,0.45),0_2px_6px_-2px_rgba(0,0,0,0.3)]"
       >
         <HintTip label={t('Edit theme')}>
@@ -353,19 +360,19 @@ function CanvasBar({
         </HintTip>
         {sep}
         {hasSettings && (
-          <HintTip label={t('Component settings')}>
+          <HintTip label={settingsLabel ?? t('Component settings')}>
             <button
               type="button"
               onClick={() => toggle('settings')}
               aria-pressed={panel === 'settings'}
-              aria-label={t('Component settings')}
+              aria-label={settingsLabel ?? t('Component settings')}
               className={`${BAR_ICON} ${panel === 'settings' ? BAR_ICON_ON : BAR_ICON_OFF}`}
             >
               <PhIcon id="faders" size={16} />
             </button>
           </HintTip>
         )}
-        <HintTip label={t('Agent context')}>
+        {hasContext && <HintTip label={t('Agent context')}>
           <button
             type="button"
             onClick={() => toggle('context')}
@@ -376,7 +383,7 @@ function CanvasBar({
             {/* The left rail's Code mark (brackets-curly), filled while open, as the rail fills its active page. */}
             <NavIcon id="code" filled={panel === 'context'} size={16} />
           </button>
-        </HintTip>
+        </HintTip>}
         {sep}
         <HintTip label={inspecting ? t('Exit inspector') : t('Inspect tokens')} shortcut={inspecting ? 'Esc' : undefined}>
           <button
@@ -456,7 +463,7 @@ function CanvasBar({
 /** What the bar opens: a layer over the Components rail. Component settings
  *  is HOME — the panel you see and control the element from — so it has no
  *  way out of its own; Theme and Agent context return to it (‹ back, ✕, Esc). */
-function CanvasSidePanel({ title, back, children, footer }: {
+export function CanvasSidePanel({ title, back, children, footer }: {
   title: string
   /** Where ‹ / ✕ / Esc land. Omit for the home panel (no back, no close). */
   back?: { label: string; onBack: () => void }
