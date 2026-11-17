@@ -6,7 +6,9 @@ description: >
   component playground, verified by measurement. Use whenever the owner sends a Figma Dev link of
   a component (figma.com/design/7j5zukN5HpihGVJMmyjA20/...?node-id=…&m=dev), or asks to build,
   rebuild, port or "montar" a component from Figma into the web or Storybook ("de Figma a código",
-  "de Figma a Storybook", "tal cual Figma").
+  "de Figma a Storybook", "tal cual Figma"). Also whenever the work touches Storybook itself — its
+  config, families and titles, docs pages, verification in the browser, or publishing it to Vercel
+  (`escala-storybook`, "subir / publicar Storybook"): read `references/storybook.md`.
 ---
 
 # Escala · de Figma a código
@@ -60,6 +62,9 @@ file does that looks odd (copied, with one line saying so). Values exactly as th
   aliases, never in the catalogue.
 
 ### Step 4 · Storybook
+**`references/storybook.md` is the Storybook playbook** (build, families, guards, verification, publishing,
+how the owner wants results shown). Read it once per session before this step.
+
 Copy `references/story-template.tsx` into `apps/storybook/stories/<Component>.stories.tsx`:
 - args/argTypes = the Figma properties, **same order and same defaults as Figma's component playground**
   (variant axes, then booleans / text / swaps in panel order); swaps use `iconSwapArg` (`stories/iconSwap.ts`);
@@ -94,6 +99,9 @@ Copy `references/story-template.tsx` into `apps/storybook/stories/<Component>.st
 - Remove the component from `spec/figma-components.status.json` → `pending`;
   `figmaComponentsParity.test.ts` must stay green.
 - Commit only your files; report what changed, what was measured, anything odd in the file.
+- Titles: `node scripts/storybook/apply-families.mjs` (never typed). Publishing: merge to `main` deploys
+  web and Storybook; previews and the CLI path are in `references/storybook.md` §6 — push / merge / prod
+  only with the owner's yes.
 
 ## 3. Known traps (already fixed — don't reintroduce)
 

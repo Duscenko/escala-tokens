@@ -40,6 +40,7 @@ import { showToast } from '../../ui/Toast'
 import { buildElementFigmaContext, buildFigmaContext } from '../../../lib/figmaContext'
 import { defaultFigmaSyncModes, type FigmaSyncMode, type FigmaViewport } from '../../../lib/figmaSyncModes'
 import { HintTip } from '../../ui/HintTip'
+import { figmaPreviewPageUrl } from '../../../lib/figmaPreviewPages'
 import { PhIcon } from '../../ui/PhIcon'
 import { InspectorPortal } from '../WorkspaceInspector'
 import SemanticTokenDrawer from '../SemanticTokenGroups'
@@ -49,7 +50,7 @@ import { withAlpha } from '../../../lib/colorUtils'
 import type { PreviewTokens } from '../../preview/ButtonPreview'
 import type { ThemeAppearance } from '../../../lib/themeModes'
 import { InspectorModeProvider, InspectorOverlay, TokenInspector } from '../../preview/artefacts/TokenInspector'
-import { InspectGlyph, SparkleCircleIcon } from '../../ui/icons'
+import { InspectGlyph, LockGlyph, SparkleCircleIcon } from '../../ui/icons'
 import { OVERVIEWS, OVERVIEW_VALUE, hasOverview } from './componentOverviews'
 import { SPECIMENS, snippetFor, ICON_SLOTS, PANEL_COMPONENTS, type AxisValues, type IconOpts } from './specimens'
 import {
@@ -165,7 +166,7 @@ export interface FigmaCopyScope {
 
 const COPY_BTN = 'flex h-7 items-center gap-1.5 whitespace-nowrap rounded-md px-2 text-caption font-medium tracking-[0.18px] text-fg transition-[color,background-color,transform] duration-150 ease-[var(--ease-out-quint)] hover:bg-surface active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50'
 
-const FIGMA_MENU_W = 240
+const FIGMA_MENU_W = 280
 const FIGMA_COPY_ROWS: { id: 'element' | 'system'; label: string; icon: ReactNode }[] = [
   {
     id: 'element',
@@ -189,20 +190,27 @@ const FIGMA_COPY_ROWS: { id: 'element' | 'system'; label: string; icon: ReactNod
   },
 ]
 
-/** The click copies THIS element; the ⌄ offers the whole design system. Both
- *  are pasted with ⌘V in the Escala plugin, which reads which one it got. */
-function FigmaCopyButton({ label, build }: { label: string; build: (what: 'element' | 'system') => string }) {
+/** Copy & paste into the Escala plugin is on STANDBY (owner, 2026-11-17): the
+ *  menu keeps both rows, locked behind a PRO mark, and the Figma button opens
+ *  the component's page in the Preview library instead. Set to `false` to
+ *  bring the clipboard path back — nothing else changes. */
+const FIGMA_COPY_LOCKED = true
+
+/** The Figma button every component page carries. The click opens that
+ *  component's page in the Preview library (a new tab). The ⌄ keeps the old
+ *  Copy for Figma rows — locked while `FIGMA_COPY_LOCKED`; omitted entirely
+ *  where there is nothing to copy (`build` absent: the public reading pages).
+ *  Unlocked, the copy is pasted with ⌘V in the Escala plugin. */
+function FigmaButton({ label, href, build }: { label: string; href: string; build?: (what: 'element' | 'system') => string }) {
   const { t } = useI18n()
   const [open, setOpen] = useState(false)
-  const [done, setDone] = useState(false)
   // A callback ref into state: the popover anchors to the node, read at render.
   const [anchor, setAnchor] = useState<HTMLDivElement | null>(null)
   async function copy(what: 'element' | 'system') {
+    if (FIGMA_COPY_LOCKED || !build) return
     try {
       await navigator.clipboard.writeText(build(what))
       setOpen(false)
-      setDone(true)
-      window.setTimeout(() => setDone(false), 2000)
       showToast(what === 'element'
         ? t('{name} copied for Figma — open the Escala plugin and press ⌘V', { name: label })
         : t('Design system copied for Figma — open the Escala plugin and press ⌘V'))
@@ -215,60 +223,80 @@ function FigmaCopyButton({ label, build }: { label: string; build: (what: 'eleme
   return (
     <>
       <div ref={setAnchor} className="flex h-8 items-center rounded-lg border border-line p-0.5">
-        <button type="button" onClick={() => copy('element')} className={COPY_BTN} title={t('Copy this element for the Escala plugin in Figma')}>
-          {done
-            ? <><span className="text-caption leading-none text-status-success">✓</span>{t('Copied')}</>
-            : <><FigmaGlyph className="flex-shrink-0" />{t('Copy for Figma')}</>}
-        </button>
-        <span aria-hidden className="mx-0.5 h-4 w-px bg-line" />
-        <button
-          type="button"
-          aria-label={t('Figma copy options')}
-          aria-expanded={open}
-          aria-haspopup="menu"
-          onClick={() => setOpen((v) => !v)}
-          className={`${COPY_BTN} px-1.5 ${open ? 'bg-surface' : ''}`}
+        <a
+          href={href}
+          target="_blank"
+          rel="noopener noreferrer"
+          className={COPY_BTN}
+          title={t('Open {name} in the Escala Design System in Figma', { name: label })}
         >
-          <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-            <path d="M3 4.5 6 7.5l3-3" />
-          </svg>
-        </button>
-      </div>
-      <AnchoredPopover
-        anchor={anchor}
-        open={open}
-        onClose={() => { setOpen(false); setActive(null) }}
-        label={t('Figma copy options')}
-        width={FIGMA_MENU_W}
-        shell={SELECT_LIST}
-      >
-        {/* The Random level menu's shape: icon · two words · the row's own
-            line underneath, so the list stays short and the explanation
-            follows the pointer instead of sitting under every row. */}
-        <div role="menu" className="flex flex-col gap-0.5" onPointerLeave={() => setActive(null)}>
-          {FIGMA_COPY_ROWS.map((r) => (
+          <FigmaGlyph className="flex-shrink-0" />
+          {t('Figma')}
+        </a>
+        {build && (
+          <>
+            <span aria-hidden className="mx-0.5 h-4 w-px bg-line" />
             <button
-              key={r.id}
               type="button"
-              role="menuitem"
-              onClick={() => copy(r.id)}
-              onPointerEnter={() => setActive(r.id)}
-              onFocus={() => setActive(r.id)}
-              className={`${SELECT_OPTION} ${SELECT_OPTION_OFF} grid grid-cols-[auto_1fr] items-center gap-x-2 ${SELECT_OPTION_FOCUS}`}
+              aria-label={t('Figma copy options')}
+              aria-expanded={open}
+              aria-haspopup="menu"
+              onClick={() => setOpen((v) => !v)}
+              className={`${COPY_BTN} px-1.5 ${open ? 'bg-surface' : ''}`}
             >
-              <span className="text-fg-faint">{r.icon}</span>
-              <span className="min-w-0 truncate text-ui">{t(r.label)}</span>
+              <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                <path d="M3 4.5 6 7.5l3-3" />
+              </svg>
             </button>
-          ))}
-          <p aria-live="polite" className="mt-0.5 min-h-[calc(2lh+1rem)] border-t border-line px-2.5 py-2 text-caption leading-snug text-fg-muted">
-            {active === 'element'
-              ? t('Only {name}, on the page you are on', { name: label })
-              : active === 'system'
-                ? t('Every variable, style and page')
-                : t('Paste with ⌘V in the Escala plugin')}
-          </p>
-        </div>
-      </AnchoredPopover>
+          </>
+        )}
+      </div>
+      {build && (
+        <AnchoredPopover
+          anchor={anchor}
+          open={open}
+          onClose={() => { setOpen(false); setActive(null) }}
+          label={t('Figma copy options')}
+          width={FIGMA_MENU_W}
+          shell={SELECT_LIST}
+        >
+          {/* The Random level menu's shape: icon · two words · the row's own
+              line underneath, so the list stays short and the explanation
+              follows the pointer instead of sitting under every row. */}
+          <div role="menu" className="flex flex-col gap-0.5" onPointerLeave={() => setActive(null)}>
+            {FIGMA_COPY_ROWS.map((r) => (
+              <button
+                key={r.id}
+                type="button"
+                role="menuitem"
+                aria-disabled={FIGMA_COPY_LOCKED || undefined}
+                onClick={() => copy(r.id)}
+                onPointerEnter={() => setActive(r.id)}
+                onFocus={() => setActive(r.id)}
+                className={`${SELECT_OPTION} ${SELECT_OPTION_OFF} grid grid-cols-[auto_1fr_auto] items-center gap-x-2 ${SELECT_OPTION_FOCUS} ${FIGMA_COPY_LOCKED ? 'cursor-not-allowed opacity-60' : ''}`}
+              >
+                <span className="text-fg-faint">{r.icon}</span>
+                <span className="min-w-0 truncate text-ui">{t(r.label)}</span>
+                {FIGMA_COPY_LOCKED && (
+                  <span className="flex items-center gap-1 rounded bg-elevated px-1.5 py-0.5 text-mini font-semibold uppercase leading-none tracking-wider text-fg-muted">
+                    <LockGlyph size={10} />
+                    Pro
+                  </span>
+                )}
+              </button>
+            ))}
+            <p aria-live="polite" className="mt-0.5 min-h-[calc(2lh+1rem)] border-t border-line px-2.5 py-2 text-caption leading-snug text-fg-muted">
+              {FIGMA_COPY_LOCKED
+                ? t('Copy and paste into Figma is coming with Pro. For now, open the page in Figma.')
+                : active === 'element'
+                  ? t('Only {name}, on the page you are on', { name: label })
+                  : active === 'system'
+                    ? t('Every variable, style and page')
+                    : t('Paste with ⌘V in the Escala plugin')}
+            </p>
+          </div>
+        </AnchoredPopover>
+      )}
     </>
   )
 }
@@ -582,7 +610,7 @@ export function ComponentCatalogueHero({
 }: {
   /** The quick way to another component (`CatalogueSwitcher`), on the header row's right. */
   switcher?: ReactNode
-  /** What Copy for Figma ships; omitted = no Figma button. */
+  /** What Copy for Figma ships; omitted = the Figma link only, no copy menu. */
   figmaCopy?: FigmaCopyScope
   def: ComponentDef
   tokens: PreviewTokens
@@ -731,7 +759,7 @@ export function ComponentCatalogueHero({
         >
           <div className="flex items-center gap-1.5">
             {switcher}
-            {!headerTrailing && figmaCopy && <FigmaCopyButton label={def.label} build={buildFigma} />}
+            {!headerTrailing && <FigmaButton label={def.label} href={figmaPreviewPageUrl(def.key, def.figmaSets)} build={figmaCopy ? buildFigma : undefined} />}
             {headerTrailing ?? (
               // Agent context lives in the right panel (filters, preview and
               // Copy there): this icon opens it, the same door as the bar's

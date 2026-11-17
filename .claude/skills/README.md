@@ -8,6 +8,8 @@ Agent skills for Escala. Load one when the task is in its territory. A skill is 
 | --- | --- | --- |
 | [`escala-figma-to-code`](./escala-figma-to-code/) | Builds one component EXACTLY as the Figma file has it: read the set (read-only) → contract → recipe + `escala-ui` component → Storybook with Figma's playground controls → measured against Figma. The file is the only rule and is never edited. | code, Storybook, `design-plans/<x>-contract.md` |
 
+Storybook itself (config, families, docs pages, browser checks, publishing to Vercel `escala-storybook`) lives in the same skill: [`references/storybook.md`](./escala-figma-to-code/references/storybook.md).
+
 ## Figma
 
 Escala already builds the library. The plugin in `../escala-figma-plugin` (`src/code.ts`) imports variables and component sets. These skills do not draw a second Button.

@@ -23,16 +23,31 @@
 
 export const FIGMA_KIT_PATH = '/figma-kit'
 
-/** The PREVIEW file (copying off), as Figma's Share → Copy link gives it.
- *  Refreshed per release: duplicate the master, turn copying off, swap the
- *  key here. Never the master's key. */
-export const FIGMA_KIT_FILE_URL =
-  'https://www.figma.com/design/wcrw08ZVRYDuxYnCqWXoeD/Escala-Design-System--Preview-?node-id=4-17005'
+/** The PREVIEW library's file key — the ONE place it lives. Every link that
+ *  leads to the design system (About → /figma-kit, the kit page, each
+ *  component's Figma button, Storybook's "Open in Figma") is built from it.
+ *  Refreshed per release: duplicate the master, turn copying off, swap the key
+ *  here. Never the master's key. */
+export const FIGMA_PREVIEW_FILE_KEY = 'X736U9ffkni3gg6rmvEEnJ'
+const FIGMA_PREVIEW_FILE_NAME = 'Escala-Design-System--Preview-'
+/** The Cover (node 4-17005 — a duplicate keeps node ids, so a refreshed
+ *  preview keeps this one, and every component page id in
+ *  `spec/figma-components.json` too: all 56 checked 2026-11-17). */
+const FIGMA_PREVIEW_COVER = '4-17005'
 
-/** Figma's embed host for that same file, opened on the Cover (node 4-17005 —
- *  a duplicate keeps node ids, so a refreshed preview keeps this one). */
+/** A page (or node) of the PREVIEW library, as Figma's Share → Copy link gives
+ *  it. Ids are Figma's `4:2185` or the URL's `4-2185`; none = the Cover. */
+export function figmaPreviewUrl(nodeId?: string | null): string {
+  const node = nodeId ? nodeId.replace(':', '-') : FIGMA_PREVIEW_COVER
+  return `https://www.figma.com/design/${FIGMA_PREVIEW_FILE_KEY}/${FIGMA_PREVIEW_FILE_NAME}?node-id=${node}`
+}
+
+/** The PREVIEW file (copying off), opened on the Cover. */
+export const FIGMA_KIT_FILE_URL = figmaPreviewUrl()
+
+/** Figma's embed host for that same file, opened on the Cover. */
 export const FIGMA_KIT_EMBED_URL =
-  'https://embed.figma.com/design/wcrw08ZVRYDuxYnCqWXoeD/Escala-Design-System--Preview-?node-id=4-17005&embed-host=share'
+  `https://embed.figma.com/design/${FIGMA_PREVIEW_FILE_KEY}/${FIGMA_PREVIEW_FILE_NAME}?node-id=${FIGMA_PREVIEW_COVER}&embed-host=share`
 
 /** Polar checkout link "Figma kit page" (Polar → Products → Checkout links).
  *  Same product as `POLAR_CHECKOUT_URL` ("Escala Pro - launch"), its own link
