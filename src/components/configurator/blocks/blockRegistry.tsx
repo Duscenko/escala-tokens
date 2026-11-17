@@ -20,8 +20,9 @@ import {
 } from '../../escala-ui/blocks/marketing'
 import {
   AnnouncementBar, UtilityBar, AppHeader, AppHeaderExtended, FloatingHeader, SidebarStatCard, DualSidebar,
-  NAV_LAYOUTS, type NavLayout,
+  FLOATING_NAVS, type FloatingNav, type NavLayout,
 } from '../../escala-ui/blocks/navigation'
+import { HeaderMockup, SidebarMockup } from '../../escala-ui/blocks/navigationShowcase'
 import {
   ConfirmDialog, DestructiveConfirm, FormModal, SuccessModal, ErrorModal, FeedbackRating, WarningDialog, ShareModal,
   SessionTimeoutWarning, CartDrawer, QuickEditDialog, FilterDrawer, FilterModal, ReleaseModal, CookieConsent,
@@ -65,6 +66,9 @@ export interface BlockDef {
   wide: boolean
   /** Renders the block at these control values, in place. */
   render: (v: Record<string, string>) => ReactNode
+  /** Navigation blocks: the block inside its Figma prototype frame — the 1440 desktop window, or the phone when the
+   *  stage's viewport is Mobile (the viewport is the Layout, so these blocks have no Layout control). */
+  mockup?: (v: Record<string, string>, layout: NavLayout) => ReactNode
   /** Overlay blocks: the real dialog (scrim, focus trap, Escape). */
   dialog?: (p: Required<Pick<OverlayBlockProps, 'open' | 'onOpenChange'>>) => ReactNode
   contract: BlockContract | null
@@ -79,7 +83,8 @@ const CONTRACTS = new Map<string, BlockContract>(
 const containerCtl: BlockControl = { key: 'container', label: 'Container', options: AUTH_CONTAINERS, default: 'card' }
 const statusCtl: BlockControl = { key: 'status', label: 'Status', options: AUTH_STATUSES, default: 'idle' }
 const marketingLayout: BlockControl = { key: 'layout', label: 'Layout', options: MARKETING_LAYOUTS, default: 'desktop' }
-const navLayout: BlockControl = { key: 'layout', label: 'Layout', options: NAV_LAYOUTS, default: 'desktop' }
+const floatingNav: BlockControl = { key: 'nav', label: 'Nav', options: FLOATING_NAVS, default: 'links' }
+const panelVisible: BlockControl = { key: 'panelVisible', label: 'PanelVisible', options: ['true', 'false'], default: 'true' }
 
 type Def = Omit<BlockDef, 'id' | 'contract'> & { contractName?: string }
 
@@ -127,10 +132,10 @@ const DEFS: Def[] = [
   { group: 'Marketing', name: 'PricingSection', description: 'The pricing page section: heading and the plans side by side.', wide: true, controls: [marketingLayout], render: (v) => <PricingSection layout={v.layout as MarketingLayout} /> },
   // ── Navigation ──
   { group: 'Navigation', name: 'AnnouncementBar', description: 'A one-line message across the top of the page, dismissible.', wide: true, controls: [], render: () => <AnnouncementBar /> },
-  { group: 'Navigation', name: 'AppHeader', description: 'The product header: brand, navigation, search and account.', wide: true, controls: [navLayout], render: (v) => <AppHeader layout={v.layout as NavLayout} /> },
-  { group: 'Navigation', name: 'AppHeaderExtended', description: 'The product header with an announcement bar, a utility bar and breadcrumbs.', wide: true, controls: [navLayout], render: (v) => <AppHeaderExtended layout={v.layout as NavLayout} /> },
-  { group: 'Navigation', name: 'DualSidebar', description: 'An icon rail beside a panel of grouped links.', wide: true, controls: [], render: () => <DualSidebar /> },
-  { group: 'Navigation', name: 'FloatingHeader', description: 'A header that floats over the page as a rounded bar.', wide: true, controls: [navLayout], render: (v) => <FloatingHeader layout={v.layout as NavLayout} /> },
+  { group: 'Navigation', name: 'AppHeader', description: 'The product header: brand, navigation, search and account.', wide: true, controls: [], render: () => <AppHeader />, mockup: (_v, layout) => <HeaderMockup block="AppHeader" layout={layout} /> },
+  { group: 'Navigation', name: 'AppHeaderExtended', description: 'The product header with an announcement bar, a utility bar and breadcrumbs.', wide: true, controls: [], render: () => <AppHeaderExtended />, mockup: (_v, layout) => <HeaderMockup block="AppHeaderExtended" layout={layout} /> },
+  { group: 'Navigation', name: 'DualSidebar', description: 'An icon rail beside a panel of grouped links.', wide: true, controls: [panelVisible], render: (v) => <DualSidebar panelVisible={v.panelVisible !== 'false'} />, mockup: (v, layout) => <SidebarMockup layout={layout} expanded={v.panelVisible !== 'false'} /> },
+  { group: 'Navigation', name: 'FloatingHeader', description: 'A header that floats over the page as a rounded bar.', wide: true, controls: [floatingNav], render: (v) => <FloatingHeader nav={v.nav as FloatingNav} />, mockup: (v, layout) => <HeaderMockup block="FloatingHeader" layout={layout} nav={v.nav as FloatingNav} /> },
   { group: 'Navigation', name: 'SidebarStatCard', description: 'A figure with its trend, for the foot of a sidebar.', wide: false, controls: [], render: () => <SidebarStatCard /> },
   { group: 'Navigation', name: 'UtilityBar', description: 'A thin bar above the header: language and social links.', wide: true, controls: [], render: () => <UtilityBar /> },
   // ── Overlay ──

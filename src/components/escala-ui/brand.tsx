@@ -31,7 +31,7 @@ function Brand({ size = 'default', name = 'Escala', versionVisible = true, versi
     <span data-slot="brand" data-escala="Brand" data-size={size} className={cn('inline-flex items-center', className)} {...props}>
       <span data-part="Brand.logo" className="inline-flex shrink-0 items-center">
         {logo ?? (
-          <Avatar type="icon" size={size === 'sm' ? 'xs' : 'sm'} shape="rounded" variant="default" appearance="solid" icon={glyph('stack')} />
+          <Avatar type="icon" size={size === 'sm' ? 'xs' : 'sm'} shape="rounded" variant="default" appearance="solid" icon={glyph('cube')} />
         )}
       </span>
       <span data-part="Brand.name">{name}</span>

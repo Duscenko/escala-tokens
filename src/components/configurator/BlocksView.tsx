@@ -30,6 +30,7 @@ import { PickerField } from '../ui/PickerField'
 import { InspectorModeProvider, InspectorOverlay, inspectGroupAttrs } from '../preview/artefacts/TokenInspector'
 import SemanticTokenDrawer from './SemanticTokenGroups'
 import ThemeQuickSettingsRail, { type QuickPanelFoundation } from './ThemeQuickSettingsRail'
+import { DESKTOP_FRAME, PHONE_FRAME } from '../escala-ui/blocks/frames'
 import { BLOCK_GROUPS, blockDefaults, blocksIn, matchesBlock, type BlockDef } from './blocks/blockRegistry'
 
 /** The width a wide block is laid out at before a card scales it down. */
@@ -39,6 +40,8 @@ const FRAME_WIDTH: Record<GridViewport, number | null> = { desktop: null, tablet
 const VIEWPORTS: GridViewport[] = ['desktop', 'tablet', 'mobile']
 /** What a block stage's "100 %" draws at: half true size. */
 const BLOCK_STAGE_BASE = 0.5
+/** Room around a prototype mockup on the stage, in true pixels. */
+const MOCKUP_MARGIN = 48
 
 export default function BlocksView({
   previewTheme = 'light', active, onSelect, onOpenComponent, onInspectRole, onOpenFoundation, search = '', onClearSearch,
@@ -248,12 +251,27 @@ function BlockPage({ block, onSelect, previewTheme, onOpenComponent, onInspectRo
   // reader's face. − / + step relative to it, like a component page's stage;
   // 200 % is true pixel size.
   const [zoom, setZoom] = useState(1)
-  const scale = zoom * BLOCK_STAGE_BASE
   const canvasRef = useRef<HTMLDivElement>(null)
   const stageRef = useRef<HTMLDivElement>(null)
   useInspectMarkers(stageRef, inspecting)
 
-  const frame = FRAME_WIDTH[viewport]
+  // A navigation block shows in its Figma prototype frame: the 1440 window, or the phone on Mobile. The stage is the
+  // mockup's width plus a margin, drawn at the stage zoom like any block.
+  const mockupLayout = viewport === 'mobile' ? 'mobile' : 'desktop'
+  const mockupWidth = block.mockup ? (mockupLayout === 'mobile' ? PHONE_FRAME.width + 3 : DESKTOP_FRAME.width) + MOCKUP_MARGIN * 2 : null
+  const frame = mockupWidth ?? FRAME_WIDTH[viewport]
+  // A mockup's 100 % FITS the stage (a 1440 window at half size still overflowed it); − / + step from there.
+  const [canvasWidth, setCanvasWidth] = useState(0)
+  useEffect(() => {
+    const el = canvasRef.current
+    if (!el || typeof ResizeObserver === 'undefined') return
+    const ro = new ResizeObserver(([e]) => setCanvasWidth(e.contentRect.width))
+    ro.observe(el)
+    return () => ro.disconnect()
+  }, [])
+  // The phone stops at 60 %: at true size it is taller than the stage.
+  const mockupCap = mockupLayout === 'mobile' ? 0.6 : 1
+  const scale = zoom * (mockupWidth && canvasWidth ? Math.min(mockupCap, canvasWidth / mockupWidth) : BLOCK_STAGE_BASE)
   const contract = block.contract
   const viewportLabel: Record<string, string> = { desktop: t('Desktop'), tablet: t('Tablet'), mobile: t('Mobile') }
 
@@ -265,7 +283,7 @@ function BlockPage({ block, onSelect, previewTheme, onOpenComponent, onInspectRo
             left={
               <span className="flex items-center gap-2">
                 <span className="rounded-md bg-elevated px-2.5 py-1 text-caption font-medium text-fg">{t('{name} preview', { name: block.name })}</span>
-                <span className="text-mini text-fg-faint">{viewportLabel[viewport]}{frame ? ` · ${frame}px` : ''}</span>
+                <span className="text-mini text-fg-faint">{viewportLabel[viewport]}{block.mockup ? (mockupLayout === 'mobile' ? ` · iPhone ${PHONE_FRAME.screenWidth}px` : ` · ${DESKTOP_FRAME.width}px`) : frame ? ` · ${frame}px` : ''}</span>
               </span>
             }
           >
@@ -311,7 +329,7 @@ function BlockPage({ block, onSelect, previewTheme, onOpenComponent, onInspectRo
                     // desktop frame stays the stage's width, only drawn smaller.
                     width: frame ?? `${zoom * 100}%`,
                     maxWidth: frame ?? undefined,
-                    boxShadow: frame ? '0 0 0 1px var(--color-border-subtle, rgba(127,127,127,.25))' : undefined,
+                    boxShadow: frame && !block.mockup ? '0 0 0 1px var(--color-border-subtle, rgba(127,127,127,.25))' : undefined,
                   } as CSSProperties}
                 >
                   <RecipeScope t={tokens}>
@@ -319,9 +337,9 @@ function BlockPage({ block, onSelect, previewTheme, onOpenComponent, onInspectRo
                       ref={stageRef}
                       {...inspectGroupAttrs(inspecting)}
                       className="relative flex flex-1 flex-col"
-                      style={block.wide ? undefined : { padding: 32, alignItems: 'center', justifyContent: 'center' }}
+                      style={block.mockup ? { padding: MOCKUP_MARGIN, alignItems: 'center' } : block.wide ? undefined : { padding: 32, alignItems: 'center', justifyContent: 'center' }}
                     >
-                      {block.render(values)}
+                      {block.mockup ? block.mockup(values, mockupLayout) : block.render(values)}
                     </div>
                     {block.dialog?.({ open, onOpenChange: setOpen })}
                   </RecipeScope>

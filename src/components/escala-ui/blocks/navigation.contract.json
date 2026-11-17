@@ -84,16 +84,25 @@
         "Brand",
         "Separator",
         "NavItem",
+        "Badge",
         "Input",
         "IconButton",
         "SegmentedControl",
-        "AccountMenuTrigger"
+        "AccountMenuTrigger",
+        "DropdownMenu"
       ],
       "slots": [
         "Nav"
       ],
       "props": [
         "layout",
+        "themeToggleVisible",
+        "messagesVisible",
+        "notificationsVisible",
+        "searchVisible",
+        "searchButtonVisible",
+        "nav",
+        "current",
         "style"
       ],
       "a11y": [
@@ -163,11 +172,16 @@
         "Brand",
         "NavItem",
         "IconButton",
-        "AccountMenuTrigger"
+        "Badge",
+        "AccountMenuTrigger",
+        "DropdownMenu"
       ],
       "slots": [],
       "props": [
         "layout",
+        "nav",
+        "notificationsVisible",
+        "searchButtonVisible",
         "style"
       ],
       "a11y": [
@@ -198,12 +212,17 @@
         "Sidebar",
         "SidebarBrand",
         "SidebarGroup",
+        "SidebarGroupLabel",
         "SidebarMenuButton",
+        "Badge",
         "Avatar",
         "SidebarStatCard"
       ],
       "slots": [],
       "props": [
+        "railVisible",
+        "panelVisible",
+        "current",
         "style"
       ],
       "a11y": [
@@ -258,5 +277,10 @@
         }
       ]
     }
-  ]
+  ],
+  "showcase": {
+    "frames": "frames.tsx (DesktopWindow 1440×900, PhoneFrame iPhone 18 Pro)",
+    "prototypes": "navigationShowcase.tsx = HeaderNavigation · Prototype 1063:2193 and SidebarNavigation · Prototype 1065:872",
+    "storybook": "each block story opens on Overview: Desktop · Light, Desktop · Dark, Mobile (Light · Dark)"
+  }
 }
