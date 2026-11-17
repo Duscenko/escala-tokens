@@ -586,6 +586,37 @@ function table(headers: string[], rows: string[][]): string {
   ].join('\n')
 }
 
+// ── Alpha ramps in Markdown ─────────────────────────────────────────────────
+// A table of `#rrggbbaa` values says nothing about what an alpha ramp IS, and
+// a reader (or an agent) that treats it as an opacity scale picks the wrong
+// step. These notes say it once, in the file itself.
+const isNeutralLadder = (name: string) => name === 'black-a' || name === 'white-a'
+export const isAlphaTwin = (name: string) => !isNeutralLadder(name) && /-a(-dark)?$/.test(name)
+
+/** The explanation that belongs above an alpha ramp, or null for a solid one. */
+export function alphaRampNote(name: string): string | null {
+  if (isNeutralLadder(name)) {
+    const ink = name === 'black-a' ? 'black' : 'white'
+    return `> Fixed opacity ladder of pure ${ink}: 5, 10, 15, 20, 30, 40, 50, 60, 70, 80, 90 and 95 %, values written as \`#rrggbbaa\`. It is not tied to any page, so use it to darken or lighten whatever sits behind it.`
+  }
+  if (!isAlphaTwin(name)) return null
+  const dark = name.endsWith('-a-dark')
+  const solid = name.replace(/-a(-dark)?$/, dark ? '-dark' : '')
+  return `> Alpha twin of \`${solid}\`, values written as \`#rrggbbaa\`. Each step is the translucent colour that, laid over the ${dark ? 'dark' : 'light'} page it was solved against, looks exactly like the solid step with the same number. It is not an opacity scale: the alpha rises and falls along the ramp, and step 1 is fully transparent because step 1 is the page. Over any other backdrop use \`${solid}-N\`.`
+}
+
+/** One alpha ramp as Markdown — heading, explanation, table. Used by the
+ *  per-column export; the section export writes the same pieces inline. */
+export function alphaFamilyMd(name: string, scale: Record<number, string>, naming: Store['colorNaming']): string {
+  return [
+    '## Color',
+    `\n### ${cap(name)}\n`,
+    alphaRampNote(name) ?? '',
+    '',
+    table(['Token', 'Value'], sortedEntries(scale).map(([k, v]) => [`\`${name}-${toneLabel(naming, Number(k))}\``, `\`${v}\``])),
+  ].join('\n')
+}
+
 function categoricalRoleLabel(comment: string): string {
   return comment.match(/^\[ROLE: ([^\]]+)\]/)?.[1] ?? ''
 }
@@ -720,8 +751,18 @@ function oneAppearance(store: Store, opts: SectionExportOptions): 'light' | 'dar
 function mdFor(section: SectionKey, store: Store, cf: ColorFormat, opts: SectionExportOptions = {}): string {
   if (section === 'color') {
     const parts = ['## Color']
+    // The explanation is written once before the first alpha twin and once
+    // before the neutral ladder, not under all thirty headings.
+    let twinNoted = false
+    let ladderNoted = false
     colorFamilies(store, opts).forEach(([name, scale]) => {
       parts.push(`\n### ${cap(name)}\n`)
+      const note = alphaRampNote(name)
+      if (note && ((isNeutralLadder(name) && !ladderNoted) || (isAlphaTwin(name) && !twinNoted))) {
+        parts.push(`${note}\n`)
+        if (isNeutralLadder(name)) ladderNoted = true
+        else twinNoted = true
+      }
       parts.push(table(['Token', 'Value'], sortedEntries(scale).map(([k, v]) => [`\`${name}-${toneLabel(store.colorNaming, Number(k))}\``, `\`${formatColor(v, cf)}\``])))
     })
     if (opts.includeSemantics !== false) {

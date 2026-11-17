@@ -26,7 +26,7 @@ import { shippedThemes, shipsEveryTheme } from './brandThemes'
 import { defaultFigmaSyncModes } from './figmaSyncModes'
 import { myThemeKeys } from './themeLibrary'
 import { primitiveDisplayLabel } from './themeSources'
-import { buildSectionExport, type ColorFormat, type SectionKey } from './sectionExport'
+import { alphaFamilyMd, buildSectionExport, type ColorFormat, type SectionKey } from './sectionExport'
 import { useDesignStore } from '../store/useDesignStore'
 import { buildAgentProductExport, buildSkillExport } from './skillExport'
 import { dimensionFromKey, dimensionRef, parseDimension } from './dimensions'
@@ -535,10 +535,12 @@ export function buildFamilyExport(
 // wizard pipeline about a bucket only this one popover needs to reach.
 //
 // Only the formats that can be built CORRECTLY from a bare `Record<number,
-// string>` are offered — see `ALPHA_EXPORT_FORMATS` below. Markdown and Skill
-// have no alpha concept in `sectionExport`; faking support there would repeat
+// string>` are offered — see `ALPHA_EXPORT_FORMATS` below. Markdown is one of
+// them: `alphaFamilyMd` (sectionExport) writes the table with the note that
+// says what an alpha ramp is, the same note the section export carries.
+// Tailwind and Skill have no alpha concept; faking support there would repeat
 // the exact bug this function exists to fix.
-export const ALPHA_EXPORT_FORMATS: WizardFormat[] = ['w3c', 'escala']
+export const ALPHA_EXPORT_FORMATS: WizardFormat[] = ['w3c', 'escala', 'md']
 
 export function buildAlphaFamilyExport(
   /** The alpha Family's own `tokenPrefix` (e.g. `accent-a`, `<custom>-a`) —
@@ -559,6 +561,11 @@ export function buildAlphaFamilyExport(
   }
 
   const naming = useDesignStore.getState().colorNaming
+  if (format === 'md') {
+    const project = useDesignStore.getState().projectName || 'escala'
+    const slug = project.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'escala'
+    return [{ name: `${slug}.md`, content: alphaFamilyMd(tokenPrefix, scale, naming), language: 'md' }]
+  }
   // Same flattener `tokenGenerator` uses for `colors.primitiveAlpha` itself —
   // `accent-a-1`…`accent-a-12` (or the naming scheme's own labels) — so a
   // reader can match these names straight back to the real export.
