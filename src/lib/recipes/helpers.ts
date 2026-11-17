@@ -151,6 +151,24 @@ export function part(axes: Record<string, readonly string[]>, build: (...values:
  *  (Fields at its roundest) would otherwise turn these boxes into blobs. */
 export const TALL_FIELD_RADIUS = 'min(radius.action,radius.2xl)'
 
+// ── Box guards (design-plans/component-box-classification.md) ─────────────
+// A Black box's shape carries meaning by convention, so it never follows a
+// generator axis past the point where it would read as another component.
+// The roles stay the Figma bindings; the cap is compilation (code owns it).
+
+/** Checkbox: square = many. Never rounder than ~25 % of its side, so no axis
+ *  pick can turn it into a circle (a radio). 20px box → ≤ 6 (`md`); the
+ *  16px compact box → ≤ 4 (`sm`). Sharp still gives 0. */
+export const SELECTOR_SQUARE_RADIUS = { default: 'min(radius.control,radius.md)', compact: 'min(radius.control,radius.sm)' } as const
+
+/** A small key cap (Kbd) on the Selectors axis: never a pill. */
+export const KEYCAP_RADIUS = 'min(radius.control,radius.md)'
+
+/** A Gray box whose `Shape=rounded` must stay distinct from its `Shape=circle`
+ *  (Avatar, FeaturedIcon) or a slot that must stay a box (InputOTPSlot): the
+ *  Fields radius, never rounder than its Rounded default (12, `xl`). */
+export const ROUNDED_SHAPE_RADIUS = 'min(radius.action,radius.xl)'
+
 /** A box that holds content (a menu, a list panel, a bar): the Boxes radius. */
 export const PANEL_RADIUS = 'radius.container'
 /** A row inside a panel inset by `spacing.1` (a menu item, a bar's trigger):

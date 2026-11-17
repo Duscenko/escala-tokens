@@ -175,7 +175,9 @@
       "icon.small"
     ],
     "radius": [
-      "radius.control"
+      "radius.control",
+      "radius.md",
+      "radius.sm"
     ],
     "selector": [
       "selector.compact",

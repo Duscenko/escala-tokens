@@ -163,7 +163,8 @@
     ],
     "radius": [
       "radius.action",
-      "radius.pill"
+      "radius.pill",
+      "radius.xl"
     ],
     "size": [
       "size.lg",

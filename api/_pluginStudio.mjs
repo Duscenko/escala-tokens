@@ -9144,12 +9144,15 @@ function part(axes, build) {
   for (const combo of combos(axes)) values[combo.join("|")] = build(...combo);
   return { axes: Object.keys(axes), values };
 }
-var c, NONE, FOCUS;
+var c, NONE, FOCUS, SELECTOR_SQUARE_RADIUS, KEYCAP_RADIUS, ROUNDED_SHAPE_RADIUS;
 var init_helpers = __esm({
   "src/lib/recipes/helpers.ts"() {
     c = (role) => `color.${role}`;
     NONE = "none";
     FOCUS = { focus: "color.border.focus", ring: "color.border.ring.default" };
+    SELECTOR_SQUARE_RADIUS = { default: "min(radius.control,radius.md)", compact: "min(radius.control,radius.sm)" };
+    KEYCAP_RADIUS = "min(radius.control,radius.md)";
+    ROUNDED_SHAPE_RADIUS = "min(radius.action,radius.xl)";
   }
 });
 
@@ -10472,7 +10475,7 @@ var init_forms = __esm({
           const [w, h] = OTP_SLOT_BOX[size];
           return { root: { width: w, height: h }, digit: { font: OTP_SLOT_FONT[size] }, caret: { height: OTP_CARET[size] } };
         }),
-        part({ Variant: INPUT_OTP_VARIANTS }, (variant) => variant === "underline" ? { root: { radius: "radius.none", strokeWidth: "stroke.none", strokeBottomWidth: "stroke.control" } } : { root: { radius: "radius.action", strokeWidth: "stroke.control" } }),
+        part({ Variant: INPUT_OTP_VARIANTS }, (variant) => variant === "underline" ? { root: { radius: "radius.none", strokeWidth: "stroke.none", strokeBottomWidth: "stroke.control" } } : { root: { radius: ROUNDED_SHAPE_RADIUS, strokeWidth: "stroke.control" } }),
         part({ Variant: INPUT_OTP_VARIANTS, State: INPUT_OTP_SLOT_STATES }, (variant, state2) => ({
           root: otpSlotRoot(variant, state2),
           ...state2 === "Disabled" ? { digit: { text: c("content.disabled") } } : {}
@@ -10497,10 +10500,15 @@ var init_forms = __esm({
       defaults: { Size: "default", Checked: "false", State: "Default", Variant: "default" },
       parts: [
         part({}, () => ({
-          root: { radius: "radius.control", strokeWidth: "stroke.control", hit: "size.hit" }
+          root: { strokeWidth: "stroke.control", hit: "size.hit" }
         })),
         part({ Size: CHECKBOX_SIZES }, (size) => ({
-          root: { height: size === "default" ? "selector.control" : "selector.compact", width: size === "default" ? "selector.control" : "selector.compact" },
+          // Black box: Radius/control, capped so the box stays a square (SELECTOR_SQUARE_RADIUS).
+          root: {
+            radius: size === "default" ? SELECTOR_SQUARE_RADIUS.default : SELECTOR_SQUARE_RADIUS.compact,
+            height: size === "default" ? "selector.control" : "selector.compact",
+            width: size === "default" ? "selector.control" : "selector.compact"
+          },
           indicator: { width: size === "default" ? "icon.small" : "spacing.3", height: size === "default" ? "icon.small" : "spacing.3" }
         })),
         part({ Checked: CHECKBOX_CHECKED, State: CHECKBOX_STATES, Variant: CHECKBOX_VARIANTS }, checkPaint)
@@ -12144,7 +12152,7 @@ var init_indicators = __esm({
           ring: { stroke: c("border.accent"), strokeWidth: "stroke.md" }
         })),
         part({ Shape: AVATAR_SHAPES }, (shape) => {
-          const radius = shape === "circle" ? "radius.pill" : "radius.action";
+          const radius = shape === "circle" ? "radius.pill" : ROUNDED_SHAPE_RADIUS;
           return { root: { radius }, image: { radius }, stroke: { radius }, ring: { radius } };
         }),
         part({ Size: AVATAR_SIZES }, (size) => {
@@ -12220,7 +12228,7 @@ var init_indicators = __esm({
           };
         }),
         part({ Shape: AVATAR_SHAPES }, (shape) => {
-          const radius = shape === "circle" ? "radius.pill" : "radius.action";
+          const radius = shape === "circle" ? "radius.pill" : ROUNDED_SHAPE_RADIUS;
           return { item: { radius }, action: { radius } };
         })
       ]
@@ -12251,7 +12259,7 @@ var init_indicators = __esm({
           root: { width: FEATURED_ICON_GEOMETRY[size].box, height: FEATURED_ICON_GEOMETRY[size].box },
           icon: { width: FEATURED_ICON_GEOMETRY[size].icon, height: FEATURED_ICON_GEOMETRY[size].icon }
         })),
-        part({ Shape: AVATAR_SHAPES }, (shape) => ({ root: { radius: shape === "circle" ? "radius.pill" : "radius.action" } })),
+        part({ Shape: AVATAR_SHAPES }, (shape) => ({ root: { radius: shape === "circle" ? "radius.pill" : ROUNDED_SHAPE_RADIUS } })),
         part({ Variant: FEATURED_ICON_VARIANTS, Appearance: FEATURED_ICON_APPEARANCES }, (variant, appearance) => {
           if (appearance === "gradient") {
             const g = FEATURED_ICON_GRADIENT[variant];
@@ -12279,7 +12287,7 @@ var init_indicators = __esm({
             stroke: c("border.subtle"),
             strokeWidth: "stroke.control",
             text: c("content.secondary"),
-            radius: "radius.control",
+            radius: KEYCAP_RADIUS,
             gap: "spacing.gap-tight"
           }
         })),

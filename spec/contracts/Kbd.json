@@ -83,7 +83,8 @@
       "icon.small"
     ],
     "radius": [
-      "radius.control"
+      "radius.control",
+      "radius.md"
     ],
     "spacing": [
       "spacing.gap-control",

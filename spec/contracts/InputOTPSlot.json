@@ -122,7 +122,8 @@
     ],
     "radius": [
       "radius.action",
-      "radius.none"
+      "radius.none",
+      "radius.xl"
     ],
     "size": [
       "size.compact",

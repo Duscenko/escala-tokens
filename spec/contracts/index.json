@@ -123,7 +123,7 @@
     "file": "spec/contracts/InputOTPSlot.json",
     "figmaSet": "InputOTPSlot",
     "story": "forms-inputotp--input-otp-slot-playground",
-    "tokens": 25
+    "tokens": 26
   },
   {
     "key": "NumberInput",
@@ -276,7 +276,7 @@
     "file": "spec/contracts/Checkbox.json",
     "figmaSet": "Checkbox",
     "story": "forms-checkbox--playground",
-    "tokens": 41
+    "tokens": 43
   },
   {
     "key": "CheckboxItem",
@@ -465,7 +465,7 @@
     "file": "spec/contracts/FeaturedIcon.json",
     "figmaSet": "FeaturedIcon",
     "story": "indicators-featuredicon--playground",
-    "tokens": 47
+    "tokens": 48
   },
   {
     "key": "Kbd",
@@ -474,7 +474,7 @@
     "file": "spec/contracts/Kbd.json",
     "figmaSet": "Kbd",
     "story": "indicators-kbd--playground",
-    "tokens": 12
+    "tokens": 13
   },
   {
     "key": "RatingGroup",
@@ -501,7 +501,7 @@
     "file": "spec/contracts/Avatar.json",
     "figmaSet": "Avatar",
     "story": "content-surfaces-avatar--playground",
-    "tokens": 46
+    "tokens": 47
   },
   {
     "key": "AvatarStatus",
@@ -519,7 +519,7 @@
     "file": "spec/contracts/AvatarGroup.json",
     "figmaSet": "AvatarGroup",
     "story": "content-surfaces-avatar--avatar-group-playground",
-    "tokens": 17
+    "tokens": 18
   },
   {
     "key": "Card",
