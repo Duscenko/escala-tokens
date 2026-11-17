@@ -6122,3 +6122,13 @@ npm run bundle:plugin  # → public/escala-figma-plugin.zip + src/lib/pluginVers
 >   left the file name 0px wide in a tile.
 > Measured after: 7 shifts on load, CLS 0.027, zero at rest (see the `ScaledModule` note above).
 
+> - **UPDATE (2026-11-17, owner's call): Blocks lives INSIDE Components.** The library is one place at three scales —
+>   Elements (atoms: Button…) · Blocks (organisms) · Templates (web pages, later). The top bar and the workspace rail
+>   carry only Components; the card's header is the switch, `CatalogueTabs` (Elements · Blocks), shown on each index (a
+>   component or block page keeps its breadcrumb; its back link reads Elements / Blocks). The shell keeps two tabs
+>   (`components` / `blocks`) so `?section=blocks/…` links still work; `navActive` and the rail light Components for
+>   both. The components index is titled "Elements". **Templates gets its tab when the first template exists** — an
+>   empty tab reads as unfinished. Don't put Blocks back in the top bar or the rail. The top bar on Components reads
+>   like the Generator's (`navInMenu={catalogueTab}`, no Plugin link): "Escala Tokens Beta | Components", sections in
+>   ☰. The tabs are the inspector's segmented control (`CHROME_CONTROL_SHELL` track + a sliding `SEGMENT_SELECTED_FILL`
+>   key, `SEGMENT_INACTIVE` for the other) — an inverted white pill read as a heavy button and was dropped.
