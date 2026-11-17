@@ -423,7 +423,7 @@ function ThemeDock({ id, visible, open, onOpenChange, onPeek, labelledBy, descri
   open: boolean
   onOpenChange: (open: boolean) => void
   /** The folded height in px, for the page to keep its end clear of it. */
-  onPeek: (px: number) => void
+  onPeek?: (px: number) => void
   labelledBy: string
   describedBy: string
   children: (startDrag: (e: ReactPointerEvent) => void, peekRef: React.Ref<HTMLDivElement>) => ReactNode
@@ -443,7 +443,7 @@ function ThemeDock({ id, visible, open, onOpenChange, onPeek, labelledBy, descri
       setHeight(el.offsetHeight)
       const top = peekRef.current?.offsetHeight ?? 0
       setPeek(top)
-      onPeek(top)
+      onPeek?.(top)
     }
     measure()
     const ro = new ResizeObserver(measure)
@@ -745,10 +745,6 @@ export function MobileGenerator() {
   // The bar shows only while the preview is on screen: scrolled on to the
   // rest of About, it slides away and an open sheet closes.
   const [inView, setInView] = useState(false)
-  // The folded dock's height: the page keeps its end clear of it.
-  const [peek, setPeek] = useState(160)
-  const peekRef = useRef(160)
-  const onPeek = (px: number) => { peekRef.current = px; setPeek(px) }
   useEffect(() => {
     const el = sectionRef.current
     if (!el) return
@@ -762,7 +758,10 @@ export function MobileGenerator() {
       frame = 0
       const r = el.getBoundingClientRect()
       const vh = window.innerHeight
-      const on = r.top < vh * 0.6 && r.bottom - peekRef.current > vh * 0.4
+      // The section ends 16px under its last tile (About goes on below it, so
+      // the page itself scrolls that tile clear of the dock — no reserved
+      // block): off once that tile is above the top 40% of the screen.
+      const on = r.top < vh * 0.6 && r.bottom - 16 > vh * 0.4
       setInView(on)
       if (!on) setSheet((s) => (s.open ? { ...s, open: false } : s))
     }
@@ -1156,8 +1155,10 @@ export function MobileGenerator() {
   }
 
   return (
-    // The bottom padding keeps the last tile clear of the folded dock.
-    <div ref={sectionRef} className="flex scroll-mt-4 flex-col gap-3" style={{ paddingBottom: peek + 16 }}>
+    // No reserved block under the last tile: About continues below, so the page
+    // scrolls it clear of the folded dock (a peek-high pad stayed on screen as an
+    // empty band once the dock slid away).
+    <div ref={sectionRef} className="flex scroll-mt-4 flex-col gap-3" style={{ paddingBottom: 16 }}>
       {tokens.archTokens && (
         <MobilePreview
           tokens={tokens}
@@ -1174,7 +1175,6 @@ export function MobileGenerator() {
         visible={inView}
         open={sheet.open}
         onOpenChange={setOpen}
-        onPeek={onPeek}
         labelledBy={titleId}
         describedBy={descId}
       >

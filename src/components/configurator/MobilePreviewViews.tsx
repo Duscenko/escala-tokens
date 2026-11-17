@@ -190,7 +190,7 @@ function ButtonsTile({ t }: { t: T }) {
       </Row>
       {/* Icons and sizes in one balanced line: the icon button sits beside, never alone below. */}
       <div className="flex items-center" style={{ gap: 'var(--spacing-gap-control)' }}>
-        <Button size="sm" variant="secondary" className="flex-1"><PlusGlyph /> {t('Add')}</Button>
+        <Button size="sm" variant="secondary" className="flex-1" leading={<PlusGlyph />}>{t('Add')}</Button>
         <Button className="flex-1">{t('Continue')} <ArrowGlyph /></Button>
         <Button size="icon" variant="ghost" aria-label={t('More')}><MoreGlyph /></Button>
       </div>
@@ -254,7 +254,7 @@ function AccountTile({ t, avatar }: { t: T; avatar: string }) {
           <Button className="w-full">{t('Continue')}</Button>
           <OrRule t={t} />
           <div className="flex flex-col" style={{ gap: 'var(--spacing-gap-control)' }}>
-            <Button variant="outline" className="w-full"><KeyGlyph /> {t('Sign in with a passkey')}</Button>
+            <Button variant="outline" className="w-full" leading={<KeyGlyph />}>{t('Sign in with a passkey')}</Button>
             {/* Two providers, full names: three cut to "G…" in a phone card. */}
             <div className="grid grid-cols-2" style={{ gap: 'var(--spacing-gap-control)' }}>
               {(['google', 'apple'] as const).map((p) => (
@@ -369,7 +369,7 @@ function FiltersTile({ t }: { t: T }) {
       <Row>
         <Chip size="sm" closeVisible><FilterLabel field={t('Status')} value={t('In review')} /></Chip>
         <Chip size="sm" closeVisible><FilterLabel field={t('Owner')} value="Emma Collins" /></Chip>
-        <Button size="sm" variant="outline"><PlusGlyph /> {t('Add filter')}</Button>
+        <Button size="sm" variant="outline" leading={<PlusGlyph />}>{t('Add filter')}</Button>
         <Button size="sm" variant="ghost">{t('Clear all')}</Button>
       </Row>
     </Tile>
