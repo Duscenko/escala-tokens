@@ -83,6 +83,7 @@ import IconLibrary, { IconLibraryPanel } from '../components/configurator/IconLi
 import ComponentsRail from '../components/configurator/ComponentsRail'
 import BlocksRail from '../components/configurator/BlocksRail'
 import BlocksView from '../components/configurator/BlocksView'
+import { CatalogueTabs } from '../components/configurator/CatalogueTabs'
 import { BLOCK_BY_ID, type BlockDef } from '../components/configurator/blocks/blockRegistry'
 import ComponentsView from '../components/configurator/ComponentsView'
 import DocsView, { CHANGELOG_KEY, FAQ_KEY } from '../components/configurator/DocsView'
@@ -2556,7 +2557,8 @@ export default function Configurator() {
   const navActive: TopNavKey | null =
     (!exportMode && tab === 'about') ? 'about'
     : (!exportMode && tab === 'components') ? 'components'
-    : (!exportMode && tab === 'blocks') ? 'blocks'
+    // Blocks is a tab OF Components (Elements · Blocks), not a section.
+    : (!exportMode && tab === 'blocks') ? 'components'
     : (!exportMode && tab === 'docs') ? 'docs'
     : (!exportMode && tab === 'foundations') ? 'variables'
     : null
@@ -2673,7 +2675,7 @@ export default function Configurator() {
   // pages reached from elsewhere (the top bar, the Export menu): none.
   const workspaceNav: WorkspaceNavKey | null =
     tab === 'components' ? 'components'
-    : tab === 'blocks' ? 'blocks'
+    : tab === 'blocks' ? 'components'
     : !themesCanvas ? null
     : themeWorkspaceTab === 'primitives' ? 'variables'
     : themeWorkspaceTab === 'code' ? 'code'
@@ -2742,7 +2744,6 @@ export default function Configurator() {
         { key: 'variables', label: t('Variables') },
         { key: 'code', label: t('Code') },
         { key: 'components', label: t('Components') },
-        { key: 'blocks', label: t('Blocks') },
       ]}
       dimmed={railBlockedReason ? ['variables', 'code'] : undefined}
       dimmedReason={railBlockedReason ?? undefined}
@@ -2776,10 +2777,12 @@ export default function Configurator() {
         nav={navActive}
         onNav={handleNav}
         hamburgerNav={tab === 'foundations'}
-        navInMenu={componentsWithoutSystem}
-        // Inside the Generator the Figma door is the inspector footer and the
-        // Export pill; the plugin is step 02 of the page they open.
-        pluginLink={tab !== 'foundations'}
+        // Components (Elements · Blocks) is a workspace like the Generator:
+        // the section tags fold into ☰ and the brand names the page.
+        navInMenu={catalogueTab}
+        // Inside the Generator and Components the Figma door is the inspector
+        // footer and the Export pill; the plugin is step 02 of the page they open.
+        pluginLink={tab !== 'foundations' && !catalogueTab}
         signUpAccent={canvasAccentStyle}
         overlay={aboutOverlay}
         scrolled={aboutScrolled}
@@ -2959,7 +2962,7 @@ export default function Configurator() {
                         <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
                           <path d="M7.5 2.5 4 6l3.5 3.5" />
                         </svg>
-                        {t('Components')}
+                        {t('Elements')}
                       </button>
                       <span aria-hidden className="flex-shrink-0 text-fg-faint">/</span>
                     </>
@@ -2973,9 +2976,13 @@ export default function Configurator() {
                       <span aria-hidden className="hidden flex-shrink-0 text-fg-faint lg:inline">/</span>
                     </>
                   )}
-                  <h2 className="min-w-0 truncate text-ui font-semibold text-fg">
-                    {activeComponent ? activeComponent.label : t('Components')}
-                  </h2>
+                  {!activeComponent && !componentFromSystem
+                    ? <CatalogueTabs active="components" onSelect={changeTab} />
+                    : (
+                      <h2 className="min-w-0 truncate text-ui font-semibold text-fg">
+                        {activeComponent ? activeComponent.label : t('Components')}
+                      </h2>
+                    )}
                 </div>
                 <div className="flex min-w-0 flex-1 items-center justify-end gap-2">
                   {header.right}
@@ -3003,9 +3010,9 @@ export default function Configurator() {
                       <span aria-hidden className="hidden flex-shrink-0 text-fg-faint lg:inline">/</span>
                     </>
                   )}
-                  <h2 className="min-w-0 truncate text-ui font-semibold text-fg">
-                    {activeBlock ? activeBlock.name : t('Blocks')}
-                  </h2>
+                  {activeBlock
+                    ? <h2 className="min-w-0 truncate text-ui font-semibold text-fg">{activeBlock.name}</h2>
+                    : <CatalogueTabs active="blocks" onSelect={changeTab} />}
                 </div>
                 <div className="flex min-w-0 flex-1 items-center justify-end gap-2">
                   <PreviewThemeSwitch

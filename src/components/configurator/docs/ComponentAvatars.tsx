@@ -141,7 +141,7 @@ export function ComponentsIndex({
   return (
     <div className="mx-auto max-w-6xl px-6 py-8 lg:px-10">
       <header className="mb-6">
-        <h1 className="text-display font-semibold tracking-tight text-fg">{t('Components')}</h1>
+        <h1 className="text-display font-semibold tracking-tight text-fg">{t('Elements')}</h1>
         <p className="mt-2 max-w-2xl text-strong leading-relaxed text-fg-muted">{t('Every component in the library, drawn with your tokens. Open one to see its variants, code and the roles it reads.')}</p>
         <p className="mt-2 text-caption text-fg-faint">{items.length} {t(items.length === 1 ? 'component' : 'components')}</p>
       </header>
