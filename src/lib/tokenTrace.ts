@@ -115,6 +115,7 @@ const PROP_LABEL: Record<RecipeProp, string> = {
   hairline: 'Border width (hairline)',
   outerStroke: 'Outside border',
   outerStrokeWidth: 'Outside border width',
+  textShadow: 'Text shadow',
   overlap: 'Overlap',
 }
 

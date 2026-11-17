@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { buildStudioTokens } from '../pluginStudio'
 import { checkContrast, compositeOver } from '../colorUtils'
+import { labelOnSolidClears } from '../color/apca'
 
 /**
  * The Escala Figma file's contract for a NEW system (owner decisions,
@@ -65,8 +66,10 @@ describe('the default Escala system — contrast invariants (WCAG 2.x)', () => {
       })
 
       it('the primary button label on every state', () => {
+        // Light: WCAG AA. Dark: AA or perceived contrast Lc 60 (owner's call 2026-11-17).
         for (const state of ['default', 'hover', 'pressed']) {
-          expect(ratio('content.on-action', `action.primary.${state}`, theme), state).toBeGreaterThanOrEqual(4.5)
+          const ink = role('content.on-action', theme), fill = role(`action.primary.${state}`, theme)
+          expect(labelOnSolidClears(ink, fill, theme === DARK ? 'dark' : 'light'), state).toBe(true)
         }
       })
 
@@ -107,11 +110,12 @@ describe('the default Escala system — roles picked by job', () => {
     expect([t.colors.themeLabels[LIGHT], t.colors.themeLabels[DARK]]).toEqual(['Escala Light', 'Escala Dark'])
   })
 
-  it('primary: Light 09 · 10 · 11 on the light page, Dark 10 · 11 · 12 on the dark page', () => {
+  it('primary: Light 09 · 10 · 11 on the light page, Dark 09 · 10 · 08 (lifts on hover, sinks on press)', () => {
     expect(['default', 'hover', 'pressed'].map((s) => role(`action.primary.${s}`, LIGHT))).toEqual([9, 10, 11].map((n) => prim(accent, n)))
-    expect(['default', 'hover', 'pressed'].map((s) => role(`action.primary.${s}`, DARK))).toEqual([10, 11, 12].map((n) => prim(accent, n, true)))
+    expect(['default', 'hover', 'pressed'].map((s) => role(`action.primary.${s}`, DARK))).toEqual([9, 10, 8].map((n) => prim(accent, n, true)))
     expect(role('content.on-action', LIGHT)).toBe(prim(accent, 1))
-    expect(role('content.on-action', DARK)).toBe(prim(accent, 1, true))
+    // A LIGHT label on the vivid Dark accent: the light page's step 1, not the dark page's.
+    expect(role('content.on-action', DARK)).toBe(prim(accent, 1))
   })
 
   it('links 11, focus 09, secondary pressed 06, inverse 12', () => {

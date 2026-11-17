@@ -633,7 +633,7 @@
           },
           "on-action": {
             "core--minimalist::light": "#fefdff",
-            "core--minimalist::dark": "#100e13"
+            "core--minimalist::dark": "#fefdff"
           },
           "on-secondary": {
             "core--minimalist::light": "#37343b",
@@ -663,15 +663,15 @@
         "action": {
           "primary.default": {
             "core--minimalist::light": "#874fff",
-            "core--minimalist::dark": "#9a75fd"
+            "core--minimalist::dark": "#905cff"
           },
           "primary.hover": {
             "core--minimalist::light": "#784ddd",
-            "core--minimalist::dark": "#d2c4ff"
+            "core--minimalist::dark": "#9a75fd"
           },
           "primary.pressed": {
             "core--minimalist::light": "#7252c9",
-            "core--minimalist::dark": "#e8e0ff"
+            "core--minimalist::dark": "#714ec3"
           },
           "secondary.default": {
             "core--minimalist::light": "#e3e1e6",
@@ -753,6 +753,10 @@
           }
         },
         "status": {
+          "critical.ring": {
+            "core--minimalist::light": "#d71a00a8",
+            "core--minimalist::dark": "#fe422ca3"
+          },
           "critical.surface": {
             "core--minimalist::light": "#da350c24",
             "core--minimalist::dark": "#f3722e1c"
@@ -928,8 +932,8 @@
             "core--minimalist::dark": "#905cff"
           },
           "ring.default": {
-            "core--minimalist::light": "#3005fc4f",
-            "core--minimalist::dark": "#9570fc6b"
+            "core--minimalist::light": "#3e00ff82",
+            "core--minimalist::dark": "#9163febf"
           },
           "rim-highlight": {
             "core--minimalist::light": "#ffffff0d",
@@ -5333,10 +5337,12 @@
                 "text": "color.content.on-action",
                 "focus": "none",
                 "ring": "none",
-                "outerStroke": "color.action.primary.pressed",
-                "outerStrokeWidth": "stroke.control",
+                "halo": "none",
                 "highlight": "color.elevation.highlight",
                 "strokeWidth": "stroke.none"
+              },
+              "label": {
+                "textShadow": "text-2xs"
               }
             },
             "default|solid|Hover": {
@@ -5346,10 +5352,12 @@
                 "text": "color.content.on-action",
                 "focus": "none",
                 "ring": "none",
-                "outerStroke": "color.action.primary.pressed",
-                "outerStrokeWidth": "stroke.control",
+                "halo": "none",
                 "highlight": "color.elevation.highlight",
                 "strokeWidth": "stroke.none"
+              },
+              "label": {
+                "textShadow": "text-2xs"
               }
             },
             "default|solid|Pressed": {
@@ -5359,10 +5367,12 @@
                 "text": "color.content.on-action",
                 "focus": "none",
                 "ring": "none",
-                "outerStroke": "color.action.primary.pressed",
-                "outerStrokeWidth": "stroke.control",
+                "halo": "none",
                 "highlight": "color.elevation.highlight",
                 "strokeWidth": "stroke.none"
+              },
+              "label": {
+                "textShadow": "text-2xs"
               }
             },
             "default|solid|Focused": {
@@ -5370,12 +5380,14 @@
                 "fill": "color.action.primary.default",
                 "stroke": "none",
                 "text": "color.content.on-action",
-                "focus": "color.border.focus",
-                "ring": "color.border.ring.default",
-                "outerStroke": "none",
-                "outerStrokeWidth": "stroke.control",
+                "focus": "none",
+                "ring": "none",
+                "halo": "color.border.ring.default",
                 "highlight": "color.elevation.highlight",
                 "strokeWidth": "stroke.none"
+              },
+              "label": {
+                "textShadow": "text-2xs"
               }
             },
             "default|solid|Loading": {
@@ -5385,10 +5397,12 @@
                 "text": "color.content.on-action",
                 "focus": "none",
                 "ring": "none",
-                "outerStroke": "color.action.primary.pressed",
-                "outerStrokeWidth": "stroke.control",
+                "halo": "none",
                 "highlight": "color.elevation.highlight",
                 "strokeWidth": "stroke.none"
+              },
+              "label": {
+                "textShadow": "text-2xs"
               }
             },
             "default|solid|Disabled": {
@@ -5400,6 +5414,9 @@
                 "ring": "none",
                 "highlight": "none",
                 "strokeWidth": "stroke.none"
+              },
+              "label": {
+                "textShadow": "none"
               }
             },
             "default|outline|Default": {
@@ -5607,10 +5624,12 @@
                 "text": "color.content.on-secondary",
                 "focus": "none",
                 "ring": "none",
-                "outerStroke": "color.action.secondary.pressed",
-                "outerStrokeWidth": "stroke.control",
+                "halo": "none",
                 "highlight": "color.elevation.highlight",
                 "strokeWidth": "stroke.none"
+              },
+              "label": {
+                "textShadow": "text-2xs"
               }
             },
             "secondary|solid|Hover": {
@@ -5620,10 +5639,12 @@
                 "text": "color.content.on-secondary",
                 "focus": "none",
                 "ring": "none",
-                "outerStroke": "color.action.secondary.pressed",
-                "outerStrokeWidth": "stroke.control",
+                "halo": "none",
                 "highlight": "color.elevation.highlight",
                 "strokeWidth": "stroke.none"
+              },
+              "label": {
+                "textShadow": "text-2xs"
               }
             },
             "secondary|solid|Pressed": {
@@ -5633,10 +5654,12 @@
                 "text": "color.content.on-secondary",
                 "focus": "none",
                 "ring": "none",
-                "outerStroke": "color.action.secondary.pressed",
-                "outerStrokeWidth": "stroke.control",
+                "halo": "none",
                 "highlight": "color.elevation.highlight",
                 "strokeWidth": "stroke.none"
+              },
+              "label": {
+                "textShadow": "text-2xs"
               }
             },
             "secondary|solid|Focused": {
@@ -5644,12 +5667,14 @@
                 "fill": "color.action.secondary.default",
                 "stroke": "none",
                 "text": "color.content.on-secondary",
-                "focus": "color.border.strong",
-                "ring": "color.border.subtle",
-                "outerStroke": "none",
-                "outerStrokeWidth": "stroke.control",
+                "focus": "none",
+                "ring": "none",
+                "halo": "color.border.strong",
                 "highlight": "color.elevation.highlight",
                 "strokeWidth": "stroke.none"
+              },
+              "label": {
+                "textShadow": "text-2xs"
               }
             },
             "secondary|solid|Loading": {
@@ -5659,10 +5684,12 @@
                 "text": "color.content.on-secondary",
                 "focus": "none",
                 "ring": "none",
-                "outerStroke": "color.action.secondary.pressed",
-                "outerStrokeWidth": "stroke.control",
+                "halo": "none",
                 "highlight": "color.elevation.highlight",
                 "strokeWidth": "stroke.none"
+              },
+              "label": {
+                "textShadow": "text-2xs"
               }
             },
             "secondary|solid|Disabled": {
@@ -5674,6 +5701,9 @@
                 "ring": "none",
                 "highlight": "none",
                 "strokeWidth": "stroke.none"
+              },
+              "label": {
+                "textShadow": "none"
               }
             },
             "secondary|outline|Default": {
@@ -5881,10 +5911,12 @@
                 "text": "color.status.critical.on-solid",
                 "focus": "none",
                 "ring": "none",
-                "outerStroke": "color.status.critical.surface-solid-pressed",
-                "outerStrokeWidth": "stroke.control",
+                "halo": "none",
                 "highlight": "color.elevation.highlight",
                 "strokeWidth": "stroke.none"
+              },
+              "label": {
+                "textShadow": "text-2xs"
               }
             },
             "critical|solid|Hover": {
@@ -5894,10 +5926,12 @@
                 "text": "color.status.critical.on-solid",
                 "focus": "none",
                 "ring": "none",
-                "outerStroke": "color.status.critical.surface-solid-pressed",
-                "outerStrokeWidth": "stroke.control",
+                "halo": "none",
                 "highlight": "color.elevation.highlight",
                 "strokeWidth": "stroke.none"
+              },
+              "label": {
+                "textShadow": "text-2xs"
               }
             },
             "critical|solid|Pressed": {
@@ -5907,10 +5941,12 @@
                 "text": "color.status.critical.on-solid",
                 "focus": "none",
                 "ring": "none",
-                "outerStroke": "color.status.critical.surface-solid-pressed",
-                "outerStrokeWidth": "stroke.control",
+                "halo": "none",
                 "highlight": "color.elevation.highlight",
                 "strokeWidth": "stroke.none"
+              },
+              "label": {
+                "textShadow": "text-2xs"
               }
             },
             "critical|solid|Focused": {
@@ -5918,12 +5954,14 @@
                 "fill": "color.status.critical.surface-solid",
                 "stroke": "none",
                 "text": "color.status.critical.on-solid",
-                "focus": "color.status.critical.border-strong",
-                "ring": "color.status.critical.border",
-                "outerStroke": "none",
-                "outerStrokeWidth": "stroke.control",
+                "focus": "none",
+                "ring": "none",
+                "halo": "color.status.critical.ring",
                 "highlight": "color.elevation.highlight",
                 "strokeWidth": "stroke.none"
+              },
+              "label": {
+                "textShadow": "text-2xs"
               }
             },
             "critical|solid|Loading": {
@@ -5933,10 +5971,12 @@
                 "text": "color.status.critical.on-solid",
                 "focus": "none",
                 "ring": "none",
-                "outerStroke": "color.status.critical.surface-solid-pressed",
-                "outerStrokeWidth": "stroke.control",
+                "halo": "none",
                 "highlight": "color.elevation.highlight",
                 "strokeWidth": "stroke.none"
+              },
+              "label": {
+                "textShadow": "text-2xs"
               }
             },
             "critical|solid|Disabled": {
@@ -5948,6 +5988,9 @@
                 "ring": "none",
                 "highlight": "none",
                 "strokeWidth": "stroke.none"
+              },
+              "label": {
+                "textShadow": "none"
               }
             },
             "critical|outline|Default": {
@@ -6251,8 +6294,7 @@
                 "text": "color.content.on-action",
                 "focus": "none",
                 "ring": "none",
-                "outerStroke": "color.action.primary.pressed",
-                "outerStrokeWidth": "stroke.control",
+                "halo": "none",
                 "highlight": "color.elevation.highlight",
                 "strokeWidth": "stroke.none"
               }
@@ -6264,8 +6306,7 @@
                 "text": "color.content.on-action",
                 "focus": "none",
                 "ring": "none",
-                "outerStroke": "color.action.primary.pressed",
-                "outerStrokeWidth": "stroke.control",
+                "halo": "none",
                 "highlight": "color.elevation.highlight",
                 "strokeWidth": "stroke.none"
               }
@@ -6277,8 +6318,7 @@
                 "text": "color.content.on-action",
                 "focus": "none",
                 "ring": "none",
-                "outerStroke": "color.action.primary.pressed",
-                "outerStrokeWidth": "stroke.control",
+                "halo": "none",
                 "highlight": "color.elevation.highlight",
                 "strokeWidth": "stroke.none"
               }
@@ -6288,10 +6328,9 @@
                 "fill": "color.action.primary.default",
                 "stroke": "none",
                 "text": "color.content.on-action",
-                "focus": "color.border.focus",
-                "ring": "color.border.ring.default",
-                "outerStroke": "none",
-                "outerStrokeWidth": "stroke.control",
+                "focus": "none",
+                "ring": "none",
+                "halo": "color.border.ring.default",
                 "highlight": "color.elevation.highlight",
                 "strokeWidth": "stroke.none"
               }
@@ -6303,8 +6342,7 @@
                 "text": "color.content.on-action",
                 "focus": "none",
                 "ring": "none",
-                "outerStroke": "color.action.primary.pressed",
-                "outerStrokeWidth": "stroke.control",
+                "halo": "none",
                 "highlight": "color.elevation.highlight",
                 "strokeWidth": "stroke.none"
               }
@@ -6525,8 +6563,7 @@
                 "text": "color.content.on-secondary",
                 "focus": "none",
                 "ring": "none",
-                "outerStroke": "color.action.secondary.pressed",
-                "outerStrokeWidth": "stroke.control",
+                "halo": "none",
                 "highlight": "color.elevation.highlight",
                 "strokeWidth": "stroke.none"
               }
@@ -6538,8 +6575,7 @@
                 "text": "color.content.on-secondary",
                 "focus": "none",
                 "ring": "none",
-                "outerStroke": "color.action.secondary.pressed",
-                "outerStrokeWidth": "stroke.control",
+                "halo": "none",
                 "highlight": "color.elevation.highlight",
                 "strokeWidth": "stroke.none"
               }
@@ -6551,8 +6587,7 @@
                 "text": "color.content.on-secondary",
                 "focus": "none",
                 "ring": "none",
-                "outerStroke": "color.action.secondary.pressed",
-                "outerStrokeWidth": "stroke.control",
+                "halo": "none",
                 "highlight": "color.elevation.highlight",
                 "strokeWidth": "stroke.none"
               }
@@ -6562,10 +6597,9 @@
                 "fill": "color.action.secondary.default",
                 "stroke": "none",
                 "text": "color.content.on-secondary",
-                "focus": "color.border.strong",
-                "ring": "color.border.subtle",
-                "outerStroke": "none",
-                "outerStrokeWidth": "stroke.control",
+                "focus": "none",
+                "ring": "none",
+                "halo": "color.border.strong",
                 "highlight": "color.elevation.highlight",
                 "strokeWidth": "stroke.none"
               }
@@ -6577,8 +6611,7 @@
                 "text": "color.content.on-secondary",
                 "focus": "none",
                 "ring": "none",
-                "outerStroke": "color.action.secondary.pressed",
-                "outerStrokeWidth": "stroke.control",
+                "halo": "none",
                 "highlight": "color.elevation.highlight",
                 "strokeWidth": "stroke.none"
               }
@@ -6799,8 +6832,7 @@
                 "text": "color.status.critical.on-solid",
                 "focus": "none",
                 "ring": "none",
-                "outerStroke": "color.status.critical.surface-solid-pressed",
-                "outerStrokeWidth": "stroke.control",
+                "halo": "none",
                 "highlight": "color.elevation.highlight",
                 "strokeWidth": "stroke.none"
               }
@@ -6812,8 +6844,7 @@
                 "text": "color.status.critical.on-solid",
                 "focus": "none",
                 "ring": "none",
-                "outerStroke": "color.status.critical.surface-solid-pressed",
-                "outerStrokeWidth": "stroke.control",
+                "halo": "none",
                 "highlight": "color.elevation.highlight",
                 "strokeWidth": "stroke.none"
               }
@@ -6825,8 +6856,7 @@
                 "text": "color.status.critical.on-solid",
                 "focus": "none",
                 "ring": "none",
-                "outerStroke": "color.status.critical.surface-solid-pressed",
-                "outerStrokeWidth": "stroke.control",
+                "halo": "none",
                 "highlight": "color.elevation.highlight",
                 "strokeWidth": "stroke.none"
               }
@@ -6836,10 +6866,9 @@
                 "fill": "color.status.critical.surface-solid",
                 "stroke": "none",
                 "text": "color.status.critical.on-solid",
-                "focus": "color.status.critical.border-strong",
-                "ring": "color.status.critical.border",
-                "outerStroke": "none",
-                "outerStrokeWidth": "stroke.control",
+                "focus": "none",
+                "ring": "none",
+                "halo": "color.status.critical.ring",
                 "highlight": "color.elevation.highlight",
                 "strokeWidth": "stroke.none"
               }
@@ -6851,8 +6880,7 @@
                 "text": "color.status.critical.on-solid",
                 "focus": "none",
                 "ring": "none",
-                "outerStroke": "color.status.critical.surface-solid-pressed",
-                "outerStrokeWidth": "stroke.control",
+                "halo": "none",
                 "highlight": "color.elevation.highlight",
                 "strokeWidth": "stroke.none"
               }
@@ -31582,7 +31610,8 @@
       "Border/control-hover": "[ROLE: Control Boundary Hover] Affects the hover state of a control's resting (border.control) border. One step past border.control in Light ({black-a.4}); in Dark the Figma file puts rest and hover on the same {white-a.4} (DEC-2026-11-16-004).",
       "Border/strong": "[ROLE: Strong Border] Affects the edge of a grouping or a selected container that must read before its neighbours. Not the field outline — that is border.control. WCAG 1.4.11 + APCA Lc 45 against the page, SOLVED on the alpha ladder ({ui-a:…}): {black-a.7} in light, {white-a.8} in dark for the default system.",
       "Border/focus": "[ROLE: A11y Focus Ring] The keyboard focus-visible boundary on every interactive element of the default / accent variant. SOLVED per theme ({focus:accent.9}): the first accent tone from 9 that clears WCAG 1.4.11 (3:1) on the page — tone 9 in both themes for the default system. Severity, neutral and inverse variants take their own boundary (status.<sev>.border-strong, border.strong, border.inverse). The translucent halo outside it is border.ring.*.",
-      "Border/ring/default": "[ROLE: Focus Halo] Translucent glow outside border.focus. Paired with border.focus on EVERY focused control (shadcn border-ring + ring-[3px]): the edge turns to border.focus, this halo sits outside it. Never the only focus cue. Decoration, NOT a boundary — never measured for WCAG 1.4.11; border.focus is the contrast-bearing part. Replaces a hardcoded 40% alpha in the preview specimens. A field in an error/success state reuses status.<sev>.border for its halo — there is no separate per-severity ring role.",
+      "Border/ring/default": "[ROLE: Focus Ring] The translucent accent ring drawn OUTSIDE a focused control (a 2px outside stroke on the solid Button and IconButton; a field also turns its edge to border.focus). Accent Alpha/08. Never the only focus cue. Decoration, NOT a boundary — never measured for WCAG 1.4.11; border.focus is the contrast-bearing part. The neutral Button focuses with border.strong and the critical one with status.critical.ring: the ring wears the colour of the control it belongs to.",
+      "Status/critical/ring": "[ROLE: Critical Focus Ring] The translucent red ring outside a focused critical (destructive) button. Error Alpha/08, the red twin of border.ring.default. Decoration, never the only focus cue. Not the edge of an alert — that stays status.critical.border.",
       "Border/rim-highlight": "[ROLE: Elevation Rim] 1px light rim along the top of an elevated surface in dark mode. Below a near-black page only ~5% of the luminance range is left to spend downward, so elevation has to be bought with light, not shadow — this is the token for the rim darkShadow() already paints.",
       "Border/accent": "[ROLE: Accent Border] Border painted in the brand accent — a selected card, a toggled button, any element that needs its stroke to read as the primary accent. For keyboard focus use border.focus."
     },

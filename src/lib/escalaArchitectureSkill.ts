@@ -571,7 +571,7 @@ Naming, everywhere:
 | Fill | Ink on it |
 |---|---|
 | \`surface.page\` / \`surface.layer-1\` / \`surface.layer-2\` | \`content.primary\`, \`content.secondary\` |
-| \`action.primary.default\\|hover\\|pressed\` | \`content.on-action\` (solved: may be near-black — never assume white) |
+| \`action.primary.default\\|hover\\|pressed\` | \`content.on-action\` (solved per theme: a light label on a vivid Dark accent — judged on perceived contrast, APCA Lc ≥ 60 — or the near-black ink when the hue cannot carry it. Green, yellow and orange take the dark ink; never assume white) |
 | \`action.secondary.default\\|hover\\|pressed\` | \`content.on-secondary\` |
 | \`action.ghost.*\`, outline buttons | \`content.primary\` |
 | \`action.disabled.default\` | \`content.disabled\` |
@@ -596,11 +596,14 @@ Links use \`content.link.default\` / \`.hover\`, not \`content.accent\`.
 | Resting outline of an input, select, checkbox, outline button | \`border.control\` → hover \`border.control-hover\` |
 | Invalid / warning / valid field | \`status.<sev>.border-strong\` |
 | Edge of an alert or banner | \`status.<sev>.border\` |
-| Keyboard focus | \`border.focus\` (the boundary) **plus** \`border.ring.default\` (the halo outside it) |
+| Keyboard focus on a field, outline / ghost / link button | \`border.focus\` (the boundary, inside) **plus** \`border.ring.default\` (the ring outside it) |
+| Keyboard focus on a SOLID button (default · secondary · critical, Button and IconButton) | ONE 2px ring fully outside, in the colour of the control: \`border.ring.default\` (accent), \`border.strong\` (neutral), \`status.critical.ring\` (critical). Nothing inside |
 | Selected / brand-coloured stroke | \`border.accent\` |
 
 Width is a separate token: \`stroke.divider\`, \`stroke.control\`, \`stroke.focus\`.
 There is ONE focus ring, also on an invalid field — focus wins over error.
+
+**Solid buttons have no outside stroke.** The fill is the control. Depth comes from the top highlight (\`elevation.highlight\`, 2px inside) and, on a Button, the label's text shadow (0 1px 0, black 15 %). A hard edge round a vivid fill reads as noise — in Dark it drew a pale halo. If a design needs a stronger edge for accessibility, that is a High-contrast mode, not a stroke on the default.
 
 ### Dimensions
 

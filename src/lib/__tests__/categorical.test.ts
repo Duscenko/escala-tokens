@@ -43,7 +43,7 @@ const amberView = buildArchitectureView('categorical', {
 } as never, amberSystem.errorSeed)!
 
 describe('the categorical catalogue is complete', () => {
-  it('ships 83 roles across six groups', () => {
+  it('ships 84 roles across six groups', () => {
     // Base 51 + 10 (phase 0) + 2 (phase 1 stroke split) = 63; then the
     // semantic-border audit re-homed the severity strokes:
     //
@@ -69,7 +69,9 @@ describe('the categorical catalogue is complete', () => {
     //  (`content.inverse-secondary`, `surface.inverse-muted`, `border.inverse`)
     //  and the Elevation group (`shadow-key`, `shadow-ambient`, `shadow-ring`,
     //  `highlight`) → 83.
-    expect(roleIds).toHaveLength(83)
+    //  +1 (2026-11-17, the Figma file): `action.primary.border`, the primary
+    //  solid's outside edge (Dark no longer strokes the ramp's palest step) → 84.
+    expect(roleIds).toHaveLength(84)
     for (const group of ['content', 'action', 'surface', 'status', 'border', 'elevation']) {
       expect(view.categories.some((c) => c.key === group), group).toBe(true)
     }
@@ -82,8 +84,11 @@ describe('the categorical catalogue is complete', () => {
   it('gives every severity the identical role shape', () => {
     const SHAPE = ['surface', 'surface-pressed', 'content', 'surface-solid', 'surface-solid-hover', 'surface-solid-pressed', 'on-solid', 'border', 'border-strong']
     for (const sev of ['critical', 'warning', 'success', 'info']) {
+      // `critical.ring` (2026-11-17) is the focus ring of the destructive Button: the
+      // other severities have no solid button of their own, so no ring role.
       const own = roleIds.filter((id) => id.startsWith(`status.${sev}.`))
-        .map((id) => id.slice(`status.${sev}.`.length)).sort()
+        .map((id) => id.slice(`status.${sev}.`.length))
+        .filter((k) => !(sev === 'critical' && k === 'ring')).sort()
       expect(own, sev).toEqual([...SHAPE].sort())
     }
   })
@@ -411,7 +416,14 @@ describe('action.primary hover/pressed — solved relative to the resolved solid
         expect(new Set([d, h, p]).size, `${name}/${appearance} states`).toBe(3)
         // Monotonic: both steps go the same way, so the ramp reads as one
         // direction of travel rather than oscillating around the fill.
-        expect(Math.sign(h - d), `${name}/${appearance} direction`).toBe(Math.sign(p - h))
+        // Except the Dark violet (owner's call 2026-11-17): it LIFTS on hover and
+        // SINKS on press (09 · 10 · 08), as a real press does.
+        if (name === 'violet' && appearance === 'dark') {
+          expect(Math.sign(h - d), 'violet/dark hover lifts').toBe(1)
+          expect(Math.sign(p - d), 'violet/dark press sinks').toBe(-1)
+        } else {
+          expect(Math.sign(h - d), `${name}/${appearance} direction`).toBe(Math.sign(p - h))
+        }
       }
     }
   })

@@ -258,7 +258,7 @@ function designReviewSkill(json: TokenJSON, project: string, slug: string): stri
   const typeRoles = Object.keys(json.typography?.roles ?? {})
   const radiusRows = RADIUS_GROUPS.map((g) =>
     `| ${g.label} | ${g.hint} | ${g.roles.filter((r) => json.radiusRoles?.[r] !== undefined).map((r) => `\`${roleFigmaName('radius', r)}\``).join(', ')} | ${g.roles.map((r) => radiusPx(json, r)).join(', ')} |`)
-  const ring = roles.has('border.ring.default') ? ` The halo around it is \`${F('border.ring.default')}\`.` : ''
+  const ring = roles.has('border.ring.default') ? ` Outside it sits the ring \`${F('border.ring.default')}\`; on a solid button that ring is the only focus mark.` : ''
 
   return `---
 name: ${slug}-design-review

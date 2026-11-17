@@ -158,7 +158,7 @@ export const ALGORITHMS: ColorAlgorithm[] = ['radix', 'tailwind', 'ant', 'defaul
 // `fgBackdrop` still throws, so a genuine ink-as-wash modelling error stays
 // loud. Defaults to `bg` — a border is measured for the contrast it creates
 // against the surface it sits on.
-export type Pairing = { fg: string; bg: string; intent: IntentClass; backdrop?: string; fgBackdrop?: string }
+export type Pairing = { fg: string; bg: string; intent: IntentClass; /** Intent to use in a dark theme, when it differs (a label judged on APCA alone). */ intentDark?: IntentClass; backdrop?: string; fgBackdrop?: string }
 
 const OPAQUE_HEX = /^#[0-9a-f]{6}$/i
 const TRANSLUCENT_HEX = /^#[0-9a-f]{8}$/i
@@ -191,7 +191,7 @@ export const CURATED_PAIRINGS: Partial<Record<SemanticArchitecture, Pairing[]>> 
     // (Lc 60) rather than the 400-weight running-copy row. See `IntentClass`
     // for the measurement that forced the distinction — auditing a button as
     // body copy is what pushed every dark-theme solid onto a near-white pastel.
-    { fg: 'content.on-action', bg: 'action.primary.default',  intent: 'action-label' },
+    { fg: 'content.on-action', bg: 'action.primary.default',  intent: 'action-label', intentDark: 'action-label-perceived' },
     { fg: 'content.on-secondary', bg: 'action.secondary.default', intent: 'action-label' },
     { fg: 'content.on-secondary', bg: 'action.secondary.hover',   intent: 'action-label' },
     { fg: 'content.on-secondary', bg: 'action.secondary.pressed', intent: 'pressed-label' },
@@ -348,10 +348,11 @@ export function auditResolvedRoles(
         }
       }
       if (!OPAQUE_HEX.test(bg)) continue
-      const v = evaluate(measuredFg, bg, p.intent)
+      const pairIntent = theme === 'dark' && p.intentDark ? p.intentDark : p.intent
+      const v = evaluate(measuredFg, bg, pairIntent)
       out.push({
         architecture: arch, system, theme, role: p.fg, against: p.bg,
-        intent: p.intent, fg: measuredFg, bg, tone: -1,
+        intent: pairIntent, fg: measuredFg, bg, tone: -1,
         wcag: Number(v.wcag.toFixed(2)), apcaLc: Number(v.apcaLc.toFixed(1)),
         passesWcag: v.passesWcag, passesApca: v.passesApca,
       })

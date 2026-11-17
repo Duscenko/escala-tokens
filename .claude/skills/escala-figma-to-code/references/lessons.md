@@ -571,3 +571,18 @@ Source: the file's «AvatarGroup Prototype» (868:28472): four PHOTO avatars + t
 | The file's bars are always visible with a track | Radix hides them until you scroll | `type="always"` on the root; the viewport is `role="region"` when named (axe `aria-prohibited-attr` on a bare labelled div) and joins the tab order |
 | Radix wraps the viewport content in a `display: table` div | A vertical Content slot would not fill the width | `[&>div]:!block` on the viewport and `w-full` (vertical) / `w-max min-w-full` (horizontal, both) on the Content div; measured 190 wide inside the 1px border |
 | A fade that never goes away | The file draws it permanently when FadeVisible | It hides itself when the scroll reaches the end (`scrollTop` / `scrollLeft` check on scroll and resize) |
+
+## Solid buttons, Create UI style (2026-11-17)
+
+Decided with the owner, on a Figma experiment page first, then applied to Button 4:5066 and IconButton 614:785 (default · secondary · critical, solid). Read them before touching a solid button.
+
+| Trap | What it looked like | The fix (where it lives) |
+|---|---|---|
+| The solid's outside stroke is the intent's PRESSED tone | Light: a deeper edge, fine. Dark: the pressed tone is the palest step of the ramp, so the edge was a near-white halo round a violet fill | No outside stroke on any solid. `buttonPaint` (`recipes/actions.ts`) no longer sets `outerStroke`; the fill is the control, depth is the top highlight |
+| Focus on a solid drawn as a 2px INSIDE edge + a halo | Dark: the edge (`Border/focus`) was the same hue as the fill, so only the halo showed; the neutral ring looked opaque and grey | ONE ring, 2px, fully outside: recipe prop `halo` with `border.ring.default` (accent, Alpha/08) · `border.strong` (neutral) · `status.critical.ring` (critical). Nothing inside |
+| A bound paint written with a PLACEHOLDER base colour | `setBoundVariableForPaint({color: grey})`: the file rendered the placeholder (grey 128) instead of the variable, in the app and in screenshots | Write the RESOLVED colour of the variable as the base, then bind it. Check a render, not just `boundVariables` |
+| `DROP_SHADOW` with spread as a focus ring | Painted nothing (same cause as `outerEdge` above) | The ring is a frame stroked OUTSIDE (`focus-ring`); in CSS it is a 0-blur box-shadow |
+| The label's shadow | Create UI lifts the label with `text-shadow-2xs` | `Shadow/text-2xs` effect style (0 1px 0, black 15 %) on the Button label only; recipe prop `textShadow` on the `label` slot. IconButton has no label |
+| White label on the Dark accent judged by WCAG 2 | 4.1:1 / 3.4:1 fail 4.5 though the label reads at Lc 73 / 66 | Owner's call: Dark accent label is judged on APCA (`action-label-perceived`, Lc 60); a hue that fails it (green, yellow, orange) takes the dark ink. `SOLID_JOB.accent.dark` in `semanticArchitectures.ts`; the strict ratio waits for a High-contrast mode |
+| Hover and pressed both "away from the ink" | The Dark violet went pale lavender on hover and almost white on press | Dark accent states are Dark 09 · 10 · 08: lifts on hover, sinks on press (`SOLID_JOB … states: [1, -1]`) |
+| Editing the file | Rule 2 says never edit the file | Only when the owner asks for the change in the file itself (this round: new Dark ramp, `Action/primary/*`, `Content/on-action`, `Border/ring/default`, `Status/critical/ring`, `Shadow/text-2xs`, the solid variants). Show it on an experiment page first and wait for approval |
