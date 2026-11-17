@@ -1,4 +1,5 @@
 import { useEffect, useId, useRef, useState, type ComponentType, type ReactNode } from 'react'
+import { STORYBOOK_URL } from '../../lib/storybookLinks'
 import { motion, useReducedMotion } from 'framer-motion'
 import { TOKEN_SCHEMA_VERSION } from '../../lib/tokenGenerator'
 import { useI18n } from '../../lib/i18n'
@@ -1129,6 +1130,7 @@ function AboutFooter({ onStart, onOpenDocsPage, onOpenComponents }: {
         items={[
           { label: t('Generator'), onClick: onStart, appHref: START_PATH },
           { label: t('Components'), onClick: onOpenComponents, appHref: '/components' },
+          { label: 'Storybook', href: STORYBOOK_URL, external: true },
           { label: t('Use in Figma'), onClick: () => onOpenDocsPage('figma'), appHref: '/docs/figma' },
           { label: t(OPEN_BETA ? 'Open beta' : 'Pricing'), href: PRICING_PATH },
           { label: t('Changelog'), onClick: () => onOpenDocsPage('changelog'), appHref: '/docs/changelog' },
@@ -1351,7 +1353,13 @@ export function AboutHome({
               title={t('A component catalogue, painted with your tokens.')}
               body={t('{count} components, each on one page: a live playground, every variant the Figma library ships, and the snippet for exactly what is on screen.', { count: COMPONENT_KEYS.length })}
               media={SHOTS.components}
-              action={<StepLink appHref="/components" onClick={onOpenComponents}>{t('Browse components')}</StepLink>}
+              action={
+                <span className="flex flex-wrap items-center justify-end gap-x-5 gap-y-2">
+                  <StepLink appHref="/components" onClick={onOpenComponents}>{t('Browse components')}</StepLink>
+                  {/* The Escala reference system (the Figma file's palette), not the visitor's brand. */}
+                  <StepLink href={STORYBOOK_URL}>{t('See the Escala system in Storybook')}</StepLink>
+                </span>
+              }
             />
             <WorkflowStep
               label={t('03 · Code and agents')}
