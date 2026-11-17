@@ -1,5 +1,6 @@
 // Escala component: SocialLoginButton, the Figma set of the same name (364:20), 1:1: Brand × Appearance (white · brand) × Size ×
-// State × IconOnly. A Button painted by its own recipe; the mark is third-party artwork in the label's ink.
+// State × IconOnly. A Button painted by its own recipe. The mark is the file's own `logo/<Brand>`: in colour on
+// `white`, one colour in the label's ink on `brand` and when disabled (brandLogos.ts).
 import * as React from 'react'
 import { Button } from './button'
 import { ProviderMark } from './brand-artwork'
@@ -40,10 +41,12 @@ function SocialLoginButton({ brand, provider, appearance = 'white', iconOnly = f
       data-appearance={appearance}
       data-icononly={iconOnly ? 'true' : 'false'}
       aria-label={iconOnly && typeof text === 'string' ? text : undefined}
-      className={cn(!iconOnly && 'w-full', className)}
+      className={cn(!iconOnly && 'w-full', iconOnly && '[&>[data-part="Button.label"]:empty]:hidden', className)}
+      // The mark is the Button's leading slot, so it sits beside the label on the
+      // control's centre line with the recipe's gap (inside the label it rode the baseline).
+      leading={<span data-part="SocialLoginButton.icon" className="inline-flex shrink-0"><ProviderMark provider={name} colored={appearance === 'white' && !(props.disabled || props.forceState === 'Disabled')} /></span>}
       {...props}
     >
-      <span data-part="SocialLoginButton.icon" className="inline-flex shrink-0"><ProviderMark provider={name} /></span>
       {!iconOnly && <span data-part="SocialLoginButton.label" className="min-w-0 truncate">{text}</span>}
     </Button>
   )

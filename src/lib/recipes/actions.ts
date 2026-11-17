@@ -577,7 +577,8 @@ export const BUTTON_GROUP_DIVIDER: ComponentRecipe = {
 // `Content/on-action`, `Border/focus`) with a 1px edge in its pressed step and the solid-control highlight; Disabled
 // drops to Action/disabled/default with no edge. Radius/action, Size/control-md (40) · control-lg (48), padding
 // inset-control, gap gap-control, Type/button, a 20px mark. IconOnly is a square of the Size and no label.
-// The provider mark is third-party artwork (brand-artwork.tsx), painted in the label's ink.
+// The provider mark is the file's `logo/<Brand>` (brandLogos.ts): in colour on `white`, one colour in the label's ink on
+// `brand` and Disabled.
 
 export const SOCIAL_BRAND_NAMES = ['Google', 'Apple', 'Discord', 'Dribbble', 'Facebook', 'GitHub', 'LinkedIn', 'Slack', 'X'] as const
 export const SOCIAL_APPEARANCES = ['white', 'brand'] as const
