@@ -80,7 +80,9 @@ import {
   type FoundationRow,
 } from '../../lib/adoptPreset'
 import { StyleOverview } from './StyleOverview'
-import { PICK_TWO_COLOR_PAIR, pairPalette, type PickTwoColorPairDetail } from '../../lib/twoColorPairs'
+import { PICK_TWO_COLOR_PAIR, pairPalette, type PickTwoColorPairDetail, type TwoColorPalette } from '../../lib/twoColorPairs'
+import { PICK_CURATED_COLOR, curatedPalette, type PickCuratedColorDetail } from '../../lib/curatedColors'
+import { CuratedColorStrip } from './CuratedColorStrip'
 import { nextShuffle, randomLabelAfterTweak, styleLabelAfterShuffle } from '../../lib/randomTheme'
 import { isScaffoldTheme, myThemeKeys, resolveListedTheme } from '../../lib/themeLibrary'
 import { presetHarmony, themeStylePreset } from '../../lib/themePresets'
@@ -2788,11 +2790,12 @@ export default function ThemeQuickSettingsRail({
   // deepened for Light (`lightAccentOf`) — so the board's Light / Dark switch
   // shows one brand. The board opens on Dark, the pair as the collection shows
   // it. Only the rail that owns the board's Random listens.
-  const applyPairRef = useRef<(detail: PickTwoColorPairDetail) => void>(() => {})
-  applyPairRef.current = ({ pair, strength }) => {
-    const palette = pairPalette(pair, strength)
-    commit(t('Pair applied'), (themeKey) => {
-      onRandomBoardAppearance?.('dark')
+  // A curated colour (`curatedColors`, after HeroUI) lands the same way, on the
+  // appearance the board is already showing — its accent reads in both.
+  const applyPaletteRef = useRef<(palette: TwoColorPalette, label: string, appearance?: 'dark') => void>(() => {})
+  applyPaletteRef.current = (palette, label, appearance) => {
+    commit(label, (themeKey) => {
+      if (appearance) onRandomBoardAppearance?.(appearance)
       setNeutralTint(palette.neutralTint)
       applyNeutral(palette.neutral, themeKey)
       // After the neutral: the accent ramps anchor to the pages it produced.
@@ -2808,9 +2811,21 @@ export default function ThemeQuickSettingsRail({
   const ownsBoardRandom = Boolean(randomHandle)
   useEffect(() => {
     if (!ownsBoardRandom) return
-    const onPick = (event: Event) => applyPairRef.current((event as CustomEvent<PickTwoColorPairDetail>).detail)
+    const onPick = (event: Event) => {
+      const { pair, strength } = (event as CustomEvent<PickTwoColorPairDetail>).detail
+      applyPaletteRef.current(pairPalette(pair, strength), t('Pair applied'), 'dark')
+    }
+    const onCurated = (event: Event) => {
+      const { color } = (event as CustomEvent<PickCuratedColorDetail>).detail
+      applyPaletteRef.current(curatedPalette(color), t('Colour applied'))
+    }
     window.addEventListener(PICK_TWO_COLOR_PAIR, onPick)
-    return () => window.removeEventListener(PICK_TWO_COLOR_PAIR, onPick)
+    window.addEventListener(PICK_CURATED_COLOR, onCurated)
+    return () => {
+      window.removeEventListener(PICK_TWO_COLOR_PAIR, onPick)
+      window.removeEventListener(PICK_CURATED_COLOR, onCurated)
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [ownsBoardRandom])
 
   const typeScaleMode = inferTypeScaleMode(typography.sizes)
@@ -2996,6 +3011,17 @@ export default function ThemeQuickSettingsRail({
                 <BrandShipsChoice value={shippedThemes(store.brandThemes, previewTheme)} onChange={pickShips} />
               </div>
             )}
+            {/* Suggested colours first: a first visitor sees there ARE good
+                starting points before six hex fields (`curatedColors`). */}
+            <div className={RAIL_BLOCK}>
+              <CuratedColorStrip
+                appearance={rampAppearance}
+                currentAccent={accentSummaryHex}
+                label={t('Suggested colours')}
+                hint={<InfoHint>{t('Hand-picked accents. One click sets the accent, the neutral and the four states, in Light and Dark.')}</InfoHint>}
+                onPick={(color) => applyPaletteRef.current(curatedPalette(color), t('Colour applied'))}
+              />
+            </div>
             <div className={RAIL_BLOCK}>
               <ColorRolesPanel
                 appearance={rampAppearance}

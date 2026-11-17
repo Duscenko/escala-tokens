@@ -149,8 +149,8 @@ One line each. Detail: search the archive or the plan named.
   collections · agent package (AGENTS.md, llms.txt, SKILL, references; offline) · Figma payload;
   all checked by the export watchdog. (`export-watchdog.md`)
 - **Components & Blocks on the platform mirror the Storybook** (`lib/platformCatalogue.ts` reads
-  `spec/storybook-families.json`; a family's parts open from its Anatomy section). Blocks are a tab of
-  Components (`BlocksView`, `blocks/blockRegistry.tsx`); a new block story needs an entry there
+  `spec/storybook-families.json`; a family's parts open from its Anatomy section). Blocks live inside
+  Components as the Elements · Blocks switch (`BlocksView`, `blocks/blockRegistry.tsx`); a new block story needs an entry there
   (`platformBlocks.test.ts`).
 - **Configurator UI:** top bar About · Generator · Components · Docs; Generator rail
   Home · Board · Variables · Code · Components; right inspector; ship doors CSS · Figma · Agent.

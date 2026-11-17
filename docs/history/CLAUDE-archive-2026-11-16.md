@@ -6132,3 +6132,17 @@ npm run bundle:plugin  # → public/escala-figma-plugin.zip + src/lib/pluginVers
 >   like the Generator's (`navInMenu={catalogueTab}`, no Plugin link): "Escala Tokens Beta | Components", sections in
 >   ☰. The tabs are the inspector's segmented control (`CHROME_CONTROL_SHELL` track + a sliding `SEGMENT_SELECTED_FILL`
 >   key, `SEGMENT_INACTIVE` for the other) — an inverted white pill read as a heavy button and was dropped.
+> **UPDATE (2026-11-17): CURATED COLOURS — a third deck in Random's menu, from Create UI and HeroUI
+> (`lib/curatedColors.ts`).** FIRST Create UI's eight (createui.co/docs/colors, Tailwind v4: indigo · blue · sky ·
+> green · yellow · orange · red · fuchsia), each a PAIR — the 600 step in Light, the 500 in Dark — on a zinc neutral
+> (`#71717b`) with Create UI's own severities; the owner's favourites. THEN HeroUI's sixteen accents (read from heroui.com/themes' own popover), listed first,
+> above Rich / Soft pairs. HeroUI's model, measured from its generated globals.css: one accent, IDENTICAL in Light
+> and Dark (only the ink on it flips); near-grey neutrals at the accent's hue (chroma ≈ 0.0015); fixed vivid
+> severities. Escala keeps it with its own rules: Dark = the hex verbatim unless it fails on the dark page
+> (`darkTwinOf` — only Ink, Royal blue, Teal move), Light = verbatim unless it fails on the light page, then
+> `lightAccentOf` (the 2026-10-22 visibility rule, so pale accents deepen: Sunflower `#f8d559` → `#8d7300`). Neutral
+> seed = the accent's hue at low chroma, `subtle`; states = HeroUI's danger · warning · success + canonical info.
+> `curatedPalette` returns the pairs' `TwoColorPalette`, so the menu (`PAIR_DECKS` + `deckTiles`) and the rail
+> (`applyPaletteRef`, event `PICK_CURATED_COLOR`) apply both the same way; a curated pick keeps the board's
+> appearance and sets no Random level. Not dealt by the dice (`nextShuffle`) yet. Locked by `curatedColors.test.ts`.
+
