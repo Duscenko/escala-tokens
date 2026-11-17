@@ -417,8 +417,15 @@ export function rolesForPaints(
     // are one tone): the slot decides which one this paint is. A stroke takes
     // the border role when there is one; a fill or an ink never does.
     const isBorder = (id: string) => id.startsWith('border.') || /\.border(-|$)/.test(id)
-    const slotted = owned.filter((id) => (paint.where === 'stroke') === isBorder(id))
-    for (const id of slotted.length ? slotted : owned) {
+    let slotted = owned.filter((id) => (paint.where === 'stroke') === isBorder(id))
+    // An ink is never a surface. When the declared union only offers a
+    // surface for this hex (`surface.inverse` and `content.secondary` are one
+    // value in dark), the measured glyph is the content role that shares it.
+    if (paint.where === 'ink') {
+      const inks = slotted.filter((id) => !isFillRole(id))
+      slotted = inks.length ? inks : candidates.filter(isInkRole)
+    }
+    for (const id of slotted.length ? slotted : owned.filter((id) => paint.where !== 'ink' || !isFillRole(id))) {
       if (roles.some((role) => role.id === id)) continue
       roles.push({ id, css: paint.css, where: paint.where })
     }
@@ -617,12 +624,28 @@ export function pairTabMenuScopes(
   return out
 }
 
-/** Chrome fills/strokes prefer surface and border roles when several ids
- *  share the hex — a card should name `surface.layer-1`, not whatever
- *  action/content role happens to collide with it. */
-function chromeIds(candidates: string[]): string[] {
-  const preferred = candidates.filter((id) => id.startsWith('surface.') || id.startsWith('border.'))
-  return preferred.length ? preferred : candidates
+/** Which family of role a chrome paint can name when several ids share the
+ *  hex — decided by the SLOT it was painted in. A card fill names
+ *  `surface.layer-1`, a stroke a `border.*`, and an INK a `content.*` (or a
+ *  status ink): `surface.inverse` and `content.secondary` are one hex in dark,
+ *  and a muted caption reported as `surface.inverse` read as text painted with
+ *  a surface token. */
+const isInkRole = (id: string) => id.startsWith('content.') || /\.(content|on-solid)$/.test(id)
+const isStrokeRole = (id: string) => id.startsWith('border.') || /\.border(-|$)/.test(id)
+const isFillRole = (id: string) => id.startsWith('surface.') || /\.surface(-|$)/.test(id)
+
+export function chromeIds(candidates: string[], where: PaintSlot): string[] {
+  const fits = where === 'ink' ? isInkRole : where === 'stroke' ? isStrokeRole : isFillRole
+  const preferred = candidates.filter(fits)
+  // Chrome text (a heading, a caption) is page ink; the on-fill inks
+  // (`content.on-action`, `*.on-solid`, `content.inverse`) only share its hex.
+  const plain = where === 'ink' ? preferred.filter((id) => !/(^|\.)on-|inverse/.test(id)) : preferred
+  if (plain.length) return plain
+  if (preferred.length) return preferred
+  // Nothing of the slot's own family shares the hex: never name a role of
+  // the WRONG family either (a surface for an ink, a content role for a fill).
+  const neutral = candidates.filter((id) => !(where === 'ink' ? isFillRole(id) || isStrokeRole(id) : isInkRole(id)))
+  return neutral.length ? neutral : candidates
 }
 
 /** A corner, a text run, or the element's own height, already in px. */
@@ -897,21 +920,19 @@ export function inspectPage(t: PreviewTokens): Inspection {
 
 /** A group's members and their combined roles. */
 export interface GroupInspection {
+  /** What the CONTAINER itself paints — its fill, edge, corner and the text
+   *  that is not a component (its heading, a caption). Not the union of its
+   *  children: two cards holding the same controls read near-identical that
+   *  way, which says nothing about the card you picked. */
   roles: InspectedRole[]
   /** Catalogue keys of the inspectable components inside, in DOM order. */
   members: string[]
+  /** The member elements, same order — the panel lists them to select one. */
+  memberEls: Element[]
+  /** The container's own first line of text (`Verify account`), or null. */
+  title: string | null
 }
 
-/**
- * Every role painted by the components INSIDE a container — the answer to
- * "what does this whole cluster consume", which is the question you're asking
- * when you point at the box rather than at one control in it.
- *
- * Membership is read from the DOM (`[data-inspect]` descendants), never
- * declared on the container: a module that gains a component gains its roles
- * here with nothing to update, and a label listing components a module no
- * longer holds is impossible to write.
- */
 /** One WCAG contrast pair the inspector can verify from resolved roles. */
 export interface ContrastCheck {
   id: string
@@ -1042,8 +1063,13 @@ export function accessibilityReport(roles: InspectedRole[], pageCss: string): Ac
   return { contrasts, touch }
 }
 
+/**
+ * A container (a collage module): its OWN paints, plus which components it
+ * holds. Membership is read from the DOM (`[data-inspect]` descendants), never
+ * declared on the container, so the list cannot name a member it no longer
+ * renders. Selecting a member is how you read that member's tokens.
+ */
 export function inspectGroup(t: PreviewTokens, el: Element): GroupInspection {
-  const members: string[] = []
   const roles: InspectedRole[] = []
   const arch = t.archTokens
   if (arch) {
@@ -1051,32 +1077,33 @@ export function inspectGroup(t: PreviewTokens, el: Element): GroupInspection {
     for (const paint of observeChromePaints(el)) {
       const candidates = index.get(paint.key)
       if (!candidates) continue
-      for (const id of chromeIds(candidates)) {
+      for (const id of chromeIds(candidates, paint.where)) {
         if (roles.some((existing) => existing.id === id)) continue
         roles.push({ id, css: paint.css, where: paint.where })
       }
     }
   }
-  for (const child of Array.from(el.querySelectorAll('[data-inspect]'))) {
-    const key = child.getAttribute('data-inspect') || ''
-    if (!key) continue
-    members.push(key)
-    // Unmeasured children dump the component's WHOLE union — six variants
-    // that aren't on screen. A GradientAvatar with a CSS gradient (no
-    // `backgroundColor` to match) would otherwise inject `content.primary`
-    // as the accent hex, which is the cyan swatch on a white heading.
-    const inspection = inspectElement(t, key, child)
-    if (!inspection.measured) continue
-    for (const role of inspection.roles) {
-      if (roles.some((existing) => existing.id === role.id)) continue
-      roles.push(role)
-    }
-  }
+  const memberEls = Array.from(el.querySelectorAll('[data-inspect]'))
+    .filter((child) => !!child.getAttribute('data-inspect'))
+  const members = memberEls.map((child) => child.getAttribute('data-inspect') as string)
   // The frame itself — a module's own corner, a title that isn't a
-  // component. Nested markers were already measured above.
+  // component. Nested markers are deliberately NOT folded in.
   for (const role of measureGeometry(t, el)) {
     if (roles.some((existing) => existing.id === role.id)) continue
     roles.push(role)
   }
-  return { roles, members }
+  return { roles, members, memberEls, title: groupTitle(el) }
+}
+
+/** The first run of text the container paints itself (not inside a
+ *  component) — what a person would call the card. */
+function groupTitle(el: Element): string | null {
+  const nodes = [el, ...Array.from(el.querySelectorAll('*')).slice(0, MAX_NODES)]
+  for (const node of nodes) {
+    if (node !== el && node.closest('[data-inspect]')) continue
+    if (!paintsText(node)) continue
+    const text = (node.textContent ?? '').replace(/\s+/g, ' ').trim()
+    if (text) return text.length > 40 ? `${text.slice(0, 39)}…` : text
+  }
+  return null
 }

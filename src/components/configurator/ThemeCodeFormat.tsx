@@ -255,7 +255,7 @@ function ThemeExportHeader({ name, facts, onEdit }: { name: string; facts: Expor
         [compactCount(facts.primitives), t('primitives')],
         // "roles", the word Export uses for the same number (audit 2026-11-05).
         [compactCount(facts.tokens), t('roles')],
-        [String(facts.modes), t('modes')],
+        [String(facts.modes), facts.modes === 1 ? t('mode') : t('modes')],
         [compactCount(facts.cssBytes), 'CSS'],
       ]
     : []
