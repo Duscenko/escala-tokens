@@ -190,38 +190,42 @@ describe('focus', () => {
     }
   })
 
-  // The focus edge is the one each Figma variant strokes in its Focused state
-  // (design-plans/button-contract.md); every variant adds the border.ring.default
-  // halo. The edge is not one colour yet: the file strokes secondary · solid with
-  // border.strong and Button critical solid / outline with the critical border.
-  it.each([
-    ['default', 'solid', 'color.border.focus'],
-    ['default', 'outline', 'color.border.focus'],
-    ['default', 'ghost', 'color.border.focus'],
-    ['default', 'link', 'color.border.focus'],
-    ['secondary', 'solid', 'color.border.focus'],
-    ['secondary', 'outline', 'color.border.focus'],
-    ['secondary', 'ghost', 'color.border.focus'],
-    ['secondary', 'link', 'color.border.focus'],
-    ['critical', 'solid', 'color.border.focus'],
-    ['critical', 'outline', 'color.border.focus'],
-    ['critical', 'ghost', 'color.border.focus'],
-    ['critical', 'link', 'color.border.focus'],
-  ])('Button %s · %s focuses with edge %s and the ring halo', (variant, appearance, edge) => {
-    const root = resolveRecipe(COMPONENT_RECIPES.Button, { Variant: variant, Appearance: appearance, Size: 'default', State: 'Focused' }).root
-    expect(root.focus).toBe(edge)
-    expect(root.ring).toBe('color.border.ring.default')
+  // Focus, owner decision 2026-11-17 (Button 4:5066, IconButton 614:785): EVERY
+  // appearance focuses the same way — the Default look plus ONE ring, 2px, 1px
+  // outside the edge, in the colour of the intent. Nothing is drawn inside, so a
+  // focused button only differs from its Default by the ring.
+  const RING: Record<string, string> = {
+    default: 'color.border.ring.default',
+    secondary: 'color.border.ring.neutral',
+    critical: 'color.status.critical.ring',
+  }
+  it.each(['Button', 'IconButton'].flatMap((key) =>
+    Object.keys(RING).flatMap((variant) => ['solid', 'outline', 'ghost', 'link'].map((appearance) => [key, variant, appearance]))),
+  )('%s %s · %s focuses with one ring 1px off the edge, the Default look inside', (key, variant, appearance) => {
+    const r = (state: string) => resolveRecipe(COMPONENT_RECIPES[key], { Variant: variant, Appearance: appearance, Size: 'default', State: state }).root
+    const focused = r('Focused'), rest = r('Default')
+    expect(focused.gapRing).toBe(RING[variant])
+    for (const k of ['focus', 'ring', 'halo', 'outerStroke'] as const) expect(focused[k] ?? 'none', k).toBe('none')
+    expect({ ...focused, gapRing: undefined }).toEqual({ ...rest, gapRing: undefined })
+    for (const state of ['Default', 'Hover', 'Pressed', 'Loading', 'Disabled']) expect(r(state).gapRing ?? 'none', state).toBe('none')
+  })
+  it.each(['Button', 'IconButton'].flatMap((key) => Object.keys(RING).map((variant) => [key, variant])))(
+    '%s %s · solid has no outside stroke, and the Button label carries its shadow',
+    (key, variant) => {
+      for (const state of ['Default', 'Hover', 'Pressed', 'Loading', 'Focused', 'Disabled']) {
+        const p = { Variant: variant, Appearance: 'solid', Size: 'default', State: state }
+        expect(resolveRecipe(COMPONENT_RECIPES[key], p).root.outerStroke ?? 'none', state).toBe('none')
+        const label = resolveRecipe(COMPONENT_RECIPES[key], p).label
+        expect(label?.textShadow, `${state} label shadow`).toBe(key !== 'Button' ? undefined : state === 'Disabled' ? 'none' : 'text-2xs')
+      }
+    })
+  it('the focus ring is an outline 1px off the edge', () => {
+    expect(RECIPE_CSS).toContain('outline-offset: 1px')
+  })
+  it('the label shadow is the file\'s Shadow/text-2xs', () => {
+    expect(RECIPE_CSS).toContain('text-shadow: 0 1px 0 rgb(0 0 0 / 0.15)')
   })
 
-  // IconButton keeps its own edge + ring on two solid fills (Figma file, 2026-11-12).
-  it.each([
-    ['secondary', 'color.border.strong', 'color.border.subtle'],
-    ['critical', 'color.status.critical.border-strong', 'color.status.critical.border'],
-  ])('IconButton %s · solid focuses with edge %s and ring %s, as the Figma file does', (variant, edge, ring) => {
-    const root = resolveRecipe(COMPONENT_RECIPES.IconButton, { Variant: variant, Appearance: 'solid', Size: 'default', State: 'Focused' }).root
-    expect(root.focus).toBe(edge)
-    expect(root.ring).toBe(ring)
-  })
 
   // Figma's render of the solid Button (4:2186), read pixel by pixel: the top
   // highlight fills the node's top 2 rows, and the DROP_SHADOW spread 1 paints
@@ -244,10 +248,6 @@ describe('focus', () => {
       }
     })
 
-  it('IconButton critical · outline focuses on border.focus (Figma)', () => {
-    const root = resolveRecipe(COMPONENT_RECIPES.IconButton, { Variant: 'critical', Appearance: 'outline', Size: 'default', State: 'Focused' }).root
-    expect(root.focus).toBe('color.border.focus')
-  })
 
   it('the ring clears WCAG 1.4.11 against the page it is set off onto, in both themes', () => {
     for (const mode of ['light', 'dark']) {

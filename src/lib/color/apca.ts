@@ -187,6 +187,7 @@ export type IntentClass =
   | 'body-text'
   | 'large-text'
   | 'action-label'
+  | 'action-label-perceived'
   | 'ui-component'
   | 'control-boundary'
   | 'control-hairline'
@@ -202,6 +203,11 @@ export const INTENT_THRESHOLDS: Record<IntentClass, Thresholds> = {
   'body-text':    { wcag: 4.5, apcaLc: 75 },
   'large-text':   { wcag: 3.0, apcaLc: 60 },
   'action-label': { wcag: 4.5, apcaLc: 60 },
+  // A label on a vivid SOLID in Dark, judged on perceived contrast alone (owner's call
+  // 2026-11-17): a light label on the Escala violet reads at Lc 73 while its WCAG 2
+  // ratio is 4.1:1. The strict ratio is left to a future High-contrast mode. A hue
+  // where even this fails takes the dark ink (see `SOLID_JOB` in semanticArchitectures).
+  'action-label-perceived': { wcag: null, apcaLc: 60 },
   'ui-component': { wcag: 3.0, apcaLc: 45 },
   // A control's BOUNDARY: the resting outline of a field / select / checkbox
   // / outline button (`border.control`), the focus ring's boundary
@@ -277,4 +283,14 @@ export function evaluate(fg: string, bg: string, intent: IntentClass): ContrastV
     // is exactly the class of bug this module exists to surface.
     pass: passesWcag && passesApca,
   }
+}
+
+/**
+ * Does a label carried by a vivid SOLID clear its floor? Light: WCAG AA (4.5:1).
+ * Dark: AA OR perceived contrast Lc 60 (`action-label-perceived`) — the owner's call
+ * of 2026-11-17, so a light label on a vivid Dark accent is accepted on APCA alone.
+ */
+export function labelOnSolidClears(ink: string, fill: string, appearance: 'light' | 'dark'): boolean {
+  if (wcagRatio(ink, fill) >= 4.5) return true
+  return appearance === 'dark' && Math.abs(apcaLc(ink, fill)) >= (INTENT_THRESHOLDS['action-label-perceived'].apcaLc ?? 60)
 }

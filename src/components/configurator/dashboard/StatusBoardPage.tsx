@@ -158,7 +158,7 @@ export default function StatusBoardPage({ dash, kind, onKind, filter, onFilter, 
                           {name}
                           <td className={TD}>
                             <span className="flex items-center gap-1">
-                              {roles.modeKeys.map((mode) => <Swatch key={mode} css={entry?.modes[mode]?.css ?? 'transparent'} size={16} />)}
+                              {roles.modeKeys.map((mode) => <Swatch key={mode} css={entry?.modes[mode]?.css ?? 'transparent'} size={16} page={roles.pageOf[mode]} />)}
                             </span>
                           </td>
                           <td className={TD}><StatusMenu element={el} /></td>
@@ -201,7 +201,7 @@ export default function StatusBoardPage({ dash, kind, onKind, filter, onFilter, 
               <ul className="flex flex-col gap-1.5 rounded-lg border border-line p-2.5">
                 {roles.modeKeys.map((mode) => (
                   <li key={mode} className="flex items-center gap-2 text-caption">
-                    <Swatch css={role.modes[mode]?.css ?? 'transparent'} size={18} />
+                    <Swatch css={role.modes[mode]?.css ?? 'transparent'} size={18} page={roles.pageOf[mode]} />
                     <span className="w-10 flex-shrink-0 text-fg-muted">{roles.appearanceOf[mode] === 'dark' ? t('Dark') : t('Light')}</span>
                     <span className="min-w-0 flex-1 truncate font-mono text-micro text-fg">{role.modes[mode]?.label}</span>
                     <span className="flex-shrink-0 font-mono text-micro text-fg-faint">{role.modes[mode]?.css}</span>

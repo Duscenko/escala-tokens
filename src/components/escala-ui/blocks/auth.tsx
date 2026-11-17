@@ -15,7 +15,7 @@ import { Checkbox, CheckboxItem } from '../checkbox'
 import { Field } from '../field'
 import { type FeaturedIconVariant } from '../featured-icon'
 import { glyph } from '../../../lib/icons'
-import { boxedGlyph } from './shared'
+import { boxedGlyph, blockType } from './shared'
 import { Input } from '../input'
 import { PhoneNumberInput } from './phoneNumber'
 import { InputOTP } from '../input-otp'
@@ -33,13 +33,7 @@ export const AUTH_STATUSES = ['idle', 'invalid', 'loading', 'success'] as const
 export type AuthStatus = (typeof AUTH_STATUSES)[number]
 
 const v = (ref: string) => `var(${cssVarOf(ref)})`
-const type = (role: string): React.CSSProperties => ({
-  fontFamily: `var(--text-${role}-font-family)`,
-  fontSize: `var(--text-${role}-font-size)`,
-  lineHeight: `var(--text-${role}-line-height)`,
-  fontWeight: `var(--text-${role}-font-weight)`,
-  letterSpacing: `var(--text-${role}-letter-spacing)`,
-})
+const type = blockType
 const motion = (role: string) => `var(--motion-${role}-duration) var(--motion-${role}-easing)`
 
 /** Mounts transparent and low, then settles on a motion role: a content swap, a disclosure or a success moment. */

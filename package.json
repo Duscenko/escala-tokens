@@ -34,7 +34,8 @@
     "build-storybook": "storybook build -c apps/storybook/.storybook -o apps/storybook/storybook-static",
     "check:story-parity": "node scripts/check-story-parity.mjs",
     "typecheck:storybook": "tsc -p apps/storybook/tsconfig.json --noEmit",
-    "gen:figma-palette": "tsx scripts/gen-figma-palette.ts"
+    "gen:figma-palette": "tsx scripts/gen-figma-palette.ts",
+    "gen:contracts": "tsx scripts/gen-component-contracts.ts"
   },
   "dependencies": {
     "@radix-ui/react-icons": "^1.3.2",

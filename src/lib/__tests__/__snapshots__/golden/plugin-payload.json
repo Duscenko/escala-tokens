@@ -633,7 +633,7 @@
           },
           "on-action": {
             "core--minimalist::light": "#fefdff",
-            "core--minimalist::dark": "#100e13"
+            "core--minimalist::dark": "#fefdff"
           },
           "on-secondary": {
             "core--minimalist::light": "#37343b",
@@ -663,15 +663,15 @@
         "action": {
           "primary.default": {
             "core--minimalist::light": "#874fff",
-            "core--minimalist::dark": "#9a75fd"
+            "core--minimalist::dark": "#905cff"
           },
           "primary.hover": {
             "core--minimalist::light": "#784ddd",
-            "core--minimalist::dark": "#d2c4ff"
+            "core--minimalist::dark": "#9a75fd"
           },
           "primary.pressed": {
             "core--minimalist::light": "#7252c9",
-            "core--minimalist::dark": "#e8e0ff"
+            "core--minimalist::dark": "#714ec3"
           },
           "secondary.default": {
             "core--minimalist::light": "#e3e1e6",
@@ -717,7 +717,7 @@
           },
           "accent": {
             "core--minimalist::light": "#f3f1fd",
-            "core--minimalist::dark": "#17161d"
+            "core--minimalist::dark": "#2a243f"
           },
           "muted": {
             "core--minimalist::light": "#e3e1e6",
@@ -753,6 +753,10 @@
           }
         },
         "status": {
+          "critical.ring": {
+            "core--minimalist::light": "#dc240469",
+            "core--minimalist::dark": "#fe54365e"
+          },
           "critical.surface": {
             "core--minimalist::light": "#da350c24",
             "core--minimalist::dark": "#f3722e1c"
@@ -930,6 +934,10 @@
           "ring.default": {
             "core--minimalist::light": "#3005fc4f",
             "core--minimalist::dark": "#9570fc6b"
+          },
+          "ring.neutral": {
+            "core--minimalist::light": "#12082938",
+            "core--minimalist::dark": "#f0f3f32b"
           },
           "rim-highlight": {
             "core--minimalist::light": "#ffffff0d",
@@ -3998,8 +4006,7 @@
       "dialog-enter": {
         "pattern": "coordinated",
         "components": [
-          "Modal",
-          "AlertDialog"
+          "Modal"
         ],
         "intent": {
           "usage": [
@@ -4055,8 +4062,7 @@
       "dialog-exit": {
         "pattern": "coordinated",
         "components": [
-          "Modal",
-          "AlertDialog"
+          "Modal"
         ],
         "intent": {
           "usage": [
@@ -4219,7 +4225,7 @@
       "drawer-enter": {
         "pattern": "coordinated",
         "components": [
-          "Drawer"
+          "Sheet"
         ],
         "intent": {
           "usage": [
@@ -4273,7 +4279,7 @@
       "drawer-exit": {
         "pattern": "coordinated",
         "components": [
-          "Drawer"
+          "Sheet"
         ],
         "intent": {
           "usage": [
@@ -4464,8 +4470,7 @@
         "pattern": "disclosure",
         "components": [
           "Accordion",
-          "AccordionItem",
-          "Collapsible"
+          "AccordionItem"
         ],
         "intent": {
           "usage": [
@@ -4492,8 +4497,7 @@
         "pattern": "disclosure",
         "components": [
           "Accordion",
-          "AccordionItem",
-          "Collapsible"
+          "AccordionItem"
         ],
         "intent": {
           "usage": [
@@ -4522,7 +4526,6 @@
           "Popover",
           "DatePickerPopover",
           "TooltipContent",
-          "HoverCard",
           "DropdownMenu"
         ],
         "intent": {
@@ -4563,7 +4566,6 @@
           "Popover",
           "DatePickerPopover",
           "TooltipContent",
-          "HoverCard",
           "DropdownMenu"
         ],
         "intent": {
@@ -5333,8 +5335,12 @@
                 "text": "color.content.on-action",
                 "focus": "none",
                 "ring": "none",
+                "gapRing": "none",
                 "highlight": "color.elevation.highlight",
                 "strokeWidth": "stroke.none"
+              },
+              "label": {
+                "textShadow": "text-2xs"
               }
             },
             "default|solid|Hover": {
@@ -5344,8 +5350,12 @@
                 "text": "color.content.on-action",
                 "focus": "none",
                 "ring": "none",
+                "gapRing": "none",
                 "highlight": "color.elevation.highlight",
                 "strokeWidth": "stroke.none"
+              },
+              "label": {
+                "textShadow": "text-2xs"
               }
             },
             "default|solid|Pressed": {
@@ -5355,8 +5365,12 @@
                 "text": "color.content.on-action",
                 "focus": "none",
                 "ring": "none",
+                "gapRing": "none",
                 "highlight": "color.elevation.highlight",
                 "strokeWidth": "stroke.none"
+              },
+              "label": {
+                "textShadow": "text-2xs"
               }
             },
             "default|solid|Focused": {
@@ -5364,10 +5378,14 @@
                 "fill": "color.action.primary.default",
                 "stroke": "none",
                 "text": "color.content.on-action",
-                "focus": "color.border.focus",
-                "ring": "color.border.ring.default",
+                "focus": "none",
+                "ring": "none",
+                "gapRing": "color.border.ring.default",
                 "highlight": "color.elevation.highlight",
                 "strokeWidth": "stroke.none"
+              },
+              "label": {
+                "textShadow": "text-2xs"
               }
             },
             "default|solid|Loading": {
@@ -5377,8 +5395,12 @@
                 "text": "color.content.on-action",
                 "focus": "none",
                 "ring": "none",
+                "gapRing": "none",
                 "highlight": "color.elevation.highlight",
                 "strokeWidth": "stroke.none"
+              },
+              "label": {
+                "textShadow": "text-2xs"
               }
             },
             "default|solid|Disabled": {
@@ -5388,8 +5410,12 @@
                 "text": "color.content.disabled",
                 "focus": "none",
                 "ring": "none",
+                "gapRing": "none",
                 "highlight": "none",
                 "strokeWidth": "stroke.none"
+              },
+              "label": {
+                "textShadow": "none"
               }
             },
             "default|outline|Default": {
@@ -5399,6 +5425,7 @@
                 "text": "color.content.accent",
                 "focus": "none",
                 "ring": "none",
+                "gapRing": "none",
                 "highlight": "none",
                 "strokeWidth": "stroke.control"
               }
@@ -5410,6 +5437,7 @@
                 "text": "color.content.accent",
                 "focus": "none",
                 "ring": "none",
+                "gapRing": "none",
                 "highlight": "none",
                 "strokeWidth": "stroke.control"
               }
@@ -5421,6 +5449,7 @@
                 "text": "color.content.accent",
                 "focus": "none",
                 "ring": "none",
+                "gapRing": "none",
                 "highlight": "none",
                 "strokeWidth": "stroke.control"
               }
@@ -5430,8 +5459,9 @@
                 "fill": "none",
                 "stroke": "color.border.accent",
                 "text": "color.content.accent",
-                "focus": "color.border.focus",
-                "ring": "color.border.ring.default",
+                "focus": "none",
+                "ring": "none",
+                "gapRing": "color.border.ring.default",
                 "highlight": "none",
                 "strokeWidth": "stroke.control"
               }
@@ -5443,6 +5473,7 @@
                 "text": "color.content.accent",
                 "focus": "none",
                 "ring": "none",
+                "gapRing": "none",
                 "highlight": "none",
                 "strokeWidth": "stroke.control"
               }
@@ -5454,6 +5485,7 @@
                 "text": "color.content.disabled",
                 "focus": "none",
                 "ring": "none",
+                "gapRing": "none",
                 "highlight": "none",
                 "strokeWidth": "stroke.control"
               }
@@ -5465,6 +5497,7 @@
                 "text": "color.content.accent",
                 "focus": "none",
                 "ring": "none",
+                "gapRing": "none",
                 "highlight": "none",
                 "strokeWidth": "stroke.none"
               }
@@ -5476,6 +5509,7 @@
                 "text": "color.content.accent",
                 "focus": "none",
                 "ring": "none",
+                "gapRing": "none",
                 "highlight": "none",
                 "strokeWidth": "stroke.none"
               }
@@ -5487,6 +5521,7 @@
                 "text": "color.content.accent",
                 "focus": "none",
                 "ring": "none",
+                "gapRing": "none",
                 "highlight": "none",
                 "strokeWidth": "stroke.none"
               }
@@ -5496,8 +5531,9 @@
                 "fill": "none",
                 "stroke": "none",
                 "text": "color.content.accent",
-                "focus": "color.border.focus",
-                "ring": "color.border.ring.default",
+                "focus": "none",
+                "ring": "none",
+                "gapRing": "color.border.ring.default",
                 "highlight": "none",
                 "strokeWidth": "stroke.none"
               }
@@ -5509,6 +5545,7 @@
                 "text": "color.content.accent",
                 "focus": "none",
                 "ring": "none",
+                "gapRing": "none",
                 "highlight": "none",
                 "strokeWidth": "stroke.none"
               }
@@ -5520,6 +5557,7 @@
                 "text": "color.content.disabled",
                 "focus": "none",
                 "ring": "none",
+                "gapRing": "none",
                 "highlight": "none",
                 "strokeWidth": "stroke.none"
               }
@@ -5531,6 +5569,7 @@
                 "text": "color.content.link.default",
                 "focus": "none",
                 "ring": "none",
+                "gapRing": "none",
                 "highlight": "none",
                 "strokeWidth": "stroke.none"
               }
@@ -5542,6 +5581,7 @@
                 "text": "color.content.link.hover",
                 "focus": "none",
                 "ring": "none",
+                "gapRing": "none",
                 "highlight": "none",
                 "strokeWidth": "stroke.none"
               }
@@ -5553,6 +5593,7 @@
                 "text": "color.content.link.hover",
                 "focus": "none",
                 "ring": "none",
+                "gapRing": "none",
                 "highlight": "none",
                 "strokeWidth": "stroke.none"
               }
@@ -5562,8 +5603,9 @@
                 "fill": "none",
                 "stroke": "none",
                 "text": "color.content.link.default",
-                "focus": "color.border.focus",
-                "ring": "color.border.ring.default",
+                "focus": "none",
+                "ring": "none",
+                "gapRing": "color.border.ring.default",
                 "highlight": "none",
                 "strokeWidth": "stroke.none"
               }
@@ -5575,6 +5617,7 @@
                 "text": "color.content.link.default",
                 "focus": "none",
                 "ring": "none",
+                "gapRing": "none",
                 "highlight": "none",
                 "strokeWidth": "stroke.none"
               }
@@ -5586,6 +5629,7 @@
                 "text": "color.content.disabled",
                 "focus": "none",
                 "ring": "none",
+                "gapRing": "none",
                 "highlight": "none",
                 "strokeWidth": "stroke.none"
               }
@@ -5597,8 +5641,12 @@
                 "text": "color.content.on-secondary",
                 "focus": "none",
                 "ring": "none",
+                "gapRing": "none",
                 "highlight": "color.elevation.highlight",
                 "strokeWidth": "stroke.none"
+              },
+              "label": {
+                "textShadow": "text-2xs"
               }
             },
             "secondary|solid|Hover": {
@@ -5608,8 +5656,12 @@
                 "text": "color.content.on-secondary",
                 "focus": "none",
                 "ring": "none",
+                "gapRing": "none",
                 "highlight": "color.elevation.highlight",
                 "strokeWidth": "stroke.none"
+              },
+              "label": {
+                "textShadow": "text-2xs"
               }
             },
             "secondary|solid|Pressed": {
@@ -5619,8 +5671,12 @@
                 "text": "color.content.on-secondary",
                 "focus": "none",
                 "ring": "none",
+                "gapRing": "none",
                 "highlight": "color.elevation.highlight",
                 "strokeWidth": "stroke.none"
+              },
+              "label": {
+                "textShadow": "text-2xs"
               }
             },
             "secondary|solid|Focused": {
@@ -5628,10 +5684,14 @@
                 "fill": "color.action.secondary.default",
                 "stroke": "none",
                 "text": "color.content.on-secondary",
-                "focus": "color.border.focus",
-                "ring": "color.border.ring.default",
+                "focus": "none",
+                "ring": "none",
+                "gapRing": "color.border.ring.neutral",
                 "highlight": "color.elevation.highlight",
                 "strokeWidth": "stroke.none"
+              },
+              "label": {
+                "textShadow": "text-2xs"
               }
             },
             "secondary|solid|Loading": {
@@ -5641,8 +5701,12 @@
                 "text": "color.content.on-secondary",
                 "focus": "none",
                 "ring": "none",
+                "gapRing": "none",
                 "highlight": "color.elevation.highlight",
                 "strokeWidth": "stroke.none"
+              },
+              "label": {
+                "textShadow": "text-2xs"
               }
             },
             "secondary|solid|Disabled": {
@@ -5652,8 +5716,12 @@
                 "text": "color.content.disabled",
                 "focus": "none",
                 "ring": "none",
+                "gapRing": "none",
                 "highlight": "none",
                 "strokeWidth": "stroke.none"
+              },
+              "label": {
+                "textShadow": "none"
               }
             },
             "secondary|outline|Default": {
@@ -5663,6 +5731,7 @@
                 "text": "color.content.primary",
                 "focus": "none",
                 "ring": "none",
+                "gapRing": "none",
                 "highlight": "none",
                 "strokeWidth": "stroke.control"
               }
@@ -5674,6 +5743,7 @@
                 "text": "color.content.primary",
                 "focus": "none",
                 "ring": "none",
+                "gapRing": "none",
                 "highlight": "none",
                 "strokeWidth": "stroke.control"
               }
@@ -5685,6 +5755,7 @@
                 "text": "color.content.primary",
                 "focus": "none",
                 "ring": "none",
+                "gapRing": "none",
                 "highlight": "none",
                 "strokeWidth": "stroke.control"
               }
@@ -5694,8 +5765,9 @@
                 "fill": "none",
                 "stroke": "color.border.control",
                 "text": "color.content.primary",
-                "focus": "color.border.focus",
-                "ring": "color.border.ring.default",
+                "focus": "none",
+                "ring": "none",
+                "gapRing": "color.border.ring.neutral",
                 "highlight": "none",
                 "strokeWidth": "stroke.control"
               }
@@ -5707,6 +5779,7 @@
                 "text": "color.content.primary",
                 "focus": "none",
                 "ring": "none",
+                "gapRing": "none",
                 "highlight": "none",
                 "strokeWidth": "stroke.control"
               }
@@ -5718,6 +5791,7 @@
                 "text": "color.content.disabled",
                 "focus": "none",
                 "ring": "none",
+                "gapRing": "none",
                 "highlight": "none",
                 "strokeWidth": "stroke.control"
               }
@@ -5729,6 +5803,7 @@
                 "text": "color.content.primary",
                 "focus": "none",
                 "ring": "none",
+                "gapRing": "none",
                 "highlight": "none",
                 "strokeWidth": "stroke.none"
               }
@@ -5740,6 +5815,7 @@
                 "text": "color.content.primary",
                 "focus": "none",
                 "ring": "none",
+                "gapRing": "none",
                 "highlight": "none",
                 "strokeWidth": "stroke.none"
               }
@@ -5751,6 +5827,7 @@
                 "text": "color.content.primary",
                 "focus": "none",
                 "ring": "none",
+                "gapRing": "none",
                 "highlight": "none",
                 "strokeWidth": "stroke.none"
               }
@@ -5760,8 +5837,9 @@
                 "fill": "none",
                 "stroke": "none",
                 "text": "color.content.primary",
-                "focus": "color.border.focus",
-                "ring": "color.border.ring.default",
+                "focus": "none",
+                "ring": "none",
+                "gapRing": "color.border.ring.neutral",
                 "highlight": "none",
                 "strokeWidth": "stroke.none"
               }
@@ -5773,6 +5851,7 @@
                 "text": "color.content.primary",
                 "focus": "none",
                 "ring": "none",
+                "gapRing": "none",
                 "highlight": "none",
                 "strokeWidth": "stroke.none"
               }
@@ -5784,6 +5863,7 @@
                 "text": "color.content.disabled",
                 "focus": "none",
                 "ring": "none",
+                "gapRing": "none",
                 "highlight": "none",
                 "strokeWidth": "stroke.none"
               }
@@ -5795,6 +5875,7 @@
                 "text": "color.content.secondary",
                 "focus": "none",
                 "ring": "none",
+                "gapRing": "none",
                 "highlight": "none",
                 "strokeWidth": "stroke.none"
               }
@@ -5806,6 +5887,7 @@
                 "text": "color.content.primary",
                 "focus": "none",
                 "ring": "none",
+                "gapRing": "none",
                 "highlight": "none",
                 "strokeWidth": "stroke.none"
               }
@@ -5817,6 +5899,7 @@
                 "text": "color.content.primary",
                 "focus": "none",
                 "ring": "none",
+                "gapRing": "none",
                 "highlight": "none",
                 "strokeWidth": "stroke.none"
               }
@@ -5826,8 +5909,9 @@
                 "fill": "none",
                 "stroke": "none",
                 "text": "color.content.secondary",
-                "focus": "color.border.focus",
-                "ring": "color.border.ring.default",
+                "focus": "none",
+                "ring": "none",
+                "gapRing": "color.border.ring.neutral",
                 "highlight": "none",
                 "strokeWidth": "stroke.none"
               }
@@ -5839,6 +5923,7 @@
                 "text": "color.content.secondary",
                 "focus": "none",
                 "ring": "none",
+                "gapRing": "none",
                 "highlight": "none",
                 "strokeWidth": "stroke.none"
               }
@@ -5850,6 +5935,7 @@
                 "text": "color.content.disabled",
                 "focus": "none",
                 "ring": "none",
+                "gapRing": "none",
                 "highlight": "none",
                 "strokeWidth": "stroke.none"
               }
@@ -5861,8 +5947,12 @@
                 "text": "color.status.critical.on-solid",
                 "focus": "none",
                 "ring": "none",
+                "gapRing": "none",
                 "highlight": "color.elevation.highlight",
                 "strokeWidth": "stroke.none"
+              },
+              "label": {
+                "textShadow": "text-2xs"
               }
             },
             "critical|solid|Hover": {
@@ -5872,8 +5962,12 @@
                 "text": "color.status.critical.on-solid",
                 "focus": "none",
                 "ring": "none",
+                "gapRing": "none",
                 "highlight": "color.elevation.highlight",
                 "strokeWidth": "stroke.none"
+              },
+              "label": {
+                "textShadow": "text-2xs"
               }
             },
             "critical|solid|Pressed": {
@@ -5883,8 +5977,12 @@
                 "text": "color.status.critical.on-solid",
                 "focus": "none",
                 "ring": "none",
+                "gapRing": "none",
                 "highlight": "color.elevation.highlight",
                 "strokeWidth": "stroke.none"
+              },
+              "label": {
+                "textShadow": "text-2xs"
               }
             },
             "critical|solid|Focused": {
@@ -5892,10 +5990,14 @@
                 "fill": "color.status.critical.surface-solid",
                 "stroke": "none",
                 "text": "color.status.critical.on-solid",
-                "focus": "color.border.focus",
-                "ring": "color.border.ring.default",
+                "focus": "none",
+                "ring": "none",
+                "gapRing": "color.status.critical.ring",
                 "highlight": "color.elevation.highlight",
                 "strokeWidth": "stroke.none"
+              },
+              "label": {
+                "textShadow": "text-2xs"
               }
             },
             "critical|solid|Loading": {
@@ -5905,8 +6007,12 @@
                 "text": "color.status.critical.on-solid",
                 "focus": "none",
                 "ring": "none",
+                "gapRing": "none",
                 "highlight": "color.elevation.highlight",
                 "strokeWidth": "stroke.none"
+              },
+              "label": {
+                "textShadow": "text-2xs"
               }
             },
             "critical|solid|Disabled": {
@@ -5916,8 +6022,12 @@
                 "text": "color.content.disabled",
                 "focus": "none",
                 "ring": "none",
+                "gapRing": "none",
                 "highlight": "none",
                 "strokeWidth": "stroke.none"
+              },
+              "label": {
+                "textShadow": "none"
               }
             },
             "critical|outline|Default": {
@@ -5927,6 +6037,7 @@
                 "text": "color.status.critical.content",
                 "focus": "none",
                 "ring": "none",
+                "gapRing": "none",
                 "highlight": "none",
                 "strokeWidth": "stroke.control"
               }
@@ -5938,6 +6049,7 @@
                 "text": "color.status.critical.content",
                 "focus": "none",
                 "ring": "none",
+                "gapRing": "none",
                 "highlight": "none",
                 "strokeWidth": "stroke.control"
               }
@@ -5949,6 +6061,7 @@
                 "text": "color.status.critical.content",
                 "focus": "none",
                 "ring": "none",
+                "gapRing": "none",
                 "highlight": "none",
                 "strokeWidth": "stroke.control"
               }
@@ -5958,8 +6071,9 @@
                 "fill": "none",
                 "stroke": "color.status.critical.border-strong",
                 "text": "color.status.critical.content",
-                "focus": "color.border.focus",
-                "ring": "color.border.ring.default",
+                "focus": "none",
+                "ring": "none",
+                "gapRing": "color.status.critical.ring",
                 "highlight": "none",
                 "strokeWidth": "stroke.control"
               }
@@ -5971,6 +6085,7 @@
                 "text": "color.status.critical.content",
                 "focus": "none",
                 "ring": "none",
+                "gapRing": "none",
                 "highlight": "none",
                 "strokeWidth": "stroke.control"
               }
@@ -5982,6 +6097,7 @@
                 "text": "color.content.disabled",
                 "focus": "none",
                 "ring": "none",
+                "gapRing": "none",
                 "highlight": "none",
                 "strokeWidth": "stroke.control"
               }
@@ -5993,6 +6109,7 @@
                 "text": "color.status.critical.content",
                 "focus": "none",
                 "ring": "none",
+                "gapRing": "none",
                 "highlight": "none",
                 "strokeWidth": "stroke.none"
               }
@@ -6004,6 +6121,7 @@
                 "text": "color.status.critical.content",
                 "focus": "none",
                 "ring": "none",
+                "gapRing": "none",
                 "highlight": "none",
                 "strokeWidth": "stroke.none"
               }
@@ -6015,6 +6133,7 @@
                 "text": "color.status.critical.content",
                 "focus": "none",
                 "ring": "none",
+                "gapRing": "none",
                 "highlight": "none",
                 "strokeWidth": "stroke.none"
               }
@@ -6024,8 +6143,9 @@
                 "fill": "none",
                 "stroke": "none",
                 "text": "color.status.critical.content",
-                "focus": "color.border.focus",
-                "ring": "color.border.ring.default",
+                "focus": "none",
+                "ring": "none",
+                "gapRing": "color.status.critical.ring",
                 "highlight": "none",
                 "strokeWidth": "stroke.none"
               }
@@ -6037,6 +6157,7 @@
                 "text": "color.status.critical.content",
                 "focus": "none",
                 "ring": "none",
+                "gapRing": "none",
                 "highlight": "none",
                 "strokeWidth": "stroke.none"
               }
@@ -6048,6 +6169,7 @@
                 "text": "color.content.disabled",
                 "focus": "none",
                 "ring": "none",
+                "gapRing": "none",
                 "highlight": "none",
                 "strokeWidth": "stroke.none"
               }
@@ -6059,6 +6181,7 @@
                 "text": "color.status.critical.content",
                 "focus": "none",
                 "ring": "none",
+                "gapRing": "none",
                 "highlight": "none",
                 "strokeWidth": "stroke.none"
               }
@@ -6070,6 +6193,7 @@
                 "text": "color.status.critical.content",
                 "focus": "none",
                 "ring": "none",
+                "gapRing": "none",
                 "highlight": "none",
                 "strokeWidth": "stroke.none"
               }
@@ -6081,6 +6205,7 @@
                 "text": "color.status.critical.content",
                 "focus": "none",
                 "ring": "none",
+                "gapRing": "none",
                 "highlight": "none",
                 "strokeWidth": "stroke.none"
               }
@@ -6090,8 +6215,9 @@
                 "fill": "none",
                 "stroke": "none",
                 "text": "color.status.critical.content",
-                "focus": "color.border.focus",
-                "ring": "color.border.ring.default",
+                "focus": "none",
+                "ring": "none",
+                "gapRing": "color.status.critical.ring",
                 "highlight": "none",
                 "strokeWidth": "stroke.none"
               }
@@ -6103,6 +6229,7 @@
                 "text": "color.status.critical.content",
                 "focus": "none",
                 "ring": "none",
+                "gapRing": "none",
                 "highlight": "none",
                 "strokeWidth": "stroke.none"
               }
@@ -6114,6 +6241,7 @@
                 "text": "color.content.disabled",
                 "focus": "none",
                 "ring": "none",
+                "gapRing": "none",
                 "highlight": "none",
                 "strokeWidth": "stroke.none"
               }
@@ -6221,6 +6349,7 @@
                 "text": "color.content.on-action",
                 "focus": "none",
                 "ring": "none",
+                "gapRing": "none",
                 "highlight": "color.elevation.highlight",
                 "strokeWidth": "stroke.none"
               }
@@ -6232,6 +6361,7 @@
                 "text": "color.content.on-action",
                 "focus": "none",
                 "ring": "none",
+                "gapRing": "none",
                 "highlight": "color.elevation.highlight",
                 "strokeWidth": "stroke.none"
               }
@@ -6243,6 +6373,7 @@
                 "text": "color.content.on-action",
                 "focus": "none",
                 "ring": "none",
+                "gapRing": "none",
                 "highlight": "color.elevation.highlight",
                 "strokeWidth": "stroke.none"
               }
@@ -6252,8 +6383,9 @@
                 "fill": "color.action.primary.default",
                 "stroke": "none",
                 "text": "color.content.on-action",
-                "focus": "color.border.focus",
-                "ring": "color.border.ring.default",
+                "focus": "none",
+                "ring": "none",
+                "gapRing": "color.border.ring.default",
                 "highlight": "color.elevation.highlight",
                 "strokeWidth": "stroke.none"
               }
@@ -6265,6 +6397,7 @@
                 "text": "color.content.on-action",
                 "focus": "none",
                 "ring": "none",
+                "gapRing": "none",
                 "highlight": "color.elevation.highlight",
                 "strokeWidth": "stroke.none"
               }
@@ -6276,6 +6409,7 @@
                 "text": "color.content.disabled",
                 "focus": "none",
                 "ring": "none",
+                "gapRing": "none",
                 "highlight": "none",
                 "strokeWidth": "stroke.none"
               }
@@ -6287,6 +6421,7 @@
                 "text": "color.content.accent",
                 "focus": "none",
                 "ring": "none",
+                "gapRing": "none",
                 "highlight": "none",
                 "strokeWidth": "stroke.control"
               }
@@ -6298,6 +6433,7 @@
                 "text": "color.content.accent",
                 "focus": "none",
                 "ring": "none",
+                "gapRing": "none",
                 "highlight": "none",
                 "strokeWidth": "stroke.control"
               }
@@ -6309,6 +6445,7 @@
                 "text": "color.content.accent",
                 "focus": "none",
                 "ring": "none",
+                "gapRing": "none",
                 "highlight": "none",
                 "strokeWidth": "stroke.control"
               }
@@ -6318,8 +6455,9 @@
                 "fill": "none",
                 "stroke": "color.border.accent",
                 "text": "color.content.accent",
-                "focus": "color.border.focus",
-                "ring": "color.border.ring.default",
+                "focus": "none",
+                "ring": "none",
+                "gapRing": "color.border.ring.default",
                 "highlight": "none",
                 "strokeWidth": "stroke.control"
               }
@@ -6331,6 +6469,7 @@
                 "text": "color.content.accent",
                 "focus": "none",
                 "ring": "none",
+                "gapRing": "none",
                 "highlight": "none",
                 "strokeWidth": "stroke.control"
               }
@@ -6342,6 +6481,7 @@
                 "text": "color.content.disabled",
                 "focus": "none",
                 "ring": "none",
+                "gapRing": "none",
                 "highlight": "none",
                 "strokeWidth": "stroke.control"
               }
@@ -6353,6 +6493,7 @@
                 "text": "color.content.accent",
                 "focus": "none",
                 "ring": "none",
+                "gapRing": "none",
                 "highlight": "none",
                 "strokeWidth": "stroke.none"
               }
@@ -6364,6 +6505,7 @@
                 "text": "color.content.accent",
                 "focus": "none",
                 "ring": "none",
+                "gapRing": "none",
                 "highlight": "none",
                 "strokeWidth": "stroke.none"
               }
@@ -6375,6 +6517,7 @@
                 "text": "color.content.accent",
                 "focus": "none",
                 "ring": "none",
+                "gapRing": "none",
                 "highlight": "none",
                 "strokeWidth": "stroke.none"
               }
@@ -6384,8 +6527,9 @@
                 "fill": "none",
                 "stroke": "none",
                 "text": "color.content.accent",
-                "focus": "color.border.focus",
-                "ring": "color.border.ring.default",
+                "focus": "none",
+                "ring": "none",
+                "gapRing": "color.border.ring.default",
                 "highlight": "none",
                 "strokeWidth": "stroke.none"
               }
@@ -6397,6 +6541,7 @@
                 "text": "color.content.accent",
                 "focus": "none",
                 "ring": "none",
+                "gapRing": "none",
                 "highlight": "none",
                 "strokeWidth": "stroke.none"
               }
@@ -6408,6 +6553,7 @@
                 "text": "color.content.disabled",
                 "focus": "none",
                 "ring": "none",
+                "gapRing": "none",
                 "highlight": "none",
                 "strokeWidth": "stroke.none"
               }
@@ -6419,6 +6565,7 @@
                 "text": "color.content.link.default",
                 "focus": "none",
                 "ring": "none",
+                "gapRing": "none",
                 "highlight": "none",
                 "strokeWidth": "stroke.none"
               }
@@ -6430,6 +6577,7 @@
                 "text": "color.content.link.hover",
                 "focus": "none",
                 "ring": "none",
+                "gapRing": "none",
                 "highlight": "none",
                 "strokeWidth": "stroke.none"
               }
@@ -6441,6 +6589,7 @@
                 "text": "color.content.link.hover",
                 "focus": "none",
                 "ring": "none",
+                "gapRing": "none",
                 "highlight": "none",
                 "strokeWidth": "stroke.none"
               }
@@ -6450,8 +6599,9 @@
                 "fill": "none",
                 "stroke": "none",
                 "text": "color.content.link.default",
-                "focus": "color.border.focus",
-                "ring": "color.border.ring.default",
+                "focus": "none",
+                "ring": "none",
+                "gapRing": "color.border.ring.default",
                 "highlight": "none",
                 "strokeWidth": "stroke.none"
               }
@@ -6463,6 +6613,7 @@
                 "text": "color.content.link.default",
                 "focus": "none",
                 "ring": "none",
+                "gapRing": "none",
                 "highlight": "none",
                 "strokeWidth": "stroke.none"
               }
@@ -6474,6 +6625,7 @@
                 "text": "color.content.disabled",
                 "focus": "none",
                 "ring": "none",
+                "gapRing": "none",
                 "highlight": "none",
                 "strokeWidth": "stroke.none"
               }
@@ -6485,6 +6637,7 @@
                 "text": "color.content.on-secondary",
                 "focus": "none",
                 "ring": "none",
+                "gapRing": "none",
                 "highlight": "color.elevation.highlight",
                 "strokeWidth": "stroke.none"
               }
@@ -6496,6 +6649,7 @@
                 "text": "color.content.on-secondary",
                 "focus": "none",
                 "ring": "none",
+                "gapRing": "none",
                 "highlight": "color.elevation.highlight",
                 "strokeWidth": "stroke.none"
               }
@@ -6507,6 +6661,7 @@
                 "text": "color.content.on-secondary",
                 "focus": "none",
                 "ring": "none",
+                "gapRing": "none",
                 "highlight": "color.elevation.highlight",
                 "strokeWidth": "stroke.none"
               }
@@ -6516,8 +6671,9 @@
                 "fill": "color.action.secondary.default",
                 "stroke": "none",
                 "text": "color.content.on-secondary",
-                "focus": "color.border.strong",
-                "ring": "color.border.subtle",
+                "focus": "none",
+                "ring": "none",
+                "gapRing": "color.border.ring.neutral",
                 "highlight": "color.elevation.highlight",
                 "strokeWidth": "stroke.none"
               }
@@ -6529,6 +6685,7 @@
                 "text": "color.content.on-secondary",
                 "focus": "none",
                 "ring": "none",
+                "gapRing": "none",
                 "highlight": "color.elevation.highlight",
                 "strokeWidth": "stroke.none"
               }
@@ -6540,6 +6697,7 @@
                 "text": "color.content.disabled",
                 "focus": "none",
                 "ring": "none",
+                "gapRing": "none",
                 "highlight": "none",
                 "strokeWidth": "stroke.none"
               }
@@ -6551,6 +6709,7 @@
                 "text": "color.content.primary",
                 "focus": "none",
                 "ring": "none",
+                "gapRing": "none",
                 "highlight": "none",
                 "strokeWidth": "stroke.control"
               }
@@ -6562,6 +6721,7 @@
                 "text": "color.content.primary",
                 "focus": "none",
                 "ring": "none",
+                "gapRing": "none",
                 "highlight": "none",
                 "strokeWidth": "stroke.control"
               }
@@ -6573,6 +6733,7 @@
                 "text": "color.content.primary",
                 "focus": "none",
                 "ring": "none",
+                "gapRing": "none",
                 "highlight": "none",
                 "strokeWidth": "stroke.control"
               }
@@ -6582,8 +6743,9 @@
                 "fill": "none",
                 "stroke": "color.border.control",
                 "text": "color.content.primary",
-                "focus": "color.border.focus",
-                "ring": "color.border.ring.default",
+                "focus": "none",
+                "ring": "none",
+                "gapRing": "color.border.ring.neutral",
                 "highlight": "none",
                 "strokeWidth": "stroke.control"
               }
@@ -6595,6 +6757,7 @@
                 "text": "color.content.primary",
                 "focus": "none",
                 "ring": "none",
+                "gapRing": "none",
                 "highlight": "none",
                 "strokeWidth": "stroke.control"
               }
@@ -6606,6 +6769,7 @@
                 "text": "color.content.disabled",
                 "focus": "none",
                 "ring": "none",
+                "gapRing": "none",
                 "highlight": "none",
                 "strokeWidth": "stroke.control"
               }
@@ -6617,6 +6781,7 @@
                 "text": "color.content.primary",
                 "focus": "none",
                 "ring": "none",
+                "gapRing": "none",
                 "highlight": "none",
                 "strokeWidth": "stroke.none"
               }
@@ -6628,6 +6793,7 @@
                 "text": "color.content.primary",
                 "focus": "none",
                 "ring": "none",
+                "gapRing": "none",
                 "highlight": "none",
                 "strokeWidth": "stroke.none"
               }
@@ -6639,6 +6805,7 @@
                 "text": "color.content.primary",
                 "focus": "none",
                 "ring": "none",
+                "gapRing": "none",
                 "highlight": "none",
                 "strokeWidth": "stroke.none"
               }
@@ -6648,8 +6815,9 @@
                 "fill": "none",
                 "stroke": "none",
                 "text": "color.content.primary",
-                "focus": "color.border.focus",
-                "ring": "color.border.ring.default",
+                "focus": "none",
+                "ring": "none",
+                "gapRing": "color.border.ring.neutral",
                 "highlight": "none",
                 "strokeWidth": "stroke.none"
               }
@@ -6661,6 +6829,7 @@
                 "text": "color.content.primary",
                 "focus": "none",
                 "ring": "none",
+                "gapRing": "none",
                 "highlight": "none",
                 "strokeWidth": "stroke.none"
               }
@@ -6672,6 +6841,7 @@
                 "text": "color.content.disabled",
                 "focus": "none",
                 "ring": "none",
+                "gapRing": "none",
                 "highlight": "none",
                 "strokeWidth": "stroke.none"
               }
@@ -6683,6 +6853,7 @@
                 "text": "color.content.secondary",
                 "focus": "none",
                 "ring": "none",
+                "gapRing": "none",
                 "highlight": "none",
                 "strokeWidth": "stroke.none"
               }
@@ -6694,6 +6865,7 @@
                 "text": "color.content.primary",
                 "focus": "none",
                 "ring": "none",
+                "gapRing": "none",
                 "highlight": "none",
                 "strokeWidth": "stroke.none"
               }
@@ -6705,6 +6877,7 @@
                 "text": "color.content.primary",
                 "focus": "none",
                 "ring": "none",
+                "gapRing": "none",
                 "highlight": "none",
                 "strokeWidth": "stroke.none"
               }
@@ -6714,8 +6887,9 @@
                 "fill": "none",
                 "stroke": "none",
                 "text": "color.content.secondary",
-                "focus": "color.border.focus",
-                "ring": "color.border.ring.default",
+                "focus": "none",
+                "ring": "none",
+                "gapRing": "color.border.ring.neutral",
                 "highlight": "none",
                 "strokeWidth": "stroke.none"
               }
@@ -6727,6 +6901,7 @@
                 "text": "color.content.secondary",
                 "focus": "none",
                 "ring": "none",
+                "gapRing": "none",
                 "highlight": "none",
                 "strokeWidth": "stroke.none"
               }
@@ -6738,6 +6913,7 @@
                 "text": "color.content.disabled",
                 "focus": "none",
                 "ring": "none",
+                "gapRing": "none",
                 "highlight": "none",
                 "strokeWidth": "stroke.none"
               }
@@ -6749,6 +6925,7 @@
                 "text": "color.status.critical.on-solid",
                 "focus": "none",
                 "ring": "none",
+                "gapRing": "none",
                 "highlight": "color.elevation.highlight",
                 "strokeWidth": "stroke.none"
               }
@@ -6760,6 +6937,7 @@
                 "text": "color.status.critical.on-solid",
                 "focus": "none",
                 "ring": "none",
+                "gapRing": "none",
                 "highlight": "color.elevation.highlight",
                 "strokeWidth": "stroke.none"
               }
@@ -6771,6 +6949,7 @@
                 "text": "color.status.critical.on-solid",
                 "focus": "none",
                 "ring": "none",
+                "gapRing": "none",
                 "highlight": "color.elevation.highlight",
                 "strokeWidth": "stroke.none"
               }
@@ -6780,8 +6959,9 @@
                 "fill": "color.status.critical.surface-solid",
                 "stroke": "none",
                 "text": "color.status.critical.on-solid",
-                "focus": "color.status.critical.border-strong",
-                "ring": "color.status.critical.border",
+                "focus": "none",
+                "ring": "none",
+                "gapRing": "color.status.critical.ring",
                 "highlight": "color.elevation.highlight",
                 "strokeWidth": "stroke.none"
               }
@@ -6793,6 +6973,7 @@
                 "text": "color.status.critical.on-solid",
                 "focus": "none",
                 "ring": "none",
+                "gapRing": "none",
                 "highlight": "color.elevation.highlight",
                 "strokeWidth": "stroke.none"
               }
@@ -6804,6 +6985,7 @@
                 "text": "color.content.disabled",
                 "focus": "none",
                 "ring": "none",
+                "gapRing": "none",
                 "highlight": "none",
                 "strokeWidth": "stroke.none"
               }
@@ -6815,6 +6997,7 @@
                 "text": "color.status.critical.content",
                 "focus": "none",
                 "ring": "none",
+                "gapRing": "none",
                 "highlight": "none",
                 "strokeWidth": "stroke.control"
               }
@@ -6826,6 +7009,7 @@
                 "text": "color.status.critical.content",
                 "focus": "none",
                 "ring": "none",
+                "gapRing": "none",
                 "highlight": "none",
                 "strokeWidth": "stroke.control"
               }
@@ -6837,6 +7021,7 @@
                 "text": "color.status.critical.content",
                 "focus": "none",
                 "ring": "none",
+                "gapRing": "none",
                 "highlight": "none",
                 "strokeWidth": "stroke.control"
               }
@@ -6846,8 +7031,9 @@
                 "fill": "none",
                 "stroke": "color.status.critical.border-strong",
                 "text": "color.status.critical.content",
-                "focus": "color.border.focus",
-                "ring": "color.border.ring.default",
+                "focus": "none",
+                "ring": "none",
+                "gapRing": "color.status.critical.ring",
                 "highlight": "none",
                 "strokeWidth": "stroke.control"
               }
@@ -6859,6 +7045,7 @@
                 "text": "color.status.critical.content",
                 "focus": "none",
                 "ring": "none",
+                "gapRing": "none",
                 "highlight": "none",
                 "strokeWidth": "stroke.control"
               }
@@ -6870,6 +7057,7 @@
                 "text": "color.content.disabled",
                 "focus": "none",
                 "ring": "none",
+                "gapRing": "none",
                 "highlight": "none",
                 "strokeWidth": "stroke.control"
               }
@@ -6881,6 +7069,7 @@
                 "text": "color.status.critical.content",
                 "focus": "none",
                 "ring": "none",
+                "gapRing": "none",
                 "highlight": "none",
                 "strokeWidth": "stroke.none"
               }
@@ -6892,6 +7081,7 @@
                 "text": "color.status.critical.content",
                 "focus": "none",
                 "ring": "none",
+                "gapRing": "none",
                 "highlight": "none",
                 "strokeWidth": "stroke.none"
               }
@@ -6903,6 +7093,7 @@
                 "text": "color.status.critical.content",
                 "focus": "none",
                 "ring": "none",
+                "gapRing": "none",
                 "highlight": "none",
                 "strokeWidth": "stroke.none"
               }
@@ -6912,8 +7103,9 @@
                 "fill": "none",
                 "stroke": "none",
                 "text": "color.status.critical.content",
-                "focus": "color.border.focus",
-                "ring": "color.border.ring.default",
+                "focus": "none",
+                "ring": "none",
+                "gapRing": "color.status.critical.ring",
                 "highlight": "none",
                 "strokeWidth": "stroke.none"
               }
@@ -6925,6 +7117,7 @@
                 "text": "color.status.critical.content",
                 "focus": "none",
                 "ring": "none",
+                "gapRing": "none",
                 "highlight": "none",
                 "strokeWidth": "stroke.none"
               }
@@ -6936,6 +7129,7 @@
                 "text": "color.content.disabled",
                 "focus": "none",
                 "ring": "none",
+                "gapRing": "none",
                 "highlight": "none",
                 "strokeWidth": "stroke.none"
               }
@@ -6947,6 +7141,7 @@
                 "text": "color.status.critical.content",
                 "focus": "none",
                 "ring": "none",
+                "gapRing": "none",
                 "highlight": "none",
                 "strokeWidth": "stroke.none"
               }
@@ -6958,6 +7153,7 @@
                 "text": "color.status.critical.content",
                 "focus": "none",
                 "ring": "none",
+                "gapRing": "none",
                 "highlight": "none",
                 "strokeWidth": "stroke.none"
               }
@@ -6969,6 +7165,7 @@
                 "text": "color.status.critical.content",
                 "focus": "none",
                 "ring": "none",
+                "gapRing": "none",
                 "highlight": "none",
                 "strokeWidth": "stroke.none"
               }
@@ -6978,8 +7175,9 @@
                 "fill": "none",
                 "stroke": "none",
                 "text": "color.status.critical.content",
-                "focus": "color.border.focus",
-                "ring": "color.border.ring.default",
+                "focus": "none",
+                "ring": "none",
+                "gapRing": "color.status.critical.ring",
                 "highlight": "none",
                 "strokeWidth": "stroke.none"
               }
@@ -6991,6 +7189,7 @@
                 "text": "color.status.critical.content",
                 "focus": "none",
                 "ring": "none",
+                "gapRing": "none",
                 "highlight": "none",
                 "strokeWidth": "stroke.none"
               }
@@ -7002,6 +7201,7 @@
                 "text": "color.content.disabled",
                 "focus": "none",
                 "ring": "none",
+                "gapRing": "none",
                 "highlight": "none",
                 "strokeWidth": "stroke.none"
               }
@@ -9862,54 +10062,6 @@
         }
       ]
     },
-    "AppStoreBadge": {
-      "key": "AppStoreBadge",
-      "slots": [
-        "root",
-        "eyebrow",
-        "name"
-      ],
-      "defaults": {
-        "Store": "app-store"
-      },
-      "parts": [
-        {
-          "axes": [
-            "Store"
-          ],
-          "values": {
-            "app-store": {
-              "root": {
-                "radius": "radius.action",
-                "paddingX": "spacing.4",
-                "paddingY": "spacing.2",
-                "gap": "spacing.2_5"
-              },
-              "eyebrow": {
-                "font": "type.caption"
-              },
-              "name": {
-                "font": "type.button"
-              }
-            },
-            "google-play": {
-              "root": {
-                "radius": "radius.action",
-                "paddingX": "spacing.4",
-                "paddingY": "spacing.2",
-                "gap": "spacing.2_5"
-              },
-              "eyebrow": {
-                "font": "type.caption"
-              },
-              "name": {
-                "font": "type.button"
-              }
-            }
-          }
-        }
-      ]
-    },
     "Input": {
       "key": "Input",
       "slots": [
@@ -11338,117 +11490,6 @@
           "name": "popover-exit"
         },
         "origin": "var(--radix-popover-content-transform-origin, center)"
-      }
-    },
-    "InputGroup": {
-      "key": "InputGroup",
-      "slots": [
-        "root",
-        "addon",
-        "input",
-        "button",
-        "separator"
-      ],
-      "defaults": {},
-      "parts": [
-        {
-          "axes": [],
-          "values": {
-            "": {
-              "root": {
-                "fill": "color.surface.input",
-                "stroke": "color.border.control",
-                "ring": "none",
-                "strokeWidth": "stroke.control",
-                "radius": "radius.action",
-                "height": "size.control"
-              },
-              "root:hover:not([data-force-state]):not([aria-disabled=\"true\"]):not(:has(:disabled))": {
-                "fill": "color.surface.input",
-                "stroke": "color.border.control-hover",
-                "ring": "none"
-              },
-              "root[data-force-state=\"Hover\"]": {
-                "fill": "color.surface.input",
-                "stroke": "color.border.control-hover",
-                "ring": "none"
-              },
-              "root:has([data-slot=\"input-group-control\"]:focus-visible):not([data-force-state]):not([aria-disabled=\"true\"]):not(:has(:disabled))": {
-                "fill": "color.surface.input",
-                "stroke": "color.border.focus",
-                "ring": "color.border.ring.default"
-              },
-              "root[data-force-state=\"Focused\"]": {
-                "fill": "color.surface.input",
-                "stroke": "color.border.focus",
-                "ring": "color.border.ring.default"
-              },
-              "root:has([data-slot=\"input-group-control\"][aria-invalid=\"true\"])": {
-                "fill": "color.surface.input",
-                "stroke": "color.status.critical.border-strong",
-                "ring": "color.status.critical.border"
-              },
-              "root[data-force-state=\"Error\"]": {
-                "fill": "color.surface.input",
-                "stroke": "color.status.critical.border-strong",
-                "ring": "color.status.critical.border"
-              },
-              "root:has(:disabled)": {
-                "fill": "color.action.disabled.default",
-                "stroke": "color.border.control",
-                "ring": "none"
-              },
-              "root[aria-disabled=\"true\"]": {
-                "fill": "color.action.disabled.default",
-                "stroke": "color.border.control",
-                "ring": "none"
-              },
-              "addon": {
-                "text": "color.content.secondary",
-                "font": "type.placeholder",
-                "paddingX": "spacing.inset-control",
-                "gap": "spacing.gap-control"
-              },
-              "input": {
-                "text": "color.content.primary",
-                "font": "type.placeholder",
-                "paddingX": "spacing.inset-control"
-              },
-              "input::placeholder": {
-                "text": "color.content.subtle"
-              },
-              "input:disabled": {
-                "text": "color.content.disabled"
-              },
-              "input:disabled::placeholder": {
-                "text": "color.content.disabled"
-              },
-              "button": {
-                "text": "color.content.accent",
-                "font": "type.button",
-                "paddingX": "spacing.4"
-              },
-              "button:hover": {
-                "fill": "color.action.ghost.hover"
-              },
-              "button:active": {
-                "fill": "color.action.ghost.pressed"
-              },
-              "separator": {
-                "fill": "color.border.control",
-                "width": "stroke.control"
-              }
-            }
-          }
-        }
-      ],
-      "motion": {
-        "transitions": {
-          "root": {
-            "border-color": "use-hover",
-            "box-shadow": "use-focus"
-          }
-        }
       }
     },
     "NumberInput": {
@@ -19347,68 +19388,6 @@
         }
       }
     },
-    "StatusBadge": {
-      "key": "StatusBadge",
-      "slots": [
-        "root",
-        "dot"
-      ],
-      "defaults": {
-        "Status": "online"
-      },
-      "parts": [
-        {
-          "axes": [],
-          "values": {
-            "": {
-              "root": {
-                "fill": "color.surface.layer-1",
-                "stroke": "color.border.subtle",
-                "strokeWidth": "stroke.control",
-                "text": "color.content.primary",
-                "radius": "radius.pill",
-                "font": "type.caption",
-                "paddingX": "spacing.2_5",
-                "paddingY": "spacing.1",
-                "gap": "spacing.2"
-              },
-              "dot": {
-                "width": "spacing.2",
-                "height": "spacing.2",
-                "radius": "radius.pill"
-              }
-            }
-          }
-        },
-        {
-          "axes": [
-            "Status"
-          ],
-          "values": {
-            "online": {
-              "dot": {
-                "fill": "color.status.success.surface-solid"
-              }
-            },
-            "away": {
-              "dot": {
-                "fill": "color.status.warning.surface-solid"
-              }
-            },
-            "busy": {
-              "dot": {
-                "fill": "color.status.critical.surface-solid"
-              }
-            },
-            "offline": {
-              "dot": {
-                "fill": "color.content.subtle"
-              }
-            }
-          }
-        }
-      ]
-    },
     "Chip": {
       "key": "Chip",
       "slots": [
@@ -20515,45 +20494,6 @@
         }
       ]
     },
-    "Icon": {
-      "key": "Icon",
-      "slots": [
-        "root"
-      ],
-      "defaults": {
-        "Size": "default"
-      },
-      "parts": [
-        {
-          "axes": [
-            "Size"
-          ],
-          "values": {
-            "sm": {
-              "root": {
-                "width": "icon.small",
-                "height": "icon.small",
-                "text": "color.content.primary"
-              }
-            },
-            "default": {
-              "root": {
-                "width": "icon.medium",
-                "height": "icon.medium",
-                "text": "color.content.primary"
-              }
-            },
-            "lg": {
-              "root": {
-                "width": "icon.large",
-                "height": "icon.large",
-                "text": "color.content.primary"
-              }
-            }
-          }
-        }
-      ]
-    },
     "FeaturedIcon": {
       "key": "FeaturedIcon",
       "slots": [
@@ -21003,71 +20943,6 @@
           }
         }
       }
-    },
-    "FileFormat": {
-      "key": "FileFormat",
-      "slots": [
-        "root",
-        "page",
-        "plate"
-      ],
-      "defaults": {
-        "Format": "pdf"
-      },
-      "parts": [
-        {
-          "axes": [],
-          "values": {
-            "": {
-              "root": {
-                "width": "size.control",
-                "height": "size.lg"
-              },
-              "page": {
-                "text": "color.border.strong",
-                "paint": "color.surface.layer-1"
-              },
-              "plate": {
-                "radius": "radius.control",
-                "font": "type.caption",
-                "paddingX": "spacing.1_5",
-                "paddingY": "spacing.0_5"
-              }
-            }
-          }
-        },
-        {
-          "axes": [
-            "Format"
-          ],
-          "values": {
-            "pdf": {
-              "plate": {
-                "fill": "color.status.critical.surface-solid",
-                "text": "color.status.critical.on-solid"
-              }
-            },
-            "png": {
-              "plate": {
-                "fill": "color.status.info.surface-solid",
-                "text": "color.status.info.on-solid"
-              }
-            },
-            "svg": {
-              "plate": {
-                "fill": "color.action.primary.default",
-                "text": "color.content.on-action"
-              }
-            },
-            "zip": {
-              "plate": {
-                "fill": "color.status.warning.surface-solid",
-                "text": "color.status.warning.on-solid"
-              }
-            }
-          }
-        }
-      ]
     },
     "Avatar": {
       "key": "Avatar",
@@ -21770,78 +21645,6 @@
           }
         }
       ]
-    },
-    "Collapsible": {
-      "key": "Collapsible",
-      "slots": [
-        "root",
-        "trigger",
-        "icon",
-        "content",
-        "item"
-      ],
-      "defaults": {},
-      "parts": [
-        {
-          "axes": [],
-          "values": {
-            "": {
-              "root": {
-                "gap": "spacing.2"
-              },
-              "trigger": {
-                "text": "color.content.primary",
-                "font": "type.label",
-                "gap": "spacing.4",
-                "paddingX": "spacing.1",
-                "paddingY": "spacing.1"
-              },
-              "icon": {
-                "text": "color.content.secondary",
-                "radius": "radius.action",
-                "width": "size.compact",
-                "height": "size.compact"
-              },
-              "trigger:hover": {
-                "text": "color.content.primary"
-              },
-              "icon:focus-visible": {
-                "focus": "color.border.focus",
-                "ring": "color.border.ring.default"
-              },
-              "content": {
-                "gap": "spacing.2"
-              },
-              "item": {
-                "stroke": "color.border.default",
-                "strokeWidth": "stroke.control",
-                "radius": "radius.action",
-                "paddingX": "spacing.4",
-                "paddingY": "spacing.2",
-                "text": "color.content.primary",
-                "font": "type.body-sm"
-              }
-            }
-          }
-        }
-      ],
-      "motion": {
-        "transitions": {
-          "icon": {
-            "transform": "use-disclosure-in"
-          }
-        },
-        "enter": {
-          "name": "accordion-expand",
-          "slot": "content",
-          "heightVar": "--radix-collapsible-content-height"
-        },
-        "exit": {
-          "name": "accordion-collapse",
-          "slot": "content",
-          "heightVar": "--radix-collapsible-content-height"
-        }
-      }
     },
     "Table": {
       "key": "Table",
@@ -23129,183 +22932,6 @@
         }
       ]
     },
-    "Skeleton": {
-      "key": "Skeleton",
-      "slots": [
-        "root"
-      ],
-      "defaults": {},
-      "parts": [
-        {
-          "axes": [],
-          "values": {
-            "": {
-              "root": {
-                "fill": "color.surface.layer-2",
-                "radius": "radius.action"
-              }
-            }
-          }
-        }
-      ]
-    },
-    "Empty": {
-      "key": "Empty",
-      "slots": [
-        "root",
-        "header",
-        "media",
-        "title",
-        "description",
-        "content"
-      ],
-      "defaults": {},
-      "parts": [
-        {
-          "axes": [],
-          "values": {
-            "": {
-              "root": {
-                "stroke": "color.border.default",
-                "strokeWidth": "stroke.control",
-                "radius": "radius.container",
-                "paddingX": "spacing.6",
-                "paddingY": "spacing.6",
-                "gap": "spacing.4",
-                "text": "color.content.primary"
-              },
-              "header": {
-                "gap": "spacing.2"
-              },
-              "media": {
-                "text": "color.content.primary"
-              },
-              "media[data-variant=\"icon\"]": {
-                "fill": "color.surface.layer-2",
-                "radius": "radius.action",
-                "width": "size.compact",
-                "height": "size.compact"
-              },
-              "title": {
-                "text": "color.content.primary",
-                "font": "type.label"
-              },
-              "description": {
-                "text": "color.content.secondary",
-                "font": "type.body-sm"
-              },
-              "content": {
-                "gap": "spacing.2_5"
-              }
-            }
-          }
-        }
-      ]
-    },
-    "Toggle": {
-      "key": "Toggle",
-      "slots": [
-        "root"
-      ],
-      "defaults": {
-        "Variant": "default",
-        "Size": "default",
-        "Pressed": "False"
-      },
-      "parts": [
-        {
-          "axes": [
-            "Variant"
-          ],
-          "values": {
-            "default": {
-              "root": {
-                "font": "type.button",
-                "radius": "radius.action",
-                "gap": "spacing.1"
-              }
-            },
-            "outline": {
-              "root": {
-                "stroke": "color.border.control",
-                "strokeWidth": "stroke.control",
-                "font": "type.button",
-                "radius": "radius.action",
-                "gap": "spacing.1"
-              }
-            }
-          }
-        },
-        {
-          "axes": [
-            "Size"
-          ],
-          "values": {
-            "default": {
-              "root": {
-                "height": "size.control",
-                "paddingX": "spacing.2_5"
-              }
-            },
-            "sm": {
-              "root": {
-                "height": "size.compact",
-                "paddingX": "spacing.2_5"
-              }
-            },
-            "lg": {
-              "root": {
-                "height": "size.touch",
-                "paddingX": "spacing.2_5"
-              }
-            }
-          }
-        },
-        {
-          "axes": [
-            "Pressed"
-          ],
-          "values": {
-            "False": {
-              "root": {
-                "fill": "none",
-                "text": "color.content.secondary"
-              },
-              "root:hover": {
-                "fill": "color.action.ghost.hover",
-                "text": "color.content.primary"
-              },
-              "root:focus-visible": {
-                "focus": "color.border.focus",
-                "ring": "color.border.ring.default"
-              }
-            },
-            "True": {
-              "root": {
-                "fill": "color.surface.layer-2",
-                "text": "color.content.primary"
-              },
-              "root:hover": {
-                "fill": "color.action.ghost.hover",
-                "text": "color.content.primary"
-              },
-              "root:focus-visible": {
-                "focus": "color.border.focus",
-                "ring": "color.border.ring.default"
-              }
-            }
-          }
-        }
-      ],
-      "motion": {
-        "transitions": {
-          "root": {
-            "background-color": "use-hover",
-            "color": "use-hover"
-          }
-        }
-      }
-    },
     "Calendar": {
       "key": "Calendar",
       "slots": [
@@ -23355,94 +22981,6 @@
           }
         }
       ]
-    },
-    "AlertDialog": {
-      "key": "AlertDialog",
-      "slots": [
-        "content",
-        "overlay",
-        "header",
-        "media",
-        "title",
-        "description",
-        "footer"
-      ],
-      "detachedSlots": [
-        "overlay"
-      ],
-      "defaults": {
-        "Size": "default"
-      },
-      "parts": [
-        {
-          "axes": [],
-          "values": {
-            "": {
-              "overlay": {
-                "fill": "color.surface.overlay"
-              },
-              "content": {
-                "fill": "color.surface.layer-2",
-                "stroke": "color.border.subtle",
-                "strokeWidth": "stroke.control",
-                "radius": "radius.overlay",
-                "shadow": "shadow.2xl",
-                "text": "color.content.primary"
-              },
-              "header": {
-                "gap": "spacing.1_5"
-              },
-              "media": {
-                "fill": "color.surface.layer-1",
-                "text": "color.content.primary",
-                "radius": "radius.action",
-                "width": "size.control",
-                "height": "size.control"
-              },
-              "title": {
-                "text": "color.content.primary",
-                "font": "type.heading-2xs"
-              },
-              "description": {
-                "text": "color.content.secondary",
-                "font": "type.body-sm"
-              },
-              "footer": {
-                "gap": "spacing.gap-control"
-              }
-            }
-          }
-        },
-        {
-          "axes": [
-            "Size"
-          ],
-          "values": {
-            "default": {
-              "content": {
-                "paddingX": "spacing.inset-surface",
-                "paddingY": "spacing.inset-surface",
-                "gap": "spacing.gap-group"
-              }
-            },
-            "sm": {
-              "content": {
-                "paddingX": "spacing.4",
-                "paddingY": "spacing.4",
-                "gap": "spacing.4"
-              }
-            }
-          }
-        }
-      ],
-      "motion": {
-        "enter": {
-          "name": "dialog-enter"
-        },
-        "exit": {
-          "name": "dialog-exit"
-        }
-      }
     },
     "Sheet": {
       "key": "Sheet",
@@ -23537,705 +23075,6 @@
         },
         "sideAttr": "side"
       }
-    },
-    "Drawer": {
-      "key": "Drawer",
-      "slots": [
-        "content",
-        "overlay",
-        "handle",
-        "header",
-        "title",
-        "description",
-        "footer"
-      ],
-      "detachedSlots": [
-        "overlay"
-      ],
-      "defaults": {},
-      "parts": [
-        {
-          "axes": [],
-          "values": {
-            "": {
-              "overlay": {
-                "fill": "color.surface.overlay"
-              },
-              "content": {
-                "fill": "color.surface.layer-2",
-                "stroke": "color.border.subtle",
-                "strokeWidth": "stroke.control",
-                "radius": "radius.overlay",
-                "text": "color.content.primary"
-              },
-              "handle": {
-                "fill": "color.surface.inverse",
-                "radius": "radius.pill"
-              },
-              "header": {
-                "gap": "spacing.0_5",
-                "paddingX": "spacing.4",
-                "paddingY": "spacing.4"
-              },
-              "title": {
-                "text": "color.content.primary",
-                "font": "type.heading-2xs"
-              },
-              "description": {
-                "text": "color.content.secondary",
-                "font": "type.body-sm"
-              },
-              "footer": {
-                "gap": "spacing.2",
-                "paddingX": "spacing.4",
-                "paddingY": "spacing.4"
-              }
-            }
-          }
-        }
-      ]
-    },
-    "HoverCard": {
-      "key": "HoverCard",
-      "slots": [
-        "root"
-      ],
-      "defaults": {},
-      "parts": [
-        {
-          "axes": [],
-          "values": {
-            "": {
-              "root": {
-                "fill": "color.surface.layer-2",
-                "stroke": "color.border.subtle",
-                "strokeWidth": "stroke.control",
-                "radius": "radius.overlay",
-                "shadow": "shadow.lg",
-                "paddingX": "spacing.4",
-                "paddingY": "spacing.4",
-                "gap": "spacing.2",
-                "text": "color.content.primary",
-                "font": "type.body-sm"
-              }
-            }
-          }
-        }
-      ],
-      "motion": {
-        "enter": {
-          "name": "popover-enter"
-        },
-        "exit": {
-          "name": "popover-exit"
-        },
-        "origin": "var(--radix-hover-card-content-transform-origin, center)"
-      }
-    },
-    "Item": {
-      "key": "Item",
-      "slots": [
-        "root",
-        "media",
-        "content",
-        "title",
-        "description",
-        "actions"
-      ],
-      "defaults": {
-        "Variant": "default",
-        "Size": "default"
-      },
-      "parts": [
-        {
-          "axes": [],
-          "values": {
-            "": {
-              "root": {
-                "radius": "radius.container",
-                "strokeWidth": "stroke.control",
-                "text": "color.content.primary"
-              },
-              "media": {
-                "text": "color.content.primary"
-              },
-              "title": {
-                "text": "color.content.primary",
-                "font": "type.label",
-                "gap": "spacing.2"
-              },
-              "description": {
-                "text": "color.content.secondary"
-              },
-              "actions": {
-                "gap": "spacing.2"
-              }
-            }
-          }
-        },
-        {
-          "axes": [
-            "Variant"
-          ],
-          "values": {
-            "default": {
-              "root": {
-                "fill": "none",
-                "stroke": "none"
-              }
-            },
-            "outline": {
-              "root": {
-                "fill": "none",
-                "stroke": "color.border.default"
-              }
-            },
-            "muted": {
-              "root": {
-                "fill": "color.surface.layer-2",
-                "stroke": "none"
-              }
-            }
-          }
-        },
-        {
-          "axes": [
-            "Size"
-          ],
-          "values": {
-            "default": {
-              "root": {
-                "paddingX": "spacing.4",
-                "paddingY": "spacing.4",
-                "gap": "spacing.4"
-              },
-              "content": {
-                "gap": "spacing.1"
-              },
-              "description": {
-                "font": "type.body-sm"
-              },
-              "media[data-variant=\"image\"]": {
-                "width": "size.control",
-                "height": "size.control",
-                "radius": "radius.control"
-              }
-            },
-            "sm": {
-              "root": {
-                "paddingX": "spacing.4",
-                "paddingY": "spacing.3",
-                "gap": "spacing.2_5"
-              },
-              "content": {
-                "gap": "spacing.0_5"
-              },
-              "description": {
-                "font": "type.caption"
-              },
-              "media[data-variant=\"image\"]": {
-                "width": "size.compact",
-                "height": "size.compact",
-                "radius": "radius.control"
-              }
-            },
-            "xs": {
-              "root": {
-                "paddingX": "spacing.3",
-                "paddingY": "spacing.2",
-                "gap": "spacing.2"
-              },
-              "content": {
-                "gap": "spacing.0_5"
-              },
-              "description": {
-                "font": "type.caption"
-              },
-              "media[data-variant=\"image\"]": {
-                "width": "size.xs",
-                "height": "size.xs",
-                "radius": "radius.control"
-              }
-            }
-          }
-        }
-      ],
-      "motion": {
-        "transitions": {
-          "root": {
-            "background-color": "use-hover",
-            "color": "use-hover"
-          }
-        }
-      }
-    },
-    "Attachment": {
-      "key": "Attachment",
-      "slots": [
-        "root",
-        "media",
-        "content",
-        "title",
-        "description",
-        "actions"
-      ],
-      "defaults": {
-        "Size": "default"
-      },
-      "parts": [
-        {
-          "axes": [],
-          "values": {
-            "": {
-              "root": {
-                "fill": "color.surface.layer-1",
-                "stroke": "color.border.default",
-                "strokeWidth": "stroke.control",
-                "radius": "min(radius.action,radius.2xl)",
-                "text": "color.content.primary"
-              },
-              "media": {
-                "fill": "color.surface.layer-2",
-                "text": "color.content.secondary",
-                "radius": "radius.control"
-              },
-              "media[data-state=\"error\"]": {
-                "fill": "color.status.critical.surface",
-                "text": "color.status.critical.content"
-              },
-              "content": {
-                "gap": "spacing.0_5"
-              },
-              "title": {
-                "text": "color.content.primary",
-                "font": "type.label"
-              },
-              "description": {
-                "text": "color.content.secondary",
-                "font": "type.caption"
-              },
-              "description[data-state=\"error\"]": {
-                "text": "color.status.critical.content"
-              },
-              "actions": {
-                "gap": "spacing.1",
-                "text": "color.content.secondary"
-              }
-            }
-          }
-        },
-        {
-          "axes": [
-            "Size"
-          ],
-          "values": {
-            "default": {
-              "root": {
-                "paddingX": "spacing.2",
-                "paddingY": "spacing.2",
-                "gap": "spacing.2_5"
-              },
-              "media": {
-                "width": "size.control",
-                "height": "size.control"
-              }
-            },
-            "sm": {
-              "root": {
-                "paddingX": "spacing.1_5",
-                "paddingY": "spacing.1_5",
-                "gap": "spacing.2"
-              },
-              "media": {
-                "width": "size.compact",
-                "height": "size.compact"
-              }
-            },
-            "xs": {
-              "root": {
-                "paddingX": "spacing.1",
-                "paddingY": "spacing.1",
-                "gap": "spacing.1_5"
-              },
-              "media": {
-                "width": "size.xs",
-                "height": "size.xs"
-              }
-            }
-          }
-        }
-      ]
-    },
-    "Message": {
-      "key": "Message",
-      "slots": [
-        "root",
-        "avatar",
-        "content",
-        "header",
-        "footer"
-      ],
-      "defaults": {},
-      "parts": [
-        {
-          "axes": [],
-          "values": {
-            "": {
-              "root": {
-                "gap": "spacing.2"
-              },
-              "avatar": {
-                "fill": "color.surface.layer-2",
-                "text": "color.content.secondary",
-                "radius": "radius.pill",
-                "width": "size.compact",
-                "height": "size.compact",
-                "font": "type.caption"
-              },
-              "content": {
-                "gap": "spacing.1"
-              },
-              "header": {
-                "text": "color.content.secondary",
-                "font": "type.caption",
-                "gap": "spacing.1_5"
-              },
-              "footer": {
-                "text": "color.content.subtle",
-                "font": "type.caption",
-                "gap": "spacing.1"
-              }
-            }
-          }
-        }
-      ]
-    },
-    "Bubble": {
-      "key": "Bubble",
-      "slots": [
-        "root",
-        "content",
-        "reactions"
-      ],
-      "defaults": {
-        "Variant": "default"
-      },
-      "parts": [
-        {
-          "axes": [],
-          "values": {
-            "": {
-              "root": {
-                "gap": "spacing.1"
-              },
-              "reactions": {
-                "fill": "color.surface.layer-2",
-                "text": "color.content.primary",
-                "radius": "radius.pill",
-                "paddingX": "spacing.1_5",
-                "paddingY": "spacing.0_5",
-                "gap": "spacing.1",
-                "font": "type.caption"
-              }
-            }
-          }
-        },
-        {
-          "axes": [
-            "Variant"
-          ],
-          "values": {
-            "default": {
-              "content": {
-                "radius": "radius.container",
-                "strokeWidth": "stroke.control",
-                "paddingX": "spacing.3",
-                "paddingY": "spacing.2",
-                "font": "type.body-sm",
-                "fill": "color.action.primary.default",
-                "stroke": "none",
-                "text": "color.content.on-action"
-              }
-            },
-            "secondary": {
-              "content": {
-                "radius": "radius.container",
-                "strokeWidth": "stroke.control",
-                "paddingX": "spacing.3",
-                "paddingY": "spacing.2",
-                "font": "type.body-sm",
-                "fill": "color.surface.muted",
-                "stroke": "none",
-                "text": "color.content.accent"
-              }
-            },
-            "muted": {
-              "content": {
-                "radius": "radius.container",
-                "strokeWidth": "stroke.control",
-                "paddingX": "spacing.3",
-                "paddingY": "spacing.2",
-                "font": "type.body-sm",
-                "fill": "color.surface.layer-2",
-                "stroke": "none",
-                "text": "color.content.primary"
-              }
-            },
-            "tinted": {
-              "content": {
-                "radius": "radius.container",
-                "strokeWidth": "stroke.control",
-                "paddingX": "spacing.3",
-                "paddingY": "spacing.2",
-                "font": "type.body-sm",
-                "fill": "color.surface.accent",
-                "stroke": "none",
-                "text": "color.content.accent"
-              }
-            },
-            "outline": {
-              "content": {
-                "radius": "radius.container",
-                "strokeWidth": "stroke.control",
-                "paddingX": "spacing.3",
-                "paddingY": "spacing.2",
-                "font": "type.body-sm",
-                "fill": "color.surface.page",
-                "stroke": "color.border.default",
-                "text": "color.content.primary"
-              }
-            },
-            "ghost": {
-              "content": {
-                "radius": "radius.container",
-                "strokeWidth": "stroke.control",
-                "paddingX": "spacing.0",
-                "paddingY": "spacing.0",
-                "font": "type.body-sm",
-                "fill": "none",
-                "stroke": "none",
-                "text": "color.content.primary"
-              }
-            },
-            "destructive": {
-              "content": {
-                "radius": "radius.container",
-                "strokeWidth": "stroke.control",
-                "paddingX": "spacing.3",
-                "paddingY": "spacing.2",
-                "font": "type.body-sm",
-                "fill": "color.status.critical.surface",
-                "stroke": "none",
-                "text": "color.status.critical.content"
-              }
-            }
-          }
-        }
-      ]
-    },
-    "Resizable": {
-      "key": "Resizable",
-      "slots": [
-        "root",
-        "panel",
-        "handle",
-        "grip"
-      ],
-      "defaults": {
-        "Orientation": "horizontal"
-      },
-      "parts": [
-        {
-          "axes": [],
-          "values": {
-            "": {
-              "root": {
-                "stroke": "color.border.default",
-                "strokeWidth": "stroke.control",
-                "radius": "radius.container",
-                "text": "color.content.primary"
-              },
-              "panel": {
-                "paddingX": "spacing.4",
-                "paddingY": "spacing.4",
-                "font": "type.label"
-              },
-              "grip": {
-                "fill": "color.border.default",
-                "radius": "radius.pill"
-              },
-              "handle:focus-visible": {
-                "fill": "color.border.focus"
-              }
-            }
-          }
-        },
-        {
-          "axes": [
-            "Orientation"
-          ],
-          "values": {
-            "horizontal": {
-              "handle": {
-                "fill": "color.border.default",
-                "width": "stroke.divider"
-              }
-            },
-            "vertical": {
-              "handle": {
-                "fill": "color.border.default",
-                "height": "stroke.divider"
-              }
-            }
-          }
-        }
-      ]
-    },
-    "Carousel": {
-      "key": "Carousel",
-      "slots": [
-        "root",
-        "item",
-        "previous",
-        "next"
-      ],
-      "defaults": {
-        "Orientation": "horizontal"
-      },
-      "parts": [
-        {
-          "axes": [
-            "Orientation"
-          ],
-          "values": {
-            "horizontal": {
-              "root": {
-                "text": "color.content.primary"
-              },
-              "previous": {
-                "radius": "radius.pill"
-              },
-              "next": {
-                "radius": "radius.pill"
-              }
-            },
-            "vertical": {
-              "root": {
-                "text": "color.content.primary"
-              },
-              "previous": {
-                "radius": "radius.pill"
-              },
-              "next": {
-                "radius": "radius.pill"
-              }
-            }
-          }
-        }
-      ]
-    },
-    "Chart": {
-      "key": "Chart",
-      "slots": [
-        "root",
-        "tooltip",
-        "label",
-        "legend"
-      ],
-      "defaults": {},
-      "parts": [
-        {
-          "axes": [],
-          "values": {
-            "": {
-              "root": {
-                "text": "color.content.secondary",
-                "font": "type.caption"
-              },
-              "tooltip": {
-                "fill": "color.surface.layer-2",
-                "stroke": "color.border.subtle",
-                "strokeWidth": "stroke.control",
-                "radius": "radius.container",
-                "shadow": "shadow.xl",
-                "paddingX": "spacing.2_5",
-                "paddingY": "spacing.1_5",
-                "gap": "spacing.1_5",
-                "text": "color.content.primary",
-                "font": "type.caption"
-              },
-              "label": {
-                "text": "color.content.secondary"
-              },
-              "legend": {
-                "text": "color.content.secondary",
-                "gap": "spacing.4",
-                "font": "type.caption"
-              }
-            }
-          }
-        }
-      ]
-    },
-    "NavigationMenu": {
-      "key": "NavigationMenu",
-      "slots": [
-        "root",
-        "trigger",
-        "viewport",
-        "content",
-        "link"
-      ],
-      "defaults": {},
-      "parts": [
-        {
-          "axes": [],
-          "values": {
-            "": {
-              "root": {
-                "gap": "spacing.0"
-              },
-              "trigger": {
-                "text": "color.content.primary",
-                "font": "type.label",
-                "radius": "radius.action",
-                "height": "size.compact",
-                "paddingX": "spacing.2_5",
-                "gap": "spacing.1"
-              },
-              "trigger:hover": {
-                "fill": "color.action.ghost.hover"
-              },
-              "trigger[data-state=\"open\"]": {
-                "fill": "color.action.ghost.hover"
-              },
-              "viewport": {
-                "fill": "color.surface.layer-2",
-                "stroke": "color.border.subtle",
-                "strokeWidth": "stroke.control",
-                "radius": "radius.container",
-                "shadow": "shadow.lg"
-              },
-              "content": {
-                "paddingX": "spacing.1_5",
-                "paddingY": "spacing.1_5",
-                "gap": "spacing.1"
-              },
-              "link": {
-                "text": "color.content.primary",
-                "font": "type.body-sm",
-                "radius": "sub(radius.container,spacing.1_5)",
-                "paddingX": "spacing.2",
-                "paddingY": "spacing.2",
-                "gap": "spacing.1"
-              },
-              "link:hover": {
-                "fill": "color.action.ghost.hover"
-              }
-            }
-          }
-        }
-      ]
     },
     "Accordion": {
       "key": "Accordion",
@@ -30216,129 +29055,6 @@
         }
       ]
     },
-    "Command": {
-      "key": "Command",
-      "slots": [
-        "root",
-        "search",
-        "icon",
-        "input",
-        "list",
-        "heading",
-        "item"
-      ],
-      "defaults": {},
-      "parts": [
-        {
-          "axes": [],
-          "values": {
-            "": {
-              "root": {
-                "fill": "color.surface.layer-2",
-                "stroke": "color.border.subtle",
-                "strokeWidth": "stroke.control",
-                "radius": "radius.container",
-                "shadow": "shadow.2xl"
-              },
-              "search": {
-                "stroke": "color.border.subtle",
-                "strokeBottomWidth": "stroke.control",
-                "paddingX": "spacing.3",
-                "paddingY": "spacing.2_5",
-                "gap": "spacing.gap-control"
-              },
-              "icon": {
-                "text": "color.content.secondary"
-              },
-              "input": {
-                "text": "color.content.primary",
-                "font": "type.placeholder"
-              },
-              "list": {
-                "paddingX": "spacing.1_5",
-                "paddingY": "spacing.1_5"
-              },
-              "heading": {
-                "text": "color.content.subtle",
-                "font": "type.caption",
-                "paddingX": "spacing.2_5",
-                "paddingY": "spacing.1"
-              },
-              "item": {
-                "text": "color.content.primary",
-                "font": "type.body-sm",
-                "radius": "sub(radius.container,spacing.1_5)",
-                "paddingX": "spacing.2_5",
-                "paddingY": "spacing.1_5"
-              },
-              "item[data-highlighted]": {
-                "fill": "color.action.ghost.hover"
-              },
-              "item:hover": {
-                "fill": "color.action.ghost.hover"
-              }
-            }
-          }
-        }
-      ]
-    },
-    "Navbar": {
-      "key": "Navbar",
-      "slots": [
-        "root",
-        "logo",
-        "nav",
-        "link",
-        "avatar"
-      ],
-      "defaults": {},
-      "parts": [
-        {
-          "axes": [],
-          "values": {
-            "": {
-              "root": {
-                "fill": "color.surface.layer-1",
-                "stroke": "color.border.subtle",
-                "strokeWidth": "stroke.control",
-                "radius": "radius.container",
-                "paddingX": "spacing.4",
-                "paddingY": "spacing.2_5",
-                "gap": "spacing.5"
-              },
-              "logo": {
-                "fill": "color.action.primary.default",
-                "radius": "radius.control",
-                "width": "spacing.6",
-                "height": "spacing.6"
-              },
-              "nav": {
-                "gap": "spacing.3"
-              },
-              "link": {
-                "text": "color.content.secondary",
-                "font": "type.body-sm"
-              },
-              "link:hover": {
-                "text": "color.content.primary"
-              },
-              "link[aria-current=\"page\"]": {
-                "text": "color.content.primary",
-                "font": "type.button"
-              },
-              "avatar": {
-                "fill": "color.surface.selected",
-                "text": "color.content.accent",
-                "font": "type.caption",
-                "radius": "radius.pill",
-                "width": "size.xs",
-                "height": "size.xs"
-              }
-            }
-          }
-        }
-      ]
-    },
     "Sidebar": {
       "key": "Sidebar",
       "slots": [
@@ -31457,7 +30173,7 @@
       "Surface/selected-pressed": "[ROLE: Active State Background Pressed] A pressed soft brand control (Button Soft / Outline pressed). {accent-a.5}, two steps deeper than surface.selected — the brand twin of status.*.surface-pressed.",
       "Surface/inverse": "[ROLE: Inverted Background] High-contrast background for tooltips, snackbars and inverse alerts or badges. Always pair with content.inverse (title) and content.inverse-secondary (body, icons). {neutral.12} in both themes: a dark chip in Light, a light one in Dark.",
       "Surface/overlay": "[ROLE: Scrim] Semi-transparent layer over surface.page to focus attention on modals (layer-2 surfaces). Ships at 60% black alpha (`{black-a.8}`), same in both themes.",
-      "Surface/accent": "[ROLE: Accent Wash] Ambient brand-tinted background — a section that leans brand without being an interactive fill.",
+      "Surface/accent": "[ROLE: Accent Wash] Ambient brand-tinted background — a section that leans brand without being an interactive fill. {accent.2} in Light, {accent.4} in Dark (the Figma file is the rule, 2026-11-17).",
       "Surface/muted": "[ROLE: Control Track] Neutral fill of a control's passive part — a Switch's off track, a Slider or Progress track, an OTP segment, a step connector. {neutral.4} in light. Not a button: a secondary CTA uses action.secondary.default.",
       "Surface/muted-hover": "[ROLE: Control Track Hover] Hover twin of surface.muted (a hovered off Switch, a scrollbar thumb). {neutral.5} in light — one step past the track.",
       "Content/primary": "[ROLE: High Contrast Text] Main body and headings. STRICT: must pass WCAG AA (4.5:1) against surface.page and surface.layer-1.",
@@ -31522,7 +30238,9 @@
       "Border/control-hover": "[ROLE: Control Boundary Hover] Affects the hover state of a control's resting (border.control) border. One step past border.control: {black-a.4} in Light, {white-a.4} in Dark (DEC-2026-11-16-004).",
       "Border/strong": "[ROLE: Strong Border] Affects the edge of a grouping or a selected container that must read before its neighbours. Not the field outline — that is border.control. WCAG 1.4.11 + APCA Lc 45 against the page, SOLVED on the alpha ladder ({ui-a:…}): {black-a.7} in light, {white-a.8} in dark for the default system.",
       "Border/focus": "[ROLE: A11y Focus Ring] The keyboard focus-visible boundary on every interactive element of the default / accent variant. SOLVED per theme ({focus:accent.9}): the first accent tone from 9 that clears WCAG 1.4.11 (3:1) on the page — tone 9 in both themes for the default system. Severity, neutral and inverse variants take their own boundary (status.<sev>.border-strong, border.strong, border.inverse). The translucent halo outside it is border.ring.*.",
-      "Border/ring/default": "[ROLE: Focus Halo] Translucent glow outside border.focus. Paired with border.focus on EVERY focused control (shadcn border-ring + ring-[3px]): the edge turns to border.focus, this halo sits outside it. Never the only focus cue. Decoration, NOT a boundary — never measured for WCAG 1.4.11; border.focus is the contrast-bearing part. Replaces a hardcoded 40% alpha in the preview specimens. A field in an error/success state reuses status.<sev>.border for its halo — there is no separate per-severity ring role.",
+      "Border/ring/default": "[ROLE: Focus Ring · accent] The 2px focus ring drawn 1px OUTSIDE a focused control, with the page showing in the gap (owner decision 2026-11-17). Accent Alpha/06 in each mode. Used by every default-intent control. Decoration, never the only focus cue and never measured as a boundary; border.focus is the contrast-bearing edge of a field. Neutral controls use border.ring.neutral, critical ones status.critical.ring.",
+      "Border/ring/neutral": "[ROLE: Focus Ring · neutral] The 2px focus ring, 1px outside a focused neutral (secondary) control. Gray Alpha/06 in each mode, the neutral twin of border.ring.default.",
+      "Status/critical/ring": "[ROLE: Focus Ring · critical] The 2px focus ring, 1px outside a focused critical (destructive) control. Error Alpha/06 in each mode, the critical twin of border.ring.default and the same red as a field's error halo (status.critical.border).",
       "Border/rim-highlight": "[ROLE: Elevation Rim] 1px light rim along the top of an elevated surface in dark mode. Below a near-black page only ~5% of the luminance range is left to spend downward, so elevation has to be bought with light, not shadow — this is the token for the rim darkShadow() already paints.",
       "Border/accent": "[ROLE: Accent Border] Border painted in the brand accent — a selected card, a toggled button, any element that needs its stroke to read as the primary accent. For keyboard focus use border.focus."
     },

@@ -38,7 +38,7 @@ if (process.argv.includes('--json')) {
 } else if (missing.length) {
   console.error(`✗ ${missing.length} of ${names.size} components have no Storybook story:\n`)
   for (const n of missing) console.error(`  - ${n}  (${[...names.get(n)].join(', ')})`)
-  console.error('\nAdd apps/storybook/stories/<Name>.stories.tsx, or move the file to escala-ui/_skeleton/.')
+  console.error('\nAdd apps/storybook/stories/<Name>.stories.tsx. escala-ui holds only Escala components (a Figma set, or a part one uses).')
 } else {
   console.log(`✓ all ${names.size} components have a story`)
 }

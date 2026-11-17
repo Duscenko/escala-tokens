@@ -1,0 +1,1055 @@
+[
+  {
+    "key": "Button",
+    "label": "Button",
+    "category": "Button & Actions",
+    "file": "spec/contracts/Button.json",
+    "figmaSet": "Button",
+    "story": "buttons-button--playground",
+    "tokens": 40
+  },
+  {
+    "key": "IconButton",
+    "label": "Icon Button",
+    "category": "Button & Actions",
+    "file": "spec/contracts/IconButton.json",
+    "figmaSet": "IconButton",
+    "story": "buttons-iconbutton--playground",
+    "tokens": 40
+  },
+  {
+    "key": "CloseButton",
+    "label": "Close Button",
+    "category": "Button & Actions",
+    "file": "spec/contracts/CloseButton.json",
+    "figmaSet": "CloseButton",
+    "story": "buttons-closebutton--playground",
+    "tokens": 33
+  },
+  {
+    "key": "TextLink",
+    "label": "Text Link",
+    "category": "Button & Actions",
+    "file": "spec/contracts/TextLink.json",
+    "figmaSet": "TextLink",
+    "story": "buttons-textlink--playground",
+    "tokens": 33
+  },
+  {
+    "key": "FABButton",
+    "label": "FAB Button",
+    "category": "Button & Actions",
+    "file": "spec/contracts/FABButton.json",
+    "figmaSet": "FABButton",
+    "story": "buttons-fabbutton--playground",
+    "tokens": 37
+  },
+  {
+    "key": "FABGroup",
+    "label": "FAB Group",
+    "category": "Button & Actions",
+    "file": "spec/contracts/FABGroup.json",
+    "figmaSet": "FABGroup",
+    "story": "buttons-fabbutton--fab-group-playground",
+    "tokens": 1
+  },
+  {
+    "key": "ButtonGroup",
+    "label": "Button Group",
+    "category": "Button & Actions",
+    "file": "spec/contracts/ButtonGroup.json",
+    "figmaSet": "ButtonGroup",
+    "story": "buttons-buttongroup--playground",
+    "tokens": 9
+  },
+  {
+    "key": "ButtonGroupItem",
+    "label": "Button Group Item",
+    "category": "Button & Actions",
+    "file": "spec/contracts/ButtonGroupItem.json",
+    "figmaSet": "ButtonGroupItem",
+    "story": "buttons-buttongroup--button-group-item-playground",
+    "tokens": 37
+  },
+  {
+    "key": "ButtonGroupDivider",
+    "label": "Button Group Divider",
+    "category": "Button & Actions",
+    "file": "spec/contracts/ButtonGroupDivider.json",
+    "figmaSet": "ButtonGroupDivider",
+    "story": "buttons-buttongroup--button-group-divider-playground",
+    "tokens": 5
+  },
+  {
+    "key": "SocialLoginButton",
+    "label": "Social Login Button",
+    "category": "Button & Actions",
+    "file": "spec/contracts/SocialLoginButton.json",
+    "figmaSet": "SocialLoginButton",
+    "story": "buttons-socialloginbutton--playground",
+    "tokens": 66
+  },
+  {
+    "key": "Input",
+    "label": "Input",
+    "category": "Form Controls",
+    "file": "spec/contracts/Input.json",
+    "figmaSet": "Input",
+    "story": "forms-input--playground",
+    "tokens": 28
+  },
+  {
+    "key": "Textarea",
+    "label": "Textarea",
+    "category": "Form Controls",
+    "file": "spec/contracts/Textarea.json",
+    "figmaSet": "Textarea",
+    "story": "forms-textarea--playground",
+    "tokens": 32
+  },
+  {
+    "key": "InputOTP",
+    "label": "Input OTP",
+    "category": "Form Controls",
+    "file": "spec/contracts/InputOTP.json",
+    "figmaSet": "InputOTP",
+    "story": "forms-inputotp--playground",
+    "tokens": 5
+  },
+  {
+    "key": "InputOTPSlot",
+    "label": "Input OTP Slot",
+    "category": "Form Controls",
+    "file": "spec/contracts/InputOTPSlot.json",
+    "figmaSet": "InputOTPSlot",
+    "story": "forms-inputotp--input-otp-slot-playground",
+    "tokens": 25
+  },
+  {
+    "key": "NumberInput",
+    "label": "Number Input",
+    "category": "Form Controls",
+    "file": "spec/contracts/NumberInput.json",
+    "figmaSet": "NumberInput",
+    "story": "forms-numberinput--playground",
+    "tokens": 18
+  },
+  {
+    "key": "InputTag",
+    "label": "Input Tag",
+    "category": "Form Controls",
+    "file": "spec/contracts/InputTag.json",
+    "figmaSet": "InputTag",
+    "story": "forms-inputtag--playground",
+    "tokens": 21
+  },
+  {
+    "key": "InputTagChip",
+    "label": "Input Tag Chip",
+    "category": "Form Controls",
+    "file": "spec/contracts/InputTagChip.json",
+    "figmaSet": "InputTagChip",
+    "story": "forms-inputtag--input-tag-chip-playground",
+    "tokens": 33
+  },
+  {
+    "key": "InputTagOption",
+    "label": "Input Tag Option",
+    "category": "Form Controls",
+    "file": "spec/contracts/InputTagOption.json",
+    "figmaSet": "InputTagOption",
+    "story": "forms-inputtag--input-tag-option-playground",
+    "tokens": 21
+  },
+  {
+    "key": "DatePickerTrigger",
+    "label": "Date Picker Trigger",
+    "category": "Form Controls",
+    "file": "spec/contracts/DatePickerTrigger.json",
+    "figmaSet": "DatePickerTrigger",
+    "story": "forms-datepicker--date-picker-trigger-playground",
+    "tokens": 23
+  },
+  {
+    "key": "DatePickerPopover",
+    "label": "Date Picker Popover",
+    "category": "Form Controls",
+    "file": "spec/contracts/DatePickerPopover.json",
+    "figmaSet": "DatePickerPopover",
+    "story": "forms-datepicker--date-picker-popover-playground",
+    "tokens": 3
+  },
+  {
+    "key": "CalendarDay",
+    "label": "Calendar Day",
+    "category": "Form Controls",
+    "file": "spec/contracts/CalendarDay.json",
+    "figmaSet": "CalendarDay",
+    "story": "forms-calendar--calendar-day-playground",
+    "tokens": 27
+  },
+  {
+    "key": "CalendarHeader",
+    "label": "Calendar Header",
+    "category": "Form Controls",
+    "file": "spec/contracts/CalendarHeader.json",
+    "figmaSet": "CalendarHeader",
+    "story": "forms-calendar--calendar-header-playground",
+    "tokens": 16
+  },
+  {
+    "key": "CalendarMonth",
+    "label": "Calendar Month",
+    "category": "Form Controls",
+    "file": "spec/contracts/CalendarMonth.json",
+    "figmaSet": "CalendarMonth",
+    "story": "forms-calendar--calendar-month-playground",
+    "tokens": 5
+  },
+  {
+    "key": "CalendarPresets",
+    "label": "Calendar Presets",
+    "category": "Form Controls",
+    "file": "spec/contracts/CalendarPresets.json",
+    "figmaSet": "CalendarPresets",
+    "story": "forms-calendar--calendar-presets-playground",
+    "tokens": 20
+  },
+  {
+    "key": "CalendarFooter",
+    "label": "Calendar Footer",
+    "category": "Form Controls",
+    "file": "spec/contracts/CalendarFooter.json",
+    "figmaSet": "CalendarFooter",
+    "story": "forms-calendar--calendar-footer-playground",
+    "tokens": 7
+  },
+  {
+    "key": "Calendar",
+    "label": "Calendar",
+    "category": "Form Controls",
+    "file": "spec/contracts/Calendar.json",
+    "figmaSet": "Calendar",
+    "story": "forms-calendar--playground",
+    "tokens": 7
+  },
+  {
+    "key": "Combobox",
+    "label": "Combobox",
+    "category": "Form Controls",
+    "file": "spec/contracts/Combobox.json",
+    "figmaSet": "Combobox",
+    "story": "forms-combobox--playground",
+    "tokens": 28
+  },
+  {
+    "key": "ComboboxPopover",
+    "label": "Combobox Popover",
+    "category": "Form Controls",
+    "file": "spec/contracts/ComboboxPopover.json",
+    "figmaSet": "ComboboxPopover",
+    "story": "forms-combobox--combobox-popover-playground",
+    "tokens": 14
+  },
+  {
+    "key": "ComboboxItem",
+    "label": "Combobox Item",
+    "category": "Form Controls",
+    "file": "spec/contracts/ComboboxItem.json",
+    "figmaSet": "ComboboxItem",
+    "story": "forms-combobox--combobox-item-playground",
+    "tokens": 26
+  },
+  {
+    "key": "ComboboxGroupLabel",
+    "label": "Combobox Group Label",
+    "category": "Form Controls",
+    "file": "spec/contracts/ComboboxGroupLabel.json",
+    "figmaSet": "ComboboxGroupLabel",
+    "story": "forms-combobox--combobox-group-label-playground",
+    "tokens": 6
+  },
+  {
+    "key": "Checkbox",
+    "label": "Checkbox",
+    "category": "Form Controls",
+    "file": "spec/contracts/Checkbox.json",
+    "figmaSet": "Checkbox",
+    "story": "forms-checkbox--playground",
+    "tokens": 41
+  },
+  {
+    "key": "CheckboxItem",
+    "label": "Checkbox Item",
+    "category": "Form Controls",
+    "file": "spec/contracts/CheckboxItem.json",
+    "figmaSet": "CheckboxItem",
+    "story": "forms-checkbox--checkbox-item-playground",
+    "tokens": 11
+  },
+  {
+    "key": "CheckboxGroup",
+    "label": "Checkbox Group",
+    "category": "Form Controls",
+    "file": "spec/contracts/CheckboxGroup.json",
+    "figmaSet": "CheckboxGroup",
+    "story": "forms-checkbox--checkbox-group-playground",
+    "tokens": 10
+  },
+  {
+    "key": "RadioGroup",
+    "label": "Radio Group",
+    "category": "Form Controls",
+    "file": "spec/contracts/RadioGroup.json",
+    "figmaSet": "RadioGroup",
+    "story": "forms-radiogroup--playground",
+    "tokens": 14
+  },
+  {
+    "key": "Switch",
+    "label": "Switch",
+    "category": "Form Controls",
+    "file": "spec/contracts/Switch.json",
+    "figmaSet": "Switch",
+    "story": "forms-switch--playground",
+    "tokens": 23
+  },
+  {
+    "key": "SwitchGroup",
+    "label": "Switch Group",
+    "category": "Form Controls",
+    "file": "spec/contracts/SwitchGroup.json",
+    "figmaSet": "SwitchGroup",
+    "story": "forms-switch--switch-group-playground",
+    "tokens": 19
+  },
+  {
+    "key": "Slider",
+    "label": "Slider",
+    "category": "Form Controls",
+    "file": "spec/contracts/Slider.json",
+    "figmaSet": "Slider",
+    "story": "forms-slider--playground",
+    "tokens": 23
+  },
+  {
+    "key": "SliderThumb",
+    "label": "Slider Thumb",
+    "category": "Form Controls",
+    "file": "spec/contracts/SliderThumb.json",
+    "figmaSet": "SliderThumb",
+    "story": "forms-slider--slider-thumb-playground",
+    "tokens": 19
+  },
+  {
+    "key": "FileUpload",
+    "label": "File Upload",
+    "category": "Form Controls",
+    "file": "spec/contracts/FileUpload.json",
+    "figmaSet": "FileUpload",
+    "story": "forms-fileupload--playground",
+    "tokens": 6
+  },
+  {
+    "key": "FileUploadItem",
+    "label": "File Upload Item",
+    "category": "Form Controls",
+    "file": "spec/contracts/FileUploadItem.json",
+    "figmaSet": "FileUploadItem",
+    "story": "forms-fileupload--file-upload-item-playground",
+    "tokens": 24
+  },
+  {
+    "key": "FileUploadDropzone",
+    "label": "File Upload Dropzone",
+    "category": "Form Controls",
+    "file": "spec/contracts/FileUploadDropzone.json",
+    "figmaSet": "FileUploadDropzone",
+    "story": "forms-fileupload--file-upload-dropzone-playground",
+    "tokens": 30
+  },
+  {
+    "key": "Field",
+    "label": "Field",
+    "category": "Form Controls",
+    "file": "spec/contracts/Field.json",
+    "figmaSet": "Field",
+    "story": "forms-field--playground",
+    "tokens": 9
+  },
+  {
+    "key": "Label",
+    "label": "Label",
+    "category": "Form Controls",
+    "file": "spec/contracts/Label.json",
+    "figmaSet": null,
+    "story": "forms-label--playground",
+    "tokens": 2
+  },
+  {
+    "key": "PasswordStrength",
+    "label": "Password Strength",
+    "category": "Form Controls",
+    "file": "spec/contracts/PasswordStrength.json",
+    "figmaSet": "PasswordStrength",
+    "story": "forms-passwordstrength--playground",
+    "tokens": 13
+  },
+  {
+    "key": "PasswordStrengthMeter",
+    "label": "Password Strength Meter",
+    "category": "Form Controls",
+    "file": "spec/contracts/PasswordStrengthMeter.json",
+    "figmaSet": "PasswordStrengthMeter",
+    "story": "forms-passwordstrength--password-strength-meter-playground",
+    "tokens": 11
+  },
+  {
+    "key": "PasswordStrengthRule",
+    "label": "Password Strength Rule",
+    "category": "Form Controls",
+    "file": "spec/contracts/PasswordStrengthRule.json",
+    "figmaSet": "PasswordStrengthRule",
+    "story": "forms-passwordstrength--password-strength-rule-playground",
+    "tokens": 15
+  },
+  {
+    "key": "Badge",
+    "label": "Badge",
+    "category": "Indicators",
+    "file": "spec/contracts/Badge.json",
+    "figmaSet": "Badge",
+    "story": "indicators-badge--playground",
+    "tokens": 54
+  },
+  {
+    "key": "Chip",
+    "label": "Chip",
+    "category": "Indicators",
+    "file": "spec/contracts/Chip.json",
+    "figmaSet": "Chip",
+    "story": "indicators-chip--playground",
+    "tokens": 53
+  },
+  {
+    "key": "ProgressLine",
+    "label": "Progress Line",
+    "category": "Indicators",
+    "file": "spec/contracts/ProgressLine.json",
+    "figmaSet": "ProgressLine",
+    "story": "indicators-progressline--playground",
+    "tokens": 7
+  },
+  {
+    "key": "ProgressCircle",
+    "label": "Progress Circle",
+    "category": "Indicators",
+    "file": "spec/contracts/ProgressCircle.json",
+    "figmaSet": "ProgressCircle",
+    "story": "indicators-progresscircle--playground",
+    "tokens": 6
+  },
+  {
+    "key": "Spinner",
+    "label": "Spinner",
+    "category": "Indicators",
+    "file": "spec/contracts/Spinner.json",
+    "figmaSet": null,
+    "story": "feedback-spinner--playground",
+    "tokens": 1
+  },
+  {
+    "key": "FeaturedIcon",
+    "label": "Featured Icon",
+    "category": "Indicators",
+    "file": "spec/contracts/FeaturedIcon.json",
+    "figmaSet": "FeaturedIcon",
+    "story": "indicators-featuredicon--playground",
+    "tokens": 47
+  },
+  {
+    "key": "Kbd",
+    "label": "Kbd",
+    "category": "Indicators",
+    "file": "spec/contracts/Kbd.json",
+    "figmaSet": "Kbd",
+    "story": "indicators-kbd--playground",
+    "tokens": 12
+  },
+  {
+    "key": "RatingGroup",
+    "label": "Rating Group",
+    "category": "Indicators",
+    "file": "spec/contracts/RatingGroup.json",
+    "figmaSet": "RatingGroup",
+    "story": "indicators-ratinggroup--playground",
+    "tokens": 2
+  },
+  {
+    "key": "RatingGroupItem",
+    "label": "Rating Group Item",
+    "category": "Indicators",
+    "file": "spec/contracts/RatingGroupItem.json",
+    "figmaSet": "RatingGroupItem",
+    "story": "indicators-ratinggroup--rating-group-item-playground",
+    "tokens": 17
+  },
+  {
+    "key": "Avatar",
+    "label": "Avatar",
+    "category": "Content & Surfaces",
+    "file": "spec/contracts/Avatar.json",
+    "figmaSet": "Avatar",
+    "story": "content-surfaces-avatar--playground",
+    "tokens": 46
+  },
+  {
+    "key": "AvatarStatus",
+    "label": "Avatar Status",
+    "category": "Content & Surfaces",
+    "file": "spec/contracts/AvatarStatus.json",
+    "figmaSet": "AvatarStatus",
+    "story": "content-surfaces-avatar--avatar-status-playground",
+    "tokens": 13
+  },
+  {
+    "key": "AvatarGroup",
+    "label": "Avatar Group",
+    "category": "Content & Surfaces",
+    "file": "spec/contracts/AvatarGroup.json",
+    "figmaSet": "AvatarGroup",
+    "story": "content-surfaces-avatar--avatar-group-playground",
+    "tokens": 17
+  },
+  {
+    "key": "Card",
+    "label": "Card",
+    "category": "Content & Surfaces",
+    "file": "spec/contracts/Card.json",
+    "figmaSet": null,
+    "story": "content-surfaces-card--playground",
+    "tokens": 14
+  },
+  {
+    "key": "Separator",
+    "label": "Separator",
+    "category": "Content & Surfaces",
+    "file": "spec/contracts/Separator.json",
+    "figmaSet": "Separator",
+    "story": "content-surfaces-separator--playground",
+    "tokens": 7
+  },
+  {
+    "key": "Accordion",
+    "label": "Accordion",
+    "category": "Content & Surfaces",
+    "file": "spec/contracts/Accordion.json",
+    "figmaSet": "Accordion",
+    "story": "content-surfaces-accordion--playground",
+    "tokens": 2
+  },
+  {
+    "key": "AccordionItem",
+    "label": "Accordion Item",
+    "category": "Content & Surfaces",
+    "file": "spec/contracts/AccordionItem.json",
+    "figmaSet": "AccordionItem",
+    "story": "content-surfaces-accordion--accordion-item-playground",
+    "tokens": 18
+  },
+  {
+    "key": "Image",
+    "label": "Image",
+    "category": "Content & Surfaces",
+    "file": "spec/contracts/Image.json",
+    "figmaSet": "Image",
+    "story": "content-surfaces-image--playground",
+    "tokens": 3
+  },
+  {
+    "key": "Modal",
+    "label": "Modal",
+    "category": "Content & Surfaces",
+    "file": "spec/contracts/Modal.json",
+    "figmaSet": "Modal",
+    "story": "content-surfaces-modal--playground",
+    "tokens": 14
+  },
+  {
+    "key": "ModalHeader",
+    "label": "Modal Header",
+    "category": "Content & Surfaces",
+    "file": "spec/contracts/ModalHeader.json",
+    "figmaSet": "ModalHeader",
+    "story": "content-surfaces-modal--modal-header-playground",
+    "tokens": 10
+  },
+  {
+    "key": "ModalFooter",
+    "label": "Modal Footer",
+    "category": "Content & Surfaces",
+    "file": "spec/contracts/ModalFooter.json",
+    "figmaSet": "ModalFooter",
+    "story": "content-surfaces-modal--modal-footer-playground",
+    "tokens": 7
+  },
+  {
+    "key": "Sheet",
+    "label": "Sheet",
+    "category": "Content & Surfaces",
+    "file": "spec/contracts/Sheet.json",
+    "figmaSet": "Sheet",
+    "story": "content-surfaces-sheet--playground",
+    "tokens": 20
+  },
+  {
+    "key": "Popover",
+    "label": "Popover",
+    "category": "Content & Surfaces",
+    "file": "spec/contracts/Popover.json",
+    "figmaSet": "Popover",
+    "story": "content-surfaces-popover--playground",
+    "tokens": 24
+  },
+  {
+    "key": "PopoverFooter",
+    "label": "Popover Footer",
+    "category": "Content & Surfaces",
+    "file": "spec/contracts/PopoverFooter.json",
+    "figmaSet": "PopoverFooter",
+    "story": "content-surfaces-popover--popover-footer-playground",
+    "tokens": 7
+  },
+  {
+    "key": "TooltipContent",
+    "label": "Tooltip",
+    "category": "Content & Surfaces",
+    "file": "spec/contracts/TooltipContent.json",
+    "figmaSet": "TooltipContent",
+    "story": "content-surfaces-tooltip--tooltip-content-playground",
+    "tokens": 23
+  },
+  {
+    "key": "TooltipInfoTrigger",
+    "label": "Tooltip Info Trigger",
+    "category": "Content & Surfaces",
+    "file": "spec/contracts/TooltipInfoTrigger.json",
+    "figmaSet": "TooltipInfoTrigger",
+    "story": "content-surfaces-tooltip--tooltip-info-trigger-playground",
+    "tokens": 20
+  },
+  {
+    "key": "ScrollArea",
+    "label": "Scroll Area",
+    "category": "Content & Surfaces",
+    "file": "spec/contracts/ScrollArea.json",
+    "figmaSet": "ScrollArea",
+    "story": "content-surfaces-scrollarea--playground",
+    "tokens": 6
+  },
+  {
+    "key": "ScrollBar",
+    "label": "Scroll Bar",
+    "category": "Content & Surfaces",
+    "file": "spec/contracts/ScrollBar.json",
+    "figmaSet": "ScrollBar",
+    "story": "content-surfaces-scrollarea--scroll-bar-playground",
+    "tokens": 6
+  },
+  {
+    "key": "Table",
+    "label": "Table",
+    "category": "Content & Surfaces",
+    "file": "spec/contracts/Table.json",
+    "figmaSet": "Table",
+    "story": "content-surfaces-table--playground",
+    "tokens": 5
+  },
+  {
+    "key": "TableCell",
+    "label": "TableCell",
+    "category": "Content & Surfaces",
+    "file": "spec/contracts/TableCell.json",
+    "figmaSet": "TableCell",
+    "story": "content-surfaces-table--table-cell-playground",
+    "tokens": 20
+  },
+  {
+    "key": "TableHead",
+    "label": "TableHead",
+    "category": "Content & Surfaces",
+    "file": "spec/contracts/TableHead.json",
+    "figmaSet": "TableHead",
+    "story": "content-surfaces-table--table-head-playground",
+    "tokens": 17
+  },
+  {
+    "key": "TableMediaCell",
+    "label": "TableMediaCell",
+    "category": "Content & Surfaces",
+    "file": "spec/contracts/TableMediaCell.json",
+    "figmaSet": "TableMediaCell",
+    "story": "content-surfaces-table--table-media-cell-playground",
+    "tokens": 16
+  },
+  {
+    "key": "TableTrendCell",
+    "label": "TableTrendCell",
+    "category": "Content & Surfaces",
+    "file": "spec/contracts/TableTrendCell.json",
+    "figmaSet": "TableTrendCell",
+    "story": "content-surfaces-table--table-trend-cell-playground",
+    "tokens": 17
+  },
+  {
+    "key": "TableResizer",
+    "label": "TableResizer",
+    "category": "Content & Surfaces",
+    "file": "spec/contracts/TableResizer.json",
+    "figmaSet": "TableResizer",
+    "story": "content-surfaces-table--table-resizer-playground",
+    "tokens": 5
+  },
+  {
+    "key": "TableRow",
+    "label": "TableRow",
+    "category": "Content & Surfaces",
+    "file": "spec/contracts/TableRow.json",
+    "figmaSet": "TableRow",
+    "story": "content-surfaces-table--table-row-playground",
+    "tokens": 12
+  },
+  {
+    "key": "TableHeader",
+    "label": "TableHeader",
+    "category": "Content & Surfaces",
+    "file": "spec/contracts/TableHeader.json",
+    "figmaSet": "TableHeader",
+    "story": "content-surfaces-table--table-header-playground",
+    "tokens": 7
+  },
+  {
+    "key": "TableFooter",
+    "label": "TableFooter",
+    "category": "Content & Surfaces",
+    "file": "spec/contracts/TableFooter.json",
+    "figmaSet": "TableFooter",
+    "story": "content-surfaces-table--table-footer-playground",
+    "tokens": 7
+  },
+  {
+    "key": "TableCaption",
+    "label": "TableCaption",
+    "category": "Content & Surfaces",
+    "file": "spec/contracts/TableCaption.json",
+    "figmaSet": "TableCaption",
+    "story": "content-surfaces-table--table-caption-playground",
+    "tokens": 5
+  },
+  {
+    "key": "TableDropIndicator",
+    "label": "TableDropIndicator",
+    "category": "Content & Surfaces",
+    "file": "spec/contracts/TableDropIndicator.json",
+    "figmaSet": "TableDropIndicator",
+    "story": "content-surfaces-table--table-drop-indicator-playground",
+    "tokens": 2
+  },
+  {
+    "key": "TableEmpty",
+    "label": "TableEmpty",
+    "category": "Content & Surfaces",
+    "file": "spec/contracts/TableEmpty.json",
+    "figmaSet": "TableEmpty",
+    "story": "content-surfaces-table--table-empty-playground",
+    "tokens": 9
+  },
+  {
+    "key": "TableLoading",
+    "label": "TableLoading",
+    "category": "Content & Surfaces",
+    "file": "spec/contracts/TableLoading.json",
+    "figmaSet": "TableLoading",
+    "story": "content-surfaces-table--table-loading-playground",
+    "tokens": 6
+  },
+  {
+    "key": "TableLoadMore",
+    "label": "TableLoadMore",
+    "category": "Content & Surfaces",
+    "file": "spec/contracts/TableLoadMore.json",
+    "figmaSet": "TableLoadMore",
+    "story": "content-surfaces-table--table-load-more-playground",
+    "tokens": 1
+  },
+  {
+    "key": "Toast",
+    "label": "Toast",
+    "category": "Feedback",
+    "file": "spec/contracts/Toast.json",
+    "figmaSet": "Toast",
+    "story": "feedback-toast--playground",
+    "tokens": 46
+  },
+  {
+    "key": "Alert",
+    "label": "Alert",
+    "category": "Feedback",
+    "file": "spec/contracts/Alert.json",
+    "figmaSet": "Alert",
+    "story": "feedback-alert--playground",
+    "tokens": 48
+  },
+  {
+    "key": "TabMenu",
+    "label": "Tab Menu",
+    "category": "Navigation",
+    "file": "spec/contracts/TabMenu.json",
+    "figmaSet": "TabMenu",
+    "story": "navigation-tabmenu--playground",
+    "tokens": 4
+  },
+  {
+    "key": "TabMenuItem",
+    "label": "Tab Menu Item",
+    "category": "Navigation",
+    "file": "spec/contracts/TabMenuItem.json",
+    "figmaSet": "TabMenuItem",
+    "story": "navigation-tabmenu--tab-menu-item-playground",
+    "tokens": 19
+  },
+  {
+    "key": "TabMenuLineItem",
+    "label": "Tab Menu Line Item",
+    "category": "Navigation",
+    "file": "spec/contracts/TabMenuLineItem.json",
+    "figmaSet": "TabMenuLineItem",
+    "story": "navigation-tabmenu--tab-menu-line-item-playground",
+    "tokens": 19
+  },
+  {
+    "key": "NavItem",
+    "label": "Nav Item",
+    "category": "Navigation",
+    "file": "spec/contracts/NavItem.json",
+    "figmaSet": "NavItem",
+    "story": "navigation-navitem--playground",
+    "tokens": 19
+  },
+  {
+    "key": "Brand",
+    "label": "Brand",
+    "category": "Navigation",
+    "file": "spec/contracts/Brand.json",
+    "figmaSet": "Brand",
+    "story": "navigation-brand--playground",
+    "tokens": 4
+  },
+  {
+    "key": "AccountMenuTrigger",
+    "label": "Account Menu Trigger",
+    "category": "Navigation",
+    "file": "spec/contracts/AccountMenuTrigger.json",
+    "figmaSet": "AccountMenuTrigger",
+    "story": "navigation-accountmenutrigger--playground",
+    "tokens": 15
+  },
+  {
+    "key": "SegmentedControl",
+    "label": "Segmented Control",
+    "category": "Navigation",
+    "file": "spec/contracts/SegmentedControl.json",
+    "figmaSet": "SegmentedControl",
+    "story": "navigation-segmentedcontrol--playground",
+    "tokens": 3
+  },
+  {
+    "key": "SegmentedControlItem",
+    "label": "Segmented Control Item",
+    "category": "Navigation",
+    "file": "spec/contracts/SegmentedControlItem.json",
+    "figmaSet": "SegmentedControlItem",
+    "story": "navigation-segmentedcontrol--segmented-control-item-playground",
+    "tokens": 20
+  },
+  {
+    "key": "Breadcrumb",
+    "label": "Breadcrumbs",
+    "category": "Navigation",
+    "file": "spec/contracts/Breadcrumb.json",
+    "figmaSet": "Breadcrumb",
+    "story": "navigation-breadcrumb--playground",
+    "tokens": 2
+  },
+  {
+    "key": "BreadcrumbItem",
+    "label": "Breadcrumb Item",
+    "category": "Navigation",
+    "file": "spec/contracts/BreadcrumbItem.json",
+    "figmaSet": "BreadcrumbItem",
+    "story": "navigation-breadcrumb--breadcrumb-item-playground",
+    "tokens": 30
+  },
+  {
+    "key": "BreadcrumbEllipsis",
+    "label": "Breadcrumb Ellipsis",
+    "category": "Navigation",
+    "file": "spec/contracts/BreadcrumbEllipsis.json",
+    "figmaSet": "BreadcrumbEllipsis",
+    "story": "navigation-breadcrumb--breadcrumb-ellipsis-playground",
+    "tokens": 23
+  },
+  {
+    "key": "BreadcrumbSeparator",
+    "label": "Breadcrumb Separator",
+    "category": "Navigation",
+    "file": "spec/contracts/BreadcrumbSeparator.json",
+    "figmaSet": "BreadcrumbSeparator",
+    "story": "navigation-breadcrumb--breadcrumb-separator-playground",
+    "tokens": 6
+  },
+  {
+    "key": "Pagination",
+    "label": "Pagination",
+    "category": "Navigation",
+    "file": "spec/contracts/Pagination.json",
+    "figmaSet": "Pagination",
+    "story": "navigation-pagination--playground",
+    "tokens": 2
+  },
+  {
+    "key": "PaginationLink",
+    "label": "Pagination Link",
+    "category": "Navigation",
+    "file": "spec/contracts/PaginationLink.json",
+    "figmaSet": "PaginationLink",
+    "story": "navigation-pagination--pagination-link-playground",
+    "tokens": 17
+  },
+  {
+    "key": "PaginationEllipsis",
+    "label": "Pagination Ellipsis",
+    "category": "Navigation",
+    "file": "spec/contracts/PaginationEllipsis.json",
+    "figmaSet": "PaginationEllipsis",
+    "story": "navigation-pagination--pagination-ellipsis-playground",
+    "tokens": 8
+  },
+  {
+    "key": "Stepper",
+    "label": "Stepper",
+    "category": "Navigation",
+    "file": "spec/contracts/Stepper.json",
+    "figmaSet": "Stepper",
+    "story": "navigation-stepper--playground",
+    "tokens": 2
+  },
+  {
+    "key": "StepperItem",
+    "label": "Stepper Item",
+    "category": "Navigation",
+    "file": "spec/contracts/StepperItem.json",
+    "figmaSet": "StepperItem",
+    "story": "navigation-stepper--stepper-item-playground",
+    "tokens": 9
+  },
+  {
+    "key": "StepperIndicator",
+    "label": "Stepper Indicator",
+    "category": "Navigation",
+    "file": "spec/contracts/StepperIndicator.json",
+    "figmaSet": "StepperIndicator",
+    "story": "navigation-stepper--stepper-indicator-playground",
+    "tokens": 6
+  },
+  {
+    "key": "StepperIcon",
+    "label": "Stepper Icon",
+    "category": "Navigation",
+    "file": "spec/contracts/StepperIcon.json",
+    "figmaSet": "StepperIcon",
+    "story": "navigation-stepper--stepper-icon-playground",
+    "tokens": 20
+  },
+  {
+    "key": "DropdownMenu",
+    "label": "Dropdown Menu",
+    "category": "Navigation",
+    "file": "spec/contracts/DropdownMenu.json",
+    "figmaSet": "DropdownMenu",
+    "story": "navigation-dropdownmenu--playground",
+    "tokens": 11
+  },
+  {
+    "key": "DropdownMenuLabel",
+    "label": "Dropdown Menu Label",
+    "category": "Navigation",
+    "file": "spec/contracts/DropdownMenuLabel.json",
+    "figmaSet": "DropdownMenuLabel",
+    "story": "navigation-dropdownmenu--dropdown-menu-label-playground",
+    "tokens": 6
+  },
+  {
+    "key": "DropdownMenuItem",
+    "label": "Dropdown Menu Item",
+    "category": "Navigation",
+    "file": "spec/contracts/DropdownMenuItem.json",
+    "figmaSet": "DropdownMenuItem",
+    "story": "navigation-dropdownmenu--dropdown-menu-item-playground",
+    "tokens": 24
+  },
+  {
+    "key": "DropdownMenuFooter",
+    "label": "Dropdown Menu Footer",
+    "category": "Navigation",
+    "file": "spec/contracts/DropdownMenuFooter.json",
+    "figmaSet": "DropdownMenuFooter",
+    "story": "navigation-dropdownmenu--dropdown-menu-footer-playground",
+    "tokens": 7
+  },
+  {
+    "key": "Sidebar",
+    "label": "Sidebar",
+    "category": "Navigation",
+    "file": "spec/contracts/Sidebar.json",
+    "figmaSet": "Sidebar",
+    "story": "navigation-sidebar--playground",
+    "tokens": 10
+  },
+  {
+    "key": "SidebarMenuButton",
+    "label": "Sidebar Menu Button",
+    "category": "Navigation",
+    "file": "spec/contracts/SidebarMenuButton.json",
+    "figmaSet": "SidebarMenuButton",
+    "story": "navigation-sidebar--sidebar-menu-button-playground",
+    "tokens": 21
+  },
+  {
+    "key": "SidebarGroup",
+    "label": "Sidebar Group",
+    "category": "Navigation",
+    "file": "spec/contracts/SidebarGroup.json",
+    "figmaSet": "SidebarGroup",
+    "story": "navigation-sidebar--sidebar-group-playground",
+    "tokens": 1
+  },
+  {
+    "key": "SidebarGroupLabel",
+    "label": "Sidebar Group Label",
+    "category": "Navigation",
+    "file": "spec/contracts/SidebarGroupLabel.json",
+    "figmaSet": "SidebarGroupLabel",
+    "story": "navigation-sidebar--sidebar-group-label-playground",
+    "tokens": 6
+  },
+  {
+    "key": "SidebarBrand",
+    "label": "Sidebar Brand",
+    "category": "Navigation",
+    "file": "spec/contracts/SidebarBrand.json",
+    "figmaSet": "SidebarBrand",
+    "story": "navigation-sidebar--sidebar-brand-playground",
+    "tokens": 6
+  }
+]

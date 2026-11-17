@@ -109,12 +109,12 @@ describe('recipe motion', () => {
 
 describe('escala-ui hardcodes no motion', () => {
   const dir = join(__dirname, '../../components/escala-ui')
-  // A loop keyed to its own library keyframes (spinner, skeleton, the OTP
+  // A loop keyed to its own library keyframes (spinner, the OTP
   // caret) and framer-motion's sliding pill keep their own timing.
   const LOOPS = /animate-(spin|pulse)/
   it('no Tailwind duration / ease / transition-* utility in any component file', () => {
     const offenders: string[] = []
-    const files = [...readdirSync(dir).filter((f) => f.endsWith('.tsx')), ...readdirSync(join(dir, '_skeleton')).filter((f) => f.endsWith('.tsx')).map((f) => `_skeleton/${f}`)]
+    const files = readdirSync(dir).filter((f) => f.endsWith('.tsx'))
     for (const file of files) {
       const src = readFileSync(join(dir, file), 'utf8')
       for (const m of src.matchAll(/\b(duration-\d+|ease-(in|out|in-out|linear)|transition-(all|colors|transform|opacity|shadow|\[[^\]]*\]))\b/g)) {

@@ -1,16 +1,13 @@
 import { useState } from 'react'
 import type { SpecimenProps } from '../specimens'
-import { PhosphorWeightProvider, PreviewIcon, avatarFillOf, avatarHueGradient, AVATAR_STACK_HUES } from '../specimens'
-import { iconOf, iconRoleOf } from '../../../../lib/previewTokens'
-import type { IconRole } from '../../../../lib/iconSizing'
-import { Badge as SkBadge, StatusBadge as SkStatusBadge, type BadgeAppearance, type BadgeShape, type BadgeSize, type BadgeType, type BadgeVariant, type Presence } from '../../../escala-ui/badge'
+import { PhosphorWeightProvider, avatarFillOf, avatarHueGradient, AVATAR_STACK_HUES } from '../specimens'
+import { iconOf} from '../../../../lib/previewTokens'
+import { Badge as SkBadge, type BadgeAppearance, type BadgeShape, type BadgeSize, type BadgeType, type BadgeVariant } from '../../../escala-ui/badge'
 import { Chip as SkChip, type ChipAppearance, type ChipShape, type ChipSize, type ChipState, type ChipVariant } from '../../../escala-ui/chip'
 import { useAutoplayStep } from '../../../preview/artefacts/boardAutoplay'
 import { ProgressCircle as SkProgressCircle, ProgressLine as SkProgressLine, type ProgressAppearance, type ProgressCap, type ProgressSize } from '../../../escala-ui/progress-line'
 import { Spinner as SkSpinner } from '../../../escala-ui/spinner'
-import { Icon as SkIcon } from '../../../escala-ui/icon'
 import { RatingGroup as SkRatingGroup, RatingGroupItem as SkRatingGroupItem, type RatingGroupItemState, type RatingGroupSize, type RatingGroupType } from '../../../escala-ui/rating-group'
-import { FileFormat as SkFileFormat, type Format } from '../../../escala-ui/file-format'
 import {
   Avatar as SkAvatar, AvatarStatus as SkAvatarStatus, AvatarGroup as SkAvatarGroup,
   type AvatarSize, type AvatarType, type AvatarShape, type AvatarVariant, type AvatarAppearance, type AvatarStatusValue, type AvatarStatusSize,
@@ -41,9 +38,6 @@ export function SkeletonBadgeSpecimen({ t, v, children }: SpecimenProps) {
   )
 }
 
-export function SkeletonStatusBadgeSpecimen({ t, v }: SpecimenProps) {
-  return <RecipeScope t={t}><SkStatusBadge status={(v.Status ?? 'online') as Presence} /></RecipeScope>
-}
 
 /** The Figma Chip. `CloseVisible` / `IconLeadingVisible` are Figma booleans (`'True'`). `v.Interactive: 'True'`
  *  (opt-in, not a catalogue axis) lets a click toggle it, as the board plays it; otherwise State pins it. */
@@ -97,21 +91,7 @@ export function SkeletonProgressCircleSpecimen({ t, v }: SpecimenProps) {
   )
 }
 
-export function SkeletonSpinnerSpecimen({ t }: SpecimenProps) {
-  return <RecipeScope t={t}><SkSpinner /></RecipeScope>
-}
 
-export function SkeletonIconSpecimen({ t, v }: SpecimenProps) {
-  const step = v.Size ?? 'default'
-  const role: IconRole = step === 'sm' ? 'small' : step === 'lg' ? 'large' : 'medium'
-  return (
-    <RecipeScope t={t}>
-      <SkIcon size={role === 'small' ? 'sm' : role === 'large' ? 'lg' : 'default'}>
-        <PreviewIcon concept="home" size={iconRoleOf(t, role)} />
-      </SkIcon>
-    </RecipeScope>
-  )
-}
 
 /** The Figma RatingGroup: five stars (four checked) or five smileys (the fourth chosen). */
 export function SkeletonRatingGroupSpecimen({ t, v }: SpecimenProps) {
@@ -141,9 +121,6 @@ export function SkeletonRatingGroupItemSpecimen({ t, v }: SpecimenProps) {
   )
 }
 
-export function SkeletonFileFormatSpecimen({ t, v }: SpecimenProps) {
-  return <RecipeScope t={t}><SkFileFormat format={(v.Format ?? 'pdf') as Format} /></RecipeScope>
-}
 
 /** The Figma Avatar. `v.Fill: 'Gradient'` (opt-in, not a catalogue axis) paints the avatar with
  *  the system's gradient and no initials (the board's people); `v.Hue` rotates it. RingVisible and
@@ -224,4 +201,8 @@ export function SkeletonKbdSpecimen({ t, v }: SpecimenProps) {
       </SkKbdGroup>
     </RecipeScope>
   )
+}
+
+export function SkeletonSpinnerSpecimen({ t }: SpecimenProps) {
+  return <RecipeScope t={t}><SkSpinner /></RecipeScope>
 }

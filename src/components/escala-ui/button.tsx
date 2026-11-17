@@ -126,7 +126,8 @@ function Button({
       ) : (
         <>
           {busy ? <Spinner /> : leading}
-          {children}
+          {/* The label is a part of its own: the recipe gives it the text shadow (Figma Shadow/text-2xs). An icon-only button has none. */}
+          {axes.iconOnly ? children : <span data-part="Button.label">{children}</span>}
           {!busy || !axes.iconOnly ? trailing : null}
         </>
       )}

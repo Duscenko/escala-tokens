@@ -8,7 +8,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { useI18n } from '../../../lib/i18n'
 import { COMPONENTS } from '../../../lib/componentCatalogue'
 import { componentsByRole, findingFails, tokenElementId, tokenMapping } from '../../../lib/systemDashboard'
-import { CHECKER } from '../checker'
+import { swatchPaint } from '../../../lib/swatchPaint'
 import { BTN, BTN_PRIMARY, Card, EmptyRow, Mark, ROW, StatusPill, Swatch, TD, TH, Tag } from './parts'
 import { useCheckText, type Dashboard } from './dashboardData'
 import MapWires, { type Wire } from './MapWires'
@@ -82,8 +82,10 @@ function Stat({ label, children }: { label: string; children: React.ReactNode })
 }
 
 /** A colour you can read and copy. The hex sits under the plate so a translucent fill never has to carry ink. */
-function ColorPlate({ id, appearance, primitive, css, caption, copyLabel, on, onEnter, onCopy }: {
+function ColorPlate({ id, appearance, primitive, css, page, caption, copyLabel, on, onEnter, onCopy }: {
   id: string
+  /** That mode's page — a translucent plate is drawn over it, not over the chrome. */
+  page?: string
   appearance: string
   primitive: string
   css: string
@@ -108,10 +110,8 @@ function ColorPlate({ id, appearance, primitive, css, caption, copyLabel, on, on
       <span
         aria-hidden
         className="block h-10 w-full overflow-hidden rounded-lg border border-fg/10"
-        style={{ ...CHECKER, backgroundSize: '8px 8px' }}
-      >
-        <span className="block h-full w-full" style={{ background: css }} />
-      </span>
+        style={swatchPaint(css, page || undefined, 8)}
+      />
       <span className="flex min-w-0 flex-col px-0.5 leading-tight">
         <span className="text-micro text-fg-muted">{appearance}</span>
         <span className="truncate font-mono text-micro text-fg">{primitive}</span>
@@ -294,7 +294,7 @@ export default function ColorVariableMap({ dash, onOpenComponent, onEditRole, on
                             current ? 'bg-accent-ui/[0.14] text-fg' : 'text-fg-muted hover:bg-fg/[0.05] hover:text-fg'
                           }`}
                         >
-                          <Swatch css={css} size={16} />
+                          <Swatch css={css} size={16} page={roles.pageOf[firstMode]} />
                           <span className="min-w-0 truncate">{r.id.slice(r.category.length + 1)}</span>
                         </button>
                       </li>
@@ -330,6 +330,7 @@ export default function ColorVariableMap({ dash, onOpenComponent, onEditRole, on
                             appearance={roles.appearanceOf[mode] === 'dark' ? t('Dark') : t('Light')}
                             primitive={role.modes[mode]?.label ?? '—'}
                             css={role.modes[mode]?.css ?? 'transparent'}
+                            page={roles.pageOf[mode]}
                             caption={copied ? t('Copied') : (role.modes[mode]?.css ?? '—')}
                             copyLabel={copyLabel}
                             on={focusMode === mode}
@@ -345,10 +346,9 @@ export default function ColorVariableMap({ dash, onOpenComponent, onEditRole, on
                           <span
                             aria-hidden
                             className="flex h-10 overflow-hidden rounded-lg border border-fg/10"
-                            style={{ ...CHECKER, backgroundSize: '8px 8px' }}
                           >
                             {roles.modeKeys.map((mode) => (
-                              <span key={mode} className="h-full min-w-0 flex-1" style={{ background: role.modes[mode]?.css ?? 'transparent' }} />
+                              <span key={mode} className="h-full min-w-0 flex-1" style={swatchPaint(role.modes[mode]?.css ?? 'transparent', roles.pageOf[mode] || undefined, 8)} />
                             ))}
                           </span>
                           <span className="flex min-w-0 flex-col px-0.5 leading-tight">
@@ -402,7 +402,7 @@ export default function ColorVariableMap({ dash, onOpenComponent, onEditRole, on
                   <dl className="grid gap-x-6 gap-y-3 [grid-template-columns:repeat(auto-fit,minmax(9rem,1fr))]">
                     {roles.modeKeys.map((mode) => (
                       <Stat key={mode} label={roles.appearanceOf[mode] === 'dark' ? t('Dark') : t('Light')}>
-                        <Swatch css={role.modes[mode]?.css ?? 'transparent'} size={12} />
+                        <Swatch css={role.modes[mode]?.css ?? 'transparent'} size={12} page={roles.pageOf[mode]} />
                         <span className="truncate font-mono text-micro">{role.modes[mode]?.css}</span>
                       </Stat>
                     ))}
@@ -502,7 +502,7 @@ export default function ColorVariableMap({ dash, onOpenComponent, onEditRole, on
                           <td className={TD}>
                             {value ? (
                               <span className="flex items-center gap-1.5 font-mono text-micro">
-                                <Swatch css={value.css} size={12} />{value.css}
+                                <Swatch css={value.css} size={12} page={roles.pageOf[firstMode]} />{value.css}
                               </span>
                             ) : '—'}
                           </td>

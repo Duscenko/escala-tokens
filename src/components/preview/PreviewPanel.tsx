@@ -25,9 +25,8 @@ const BadgeSpec = SPECIMENS.Badge
 const SwitchSpec = SPECIMENS.Switch
 const InputSpec = SPECIMENS.Input
 const SliderSpec = SPECIMENS.Slider
-const StatusBadgeSpec = SPECIMENS.StatusBadge
+const AvatarStatusSpec = SPECIMENS.AvatarStatus
 const ToastSpec = SPECIMENS.Toast
-const InputGroupSpec = SPECIMENS.InputGroup
 const PasswordStrengthSpec = SPECIMENS.PasswordStrength
 const TabMenuSpec = SPECIMENS.TabMenu
 const AvatarSpec = SPECIMENS.Avatar
@@ -121,10 +120,10 @@ function ColorCollage({
       </div>
 
       <div className="flex flex-wrap items-center gap-2.5">
-        <StatusBadgeSpec t={tokens} v={{ Status: 'online' }} />
-        <StatusBadgeSpec t={tokens} v={{ Status: 'away' }} />
-        <StatusBadgeSpec t={tokens} v={{ Status: 'busy' }} />
-        <StatusBadgeSpec t={tokens} v={{ Status: 'offline' }} />
+        <AvatarStatusSpec t={tokens} v={{ Status: 'online' }} />
+        <AvatarStatusSpec t={tokens} v={{ Status: 'away' }} />
+        <AvatarStatusSpec t={tokens} v={{ Status: 'busy' }} />
+        <AvatarStatusSpec t={tokens} v={{ Status: 'offline' }} />
       </div>
 
       <SliderSpec t={tokens} v={{}} />
@@ -148,7 +147,6 @@ function ColorCollage({
       <ToastSpec t={tokens} v={{ Variant: 'success' }} />
       <Live c="FileUploadDropzone" t={tokens} />
       <Live c="Select" t={tokens} />
-      <InputGroupSpec t={tokens} v={{}} />
       <PasswordStrengthSpec t={tokens} v={{ Strength: '1' }} />
 
       <div className="flex items-center justify-between gap-3">

@@ -71,6 +71,13 @@
       "parts": []
     },
     {
+      "id": "Label",
+      "page": null,
+      "folder": "Forms",
+      "root": "Label",
+      "parts": []
+    },
+    {
       "id": "Input",
       "page": "Input (✓) (D) ",
       "folder": "Forms",
@@ -246,6 +253,13 @@
       "parts": []
     },
     {
+      "id": "Card",
+      "page": null,
+      "folder": "Content & Surfaces",
+      "root": "Card",
+      "parts": []
+    },
+    {
       "id": "Badge",
       "page": "Badge (✓) (D)",
       "folder": "Indicators",
@@ -315,6 +329,13 @@
       "page": "ProgressLine & ProgressCircle (✓) (D)",
       "folder": "Indicators",
       "root": "ProgressLine",
+      "parts": []
+    },
+    {
+      "id": "Spinner",
+      "page": null,
+      "folder": "Feedback",
+      "root": "Spinner",
       "parts": []
     },
     {
@@ -457,7 +478,7 @@
     },
     {
       "id": "Sheet",
-      "page": null,
+      "page": "Sheet",
       "folder": "Content & Surfaces",
       "root": "Sheet",
       "parts": []

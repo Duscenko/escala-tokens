@@ -206,6 +206,64 @@
       "lastSeen": "2026-11-16",
       "regression": false,
       "ticket": 26
+    },
+    {
+      "id": "PAR-001:Button+IconButton/solid/outerStroke",
+      "rule": "PAR-001",
+      "severity": "error",
+      "side": "code",
+      "entity": "Button",
+      "evidence": "Figma: solid Default/Hover/Pressed/Loading stroke OUTSIDE 1px (Stroke/control) in the intent's pressed fill; code: none",
+      "status": "Fixed",
+      "resolution": {
+        "ref": "2a399c9"
+      },
+      "firstSeen": "2026-11-16",
+      "lastSeen": "2026-11-16",
+      "regression": false
+    },
+    {
+      "id": "PAR-001:Button+IconButton/Focused/secondary,critical",
+      "rule": "PAR-001",
+      "severity": "error",
+      "side": "code",
+      "entity": "Button",
+      "evidence": "Figma: secondary focus Border/strong + halo Border/subtle, critical Status/critical/border-strong + halo Status/critical/border, every Appearance; code: Border/focus (Button) or solid only (IconButton)",
+      "status": "Fixed",
+      "resolution": {
+        "ref": "2a399c9"
+      },
+      "firstSeen": "2026-11-16",
+      "lastSeen": "2026-11-16",
+      "regression": false
+    },
+    {
+      "id": "TOK-004:Button+IconButton/Focused,outline/paint-opacity",
+      "rule": "TOK-004",
+      "severity": "error",
+      "side": "figma",
+      "entity": "Button",
+      "evidence": "paint opacity on roles: secondary edge Border/strong 50%, halos Border/subtle 5% · Border/ring/default 31% · Status/critical/border 42%, IconButton secondary outline Border/control 15%",
+      "status": "Open",
+      "resolution": null,
+      "firstSeen": "2026-11-16",
+      "lastSeen": "2026-11-16",
+      "regression": false,
+      "ticket": 33
+    },
+    {
+      "id": "TOK-005:Button+IconButton/focus-ring/strokeWeight",
+      "rule": "TOK-005",
+      "severity": "warn",
+      "side": "figma",
+      "entity": "Button",
+      "evidence": "focus-ring halo stroke 2px not bound to Stroke/focus (the edge is bound)",
+      "status": "Open",
+      "resolution": null,
+      "firstSeen": "2026-11-16",
+      "lastSeen": "2026-11-16",
+      "regression": false,
+      "ticket": 34
     }
   ]
 }

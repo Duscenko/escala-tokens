@@ -316,8 +316,8 @@ function ColumnExportMenu({ family, label, appearance, isAlpha, scale }: {
   appearance: 'light' | 'dark'
   /** Routes through `buildAlphaFamilyExport` (reads `colors.primitiveAlpha`)
    *  instead of the solid-primitive pipeline, and narrows the offered formats
-   *  to `ALPHA_EXPORT_FORMATS` — Tailwind/Markdown have no alpha concept in
-   *  `sectionExport` and would silently export nothing or the solid twin. */
+   *  to `ALPHA_EXPORT_FORMATS` (W3C · Escala JSON · Markdown) — Tailwind has no
+   *  alpha concept and would silently export nothing or the solid twin. */
   isAlpha?: boolean
   /** The actual alpha hex map for THIS column — `buildAlphaFamilyExport` can't
    *  re-derive it, since alpha values are solved against a page (see

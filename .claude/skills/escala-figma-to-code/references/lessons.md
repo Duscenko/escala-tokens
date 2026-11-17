@@ -10,7 +10,7 @@ Every row cost a round trip with the owner. Check each one before calling a comp
 | The plugin's `check-ground-truth --values` compares ALIASES | Green while hex values differed | `figmaFilePalette.test.ts` resolves every Color Semantics role and compares hex |
 | Figma strokes are INSIDE, CSS borders OUTSIDE the padding | Button 2px wider than its Figma twin | `recipeStyles.ts`: padding minus `--escala-stroke-width` (registered, non-inherited) |
 | Focus geometry | 3px edge + 3px halo | Controls: 2px edge inside (border + inset) + 2px halo outside. Fields: 1px edge, 2px halo straddling it (`outline`, negative `outline-offset`) |
-| Focus colours differ per set | Code assumed one ring | Copy each set: Button `Border/focus` everywhere; IconButton keeps `Border/strong` / `Status/critical/border-strong` on solids (`focusPair`) |
+| Focus colours differ per set | Code assumed one ring | ~~Copy each set (`focusPair`)~~ — SUPERSEDED 2026-11-17: Button and IconButton share ONE focus rule, see "Focus ring: one rule for every Button and IconButton" below. Fields and controls keep their own (`border.focus` + `border.ring.default`) |
 | Solid fills carry effects | Missing top highlight | Recipe property `highlight` (`inset 0 2px 0 Elevation/highlight`), every solid state but Disabled |
 | A DROP_SHADOW with SPREAD on a frame that does not clip content | I copied `DROP_SHADOW 0 0 0 spread 1` as a 1px outer edge (`outerEdge`); Figma paints nothing there (it applies spread only to clipping frames / rectangles / ellipses). The export reserves the pixel (121×42) but it is transparent | Removed. `figma-read-set.js` now flags it. **When an effect is in doubt, read the PIXELS of the Figma render** (get_screenshot → PNG → `sharp` raw), never the export size or the Tailwind |
 | A transparent CSS border on a control Figma draws WITHOUT stroke | The top highlight sat 1px below the top edge (a band of fill above it) | Stroke width per appearance: only `outline` gets `stroke.control`, the rest `stroke.none`; the padding gives the border back, so widths do not move |
@@ -571,3 +571,50 @@ Source: the file's «AvatarGroup Prototype» (868:28472): four PHOTO avatars + t
 | The file's bars are always visible with a track | Radix hides them until you scroll | `type="always"` on the root; the viewport is `role="region"` when named (axe `aria-prohibited-attr` on a bare labelled div) and joins the tab order |
 | Radix wraps the viewport content in a `display: table` div | A vertical Content slot would not fill the width | `[&>div]:!block` on the viewport and `w-full` (vertical) / `w-max min-w-full` (horizontal, both) on the Content div; measured 190 wide inside the 1px border |
 | A fade that never goes away | The file draws it permanently when FadeVisible | It hides itself when the scroll reaches the end (`scrollTop` / `scrollLeft` check on scroll and resize) |
+
+## Solid buttons, Create UI style (2026-11-17)
+
+Decided with the owner, on a Figma experiment page first, then applied to Button 4:5066 and IconButton 614:785 (default · secondary · critical, solid). Read them before touching a solid button.
+
+| Trap | What it looked like | The fix (where it lives) |
+|---|---|---|
+| The solid's outside stroke is the intent's PRESSED tone | Light: a deeper edge, fine. Dark: the pressed tone is the palest step of the ramp, so the edge was a near-white halo round a violet fill | No outside stroke on any solid. `buttonPaint` (`recipes/actions.ts`) no longer sets `outerStroke`; the fill is the control, depth is the top highlight |
+| Focus on a solid drawn as a 2px INSIDE edge + a halo | Dark: the edge (`Border/focus`) was the same hue as the fill, so only the halo showed; the neutral ring looked opaque and grey | ONE ring, 2px, outside, nothing inside. First shipped as a flush `halo` at Alpha/08 with `border.strong` as the neutral ring; SUPERSEDED the same day by the `gapRing` rule below (1px gap, Alpha/06, `border.ring.neutral`) |
+| A bound paint written with a PLACEHOLDER base colour | `setBoundVariableForPaint({color: grey})`: the file rendered the placeholder (grey 128) instead of the variable, in the app and in screenshots | Write the RESOLVED colour of the variable as the base, then bind it. Check a render, not just `boundVariables` |
+| `DROP_SHADOW` with spread as a focus ring | Painted nothing (same cause as `outerEdge` above) | The ring is a frame stroked OUTSIDE (`focus-ring`); in CSS it is a 0-blur box-shadow |
+| The label's shadow | Create UI lifts the label with `text-shadow-2xs` | `Shadow/text-2xs` effect style (0 1px 0, black 15 %) on the Button label only; recipe prop `textShadow` on the `label` slot. IconButton has no label |
+| White label on the Dark accent judged by WCAG 2 | 4.1:1 / 3.4:1 fail 4.5 though the label reads at Lc 73 / 66 | Owner's call: Dark accent label is judged on APCA (`action-label-perceived`, Lc 60); a hue that fails it (green, yellow, orange) takes the dark ink. `SOLID_JOB.accent.dark` in `semanticArchitectures.ts`; the strict ratio waits for a High-contrast mode |
+| Hover and pressed both "away from the ink" | The Dark violet went pale lavender on hover and almost white on press | Dark accent states are Dark 09 · 10 · 08: lifts on hover, sinks on press (`SOLID_JOB … states: [1, -1]`) |
+| Editing the file | Rule 2 says never edit the file | Only when the owner asks for the change in the file itself (this round: new Dark ramp, `Action/primary/*`, `Content/on-action`, `Border/ring/default`, `Status/critical/ring`, `Shadow/text-2xs`, the solid variants). Show it on an experiment page first and wait for approval |
+
+### Solid buttons: Storybook verification and the file sweep (2026-11-17)
+
+- Measured with `getComputedStyle` on `[data-part="Button.label"]` and the button, Dark and Light, three intents × six states (Button) and Focused (IconButton). All matched the file: Dark primary fills #905cff / #9b72ff / #714dc5, label #fefdff with `0 1px 0` shadow, no outer stroke in any state. (The rings measured then — Alpha/08, `border.strong`, outline/ghost/link with inside edge + halo — are superseded by the one-rule focus below; its own measurement is in that section.)
+- The Button story documents that the Dark default solid sits under WCAG 4.5 on purpose (`parameters.docs` + `a11y.context.exclude`), so the a11y panel does not read as a bug.
+- **Sweep the file's Color Semantics after any owner change**: read every role's alias per mode through `use_figma` (read-only) and diff it against `figma-variables.txt` + `SINCE_INVENTORY` in `figmaFilePalette.test.ts`. 2026-11-17 found `Surface/accent` Dark moving from Dark/02 to Dark/04, nothing else beyond the entries already listed.
+- `spec/figma-components.json` holds axes and props only; Button and IconButton axes were read live and are identical, so no refresh was needed (a full refresh drags in the rest of the file and is its own task).
+
+### Focus ring: one rule for every Button and IconButton (2026-11-17, owner decision)
+
+| Trap | What it looked like | The fix (where it lives) |
+|---|---|---|
+| Each appearance focused its own way (inside edge + halo on outline/ghost/link, one outside ring on solids) | The owner asked for one rule: "no podemos crearle a un botón una cosa y a los otros otra" | Every appearance = its Default look + ONE ring: 2px, 1px OUTSIDE the edge, page in the gap, radius + 1. Recipe prop `gapRing` (`FOCUS_RING` in `recipes/actions.ts`); CSS `outline: 2px solid <role>; outline-offset: 1px` (follows the radius, and forced-colors paints it) |
+| The mock-up's rings were bound to PRIMITIVES | Three of six picked the other mode's alpha twin (Dark twin in Light, Light twin in Dark) | A paint is bound to a ROLE, never a primitive: the role picks each mode's twin. Rings: `Border/ring/default` (Accent Alpha/06), `Border/ring/neutral` (Gray Alpha/06, new), `Status/critical/ring` (Error Alpha/06 — stays in `Status/critical` with its severity, by the owner's call) |
+| Figma geometry of the gap | — | The `focus-ring` frame (ABSOLUTE, constraints STRETCH) sits at x/y −1, size +2, radius = button + 1 (a literal: no radius role is button + 1), stroke 2px OUTSIDE. The variant's own strokes, padding and gap are copied from its Default sibling, so Focused and Default measure the same |
+| Verifying keyboard focus | `element.focus()` from a script does NOT set `:focus-visible` | Click the canvas, press Tab with the browser tool, then read `getComputedStyle` |
+
+Measured in the built Storybook, 2026-11-17 (Button + IconButton, 3 intents × 4 appearances, forced Focused and real Tab): `outline: 2px solid`, `outline-offset: 1px`, and every other computed property equal to Default. Dark rings rgba(143,103,253,.44) · rgba(240,243,243,.17) · rgba(255,71,47,.42); Light rgba(48,5,252,.31) · rgba(18,8,41,.22) · rgba(237,32,0,.42). At Alpha/06 they read 1.6–2.0:1 on the page (under 1.4.11's 3:1) — open owner decision.
+
+### Colour roles changed, colour docs did not (found 2026-11-17)
+
+| Trap | What it looked like | The fix (where it lives) |
+|---|---|---|
+| Adding roles from the file (`border.ring.neutral`, `status.critical.ring`, the Elevation group, Dark `surface.accent`) without re-reading Docs · Color | The page still said "Sixteen roles resolve to a translucent primitive" (35 of 85 do), named five groups where six exist, described Status as "critical, warning and success" with no info, border or ring, and had NO Elevation section — its four roles were in the token count but never shown | Counts and the group list are derived from `categoricalRoleCatalogue()`; Elevation has its section; Status / Border / Action descriptions name what they hold; `colorDocs.test.ts` guards it. **Rule: a colour-role change audits the colour docs in the same commit** (SKILL.md Step 6, escala-architecture "After adding or renaming a role") |
+| Docs · Color for ONE brand (Storybook's Variables › Color, the app's brand Docs) | The Dark column repeated the Light value for every role (`border.ring.default` Dark read #3005FC4F, the Light twin): one brand key resolves only its own kind | `brandAppearanceProjection` (`tokenGenerator.ts`) reads the brand as `brand::light` + `brand::dark`, exactly like a Figma sync; `colorDocs.test.ts` asserts both columns equal the export. **Check BOTH columns of the docs, not only the tables' role list** |
+
+### Translucent colours painted on the chrome (found 2026-11-17)
+
+| Trap | What it looked like | The fix (where it lives) |
+|---|---|---|
+| A swatch / chip / plate painting an alpha colour with a bare `background` (or over the chrome's own `CHECKER`) | In dark Storybook, every Light alpha role (`status.*.surface`, `border.ring.*`, `error-a.*`) showed as a near-black smudge — "enmascarado" | `swatchPaint(color, page)` (`src/lib/swatchPaint.ts`): opaque paints as itself; translucent is drawn over ITS OWN page (upper-right) + a checker cut from that page (lower-left). Used by Docs · Color, PrimitiveCard, the dashboard `Swatch` / ColorVariableMap (`SystemRoles.pageOf`). **A new colour sample uses `swatchPaint` and passes the page of the mode it shows — never the chrome.** Components themselves are exempt: inside a component, an alpha fill over its real page is what ships |
+

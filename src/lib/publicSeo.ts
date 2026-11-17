@@ -8,7 +8,7 @@
  * accepts; the configurator attaches `project` the same way it does today.
  */
 
-import { COMPONENTS } from './componentCatalogue'
+import { PLATFORM_FAMILIES, PLATFORM_PAGES } from './platformCatalogue'
 import { PUBLIC_SITE_ORIGIN } from './documentHead'
 import { CHANGELOG_KEY, CHANGELOG_LEAD } from '../components/configurator/docs/changelogArticle'
 import { FAQ_KEY, FAQ_LEAD } from '../components/configurator/docs/faqArticle'
@@ -61,7 +61,8 @@ function docKeyByPath(): Record<string, string> {
   return Object.fromEntries(Object.entries(docPathByKey()).map(([key, path]) => [path, key]))
 }
 
-const COMPONENT_BY_KEY = new Map(COMPONENTS.map((c) => [c.key, c]))
+// Only Escala's own components have a public page; a shadcn-era key is not found.
+const COMPONENT_BY_KEY = new Map(PLATFORM_PAGES.map((c) => [c.key, c]))
 
 export function normalizePublicPath(pathname: string): string {
   const stripped = pathname.replace(/\/+$/, '')
@@ -137,7 +138,7 @@ export function headSourceForPage(page: PublicPage): HeadSource {
       path,
       translateTitle: true,
       titleIsFull: false,
-      descriptionVars: { count: COMPONENTS.length },
+      descriptionVars: { count: PLATFORM_FAMILIES.length },
     }
   }
   if (page.kind === 'component') {
@@ -202,6 +203,18 @@ export function workspaceDocumentHead(section: string): WorkspaceHead {
       robots: 'index, follow',
     }
   }
+  // Blocks live in the workspace only (no public page yet): titled, not indexed.
+  if (section === 'blocks' || section.startsWith('blocks/')) {
+    const name = section.split('/').slice(1).join(' / ')
+    return {
+      title: name ? `${name} — Blocks` : 'Blocks',
+      description: HOME_DESCRIPTION,
+      path: '/',
+      translateTitle: !name,
+      titleIsFull: false,
+      robots: 'noindex, nofollow',
+    }
+  }
   const editing = section === 'sync'
     || section.startsWith('themes')
     || section.startsWith('variables')
@@ -225,7 +238,7 @@ export function composeTitle(source: Pick<HeadSource, 'title' | 'titleIsFull'>):
 /** Paths a crawler should fetch. No `project`, no `section`, no `/api/`. */
 export function sitemapPaths(): string[] {
   const paths = ['/', '/about', '/contact', '/legal', '/privacy', '/terms', '/licence', '/figma-kit', '/components']
-  for (const component of COMPONENTS) paths.push(`/components/${component.key}`)
+  for (const component of PLATFORM_PAGES) paths.push(`/components/${component.key}`)
   paths.push('/docs', '/docs/figma', '/docs/changelog', '/docs/faq', '/docs/system')
   for (const doc of FOUNDATION_DOCS) paths.push(`/docs/${doc.key}`)
   return paths

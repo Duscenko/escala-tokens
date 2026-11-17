@@ -4,8 +4,8 @@
     "key": "7j5zukN5HpihGVJMmyjA20",
     "name": "Escala Design System (Real)"
   },
-  "exportedAt": "2026-11-14",
-  "checksum": "48a399a2",
+  "exportedAt": "2026-11-16",
+  "checksum": "36442fad",
   "pages": [
     {
       "page": "Button (✓)  (D)",
@@ -184,7 +184,7 @@
       "sets": [
         {
           "name": "Input",
-          "variants": 114,
+          "variants": 126,
           "axes": {
             "Size": "default|sm|lg",
             "State": "Default|Hover|Focused|Invalid|Disabled",
@@ -730,9 +730,9 @@
       "sets": [
         {
           "name": "FeaturedIcon",
-          "variants": 96,
+          "variants": 144,
           "axes": {
-            "Appearance": "soft|solid",
+            "Appearance": "soft|solid|gradient",
             "Shape": "circle|rounded",
             "Size": "default|sm|lg|xl",
             "Variant": "default|secondary|critical|success|warning|info"
@@ -1139,6 +1139,21 @@
             "State": "Default|Hover|Open|Focused",
             "Variant": "default|secondary|inverse|critical|info"
           }
+        }
+      ]
+    },
+    {
+      "page": "Sheet",
+      "stable": false,
+      "id": "1652:8",
+      "sets": [
+        {
+          "name": "Sheet",
+          "variants": 3,
+          "axes": {
+            "Side": "right|left|bottom"
+          },
+          "props": "CloseVisible:BOOLEAN,Content:SLOT,ContentVisible:BOOLEAN,FooterVisible:BOOLEAN"
         }
       ]
     },
@@ -1714,6 +1729,12 @@
           "props": "Body:TEXT,Eyebrow:TEXT,Heading:TEXT"
         }
       ]
+    },
+    {
+      "page": "AuthSignInPhone",
+      "stable": false,
+      "id": "1662:8",
+      "sets": []
     }
   ]
 }

@@ -17,4 +17,13 @@ describe('blocks read only roles a scope supplies', () => {
     }
     expect([...missing]).toEqual([])
   })
+  it('every type(\'role\') of every block is supplied', () => {
+    const missing = new Set<string>()
+    for (const f of readdirSync(dir).filter((x) => x.endsWith('.tsx'))) {
+      for (const m of readFileSync(dir + f, 'utf8').matchAll(/\btype\('([a-z0-9-]+)'\)/g)) {
+        if (!have.has(`type.${m[1]}`)) missing.add(`type.${m[1]} (${f})`)
+      }
+    }
+    expect([...missing]).toEqual([])
+  })
 })

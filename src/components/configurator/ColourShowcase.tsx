@@ -20,27 +20,26 @@ type Entry = { key: string; v: AxisValues; w?: number }
 export const COLOUR_SHOWCASE: Partial<Record<ColorRoleId, Entry[]>> = {
   success: [
     { key: 'Toast', v: { Variant: 'success' }, w: 300 },
-    { key: 'StatusBadge', v: { Status: 'online' } },
+    { key: 'AvatarStatus', v: { Status: 'online' } },
     { key: 'PasswordStrength', v: { Strength: '4' } },
   ],
   warning: [
     { key: 'Toast', v: { Variant: 'warning' }, w: 300 },
-    { key: 'StatusBadge', v: { Status: 'away' } },
+    { key: 'AvatarStatus', v: { Status: 'away' } },
     { key: 'RatingGroup', v: {} },
-    { key: 'FileFormat', v: { Format: 'zip' } },
+    { key: 'Badge', v: { Variant: 'warning' } },
     { key: 'PasswordStrength', v: { Strength: '3' } },
   ],
   info: [
     { key: 'Toast', v: { Variant: 'info' }, w: 300 },
-    { key: 'FileFormat', v: { Format: 'png' } },
+    { key: 'Badge', v: { Variant: 'info' } },
   ],
   error: [
     { key: 'Alert', v: { Variant: 'destructive' }, w: 300 },
     { key: 'Toast', v: { Variant: 'critical' }, w: 300 },
     { key: 'Button', v: { Variant: 'destructive', Size: 'default', State: 'Default' } },
     { key: 'Badge', v: { Variant: 'critical' } },
-    { key: 'StatusBadge', v: { Status: 'busy' } },
-    { key: 'FileFormat', v: { Format: 'pdf' } },
+    { key: 'AvatarStatus', v: { Status: 'busy' } },
     { key: 'PasswordStrength', v: { Strength: '1' } },
   ],
 }

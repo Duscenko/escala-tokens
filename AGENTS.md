@@ -12,8 +12,10 @@ A desktop token configurator. Designers pick tokens; the app emits `tokens.json`
 |---|---|
 | What not to break | `docs/agent-native/CONTRACTS.md` |
 | Payload shape | `docs/agent-native/tokens.schema.json` |
+| One component: API, Figma set, slots, tokens it consumes, story | `spec/contracts/<Key>.json` (index: `spec/contracts/index.json`) |
 | Five-layer roadmap | `docs/agent-native/PLAN.md` |
-| Deep product / nav / backlog | `CLAUDE.md` (do not treat as a system prompt) |
+| Current rules, repo map, sources of truth | `CLAUDE.md` (short, current state) |
+| Why a rule exists (history, 86 dated notes) | `docs/history/CLAUDE-archive-2026-11-16.md` (search by keyword, never load whole) |
 | Brand / user | `.impeccable.md` |
 | Color math | `.claude/skills/color-science-core/SKILL.md` |
 | Product Brain doctrine (weekly audit agent, read-only) | `PRODUCT-BRAIN.md` |
@@ -21,15 +23,15 @@ A desktop token configurator. Designers pick tokens; the app emits `tokens.json`
 | Install recipes (wizard + Docs + CLI) | `src/lib/agentInstall.ts` · `src/lib/cliInstall.ts` · `AgentInstallPanel.tsx` |
 | CLI (`npx @escala/cli`) | `src/cli/main.ts` · `cli/package.json` · `npm run build:cli` |
 | Skill zip builder | `src/lib/agentBundle/` (pure) · `src/lib/skillExport.ts` (store wrapper) |
-| MCP tools | `src/lib/agentAccess/` · `api/mcp.ts` · `docs/agent-native/MCP.md` |
+| Token resolution helpers (read by the shadcn registry; the hosted MCP was deleted 2026-10-20) | `src/lib/agentAccess/` |
 | Evals | `evals/agent-output/` · `npm run eval` |
 
-Load `CLAUDE.md` only for the section you need (nav, store, export, plugin). Do not paste the whole file into context.
+`CLAUDE.md` is short and current; read it first. Load the archive only for the area you are changing.
 
 ## Hard rules
 
-1. **`/api/tokens` GET is frozen and public.** POST is same-origin plus a per-slug claim — not a user login. Agent access is `GET|POST /api/mcp`. CORS `*` and Blob stay. GitHub holds the editor (`.escala/system.json`); the blob is a live-sync cache. User-facing URLs are `https://www.escalatokens.com`, never the Vercel preview host.
-2. **Additive schema only.** `TOKEN_SCHEMA_VERSION` is `5` on `main`; working tree may be `6`. Never rename keys. Canonical component field is `atoms`.
+1. **`/api/tokens` GET is frozen and public.** POST is same-origin plus a per-slug claim — not a user login. There is no hosted MCP (deleted 2026-10-20); agents use the offline package or the Figma MCP. CORS `*` and Blob stay. GitHub holds the editor (`.escala/system.json`); the blob is a live-sync cache. User-facing URLs are `https://www.escalatokens.com`, never the Vercel preview host.
+2. **Additive schema only.** `TOKEN_SCHEMA_VERSION` is `7` (v7 = semantic colours may be translucent `#rrggbbaa`). Never rename keys. Canonical component field is `atoms`.
 3. **One contrast implementation** — `src/lib/color/apca.ts`. Never `chroma.contrast` on hex. Never emit via channel clipping (`gamut.oklchToHex`).
 4. **Color layer is DOM-free.** Vitest is `environment: 'node'`. `npm run build` typechecks tests (`tsconfig.test.json`); a green `npm test` does not.
 5. **Store is persisted.** New Zustand fields need a migration. Emit them from `generateTokenJSON()` if consumers should see them.
@@ -48,8 +50,7 @@ src/lib/platformAxis.ts         optional web · ios · android axis (pure; web m
 src/lib/exportWizard.ts         destinations: escala | w3c | agent-bundle (skill nested)
 src/lib/agentBundle/            TokenJSON → Skill + agent-bundle zip (no store)
 src/lib/skillExport.ts          store wrappers (buildSkillExport, buildAgentProductExport)
-src/lib/agentAccess/            MCP tools (resolve, catalogue, contrast)
-api/mcp.ts                      JSON-RPC + Blob read — do not fold into api/tokens.ts
+src/lib/agentAccess/            resolve, catalogue, contrast (no hosted MCP)
 src/lib/color/                  ramps, APCA, gamut, CVD
 src/lib/componentCatalogue.ts   58 components (props, a11y) — 9 by default; all 58 via the plugin's Full catalogue option
 api/tokens.ts                   publish / fetch Blob
@@ -72,7 +73,7 @@ Plugin: `cd ../escala-figma-plugin && npm run build`.
 ## Do not invent
 
 - A second token vocabulary (no parallel “primary-500” beside `action.primary.default`)
-- A second WCAG/APCA implementation in a skill, MCP tool, or checker
+- A second WCAG/APCA implementation in a skill, tool, or checker
 - `components` as the export field name
 - Style Dictionary / Terrazzo as the pipeline
-- Storybook, phone configurator, or a rewrite of `CLAUDE.md` into this file
+- A phone editor layout, or a copy of `CLAUDE.md` into this file

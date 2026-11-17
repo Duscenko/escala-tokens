@@ -8,7 +8,7 @@ import type { ArtefactProps } from './types'
 const Card = SPECIMENS.Card
 const Button = SPECIMENS.Button
 const Avatar = SPECIMENS.Avatar
-const StatusBadge = SPECIMENS.StatusBadge
+const AvatarStatus = SPECIMENS.AvatarStatus
 
 const gap = (t: PreviewTokens, role: string, fb: string) => spacingRoleOf(t, role, fb)
 
@@ -33,7 +33,7 @@ function ProfileScreen({ t, compact }: ArtefactProps) {
             <span style={{ ...typeStyleOf(t, 'heading-xs'), color: t.neutralText }}>Maya Duscenko</span>
             <span style={{ ...typeStyleOf(t, 'body-sm'), color: muted }}>maya@escala.ds</span>
           </div>
-          <StatusBadge t={t} v={{ Status: 'online' }} />
+          <AvatarStatus t={t} v={{ Status: 'online' }} />
         </div>
 
         {/* A grouped settings CARD, which is what a settings section actually

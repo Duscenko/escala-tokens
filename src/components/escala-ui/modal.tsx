@@ -5,6 +5,7 @@
 import * as React from 'react'
 import { Dialog as DialogPrimitive } from 'radix-ui'
 import { HALO_BLEED } from './halo-bleed'
+import { usePortalContainer } from './portal-scope'
 import { cn } from '../../lib/utils'
 import { CloseButton } from './close-button'
 import { FeaturedIcon, type FeaturedIconVariant } from './featured-icon'
@@ -110,10 +111,17 @@ function ModalContent({
     </ModalContext.Provider>
   )
   if (inline) return content
+  return <ModalPortalled>{content}</ModalPortalled>
+}
+
+/** Portals into the theme scope on screen (RecipeScope), like Sheet: a dialog
+ *  opened from a preview card paints with that card's brand, not `<body>`'s. */
+function ModalPortalled({ children }: { children: React.ReactNode }) {
+  const container = usePortalContainer()
   return (
-    <ModalPortal>
+    <ModalPortal container={container}>
       <ModalOverlay />
-      {content}
+      {children}
     </ModalPortal>
   )
 }

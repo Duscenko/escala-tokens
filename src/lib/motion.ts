@@ -623,7 +623,7 @@ export function motionChoreographies(settings: MotionSettings): Record<string, C
   const sheet = (side: 'right' | 'left' | 'bottom'): [Choreography, Choreography] => [
     {
       pattern: 'coordinated',
-      components: side === 'bottom' ? ['Drawer'] : ['Sheet'],
+      components: ['Sheet'],
       intent: { usage: [side === 'bottom' ? 'drawers' : 'side panels'], direction: 'The backdrop fades while the panel crosses into place from its edge.' },
       tracks: [
         { slot: 'overlay', keyframes: 'fade-in', motion: r('use-overlay-in'), delay: 0 },
@@ -633,7 +633,7 @@ export function motionChoreographies(settings: MotionSettings): Record<string, C
     },
     {
       pattern: 'coordinated',
-      components: side === 'bottom' ? ['Drawer'] : ['Sheet'],
+      components: ['Sheet'],
       intent: { usage: [side === 'bottom' ? 'drawers' : 'side panels'], direction: 'The panel leaves the way it came; the backdrop follows, shorter.' },
       tracks: [
         { slot: 'content', keyframes: `slide-out-${side}`, motion: r('use-travel-out'), delay: 0 },
@@ -648,7 +648,7 @@ export function motionChoreographies(settings: MotionSettings): Record<string, C
   return {
     'dialog-enter': {
       pattern: 'coordinated',
-      components: ['Modal', 'AlertDialog'],
+      components: ['Modal'],
       intent: { usage: ['dialogs', 'confirmations', 'focal overlays'], direction: 'The backdrop fades while the card pops a beat behind it. The card is the focal point, so it takes the emphasis role and a `quick` delay.' },
       tracks: [
         { slot: 'overlay', keyframes: 'fade-in', motion: r('use-overlay-in'), delay: 0 },
@@ -658,7 +658,7 @@ export function motionChoreographies(settings: MotionSettings): Record<string, C
     },
     'dialog-exit': {
       pattern: 'coordinated',
-      components: ['Modal', 'AlertDialog'],
+      components: ['Modal'],
       intent: { usage: ['dialogs', 'confirmations'], direction: 'Card and backdrop leave together, fast.' },
       tracks: [
         { slot: 'content', keyframes: 'shrink', motion: r('use-overlay-out'), delay: 0 },
@@ -709,7 +709,7 @@ export function motionChoreographies(settings: MotionSettings): Record<string, C
     },
     'accordion-expand': {
       pattern: 'disclosure',
-      components: ['Accordion', 'AccordionItem', 'Collapsible'],
+      components: ['Accordion', 'AccordionItem'],
       intent: { usage: ['accordion', 'collapsible'], direction: 'Height eases open; never a jump cut.' },
       direction: 'expand',
       motion: r('use-disclosure-in'),
@@ -717,7 +717,7 @@ export function motionChoreographies(settings: MotionSettings): Record<string, C
     },
     'accordion-collapse': {
       pattern: 'disclosure',
-      components: ['Accordion', 'AccordionItem', 'Collapsible'],
+      components: ['Accordion', 'AccordionItem'],
       intent: { usage: ['accordion', 'collapsible'], direction: 'Height eases closed, faster than it opened.' },
       direction: 'collapse',
       motion: r('use-disclosure-out'),
@@ -725,14 +725,14 @@ export function motionChoreographies(settings: MotionSettings): Record<string, C
     },
     'popover-enter': {
       pattern: 'coordinated',
-      components: ['Popover', 'DatePickerPopover', 'TooltipContent', 'HoverCard', 'DropdownMenu'],
+      components: ['Popover', 'DatePickerPopover', 'TooltipContent', 'DropdownMenu'],
       intent: { usage: ['popovers', 'tooltips', 'menus'], direction: 'A floating layer grows out of its trigger: a short pop on the disclosure role.' },
       tracks: [{ keyframes: s.pop < 1 ? 'pop' : 'fade-in', motion: r('use-disclosure-in'), delay: 0 }],
       reducedMotion: { collapseTo: 'coordinated', pattern: 'coordinated', tracks: [{ keyframes: 'fade-in', motion: FADE_IN, delay: 0 }] },
     },
     'popover-exit': {
       pattern: 'coordinated',
-      components: ['Popover', 'DatePickerPopover', 'TooltipContent', 'HoverCard', 'DropdownMenu'],
+      components: ['Popover', 'DatePickerPopover', 'TooltipContent', 'DropdownMenu'],
       intent: { usage: ['popovers', 'tooltips', 'menus'], direction: 'Gets out of the way, faster than it came.' },
       tracks: [{ keyframes: s.shrink < 1 ? 'shrink' : 'fade-out', motion: r('use-disclosure-out'), delay: 0 }],
       reducedMotion: { collapseTo: 'coordinated', pattern: 'coordinated', tracks: [{ keyframes: 'fade-out', motion: FADE_OUT, delay: 0 }] },

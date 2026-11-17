@@ -73,7 +73,7 @@ import type { GridFrameAlias, GridViewport } from '../lib/layoutTokens'
 // Components and Docs used to be folded into one 'docs' tab (a single rail
 // with two groups); split back into their own tabs, each with its own
 // single-purpose rail.
-type Tab = 'about' | 'foundations' | 'components' | 'docs'
+type Tab = 'about' | 'foundations' | 'components' | 'blocks' | 'docs'
 import PreviewPanel from '../components/preview/PreviewPanel'
 import ExportView from '../components/configurator/ExportView'
 import FigmaSyncView from '../components/configurator/FigmaSyncView'
@@ -81,6 +81,10 @@ import FigmaDownloadView from '../components/configurator/FigmaDownloadView'
 import GitHubConnectView from '../components/configurator/GitHubConnectView'
 import IconLibrary, { IconLibraryPanel } from '../components/configurator/IconLibrary'
 import ComponentsRail from '../components/configurator/ComponentsRail'
+import BlocksRail from '../components/configurator/BlocksRail'
+import BlocksView from '../components/configurator/BlocksView'
+import { CatalogueTabs } from '../components/configurator/CatalogueTabs'
+import { BLOCK_BY_ID, type BlockDef } from '../components/configurator/blocks/blockRegistry'
 import ComponentsView from '../components/configurator/ComponentsView'
 import DocsView, { CHANGELOG_KEY, FAQ_KEY } from '../components/configurator/DocsView'
 import { GET_STARTED_KEY, GUIDE_FIGMA_KEY } from '../components/configurator/docs/getStarted'
@@ -101,6 +105,7 @@ import LayoutHub, { LayoutTabHeading } from '../components/configurator/LayoutHu
 import DimensionPrimitives from '../components/configurator/DimensionPrimitives'
 import GridSemantics from '../components/configurator/GridSemantics'
 import { COMPONENTS, type ComponentDef } from '../lib/componentCatalogue'
+import { familyOf, isPlatformComponent } from '../lib/platformCatalogue'
 import { PaletteIcon } from '../components/ui/icons'
 import { useI18n } from '../lib/i18n'
 import { goToLogin, useFreeTier, useAccess, useNeedsProForAnotherSystem, useNeedsProForAnotherTheme } from '../lib/access'
@@ -289,6 +294,13 @@ const CATEGORY_ICONS: Record<string, ComponentType> = {
   'Content & Surfaces':  ic('M4 5h16v14H4z|M4 10h16', '1.8'),
   'Feedback':            ic('M21 14a2 2 0 0 1-2 2H8l-4 4V5a2 2 0 0 1 2-2h13a2 2 0 0 1 2 2z', '1.8'),
   'Navigation':          ic('M4 6h16|M4 12h9|M4 18h16', '1.8'),
+}
+
+const BLOCK_GROUP_ICONS: Record<string, ComponentType> = {
+  Auth:       ic('M5 11h14v10H5z|M8 11V7a4 4 0 0 1 8 0v4', '1.8'),
+  Marketing:  ic('M3 10v4h4l6 4V6l-6 4H3z|M17 9a4 4 0 0 1 0 6', '1.8'),
+  Navigation: ic('M3 5h18v4H3z|M3 13h11|M3 18h7', '1.8'),
+  Overlay:    ic('M3 8h13v12H3z|M8 4h13v12', '1.8'),
 }
 
 // The editor follows the Figma Variables hierarchy: foundation → collection
@@ -996,8 +1008,14 @@ export default function Configurator() {
   })
   const [activeComponent, setActiveComponent] = useState<ComponentDef | null>(
     // No component in the link → the catalogue index (every component as a card).
-    () => COMPONENTS.find((c) => c.key === incomingPlace?.component) ?? null,
+    // A component the platform hides (shadcn-era) lands on the index.
+    () => COMPONENTS.find((c) => c.key === incomingPlace?.component && isPlatformComponent(c.key)) ?? null,
   )
+  // Blocks: null = the index. A link names `<Group>/<Name>`.
+  const [activeBlock, setActiveBlock] = useState<BlockDef | null>(
+    () => (incomingPlace?.block ? BLOCK_BY_ID.get(incomingPlace.block) ?? null : null),
+  )
+  const [blockSearch, setBlockSearch] = useState('')
   const [exportMode, setExportMode] = useState<ExportMode>(null)
   // About is a reading page: the top bar floats over it on a blurred fill and
   // the hairline under it shows once the page has scrolled.
@@ -2043,7 +2061,15 @@ export default function Configurator() {
     markFoundationComplete('components')
     setExportMode(null)
     setTab('components')
-    setActiveComponent(c)
+    // Only Escala's own components have a page; anything else (a shadcn-era
+    // key from the board's inspector or an old link) opens the catalogue.
+    setActiveComponent(isPlatformComponent(c.key) ? c : null)
+  }
+  const selectBlock = (b: BlockDef) => {
+    commitVisit()
+    setExportMode(null)
+    setTab('blocks')
+    setActiveBlock(b)
   }
   const openComponentsIndex = () => {
     setComponentFromSystem(false)
@@ -2095,6 +2121,7 @@ export default function Configurator() {
     foundation: activeFoundation,
     collection: activeCollection,
     component: activeComponent?.key,
+    block: activeBlock?.id,
     doc: themeWorkspaceTab === 'system' && tab === 'foundations'
       ? (systemPlace.page === 'docs' ? systemPlace.doc : undefined)
       : docFoundationKey,
@@ -2452,6 +2479,21 @@ export default function Configurator() {
     // remount, and re-keying here would rebuild the master list — losing its
     // scroll position — on every pick.
     centerKey = 'components'
+  } else if (tab === 'blocks') {
+    header = { Icon: ComponentsIcon, title: 'Blocks', subtitle: '' }
+    body = (
+      <BlocksView
+        previewTheme={previewTheme}
+        active={activeBlock}
+        onSelect={selectBlock}
+        onOpenComponent={selectComponent}
+        onInspectRole={(roleId) => openTokenInVariables(roleId, true)}
+        onOpenFoundation={selectFoundation}
+        search={blockSearch}
+        onClearSearch={() => setBlockSearch('')}
+      />
+    )
+    centerKey = 'blocks'
   } else {
     // tab === 'docs'
     header = {
@@ -2494,7 +2536,9 @@ export default function Configurator() {
   // to a right-hand panel (the Generator's inspector column), and Docs is a set
   // of focused pages selected in its top-menu.
   const outerRailVisible = false
-  const componentsCanvas = railVisible && tab === 'components'
+  // Blocks is the same canvas as Components: [rail] [page CARD] [directory].
+  const catalogueTab = tab === 'components' || tab === 'blocks'
+  const componentsCanvas = railVisible && catalogueTab
   // Every Variables foundation paints a 198px Groups column (Color owns it
   // inside ColorHub; the rest wrap with FoundationWorkbench). It's not an
   // outer SectionRail, so `outerRailVisible` above stays false — but the
@@ -2513,12 +2557,14 @@ export default function Configurator() {
   const navActive: TopNavKey | null =
     (!exportMode && tab === 'about') ? 'about'
     : (!exportMode && tab === 'components') ? 'components'
+    // Blocks is a tab OF Components (Elements · Blocks), not a section.
+    : (!exportMode && tab === 'blocks') ? 'components'
     : (!exportMode && tab === 'docs') ? 'docs'
     : (!exportMode && tab === 'foundations') ? 'variables'
     : null
   // Components before any design system exists: no Export (nothing to ship),
   // and the section tags live in ☰. "Go to generator" is the way forward.
-  const componentsWithoutSystem = tab === 'components' && myThemeKeys(themeOrder, themes).length === 0
+  const componentsWithoutSystem = catalogueTab && myThemeKeys(themeOrder, themes).length === 0
   const noSystemReason = t('Create a brand to open Variables, System and Code')
   const handleNav = (key: TopNavKey) => {
     if (key === 'pricing') window.location.assign(PRICING_PATH)
@@ -2578,7 +2624,7 @@ export default function Configurator() {
   // chrome (`chromeAccent` for ink, `brandSolidPair` for the fill).
   const canvasAccentStyle = useMemo<CSSProperties | undefined>(() => {
     if (homeFileBrowser) return undefined
-    const componentsWithSystem = tab === 'components' && myThemeKeys(themeOrder, themes).length > 0
+    const componentsWithSystem = (tab === 'components' || tab === 'blocks') && myThemeKeys(themeOrder, themes).length > 0
     if (!themesCanvas && !componentsWithSystem) return undefined
     const appearance = stylePreview ? stylePreview.appearance : previewAppearance
     const ramp = stylePreview
@@ -2629,6 +2675,7 @@ export default function Configurator() {
   // pages reached from elsewhere (the top bar, the Export menu): none.
   const workspaceNav: WorkspaceNavKey | null =
     tab === 'components' ? 'components'
+    : tab === 'blocks' ? 'components'
     : !themesCanvas ? null
     : themeWorkspaceTab === 'primitives' ? 'variables'
     : themeWorkspaceTab === 'code' ? 'code'
@@ -2653,6 +2700,7 @@ export default function Configurator() {
   }
   const changeWorkspaceNav = (next: WorkspaceNavKey) => {
     if (next === 'components') { changeTab('components'); return }
+    if (next === 'blocks') { changeTab('blocks'); return }
     if (next === 'overview') { openThemePreviewPage(); return }
     // Home (the system tab) is never blocked: with no brand yet, it is the
     // table where the first one is added.
@@ -2676,7 +2724,7 @@ export default function Configurator() {
   // other four. The create studio (`library`) keeps it too, in the same place,
   // so a first visitor's screen has the editor's shape from the start.
   const navRailVisible = themesCanvas
-    || (railVisible && tab === 'components')
+    || (railVisible && catalogueTab)
   // Without a system yet, Components still shows the rail (it is where you are
   // in the product); Variables / System / Code are dimmed — nothing to open.
   const railBlockedReason = componentsWithoutSystem ? noSystemReason : themeTablesBlocked()
@@ -2706,7 +2754,7 @@ export default function Configurator() {
   // Components): the doors out + Save. None while there is no brand of the
   // user's on screen, or on Home / the create studio, which have their own.
   const ownBrandOnScreen = myThemeKeys(themeOrder, themes).includes(previewTheme)
-  const workspaceFooter = ownBrandOnScreen && !homePage && (tab === 'foundations' || tab === 'components')
+  const workspaceFooter = ownBrandOnScreen && !homePage && (tab === 'foundations' || catalogueTab)
     ? { ship: shipFor(previewTheme), themeKey: previewTheme, onGetCode: () => openCodeForTheme(previewTheme) }
     : null
   // The brand on screen is not kept yet: the footer's Save is the primary, so
@@ -2729,10 +2777,12 @@ export default function Configurator() {
         nav={navActive}
         onNav={handleNav}
         hamburgerNav={tab === 'foundations'}
-        navInMenu={componentsWithoutSystem}
-        // Inside the Generator the Figma door is the inspector footer and the
-        // Export pill; the plugin is step 02 of the page they open.
-        pluginLink={tab !== 'foundations'}
+        // Components (Elements · Blocks) is a workspace like the Generator:
+        // the section tags fold into ☰ and the brand names the page.
+        navInMenu={catalogueTab}
+        // Inside the Generator and Components the Figma door is the inspector
+        // footer and the Export pill; the plugin is step 02 of the page they open.
+        pluginLink={tab !== 'foundations' && !catalogueTab}
         signUpAccent={canvasAccentStyle}
         overlay={aboutOverlay}
         scrolled={aboutScrolled}
@@ -2747,7 +2797,7 @@ export default function Configurator() {
         // (Board, Variables, Code, Components) holds CSS · Figma · Agent AND
         // Save — a white Export pill in the bar would be a second primary
         // competing with Save for the same click.
-        ) : !(workspaceFooter && brandUnsaved) && ((tab === 'foundations' && !(themesCanvas && (themeWorkspaceTab === 'library' || themeWorkspaceTab === 'system'))) || tab === 'components') ? (
+        ) : !(workspaceFooter && brandUnsaved) && ((tab === 'foundations' && !(themesCanvas && (themeWorkspaceTab === 'library' || themeWorkspaceTab === 'system'))) || catalogueTab) ? (
           <ExportPill
             onCss={() => shipCurrent('css')}
             onFigma={() => shipCurrent('figma')}
@@ -2912,7 +2962,7 @@ export default function Configurator() {
                         <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
                           <path d="M7.5 2.5 4 6l3.5 3.5" />
                         </svg>
-                        {t('Components')}
+                        {t('Elements')}
                       </button>
                       <span aria-hidden className="flex-shrink-0 text-fg-faint">/</span>
                     </>
@@ -2922,20 +2972,62 @@ export default function Configurator() {
                       Sidebar read "Components / Navigation" (audit 2026-11-05). */}
                   {activeComponent && (
                     <>
-                      <span className="hidden min-w-0 truncate text-ui text-fg-muted lg:inline">{t(activeComponent.category)}</span>
+                      <span className="hidden min-w-0 truncate text-ui text-fg-muted lg:inline">{t(familyOf(activeComponent.key)?.folder ?? activeComponent.category)}</span>
                       <span aria-hidden className="hidden flex-shrink-0 text-fg-faint lg:inline">/</span>
                     </>
                   )}
-                  <h2 className="min-w-0 truncate text-ui font-semibold text-fg">
-                    {activeComponent ? activeComponent.label : t('Components')}
-                  </h2>
+                  {!activeComponent && !componentFromSystem
+                    ? <CatalogueTabs active="components" onSelect={changeTab} />
+                    : (
+                      <h2 className="min-w-0 truncate text-ui font-semibold text-fg">
+                        {activeComponent ? activeComponent.label : t('Components')}
+                      </h2>
+                    )}
                 </div>
                 <div className="flex min-w-0 flex-1 items-center justify-end gap-2">
                   {header.right}
                 </div>
               </div>
             )}
-            {!skipCenterHeader && tab !== 'components' && (
+            {tab === 'blocks' && !skipCenterHeader && (
+              <div className="flex h-[52px] flex-shrink-0 items-center justify-between gap-3 border-b border-line px-4">
+                <div className="flex min-w-0 items-center gap-2">
+                  {activeBlock && (
+                    <>
+                      <button
+                        type="button"
+                        onClick={() => setActiveBlock(null)}
+                        aria-label={t('Back to all blocks')}
+                        className="inline-flex h-7 flex-shrink-0 items-center gap-1 rounded-md px-1.5 text-ui font-medium text-fg-muted transition-colors hover:bg-elevated hover:text-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50"
+                      >
+                        <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                          <path d="M7.5 2.5 4 6l3.5 3.5" />
+                        </svg>
+                        {t('Blocks')}
+                      </button>
+                      <span aria-hidden className="flex-shrink-0 text-fg-faint">/</span>
+                      <span className="hidden min-w-0 truncate text-ui text-fg-muted lg:inline">{t(activeBlock.group)}</span>
+                      <span aria-hidden className="hidden flex-shrink-0 text-fg-faint lg:inline">/</span>
+                    </>
+                  )}
+                  {activeBlock
+                    ? <h2 className="min-w-0 truncate text-ui font-semibold text-fg">{activeBlock.name}</h2>
+                    : <CatalogueTabs active="blocks" onSelect={changeTab} />}
+                </div>
+                <div className="flex min-w-0 flex-1 items-center justify-end gap-2">
+                  <PreviewThemeSwitch
+                    themes={(() => {
+                      const own = myThemeKeys(themeOrder, themes)
+                      return own.length ? own : themeOrder.filter((t) => themes[t])
+                    })()}
+                    kinds={themeKinds}
+                    value={previewTheme}
+                    onChange={changePreviewTheme}
+                  />
+                </div>
+              </div>
+            )}
+            {!skipCenterHeader && !catalogueTab && (
               <CenterHeader
                 Icon={header.Icon}
                 title={header.title}
@@ -3201,7 +3293,18 @@ export default function Configurator() {
             </div>
           </main>
           </div>
-          {componentsCanvas && (
+          {componentsCanvas && tab === 'blocks' && (
+            <BlocksRail
+              icons={BLOCK_GROUP_ICONS}
+              active={activeBlock}
+              onSelect={selectBlock}
+              onOpenIndex={() => setActiveBlock(null)}
+              search={blockSearch}
+              onSearch={setBlockSearch}
+              onInspectorSlot={setComponentsSlot}
+            />
+          )}
+          {componentsCanvas && tab === 'components' && (
             <ComponentsRail
               icons={CATEGORY_ICONS}
               active={activeComponent}

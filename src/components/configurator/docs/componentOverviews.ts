@@ -119,22 +119,10 @@ export const OVERVIEWS: Record<string, Overview> = {
     each('Variant', ['default', 'secondary', 'outline', 'inverse']),
     each('Orientation', ['horizontal', 'vertical']),
   ],
-  Toggle: [
-    [
-      { v: { Variant: 'default', Pressed: 'False' } },
-      { v: { Variant: 'default', Pressed: 'True' } },
-      { v: { Variant: 'outline', Pressed: 'False' } },
-      { v: { Variant: 'outline', Pressed: 'True' } },
-    ],
-    each('Size', ['sm', 'default', 'lg'], { Variant: 'outline', Pressed: 'True' }),
-  ],
   SocialLoginButton: [
     each('Brand', ['Google', 'Apple', 'Discord'], { Appearance: 'white' }, 260),
     each('Brand', ['Google', 'GitHub', 'X'], { Appearance: 'brand' }, 260),
   ],
-  AppStoreBadge: [each('Store', ['app-store', 'google-play'])],
-
-  // ── Form Controls ──────────────────────────────────────────────────────────
   Input: [
     each('State', ['Default', 'Focused'], { Type: 'default' }, 240),
     each('State', ['Invalid', 'Disabled'], { Type: 'default' }, 240),
@@ -297,7 +285,6 @@ export const OVERVIEWS: Record<string, Overview> = {
     each('Type', ['default', 'icon', 'number', 'dot'], { Variant: 'success', Appearance: 'solid', Shape: 'pill' }),
     each('Shape', ['rounded', 'pill']),
   ],
-  StatusBadge: [each('Status', ['online', 'away', 'busy', 'offline'])],
   Chip: [
     each('State', ['Default', 'Hover', 'Focused', 'Selected', 'Disabled', 'Dragging']),
     each('Variant', ['info', 'success', 'default', 'critical'], { Appearance: 'soft' }),
@@ -305,7 +292,6 @@ export const OVERVIEWS: Record<string, Overview> = {
     each('Size', ['xs', 'sm', 'default', 'lg', 'xl']),
     each('Shape', ['rounded', 'pill']),
   ],
-  Icon: [each('Size', ['sm', 'default', 'lg'])],
   Kbd: [each('Size', ['xs', 'sm', 'default'])],
   FeaturedIcon: [
     each('Size', ['default', 'sm', 'lg', 'xl']),
@@ -323,7 +309,6 @@ export const OVERVIEWS: Record<string, Overview> = {
     each('Type', ['star', 'emoji'], { Checked: 'true' }),
     each('Size', ['default', 'sm', 'lg'], { Checked: 'true' }),
   ],
-  FileFormat: [each('Format', ['pdf', 'png', 'svg', 'zip'])],
   Avatar: [
     each('Size', ['2xs', 'xs', 'sm', 'default', 'lg', 'xl', '2xl'], { Type: 'initials' }),
     each('Type', ['image', 'initials', 'icon']),
@@ -343,7 +328,6 @@ export const OVERVIEWS: Record<string, Overview> = {
   // ── Content & Surfaces ─────────────────────────────────────────────────────
   Card: [each('Size', ['default', 'sm'])],
   Separator: [each('Align', ['none', 'start', 'center', 'end'], {}, 320), each('Tone', ['default', 'subtle', 'strong'], {}, 320), each('Variant', ['default', 'dashed'], { Align: 'center' }, 320), each('Align', ['none', 'center'], { Orientation: 'vertical' }, 40)],
-  Collapsible: [each('Open', ['False', 'True'])],
   Accordion: [each('Variant', ['ghost-default', 'ghost-underline', 'ghost-rounded', 'outline-rounded', 'outline-sharp', 'filled-rounded'])],
   AccordionItem: [
     each('State', ['Closed', 'Open', 'Disabled'], { Variant: 'outline-rounded' }),
@@ -420,37 +404,11 @@ export const OVERVIEWS: Record<string, Overview> = {
   Modal: [each('Size', ['default', 'lg'], {}, 640)],
   ModalHeader: [each('Align', ['horizontal', 'vertical-left', 'vertical-center'], {}, 440), each('Size', ['default', 'lg'], {}, 600)],
   ModalFooter: [each('Layout', ['inline', 'stacked'], {}, 480), each('Size', ['default', 'lg'], {}, 640)],
-  AlertDialog: [each('Size', ['default', 'sm'])],
-  // Drawn inline, left/right and top/bottom look alike: one of each shape.
   Sheet: [each('Side', ['right', 'left', 'bottom'])],
-  Drawer: [each('Direction', ['bottom', 'right'])],
-  Item: [
-    ...stack('Variant', ['default', 'outline', 'muted'], {}, 360),
-    [{ v: { Variant: 'outline', Size: 'sm' }, w: 360 }],
-  ],
-  Attachment: [
-    each('State', ['idle', 'uploading', 'processing']),
-    each('State', ['error', 'done']),
-    each('Orientation', ['vertical'], { State: 'done' }),
-  ],
-  Message: stack('Align', ['start', 'end']),
-  Bubble: [
-    each('Variant', ['default', 'secondary', 'muted', 'tinted']),
-    each('Variant', ['outline', 'ghost', 'destructive']),
-    each('Align', ['end'], { Variant: 'default' }),
-  ],
-  Resizable: [each('Orientation', ['horizontal', 'vertical'])],
-  Carousel: [each('Orientation', ['horizontal', 'vertical'])],
-  Chart: [each('Type', ['bar', 'line', 'area'], {}, 260)],
-
-  // ── Feedback ───────────────────────────────────────────────────────────────
   Toast: [
     each('Variant', ['default', 'secondary', 'success', 'info', 'warning', 'critical'], { Appearance: 'filled' }, 360),
     each('Appearance', ['solid', 'soft', 'filled', 'outline'], {}, 360),
   ],
-  Empty: [each('Media', ['default', 'icon'])],
-
-  // ── Navigation ─────────────────────────────────────────────────────────────
   SegmentedControl: stack('Size', ['default', 'sm', 'lg']),
   SegmentedControlItem: [
     each('Checked', ['false', 'true']),

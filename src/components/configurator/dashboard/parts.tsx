@@ -5,7 +5,7 @@ import type { ReactNode } from 'react'
 import { useI18n } from '../../../lib/i18n'
 import type { SourceState } from '../../../lib/systemDashboard'
 import type { ElementStatus } from '../../../lib/systemDashboardTypes'
-import { CHECKER } from '../checker'
+import { swatchPaint } from '../../../lib/swatchPaint'
 import { NAV_ROW_OFF, NAV_ROW_ON } from '../themeWorkspaceLayout'
 import { STATUS_LABEL, STATUS_TONE, type MarkState, type Tone } from './dashboardData'
 
@@ -148,16 +148,15 @@ export function YesNo({ yes, yesLabel, noLabel }: { yes: boolean; yesLabel: stri
   )
 }
 
-/** A colour chip. A translucent value sits over the checker, like every alpha swatch in the app. */
-export function Swatch({ css, size = 16 }: { css: string; size?: number }) {
+/** A colour chip. A translucent value is drawn over its own page and a checker
+ *  (`swatchPaint`), never over the chrome — pass `page` (that mode's `surface.page`). */
+export function Swatch({ css, size = 16, page }: { css: string; size?: number; page?: string }) {
   return (
     <span
       aria-hidden
       className="inline-block flex-shrink-0 overflow-hidden rounded-[5px] border border-fg/15"
-      style={{ width: size, height: size, ...CHECKER, backgroundSize: '8px 8px' }}
-    >
-      <span className="block h-full w-full" style={{ background: css }} />
-    </span>
+      style={{ width: size, height: size, ...swatchPaint(css, page || undefined, 8) }}
+    />
   )
 }
 

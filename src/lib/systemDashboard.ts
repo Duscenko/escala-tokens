@@ -52,6 +52,8 @@ export interface SystemRoles {
   brand: string
   modeKeys: string[]
   appearanceOf: Record<string, ThemeAppearance>
+  /** Mode key → that mode's page (`surface.page`): what a translucent swatch is drawn over. */
+  pageOf: Record<string, string>
   roles: RoleEntry[]
   /** One row per measured pair and mode. */
   findings: ResolvedFinding[]
@@ -92,7 +94,9 @@ export function resolveSystemRoles(store: StoreState, brand: string): SystemRole
     architecture: 'categorical',
     lenient: true,
   })
-  return { brand: built.activeTheme, modeKeys, appearanceOf, roles, findings }
+  const pageRole = roles.find((r) => r.id === 'surface.page')
+  const pageOf: Record<string, string> = Object.fromEntries(modeKeys.map((m) => [m, pageRole?.modes[m]?.css ?? '']))
+  return { brand: built.activeTheme, modeKeys, appearanceOf, pageOf, roles, findings }
 }
 
 /** A finding fails when the pair clears neither metric's bar for its intent. */

@@ -32,9 +32,8 @@ export default defineConfig([
       parserOptions: { tsconfigRootDir: import.meta.dirname },
     },
   },
-  // `escala-ui/_skeleton/` holds the shadcn skeletons that have no Storybook story yet: they are not part of the
-  // documented library, so only the configurator (docs specimens, previews) may import them. Nothing else —
-  // not another escala-ui file, not a lib, not an app — may depend on one.
+  // `escala-ui/_skeleton/` (shadcn skeletons with no Figma twin) was removed on 2026-11-16: escala-ui holds only
+  // Escala components. The rule stays so a skeleton cannot come back as a dependency of the library.
   {
     files: ['**/*.{ts,tsx}'],
     ignores: ['src/components/configurator/**', 'src/components/escala-ui/_skeleton/**'],

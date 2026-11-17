@@ -4,7 +4,8 @@
 // The rail keeps the names; this row is how you recognise one before opening it.
 
 import { useLayoutEffect, useRef, useState, type ReactNode } from 'react'
-import { COMPONENTS, CATEGORIES, type ComponentDef } from '../../../lib/componentCatalogue'
+import type { ComponentDef } from '../../../lib/componentCatalogue'
+import { PLATFORM_FAMILIES, familyLabel, familyOf } from '../../../lib/platformCatalogue'
 import type { PreviewTokens } from '../../preview/ButtonPreview'
 import { motion, useReducedMotion } from 'framer-motion'
 import { SPECIMENS } from './specimens'
@@ -130,17 +131,17 @@ export function ComponentsIndex({
 }) {
   const { t } = useI18n()
   const q = search.trim().toLowerCase()
-  const items = COMPONENTS
-    .map((c, i) => ({ c, i }))
-    .filter(({ c }) => !q || c.label.toLowerCase().includes(q) || c.key.toLowerCase().includes(q))
-    .sort((a, b) =>
-      CATEGORIES.indexOf(a.c.category) - CATEGORIES.indexOf(b.c.category) || a.i - b.i)
-    .map(({ c }) => c)
+  // Escala's own families (the Storybook's), in its folder order — never the
+  // shadcn-era entries `COMPONENTS` still carries for export.
+  const items = PLATFORM_FAMILIES
+    .filter((f) => !q || [f.id, familyLabel(f), ...[f.lead, ...f.parts].flatMap((c) => [c.label, c.key])]
+      .some((s) => s.toLowerCase().includes(q)))
+    .map((f) => f.lead)
 
   return (
     <div className="mx-auto max-w-6xl px-6 py-8 lg:px-10">
       <header className="mb-6">
-        <h1 className="text-display font-semibold tracking-tight text-fg">{t('Components')}</h1>
+        <h1 className="text-display font-semibold tracking-tight text-fg">{t('Elements')}</h1>
         <p className="mt-2 max-w-2xl text-strong leading-relaxed text-fg-muted">{t('Every component in the library, drawn with your tokens. Open one to see its variants, code and the roles it reads.')}</p>
         <p className="mt-2 text-caption text-fg-faint">{items.length} {t(items.length === 1 ? 'component' : 'components')}</p>
       </header>
@@ -183,7 +184,9 @@ function ComponentCard({
 }) {
   const { t } = useI18n()
   const Specimen = SPECIMENS[def.key]
-  const category = t(def.category)
+  const family = familyOf(def.key)
+  const category = t(family?.folder ?? def.category)
+  const name = family ? familyLabel(family) : def.label
   return (
     <div className="group relative flex flex-col overflow-hidden rounded-2xl border border-line bg-surface transition-colors hover:border-line-strong has-[>button:focus-visible]:ring-2 has-[>button:focus-visible]:ring-accent-ui/50">
       <span
@@ -206,11 +209,11 @@ function ComponentCard({
       </span>
       <span aria-hidden className="flex flex-col gap-0.5 px-3.5 py-3">
         <span className="truncate text-caption text-fg-faint">{category}</span>
-        <span className="truncate text-strong font-medium text-fg">{def.label}</span>
+        <span className="truncate text-strong font-medium text-fg">{name}</span>
       </span>
       <button
         type="button"
-        aria-label={`${def.label}, ${category}`}
+        aria-label={`${name}, ${category}`}
         onClick={() => onSelect(def)}
         className="absolute inset-0 cursor-pointer rounded-2xl focus-visible:outline-none"
       />
@@ -238,16 +241,14 @@ export function ComponentCoversGrid({ tokens, onOpen }: {
 }) {
   const { t } = useI18n()
   const inspecting = useInspectorActive()
-  const items = COMPONENTS
-    .map((c, i) => ({ c, i }))
-    .sort((a, b) =>
-      CATEGORIES.indexOf(a.c.category) - CATEGORIES.indexOf(b.c.category) || a.i - b.i)
-    .map(({ c }) => c)
+  const items = PLATFORM_FAMILIES.map((f) => f.lead)
   const card = tokens.archTokens?.['surface.layer-1'] ?? tokens.surface
   return (
     <ul className="grid grid-cols-[repeat(auto-fill,minmax(240px,1fr))] gap-2">
       {items.map((def) => {
         const Specimen = SPECIMENS[def.key]
+        const fam = familyOf(def.key)
+        const name = fam ? familyLabel(fam) : def.label
         return (
           <li
             key={def.key}
@@ -264,12 +265,12 @@ export function ComponentCoversGrid({ tokens, onOpen }: {
                 <button
                   type="button"
                   onClick={() => onOpen(def)}
-                  aria-label={`${t('Open')} ${def.label}`}
+                  aria-label={`${t('Open')} ${name}`}
                   {...{ [INSPECT_EXEMPT_ATTR]: '' }}
                   className="-mx-1.5 -my-0.5 flex min-w-0 items-center gap-1 rounded-md px-1.5 py-0.5 text-ui transition-colors duration-150 ease-[var(--ease-out-quint)] hover:bg-[color-mix(in_srgb,var(--cover-ink)_8%,transparent)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--cover-ink)]"
                   style={{ color: tokens.neutralText, ['--cover-ink' as string]: tokens.neutralText }}
                 >
-                  <span className="truncate">{def.label}</span>
+                  <span className="truncate">{name}</span>
                   <svg
                     width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden
                     className="flex-shrink-0 -translate-x-1 opacity-0 transition-[opacity,transform] duration-150 ease-[var(--ease-out-quint)] group-hover:translate-x-0 group-hover:opacity-70 group-focus-within:translate-x-0 group-focus-within:opacity-70 motion-reduce:translate-x-0 motion-reduce:transition-none"
@@ -278,7 +279,7 @@ export function ComponentCoversGrid({ tokens, onOpen }: {
                   </svg>
                 </button>
               ) : (
-                <span className="truncate text-ui" style={{ color: tokens.neutralText }}>{def.label}</span>
+                <span className="truncate text-ui" style={{ color: tokens.neutralText }}>{name}</span>
               )}
             </span>
             <span aria-hidden inert={!inspecting} className="relative block min-h-0 flex-1">

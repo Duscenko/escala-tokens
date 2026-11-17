@@ -20,13 +20,13 @@ The public site is **https://www.escalatokens.com**. Vercel is hosting only — 
 | `POST /api/tokens?project=<slug>` | Write `tokens/<slug>.json` from this app only (`Origin` must match the deployment). First write issues a publish claim; later writes require `Authorization: Bearer`. |
 | `POST /api/tokens` | `400` — same as GET. There is no `design-tokens.json` key. |
 
-Do not rename query params or change CORS (`*`) — the plugin's GET is cross-origin. GET stays unauthenticated. POST is same-origin plus a per-slug claim; that is not a user account. New read capabilities still go to `/api/mcp`. Do not switch `@vercel/blob` to KV.
+Do not rename query params or change CORS (`*`) — the plugin's GET is cross-origin. GET stays unauthenticated. POST is same-origin plus a per-slug claim; that is not a user account. There is no hosted MCP (`api/mcp.ts` was deleted 2026-10-20); a new read capability is a new decision, not a default. Do not switch `@vercel/blob` to KV.
 
 Slug must stay aligned with the configurator (`slugify(projectName)`).
 
 ## 2. Escala JSON — versioning
 
-`schemaVersion` is the plugin handshake. The plugin logs a warning when the payload is newer than `SUPPORTED_SCHEMA_VERSION` (`code.ts`, currently **6**) and still imports.
+`schemaVersion` is the plugin handshake. The plugin logs a warning when the payload is newer than `SUPPORTED_SCHEMA_VERSION` (`code.ts`; check the plugin repo for the current value — the configurator ships **7**) and still imports.
 
 | Version | What changed | Compatibility |
 |---|---|---|

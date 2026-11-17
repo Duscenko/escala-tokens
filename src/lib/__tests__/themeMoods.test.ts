@@ -1,3 +1,4 @@
+import { labelOnSolidClears } from '../color/apca'
 import { describe, expect, it } from 'vitest'
 import chroma from 'chroma-js'
 import {
@@ -111,8 +112,7 @@ describe('theme moods', () => {
         const fill = get('action', 'primary', mode) || get('action', 'primary.default', mode)
         const label = get('content', 'on-action', mode)
         if (fill && label) {
-          const ratio = checkContrast(label, fill)
-          expect(ratio, `${mood.id} ${mode} button ${label} on ${fill}`).toBeGreaterThanOrEqual(4.5)
+          expect(labelOnSolidClears(label, fill, mode), `${mood.id} ${mode} button ${label} on ${fill}`).toBe(true)
         }
         for (const sev of ['critical', 'warning', 'success', 'info']) {
           const solid = get('status', `${sev}.surface-solid`, mode)

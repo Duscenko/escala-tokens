@@ -14,9 +14,7 @@ import {
   type ButtonGroupOrientation, type ButtonGroupShape, type ButtonGroupSize, type ButtonGroupVariant, type ButtonGroupItemState,
 } from '../../../escala-ui/button-group'
 import { SocialLoginButton as SkSocialLoginButton, type SocialProvider, PROVIDER_NAME } from '../../../escala-ui/social-login-button'
-import { AppStoreBadge as SkAppStoreBadge, type Store } from '../../../escala-ui/app-store-badge'
 import { RecipeScope } from './scope'
-import { Toggle as SkToggle, type ToggleSize, type ToggleVariant } from '../../../escala-ui/_skeleton/toggle'
 
 /** Button size → the control step its icon is sized from (xs · sm · md · lg). */
 const ICON_STEP: Record<string, string> = { xs: 'xs', sm: 'sm', default: 'md', lg: 'lg' }
@@ -243,27 +241,4 @@ export function SkeletonInlineLinkSpecimen({ t, children }: { t: SpecimenProps['
   )
 }
 
-export function SkeletonAppStoreBadgeSpecimen({ t, v }: SpecimenProps) {
-  return (
-    <RecipeScope t={t}>
-      <SkAppStoreBadge store={(v.Store ?? 'app-store') as Store} href="#store" onClick={(e) => e.preventDefault()} />
-    </RecipeScope>
-  )
-}
 
-export function SkeletonToggleSpecimen({ t, v }: SpecimenProps) {
-  const pressed = (v.Pressed ?? 'False') === 'True'
-  return (
-    <RecipeScope t={t}>
-      <SkToggle
-        key={String(pressed)}
-        defaultPressed={pressed}
-        variant={(v.Variant ?? 'default') as ToggleVariant}
-        size={(v.Size ?? 'default') as ToggleSize}
-        aria-label="Bold"
-      >
-        <b>B</b>
-      </SkToggle>
-    </RecipeScope>
-  )
-}

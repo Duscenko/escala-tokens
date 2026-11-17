@@ -19,9 +19,11 @@ import { SELECT_LIST, SELECT_OPTION, SELECT_OPTION_OFF, SELECT_OPTION_FOCUS } fr
 import { NavIcon } from '../FoundationIconRail'
 import { PickerField, FIELD_SHELL, FIELD_SHELL_REST, FIELD_CHIP } from '../../ui/PickerField'
 import {
-  COMPONENTS, COMPONENT_KEYS, FIGMA_SAMPLE_KEYS, isInFigmaSample,
+  COMPONENT_KEYS, FIGMA_SAMPLE_KEYS, isInFigmaSample,
   type ComponentDef, type VariantAxis,
 } from '../../../lib/componentCatalogue'
+import { PLATFORM_FAMILIES, PLATFORM_PAGES, familyOf, familyLabel } from '../../../lib/platformCatalogue'
+import { FittedSpecimen } from './ComponentAvatars'
 import { useI18n } from '../../../lib/i18n'
 import { agentContextMarkdown } from '../../../lib/agentContext'
 import { contextSize, cutComponentContext, formatApproxTokens } from '../../../lib/contextRequest'
@@ -115,17 +117,17 @@ function OptionSwitch({ label, checked, onChange }: { label: string; checked: bo
 
 const INSPECT_PREF_KEY = 'sd-playground-inspect'
 
-function readInspectPref(): boolean {
+export function readInspectPref(): boolean {
   try { return localStorage.getItem(INSPECT_PREF_KEY) !== 'off' } catch { return true }
 }
 
-function writeInspectPref(on: boolean) {
+export function writeInspectPref(on: boolean) {
   try { localStorage.setItem(INSPECT_PREF_KEY, on ? 'on' : 'off') } catch { /* private mode: this session only */ }
 }
 
 /** Inspector on / off. The name stays "Inspect" and `aria-pressed` carries
  *  the state, so a screen reader hears one answer, not two. */
-type CanvasPanel = 'theme' | 'settings' | 'context'
+export type CanvasPanel = 'theme' | 'settings' | 'context'
 
 const BAR_ICON = 'relative flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-md transition-colors duration-150 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui motion-reduce:transition-none'
 // Pressed: full white glyph on the raised pill, so "on" can't be mistaken
@@ -309,9 +311,16 @@ const STAGE_BASE = 2 / 3
  *  150 % is the true pixel size. */
 const ZOOM_STEPS = [0.5, 0.75, 1, 1.25, 1.5, 2, 3]
 
-function CanvasBar({
+export function CanvasBar({
   panel, onPanel, inspecting, onInspect, appearance, onAppearance, hasSettings, zoom, onZoom,
+  hasContext = true, settingsLabel, toolbarLabel,
 }: {
+  /** Shows the Agent context button (a block has no brief yet). */
+  hasContext?: boolean
+  /** The settings panel's name ("Component settings", "Block settings"). */
+  settingsLabel?: string
+  /** The toolbar's accessible name. */
+  toolbarLabel?: string
   /** The stage's scale: − / + step it, the readout puts it back to 100 %. */
   zoom: number
   onZoom: (z: number) => void
@@ -335,7 +344,7 @@ function CanvasBar({
     <div data-inspect-exempt="" className="pointer-events-none sticky bottom-4 z-30 -mt-14 mb-4 flex items-center justify-center px-4">
       <div
         role="toolbar"
-        aria-label={t('Component tools')}
+        aria-label={toolbarLabel ?? t('Component tools')}
         className="dark pointer-events-auto flex h-10 items-center gap-0.5 rounded-xl border border-white/[0.12] bg-[#050506] p-1 shadow-[0_8px_24px_-6px_rgba(0,0,0,0.45),0_2px_6px_-2px_rgba(0,0,0,0.3)]"
       >
         <HintTip label={t('Edit theme')}>
@@ -351,19 +360,19 @@ function CanvasBar({
         </HintTip>
         {sep}
         {hasSettings && (
-          <HintTip label={t('Component settings')}>
+          <HintTip label={settingsLabel ?? t('Component settings')}>
             <button
               type="button"
               onClick={() => toggle('settings')}
               aria-pressed={panel === 'settings'}
-              aria-label={t('Component settings')}
+              aria-label={settingsLabel ?? t('Component settings')}
               className={`${BAR_ICON} ${panel === 'settings' ? BAR_ICON_ON : BAR_ICON_OFF}`}
             >
               <PhIcon id="faders" size={16} />
             </button>
           </HintTip>
         )}
-        <HintTip label={t('Agent context')}>
+        {hasContext && <HintTip label={t('Agent context')}>
           <button
             type="button"
             onClick={() => toggle('context')}
@@ -374,7 +383,7 @@ function CanvasBar({
             {/* The left rail's Code mark (brackets-curly), filled while open, as the rail fills its active page. */}
             <NavIcon id="code" filled={panel === 'context'} size={16} />
           </button>
-        </HintTip>
+        </HintTip>}
         {sep}
         <HintTip label={inspecting ? t('Exit inspector') : t('Inspect tokens')} shortcut={inspecting ? 'Esc' : undefined}>
           <button
@@ -454,7 +463,7 @@ function CanvasBar({
 /** What the bar opens: a layer over the Components rail. Component settings
  *  is HOME — the panel you see and control the element from — so it has no
  *  way out of its own; Theme and Agent context return to it (‹ back, ✕, Esc). */
-function CanvasSidePanel({ title, back, children, footer }: {
+export function CanvasSidePanel({ title, back, children, footer }: {
   title: string
   /** Where ‹ / ✕ / Esc land. Omit for the home panel (no back, no close). */
   back?: { label: string; onBack: () => void }
@@ -1026,7 +1035,13 @@ function FigmaGlyph({ className }: { className?: string }) {
 
 function RelatedComponents({ def, onOpen }: { def: ComponentDef; onOpen: (c: ComponentDef) => void }) {
   const { t } = useI18n()
-  const related = COMPONENTS.filter((c) => c.category === def.category && c.key !== def.key).slice(0, 4)
+  // Escala's own families only: the folder's other entries, never a hidden
+  // shadcn-era component and never this page's own family.
+  const own = familyOf(def.key)
+  const related = PLATFORM_FAMILIES
+    .filter((f) => f !== own && f.folder === own?.folder)
+    .slice(0, 4)
+    .map((f) => f.lead)
   if (!related.length) return null
   return (
     <section className="flex flex-col gap-3">
@@ -1038,10 +1053,65 @@ function RelatedComponents({ def, onOpen }: { def: ComponentDef; onOpen: (c: Com
             onClick={() => onOpen(c)}
             className="text-left rounded-xl border border-line bg-surface/40 p-4 hover:border-line-strong transition-colors"
           >
-            <p className="text-xs font-semibold text-fg">{c.label}</p>
+            <p className="text-xs font-semibold text-fg">{familyOf(c.key) ? familyLabel(familyOf(c.key)!) : c.label}</p>
             <p className="text-caption text-fg-faint leading-relaxed mt-1 line-clamp-2">{t(c.description)}</p>
           </button>
         ))}
+      </div>
+    </section>
+  )
+}
+
+/** The family's anatomy, as Storybook's Documentation draws it: every part
+ *  live, at its defaults, painted in the brand on screen. A card opens that
+ *  part's own page; on a part's page the family's root leads the list. */
+function FamilyAnatomy({ def, tokens, onOpen }: { def: ComponentDef; tokens: PreviewTokens; onOpen: (c: ComponentDef) => void }) {
+  const { t } = useI18n()
+  const family = familyOf(def.key)
+  if (!family || family.parts.length === 0) return null
+  const members = [family.lead, ...family.parts.filter((p) => p !== family.lead)]
+  return (
+    <section className="flex flex-col gap-3">
+      <SectionHeading id="anatomy">{t('Anatomy')}</SectionHeading>
+      <p className="text-ui text-fg-muted leading-relaxed">
+        {t('{family} is built from these parts. Each one is its own Figma component set with its own playground.', { family: familyLabel(family) })}
+      </p>
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        {members.map((c) => {
+          const Specimen = SPECIMENS[c.key]
+          const current = c.key === def.key
+          return (
+            <button
+              key={c.key}
+              type="button"
+              onClick={() => { if (!current) onOpen(c) }}
+              aria-current={current ? 'page' : undefined}
+              className={`flex flex-col overflow-hidden rounded-xl border text-left transition-colors ${
+                current ? 'border-line-strong' : 'border-line hover:border-line-strong'
+              }`}
+            >
+              <div
+                aria-hidden
+                inert
+                className="relative h-40 overflow-hidden"
+                style={{ background: tokens.surface }}
+              >
+                {/* Scaled to fit whole, like the index cards: a part bigger
+                    than the card (Calendar, Table) reads as itself, not cut. */}
+                <span className="absolute inset-4">
+                  <FittedSpecimen>{Specimen ? <Specimen t={tokens} v={axisDefaults(c)} /> : null}</FittedSpecimen>
+                </span>
+              </div>
+              <div className="border-t border-line bg-surface/40 px-4 py-3">
+                <p className="text-xs font-semibold text-fg">
+                  {c.key}
+                  {current && <span className="ml-2 font-normal text-fg-faint">{t('This page')}</span>}
+                </p>
+                <p className="mt-1 line-clamp-2 text-caption leading-relaxed text-fg-faint">{t(c.description)}</p>
+              </div>
+            </button>
+          )
+        })}
       </div>
     </section>
   )
@@ -1055,6 +1125,7 @@ export function componentToc(def: ComponentDef, t: Translate = (s) => s): TocEnt
     { id: 'description', label: t('Description') },
     { id: 'usage', label: t('Usage') },
   ]
+  if ((familyOf(def.key)?.parts.length ?? 0) > 0) entries.push({ id: 'anatomy', label: t('Anatomy') })
   entries.push(
     { id: 'accessibility', label: t('Accessibility') },
     { id: 'figma', label: t('Figma') },
@@ -1121,9 +1192,11 @@ export function ComponentArticle({
     : undefined
 
   const heroCode = snippetFor(def, values, icons)
-  const idx = COMPONENTS.findIndex((c) => c.key === def.key)
-  const prev = COMPONENTS[idx - 1]
-  const next = COMPONENTS[idx + 1]
+  // Prev / next walk Escala's own pages (family, then its parts), the
+  // directory's order — never into a component the platform hides.
+  const idx = PLATFORM_PAGES.findIndex((c) => c.key === def.key)
+  const prev = idx >= 0 ? PLATFORM_PAGES[idx - 1] : undefined
+  const next = idx >= 0 ? PLATFORM_PAGES[idx + 1] : undefined
 
   // The brief lives in the hero panel now (Agent context tab + Copy context),
   // not in the page header: two doors to one action, two rows apart.
@@ -1177,6 +1250,9 @@ export function ComponentArticle({
           context (hero panel), the one copy of it on this page. */}
       <DocSection id="usage" title={t('Usage')} description={t(def.usage)} />
 
+      {/* Anatomy — the family's parts, live (Storybook's Anatomy section). */}
+      <FamilyAnatomy def={def} tokens={tokens} onOpen={onOpen} />
+
       {/* Accessibility */}
       <section className="flex flex-col gap-2.5">
         <SectionHeading id="accessibility">{t('Accessibility')}</SectionHeading>
@@ -1213,7 +1289,7 @@ export function ComponentArticle({
       <Pager
         prev={prev && { key: prev.key, label: prev.label }}
         next={next && { key: next.key, label: next.label }}
-        onOpen={(key) => { const c = COMPONENTS.find((x) => x.key === key); if (c) onOpen(c) }}
+        onOpen={(key) => { const c = PLATFORM_PAGES.find((x) => x.key === key); if (c) onOpen(c) }}
       />
       </div>
     </div>

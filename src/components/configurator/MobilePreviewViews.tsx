@@ -17,7 +17,8 @@ import { RecipeScope } from './docs/skeleton/scope'
 import { avatarFillOf } from './docs/specimens'
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '../escala-ui/card'
 import { SocialLoginButton, PROVIDER_NAME } from '../escala-ui/social-login-button'
-import { Badge, StatusBadge } from '../escala-ui/badge'
+import { Badge } from '../escala-ui/badge'
+import { AvatarStatus } from '../escala-ui/avatar'
 import { Button } from '../escala-ui/button'
 import { Input } from '../escala-ui/input'
 import { Label } from '../escala-ui/label'
@@ -214,10 +215,10 @@ function PresenceTile({ t }: { t: T }) {
   return (
     <Tile label={t('Presence')}>
       <Row layout="stack">
-        <StatusBadge status="online">{t('Online')}</StatusBadge>
-        <StatusBadge status="away">{t('Away')}</StatusBadge>
-        <StatusBadge status="busy">{t('Busy')}</StatusBadge>
-        <StatusBadge status="offline">{t('Offline')}</StatusBadge>
+        <span className="inline-flex items-center gap-[var(--spacing-gap-control)]"><AvatarStatus status="online" aria-hidden />{t('Online')}</span>
+        <span className="inline-flex items-center gap-[var(--spacing-gap-control)]"><AvatarStatus status="away" aria-hidden />{t('Away')}</span>
+        <span className="inline-flex items-center gap-[var(--spacing-gap-control)]"><AvatarStatus status="busy" aria-hidden />{t('Busy')}</span>
+        <span className="inline-flex items-center gap-[var(--spacing-gap-control)]"><AvatarStatus status="offline" aria-hidden />{t('Offline')}</span>
       </Row>
     </Tile>
   )

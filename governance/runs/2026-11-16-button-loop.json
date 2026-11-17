@@ -1,0 +1,31 @@
+{
+  "run": "2026-11-16 button loop (governance §2–§4, first pass)",
+  "figmaFile": "7j5zukN5HpihGVJMmyjA20",
+  "piece": "Button",
+  "figmaNode": "4:5066",
+  "story": "buttons-button--playground",
+  "branch": "feat/figma-parity-2026-11-17",
+  "sha": "2a399c9",
+  "steps": {
+    "1-audit": {
+      "how": "Read-only use_figma: props in panel order + every variant's fill / stroke / ink variable compared in Figma with the web recipe (resolveRecipe → figmaSemanticName), then stroke align / weight / opacity and the focus-ring layer of the Focused variants; same read on IconButton 614:785.",
+      "props": "Variant · Appearance · Size · State, IconLeadingVisible, Label, IconTrailingVisible, IconLeadingIcon, IconTrailingIcon — order, values and defaults equal the story's argTypes/args.",
+      "variantsChecked": 288,
+      "differences": 23,
+      "findings": ["PAR-001:Button+IconButton/solid/outerStroke", "PAR-001:Button+IconButton/Focused/secondary,critical", "TOK-004:Button+IconButton/Focused,outline/paint-opacity", "TOK-005:Button+IconButton/focus-ring/strokeWeight"]
+    },
+    "2-fix-by-owner": {
+      "anatomy (Figma owns) → fixed in code": ["solid rim: outerStroke = the intent's pressed fill, Stroke/control, OUTSIDE (composed under the highlight)", "focus pair per Variant in every Appearance, Button and IconButton"],
+      "figma-side → owner decides": ["#33 TOK-004 paint opacity on roles", "#34 TOK-005 unbound halo weight"],
+      "figmaWrites": 0
+    },
+    "3-approval": "PENDING — the owner reviews the story (states, Light / Dark, Desktop / Tablet / Mobile) and approves; the stage stays `storybook` until then.",
+    "4-publication": "Not started (needs step 3)."
+  },
+  "notMeasured": "Pixels: Storybook was not started in this run (overnight, no browser). The rim and focus colours are verified by recipe tests and CSS output, not by a zoomed screenshot against Figma's render (escala-figma-to-code step 5). Do that before approving.",
+  "processGaps": [
+    "The daily review (§4.5 check 2) compares the component inventory (axes, values, properties) but not the role each variant binds. Figma changed Button's bindings after 2026-11-12 and nothing reported it: the per-variant colour comparison used here should be part of the review for registry pieces.",
+    "design-plans/button-contract.md had the 2026-11-12 bindings; it is now re-read and dated."
+  ],
+  "verification": { "vitest": "see PR", "tsc": "ok", "typecheck:storybook": "ok", "lint": "0 new errors vs main" }
+}

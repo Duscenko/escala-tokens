@@ -428,6 +428,33 @@ function remapOverridesForSyncModes(
   return next
 }
 
+/** One brand read in BOTH appearances, as the Categorical projection needs it:
+ *  `theme::light` and `theme::dark` columns built exactly like a Figma sync of
+ *  that brand (same palettes, same override remap). Docs · Color uses it so its
+ *  Light and Dark columns are the values the export ships — a brand key alone
+ *  resolves only its own kind, and the Dark column used to repeat Light. */
+export function brandAppearanceProjection(store: ReturnType<typeof useDesignStore.getState>, theme: string) {
+  const modes: FigmaSyncMode[] = [{ theme, appearance: 'light' }, { theme, appearance: 'dark' }]
+  const { globalScales, orderedThemeModes } = buildThemeContext(store, theme)
+  const flat = flattenThemesForSyncModes(store, modes, orderedThemeModes, {})
+  if (!flat.themeOrder.length) return null
+  return {
+    lightKey: figmaSyncModeId(modes[0]),
+    darkKey: figmaSyncModeId(modes[1]),
+    order: flat.themeOrder,
+    input: {
+      themes: flat.themes,
+      themeKinds: flat.themeKinds,
+      themePalettes: flat.themePalettes,
+      scales: globalScales,
+      accent: store.primaryColor,
+      pageBackground: store.pageBackground,
+      darkBackground: store.darkBackground,
+    },
+    overrides: remapOverridesForSyncModes(store.architectureOverrides?.categorical ?? {}, modes, store.themeKinds ?? {}),
+  }
+}
+
 export function generateTokenJSON(
   source?: DesignSnapshot | ReturnType<typeof useDesignStore.getState>,
   opts?: GenerateTokenOptions,

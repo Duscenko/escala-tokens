@@ -4,7 +4,7 @@
  *
  * `slot:hover` / `slot[attr]` keys give one PART its own state.
  */
-import { c, NONE, part, type ComponentRecipe, type SlotMap, type SlotProps, FOCUS } from './helpers.js'
+import { c, NONE, part, type ComponentRecipe, type SlotMap, type SlotProps } from './helpers.js'
 
 // ── Button · IconButton ────────────────────────────────────────────────────
 // The Figma file is the source (design-plans/button-contract.md): `Variant` is the
@@ -13,8 +13,8 @@ import { c, NONE, part, type ComponentRecipe, type SlotMap, type SlotProps, FOCU
 // is the variable the Figma variant binds, state by state. Disabled is a role
 // (action.disabled / content.disabled), never an opacity.
 //
-// Focus: `focus` is the edge the Figma variant strokes in its Focused state, `ring`
-// the halo outside it — exactly as each set has them (`focusPair`).
+// Focus: every Focused variant is its Default plus ONE ring (`gapRing`), 1px off
+// the edge, in the intent's colour (`FOCUS_RING`) — owner decision 2026-11-17.
 
 export const BUTTON_VARIANTS = ['default', 'secondary', 'critical'] as const
 export const BUTTON_APPEARANCES = ['solid', 'outline', 'ghost', 'link'] as const
@@ -28,16 +28,17 @@ const SOLID: Record<string, { fill: [string, string, string]; ink: string }> = {
   critical: { fill: ['status.critical.surface-solid', 'status.critical.surface-solid-hover', 'status.critical.surface-solid-pressed'], ink: 'status.critical.on-solid' },
 }
 
-/** The focus edge and ring, read per set from the Figma file (2026-11-12):
- *  Button focuses every combination on Border/focus + Border/ring/default;
- *  IconButton keeps its own on two solid fills. Figma is the rule here. */
-function focusPair(variant: string, appearance: string, iconOnly: boolean): [string, string] {
-  if (iconOnly && appearance === 'solid') {
-    if (variant === 'secondary') return ['border.strong', 'border.subtle']
-    if (variant === 'critical') return ['status.critical.border-strong', 'status.critical.border']
-  }
-  return ['border.focus', 'border.ring.default']
+/** The focus ring of every Button and IconButton (Figma 4:5066 · 614:785,
+ *  owner decision 2026-11-17): ONE ring, `stroke.focus` wide, 1px OUTSIDE the
+ *  control with the page in the gap, in the colour of the intent — the same at
+ *  every appearance. Nothing changes inside the control: a focused button looks
+ *  exactly like its Default, plus the ring. */
+const FOCUS_RING: Record<string, string> = {
+  default: 'border.ring.default',
+  secondary: 'border.ring.neutral',
+  critical: 'status.critical.ring',
 }
+const focusRing = (variant: string, focused: boolean) => (focused ? c(FOCUS_RING[variant] ?? FOCUS_RING.default) : NONE)
 /** Outline / ghost: the intent's ink and the outline's edge. */
 const QUIET: Record<string, { ink: string; edge: string }> = {
   default: { ink: 'content.accent', edge: 'border.accent' },
@@ -56,9 +57,7 @@ const LINK: Record<string, [string, string]> = {
  *  Focused draws its 2px edge as an inset on top, so nothing shifts. */
 const strokeOf = (appearance: string) => (appearance === 'outline' ? 'stroke.control' : 'stroke.none')
 
-function buttonPaint(variant: string, appearance: string, state: string, iconOnly = false): SlotMap {
-  const [focusEdge, focusRing] = focusPair(variant, appearance, iconOnly)
-  const ring = state === 'Focused' ? c(focusRing) : NONE
+function buttonPaint(variant: string, appearance: string, state: string, shadowLabel = false): SlotMap {
   if (state === 'Disabled') {
     return {
       root: {
@@ -67,23 +66,34 @@ function buttonPaint(variant: string, appearance: string, state: string, iconOnl
         text: c('content.disabled'),
         focus: NONE,
         ring: NONE,
+        gapRing: NONE,
         highlight: NONE,
         strokeWidth: strokeOf(appearance),
       },
+      // A disabled label lies flat (the file puts no effect on it).
+      ...(shadowLabel && appearance === 'solid' ? { label: { textShadow: NONE } } : {}),
     }
   }
   const step = state === 'Pressed' ? 2 : state === 'Hover' ? 1 : 0
-  const focused = state === 'Focused'
+  const gapRing = focusRing(variant, state === 'Focused')
   if (appearance === 'solid') {
     const k = SOLID[variant]
-    // Every solid state but Disabled carries Figma's top highlight. (Its
-    // DROP_SHADOW 0 0 0 spread 1 paints nothing: Figma applies spread only to
-    // a frame that clips content — measured on the file's own render.)
-    return { root: { fill: c(k.fill[step]), stroke: NONE, text: c(k.ink), focus: focused ? c(focusEdge) : NONE, ring, highlight: c('elevation.highlight'), strokeWidth: strokeOf(appearance) } }
+    // Every solid state but Disabled carries the top highlight and, on a Button,
+    // the label's 0 1px 0 shadow (`Shadow/text-2xs`). No outside stroke any more
+    // (owner's call 2026-11-17, after Create UI): the fill is the control, and
+    // the hard edge round a vivid fill read as noise — a pale halo in Dark.
+    return {
+      root: {
+        fill: c(k.fill[step]), stroke: NONE, text: c(k.ink),
+        focus: NONE, ring: NONE, gapRing,
+        highlight: c('elevation.highlight'), strokeWidth: strokeOf(appearance),
+      },
+      ...(shadowLabel ? { label: { textShadow: 'text-2xs' } } : {}),
+    }
   }
   if (appearance === 'link') {
     const [rest, over] = LINK[variant]
-    return { root: { fill: NONE, stroke: NONE, text: c(step ? over : rest), focus: focused ? c(focusEdge) : NONE, ring, highlight: NONE, strokeWidth: strokeOf(appearance) } }
+    return { root: { fill: NONE, stroke: NONE, text: c(step ? over : rest), focus: NONE, ring: NONE, gapRing, highlight: NONE, strokeWidth: strokeOf(appearance) } }
   }
   const k = QUIET[variant]
   const wash = step === 2 ? c('action.ghost.pressed') : step === 1 ? c('action.ghost.hover') : NONE
@@ -92,8 +102,9 @@ function buttonPaint(variant: string, appearance: string, state: string, iconOnl
       fill: wash,
       stroke: appearance === 'outline' ? c(k.edge) : NONE,
       text: c(k.ink),
-      focus: focused ? c(focusEdge) : NONE,
-      ring,
+      focus: NONE,
+      ring: NONE,
+      gapRing,
       highlight: NONE,
       strokeWidth: strokeOf(appearance),
     },
@@ -118,7 +129,7 @@ export const BUTTON: ComponentRecipe = {
     part({ Size: BUTTON_SIZES }, (size) => ({
       root: { height: BUTTON_HEIGHT[size], paddingX: 'spacing.inset-control', gap: BUTTON_GAP[size] },
     })),
-    part({ Variant: BUTTON_VARIANTS, Appearance: BUTTON_APPEARANCES, State: BUTTON_STATES }, (v, a, s) => buttonPaint(v, a, s)),
+    part({ Variant: BUTTON_VARIANTS, Appearance: BUTTON_APPEARANCES, State: BUTTON_STATES }, (v, a, s) => buttonPaint(v, a, s, true)),
   ],
 }
 
@@ -138,7 +149,7 @@ export const ICON_BUTTON: ComponentRecipe = {
       // The file's icon frame: Size/icon-sm at xs and sm, icon-md at default, icon-lg at lg.
       icon: { width: ICON_BUTTON_GLYPH[size], height: ICON_BUTTON_GLYPH[size] },
     })),
-    part({ Variant: BUTTON_VARIANTS, Appearance: BUTTON_APPEARANCES, State: BUTTON_STATES }, (v, a, s) => buttonPaint(v, a, s, true)),
+    part({ Variant: BUTTON_VARIANTS, Appearance: BUTTON_APPEARANCES, State: BUTTON_STATES }, (v, a, s) => buttonPaint(v, a, s)),
   ],
 }
 
@@ -625,18 +636,6 @@ export const SOCIAL_LOGIN_BUTTON: ComponentRecipe = {
 // The badge is the STORE's artwork (Apple and Google require a black badge with
 // white type), so its ink and fill are not tokens — only its geometry is.
 
-export const APP_STORE_BADGE: ComponentRecipe = {
-  key: 'AppStoreBadge',
-  slots: ['root', 'eyebrow', 'name'],
-  defaults: { Store: 'app-store' },
-  parts: [
-    part({ Store: ['app-store', 'google-play'] as const }, () => ({
-      root: { radius: 'radius.action', paddingX: 'spacing.4', paddingY: 'spacing.2', gap: 'spacing.2_5' },
-      eyebrow: { font: 'type.caption' },
-      name: { font: 'type.button' },
-    })),
-  ],
-}
 
 // ── Toggle variants (shared by Toggle) ─────────────────────────────────────
 // `variant` default (no edge) | outline
@@ -647,32 +646,3 @@ export const APP_STORE_BADGE: ComponentRecipe = {
 
 export const TOGGLE_GROUP_VARIANTS = ['default', 'outline'] as const
 export const TOGGLE_GROUP_SIZES = ['default', 'sm', 'lg'] as const
-const TOGGLE_HEIGHT: Record<string, string> = { sm: 'size.compact', default: 'size.control', lg: 'size.touch' }
-
-// ── Toggle ─────────────────────────────────────────────────────────────────
-// shadcn's Toggle: the ToggleGroup item on its own. Pressed (Radix
-// `data-state="on"`, mirrored as `data-pressed` True/False — a Figma property)
-// takes the muted surface.
-
-export const TOGGLE: ComponentRecipe = {
-  key: 'Toggle',
-  slots: ['root'],
-  defaults: { Variant: 'default', Size: 'default', Pressed: 'False' },
-  parts: [
-    part({ Variant: TOGGLE_GROUP_VARIANTS }, (variant) => ({
-      root: variant === 'outline'
-        ? { stroke: c('border.control'), strokeWidth: 'stroke.control', font: 'type.button', radius: 'radius.action', gap: 'spacing.1' }
-        : { font: 'type.button', radius: 'radius.action', gap: 'spacing.1' },
-    })),
-    part({ Size: TOGGLE_GROUP_SIZES }, (size) => ({
-      root: { height: TOGGLE_HEIGHT[size], paddingX: 'spacing.2_5' },
-    })),
-    part({ Pressed: ['False', 'True'] as const }, (pressed) => ({
-      root: pressed === 'True'
-        ? { fill: c('surface.layer-2'), text: c('content.primary') }
-        : { fill: NONE, text: c('content.secondary') },
-      'root:hover': { fill: c('action.ghost.hover'), text: c('content.primary') },
-      'root:focus-visible': FOCUS,
-    })),
-  ],
-}
