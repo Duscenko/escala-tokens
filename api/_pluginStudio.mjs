@@ -9413,8 +9413,8 @@ var init_helpers = __esm({
     SELECTOR_SQUARE_RADIUS = { default: "min(radius.control,radius.md)", compact: "min(radius.control,radius.sm)" };
     KEYCAP_RADIUS = "min(radius.item,radius.lg)";
     TAG_ROUNDED_RADIUS = {
-      xs: "min(radius.item,radius.sm)",
-      sm: "min(radius.item,radius.md)",
+      xs: "min(radius.control,radius.sm)",
+      sm: "min(radius.control,radius.md)",
       default: "min(radius.item,radius.lg)"
     };
     ROUNDED_SHAPE_RADIUS = "min(radius.action,radius.xl)";
@@ -9462,7 +9462,8 @@ function buttonPaint(variant, appearance, state2, shadowLabel = false) {
     return { root: { fill: NONE, stroke: NONE, text: c(step ? over : rest), focus: NONE, ring: NONE, gapRing, highlight: NONE, strokeWidth: strokeOf(appearance) } };
   }
   const k = QUIET[variant];
-  const wash = step === 2 ? c("action.ghost.pressed") : step === 1 ? c("action.ghost.hover") : NONE;
+  const [hoverWash, pressedWash] = variant === "critical" ? ["status.critical.surface", "status.critical.surface-pressed"] : ["action.ghost.hover", "action.ghost.pressed"];
+  const wash = step === 2 ? c(pressedWash) : step === 1 ? c(hoverWash) : NONE;
   return {
     root: {
       fill: wash,

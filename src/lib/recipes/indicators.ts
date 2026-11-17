@@ -55,7 +55,7 @@ function badgeLayout(size: string, type: string, shape: string, appearance: stri
   const g = BADGE_GEOMETRY[size]
   // A stroke the file lays out (outline widens the badge by two hairlines).
   const lay = appearance === 'outline' ? '+stroke.control' : ''
-  // Rounded badges are the tag family: `Radius/item` in Figma (DEC-2026-11-17-002),
+  // Rounded badges: `Radius/control` on xs · sm, `Radius/item` on default (DEC-2026-11-17-002 · -003),
   // capped per size so a small rounded badge never reads as its pill.
   const radius = shape === 'pill' ? 'radius.pill' : TAG_ROUNDED_RADIUS[size]
   if (type === 'dot') return { root: { width: g.dot, height: g.dot, radius: 'radius.pill', paddingX: 'spacing.none', paddingY: 'spacing.none' } }

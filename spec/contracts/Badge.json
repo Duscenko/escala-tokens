@@ -217,6 +217,7 @@
       "color.surface.page"
     ],
     "radius": [
+      "radius.control",
       "radius.item",
       "radius.lg",
       "radius.md",

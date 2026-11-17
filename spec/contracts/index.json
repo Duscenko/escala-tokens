@@ -12,7 +12,7 @@
     "file": "spec/contracts/Button.json",
     "figmaSet": "Button",
     "story": "buttons-button--playground",
-    "tokens": 40
+    "tokens": 42
   },
   {
     "key": "IconButton",
@@ -27,7 +27,7 @@
     "file": "spec/contracts/IconButton.json",
     "figmaSet": "IconButton",
     "story": "buttons-iconbutton--playground",
-    "tokens": 40
+    "tokens": 42
   },
   {
     "key": "CloseButton",
@@ -672,7 +672,7 @@
     "file": "spec/contracts/Badge.json",
     "figmaSet": "Badge",
     "story": "indicators-badge--playground",
-    "tokens": 57
+    "tokens": 58
   },
   {
     "key": "Chip",

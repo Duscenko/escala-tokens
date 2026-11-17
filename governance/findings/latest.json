@@ -289,6 +289,20 @@
       "firstSeen": "2026-11-17",
       "lastSeen": "2026-11-17",
       "regression": false
+    },
+    {
+      "id": "FIG-003:SegmentedControl/selected-dark",
+      "rule": "COL-002",
+      "severity": "warn",
+      "side": "figma",
+      "entity": "SegmentedControlItem",
+      "evidence": "Dark: selected Surface/input #100e13 sits darker than the track Surface/muted #252428 (reads as a hole). Approved: a new role; name pending from the owner. Board 2082:305.",
+      "status": "Open",
+      "resolution": null,
+      "figmaNode": "2082:305",
+      "firstSeen": "2026-11-17",
+      "lastSeen": "2026-11-17",
+      "regression": false
     }
   ]
 }
