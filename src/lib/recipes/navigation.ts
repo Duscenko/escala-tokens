@@ -86,8 +86,15 @@ export const NAV_ITEM: ComponentRecipe = {
   slots: ['root', 'iconLeading', 'label', 'badge', 'iconTrailing'],
   defaults: { Size: 'default', State: 'Default' },
   parts: [
-    part({ Size: NAV_ITEM_SIZES }, tabMenuSizeSlots),
-    part({ State: NAV_ITEM_STATES }, (state) => ({ root: tabMenuItemPaint(state === 'Current' ? 'Selected' : state, false) })),
+    // The trailing chevron sits one step below the leading icon (DEC-2026-11-18-010).
+    part({ Size: NAV_ITEM_SIZES }, (size) => {
+      const chevron = size === 'lg' ? 'icon.medium' : 'icon.small'
+      return { ...tabMenuSizeSlots(size), iconTrailing: { width: chevron, height: chevron } }
+    }),
+    part({ State: NAV_ITEM_STATES }, (state) => ({
+      root: tabMenuItemPaint(state === 'Current' ? 'Selected' : state, false),
+      iconTrailing: { text: c(state === 'Disabled' ? 'content.disabled' : 'content.secondary') },
+    })),
   ],
 }
 

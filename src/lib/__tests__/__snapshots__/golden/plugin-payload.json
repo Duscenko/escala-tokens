@@ -26458,8 +26458,8 @@
                 "height": "icon.medium"
               },
               "iconTrailing": {
-                "width": "icon.medium",
-                "height": "icon.medium"
+                "width": "icon.small",
+                "height": "icon.small"
               }
             },
             "sm": {
@@ -26494,8 +26494,8 @@
                 "height": "icon.large"
               },
               "iconTrailing": {
-                "width": "icon.large",
-                "height": "icon.large"
+                "width": "icon.medium",
+                "height": "icon.medium"
               }
             }
           }
@@ -26509,12 +26509,18 @@
               "root": {
                 "text": "color.content.secondary",
                 "fill": "none"
+              },
+              "iconTrailing": {
+                "text": "color.content.secondary"
               }
             },
             "Hover": {
               "root": {
                 "text": "color.content.primary",
                 "fill": "color.action.ghost.hover"
+              },
+              "iconTrailing": {
+                "text": "color.content.secondary"
               }
             },
             "Focused": {
@@ -26523,18 +26529,27 @@
                 "fill": "none",
                 "focus": "color.border.focus",
                 "ring": "color.border.ring.default"
+              },
+              "iconTrailing": {
+                "text": "color.content.secondary"
               }
             },
             "Current": {
               "root": {
                 "text": "color.content.accent",
                 "fill": "color.surface.selected"
+              },
+              "iconTrailing": {
+                "text": "color.content.secondary"
               }
             },
             "Disabled": {
               "root": {
                 "text": "color.content.disabled",
                 "fill": "none"
+              },
+              "iconTrailing": {
+                "text": "color.content.disabled"
               }
             }
           }
@@ -26548,6 +26563,254 @@
           }
         }
       }
+    },
+    "SettingsRow": {
+      "key": "SettingsRow",
+      "slots": [
+        "root",
+        "text",
+        "title",
+        "description",
+        "control"
+      ],
+      "defaults": {
+        "Layout": "inline"
+      },
+      "parts": [
+        {
+          "axes": [],
+          "values": {
+            "": {
+              "root": {
+                "paddingY": "spacing.gap-group",
+                "stroke": "color.border.subtle",
+                "strokeBottomWidth": "stroke.divider"
+              },
+              "text": {
+                "gap": "spacing.gap-tight"
+              },
+              "title": {
+                "text": "color.content.primary",
+                "font": "type.label"
+              },
+              "description": {
+                "text": "color.content.secondary",
+                "font": "type.body-sm"
+              }
+            }
+          }
+        },
+        {
+          "axes": [
+            "Layout"
+          ],
+          "values": {
+            "inline": {
+              "root": {
+                "gap": "spacing.gap-section"
+              }
+            },
+            "stacked": {
+              "root": {
+                "gap": "spacing.gap-control"
+              }
+            }
+          }
+        }
+      ]
+    },
+    "SettingsSection": {
+      "key": "SettingsSection",
+      "slots": [
+        "root",
+        "header",
+        "title",
+        "description",
+        "content"
+      ],
+      "defaults": {},
+      "parts": [
+        {
+          "axes": [],
+          "values": {
+            "": {
+              "root": {
+                "gap": "spacing.gap-control"
+              },
+              "header": {
+                "gap": "spacing.gap-tight"
+              },
+              "title": {
+                "text": "color.content.primary",
+                "font": "type.heading-2xs"
+              },
+              "description": {
+                "text": "color.content.secondary",
+                "font": "type.body-md"
+              }
+            }
+          }
+        }
+      ]
+    },
+    "IssueCard": {
+      "key": "IssueCard",
+      "slots": [
+        "root",
+        "header",
+        "key",
+        "issueKey",
+        "pullRequest",
+        "title",
+        "meta",
+        "icon",
+        "comments",
+        "due"
+      ],
+      "defaults": {
+        "State": "Default"
+      },
+      "parts": [
+        {
+          "axes": [],
+          "values": {
+            "": {
+              "root": {
+                "fill": "color.surface.layer-2",
+                "radius": "radius.action",
+                "paddingX": "spacing.inset-control",
+                "paddingY": "spacing.inset-control",
+                "gap": "spacing.gap-control",
+                "strokeWidth": "stroke.divider"
+              },
+              "root:focus-visible": {
+                "focus": "color.border.focus",
+                "ring": "color.border.ring.default"
+              },
+              "key": {
+                "gap": "spacing.gap-control"
+              },
+              "issueKey": {
+                "text": "color.content.secondary",
+                "font": "type.caption"
+              },
+              "pullRequest": {
+                "gap": "spacing.gap-tight",
+                "text": "color.content.secondary",
+                "font": "type.caption"
+              },
+              "title": {
+                "text": "color.content.primary",
+                "font": "type.label"
+              },
+              "meta": {
+                "gap": "spacing.gap-control",
+                "rowGap": "spacing.gap-tight"
+              },
+              "icon": {
+                "width": "icon.small",
+                "height": "icon.small",
+                "text": "color.content.secondary"
+              },
+              "comments": {
+                "gap": "spacing.gap-tight",
+                "text": "color.content.secondary",
+                "font": "type.caption"
+              },
+              "due": {
+                "gap": "spacing.gap-tight",
+                "text": "color.content.secondary",
+                "font": "type.caption"
+              }
+            }
+          }
+        },
+        {
+          "axes": [
+            "State"
+          ],
+          "values": {
+            "Default": {
+              "root": {
+                "stroke": "color.border.default",
+                "shadow": "shadow.xs"
+              }
+            },
+            "Hover": {
+              "root": {
+                "stroke": "color.border.strong",
+                "shadow": "shadow.xs"
+              }
+            },
+            "Dragging": {
+              "root": {
+                "stroke": "color.border.accent",
+                "shadow": "shadow.lg"
+              }
+            }
+          }
+        }
+      ],
+      "motion": {
+        "transitions": {
+          "root": {
+            "border-color": "use-hover",
+            "box-shadow": "use-hover"
+          }
+        }
+      }
+    },
+    "BoardColumn": {
+      "key": "BoardColumn",
+      "slots": [
+        "root",
+        "header",
+        "statusIcon",
+        "title",
+        "count",
+        "addIcon",
+        "content"
+      ],
+      "defaults": {},
+      "parts": [
+        {
+          "axes": [],
+          "values": {
+            "": {
+              "root": {
+                "fill": "color.surface.layer-1",
+                "radius": "radius.container",
+                "paddingX": "spacing.gap-control",
+                "paddingY": "spacing.gap-control",
+                "gap": "spacing.gap-control"
+              },
+              "header": {
+                "gap": "spacing.gap-control"
+              },
+              "statusIcon": {
+                "width": "icon.small",
+                "height": "icon.small",
+                "text": "color.content.secondary"
+              },
+              "title": {
+                "text": "color.content.primary",
+                "font": "type.label"
+              },
+              "count": {
+                "text": "color.content.secondary",
+                "font": "type.caption"
+              },
+              "addIcon": {
+                "width": "icon.small",
+                "height": "icon.small"
+              },
+              "content": {
+                "gap": "spacing.gap-control"
+              }
+            }
+          }
+        }
+      ]
     },
     "Brand": {
       "key": "Brand",

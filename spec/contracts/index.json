@@ -1328,6 +1328,66 @@
     "tokens": 19
   },
   {
+    "key": "SettingsRow",
+    "label": "Settings Row",
+    "category": "Layout",
+    "box": "gray",
+    "locks": [
+      "size",
+      "hit",
+      "motion"
+    ],
+    "file": "spec/contracts/SettingsRow.json",
+    "figmaSet": "SettingsRow",
+    "story": "pages-settingsrow--playground",
+    "tokens": 10
+  },
+  {
+    "key": "SettingsSection",
+    "label": "Settings Section",
+    "category": "Layout",
+    "box": "gray",
+    "locks": [
+      "size",
+      "hit",
+      "motion"
+    ],
+    "file": "spec/contracts/SettingsSection.json",
+    "figmaSet": "SettingsSection",
+    "story": "pages-settingssection--playground",
+    "tokens": 6
+  },
+  {
+    "key": "IssueCard",
+    "label": "Issue Card",
+    "category": "Data Display",
+    "box": "gray",
+    "locks": [
+      "size",
+      "hit",
+      "motion"
+    ],
+    "file": "spec/contracts/IssueCard.json",
+    "figmaSet": "IssueCard",
+    "story": "pages-issuecard--playground",
+    "tokens": 18
+  },
+  {
+    "key": "BoardColumn",
+    "label": "Board Column",
+    "category": "Layout",
+    "box": "gray",
+    "locks": [
+      "size",
+      "hit",
+      "motion"
+    ],
+    "file": "spec/contracts/BoardColumn.json",
+    "figmaSet": "BoardColumn",
+    "story": "pages-boardcolumn--playground",
+    "tokens": 8
+  },
+  {
     "key": "NavItem",
     "label": "Nav Item",
     "category": "Navigation",

@@ -6193,6 +6193,74 @@ var init_componentCatalogue = __esm({
         accessibility: "A button with aria-pressed; disabled uses the native attribute."
       },
       {
+        key: "SettingsRow",
+        label: "Settings Row",
+        category: "Layout",
+        box: "gray",
+        locks: ["size", "hit", "motion"],
+        description: "One setting: its title, an optional description and a single control.",
+        usage: "Inside a SettingsSection. Inline puts the control on the right; stacked puts it under the text. It saves on change, with no submit.",
+        axes: [{ name: "Layout", values: ["inline", "stacked"] }],
+        figmaSets: ["SettingsRow"],
+        props: [
+          { name: "layout", type: "string", description: "Figma Layout." },
+          { name: "title / description / descriptionVisible", type: "ReactNode / boolean", description: "Figma Title, Description and DescriptionVisible." },
+          { name: "control", type: "ReactElement", description: "Figma Control slot: one control." }
+        ],
+        accessibility: "The title names the control through aria-labelledby and the description describes it through aria-describedby."
+      },
+      {
+        key: "SettingsSection",
+        label: "Settings Section",
+        category: "Layout",
+        box: "gray",
+        locks: ["size", "hit", "motion"],
+        description: "A titled group of SettingsRow.",
+        usage: "The page stacks sections; the section carries no outer spacing.",
+        axes: [],
+        figmaSets: ["SettingsSection"],
+        props: [
+          { name: "title / description / descriptionVisible", type: "ReactNode / boolean", description: "Figma Title, Description and DescriptionVisible." },
+          { name: "children", type: "ReactNode", description: "Figma Content slot: SettingsRow only." }
+        ],
+        accessibility: "The title is an h2, so the page stays navigable by headings."
+      },
+      {
+        key: "IssueCard",
+        label: "Issue Card",
+        category: "Data Display",
+        box: "gray",
+        locks: ["size", "hit", "motion"],
+        description: "One issue on a board: key, linked pull request, assignee, title, priority, tags, comments and due date.",
+        usage: "Inside a BoardColumn. The whole card is one link to the issue.",
+        axes: [{ name: "State", values: ["Default", "Hover", "Dragging"] }],
+        figmaSets: ["IssueCard"],
+        props: [
+          { name: "issueKey / title / href", type: "string", description: "Figma IssueKey and Title; the link target." },
+          { name: "pullRequest / comments / due", type: "string", description: "Figma PullRequest, Comments and Due; omit one to hide it." },
+          { name: "tag / tagSecondary / assignee / priorityIcon", type: "ReactNode", description: "Figma tags, AssigneeVisible and PriorityIcon." },
+          { name: "forceState", type: "string", description: "Pins a state for docs and previews; Dragging while it is dragged." }
+        ],
+        accessibility: "A single link named by the issue title. While dragged, only its edge and shadow ease; the position follows the pointer with no transition."
+      },
+      {
+        key: "BoardColumn",
+        label: "Board Column",
+        category: "Layout",
+        box: "gray",
+        locks: ["size", "hit", "motion"],
+        description: "One status lane: status icon, title, count, add action and a list of IssueCard.",
+        usage: "Side by side on a board. The lane is a tray, so its cards read as raised.",
+        axes: [],
+        figmaSets: ["BoardColumn"],
+        props: [
+          { name: "title / count / statusIcon", type: "ReactNode", description: "Figma Title, Count and StatusIcon." },
+          { name: "newIssueVisible / onNewIssue", type: "boolean / function", description: "Figma NewIssueVisible and the add actions." },
+          { name: "children", type: "ReactNode", description: "Figma Content slot: IssueCard." }
+        ],
+        accessibility: "A list labelled by the title and the count."
+      },
+      {
         key: "NavItem",
         label: "Nav Item",
         category: "Navigation",
@@ -11746,8 +11814,15 @@ var init_navigation = __esm({
       slots: ["root", "iconLeading", "label", "badge", "iconTrailing"],
       defaults: { Size: "default", State: "Default" },
       parts: [
-        part({ Size: NAV_ITEM_SIZES }, tabMenuSizeSlots),
-        part({ State: NAV_ITEM_STATES }, (state2) => ({ root: tabMenuItemPaint(state2 === "Current" ? "Selected" : state2, false) }))
+        // The trailing chevron sits one step below the leading icon (DEC-2026-11-18-010).
+        part({ Size: NAV_ITEM_SIZES }, (size) => {
+          const chevron = size === "lg" ? "icon.medium" : "icon.small";
+          return { ...tabMenuSizeSlots(size), iconTrailing: { width: chevron, height: chevron } };
+        }),
+        part({ State: NAV_ITEM_STATES }, (state2) => ({
+          root: tabMenuItemPaint(state2 === "Current" ? "Selected" : state2, false),
+          iconTrailing: { text: c(state2 === "Disabled" ? "content.disabled" : "content.secondary") }
+        }))
       ]
     };
     BRAND_SIZES = ["default", "sm"];
@@ -12143,6 +12218,81 @@ var init_navigation = __esm({
         // Collapsed: a square of the row's height, no side padding (the icon centres).
         part({ Size: SIDEBAR_SIZES, Collapsed: SIDEBAR_COLLAPSED }, (size, collapsed) => ({
           root: collapsed === "true" ? { width: LIST_ITEM_METRICS[size].minHeight, paddingX: "spacing.none" } : {}
+        }))
+      ]
+    };
+  }
+});
+
+// src/lib/recipes/pages.ts
+var SETTINGS_ROW_LAYOUTS, SETTINGS_ROW, SETTINGS_SECTION, ISSUE_CARD_STATES, ISSUE_CARD, BOARD_COLUMN;
+var init_pages = __esm({
+  "src/lib/recipes/pages.ts"() {
+    init_helpers();
+    SETTINGS_ROW_LAYOUTS = ["inline", "stacked"];
+    SETTINGS_ROW = {
+      key: "SettingsRow",
+      slots: ["root", "text", "title", "description", "control"],
+      defaults: { Layout: "inline" },
+      parts: [
+        part({}, () => ({
+          root: { paddingY: "spacing.gap-group", stroke: c("border.subtle"), strokeBottomWidth: "stroke.divider" },
+          text: { gap: "spacing.gap-tight" },
+          title: { text: c("content.primary"), font: "type.label" },
+          description: { text: c("content.secondary"), font: "type.body-sm" }
+        })),
+        part({ Layout: SETTINGS_ROW_LAYOUTS }, (layout) => ({ root: { gap: layout === "inline" ? "spacing.gap-section" : "spacing.gap-control" } }))
+      ]
+    };
+    SETTINGS_SECTION = {
+      key: "SettingsSection",
+      slots: ["root", "header", "title", "description", "content"],
+      defaults: {},
+      parts: [
+        part({}, () => ({
+          root: { gap: "spacing.gap-control" },
+          header: { gap: "spacing.gap-tight" },
+          title: { text: c("content.primary"), font: "type.heading-2xs" },
+          description: { text: c("content.secondary"), font: "type.body-md" }
+        }))
+      ]
+    };
+    ISSUE_CARD_STATES = ["Default", "Hover", "Dragging"];
+    ISSUE_CARD = {
+      key: "IssueCard",
+      slots: ["root", "header", "key", "issueKey", "pullRequest", "title", "meta", "icon", "comments", "due"],
+      defaults: { State: "Default" },
+      parts: [
+        part({}, () => ({
+          root: { fill: c("surface.layer-2"), radius: "radius.action", paddingX: "spacing.inset-control", paddingY: "spacing.inset-control", gap: "spacing.gap-control", strokeWidth: "stroke.divider" },
+          "root:focus-visible": { ...FOCUS },
+          key: { gap: "spacing.gap-control" },
+          issueKey: { text: c("content.secondary"), font: "type.caption" },
+          pullRequest: { gap: "spacing.gap-tight", text: c("content.secondary"), font: "type.caption" },
+          title: { text: c("content.primary"), font: "type.label" },
+          meta: { gap: "spacing.gap-control", rowGap: "spacing.gap-tight" },
+          icon: { width: "icon.small", height: "icon.small", text: c("content.secondary") },
+          comments: { gap: "spacing.gap-tight", text: c("content.secondary"), font: "type.caption" },
+          due: { gap: "spacing.gap-tight", text: c("content.secondary"), font: "type.caption" }
+        })),
+        part({ State: ISSUE_CARD_STATES }, (state2) => ({
+          root: state2 === "Dragging" ? { stroke: c("border.accent"), shadow: "shadow.lg" } : { stroke: c(state2 === "Hover" ? "border.strong" : "border.default"), shadow: "shadow.xs" }
+        }))
+      ]
+    };
+    BOARD_COLUMN = {
+      key: "BoardColumn",
+      slots: ["root", "header", "statusIcon", "title", "count", "addIcon", "content"],
+      defaults: {},
+      parts: [
+        part({}, () => ({
+          root: { fill: c("surface.layer-1"), radius: "radius.container", paddingX: "spacing.gap-control", paddingY: "spacing.gap-control", gap: "spacing.gap-control" },
+          header: { gap: "spacing.gap-control" },
+          statusIcon: { width: "icon.small", height: "icon.small", text: c("content.secondary") },
+          title: { text: c("content.primary"), font: "type.label" },
+          count: { text: c("content.secondary"), font: "type.caption" },
+          addIcon: { width: "icon.small", height: "icon.small" },
+          content: { gap: "spacing.gap-control" }
         }))
       ]
     };
@@ -12957,6 +13107,8 @@ var init_motion2 = __esm({
       TabMenuItem: { transitions: { root: FILL } },
       TabMenuLineItem: { transitions: { root: FILL } },
       NavItem: { transitions: { root: FILL } },
+      // The card's edge and lift ease; the position that follows the pointer never does (MOT-005).
+      IssueCard: { transitions: { root: { "border-color": "use-hover", "box-shadow": "use-hover" } } },
       AccountMenuTrigger: { transitions: { root: FILL } },
       SegmentedControlItem: { transitions: { root: FILL } },
       SidebarMenuButton: { transitions: { root: FILL } },
@@ -13029,6 +13181,7 @@ var init_componentRecipes = __esm({
     init_forms();
     init_surfaces();
     init_navigation();
+    init_pages();
     init_feedback();
     init_indicators();
     init_helpers();
@@ -13126,6 +13279,10 @@ var init_componentRecipes = __esm({
       TabMenuItem: TAB_MENU_ITEM,
       TabMenuLineItem: TAB_MENU_LINE_ITEM,
       NavItem: NAV_ITEM,
+      SettingsRow: SETTINGS_ROW,
+      SettingsSection: SETTINGS_SECTION,
+      IssueCard: ISSUE_CARD,
+      BoardColumn: BOARD_COLUMN,
       Brand: BRAND,
       AccountMenuTrigger: ACCOUNT_MENU_TRIGGER,
       SegmentedControl: SEGMENTED_CONTROL,

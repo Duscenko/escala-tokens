@@ -28,10 +28,12 @@ import {
   SessionTimeoutWarning, CartDrawer, QuickEditDialog, FilterDrawer, FilterModal, ReleaseModal, CookieConsent,
   type OverlayBlockProps,
 } from '../../escala-ui/blocks/overlay'
+import { MorphNav, UserMenu, MORPH_NAV_CONTENTS, type MorphNavContent } from '../../escala-ui/blocks/siteNavigation'
 import authContract from '../../escala-ui/blocks/auth.contract.json'
 import marketingContract from '../../escala-ui/blocks/marketing.contract.json'
 import navigationContract from '../../escala-ui/blocks/navigation.contract.json'
 import overlayContract from '../../escala-ui/blocks/overlay.contract.json'
+import siteNavigationContract from '../../escala-ui/blocks/siteNavigation.contract.json'
 
 export const BLOCK_GROUPS = ['Auth', 'Marketing', 'Navigation', 'Overlay'] as const
 export type BlockGroup = typeof BLOCK_GROUPS[number]
@@ -82,7 +84,7 @@ export interface BlockDef {
 }
 
 const CONTRACTS = new Map<string, BlockContract>(
-  [authContract, marketingContract, navigationContract, overlayContract]
+  [authContract, marketingContract, navigationContract, overlayContract, siteNavigationContract]
     .flatMap((c) => c.blocks as unknown as BlockContract[])
     .map((b) => [b.name, b]),
 )
@@ -146,6 +148,8 @@ const DEFS: Def[] = [
   { group: 'Navigation', name: 'DualSidebar', description: 'An icon rail beside a panel of grouped links.', wide: true, controls: [panelVisible], render: (v) => <DualSidebar panelVisible={v.panelVisible !== 'false'} />, mockup: (v, layout) => <SidebarMockup layout={layout} expanded={v.panelVisible !== 'false'} /> },
   { group: 'Navigation', name: 'FloatingHeader', description: 'A header that floats over the page as a rounded bar.', wide: true, controls: [floatingNav], render: (v) => <FloatingHeader layout={v.layout as NavLayout} nav={v.nav as FloatingNav} />, mockup: (v, layout) => <HeaderMockup block="FloatingHeader" layout={layout} nav={v.nav as FloatingNav} /> },
   { group: 'Navigation', name: 'SidebarStatCard', description: 'A figure with its trend, for the foot of a sidebar.', wide: false, partOf: 'Navigation/DualSidebar', controls: [], render: () => <SidebarStatCard /> },
+  { group: 'Navigation', name: 'MorphNav', description: 'Floating navigation that grows from the bar into the Product panel or the search palette.', wide: true, controls: [{ key: 'content', label: 'Content', options: MORPH_NAV_CONTENTS, default: 'bar' }, { key: 'compact', label: 'Compact', options: ['false', 'true'], default: 'false' }], render: (v) => <MorphNav key={v.content} defaultContent={v.content as MorphNavContent} compact={v.compact === 'true'} /> },
+  { group: 'Navigation', name: 'UserMenu', description: 'The account menu: identity, profile, settings, billing, theme and sign out.', wide: false, controls: [], render: () => <UserMenu inline /> },
   { group: 'Navigation', name: 'UtilityBar', description: 'A thin bar above the header: language and social links.', wide: true, controls: [], render: (v) => <UtilityBar socialVisible={v.layout !== 'mobile'} /> },
   // ── Overlay ──
   overlay('CartDrawer', 'The cart in a side sheet: items, quantities, total and checkout.', CartDrawer),

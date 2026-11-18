@@ -6,9 +6,38 @@
     "Indicators",
     "Content & Surfaces",
     "Feedback",
-    "Navigation"
+    "Navigation",
+    "Pages"
   ],
   "families": [
+    {
+      "id": "SettingsRow",
+      "page": "SettingsPage",
+      "folder": "Pages",
+      "root": "SettingsRow",
+      "parts": []
+    },
+    {
+      "id": "SettingsSection",
+      "page": "SettingsPage",
+      "folder": "Pages",
+      "root": "SettingsSection",
+      "parts": []
+    },
+    {
+      "id": "IssueCard",
+      "page": "IssueBoardPage",
+      "folder": "Pages",
+      "root": "IssueCard",
+      "parts": []
+    },
+    {
+      "id": "BoardColumn",
+      "page": "IssueBoardPage",
+      "folder": "Pages",
+      "root": "BoardColumn",
+      "parts": []
+    },
     {
       "id": "Button",
       "page": "Button (✓)  (D)",

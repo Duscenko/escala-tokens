@@ -527,8 +527,10 @@
       "side": "code",
       "entity": "Button",
       "evidence": "button.tsx underlines only the critical link on hover and press; Figma underlines every link Variant on Hover and Pressed",
-      "status": "Open",
-      "resolution": null,
+      "status": "Fixed",
+      "resolution": {
+        "ref": "feat/pages-and-blocks-2026-11-18"
+      },
       "firstSeen": "2026-11-18",
       "lastSeen": "2026-11-18",
       "regression": false
@@ -539,9 +541,11 @@
       "severity": "info",
       "side": "code",
       "entity": "SettingsRow",
-      "evidence": "Exists in Figma only until Phase D",
-      "status": "Open",
-      "resolution": null,
+      "evidence": "Built in Storybook, stage storybook; waits for owner approval",
+      "status": "Fixed",
+      "resolution": {
+        "ref": "feat/pages-and-blocks-2026-11-18"
+      },
       "firstSeen": "2026-11-18",
       "lastSeen": "2026-11-18",
       "regression": false
@@ -567,9 +571,11 @@
       "severity": "info",
       "side": "code",
       "entity": "SettingsSection",
-      "evidence": "Exists in Figma only until Phase D",
-      "status": "Open",
-      "resolution": null,
+      "evidence": "Built in Storybook, stage storybook; waits for owner approval",
+      "status": "Fixed",
+      "resolution": {
+        "ref": "feat/pages-and-blocks-2026-11-18"
+      },
       "firstSeen": "2026-11-18",
       "lastSeen": "2026-11-18",
       "regression": false
@@ -595,9 +601,11 @@
       "severity": "info",
       "side": "code",
       "entity": "IssueCard",
-      "evidence": "Exists in Figma only until Phase D",
-      "status": "Open",
-      "resolution": null,
+      "evidence": "Built in Storybook, stage storybook; waits for owner approval",
+      "status": "Fixed",
+      "resolution": {
+        "ref": "feat/pages-and-blocks-2026-11-18"
+      },
       "firstSeen": "2026-11-18",
       "lastSeen": "2026-11-18",
       "regression": false
@@ -623,9 +631,11 @@
       "severity": "info",
       "side": "code",
       "entity": "BoardColumn",
-      "evidence": "Exists in Figma only until Phase D",
-      "status": "Open",
-      "resolution": null,
+      "evidence": "Built in Storybook, stage storybook; waits for owner approval",
+      "status": "Fixed",
+      "resolution": {
+        "ref": "feat/pages-and-blocks-2026-11-18"
+      },
       "firstSeen": "2026-11-18",
       "lastSeen": "2026-11-18",
       "regression": false
@@ -651,9 +661,11 @@
       "severity": "info",
       "side": "code",
       "entity": "UserMenu",
-      "evidence": "Exists in Figma only until Phase D",
-      "status": "Open",
-      "resolution": null,
+      "evidence": "Built in Storybook, stage storybook; waits for owner approval",
+      "status": "Fixed",
+      "resolution": {
+        "ref": "feat/pages-and-blocks-2026-11-18"
+      },
       "firstSeen": "2026-11-18",
       "lastSeen": "2026-11-18",
       "regression": false
@@ -679,9 +691,11 @@
       "severity": "info",
       "side": "code",
       "entity": "MorphNav",
-      "evidence": "Exists in Figma only until Phase D",
-      "status": "Open",
-      "resolution": null,
+      "evidence": "Built in Storybook, stage storybook; waits for owner approval",
+      "status": "Fixed",
+      "resolution": {
+        "ref": "feat/pages-and-blocks-2026-11-18"
+      },
       "firstSeen": "2026-11-18",
       "lastSeen": "2026-11-18",
       "regression": false

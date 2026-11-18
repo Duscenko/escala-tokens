@@ -1,4 +1,37 @@
 {
+  "AnnouncementBar": {
+    "kind": "block",
+    "stage": "storybook",
+    "version": null,
+    "workshopPage": null,
+    "story": "blocks-navigation-announcementbar--playground",
+    "figmaNode": "1059:3",
+    "lastAudit": "2026-11-16",
+    "lastSyncSha": null,
+    "codeConnect": null
+  },
+  "AppHeader": {
+    "kind": "block",
+    "stage": "storybook",
+    "version": null,
+    "workshopPage": null,
+    "story": "blocks-navigation-appheader--playground",
+    "figmaNode": "1061:433",
+    "lastAudit": "2026-11-16",
+    "lastSyncSha": null,
+    "codeConnect": null
+  },
+  "AppHeaderExtended": {
+    "kind": "block",
+    "stage": "storybook",
+    "version": null,
+    "workshopPage": null,
+    "story": "blocks-navigation-appheaderextended--playground",
+    "figmaNode": "1061:5849",
+    "lastAudit": "2026-11-16",
+    "lastSyncSha": null,
+    "codeConnect": null
+  },
   "AuthAccountLocked": {
     "kind": "block",
     "stage": "storybook",
@@ -131,122 +164,24 @@
     "lastSyncSha": null,
     "codeConnect": null
   },
-  "SocialLoginButton": {
+  "BoardColumn": {
     "kind": "component",
     "stage": "storybook",
     "version": null,
     "workshopPage": null,
-    "story": "buttons-socialloginbutton--playground",
-    "figmaNode": "364:20",
-    "lastAudit": "2026-11-16",
-    "lastSyncSha": null
+    "story": "pages-boardcolumn--playground",
+    "figmaNode": "2228:161",
+    "lastAudit": "2026-11-18",
+    "lastSyncSha": null,
+    "codeConnect": null
   },
-  "FeaturedIcon": {
+  "Button": {
     "kind": "component",
     "stage": "storybook",
     "version": null,
     "workshopPage": null,
-    "story": "indicators-featuredicon--playground",
-    "figmaNode": "1119:10857",
-    "lastAudit": "2026-11-16",
-    "lastSyncSha": null,
-    "note": "Appearance=gradient added (A4)"
-  },
-  "ConfirmDialog": {
-    "kind": "block",
-    "stage": "storybook",
-    "version": null,
-    "workshopPage": null,
-    "story": "blocks-overlay-confirmdialog--playground",
-    "figmaNode": "1054:6187",
-    "lastAudit": "2026-11-16",
-    "lastSyncSha": null,
-    "codeConnect": null
-  },
-  "DestructiveConfirm": {
-    "kind": "block",
-    "stage": "storybook",
-    "version": null,
-    "workshopPage": null,
-    "story": "blocks-overlay-destructiveconfirm--playground",
-    "figmaNode": "1054:6209",
-    "lastAudit": "2026-11-16",
-    "lastSyncSha": null,
-    "codeConnect": null
-  },
-  "FormModal": {
-    "kind": "block",
-    "stage": "storybook",
-    "version": null,
-    "workshopPage": null,
-    "story": "blocks-overlay-formmodal--playground",
-    "figmaNode": "1055:99",
-    "lastAudit": "2026-11-16",
-    "lastSyncSha": null,
-    "codeConnect": null
-  },
-  "SuccessModal": {
-    "kind": "block",
-    "stage": "storybook",
-    "version": null,
-    "workshopPage": null,
-    "story": "blocks-overlay-successmodal--playground",
-    "figmaNode": "1055:265",
-    "lastAudit": "2026-11-16",
-    "lastSyncSha": null,
-    "codeConnect": null
-  },
-  "ErrorModal": {
-    "kind": "block",
-    "stage": "storybook",
-    "version": null,
-    "workshopPage": null,
-    "story": "blocks-overlay-errormodal--playground",
-    "figmaNode": "1055:346",
-    "lastAudit": "2026-11-16",
-    "lastSyncSha": null,
-    "codeConnect": null
-  },
-  "FeedbackRating": {
-    "kind": "block",
-    "stage": "storybook",
-    "version": null,
-    "workshopPage": null,
-    "story": "blocks-overlay-feedbackrating--playground",
-    "figmaNode": "1055:404",
-    "lastAudit": "2026-11-16",
-    "lastSyncSha": null,
-    "codeConnect": null
-  },
-  "WarningDialog": {
-    "kind": "block",
-    "stage": "storybook",
-    "version": null,
-    "workshopPage": null,
-    "story": "blocks-overlay-warningdialog--playground",
-    "figmaNode": "1055:548",
-    "lastAudit": "2026-11-16",
-    "lastSyncSha": null,
-    "codeConnect": null
-  },
-  "ShareModal": {
-    "kind": "block",
-    "stage": "storybook",
-    "version": null,
-    "workshopPage": null,
-    "story": "blocks-overlay-sharemodal--playground",
-    "figmaNode": "1055:613",
-    "lastAudit": "2026-11-16",
-    "lastSyncSha": null,
-    "codeConnect": null
-  },
-  "SessionTimeoutWarning": {
-    "kind": "block",
-    "stage": "storybook",
-    "version": null,
-    "workshopPage": null,
-    "story": "blocks-overlay-sessiontimeoutwarning--playground",
-    "figmaNode": "1055:793",
+    "story": "buttons-button--playground",
+    "figmaNode": "4:5066",
     "lastAudit": "2026-11-16",
     "lastSyncSha": null,
     "codeConnect": null
@@ -262,13 +197,101 @@
     "lastSyncSha": null,
     "codeConnect": null
   },
-  "QuickEditDialog": {
+  "ConfirmDialog": {
     "kind": "block",
     "stage": "storybook",
     "version": null,
     "workshopPage": null,
-    "story": "blocks-overlay-quickeditdialog--playground",
-    "figmaNode": "1074:3374",
+    "story": "blocks-overlay-confirmdialog--playground",
+    "figmaNode": "1054:6187",
+    "lastAudit": "2026-11-16",
+    "lastSyncSha": null,
+    "codeConnect": null
+  },
+  "ContactSection": {
+    "kind": "block",
+    "stage": "storybook",
+    "version": null,
+    "workshopPage": null,
+    "story": "blocks-marketing-contactsection--playground",
+    "figmaNode": "1069:849",
+    "lastAudit": "2026-11-16",
+    "lastSyncSha": null,
+    "codeConnect": null
+  },
+  "CookieConsent": {
+    "kind": "block",
+    "stage": "storybook",
+    "version": null,
+    "workshopPage": null,
+    "story": "blocks-overlay-cookieconsent--playground",
+    "figmaNode": "1074:3929",
+    "lastAudit": "2026-11-16",
+    "lastSyncSha": null,
+    "codeConnect": null
+  },
+  "DestructiveConfirm": {
+    "kind": "block",
+    "stage": "storybook",
+    "version": null,
+    "workshopPage": null,
+    "story": "blocks-overlay-destructiveconfirm--playground",
+    "figmaNode": "1054:6209",
+    "lastAudit": "2026-11-16",
+    "lastSyncSha": null,
+    "codeConnect": null
+  },
+  "DualSidebar": {
+    "kind": "block",
+    "stage": "storybook",
+    "version": null,
+    "workshopPage": null,
+    "story": "blocks-navigation-dualsidebar--playground",
+    "figmaNode": "1064:49",
+    "lastAudit": "2026-11-16",
+    "lastSyncSha": null,
+    "codeConnect": null
+  },
+  "ErrorModal": {
+    "kind": "block",
+    "stage": "storybook",
+    "version": null,
+    "workshopPage": null,
+    "story": "blocks-overlay-errormodal--playground",
+    "figmaNode": "1055:346",
+    "lastAudit": "2026-11-16",
+    "lastSyncSha": null,
+    "codeConnect": null
+  },
+  "FAQSection": {
+    "kind": "block",
+    "stage": "storybook",
+    "version": null,
+    "workshopPage": null,
+    "story": "blocks-marketing-faqsection--playground",
+    "figmaNode": "1066:422",
+    "lastAudit": "2026-11-16",
+    "lastSyncSha": null,
+    "codeConnect": null
+  },
+  "FeaturedIcon": {
+    "kind": "component",
+    "stage": "storybook",
+    "version": null,
+    "workshopPage": null,
+    "story": "indicators-featuredicon--playground",
+    "figmaNode": "1119:10857",
+    "lastAudit": "2026-11-16",
+    "lastSyncSha": null,
+    "note": "Appearance=gradient added (A4)"
+  },
+  "FeedbackRating": {
+    "kind": "block",
+    "stage": "storybook",
+    "version": null,
+    "workshopPage": null,
+    "story": "blocks-overlay-feedbackrating--playground",
+    "figmaNode": "1055:404",
     "lastAudit": "2026-11-16",
     "lastSyncSha": null,
     "codeConnect": null
@@ -295,72 +318,6 @@
     "lastSyncSha": null,
     "codeConnect": null
   },
-  "ReleaseModal": {
-    "kind": "block",
-    "stage": "storybook",
-    "version": null,
-    "workshopPage": null,
-    "story": "blocks-overlay-releasemodal--playground",
-    "figmaNode": "1074:3824",
-    "lastAudit": "2026-11-16",
-    "lastSyncSha": null,
-    "codeConnect": null
-  },
-  "CookieConsent": {
-    "kind": "block",
-    "stage": "storybook",
-    "version": null,
-    "workshopPage": null,
-    "story": "blocks-overlay-cookieconsent--playground",
-    "figmaNode": "1074:3929",
-    "lastAudit": "2026-11-16",
-    "lastSyncSha": null,
-    "codeConnect": null
-  },
-  "AnnouncementBar": {
-    "kind": "block",
-    "stage": "storybook",
-    "version": null,
-    "workshopPage": null,
-    "story": "blocks-navigation-announcementbar--playground",
-    "figmaNode": "1059:3",
-    "lastAudit": "2026-11-16",
-    "lastSyncSha": null,
-    "codeConnect": null
-  },
-  "UtilityBar": {
-    "kind": "block",
-    "stage": "storybook",
-    "version": null,
-    "workshopPage": null,
-    "story": "blocks-navigation-utilitybar--playground",
-    "figmaNode": "1059:27",
-    "lastAudit": "2026-11-16",
-    "lastSyncSha": null,
-    "codeConnect": null
-  },
-  "AppHeader": {
-    "kind": "block",
-    "stage": "storybook",
-    "version": null,
-    "workshopPage": null,
-    "story": "blocks-navigation-appheader--playground",
-    "figmaNode": "1061:433",
-    "lastAudit": "2026-11-16",
-    "lastSyncSha": null,
-    "codeConnect": null
-  },
-  "AppHeaderExtended": {
-    "kind": "block",
-    "stage": "storybook",
-    "version": null,
-    "workshopPage": null,
-    "story": "blocks-navigation-appheaderextended--playground",
-    "figmaNode": "1061:5849",
-    "lastAudit": "2026-11-16",
-    "lastSyncSha": null,
-    "codeConnect": null
-  },
   "FloatingHeader": {
     "kind": "block",
     "stage": "storybook",
@@ -372,24 +329,24 @@
     "lastSyncSha": null,
     "codeConnect": null
   },
-  "DualSidebar": {
+  "Footer": {
     "kind": "block",
     "stage": "storybook",
     "version": null,
     "workshopPage": null,
-    "story": "blocks-navigation-dualsidebar--playground",
-    "figmaNode": "1064:49",
+    "story": "blocks-marketing-footer--playground",
+    "figmaNode": "1129:3971",
     "lastAudit": "2026-11-16",
     "lastSyncSha": null,
     "codeConnect": null
   },
-  "SidebarStatCard": {
+  "FormModal": {
     "kind": "block",
     "stage": "storybook",
     "version": null,
     "workshopPage": null,
-    "story": "blocks-navigation-sidebarstatcard--playground",
-    "figmaNode": "1064:3",
+    "story": "blocks-overlay-formmodal--playground",
+    "figmaNode": "1055:99",
     "lastAudit": "2026-11-16",
     "lastSyncSha": null,
     "codeConnect": null
@@ -405,14 +362,36 @@
     "lastSyncSha": null,
     "codeConnect": null
   },
-  "FAQSection": {
+  "IssueBoardPage": {
+    "kind": "page",
+    "stage": "storybook",
+    "version": null,
+    "workshopPage": null,
+    "story": "pages-issueboardpage--playground",
+    "figmaNode": "2223:839",
+    "lastAudit": "2026-11-18",
+    "lastSyncSha": null,
+    "codeConnect": null
+  },
+  "IssueCard": {
+    "kind": "component",
+    "stage": "storybook",
+    "version": null,
+    "workshopPage": null,
+    "story": "pages-issuecard--playground",
+    "figmaNode": "2228:160",
+    "lastAudit": "2026-11-18",
+    "lastSyncSha": null,
+    "codeConnect": null
+  },
+  "MorphNav": {
     "kind": "block",
     "stage": "storybook",
     "version": null,
     "workshopPage": null,
-    "story": "blocks-marketing-faqsection--playground",
-    "figmaNode": "1066:422",
-    "lastAudit": "2026-11-16",
+    "story": "blocks-navigation-morphnav--playground",
+    "figmaNode": "2259:594",
+    "lastAudit": "2026-11-18",
     "lastSyncSha": null,
     "codeConnect": null
   },
@@ -438,35 +417,144 @@
     "lastSyncSha": null,
     "codeConnect": null
   },
-  "ContactSection": {
+  "QuickEditDialog": {
     "kind": "block",
     "stage": "storybook",
     "version": null,
     "workshopPage": null,
-    "story": "blocks-marketing-contactsection--playground",
-    "figmaNode": "1069:849",
+    "story": "blocks-overlay-quickeditdialog--playground",
+    "figmaNode": "1074:3374",
     "lastAudit": "2026-11-16",
     "lastSyncSha": null,
     "codeConnect": null
   },
-  "Footer": {
+  "ReleaseModal": {
     "kind": "block",
     "stage": "storybook",
     "version": null,
     "workshopPage": null,
-    "story": "blocks-marketing-footer--playground",
-    "figmaNode": "1129:3971",
+    "story": "blocks-overlay-releasemodal--playground",
+    "figmaNode": "1074:3824",
     "lastAudit": "2026-11-16",
     "lastSyncSha": null,
     "codeConnect": null
   },
-  "Button": {
+  "SessionTimeoutWarning": {
+    "kind": "block",
+    "stage": "storybook",
+    "version": null,
+    "workshopPage": null,
+    "story": "blocks-overlay-sessiontimeoutwarning--playground",
+    "figmaNode": "1055:793",
+    "lastAudit": "2026-11-16",
+    "lastSyncSha": null,
+    "codeConnect": null
+  },
+  "SettingsPage": {
+    "kind": "page",
+    "stage": "storybook",
+    "version": null,
+    "workshopPage": null,
+    "story": "pages-settingspage--playground",
+    "figmaNode": "2223:838",
+    "lastAudit": "2026-11-18",
+    "lastSyncSha": null,
+    "codeConnect": null
+  },
+  "SettingsRow": {
     "kind": "component",
     "stage": "storybook",
     "version": null,
     "workshopPage": null,
-    "story": "buttons-button--playground",
-    "figmaNode": "4:5066",
+    "story": "pages-settingsrow--playground",
+    "figmaNode": "2225:89",
+    "lastAudit": "2026-11-18",
+    "lastSyncSha": null,
+    "codeConnect": null
+  },
+  "SettingsSection": {
+    "kind": "component",
+    "stage": "storybook",
+    "version": null,
+    "workshopPage": null,
+    "story": "pages-settingssection--playground",
+    "figmaNode": "2224:123",
+    "lastAudit": "2026-11-18",
+    "lastSyncSha": null,
+    "codeConnect": null
+  },
+  "ShareModal": {
+    "kind": "block",
+    "stage": "storybook",
+    "version": null,
+    "workshopPage": null,
+    "story": "blocks-overlay-sharemodal--playground",
+    "figmaNode": "1055:613",
+    "lastAudit": "2026-11-16",
+    "lastSyncSha": null,
+    "codeConnect": null
+  },
+  "SidebarStatCard": {
+    "kind": "block",
+    "stage": "storybook",
+    "version": null,
+    "workshopPage": null,
+    "story": "blocks-navigation-sidebarstatcard--playground",
+    "figmaNode": "1064:3",
+    "lastAudit": "2026-11-16",
+    "lastSyncSha": null,
+    "codeConnect": null
+  },
+  "SocialLoginButton": {
+    "kind": "component",
+    "stage": "storybook",
+    "version": null,
+    "workshopPage": null,
+    "story": "buttons-socialloginbutton--playground",
+    "figmaNode": "364:20",
+    "lastAudit": "2026-11-16",
+    "lastSyncSha": null
+  },
+  "SuccessModal": {
+    "kind": "block",
+    "stage": "storybook",
+    "version": null,
+    "workshopPage": null,
+    "story": "blocks-overlay-successmodal--playground",
+    "figmaNode": "1055:265",
+    "lastAudit": "2026-11-16",
+    "lastSyncSha": null,
+    "codeConnect": null
+  },
+  "UserMenu": {
+    "kind": "block",
+    "stage": "storybook",
+    "version": null,
+    "workshopPage": null,
+    "story": "blocks-navigation-usermenu--playground",
+    "figmaNode": "2259:589",
+    "lastAudit": "2026-11-18",
+    "lastSyncSha": null,
+    "codeConnect": null
+  },
+  "UtilityBar": {
+    "kind": "block",
+    "stage": "storybook",
+    "version": null,
+    "workshopPage": null,
+    "story": "blocks-navigation-utilitybar--playground",
+    "figmaNode": "1059:27",
+    "lastAudit": "2026-11-16",
+    "lastSyncSha": null,
+    "codeConnect": null
+  },
+  "WarningDialog": {
+    "kind": "block",
+    "stage": "storybook",
+    "version": null,
+    "workshopPage": null,
+    "story": "blocks-overlay-warningdialog--playground",
+    "figmaNode": "1055:548",
     "lastAudit": "2026-11-16",
     "lastSyncSha": null,
     "codeConnect": null

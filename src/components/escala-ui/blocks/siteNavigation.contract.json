@@ -1,0 +1,108 @@
+{
+  "$comment": "Contract of the UserMenu and MorphNav blocks (DEC-2026-11-18-012). Figma owns the anatomy, Storybook the behaviour and motion.",
+  "figma": {
+    "file": "7j5zukN5HpihGVJMmyjA20",
+    "pages": [
+      "UserMenu & MorphNav 2223:840"
+    ]
+  },
+  "blocks": [
+    {
+      "name": "UserMenu",
+      "figmaSet": "2259:589",
+      "axes": {},
+      "variants": 1,
+      "nests": [
+        "DropdownMenu",
+        "DropdownMenuItem",
+        "DropdownMenuLabel",
+        "AccountMenuTrigger",
+        "Avatar",
+        "Badge",
+        "SegmentedControl"
+      ],
+      "slots": [],
+      "props": [
+        "name",
+        "email",
+        "plan",
+        "theme",
+        "onThemeChange",
+        "onSignOut",
+        "inline"
+      ],
+      "a11y": [
+        "Opens from AccountMenuTrigger, which reports aria-expanded",
+        "The theme segments are named Light, Dark and System",
+        "Sign out is Variant=default: critical is only for actions that delete"
+      ],
+      "motion": [
+        {
+          "moment": "open and close",
+          "mechanism": "the DropdownMenu's own choreography",
+          "role": "popover-enter / popover-exit",
+          "reduced": "fade only, from the tokens"
+        }
+      ]
+    },
+    {
+      "name": "MorphNav",
+      "figmaSet": "2259:594",
+      "axes": {
+        "Content": [
+          "bar",
+          "product",
+          "search"
+        ],
+        "Compact": [
+          "false",
+          "true"
+        ]
+      },
+      "variants": 4,
+      "nests": [
+        "Brand",
+        "NavItem",
+        "IconButton",
+        "Button",
+        "Input",
+        "DropdownMenuItem",
+        "DropdownMenuLabel",
+        "Image"
+      ],
+      "slots": [],
+      "props": [
+        "content",
+        "defaultContent",
+        "onContentChange",
+        "compact"
+      ],
+      "a11y": [
+        "A nav landmark named Main",
+        "Product opens on pointer enter and from the keyboard; its trigger reports aria-expanded",
+        "Search opens on click and Cmd K and takes focus",
+        "Escape returns to the bar and restores focus to the control that opened it"
+      ],
+      "motion": [
+        {
+          "moment": "open product or search",
+          "mechanism": "transitions on the container's width and height, content cross-fade",
+          "role": "use-overlay-in",
+          "reduced": "no size travel, the fade stays"
+        },
+        {
+          "moment": "return to the bar",
+          "mechanism": "transitions on the container's width and height",
+          "role": "use-overlay-out",
+          "reduced": "no size travel, the fade stays"
+        },
+        {
+          "moment": "Compact",
+          "mechanism": "none (a product state)",
+          "role": "none",
+          "reduced": "n/a"
+        }
+      ]
+    }
+  ]
+}

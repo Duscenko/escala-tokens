@@ -201,6 +201,14 @@
     },
     "DropdownMenuItem": {
       "status": "rebuild"
+    },
+    "MorphNav": {
+      "status": "block",
+      "page": "UserMenu & MorphNav"
+    },
+    "UserMenu": {
+      "status": "block",
+      "page": "UserMenu & MorphNav"
     }
   },
   "codeOnly": [

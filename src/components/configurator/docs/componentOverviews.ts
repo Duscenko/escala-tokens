@@ -382,6 +382,8 @@ export const OVERVIEWS: Record<string, Overview> = {
   TabMenu: [each('Variant', ['horizontal-line', 'horizontal-button'], {}, 360), each('Variant', ['vertical-line', 'vertical-button'], {}, 240), each('Size', ['default', 'sm', 'lg'], {}, 360)],
   TabMenuItem: [each('State', ['Default', 'Hover', 'Focused', 'Selected', 'Disabled']), each('Size', ['default', 'sm', 'lg'])],
   TabMenuLineItem: [each('State', ['Default', 'Hover', 'Focused', 'Selected', 'Disabled']), each('Indicator', ['bottom', 'left']), each('Size', ['default', 'sm', 'lg'])],
+  SettingsRow: [each('Layout', ['inline', 'stacked'])],
+  IssueCard: [each('State', ['Default', 'Hover', 'Dragging'])],
   NavItem: [each('State', ['Default', 'Hover', 'Focused', 'Current', 'Disabled']), each('Size', ['default', 'sm', 'lg'])],
   Brand: [each('Size', ['default', 'sm'])],
   AccountMenuTrigger: [each('State', ['Default', 'Hover', 'Pressed', 'Focused']), each('Size', ['default', 'sm'])],

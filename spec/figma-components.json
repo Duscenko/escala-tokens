@@ -5,7 +5,7 @@
     "name": "Escala Design System (Real)"
   },
   "exportedAt": "2026-11-18",
-  "checksum": "2881bc15",
+  "checksum": "15f1a95a",
   "pages": [
     {
       "page": "Button (✓)  (D)",
@@ -1757,6 +1757,65 @@
       "stable": false,
       "id": "1662:8",
       "sets": []
+    },
+    {
+      "page": "UserMenu & MorphNav",
+      "stable": false,
+      "id": "2223:840",
+      "sets": [
+        {
+          "name": "MorphNav",
+          "variants": 4,
+          "axes": {
+            "Compact": "false|true",
+            "Content": "bar|product|search"
+          }
+        },
+        {
+          "name": "UserMenu",
+          "variants": 1
+        }
+      ]
+    },
+    {
+      "page": "SettingsPage",
+      "stable": false,
+      "id": "2223:838",
+      "sets": [
+        {
+          "name": "SettingsRow",
+          "variants": 2,
+          "axes": {
+            "Layout": "inline|stacked"
+          },
+          "props": "Control:SLOT,Description:TEXT,DescriptionVisible:BOOLEAN,Title:TEXT"
+        },
+        {
+          "name": "SettingsSection",
+          "variants": 1,
+          "props": "Content:SLOT,Description:TEXT,DescriptionVisible:BOOLEAN,Title:TEXT"
+        }
+      ]
+    },
+    {
+      "page": "IssueBoardPage",
+      "stable": false,
+      "id": "2223:839",
+      "sets": [
+        {
+          "name": "BoardColumn",
+          "variants": 1,
+          "props": "Content:SLOT,Count:TEXT,NewIssueVisible:BOOLEAN,StatusIcon:INSTANCE_SWAP,Title:TEXT"
+        },
+        {
+          "name": "IssueCard",
+          "variants": 3,
+          "axes": {
+            "State": "Default|Hover|Dragging"
+          },
+          "props": "AssigneeVisible:BOOLEAN,Comments:TEXT,CommentsVisible:BOOLEAN,Due:TEXT,DueVisible:BOOLEAN,IssueKey:TEXT,PriorityIcon:INSTANCE_SWAP,PullRequest:TEXT,PullRequestVisible:BOOLEAN,TagSecondaryVisible:BOOLEAN,Title:TEXT"
+        }
+      ]
     }
   ]
 }
