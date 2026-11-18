@@ -20955,7 +20955,8 @@
                 "fillMid": "color.action.primary.hover",
                 "fillEnd": "color.action.primary.pressed",
                 "text": "color.content.on-action",
-                "highlight": "color.elevation.highlight"
+                "highlight": "color.elevation.highlight",
+                "lift": "feature"
               }
             },
             "secondary|soft": {
@@ -20976,7 +20977,8 @@
                 "fillMid": "color.action.secondary.hover",
                 "fillEnd": "color.action.secondary.pressed",
                 "text": "color.content.on-secondary",
-                "highlight": "color.elevation.highlight"
+                "highlight": "color.elevation.highlight",
+                "lift": "feature"
               }
             },
             "critical|soft": {
@@ -20997,7 +20999,8 @@
                 "fillMid": "color.status.critical.surface-solid-hover",
                 "fillEnd": "color.status.critical.surface-solid-pressed",
                 "text": "color.status.critical.on-solid",
-                "highlight": "color.elevation.highlight"
+                "highlight": "color.elevation.highlight",
+                "lift": "feature"
               }
             },
             "success|soft": {
@@ -21018,7 +21021,8 @@
                 "fillMid": "color.status.success.surface-solid-hover",
                 "fillEnd": "color.status.success.surface-solid-pressed",
                 "text": "color.status.success.on-solid",
-                "highlight": "color.elevation.highlight"
+                "highlight": "color.elevation.highlight",
+                "lift": "feature"
               }
             },
             "warning|soft": {
@@ -21039,7 +21043,8 @@
                 "fillMid": "color.status.warning.surface-solid-hover",
                 "fillEnd": "color.status.warning.surface-solid-pressed",
                 "text": "color.status.warning.on-solid",
-                "highlight": "color.elevation.highlight"
+                "highlight": "color.elevation.highlight",
+                "lift": "feature"
               }
             },
             "info|soft": {
@@ -21060,7 +21065,8 @@
                 "fillMid": "color.status.info.surface-solid-hover",
                 "fillEnd": "color.status.info.surface-solid-pressed",
                 "text": "color.status.info.on-solid",
-                "highlight": "color.elevation.highlight"
+                "highlight": "color.elevation.highlight",
+                "lift": "feature"
               }
             }
           }

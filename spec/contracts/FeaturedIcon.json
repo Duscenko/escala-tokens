@@ -136,6 +136,8 @@
       "color.content.on-secondary",
       "color.content.secondary",
       "color.elevation.highlight",
+      "color.elevation.shadow-ambient",
+      "color.elevation.shadow-key",
       "color.status.critical.content",
       "color.status.critical.on-solid",
       "color.status.critical.surface",
