@@ -712,7 +712,7 @@
             "core--minimalist::dark": "#1b1b1c"
           },
           "layer-2": {
-            "core--minimalist::light": "#ececee",
+            "core--minimalist::light": "#fefdff",
             "core--minimalist::dark": "#222223"
           },
           "accent": {

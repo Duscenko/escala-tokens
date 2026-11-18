@@ -313,8 +313,10 @@
       "side": "code",
       "entity": "Surface/layer-2",
       "evidence": "Surface/layer-2 Light: Figma is white, code is Gray/03",
-      "status": "Open",
-      "resolution": null,
+      "status": "Decided",
+      "resolution": {
+        "ref": "DEC-2026-11-18-006"
+      },
       "firstSeen": "2026-11-18",
       "lastSeen": "2026-11-18",
       "regression": false,
@@ -327,8 +329,10 @@
       "side": "figma",
       "entity": "AuthSignIn, AuthSignInPhone, AuthSocialSignIn",
       "evidence": "Auth header icons: the change list says gradient, the components are soft",
-      "status": "Open",
-      "resolution": null,
+      "status": "Decided",
+      "resolution": {
+        "ref": "DEC-2026-11-18-006"
+      },
       "firstSeen": "2026-11-18",
       "lastSeen": "2026-11-18",
       "regression": false,
