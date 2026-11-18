@@ -148,7 +148,7 @@
     "file": "spec/contracts/SocialLoginButton.json",
     "figmaSet": "SocialLoginButton",
     "story": "buttons-socialloginbutton--playground",
-    "tokens": 64
+    "tokens": 66
   },
   {
     "key": "Input",

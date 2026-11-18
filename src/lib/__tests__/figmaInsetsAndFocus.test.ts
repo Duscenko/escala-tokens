@@ -23,6 +23,14 @@ describe('Button padding', () => {
   })
 })
 
+describe('SocialLoginButton label', () => {
+  it('reads the scale step of its Size with the weight of Type/button', () => {
+    const root = (Size: string) => resolveRecipe(COMPONENT_RECIPES.SocialLoginButton, { Brand: 'Google', Appearance: 'white', Size, State: 'Default', IconOnly: 'false' }).root
+    expect(root('default')).toMatchObject({ font: 'type.button', fontStep: 'type.text-md' })
+    expect(root('lg')).toMatchObject({ font: 'type.button', fontStep: 'type.text-lg' })
+  })
+})
+
 describe('SocialLoginButton focus', () => {
   it('draws the ring of its brand, outside the edge', () => {
     for (const Appearance of ['white', 'brand']) {

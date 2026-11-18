@@ -10024,7 +10024,7 @@ var init_actions = __esm({
           icon: { width: "icon.medium", height: "icon.medium" }
         })),
         part({ Size: SOCIAL_SIZES, IconOnly: ["false", "true"] }, (size, iconOnly) => ({
-          root: iconOnly === "true" ? { ...SOCIAL_GEOMETRY[size], width: SOCIAL_GEOMETRY[size].height, paddingX: "spacing.none" } : { ...SOCIAL_GEOMETRY[size], paddingX: "spacing.inset-action" }
+          root: iconOnly === "true" ? { ...SOCIAL_GEOMETRY[size], width: SOCIAL_GEOMETRY[size].height, paddingX: "spacing.none" } : { ...SOCIAL_GEOMETRY[size], paddingX: "spacing.inset-action", fontStep: size === "lg" ? "type.text-lg" : "type.text-md" }
         })),
         part({ Appearance: SOCIAL_APPEARANCES, Brand: SOCIAL_BRAND_NAMES, State: SOCIAL_STATES }, socialPaint)
       ]

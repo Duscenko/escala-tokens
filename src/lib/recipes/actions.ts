@@ -584,7 +584,7 @@ export const BUTTON_GROUP_DIVIDER: ComponentRecipe = {
 // `brand` is the provider's own fill from the Social Media Brands collection (`<Brand>/Action/default|hover|pressed`,
 // `Content/on-action`, `Border/focus`) with a 1px edge in its pressed step and the solid-control highlight; Disabled
 // drops to Action/disabled/default with no edge. Radius/action, Size/control-md (40) · control-lg (48), padding
-// inset-action, gap gap-control, Type/button, a 20px mark. Focused: one 2px ring 1px outside the edge, in `<Brand>/Border/focus`. IconOnly is a square of the Size and no label.
+// inset-action, gap gap-control, the label on `size/text-md` (lg `text-lg`) with Type/button's family and weight, a 20px mark. Focused: one 2px ring 1px outside the edge, in `<Brand>/Border/focus`. IconOnly is a square of the Size and no label.
 // The provider mark is the file's `logo/<Brand>` (brandLogos.ts): in colour on `white`, one colour in the label's ink on
 // `brand` and Disabled.
 
@@ -635,7 +635,7 @@ export const SOCIAL_LOGIN_BUTTON: ComponentRecipe = {
     part({ Size: SOCIAL_SIZES, IconOnly: ['false', 'true'] as const }, (size, iconOnly) => ({
       root: iconOnly === 'true'
         ? { ...SOCIAL_GEOMETRY[size], width: SOCIAL_GEOMETRY[size].height, paddingX: 'spacing.none' }
-        : { ...SOCIAL_GEOMETRY[size], paddingX: 'spacing.inset-action' },
+        : { ...SOCIAL_GEOMETRY[size], paddingX: 'spacing.inset-action', fontStep: size === 'lg' ? 'type.text-lg' : 'type.text-md' },
     })),
     part({ Appearance: SOCIAL_APPEARANCES, Brand: SOCIAL_BRAND_NAMES, State: SOCIAL_STATES }, socialPaint),
   ],

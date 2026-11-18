@@ -9538,7 +9538,8 @@
             "lg|false": {
               "root": {
                 "height": "size.touch",
-                "paddingX": "spacing.inset-action"
+                "paddingX": "spacing.inset-action",
+                "fontStep": "type.text-lg"
               }
             },
             "lg|true": {
@@ -9551,7 +9552,8 @@
             "default|false": {
               "root": {
                 "height": "size.control",
-                "paddingX": "spacing.inset-action"
+                "paddingX": "spacing.inset-action",
+                "fontStep": "type.text-md"
               }
             },
             "default|true": {

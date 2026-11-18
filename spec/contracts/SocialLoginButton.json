@@ -234,7 +234,9 @@
       "stroke.control"
     ],
     "type": [
-      "type.button"
+      "type.button",
+      "type.text-lg",
+      "type.text-md"
     ]
   },
   "usage": "Stack vertically above the email form, or lay the icon-only form in a row. Keep provider order consistent across screens.",
