@@ -435,6 +435,286 @@
       "lastSeen": "2026-11-18",
       "regression": false,
       "ticket": 61
+    },
+    {
+      "id": "CMP-004:DropdownMenuItem:State=Hover",
+      "rule": "CMP-004",
+      "severity": "error",
+      "side": "figma",
+      "entity": "DropdownMenuItem",
+      "evidence": "The 6 State=Hover variants have Media and Control as frames and 0 property links; State=Default has slots and 7 links",
+      "status": "Open",
+      "resolution": null,
+      "firstSeen": "2026-11-18",
+      "lastSeen": "2026-11-18",
+      "regression": false,
+      "ticket": 69
+    },
+    {
+      "id": "TYP-001:Button:Variant=default,Appearance=link,Size=xs,State=Hover|Pressed",
+      "rule": "TYP-001",
+      "severity": "error",
+      "side": "figma",
+      "entity": "Button",
+      "evidence": "2 of 288 variants break the rule: default link xs Hover and Pressed have textDecoration NONE",
+      "status": "Open",
+      "resolution": null,
+      "firstSeen": "2026-11-18",
+      "lastSeen": "2026-11-18",
+      "regression": false,
+      "ticket": 70
+    },
+    {
+      "id": "DOC-001:MorphNav:variants-canvas",
+      "rule": "DOC-001",
+      "severity": "warn",
+      "side": "figma",
+      "entity": "MorphNav",
+      "evidence": "Matrix 1161 px tall, taller than its Components board; variants-canvas cannot grow inside the template",
+      "status": "Open",
+      "resolution": null,
+      "firstSeen": "2026-11-18",
+      "lastSeen": "2026-11-18",
+      "regression": false,
+      "ticket": 71
+    },
+    {
+      "id": "DOC-002:AuthSignInPhone:flow-note",
+      "rule": "DOC-002",
+      "severity": "warn",
+      "side": "figma",
+      "entity": "AuthSignInPhone",
+      "evidence": "The old flow note said anchored Popover on every viewport; the mobile screens show a bottom Sheet",
+      "status": "Open",
+      "resolution": null,
+      "firstSeen": "2026-11-18",
+      "lastSeen": "2026-11-18",
+      "regression": false,
+      "ticket": 72
+    },
+    {
+      "id": "TOK-005:IssueBoardPage:DocWindow",
+      "rule": "TOK-005",
+      "severity": "warn",
+      "side": "figma",
+      "entity": "IssueBoardPage",
+      "evidence": "Scaled IssueCard in DocWindow draws padding 9, radius 9, stroke 0.75 instead of 12, 12, 1; the variables stay bound",
+      "status": "Open",
+      "resolution": null,
+      "firstSeen": "2026-11-18",
+      "lastSeen": "2026-11-18",
+      "regression": false,
+      "ticket": 73
+    },
+    {
+      "id": "CMP-001:MorphNav:Content=product/bar/NavItem",
+      "rule": "CMP-001",
+      "severity": "error",
+      "side": "figma",
+      "entity": "MorphNav",
+      "evidence": "In Content=product the NavItem layer is a frame, not an instance; a layer is named Frame 1",
+      "status": "Open",
+      "resolution": null,
+      "firstSeen": "2026-11-18",
+      "lastSeen": "2026-11-18",
+      "regression": false,
+      "ticket": 74
+    },
+    {
+      "id": "PAR-001:Button:link-underline",
+      "rule": "PAR-001",
+      "severity": "error",
+      "side": "code",
+      "entity": "Button",
+      "evidence": "button.tsx underlines only the critical link on hover and press; Figma underlines every link Variant on Hover and Pressed",
+      "status": "Open",
+      "resolution": null,
+      "firstSeen": "2026-11-18",
+      "lastSeen": "2026-11-18",
+      "regression": false
+    },
+    {
+      "id": "PAR-002:SettingsRow",
+      "rule": "PAR-002",
+      "severity": "info",
+      "side": "code",
+      "entity": "SettingsRow",
+      "evidence": "Exists in Figma only until Phase D",
+      "status": "Open",
+      "resolution": null,
+      "firstSeen": "2026-11-18",
+      "lastSeen": "2026-11-18",
+      "regression": false
+    },
+    {
+      "id": "STG-001:SettingsRow",
+      "rule": "STG-001",
+      "severity": "error",
+      "side": "figma",
+      "entity": "SettingsRow",
+      "evidence": "Built in the library before Storybook and approval",
+      "status": "Accepted",
+      "resolution": {
+        "ref": "EXC-2026-11-18-002"
+      },
+      "firstSeen": "2026-11-18",
+      "lastSeen": "2026-11-18",
+      "regression": false
+    },
+    {
+      "id": "PAR-002:SettingsSection",
+      "rule": "PAR-002",
+      "severity": "info",
+      "side": "code",
+      "entity": "SettingsSection",
+      "evidence": "Exists in Figma only until Phase D",
+      "status": "Open",
+      "resolution": null,
+      "firstSeen": "2026-11-18",
+      "lastSeen": "2026-11-18",
+      "regression": false
+    },
+    {
+      "id": "STG-001:SettingsSection",
+      "rule": "STG-001",
+      "severity": "error",
+      "side": "figma",
+      "entity": "SettingsSection",
+      "evidence": "Built in the library before Storybook and approval",
+      "status": "Accepted",
+      "resolution": {
+        "ref": "EXC-2026-11-18-002"
+      },
+      "firstSeen": "2026-11-18",
+      "lastSeen": "2026-11-18",
+      "regression": false
+    },
+    {
+      "id": "PAR-002:IssueCard",
+      "rule": "PAR-002",
+      "severity": "info",
+      "side": "code",
+      "entity": "IssueCard",
+      "evidence": "Exists in Figma only until Phase D",
+      "status": "Open",
+      "resolution": null,
+      "firstSeen": "2026-11-18",
+      "lastSeen": "2026-11-18",
+      "regression": false
+    },
+    {
+      "id": "STG-001:IssueCard",
+      "rule": "STG-001",
+      "severity": "error",
+      "side": "figma",
+      "entity": "IssueCard",
+      "evidence": "Built in the library before Storybook and approval",
+      "status": "Accepted",
+      "resolution": {
+        "ref": "EXC-2026-11-18-002"
+      },
+      "firstSeen": "2026-11-18",
+      "lastSeen": "2026-11-18",
+      "regression": false
+    },
+    {
+      "id": "PAR-002:BoardColumn",
+      "rule": "PAR-002",
+      "severity": "info",
+      "side": "code",
+      "entity": "BoardColumn",
+      "evidence": "Exists in Figma only until Phase D",
+      "status": "Open",
+      "resolution": null,
+      "firstSeen": "2026-11-18",
+      "lastSeen": "2026-11-18",
+      "regression": false
+    },
+    {
+      "id": "STG-001:BoardColumn",
+      "rule": "STG-001",
+      "severity": "error",
+      "side": "figma",
+      "entity": "BoardColumn",
+      "evidence": "Built in the library before Storybook and approval",
+      "status": "Accepted",
+      "resolution": {
+        "ref": "EXC-2026-11-18-002"
+      },
+      "firstSeen": "2026-11-18",
+      "lastSeen": "2026-11-18",
+      "regression": false
+    },
+    {
+      "id": "PAR-002:UserMenu",
+      "rule": "PAR-002",
+      "severity": "info",
+      "side": "code",
+      "entity": "UserMenu",
+      "evidence": "Exists in Figma only until Phase D",
+      "status": "Open",
+      "resolution": null,
+      "firstSeen": "2026-11-18",
+      "lastSeen": "2026-11-18",
+      "regression": false
+    },
+    {
+      "id": "STG-001:UserMenu",
+      "rule": "STG-001",
+      "severity": "error",
+      "side": "figma",
+      "entity": "UserMenu",
+      "evidence": "Built in the library before Storybook and approval",
+      "status": "Accepted",
+      "resolution": {
+        "ref": "EXC-2026-11-18-002"
+      },
+      "firstSeen": "2026-11-18",
+      "lastSeen": "2026-11-18",
+      "regression": false
+    },
+    {
+      "id": "PAR-002:MorphNav",
+      "rule": "PAR-002",
+      "severity": "info",
+      "side": "code",
+      "entity": "MorphNav",
+      "evidence": "Exists in Figma only until Phase D",
+      "status": "Open",
+      "resolution": null,
+      "firstSeen": "2026-11-18",
+      "lastSeen": "2026-11-18",
+      "regression": false
+    },
+    {
+      "id": "STG-001:MorphNav",
+      "rule": "STG-001",
+      "severity": "error",
+      "side": "figma",
+      "entity": "MorphNav",
+      "evidence": "Built in the library before Storybook and approval",
+      "status": "Accepted",
+      "resolution": {
+        "ref": "EXC-2026-11-18-002"
+      },
+      "firstSeen": "2026-11-18",
+      "lastSeen": "2026-11-18",
+      "regression": false
+    },
+    {
+      "id": "STG-002:Audit-Overlays-2026-11-18",
+      "rule": "STG-002",
+      "severity": "warn",
+      "side": "figma",
+      "entity": "Audit · Overlays 2026-11-18",
+      "evidence": "The approval page is no longer in the library: no page name contains Audit (read 2026-11-18)",
+      "status": "Fixed",
+      "resolution": {
+        "ref": "figma-read-2026-11-18"
+      },
+      "firstSeen": "2026-11-18",
+      "lastSeen": "2026-11-18",
+      "regression": false
     }
   ]
 }
