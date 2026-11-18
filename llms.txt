@@ -27,10 +27,11 @@ The source of truth for a generated system is the live token payload, not this r
 ## Live access (HTTP)
 
 - `GET https://www.escalatokens.com/docs/agent-native/tokens.schema.json` — Escala JSON Schema
+- `GET https://www.escalatokens.com/docs/agent-native/contracts/index.json` — every Escala component contract (then `<Key>.json` beside it): Figma set + axes, code API, slots, roles consumed, story
 - `GET https://www.escalatokens.com/api/tokens?project=<slug>` — published Escala JSON (public read)
 - `POST https://www.escalatokens.com/api/tokens?project=<slug>` — publish from the configurator (same-origin + claim)
 
-`/api/tokens` is frozen. There is no hosted MCP (deleted 2026-10-20): read the published Escala JSON above, or use the offline agent package (Export → AI).
+`/api/tokens` is frozen. There is no hosted MCP (deleted 2026-10-20): read the published Escala JSON and component contracts above (static files), or use the offline agent package (Export → AI).
 
 ## Code (do not invent a second copy)
 

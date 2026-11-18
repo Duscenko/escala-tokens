@@ -1,4 +1,4 @@
-// The `escala-architecture` agent skill must teach the roles that ship.
+// The `escala-platform-roles` agent skill (generated; formerly `escala-architecture`) must teach the roles that ship.
 // 1. The generated references equal what the role tables produce now.
 // 2. Every marker the colour table uses is explained in the legend.
 // 3. Every role id SKILL.md (hand-written) names exists.
@@ -14,9 +14,9 @@ import { LAYOUT_ROLES, type LayoutFamily } from '../layoutTokens'
 import { ICON_ROLES } from '../iconSizing'
 import { TYPE_ROLES } from '../typeRoles'
 
-const SKILL_DIR = resolve(__dirname, '../../../.claude/skills/escala-architecture')
+const SKILL_DIR = resolve(__dirname, '../../../.claude/skills/escala-platform-roles')
 
-describe('escala-architecture skill', () => {
+describe('escala-platform-roles skill', () => {
   it('committed references match the role tables (run `npm run gen:escala-skill`)', () => {
     for (const [path, body] of Object.entries(buildEscalaSkillReferences())) {
       expect(readFileSync(resolve(SKILL_DIR, path), 'utf8'), path).toBe(body)

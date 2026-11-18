@@ -3,6 +3,7 @@ import { defineConfig, type Plugin } from 'vite'
 import react from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
 import { fileURLToPath, URL } from 'node:url'
+import { CONTRACTS_PUBLIC_DIR, contractAssets } from './scripts/contracts-publish.ts'
 import { licenceCookieHeaders, readLicenceCookie } from './src/lib/licenceCookie.ts'
 import {
   POLAR_ACTIVATE_URL, POLAR_ORGANIZATION_ID, POLAR_VALIDATE_URL,
@@ -207,10 +208,33 @@ function devApiFallback(): Plugin {
   }
 }
 
+// Component contracts → `docs/agent-native/contracts/` (read-only, beside the
+// token schema). Build: emitted as assets. Dev: served from `spec/contracts/`.
+function publishContracts(): Plugin {
+  const dir = fileURLToPath(new URL('./spec/contracts', import.meta.url))
+  return {
+    name: 'escala-publish-contracts',
+    generateBundle() {
+      for (const asset of contractAssets(dir)) this.emitFile({ type: 'asset', fileName: asset.fileName, source: asset.source })
+    },
+    configureServer(server) {
+      server.middlewares.use(`/${CONTRACTS_PUBLIC_DIR}/`, (req, res, next) => {
+        const name = decodeURIComponent((req.url ?? '').split('?')[0].replace(/^\//, ''))
+        const asset = contractAssets(dir).find((a) => a.fileName === `${CONTRACTS_PUBLIC_DIR}/${name}`)
+        if (!asset) return next()
+        res.setHeader('Content-Type', 'application/json; charset=utf-8')
+        res.setHeader('Access-Control-Allow-Origin', '*')
+        res.end(asset.source)
+      })
+    },
+  }
+}
+
 export default defineConfig(({ command }) => ({
   plugins: [
     react(),
     tailwindcss(),
+    publishContracts(),
     ...(command === 'serve' ? [devLicence(), devRegistry(), devApiFallback()] : []),
   ],
   // The preview harness hands each session a free port through PORT (autoPort);
