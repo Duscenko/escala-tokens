@@ -254,8 +254,8 @@ describe('the categorical catalogue is complete', () => {
     // a fill.
     // DEC-2026-11-16-004: the Figma file is the rule, so the field outline is the soft hairline again (Alpha/03, hover /04).
     expect(label('control')?.light.label).toBe('black-a.3')
-    // DEC-2026-11-16-006: Dark moved to Alpha/04 in the file (the same step as its hover).
-    expect(label('control')?.dark.label).toBe('white-a.4')
+    // DEC-2026-11-18-002: Dark is Alpha/03 in the file, one step under its hover.
+    expect(label('control')?.dark.label).toBe('white-a.3')
     expect(label('control-hover')?.light.label).toBe('black-a.4')
     expect(label('control-hover')?.dark.label).toBe('white-a.4')
     // Emphasis keeps the stricter ui-component solve.

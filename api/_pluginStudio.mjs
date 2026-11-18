@@ -8669,9 +8669,10 @@ var init_semanticArchitectures = __esm({
       { group: "content", key: "secondary", light: "{neutral.11}", dark: "{neutral-dark.11}" },
       // DE-EMPHASIS tier, not a third readable level. `primary` (12) and
       // `secondary` (11) are the two perceivable text levels this system can
-      // deliver; in dark mode step 9 measures Lc 21 against the page. Use it for
-      // placeholders and watermarks, never for information.
-      { group: "content", key: "subtle", light: "{neutral.9}", dark: "{neutral-dark.9}" },
+      // deliver. Use it for placeholders, field icons and watermarks, never for
+      // information. Step 10 since 2026-11-18 (DEC-2026-11-18-002): 3.6:1 Light and
+      // 4.0:1 Dark on `surface.input`.
+      { group: "content", key: "subtle", light: "{neutral.10}", dark: "{neutral-dark.10}" },
       { group: "content", key: "accent", light: "{accent.11}", dark: "{accent.11}" },
       // Sits on action.primary, so its ink is SOLVED against that fill per theme
       // (see curatedRefs) — never assumed white. Ships as {neutral.1} or {neutral.12}.
@@ -8801,14 +8802,13 @@ var init_semanticArchitectures = __esm({
       // turning every track black.
       { group: "surface", key: "muted", light: "{neutral.4}", dark: "{neutral-dark.4}" },
       { group: "surface", key: "muted-hover", light: "{neutral.5}", dark: "{neutral-dark.5}" },
-      // Form background — same tone as the page, named separately so a form field
-      // has its own token to point at rather than reusing "page" by coincidence.
-      { group: "surface", key: "input", light: "{neutral.1}", dark: "{neutral-dark.1}" },
+      // Form background, named separately so a form field has its own token. Light is
+      // the page tone; Dark sits one step under its card (DEC-2026-11-18-002).
+      { group: "surface", key: "input", light: "{neutral.1}", dark: "{neutral-dark.2}" },
       // A part lifted above the track or surface it sits on — the selected segment
-      // of a SegmentedControl. Lighter than `surface.muted` in BOTH themes: Light
-      // takes the form tone (white on the grey track), Dark the secondary button's
-      // tone (`surface.input` sank below the track there). DEC-2026-11-17-003.
-      { group: "surface", key: "raised", light: "{neutral.1}", dark: "{neutral-dark.6}" },
+      // of a SegmentedControl. Light takes the form tone; Dark is Gray Dark/04 since
+      // DEC-2026-11-18-002 (was /06, DEC-2026-11-17-003), the same step as `surface.muted`.
+      { group: "surface", key: "raised", light: "{neutral.1}", dark: "{neutral-dark.4}" },
       // Accent-tinted row/item selection — one step up from `surface.accent`,
       // the same tone `action.secondary` already uses for a component-level fill.
       // A selected row is the textbook alpha case: it can sit on the page OR on a
@@ -9086,8 +9086,8 @@ var init_semanticArchitectures = __esm({
       // neighbours — and keeps the ui-component solve (black-a.7 / white-a.8).
       // OWNER DECISION 2026-11-16 (DEC-2026-11-16-004): the Figma file is the rule. `Border/control` sits at Black Alpha/03 ·
       // White Alpha/03 and its hover at /04, a soft hairline below the 3:1 of WCAG 1.4.11. Pinned to the file's steps, not solved.
-      // DEC-2026-11-16-006: in the file Dark `Border/control` moved to White Alpha/04 (the same step as its hover, #ffffff33).
-      { group: "border", key: "control", light: "{black-a.3}", dark: "{white-a.4}" },
+      // DEC-2026-11-18-002: Dark `Border/control` is White Alpha/03 again, so rest and hover differ (closes COL-003).
+      { group: "border", key: "control", light: "{black-a.3}", dark: "{white-a.3}" },
       { group: "border", key: "control-hover", light: "{black-a.4}", dark: "{white-a.4}" },
       { group: "border", key: "strong", light: "{ui-a:black-a.5}", dark: "{ui-a:white-a.5}" },
       // DECORATIVE brand emphasis — a tinted card edge or a grouping stroke. It is

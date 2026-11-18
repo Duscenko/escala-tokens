@@ -624,7 +624,7 @@
             "core--minimalist::dark": "#cdcbd3"
           },
           "subtle": {
-            "core--minimalist::light": "#9791a4",
+            "core--minimalist::light": "#898494",
             "core--minimalist::dark": "#716e77"
           },
           "accent": {
@@ -733,7 +733,7 @@
           },
           "raised": {
             "core--minimalist::light": "#fefdff",
-            "core--minimalist::dark": "#363539"
+            "core--minimalist::dark": "#222223"
           },
           "selected": {
             "core--minimalist::light": "#220de11a",

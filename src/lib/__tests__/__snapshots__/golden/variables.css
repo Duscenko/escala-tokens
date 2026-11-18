@@ -225,7 +225,7 @@
   /* Semantic roles (Categorical) — light. Components bind these. */
   --color-content-primary: #37343b;
   --color-content-secondary: #6e6976;
-  --color-content-subtle: #9791a4;
+  --color-content-subtle: #898494;
   --color-content-accent: #7252c9;
   --color-content-on-action: #fefdff;
   --color-content-on-secondary: #37343b;
@@ -1264,7 +1264,7 @@
   --color-surface-muted: #2a292c;
   --color-surface-muted-hover: #363539;
   --color-surface-input: #151515;
-  --color-surface-raised: #363539;
+  --color-surface-raised: #222223;
   --color-surface-selected: #a196f61c;
   --color-surface-selected-pressed: #9879ff47;
   --color-surface-inverse: #e5e4e8;
