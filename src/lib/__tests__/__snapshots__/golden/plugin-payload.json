@@ -721,11 +721,11 @@
           },
           "muted": {
             "core--minimalist::light": "#e3e1e6",
-            "core--minimalist::dark": "#222223"
+            "core--minimalist::dark": "#2a292c"
           },
           "muted-hover": {
             "core--minimalist::light": "#d8d6dd",
-            "core--minimalist::dark": "#2a292c"
+            "core--minimalist::dark": "#363539"
           },
           "input": {
             "core--minimalist::light": "#f5f4f6",

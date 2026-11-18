@@ -8,7 +8,10 @@ import { readableInk } from '../../lib/colorUtils'
 import { themeDisplayName } from '../../lib/themeSources'
 import { SystemCollage } from '../preview/artefacts/SystemCollage'
 import { ComponentCoversGrid } from './docs/ComponentAvatars'
-import { BoardViewSwitch, BoardGlyph, boardTabId, type BoardView } from './BoardViewSwitch'
+import { BoardViewSwitch, BoardGlyph, boardTabId, type BoardPack, type BoardView } from './BoardViewSwitch'
+import { BlockCoversGrid } from './blocks/BlockCoversGrid'
+import { LISTED_BLOCKS, type BlockDef } from './blocks/blockRegistry'
+import { PLATFORM_FAMILIES } from '../../lib/platformCatalogue'
 import { BoardThemeSwitch } from './BrandThemesPicker'
 
 /** The Generator board — the region Theme · Components switches. */
@@ -307,8 +310,12 @@ const CANVAS_INSET = 'px-5'
 function ArtefactsView({
   view, previewTheme, previewViewport, accentPreview, stylePreview, drawerOpen,
   inspecting, onInspectingChange, tileAppearances, boardAppearance, onPickRole, onOpenRoleInVariables, editingRole, onSelectionChange, onOpenComponent,
-  spotlight,
+  spotlight, pack, onOpenBlock,
 }: {
+  /** Components view: the package on the board (Elements · Blocks). */
+  pack: BoardPack
+  /** Components view: a block cover's ↗ opens that block's page. */
+  onOpenBlock?: (block: BlockDef) => void
   /** The colour map shown ON the board: the roles to light, and what the
    *  callout names for each. */
   spotlight?: { roleIds: ReadonlySet<string>; roleInfo: ReadonlyMap<string, SpotlightRole>; colour: ColorRoleId }
@@ -426,7 +433,9 @@ function ArtefactsView({
               />
             ) : (
               <div className={boardAppearance === 'dark' ? 'dark' : 'light'}>
-                <ComponentCoversGrid tokens={stageTokens} onOpen={onOpenComponent} />
+                {pack === 'blocks'
+                  ? <BlockCoversGrid tokens={stageTokens} onOpen={onOpenBlock} />
+                  : <ComponentCoversGrid tokens={stageTokens} onOpen={onOpenComponent} />}
               </div>
             )}
           </InspectorModeProvider>
@@ -496,12 +505,14 @@ function DocumentationView({ onEditFoundation, exits, active, onChange, overview
 
 /** The board view last chosen this session (Theme · Components). */
 let lastBoardView: BoardView = 'theme'
+/** The package last chosen for the Components view (Elements · Blocks). */
+let lastBoardPack: BoardPack = 'elements'
 
 export default function ThemePreviewHub({
   docsOpen,
   onDocsOpenChange,
   surface, onSurfaceChange,
-  previewTheme, previewAppearance, previewViewport = 'desktop', stylePreview, onNeedAccount, onOpenComponent, onAdoptStyle, onSelectTheme, onPreviewAppearanceChange, onBoardAppearanceChange, onPreviewPlatformChange,
+  previewTheme, previewAppearance, previewViewport = 'desktop', stylePreview, onNeedAccount, onOpenComponent, onOpenBlock, onAdoptStyle, onSelectTheme, onPreviewAppearanceChange, onBoardAppearanceChange, onPreviewPlatformChange,
   onEditFoundation, onSyncFoundationFromDoc, activeFoundation, onSelectFoundation, onOpenPrimitiveFamily, onOpenInVariables, figmaPublishState, workspaceSection, onOpenFigmaDownload,
   figmaFileName, onFigmaFileNameChange, figmaSyncModes, onFigmaSyncModesChange, figmaViewports, onFigmaViewportsChange,
   githubPushState, onGithubPushStateChange, docsExits, onGetCode, ship, onCreateTheme,
@@ -536,6 +547,8 @@ export default function ThemePreviewHub({
   onBoardAppearanceChange?: (appearance: ThemeAppearance | null) => void
   /** Open the Components destination — catalogue link in the Button teaser header. */
   onOpenComponents: () => void
+  /** The board's Blocks package: a cover opens that block's page. */
+  onOpenBlock?: (block: BlockDef) => void
   /** Open one component's page — the ↗ on a board cover. */
   onOpenComponent?: (def: ComponentDef) => void
   onEditFoundation: (key: string) => void
@@ -616,6 +629,8 @@ export default function ThemePreviewHub({
   // lands back on the Components view instead of the bento board.
   const [boardView, setBoardViewState] = useState<BoardView>(() => lastBoardView)
   const setBoardView = (view: BoardView) => { lastBoardView = view; setBoardViewState(view) }
+  const [boardPack, setBoardPackState] = useState<BoardPack>(() => lastBoardPack)
+  const setBoardPack = (pack: BoardPack) => { lastBoardPack = pack; setBoardPackState(pack) }
   useEffect(() => {
     if (randomDraft) setInspecting(false)
   }, [randomDraft])
@@ -1078,7 +1093,15 @@ export default function ThemePreviewHub({
                           </HintTip>
                         ) : (
                           <>
-                            <BoardViewSwitch inset value={boardView} onChange={setBoardView} panelId={BOARD_PANEL_ID} />
+                            <BoardViewSwitch
+                              inset
+                              value={boardView}
+                              onChange={setBoardView}
+                              panelId={BOARD_PANEL_ID}
+                              pack={boardPack}
+                              onPackChange={setBoardPack}
+                              packCounts={{ elements: PLATFORM_FAMILIES.length, blocks: LISTED_BLOCKS.length }}
+                            />
                             {/* The colour map's door on the bar: before, it
                                 was only the ramp toggle inside the Color card,
                                 so the map was hard to find. Opens Accent's map
@@ -1200,6 +1223,8 @@ export default function ThemePreviewHub({
                 {!contrastOpen && !docsOpen ? (
                   <ArtefactsView
                     view={boardView}
+                    pack={boardPack}
+                    onOpenBlock={onOpenBlock}
                     previewTheme={previewTheme}
                     previewViewport={boardPlatform}
                     accentPreview={accentPreview}

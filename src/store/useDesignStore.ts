@@ -41,6 +41,30 @@ export function liftSecondaryAboveLayer2V152(state: any): void {
   }
 }
 
+/** Store v155: in Dark a control's track stays one tone above the card it sits on. A style that lifted
+ *  `surface.layer-2` onto tone 4 left `surface.muted` on that same tone, so a SegmentedControl's track
+ *  disappeared into its card. Brands saved that way get what adopting the style now writes. A hand-picked
+ *  track or raised fill is never touched. */
+export function liftTrackAboveLayer2V155(state: any): void {
+  const cat = state?.architectureOverrides?.categorical
+  if (!cat || typeof cat !== 'object') return
+  const layer2 = cat['surface.layer-2']
+  if (!layer2 || typeof layer2 !== 'object') return
+  for (const [mode, ref] of Object.entries(layer2)) {
+    if (!mode.endsWith('::dark') || typeof ref !== 'string') continue
+    const match = /^\{neutral-dark\.(\d+)\}$/.exec(ref)
+    if (!match || Number(match[1]) < 4) continue
+    const step = Number(match[1])
+    if (cat['surface.muted']?.[mode] || cat['surface.muted-hover']?.[mode]) continue
+    cat['surface.muted'] = { ...(cat['surface.muted'] ?? {}), [mode]: `{neutral-dark.${Math.min(12, step + 1)}}` }
+    cat['surface.muted-hover'] = { ...(cat['surface.muted-hover'] ?? {}), [mode]: `{neutral-dark.${Math.min(12, step + 2)}}` }
+    // The selected segment stays lighter than its track (the schema's tone 6).
+    if (step + 1 >= 6 && !cat['surface.raised']?.[mode]) {
+      cat['surface.raised'] = { ...(cat['surface.raised'] ?? {}), [mode]: `{neutral-dark.${Math.min(12, step + 2)}}` }
+    }
+  }
+}
+
 /** Catalogue keys added by store v97 / v98 (shadcn phase 5). A migration adds
  *  them only to a selection that already held every earlier component. */
 const COMPONENTS_V97 = ['ToggleGroup', 'NativeSelect', 'Kbd', 'Collapsible', 'Table', 'Skeleton', 'Empty']
@@ -2091,7 +2115,7 @@ export const useDesignStore = create<DesignStore>()(
     }),
     {
       name: 'scalable-designs-store',
-      version: 154,
+      version: 155,
       migrate: (persisted: any, version: number) => {
         if (persisted) {
           // v1→v2: remove styleDirection, rename selectedAtoms → selectedComponents
@@ -4526,6 +4550,14 @@ export const useDesignStore = create<DesignStore>()(
           addMotionRoles(persisted)
           if (Array.isArray(persisted.savedSystems)) {
             for (const sys of persisted.savedSystems) addMotionRoles(sys?.snapshot)
+          }
+        }
+        if (version < 155) {
+          // v154→v155: in Dark a control's track stays one tone above the card
+          // it sits on (see `liftTrackAboveLayer2V155`).
+          liftTrackAboveLayer2V155(persisted)
+          if (Array.isArray(persisted.savedSystems)) {
+            for (const sys of persisted.savedSystems) liftTrackAboveLayer2V155(sys?.snapshot)
           }
         }
         if (version < 133) {

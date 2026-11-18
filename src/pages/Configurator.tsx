@@ -84,7 +84,8 @@ import ComponentsRail from '../components/configurator/ComponentsRail'
 import BlocksRail from '../components/configurator/BlocksRail'
 import BlocksView from '../components/configurator/BlocksView'
 import { CatalogueTabs } from '../components/configurator/CatalogueTabs'
-import { BLOCK_BY_ID, type BlockDef } from '../components/configurator/blocks/blockRegistry'
+import { LISTED_BLOCKS, resolveBlock, type BlockDef } from '../components/configurator/blocks/blockRegistry'
+import { StageActionsSlot } from '../components/configurator/docs/stageActions'
 import ComponentsView from '../components/configurator/ComponentsView'
 import DocsView, { CHANGELOG_KEY, FAQ_KEY } from '../components/configurator/DocsView'
 import { GET_STARTED_KEY, GUIDE_FIGMA_KEY } from '../components/configurator/docs/getStarted'
@@ -105,7 +106,7 @@ import LayoutHub, { LayoutTabHeading } from '../components/configurator/LayoutHu
 import DimensionPrimitives from '../components/configurator/DimensionPrimitives'
 import GridSemantics from '../components/configurator/GridSemantics'
 import { COMPONENTS, type ComponentDef } from '../lib/componentCatalogue'
-import { familyOf, isPlatformComponent } from '../lib/platformCatalogue'
+import { isPlatformComponent } from '../lib/platformCatalogue'
 import { PaletteIcon } from '../components/ui/icons'
 import { useI18n } from '../lib/i18n'
 import { goToLogin, useFreeTier, useAccess, useNeedsProForAnotherSystem, useNeedsProForAnotherTheme } from '../lib/access'
@@ -390,90 +391,6 @@ function themeLabel(key: string): string {
   if (key === 'light') return 'Light'
   if (key === 'dark') return 'Dark'
   return key.charAt(0).toUpperCase() + key.slice(1)
-}
-
-/** One Theme menu for any count. A Light/Dark segment only works for the
- *  default pair — extra style themes are named keys (`forest`, `brand-b`),
- *  each with its own palette and a light/dark kind. Same trigger at 2 or 12. */
-function PreviewThemeSwitch({
-  themes,
-  kinds,
-  value,
-  onChange,
-}: {
-  themes: string[]
-  kinds: Record<string, 'light' | 'dark'>
-  value: string
-  onChange: (key: string) => void
-}) {
-  const [open, setOpen] = useState(false)
-  const menuRef = useRef<HTMLDivElement>(null)
-  const current = themes.includes(value) ? value : themes[0]
-
-  useEffect(() => {
-    if (!open) return
-    const onDown = (e: MouseEvent) => {
-      if (menuRef.current && !menuRef.current.contains(e.target as Node)) setOpen(false)
-    }
-    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') setOpen(false) }
-    document.addEventListener('mousedown', onDown)
-    document.addEventListener('keydown', onKey)
-    return () => {
-      document.removeEventListener('mousedown', onDown)
-      document.removeEventListener('keydown', onKey)
-    }
-  }, [open])
-
-  if (themes.length < 2 || !current) return null
-
-  return (
-    <div ref={menuRef} className="relative flex-shrink-0">
-      <button
-        type="button"
-        aria-expanded={open}
-        aria-haspopup="listbox"
-        aria-label={`Preview brand ${themeLabel(current)}`}
-        onClick={() => setOpen((v) => !v)}
-        className="flex items-center gap-1.5 h-8 pl-2.5 pr-2 rounded-lg border border-line bg-app text-body font-medium hover:border-line-strong transition-colors"
-      >
-        <span className="text-fg-faint font-normal">Brand</span>
-        <span className="text-fg truncate max-w-[8rem]">{themeLabel(current)}</span>
-        <svg width="10" height="10" viewBox="0 0 12 12" fill="none" stroke="currentColor" className="text-fg-faint" strokeWidth="1.6" aria-hidden>
-          <path d="M3 4.5 6 8l3-3.5" />
-        </svg>
-      </button>
-      {open && (
-        <ul
-          role="listbox"
-          aria-label="Preview brand"
-          className="absolute right-0 top-full mt-1 z-50 w-56 max-h-64 overflow-y-auto py-1 rounded-lg border border-line bg-surface shadow-[0_12px_32px_-12px_rgba(0,0,0,0.28)]"
-        >
-          {themes.map((t) => {
-            const on = t === current
-            const kind = kinds[t] ?? 'light'
-            return (
-              <li key={t}>
-                <button
-                  type="button"
-                  role="option"
-                  aria-selected={on}
-                  onClick={() => { onChange(t); setOpen(false) }}
-                  className={`w-full flex items-center justify-between gap-3 px-2.5 py-1.5 text-left transition-colors ${
-                    on ? 'bg-accent-ui/[0.06]' : 'hover:bg-elevated/60'
-                  }`}
-                >
-                  <span className={`text-body font-medium truncate ${on ? 'text-accent-ui' : 'text-fg'}`}>
-                    {themeLabel(t)}
-                  </span>
-                  <span className="text-caption text-fg-faint capitalize flex-shrink-0">{kind}</span>
-                </button>
-              </li>
-            )
-          })}
-        </ul>
-      )}
-    </div>
-  )
 }
 
 const EXPORT_FOCUS = 'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-fg/40'
@@ -777,7 +694,6 @@ export default function Configurator() {
   // list, or a Docs page such as the color variable map). The Components
   // header then offers the way back. A direct Components visit from the top
   // nav does not set it — there is nothing to return to.
-  const [componentFromSystem, setComponentFromSystem] = useState(false)
   // Leaving About for anything else marks this browser onboarded, so the
   // NEXT reload lands on Variables · Color instead. Every existing path that
   // changes tabs (`selectFoundation`, `changeTab`, `selectComponent`,
@@ -1013,7 +929,7 @@ export default function Configurator() {
   )
   // Blocks: null = the index. A link names `<Group>/<Name>`.
   const [activeBlock, setActiveBlock] = useState<BlockDef | null>(
-    () => (incomingPlace?.block ? BLOCK_BY_ID.get(incomingPlace.block) ?? null : null),
+    () => resolveBlock(incomingPlace?.block),
   )
   const [blockSearch, setBlockSearch] = useState('')
   const [exportMode, setExportMode] = useState<ExportMode>(null)
@@ -2014,10 +1930,6 @@ export default function Configurator() {
     setTab('foundations')
     changeThemeWorkspaceTab('preview')
   }
-  const returnToSystem = () => {
-    setComponentFromSystem(false)
-    openSystemPage()
-  }
   // `?remix=` — a system shuffled in the phone playground opens HERE as a
   // try-on on the board, like a System Style from the library: nothing is
   // written until Add brand, and no account is asked for to look. Below `md`
@@ -2042,10 +1954,6 @@ export default function Configurator() {
     return () => { live = false }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
-  const returnToBrand = () => {
-    setComponentFromSystem(false)
-    openThemePreviewPage()
-  }
   useEffect(() => {
     const onOpenFaq = () => {
       commitVisit()
@@ -2071,16 +1979,10 @@ export default function Configurator() {
     setTab('blocks')
     setActiveBlock(b)
   }
-  const openComponentsIndex = () => {
-    setComponentFromSystem(false)
-    setActiveComponent(null)
-  }
+  const openComponentsIndex = () => setActiveComponent(null)
   const changeTab = (t: Tab) => {
     commitVisit()
-    if (t === 'components') {
-      markFoundationComplete('components')
-      setComponentFromSystem(false)
-    }
+    if (t === 'components') markFoundationComplete('components')
     setExportMode(null)
     setTab(t)
   }
@@ -2442,21 +2344,6 @@ export default function Configurator() {
       Icon: ComponentsIcon,
       title: 'Components',
       subtitle: 'One page per component — live playground, examples, accessibility, Figma and API.',
-      // Search lives in the directory panel on the right (it filters that
-      // list). Same `previewTheme` as the playground — not a second switcher.
-      right: (
-        <div className="flex items-center gap-2">
-          <PreviewThemeSwitch
-            themes={(() => {
-              const own = myThemeKeys(themeOrder, themes)
-              return own.length ? own : themeOrder.filter((t) => themes[t])
-            })()}
-            kinds={themeKinds}
-            value={previewTheme}
-            onChange={changePreviewTheme}
-          />
-        </div>
-      ),
     }
     body = (
       <ComponentsView
@@ -2467,6 +2354,7 @@ export default function Configurator() {
         onOpenFoundation={selectFoundation}
         search={componentSearch}
         onClearSearch={() => setComponentSearch('')}
+        onOpenBlocks={() => selectBlock(LISTED_BLOCKS[0])}
         figmaCopy={{
           modes: figmaSyncModes,
           viewports: figmaViewports,
@@ -2833,7 +2721,7 @@ export default function Configurator() {
             onGetCode={() => openCodeForTheme(previewTheme)}
             // On About, picking a brand only changes the brand in the header: it
             // used to throw the reader onto the Board mid-page (audit 2026-11-05).
-            onSelectTheme={(key) => { changePreviewTheme(key); if (tab !== 'about') openThemePreviewPage() }}
+            onSelectTheme={(key) => { changePreviewTheme(key); if (tab !== 'about' && !catalogueTab) openThemePreviewPage() }}
           />
         ) : undefined}
         onOpenDocsPage={openDocsPage}
@@ -2921,110 +2809,12 @@ export default function Configurator() {
                 the section named at the left (the active category, where
                 Variables names its collection) and the controls at the right —
                 so the two canvases read as one product. */}
-            {tab === 'components' && !skipCenterHeader && (
+            {/* One row for the whole catalogue: Elements · Blocks, then the page's own tools
+                (find another page, Storybook, Figma). The name of what is open rides on the canvas. */}
+            {catalogueTab && !skipCenterHeader && (
               <div className="flex h-[52px] flex-shrink-0 items-center justify-between gap-3 border-b border-line px-4">
-                <div className="flex min-w-0 items-center gap-2">
-                  {componentFromSystem && (
-                    <div role="group" aria-label={t('Back to')} className="flex flex-shrink-0 items-center gap-0.5">
-                      <button
-                        type="button"
-                        onClick={returnToSystem}
-                        aria-label={t('Back to Home')}
-                        className="inline-flex h-7 items-center gap-1 rounded-md px-1.5 text-caption font-medium text-fg-muted transition-colors hover:bg-elevated hover:text-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50"
-                      >
-                        <svg width="11" height="11" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-                          <path d="M7.5 2.5 4 6l3.5 3.5" />
-                        </svg>
-                        {t('Home')}
-                      </button>
-                      <button
-                        type="button"
-                        onClick={returnToBrand}
-                        aria-label={t('Back to Brand')}
-                        className="inline-flex h-7 items-center gap-1 rounded-md px-1.5 text-caption font-medium text-fg-muted transition-colors hover:bg-elevated hover:text-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50"
-                      >
-                        <svg width="11" height="11" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-                          <path d="M7.5 2.5 4 6l3.5 3.5" />
-                        </svg>
-                        {t('Brand')}
-                      </button>
-                    </div>
-                  )}
-                  {componentFromSystem && <span aria-hidden className="flex-shrink-0 text-fg-faint">/</span>}
-                  {activeComponent && !componentFromSystem && (
-                    <>
-                      <button
-                        type="button"
-                        onClick={openComponentsIndex}
-                        aria-label={t('Back to all components')}
-                        className="inline-flex h-7 flex-shrink-0 items-center gap-1 rounded-md px-1.5 text-ui font-medium text-fg-muted transition-colors hover:bg-elevated hover:text-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50"
-                      >
-                        <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-                          <path d="M7.5 2.5 4 6l3.5 3.5" />
-                        </svg>
-                        {t('Elements')}
-                      </button>
-                      <span aria-hidden className="flex-shrink-0 text-fg-faint">/</span>
-                    </>
-                  )}
-                  {/* Components / <category> / <component>: the page's own name
-                      is the last crumb. It used to stop at the category, so
-                      Sidebar read "Components / Navigation" (audit 2026-11-05). */}
-                  {activeComponent && (
-                    <>
-                      <span className="hidden min-w-0 truncate text-ui text-fg-muted lg:inline">{t(familyOf(activeComponent.key)?.folder ?? activeComponent.category)}</span>
-                      <span aria-hidden className="hidden flex-shrink-0 text-fg-faint lg:inline">/</span>
-                    </>
-                  )}
-                  {!activeComponent && !componentFromSystem
-                    ? <CatalogueTabs active="components" onSelect={changeTab} />
-                    : (
-                      <h2 className="min-w-0 truncate text-ui font-semibold text-fg">
-                        {activeComponent ? activeComponent.label : t('Components')}
-                      </h2>
-                    )}
-                </div>
-                <div className="flex min-w-0 flex-1 items-center justify-end gap-2">
-                  {header.right}
-                </div>
-              </div>
-            )}
-            {tab === 'blocks' && !skipCenterHeader && (
-              <div className="flex h-[52px] flex-shrink-0 items-center justify-between gap-3 border-b border-line px-4">
-                <div className="flex min-w-0 items-center gap-2">
-                  {activeBlock && (
-                    <>
-                      <button
-                        type="button"
-                        onClick={() => setActiveBlock(null)}
-                        aria-label={t('Back to all blocks')}
-                        className="inline-flex h-7 flex-shrink-0 items-center gap-1 rounded-md px-1.5 text-ui font-medium text-fg-muted transition-colors hover:bg-elevated hover:text-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50"
-                      >
-                        <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-                          <path d="M7.5 2.5 4 6l3.5 3.5" />
-                        </svg>
-                        {t('Blocks')}
-                      </button>
-                      <span aria-hidden className="flex-shrink-0 text-fg-faint">/</span>
-                      <span className="hidden min-w-0 truncate text-ui text-fg-muted lg:inline">{t(activeBlock.group)}</span>
-                      <span aria-hidden className="hidden flex-shrink-0 text-fg-faint lg:inline">/</span>
-                    </>
-                  )}
-                  {activeBlock
-                    ? <h2 className="min-w-0 truncate text-ui font-semibold text-fg">{activeBlock.name}</h2>
-                    : <CatalogueTabs active="blocks" onSelect={changeTab} />}
-                </div>
-                <div className="flex min-w-0 flex-1 items-center justify-end gap-2">
-                  <PreviewThemeSwitch
-                    themes={(() => {
-                      const own = myThemeKeys(themeOrder, themes)
-                      return own.length ? own : themeOrder.filter((t) => themes[t])
-                    })()}
-                    kinds={themeKinds}
-                    value={previewTheme}
-                    onChange={changePreviewTheme}
-                  />
-                </div>
+                <CatalogueTabs active={tab === 'blocks' ? 'blocks' : 'components'} onSelect={changeTab} />
+                <StageActionsSlot />
               </div>
             )}
             {!skipCenterHeader && !catalogueTab && (
@@ -3080,11 +2870,8 @@ export default function Configurator() {
                     onSelectTheme={changePreviewTheme}
                     onPreviewAppearanceChange={changePreviewAppearance}
                     onOpenComponents={() => changeTab('components')}
-                    onOpenComponent={(def) => {
-                      // The page's breadcrumb leads back to this brand.
-                      setComponentFromSystem(true)
-                      selectComponent(def)
-                    }}
+                    onOpenBlock={selectBlock}
+                    onOpenComponent={selectComponent}
                     onEditFoundation={(key) => {
                       const reason = themeTablesBlocked()
                       if (reason) { showToast(reason, undefined, true); return }
@@ -3185,9 +2972,7 @@ export default function Configurator() {
                     onCreatingChange={setHomeCreating}
                     onOpenComponent={(key) => {
                       const def = COMPONENTS.find((c) => c.key === key)
-                      if (!def) return
-                      setComponentFromSystem(true)
-                      selectComponent(def)
+                      if (def) selectComponent(def)
                     }}
                   />
                 </motion.div>

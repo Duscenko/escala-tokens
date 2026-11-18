@@ -25,8 +25,8 @@ describe('platform Blocks = the Storybook block stories', () => {
   it('offers the same controls as the story', () => {
     for (const s of stories) {
       const b = BLOCKS.find((x) => x.id === s.title)!
-      // A block shown in its prototype mockup takes its Layout from the stage's viewport (Mobile = the phone).
-      const keys = b.mockup ? s.argKeys.filter((k) => k !== 'layout') : [...s.argKeys]
+      // A block shown in its prototype mockup, or marked responsive, takes its Layout from the stage's frame.
+      const keys = b.mockup || b.responsive ? s.argKeys.filter((k) => k !== 'layout') : [...s.argKeys]
       expect(b.controls.map((c) => c.key).sort(), s.file).toEqual(keys.sort())
     }
   })

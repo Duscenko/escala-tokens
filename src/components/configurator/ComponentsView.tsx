@@ -20,8 +20,10 @@ import { ComponentArticle, type FigmaCopyScope } from './docs/componentArticle'
 import { ComponentsIndex } from './docs/ComponentAvatars'
 
 export default function ComponentsView({
-  previewTheme = 'light', active, onSelect, onInspectRole, onOpenFoundation, search = '', onClearSearch, figmaCopy,
+  previewTheme = 'light', active, onSelect, onInspectRole, onOpenFoundation, search = '', onClearSearch, figmaCopy, onOpenBlocks,
 }: {
+  /** The last component's way on: the first block. */
+  onOpenBlocks?: () => void
   /** What Copy for Figma ships (the Figma page's File & modes). */
   figmaCopy?: FigmaCopyScope
   previewTheme?: string
@@ -74,12 +76,13 @@ export default function ComponentsView({
       <div className="flex-1 min-w-0 flex flex-col min-h-0">
         <div
           ref={articleRef}
+          data-stage-scroller=""
           className="flex-1 min-h-0 overflow-y-auto"
         >
           <motion.div
             key={def.key}
-            initial={{ opacity: 0, y: 8 }}
-            animate={{ opacity: 1, y: 0 }}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
             transition={{ duration: 0.18 }}
             className="pb-6"
           >
@@ -92,6 +95,7 @@ export default function ComponentsView({
               onInspectRole={onInspectRole}
               onOpenFoundation={onOpenFoundation}
               figmaCopy={figmaCopy}
+              onOpenBlocks={onOpenBlocks}
             />
           </motion.div>
         </div>

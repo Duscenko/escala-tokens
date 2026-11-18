@@ -11,6 +11,21 @@ export const LOCALES: { key: Locale; label: string; shortLabel: string }[] = [
 const STORAGE_KEY = 'escala-language'
 
 const es: Record<string, string> = {
+  // Preview canvas
+  'Open in the Figma Preview library': 'Abrir en la biblioteca Preview de Figma',
+  'Bare canvas': 'Lienzo libre',
+  'Actual size': 'Tamaño real',
+  'Fit to canvas': 'Ajustar al lienzo',
+  'Expand canvas': 'Ampliar lienzo',
+  'Exit expanded canvas': 'Salir del lienzo ampliado',
+  'Complementary': 'Complementario',
+  'Continue to Blocks': 'Continuar con Bloques',
+  'Board package': 'Paquete del tablero',
+  'Elements or Blocks': 'Elementos o Bloques',
+  'Every component on its own': 'Cada componente por separado',
+  'Ready-made screens and sections': 'Pantallas y secciones listas',
+  'Same options as the block’s story in Storybook. The frame buttons under the canvas show it on desktop, tablet and phone.': 'Las mismas opciones que la historia del bloque en Storybook. Los botones de marco bajo el lienzo lo muestran en escritorio, tableta y móvil.',
+  'This block has no options of its own. The frame buttons under the canvas show it on desktop, tablet and phone.': 'Este bloque no tiene opciones propias. Los botones de marco bajo el lienzo lo muestran en escritorio, tableta y móvil.',
   // Platform Components (Storybook families) + Blocks
   'Anatomy': 'Anatomía',
   '{family} is built from these parts. Each one is its own Figma component set with its own playground.': '{family} se construye con estas partes. Cada una es su propio component set en Figma, con su propio playground.',
@@ -2066,6 +2081,21 @@ const es: Record<string, string> = {
 }
 
 const fr: Record<string, string> = {
+  // Preview canvas
+  'Open in the Figma Preview library': 'Ouvrir dans la bibliothèque Preview de Figma',
+  'Bare canvas': 'Canevas nu',
+  'Actual size': 'Taille réelle',
+  'Fit to canvas': 'Ajuster au canevas',
+  'Expand canvas': 'Agrandir le canevas',
+  'Exit expanded canvas': 'Quitter le canevas agrandi',
+  'Complementary': 'Complémentaire',
+  'Continue to Blocks': 'Continuer vers les blocs',
+  'Board package': 'Ensemble du tableau',
+  'Elements or Blocks': 'Éléments ou blocs',
+  'Every component on its own': 'Chaque composant séparément',
+  'Ready-made screens and sections': 'Écrans et sections prêts à l’emploi',
+  'Same options as the block’s story in Storybook. The frame buttons under the canvas show it on desktop, tablet and phone.': 'Les mêmes options que la story du bloc dans Storybook. Les boutons de cadre sous le canevas le montrent sur ordinateur, tablette et téléphone.',
+  'This block has no options of its own. The frame buttons under the canvas show it on desktop, tablet and phone.': 'Ce bloc n’a pas d’options propres. Les boutons de cadre sous le canevas le montrent sur ordinateur, tablette et téléphone.',
   // Platform Components (Storybook families) + Blocks
   'Anatomy': 'Anatomie',
   '{family} is built from these parts. Each one is its own Figma component set with its own playground.': '{family} est construit à partir de ces parties. Chacune est son propre component set Figma, avec son propre playground.',

@@ -16,7 +16,7 @@ import {
 } from '../../escala-ui/blocks/auth'
 import {
   HeroHeader, FAQSection, PricingCard, PricingSection, ContactSection, Footer,
-  MARKETING_LAYOUTS, FAQ_STYLES, type MarketingLayout, type FaqStyle,
+  FAQ_STYLES, type MarketingLayout, type FaqStyle,
 } from '../../escala-ui/blocks/marketing'
 import {
   AnnouncementBar, UtilityBar, AppHeader, AppHeaderExtended, FloatingHeader, SidebarStatCard, DualSidebar,
@@ -69,6 +69,11 @@ export interface BlockDef {
   /** Navigation blocks: the block inside its Figma prototype frame — the 1440 desktop window, or the phone when the
    *  stage's viewport is Mobile (the viewport is the Layout, so these blocks have no Layout control). */
   mockup?: (v: Record<string, string>, layout: NavLayout) => ReactNode
+  /** The block's Layout follows the stage's frame (Mobile and Tablet draw `mobile`), so it has no Layout control of its
+   *  own: two switches for one question disagreed on screen. */
+  responsive?: boolean
+  /** A complementary piece of another block (`<Group>/<Name>`): shown on that block's page, not listed on its own. */
+  partOf?: string
   /** Overlay blocks: the real dialog (scrim, focus trap, Escape). */
   dialog?: (p: Required<Pick<OverlayBlockProps, 'open' | 'onOpenChange'>>) => ReactNode
   contract: BlockContract | null
@@ -82,7 +87,6 @@ const CONTRACTS = new Map<string, BlockContract>(
 
 const containerCtl: BlockControl = { key: 'container', label: 'Container', options: AUTH_CONTAINERS, default: 'card' }
 const statusCtl: BlockControl = { key: 'status', label: 'Status', options: AUTH_STATUSES, default: 'idle' }
-const marketingLayout: BlockControl = { key: 'layout', label: 'Layout', options: MARKETING_LAYOUTS, default: 'desktop' }
 const floatingNav: BlockControl = { key: 'nav', label: 'Nav', options: FLOATING_NAVS, default: 'links' }
 const panelVisible: BlockControl = { key: 'panelVisible', label: 'PanelVisible', options: ['true', 'false'], default: 'true' }
 
@@ -124,20 +128,20 @@ const DEFS: Def[] = [
   auth('SocialSignIn', 'Sign-in with social providers only.', AuthSocialSignIn, false),
   auth('TwoFactor', 'Asks for the code from an authenticator app.', AuthTwoFactor),
   // ── Marketing ──
-  { group: 'Marketing', name: 'ContactSection', description: 'A contact form beside an image, with the services to choose from.', wide: true, controls: [marketingLayout], render: (v) => <ContactSection layout={v.layout as MarketingLayout} /> },
-  { group: 'Marketing', name: 'FAQSection', description: 'Frequently asked questions as an accordion, split or centred.', wide: true, controls: [marketingLayout, { key: 'faqStyle', label: 'Style', options: FAQ_STYLES, default: 'split' }], render: (v) => <FAQSection layout={v.layout as MarketingLayout} faqStyle={v.faqStyle as FaqStyle} /> },
-  { group: 'Marketing', name: 'Footer', description: 'The site footer: brand, link columns, newsletter and the legal line.', wide: true, controls: [marketingLayout], render: (v) => <Footer layout={v.layout as MarketingLayout} /> },
-  { group: 'Marketing', name: 'HeroHeader', description: 'The page opener: badge, headline, supporting copy, an email form and media.', wide: true, controls: [marketingLayout], render: (v) => <HeroHeader layout={v.layout as MarketingLayout} /> },
-  { group: 'Marketing', name: 'PricingCard', description: 'One plan: name, price, billing, features and its call to action.', wide: false, controls: [], render: () => <PricingCard /> },
-  { group: 'Marketing', name: 'PricingSection', description: 'The pricing page section: heading and the plans side by side.', wide: true, controls: [marketingLayout], render: (v) => <PricingSection layout={v.layout as MarketingLayout} /> },
+  { group: 'Marketing', name: 'ContactSection', description: 'A contact form beside an image, with the services to choose from.', wide: true, responsive: true, controls: [], render: (v) => <ContactSection layout={v.layout as MarketingLayout} /> },
+  { group: 'Marketing', name: 'FAQSection', description: 'Frequently asked questions as an accordion, split or centred.', wide: true, responsive: true, controls: [{ key: 'faqStyle', label: 'Style', options: FAQ_STYLES, default: 'split' }], render: (v) => <FAQSection layout={v.layout as MarketingLayout} faqStyle={v.faqStyle as FaqStyle} /> },
+  { group: 'Marketing', name: 'Footer', description: 'The site footer: brand, link columns, newsletter and the legal line.', wide: true, responsive: true, controls: [], render: (v) => <Footer layout={v.layout as MarketingLayout} /> },
+  { group: 'Marketing', name: 'HeroHeader', description: 'The page opener: badge, headline, supporting copy, an email form and media.', wide: true, responsive: true, controls: [], render: (v) => <HeroHeader layout={v.layout as MarketingLayout} /> },
+  { group: 'Marketing', name: 'PricingCard', description: 'One plan: name, price, billing, features and its call to action.', wide: false, partOf: 'Marketing/PricingSection', controls: [], render: () => <PricingCard /> },
+  { group: 'Marketing', name: 'PricingSection', description: 'The pricing page section: heading and the plans side by side.', wide: true, responsive: true, controls: [], render: (v) => <PricingSection layout={v.layout as MarketingLayout} /> },
   // ── Navigation ──
   { group: 'Navigation', name: 'AnnouncementBar', description: 'A one-line message across the top of the page, dismissible.', wide: true, controls: [], render: () => <AnnouncementBar /> },
-  { group: 'Navigation', name: 'AppHeader', description: 'The product header: brand, navigation, search and account.', wide: true, controls: [], render: () => <AppHeader />, mockup: (_v, layout) => <HeaderMockup block="AppHeader" layout={layout} /> },
-  { group: 'Navigation', name: 'AppHeaderExtended', description: 'The product header with an announcement bar, a utility bar and breadcrumbs.', wide: true, controls: [], render: () => <AppHeaderExtended />, mockup: (_v, layout) => <HeaderMockup block="AppHeaderExtended" layout={layout} /> },
+  { group: 'Navigation', name: 'AppHeader', description: 'The product header: brand, navigation, search and account.', wide: true, controls: [], render: (v) => <AppHeader layout={v.layout as NavLayout} />, mockup: (_v, layout) => <HeaderMockup block="AppHeader" layout={layout} /> },
+  { group: 'Navigation', name: 'AppHeaderExtended', description: 'The product header with an announcement bar, a utility bar and breadcrumbs.', wide: true, controls: [], render: (v) => <AppHeaderExtended layout={v.layout as NavLayout} />, mockup: (_v, layout) => <HeaderMockup block="AppHeaderExtended" layout={layout} /> },
   { group: 'Navigation', name: 'DualSidebar', description: 'An icon rail beside a panel of grouped links.', wide: true, controls: [panelVisible], render: (v) => <DualSidebar panelVisible={v.panelVisible !== 'false'} />, mockup: (v, layout) => <SidebarMockup layout={layout} expanded={v.panelVisible !== 'false'} /> },
-  { group: 'Navigation', name: 'FloatingHeader', description: 'A header that floats over the page as a rounded bar.', wide: true, controls: [floatingNav], render: (v) => <FloatingHeader nav={v.nav as FloatingNav} />, mockup: (v, layout) => <HeaderMockup block="FloatingHeader" layout={layout} nav={v.nav as FloatingNav} /> },
-  { group: 'Navigation', name: 'SidebarStatCard', description: 'A figure with its trend, for the foot of a sidebar.', wide: false, controls: [], render: () => <SidebarStatCard /> },
-  { group: 'Navigation', name: 'UtilityBar', description: 'A thin bar above the header: language and social links.', wide: true, controls: [], render: () => <UtilityBar /> },
+  { group: 'Navigation', name: 'FloatingHeader', description: 'A header that floats over the page as a rounded bar.', wide: true, controls: [floatingNav], render: (v) => <FloatingHeader layout={v.layout as NavLayout} nav={v.nav as FloatingNav} />, mockup: (v, layout) => <HeaderMockup block="FloatingHeader" layout={layout} nav={v.nav as FloatingNav} /> },
+  { group: 'Navigation', name: 'SidebarStatCard', description: 'A figure with its trend, for the foot of a sidebar.', wide: false, partOf: 'Navigation/DualSidebar', controls: [], render: () => <SidebarStatCard /> },
+  { group: 'Navigation', name: 'UtilityBar', description: 'A thin bar above the header: language and social links.', wide: true, controls: [], render: (v) => <UtilityBar socialVisible={v.layout !== 'mobile'} /> },
   // ── Overlay ──
   overlay('CartDrawer', 'The cart in a side sheet: items, quantities, total and checkout.', CartDrawer),
   overlay('ConfirmDialog', 'Asks the person to confirm an action before it runs.', ConfirmDialog),
@@ -162,10 +166,24 @@ export const BLOCKS: BlockDef[] = DEFS.map(({ contractName, ...d }) => ({
   contract: CONTRACTS.get(contractName ?? d.name) ?? null,
 }))
 
+/** What the catalogue lists: a complementary piece lives on its parent's page. */
+export const LISTED_BLOCKS = BLOCKS.filter((b) => !b.partOf)
+
+/** A link to a complementary piece opens the block it belongs to. */
 export const BLOCK_BY_ID = new Map(BLOCKS.map((b) => [b.id, b]))
+export function resolveBlock(id: string | undefined): BlockDef | null {
+  const block = id ? BLOCK_BY_ID.get(id) : undefined
+  if (!block) return null
+  return block.partOf ? BLOCK_BY_ID.get(block.partOf) ?? block : block
+}
 
 export function blocksIn(group: BlockGroup): BlockDef[] {
-  return BLOCKS.filter((b) => b.group === group)
+  return LISTED_BLOCKS.filter((b) => b.group === group)
+}
+
+/** The complementary pieces shown on a block's page. */
+export function partsOf(block: BlockDef): BlockDef[] {
+  return BLOCKS.filter((b) => b.partOf === block.id)
 }
 
 export function blockDefaults(b: BlockDef): Record<string, string> {

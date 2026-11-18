@@ -4,7 +4,9 @@ import { OVERVIEWS } from '../../components/configurator/docs/componentOverviews
 
 describe('component Overview', () => {
   it('every component with variants has an Overview', () => {
-    const missing = COMPONENTS.filter((c) => c.axes.length > 0 && !OVERVIEWS[c.key]).map((c) => c.key)
+    // Accordion opens on one variant by design: six stacked accordions read as one list.
+    const singleVariant = new Set(['Accordion'])
+    const missing = COMPONENTS.filter((c) => c.axes.length > 0 && !OVERVIEWS[c.key] && !singleVariant.has(c.key)).map((c) => c.key)
     expect(missing).toEqual([])
   })
 

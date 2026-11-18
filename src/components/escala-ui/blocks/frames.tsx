@@ -15,18 +15,20 @@ import { cssVarOf } from '../../../lib/componentRecipes'
 const v = (ref: string) => `var(${cssVarOf(ref)})`
 
 export const DESKTOP_FRAME = { width: 1440, height: 900 } as const
+/** The Grid's tablet viewport, drawn as the same window: the file has no tablet hardware to copy. */
+export const TABLET_FRAME = { width: 768, height: 1024 } as const
 export const PHONE_FRAME = { width: 422, height: 894, screenWidth: 402, screenHeight: 874, bezel: 10 } as const
 
 /** Figma `window-bar` + `screen`: a 1440 × 900 desktop window. `screen` styles the screen area (its fill, padding,
  *  alignment); the children are what the prototype places in it. */
-export function DesktopWindow({ children, screen, label }: { children?: React.ReactNode; screen?: React.CSSProperties; label?: string }) {
+export function DesktopWindow({ children, screen, label, size = DESKTOP_FRAME }: { children?: React.ReactNode; screen?: React.CSSProperties; label?: string; size?: { width: number; height: number } }) {
   return (
     <div
       data-mockup="desktop"
       role="img"
       aria-label={label}
       style={{
-        width: DESKTOP_FRAME.width, height: DESKTOP_FRAME.height, flexShrink: 0, boxSizing: 'border-box',
+        width: size.width, height: size.height, flexShrink: 0, boxSizing: 'border-box',
         display: 'flex', flexDirection: 'column', overflow: 'clip',
         background: v('color.surface.layer-1'),
         border: `${v('stroke.divider')} solid ${v('color.border.subtle')}`,

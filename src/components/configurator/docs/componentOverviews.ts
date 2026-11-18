@@ -328,7 +328,8 @@ export const OVERVIEWS: Record<string, Overview> = {
   // ── Content & Surfaces ─────────────────────────────────────────────────────
   Card: [each('Size', ['default', 'sm'])],
   Separator: [each('Align', ['none', 'start', 'center', 'end'], {}, 320), each('Tone', ['default', 'subtle', 'strong'], {}, 320), each('Variant', ['default', 'dashed'], { Align: 'center' }, 320), each('Align', ['none', 'center'], { Orientation: 'vertical' }, 40)],
-  Accordion: [each('Variant', ['ghost-default', 'ghost-underline', 'ghost-rounded', 'outline-rounded', 'outline-sharp', 'filled-rounded'])],
+  // No Accordion row: six stacked accordions read as one confusing list, so its page opens on one
+  // variant and the Variant control walks them (owner, 2026-11-18).
   AccordionItem: [
     each('State', ['Closed', 'Open', 'Disabled'], { Variant: 'outline-rounded' }),
     each('Variant', ['ghost-default', 'ghost-underline', 'ghost-rounded', 'outline-rounded', 'outline-sharp', 'filled-rounded'], { State: 'Open' }),
@@ -338,9 +339,7 @@ export const OVERVIEWS: Record<string, Overview> = {
     // Dividers grid = «Example Dark» (grid · pinned · sorted · resizing · scrolled header).
     [{ v: { Dividers: 'rows' }, w: TABLE_PROTOTYPE_W }],
     [{ v: { Dividers: 'grid' }, w: TABLE_PROTOTYPE_W }],
-    each('Size', ['default', 'xs', 'sm', 'lg'], { Appearance: 'filled' }, 800),
-    each('Appearance', ['filled', 'ghost'], {}, 800),
-    each('Dividers', ['rows', 'grid'], {}, 800),
+    // Sizes, appearances and dividers are one pick away in the settings: eight more full tables only shrank these two.
   ],
   TableCell: [
     each('Size', ['default', 'xs', 'sm', 'lg']),

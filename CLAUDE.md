@@ -44,7 +44,7 @@ About + the phone generator (`MobileThemeSheet.tsx`, picks only, no free inputs)
 | What | Where |
 |---|---|
 | App shell | `src/pages/Configurator.tsx` (rail · canvas card · right inspector) |
-| Store (persisted, **version 154**) | `src/store/useDesignStore.ts` |
+| Store (persisted, **version 155**) | `src/store/useDesignStore.ts` |
 | Colour maths (DOM-free) | `src/lib/color/` (`apca.ts`, `gamut.ts`, `cvd.ts`, `audit.ts`), `src/lib/colorUtils.ts` |
 | Semantic roles (Categorical, the only architecture) | `src/lib/semanticArchitectures.ts` (`CATEGORICAL_ROLES`), `src/lib/roleNames.ts` |
 | Dimensions, radius, spacing, sizes, grid | `src/lib/dimensions.ts`, `src/lib/layoutTokens.ts` |
@@ -152,6 +152,7 @@ One line each. Detail: search the archive or the plan named.
   `spec/storybook-families.json`; a family's parts open from its Anatomy section). Blocks live inside
   Components as the Elements · Blocks switch (`BlocksView`, `blocks/blockRegistry.tsx`); a new block story needs an entry there
   (`platformBlocks.test.ts`).
+- **Preview canvas:** component and block pages share `docs/PreviewStage.tsx`: opens fitted, zoom reads true pixels, pan, expand; one header row, Elements · Blocks then find · Storybook · Figma (`docs/stageActions.tsx`); a block's Frame also sets its layout.
 - **Configurator UI:** top bar About · Generator · Components · Docs; Generator rail
   Home · Board · Variables · Code · Components; right inspector; ship doors CSS · Figma · Agent.
   Open beta: everything open, 5 brands per system (`openBeta.ts`). Accounts keep systems in the cloud.

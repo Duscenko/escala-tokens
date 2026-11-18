@@ -381,6 +381,85 @@ export function traceElement(t: PreviewTokens, el: Element): ElementTrace | null
   return traceRecipe(t, key, axesOf(root, key))
 }
 
+// ── A block's own box ──────────────────────────────────────────────────────
+// A block's card (the sign-in panel, a pricing card) is no recipe component: it is
+// the block's own frame, written as token references in its inline style. So the
+// trace READS that style, declaration by declaration: nothing is measured or guessed.
+
+let refsByVar: Map<string, string> | null = null
+/** CSS variable → the token it belongs to, from every length the recipes name. */
+function refOfVar(cssVar: string): string | null {
+  if (!refsByVar) {
+    refsByVar = new Map()
+    for (const [ref] of JSON.stringify(COMPONENT_RECIPES).matchAll(/\b(?:radius|spacing|stroke)\.[a-z0-9-]+/g)) refsByVar.set(cssVarOf(ref), ref)
+  }
+  const known = refsByVar.get(cssVar)
+  if (known) return known
+  const m = cssVar.match(/^--(color|radius|spacing|stroke)-(.+)$/)
+  if (!m) return null
+  return m[1] === 'color' ? null : `${m[1]}.${m[2]}`
+}
+
+/** `--color-surface-layer-2` → `color.surface.layer-2`, through the roles on screen. */
+function colorRefOfVar(t: PreviewTokens, cssVar: string): string | null {
+  const id = Object.keys(t.archTokens ?? {}).find((key) => `--color-${key.replace(/\./g, '-')}` === cssVar)
+  return id ? `color.${id}` : null
+}
+
+const BOX_DECLARATIONS: { css: RegExp; prop: RecipeProp; label?: string }[] = [
+  { css: /^background(-color)?$/, prop: 'fill' },
+  { css: /^border(-(top|right|bottom|left))?(-color)?$/, prop: 'stroke' },
+  { css: /^border(-(top|right|bottom|left))?(-width)?$/, prop: 'strokeWidth' },
+  { css: /^border-radius$/, prop: 'radius' },
+  { css: /^padding(-inline)?$/, prop: 'paddingX' },
+  { css: /^padding(-block)?$/, prop: 'paddingY' },
+  { css: /^padding-top$/, prop: 'paddingTop' },
+  { css: /^padding-bottom$/, prop: 'paddingBottom' },
+  { css: /^padding-right$/, prop: 'paddingRight' },
+  { css: /^gap$/, prop: 'gap' },
+  { css: /^box-shadow$/, prop: 'shadow' },
+]
+
+function boxRows(t: PreviewTokens, el: Element, slot: string): TraceRow[] {
+  const rows: TraceRow[] = []
+  const seen = new Set<string>()
+  for (const declaration of (el.getAttribute('style') ?? '').split(';')) {
+    const at = declaration.indexOf(':')
+    if (at < 0) continue
+    const name = declaration.slice(0, at).trim().toLowerCase()
+    const vars = [...declaration.slice(at + 1).matchAll(/var\((--[\w-]+)/g)].map((m) => m[1])
+    for (const { css, prop } of BOX_DECLARATIONS) {
+      if (!css.test(name)) continue
+      for (const cssVar of vars) {
+        const color = colorRefOfVar(t, cssVar)
+        const wantsColor = prop === 'fill' || prop === 'stroke' || prop === 'shadow'
+        if (wantsColor !== Boolean(color)) continue
+        const ref = color ?? refOfVar(cssVar)
+        if (!ref) continue
+        const key = `${slot}|${prop}|${ref}`
+        if (seen.has(key)) continue
+        seen.add(key)
+        const resolved = resolveValue(t, ref)
+        rows.push({ key, slot, prop, label: PROP_LABEL[prop], kind: kindOf(ref), ref, cssVar, value: resolved.value, pickId: pickIdOf(ref), facets: resolved.facets })
+      }
+    }
+  }
+  return rows.sort((a, b) => PROP_ORDER.indexOf(a.prop as RecipeProp) - PROP_ORDER.indexOf(b.prop as RecipeProp))
+}
+
+/** The trace of a block's own box and the regions it pads (`header-area`, `body`), or
+ *  null for an element that is a recipe component (a Modal traces through its recipe). */
+export function traceBlockBox(t: PreviewTokens, el: Element): ElementTrace | null {
+  if (!el.matches?.('[data-block]:not([data-escala])')) return null
+  const slots: TraceSlot[] = [{ slot: 'root', rows: boxRows(t, el, 'root') }]
+  for (const part of Array.from(el.children)) {
+    const name = part.getAttribute('data-part')
+    if (name) slots.push({ slot: name, rows: boxRows(t, part, name) })
+  }
+  const filled = slots.filter((s) => s.rows.length)
+  return filled.length ? { component: el.getAttribute('data-block') ?? 'Block', axes: {}, slots: filled } : null
+}
+
 /** Which anatomy slot the node under the pointer belongs to — `label` for the
  *  text span of a Badge, `root` for the badge itself. */
 export function slotUnder(el: Element, hit: Element | null, recipeKey: string): string | null {

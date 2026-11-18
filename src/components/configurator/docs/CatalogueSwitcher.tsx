@@ -20,7 +20,17 @@ function Chevron({ dir }: { dir: 'left' | 'right' | 'down' }) {
   return <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden><path d={d} /></svg>
 }
 
-export function CatalogueSwitcher({ groups, currentId, onPick, noun }: {
+/** A step past the end of this list, into the next catalogue (Elements → Blocks). */
+export interface CatalogueBridge { label: string; hint: string; onGo: () => void }
+
+const BRIDGE_BTN =
+  'flex h-8 items-center gap-1 rounded-lg border border-line-strong bg-surface px-2 text-caption font-medium text-fg transition-colors hover:bg-elevated focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50'
+
+export function CatalogueSwitcher({ groups, currentId, onPick, noun, bridgePrev, bridgeNext }: {
+  /** Shown on the first page instead of a dead ‹. */
+  bridgePrev?: CatalogueBridge
+  /** Shown on the last page instead of a dead ›. */
+  bridgeNext?: CatalogueBridge
   groups: SwitcherGroup[]
   currentId: string
   onPick: (id: string) => void
@@ -68,11 +78,20 @@ export function CatalogueSwitcher({ groups, currentId, onPick, noun }: {
 
   return (
     <div className="flex items-center gap-1">
+      {!prev && bridgePrev ? (
+        <HintTip label={bridgePrev.hint}>
+          <button type="button" className={BRIDGE_BTN} onClick={bridgePrev.onGo}>
+            <Chevron dir="left" />
+            {bridgePrev.label}
+          </button>
+        </HintTip>
+      ) : (
       <HintTip label={prev ? `${t('Previous')}: ${prev.label}` : t('Previous')}>
         <button type="button" className={ICON_BTN} aria-label={t('Previous')} aria-disabled={!prev || undefined} onClick={() => prev && go(prev.id)}>
           <Chevron dir="left" />
         </button>
       </HintTip>
+      )}
       <Popover.Root open={open} onOpenChange={(o) => { setOpen(o); if (!o) setQuery('') }}>
         <Popover.Trigger asChild>
           <button
@@ -80,6 +99,10 @@ export function CatalogueSwitcher({ groups, currentId, onPick, noun }: {
             aria-label={label}
             className="flex h-8 max-w-[220px] items-center gap-1.5 rounded-lg border border-line px-2.5 text-caption font-medium text-fg transition-colors hover:bg-surface focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50 data-[state=open]:bg-surface"
           >
+            <svg width="13" height="13" viewBox="0 0 14 14" fill="none" aria-hidden className="flex-shrink-0 text-fg-faint">
+              <circle cx="6" cy="6" r="4.5" stroke="currentColor" strokeWidth="1.4" />
+              <path d="M9.5 9.5L12.5 12.5" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
+            </svg>
             <span className="truncate">{current?.label ?? label}</span>
             {index >= 0 && <span className="tabular-nums text-mini font-normal text-fg-faint">{index + 1}/{flat.length}</span>}
             <span className="text-fg-faint"><Chevron dir="down" /></span>
@@ -137,11 +160,20 @@ export function CatalogueSwitcher({ groups, currentId, onPick, noun }: {
           </Popover.Content>
         </Popover.Portal>
       </Popover.Root>
+      {!next && bridgeNext ? (
+        <HintTip label={bridgeNext.hint}>
+          <button type="button" className={BRIDGE_BTN} onClick={bridgeNext.onGo}>
+            {bridgeNext.label}
+            <Chevron dir="right" />
+          </button>
+        </HintTip>
+      ) : (
       <HintTip label={next ? `${t('Next')}: ${next.label}` : t('Next')}>
         <button type="button" className={ICON_BTN} aria-label={t('Next')} aria-disabled={!next || undefined} onClick={() => next && go(next.id)}>
           <Chevron dir="right" />
         </button>
       </HintTip>
+      )}
     </div>
   )
 }

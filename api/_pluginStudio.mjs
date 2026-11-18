@@ -3315,6 +3315,8 @@ var init_themePresets = __esm({
     DARK_DEPTH = {
       "surface.layer-1": { dark: "{neutral-dark.3}" },
       "surface.layer-2": { dark: "{neutral-dark.4}" },
+      "surface.muted": { dark: "{neutral-dark.5}" },
+      "surface.muted-hover": { dark: "{neutral-dark.6}" },
       "content.subtle": { dark: "{neutral-dark.10}" }
     };
     A_DEFAULT_L = "{black-a.3}";
@@ -3833,6 +3835,9 @@ var init_themePresets = __esm({
         semantics: {
           ...softBorders,
           "surface.layer-2": { dark: "{neutral-dark.5}" },
+          "surface.muted": { dark: "{neutral-dark.6}" },
+          "surface.muted-hover": { dark: "{neutral-dark.7}" },
+          "surface.raised": { dark: "{neutral-dark.7}" },
           "action.secondary.default": { dark: "{neutral-dark.7}" },
           "action.secondary.hover": { dark: "{neutral-dark.8}" },
           "action.secondary.pressed": { dark: "{neutral-dark.9}" }
@@ -14809,6 +14814,24 @@ function liftSecondaryAboveLayer2V152(state2) {
     });
   }
 }
+function liftTrackAboveLayer2V155(state2) {
+  const cat = state2?.architectureOverrides?.categorical;
+  if (!cat || typeof cat !== "object") return;
+  const layer2 = cat["surface.layer-2"];
+  if (!layer2 || typeof layer2 !== "object") return;
+  for (const [mode, ref] of Object.entries(layer2)) {
+    if (!mode.endsWith("::dark") || typeof ref !== "string") continue;
+    const match = /^\{neutral-dark\.(\d+)\}$/.exec(ref);
+    if (!match || Number(match[1]) < 4) continue;
+    const step = Number(match[1]);
+    if (cat["surface.muted"]?.[mode] || cat["surface.muted-hover"]?.[mode]) continue;
+    cat["surface.muted"] = { ...cat["surface.muted"] ?? {}, [mode]: `{neutral-dark.${Math.min(12, step + 1)}}` };
+    cat["surface.muted-hover"] = { ...cat["surface.muted-hover"] ?? {}, [mode]: `{neutral-dark.${Math.min(12, step + 2)}}` };
+    if (step + 1 >= 6 && !cat["surface.raised"]?.[mode]) {
+      cat["surface.raised"] = { ...cat["surface.raised"] ?? {}, [mode]: `{neutral-dark.${Math.min(12, step + 2)}}` };
+    }
+  }
+}
 function renameSemanticKeys(map) {
   if (!map || typeof map !== "object") return map;
   const out = {};
@@ -15964,7 +15987,7 @@ var init_useDesignStore = __esm({
         }),
         {
           name: "scalable-designs-store",
-          version: 154,
+          version: 155,
           migrate: (persisted, version) => {
             if (persisted) {
               delete persisted.styleDirection;
@@ -17859,6 +17882,12 @@ var init_useDesignStore = __esm({
               addMotionRoles(persisted);
               if (Array.isArray(persisted.savedSystems)) {
                 for (const sys of persisted.savedSystems) addMotionRoles(sys?.snapshot);
+              }
+            }
+            if (version < 155) {
+              liftTrackAboveLayer2V155(persisted);
+              if (Array.isArray(persisted.savedSystems)) {
+                for (const sys of persisted.savedSystems) liftTrackAboveLayer2V155(sys?.snapshot);
               }
             }
             if (version < 133) {

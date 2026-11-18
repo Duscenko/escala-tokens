@@ -5,7 +5,7 @@ import FoundationSwitchStrip from './FoundationSwitchStrip'
 import { WorkspaceSaveBar } from './ThemeSaveBar'
 import { INSPECTOR_WIDTH } from './WorkspaceInspector'
 import { INSPECTOR_TABS_H } from './themeWorkspaceLayout'
-import { BLOCKS, BLOCK_GROUPS, blocksIn, matchesBlock, type BlockDef } from './blocks/blockRegistry'
+import { LISTED_BLOCKS, BLOCK_GROUPS, blocksIn, matchesBlock, type BlockDef } from './blocks/blockRegistry'
 
 const ROW_ACTIVE = 'border-line-strong bg-app text-fg font-medium shadow-[0_2px_12px_-6px_rgba(0,0,0,0.24)]'
 const ROW_IDLE = 'border-transparent text-fg-muted hover:bg-elevated hover:text-fg'
@@ -125,7 +125,7 @@ export default function BlocksRail({
               <rect x="9" y="9" width="5" height="5" rx="1.2" />
             </svg>
             <span className="min-w-0 flex-1 truncate">{t('All blocks')}</span>
-            <span className="text-caption text-fg-faint">{BLOCKS.length}</span>
+            <span className="text-caption text-fg-faint">{LISTED_BLOCKS.length}</span>
           </button>
         )}
 
