@@ -10539,7 +10539,7 @@
             "default": {
               "root": {
                 "height": "size.control",
-                "font": "type.placeholder"
+                "font": "type.body-md"
               },
               "icon": {
                 "width": "icon.medium",
@@ -10557,7 +10557,7 @@
             "sm": {
               "root": {
                 "height": "size.compact",
-                "font": "type.placeholder"
+                "font": "type.body-md"
               },
               "icon": {
                 "width": "icon.small",
@@ -30453,7 +30453,7 @@
           "values": {
             "default": {
               "title": {
-                "font": "type.heading-sm"
+                "font": "type.heading-2xs"
               },
               "description": {
                 "font": "type.body-md"
@@ -30465,7 +30465,7 @@
             },
             "lg": {
               "title": {
-                "font": "type.heading-md"
+                "font": "type.heading-xs"
               },
               "description": {
                 "font": "type.body-md"

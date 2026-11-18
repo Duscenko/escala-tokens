@@ -10401,7 +10401,7 @@ var init_forms = __esm({
         })),
         part({ Size: INPUT_SIZES }, (size) => ({
           // Every Type follows the Size (2026-11-18). The file binds the text to `size/text-md` · `text-lg` primitives; these roles carry the same values.
-          root: { height: INPUT_GEOMETRY[size], font: size === "lg" ? "type.body-lg" : "type.placeholder" },
+          root: { height: INPUT_GEOMETRY[size], font: size === "lg" ? "type.body-lg" : "type.body-md" },
           icon: { width: INPUT_GLYPH[size], height: INPUT_GLYPH[size] },
           // The select addon's caret is Size/icon-sm at every size.
           'icon[data-icon="chevron"]': { width: "icon.small", height: "icon.small" },
@@ -11380,7 +11380,7 @@ var init_surfaces = __esm({
           trailing: { gap: "spacing.gap-control" }
         })),
         part({ Size: MODAL_SIZES }, (size) => ({
-          title: { font: size === "lg" ? "type.heading-md" : "type.heading-sm" },
+          title: { font: size === "lg" ? "type.heading-xs" : "type.heading-2xs" },
           // The file's ModalHeader set draws the description at Type/body-md in BOTH sizes (header 53 / 58 tall; it was body-sm at
           // default when the Modal was first built, 2026-11-13).
           description: { font: "type.body-md" },

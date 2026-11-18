@@ -21,11 +21,12 @@
     "page": "Modal (✓) (D)",
     "pageNodeId": "931:87046",
     "set": "ModalFooter",
-    "variants": 4,
+    "variants": 6,
     "axes": {
       "Layout": [
         "inline",
-        "stacked"
+        "stacked",
+        "equal"
       ],
       "Size": [
         "default",

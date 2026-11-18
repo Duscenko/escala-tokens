@@ -21,7 +21,7 @@
     "page": "Input (✓) (D) ",
     "pageNodeId": "4:10609",
     "set": "Input",
-    "variants": 126,
+    "variants": 222,
     "axes": {
       "Size": [
         "default",
@@ -243,8 +243,8 @@
     ],
     "type": [
       "type.body-lg",
-      "type.caption",
-      "type.placeholder"
+      "type.body-md",
+      "type.caption"
     ]
   },
   "usage": "Wrap it in a Field with a FieldLabel. Pick the type for the value it holds (phone, currency, password, url…); any other HTML type works on the default layout. For an add-on the types do not cover, use Input Group.",

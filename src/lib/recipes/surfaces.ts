@@ -75,7 +75,7 @@ export const MODAL_HEADER: ComponentRecipe = {
       trailing: { gap: 'spacing.gap-control' },
     })),
     part({ Size: MODAL_SIZES }, (size) => ({
-      title: { font: size === 'lg' ? 'type.heading-md' : 'type.heading-sm' },
+      title: { font: size === 'lg' ? 'type.heading-xs' : 'type.heading-2xs' },
       // The file's ModalHeader set draws the description at Type/body-md in BOTH sizes (header 53 / 58 tall; it was body-sm at
       // default when the Modal was first built, 2026-11-13).
       description: { font: 'type.body-md' },

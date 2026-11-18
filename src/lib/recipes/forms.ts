@@ -73,7 +73,7 @@ export const INPUT: ComponentRecipe = {
     })),
     part({ Size: INPUT_SIZES }, (size) => ({
       // Every Type follows the Size (2026-11-18). The file binds the text to `size/text-md` · `text-lg` primitives; these roles carry the same values.
-      root: { height: INPUT_GEOMETRY[size], font: size === 'lg' ? 'type.body-lg' : 'type.placeholder' },
+      root: { height: INPUT_GEOMETRY[size], font: size === 'lg' ? 'type.body-lg' : 'type.body-md' },
       icon: { width: INPUT_GLYPH[size], height: INPUT_GLYPH[size] },
       // The select addon's caret is Size/icon-sm at every size.
       'icon[data-icon="chevron"]': { width: 'icon.small', height: 'icon.small' },

@@ -24,8 +24,8 @@
     "variants": 360,
     "axes": {
       "Appearance": [
-        "white",
-        "brand"
+        "outline",
+        "solid"
       ],
       "Brand": [
         "Google",

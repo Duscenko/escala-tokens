@@ -139,8 +139,8 @@
     ],
     "type": [
       "type.body-md",
-      "type.heading-md",
-      "type.heading-sm"
+      "type.heading-2xs",
+      "type.heading-xs"
     ]
   },
   "usage": "Inside a Modal. Align sets the layout; vertical-center suits confirmations and has no trailing slot. Never hide the title: it is the dialog name.",

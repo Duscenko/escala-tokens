@@ -1,14 +1,15 @@
 import * as React from 'react'
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { expect, screen, userEvent, waitFor, within } from 'storybook/test'
-import { AuthSignInPhone, AUTH_CONTAINERS, AUTH_STATUSES, type AuthContainer, type AuthStatus } from '../../../../src/components/escala-ui/blocks/auth'
+import { AuthSignInPhone, AUTH_CONTAINERS, AUTH_LAYOUTS, authPlacement, type AuthLayout, AUTH_STATUSES, type AuthContainer, type AuthStatus } from '../../../../src/components/escala-ui/blocks/auth'
 import { PortalScopeContext } from '../../../../src/components/escala-ui/portal-scope'
 
-/** Story args = the Figma `AuthSignInPhone` set (Auth page) and its approved flow (16 Nov): `Container` card · plain. `Status` is the state the
+/** Story args = the Figma `AuthSignInPhone` set (Auth page) and its approved flow (16 Nov): `Container` card · plain × `Layout` stacked · inline (inline only on plain). `Status` is the state the
  *  form can reach (code only): idle · invalid · loading · success. The block is built from escala-ui components and role tokens alone; the
  *  country picker is an anchored Popover on every viewport. */
 interface Args {
   container: AuthContainer
+  layout: AuthLayout
   status: AuthStatus
 }
 
@@ -18,10 +19,11 @@ const meta: Meta<Args> = {
   title: 'Blocks/Auth/SignInPhone',
   tags: ['stage:storybook'],
   parameters: { layout: 'padded' },
-  render: (args) => <AuthSignInPhone container={args.container} status={args.status} />,
-  args: { container: 'card', status: 'idle' },
+  render: (args) => <AuthSignInPhone {...authPlacement(args.container, args.layout)} status={args.status} />,
+  args: { container: 'card', layout: 'stacked', status: 'idle' },
   argTypes: {
     container: { name: 'Container', control: 'select', options: [...AUTH_CONTAINERS] },
+    layout: { name: 'Layout', control: 'select', options: [...AUTH_LAYOUTS], if: { arg: 'container', eq: 'plain' }, description: 'inline: the desktop page. Modals and phones stay stacked.' },
     status: { name: 'Status', control: 'select', options: [...AUTH_STATUSES], description: 'The state the form is in: idle · invalid · loading · success.' },
   },
 }
@@ -117,7 +119,7 @@ export const Motion: Story = {
           <button onClick={() => setRun((n) => n + 1)}>Replay mount</button>
           <button onClick={() => setStatus((s) => (s === 'invalid' ? 'idle' : 'invalid'))}>Toggle error</button>
         </div>
-        <AuthSignInPhone key={run} container={args.container} status={status} defaultCountry="FR" defaultPhone="6 12" />
+        <AuthSignInPhone key={run} {...authPlacement(args.container, args.layout)} status={status} defaultCountry="FR" defaultPhone="6 12" />
       </div>
     )
   },
@@ -144,3 +146,12 @@ function Phone({ keyboard }: { keyboard: boolean }) {
 }
 export const Mobile: Story = { render: () => <Phone keyboard={false} />, parameters: { layout: 'padded' }, globals: { dimensions: 'mobile' } }
 export const MobileKeyboard: Story = { render: () => <Phone keyboard />, parameters: { layout: 'padded' }, globals: { dimensions: 'mobile' } }
+
+/** The desktop page: `plain` + `inline`. */
+export const DesktopPage: Story = { name: 'Desktop page', render: () => <AuthSignInPhone container="plain" layout="inline" /> }
+
+/** The mobile page: `plain` + `stacked`. */
+export const MobilePage: Story = { name: 'Mobile page', render: () => <AuthSignInPhone container="plain" layout="stacked" /> }
+
+/** The modal: `card` + `stacked`. */
+export const ModalCard: Story = { name: 'Modal', render: () => <AuthSignInPhone container="card" layout="stacked" /> }
