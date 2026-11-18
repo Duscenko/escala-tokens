@@ -72,6 +72,8 @@ export interface BlockDef {
   /** The block's Layout follows the stage's frame (Mobile and Tablet draw `mobile`), so it has no Layout control of its
    *  own: two switches for one question disagreed on screen. */
   responsive?: boolean
+  /** Wide on a desktop, but a phone draws only its plain content: that content keeps the page's inset there. */
+  phoneInset?: boolean
   /** A complementary piece of another block (`<Group>/<Name>`): shown on that block's page, not listed on its own. */
   partOf?: string
   /** Overlay blocks: the real dialog (scrim, focus trap, Escape). */
@@ -125,7 +127,7 @@ const DEFS: Def[] = [
   auth('OTPVerification', 'Asks for the one-time code sent by email or SMS.', AuthOTPVerification),
   auth('SignIn', 'Email and password sign-in, with social sign-in and a link to sign up.', AuthSignIn),
   { group: 'Auth', name: 'SignInPasskey', description: 'Email-first sign-in with a passkey and social providers, in a tray modal.', wide: false, controls: [], render: () => <AuthSignInPasskey />, contractName: 'AuthSignInPasskey' },
-  { group: 'Auth', name: 'Split', description: 'A brand panel beside any Auth block, for a full sign-in page.', wide: true, controls: [], render: () => <AuthSplit><AuthSignIn container="plain" /></AuthSplit>, contractName: 'AuthSplit' },
+  { group: 'Auth', name: 'Split', description: 'A brand panel beside any Auth block, for a full sign-in page.', wide: true, phoneInset: true, controls: [], render: () => <AuthSplit><AuthSignIn container="plain" /></AuthSplit>, contractName: 'AuthSplit' },
   auth('SignInPhone', 'Sign-in with a phone number and its country code.', AuthSignInPhone),
   auth('SignUp', 'Creates an account: name, email, password and the terms.', AuthSignUp),
   auth('SocialSignIn', 'Sign-in with social providers only.', AuthSocialSignIn, false),
@@ -187,6 +189,13 @@ export function blocksIn(group: BlockGroup): BlockDef[] {
 /** The complementary pieces shown on a block's page. */
 export function partsOf(block: BlockDef): BlockDef[] {
   return BLOCKS.filter((b) => b.partOf === block.id)
+}
+
+/** The values a block draws with on the stage. The frame is the one switch for the viewport: Tablet and Mobile draw the block's
+ *  mobile layout. A block whose own `layout` is a control (Auth: stacked · inline) keeps what the reader picked. */
+export function stageBlockValues(block: Pick<BlockDef, 'controls'>, values: Record<string, string>, frame: string): Record<string, string> {
+  if (block.controls.some((c) => c.key === 'layout')) return values
+  return { ...values, layout: frame === 'tablet' || frame === 'mobile' ? 'mobile' : 'desktop' }
 }
 
 export function blockDefaults(b: BlockDef): Record<string, string> {

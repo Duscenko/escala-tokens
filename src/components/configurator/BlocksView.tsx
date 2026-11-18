@@ -35,8 +35,9 @@ import { PickerField } from '../ui/PickerField'
 import { InspectorModeProvider, InspectorOverlay, inspectGroupAttrs } from '../preview/artefacts/TokenInspector'
 import SemanticTokenDrawer from './SemanticTokenGroups'
 import ThemeQuickSettingsRail, { type QuickPanelFoundation } from './ThemeQuickSettingsRail'
+import { AuthDeviceFrameContext } from '../escala-ui/blocks/auth'
 import { DESKTOP_FRAME, DesktopWindow, PHONE_FRAME, PhoneFrame, TABLET_FRAME } from '../escala-ui/blocks/frames'
-import { BLOCK_GROUPS, LISTED_BLOCKS, blockDefaults, blocksIn, matchesBlock, partsOf, type BlockDef } from './blocks/blockRegistry'
+import { BLOCK_GROUPS, LISTED_BLOCKS, blockDefaults, blocksIn, matchesBlock, partsOf, stageBlockValues, type BlockDef } from './blocks/blockRegistry'
 
 /** The width a wide block is laid out at before a card scales it down. */
 const THUMB_LAYOUT_WIDTH = 1200
@@ -47,6 +48,9 @@ const BARE_LAYOUT_WIDTH = 560
 /** Fit never draws a bare block above this: at 1:1 a sign-in card sits in the reader's face. */
 const BARE_FIT_CAP = 0.75
 const FRAME_LAYOUT_WIDTH: Record<GridViewport, number> = { desktop: DESKTOP_FRAME.width, tablet: TABLET_FRAME.width, mobile: PHONE_FRAME.width }
+/** The viewport an Auth block answers to on the stage: the frame's, never the window the platform runs in. */
+const PHONE_DEVICE = { tabletUp: false }
+const WIDE_DEVICE = { tabletUp: true }
 
 const frameIcon = (d: string) => (
   <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden><path d={d} /></svg>
@@ -66,13 +70,14 @@ function FramedBlock({ block, values, frame }: { block: BlockDef; values: Record
   if (block.mockup && frame !== 'tablet') return <>{block.mockup(values, layout)}</>
   // A plain block has no card of its own: it sits straight on the page.
   const onPage = block.wide || values.container === 'plain'
+  const edgeToEdge = block.wide && !(block.phoneInset && frame === 'mobile')
   const page = `var(${cssVarOf(onPage ? 'color.surface.page' : 'color.surface.layer-1')})`
   const screen: CSSProperties = {
     flexDirection: 'column', alignItems: 'stretch', overflowY: 'auto', scrollbarWidth: 'none', background: page,
-    ...(block.wide ? null : { padding: `var(${cssVarOf('spacing.inset-surface')})` }),
+    ...(edgeToEdge ? null : { padding: `var(${cssVarOf('spacing.inset-surface')})` }),
     ...(frame === 'mobile' ? { paddingBottom: 34 } : null),
   }
-  const content = block.wide
+  const content = edgeToEdge
     ? <div style={{ flexShrink: 0 }}>{block.render(values)}</div>
     : <div style={{ margin: 'auto 0', flexShrink: 0, display: 'flex', justifyContent: 'center', minWidth: 0 }}>{block.render(values)}</div>
   if (frame === 'mobile') return <PhoneFrame label={`${block.name} in a phone`} screen={screen}>{content}</PhoneFrame>
@@ -301,8 +306,7 @@ function BlockPage({ block, onSelect, previewTheme, onOpenComponent, onInspectRo
   const stageRef = useRef<HTMLDivElement>(null)
   useInspectMarkers(stageRef, inspecting)
 
-  // Frame is the one switch for the viewport: Tablet and Mobile draw the block's mobile layout.
-  const stageValues = { ...values, layout: frame === 'tablet' || frame === 'mobile' ? 'mobile' : 'desktop' }
+  const stageValues = stageBlockValues(block, values, frame)
   const frameOptions: CanvasFrameOption<StageFrame>[] = ([...(block.wide || block.mockup || plain ? [] : ['canvas']), 'desktop', 'tablet', 'mobile'] as StageFrame[])
     .map((value) => ({ value, icon: FRAME_ICONS[value], label: { canvas: t('Bare canvas'), desktop: t('Desktop'), tablet: t('Tablet'), mobile: t('Mobile') }[value] }))
   const frameSize = frame === 'canvas' ? t('Bare canvas')
@@ -375,7 +379,9 @@ function BlockPage({ block, onSelect, previewTheme, onOpenComponent, onInspectRo
           >
             <RecipeScope t={tokens}>
               <div ref={stageRef} {...inspectGroupAttrs(inspecting)} className="relative flex flex-col">
-                <FramedBlock block={block} values={stageValues} frame={frame} />
+                <AuthDeviceFrameContext.Provider value={frame === 'mobile' ? PHONE_DEVICE : WIDE_DEVICE}>
+                  <FramedBlock block={block} values={stageValues} frame={frame} />
+                </AuthDeviceFrameContext.Provider>
               </div>
             </RecipeScope>
           </PreviewStage>
