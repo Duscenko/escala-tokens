@@ -191,6 +191,7 @@ export type IntentClass =
   | 'ui-component'
   | 'control-boundary'
   | 'control-hairline'
+  | 'dark-soft-border'
   | 'pinned-status-text'
   | 'pressed-label'
   | 'disabled-text'
@@ -221,6 +222,9 @@ export const INTENT_THRESHOLDS: Record<IntentClass, Thresholds> = {
   // The field outline as the owner set it in the Figma file (DEC-2026-11-16-004): Border/control at Black / White Alpha 03,
   // a soft hairline BELOW the 3:1 of WCAG 1.4.11. A visibility floor only, so a regression to nothing still fails.
   'control-hairline': { wcag: 1.4, apcaLc: null },
+  // Escala Dark borders as the owner chose them in the Figma file (DEC-2026-11-18-008): White Alpha 01 · 02 · 03, compared on canvas
+  // with real components. Accepted below 1.4.11 until the high-contrast mode exists (EXC-2026-11-16-001). A floor so a stroke that vanishes still fails.
+  'dark-soft-border': { wcag: 1.05, apcaLc: null },
   // Critical text in Dark as the Figma file pins it (DEC-2026-11-16-006): `Status/critical/content` = Error Dark 10 (#fb493d), read on its
   // own tint at Lc ~42 — under the 60 of `large-text`, over WCAG's 3:1. WCAG only, like `pressed-label`; Light keeps `large-text`.
   'pinned-status-text': { wcag: 3.0, apcaLc: null },
