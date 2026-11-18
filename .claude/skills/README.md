@@ -1,47 +1,31 @@
 # Skills
 
-Agent skills for Escala. Load one when the task is in its territory. A skill is the procedure and the traps, not a second description of the product.
+One system, one skill set. The Escala design system is governed by five **account skills** (in Claude, not in this repo). This folder holds only skills that have no account twin. Never copy an account skill in here: a second copy drifts and gives agents two answers (DEC-2026-11-18-001).
 
-## Figma → code (components)
+## The Escala design system: account skills (canonical)
 
-| Skill | What it does | Writes |
-| --- | --- | --- |
-| [`escala-figma-to-code`](./escala-figma-to-code/) | Builds one component EXACTLY as the Figma file has it: read the set (read-only) → contract → recipe + `escala-ui` component → Storybook with Figma's playground controls → measured against Figma. The file is the only rule and is never edited. | code, Storybook, `design-plans/<x>-contract.md` |
-
-Storybook itself (config, families, docs pages, browser checks, publishing to Vercel `escala-storybook`) lives in the same skill: [`references/storybook.md`](./escala-figma-to-code/references/storybook.md).
-
-## Figma
-
-Escala already builds the library. The plugin in `../escala-figma-plugin` (`src/code.ts`) imports variables and component sets. These skills do not draw a second Button.
-
-```
-Sync now  →  variables in the file (Color Semantics, Dimension Semantics, Typography)
-                │
-                ▼
-Plugin import, Full catalogue  →  every catalogue set, paints bound to semantic variables
-                │
-                ▼
-ds-figma-document  →  the page around each set
-ds-figma-explain   →  boards that explain the system (any time)
-```
-
-| Skill | What it does | Writes |
-| --- | --- | --- |
-| [`ds-figma-component`](./ds-figma-component/) | Gets the catalogue into the file the user named, dressed with that file's variables. The plugin builds the sets. | Figma, `.figma/maps/components.json` |
-| [`ds-figma-document`](./ds-figma-document/) | Lays out the page around a set that already exists: title, description, labelled cell grid, extension tables. | Figma, `.figma/maps/components.json` |
-| [`ds-figma-explain`](./ds-figma-explain/) | Explanatory boards: graphs, spec tables, annotated anatomy, flows. Bound to semantic variables. | Figma |
-
-### Which Figma skill
-
-| You want | Skill |
+| Skill | Owns |
 | --- | --- |
-| Every Escala component in a file, wearing this system's tokens | `ds-figma-component` |
-| The page around a set: description, labels, states | `ds-figma-document` |
-| A state shown without adding a variant axis | `ds-figma-document` — extension tables |
-| A board that explains how something works | `ds-figma-explain` |
+| `escala-governance` | Who changes what, when: one owner per domain (Figma = foundations + anatomy, Storybook = behaviour + code), the 4-step flow, agents, findings, ledger |
+| `escala-architecture` | Every value and name: token tiers, semantic roles, Figma = code naming. Figma ground truth wins |
+| `escala-component-builder` | Structure: reference or Workshop design → reuse inventory → `contract.json` → build |
+| `escala-component-docs` | Documentation pages in the Figma library |
+| `escala-rebind` | Repairs stale variable ids (`TOK-003`) |
 
-The file key comes from the user for this task. Read it from `.figma/manifest.json` → `sources.target` after they confirm it. Never type one, and never reuse a key from another design system.
+They are edited in Claude (Settings → Skills), never here. If one is missing in your session, stop and say so; do not fall back to a skill in this folder.
 
-## Not the Escala path
+## Repo-only skills
 
-`ds-decide` and `ds-component` came in with the Weave template. They author ADRs and `packages/contracts` files this repo does not have. Do not follow them to create an Escala component. Components are `src/lib/componentCatalogue.ts`, mirrored from the plugin.
+| Skill | What it does | Writes |
+| --- | --- | --- |
+| [`escala-figma-to-code`](./escala-figma-to-code/) | Builds one component exactly as the Figma library has it: read the set (read-only) → contract → recipe + `escala-ui` component → Storybook with Figma's playground controls → measured against Figma. Loads `escala-architecture` (account) for names and roles. | code, Storybook, `design-plans/<x>-contract.md` |
+| [`escala-platform-roles`](./escala-platform-roles/) | GENERATED (`npm run gen:escala-skill`). Role catalogue of the Escala Tokens **platform**: default values and brand support for generated systems. Not for the Escala design system itself. | — |
+| [`color-science-core`](./color-science-core/) | Contrast, OKLab, gamut. The only colour math reference | — |
+
+Storybook itself (config, families, docs pages, browser checks, publishing to Vercel `escala-storybook`) lives in [`escala-figma-to-code/references/storybook.md`](./escala-figma-to-code/references/storybook.md).
+
+The other folders (`adapt`, `audit`, `polish`, …) are generic UI-craft skills installed from external sources (`skills-lock.json`). They never override the Escala skills.
+
+## Removed 2026-11-18
+
+`ds-figma-component`, `ds-figma-document`, `ds-figma-explain`, `ds-component`, `ds-decide` and the `.figma/` manifest described the old plugin-first flow (the plugin builds the library, brand modes, a per-task target file). Governance replaced it: the library file is fixed (`7j5zukN5HpihGVJMmyjA20`), components reach it only through the sync agent after approval, and the plugin owns nothing. Their jobs now belong to `escala-component-builder` and `escala-component-docs`.

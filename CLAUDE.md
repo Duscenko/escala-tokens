@@ -58,8 +58,8 @@ About + the phone generator (`MobileThemeSheet.tsx`, picks only, no free inputs)
 | Storybook | `apps/storybook` (stories, `.storybook`), families in `spec/storybook-families.json` |
 | Exports | `src/lib/tokenGenerator.ts` (`TOKEN_SCHEMA_VERSION` **7**), `src/lib/exporters.ts`, `src/lib/figmaCollections/w3cTree.ts`, `src/lib/agentBundle/` |
 | Serverless API | `api/` (`tokens.ts`, `plugin-session.ts`, `account-files.ts`, …) |
-| Agent router | `AGENTS.md`, `llms.txt`, `docs/agent-native/` |
-| Agent skills | `.claude/skills/` (`escala-figma-to-code`, `escala-architecture` — generated, `color-science-core`, …) |
+| Agent router | `AGENTS.md`, `llms.txt`, `docs/agent-native/`; contracts published read-only at `/docs/agent-native/contracts/` (build copy of `spec/contracts/`, `scripts/contracts-publish.ts`) |
+| Agent skills | Escala DS: the five **account** skills (`escala-governance`, `escala-architecture`, `escala-component-builder`, `escala-component-docs`, `escala-rebind`), never copied here. Repo-only in `.claude/skills/`: `escala-figma-to-code`, `escala-platform-roles` (generated, platform defaults), `color-science-core` (DEC-2026-11-18-001) |
 
 Target layout not built yet: `tokens/`, `packages/ui` (`design-plans/packages-ui-extraction.md`);
 until then the per-component contract lives in `spec/contracts/`. Do not report their absence as a bug.
@@ -97,7 +97,7 @@ Deploy: `npx vercel --prod` (web); Storybook is its own Vercel project `escala-s
    palettes with `cvd.validateCategorical()`. The colour layer stays DOM-free.
 6. **Generated files are never hand-edited:** `*Reference.ts`, `*.generated.ts`, `src/generated/*`,
    `spec/figma-components.json`, `spec/contracts/`, `src/lib/pluginVersion.ts`, `api/_pluginStudio.mjs`,
-   `.claude/skills/escala-architecture/`. Regenerate with its `npm run gen:*`.
+   `.claude/skills/escala-platform-roles/`. Regenerate with its `npm run gen:*`.
    After changing a role, also re-read Docs · Color's prose (`foundationDocs.tsx`, guarded by
    `colorDocs.test.ts`) — it once shipped a stale translucent-role count and no Elevation section.
 7. **Store:** a new persisted field bumps `version` with an append-only migration; design fields
