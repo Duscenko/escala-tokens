@@ -242,6 +242,7 @@
       "stroke.divider"
     ],
     "type": [
+      "type.body-lg",
       "type.caption",
       "type.placeholder"
     ]

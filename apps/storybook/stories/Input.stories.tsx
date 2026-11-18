@@ -134,6 +134,60 @@ export const RestingFocused: Story = {
   ),
 }
 
+/** Size × Type, as the Figma DocMatrix draws it: one group per Type, a column per Size, placeholder and filled. */
+export const SizeByType: Story = {
+  name: 'Size × Type',
+  render: () => (
+    <div style={{ display: 'grid', gridTemplateColumns: '120px repeat(3, 260px)', gap: 12, alignItems: 'center' }}>
+      <span />
+      {(['sm', 'default', 'lg'] as const).map((size) => <p key={size} style={{ ...label, margin: 0 }}>{size}</p>)}
+      {INPUT_TYPES.flatMap((type) => (['placeholder', 'filled'] as const).map((value) => (
+        <div key={`${type}-${value}`} style={{ display: 'contents' }}>
+          <p style={{ ...label, margin: 0, textAlign: 'left' }}>{type} · {value}</p>
+          {(['sm', 'default', 'lg'] as const).map((size) => (
+            <Input
+              key={size}
+              size={size}
+              type={type}
+              placeholder={COPY[type].placeholder}
+              defaultValue={value === 'filled' ? COPY[type].filled : undefined}
+              aria-label={`${type} ${size} ${value}`}
+            />
+          ))}
+        </div>
+      )))}
+    </div>
+  ),
+}
+
+/** Size × State for every Type: the glyphs stay `Content/subtle` beside the typed value; only Disabled changes them. */
+export const SizeByTypeStates: Story = {
+  name: 'Size × Type · States',
+  render: () => (
+    <div style={{ display: 'grid', gridTemplateColumns: '120px repeat(5, 220px)', gap: 12, alignItems: 'center' }}>
+      <span />
+      {STATES.map((state) => <p key={state} style={{ ...label, margin: 0 }}>{state}</p>)}
+      {INPUT_TYPES.flatMap((type) => (['sm', 'default', 'lg'] as const).map((size) => (
+        <div key={`${type}-${size}`} style={{ display: 'contents' }}>
+          <p style={{ ...label, margin: 0, textAlign: 'left' }}>{type} · {size}</p>
+          {STATES.map((state) => (
+            <Input
+              key={state}
+              size={size}
+              type={type}
+              forceState={state}
+              disabled={state === 'Disabled'}
+              placeholder={COPY[type].placeholder}
+              defaultValue={COPY[type].filled || undefined}
+              aria-label={`${type} ${size} ${state}`}
+            />
+          ))}
+        </div>
+      )))}
+    </div>
+  ),
+}
+
 /** Every Type, placeholder and filled, at the default size. */
 export const Types: Story = {
   render: () => (

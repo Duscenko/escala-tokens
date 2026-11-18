@@ -299,10 +299,10 @@ describe('Input (Figma)', () => {
     for (const slot of ['text', 'placeholder', 'icon', 'addon']) expect(r[slot].text, slot).toBe('color.content.disabled')
   })
 
-  it('the placeholder reads content.subtle; a typed value, icons and add-ons content.primary', () => {
+  it('the placeholder and the icons read content.subtle; a typed value and add-ons content.primary', () => {
     const r = at({})
-    expect(r.placeholder.text).toBe('color.content.subtle')
-    for (const slot of ['text', 'icon', 'addon']) expect(r[slot].text, slot).toBe('color.content.primary')
+    for (const slot of ['placeholder', 'icon']) expect(r[slot].text, slot).toBe('color.content.subtle')
+    for (const slot of ['text', 'addon']) expect(r[slot].text, slot).toBe('color.content.primary')
   })
 
   it('the Types that lay their strokes out start 1px further in (13, not 12)', () => {

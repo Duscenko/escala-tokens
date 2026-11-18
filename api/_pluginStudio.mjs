@@ -10128,8 +10128,8 @@ function textareaPaint(state2) {
 function datePickerTriggerPaint(state2) {
   const disabled = state2 === "Disabled";
   const out = {
-    icon: { text: c(disabled ? "content.disabled" : "content.secondary") },
-    spinner: { text: c("content.secondary") },
+    icon: { text: c(disabled ? "content.disabled" : "content.subtle") },
+    spinner: { text: c("content.subtle") },
     text: { text: c(disabled ? "content.disabled" : "content.primary") },
     placeholder: { text: c(disabled ? "content.disabled" : "content.subtle") }
   };
@@ -10254,7 +10254,7 @@ function comboboxPaint(state2) {
   const out = {
     text: { text: ink },
     placeholder: { text: c(disabled ? "content.disabled" : "content.subtle") },
-    icon: { text: ink }
+    icon: { text: c(disabled ? "content.disabled" : "content.subtle") }
   };
   if (disabled) out.root = { fill: c("action.disabled.default"), stroke: c("border.control"), halo: NONE };
   else if (state2 === "Invalid") out.root = { fill: c("surface.input"), stroke: c("status.critical.border-strong"), halo: c("status.critical.border") };
@@ -10384,7 +10384,7 @@ var init_forms = __esm({
       defaults: { Size: "default", State: "Default", Type: "default", Value: "placeholder" },
       parts: [
         part({}, () => ({
-          root: { radius: "radius.action", strokeWidth: "stroke.control", gap: "spacing.gap-control", font: "type.placeholder" },
+          root: { radius: "radius.action", strokeWidth: "stroke.control", gap: "spacing.gap-control" },
           divider: { fill: c("border.subtle"), width: "stroke.control" },
           kbd: {
             fill: c("surface.muted"),
@@ -10400,7 +10400,8 @@ var init_forms = __esm({
           root: { paddingX: INPUT_STROKE_IN_LAYOUT.has(type) ? "spacing.inset-control+stroke.control" : "spacing.inset-control" }
         })),
         part({ Size: INPUT_SIZES }, (size) => ({
-          root: { height: INPUT_GEOMETRY[size] },
+          // Every Type follows the Size (2026-11-18). The file binds the text to `size/text-md` · `text-lg` primitives; these roles carry the same values.
+          root: { height: INPUT_GEOMETRY[size], font: size === "lg" ? "type.body-lg" : "type.placeholder" },
           icon: { width: INPUT_GLYPH[size], height: INPUT_GLYPH[size] },
           // The select addon's caret is Size/icon-sm at every size.
           'icon[data-icon="chevron"]': { width: "icon.small", height: "icon.small" },
@@ -10413,7 +10414,8 @@ var init_forms = __esm({
             root: fieldBox(state2),
             text: { text: ink },
             placeholder: { text: c(disabled ? "content.disabled" : "content.subtle") },
-            icon: { text: ink },
+            // Every glyph in the field stays subtle: it never darkens on hover or focus (DEC-2026-11-18-004).
+            icon: { text: c(disabled ? "content.disabled" : "content.subtle") },
             addon: { text: ink }
           };
         })
