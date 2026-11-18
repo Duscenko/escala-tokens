@@ -1,6 +1,6 @@
 # Contrato · FeaturedIcon (de Figma a código)
 
-Fecha: 2026-11-12 · Fuente: set `FeaturedIcon` (`1119:10857`, 96 variantes), leído en solo lectura. **Figma manda.**
+Fecha: 2026-11-12 · Fuente: set `FeaturedIcon` (`1119:10857`, 144 variantes), leído en solo lectura. **Figma manda.**
 Descripción: «Decorative icon in a tinted or solid shape… Hidden from assistive tech (aria-hidden)… ModalHeader nests it (Size default · lg, Shape rounded).»
 
 ## API
@@ -9,7 +9,7 @@ Descripción: «Decorative icon in a tinted or solid shape… Hidden from assist
 | `Icon` INSTANCE_SWAP | `icon/Lightning` (Outline) | `icon` (por defecto el rayo regular de Phosphor) |
 | `Size` default · sm · lg · xl | `default` | `size` |
 | `Variant` default · secondary · critical · success · warning · info | `default` | `variant` |
-| `Appearance` soft · solid | `soft` | `appearance` |
+| `Appearance` soft · solid · gradient | `soft` | `appearance` |
 | `Shape` circle · rounded | `circle` | `shape` |
 
 ## Geometría

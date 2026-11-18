@@ -1316,7 +1316,7 @@ export const COMPONENTS: ComponentDef[] = [
     box: 'gray',
     locks: ['radius', 'size', 'hit', 'motion'],
     description: 'A decorative glyph in a tinted or solid shape: cards, empty states, dialogs, feature lists.',
-    usage: 'Always decorative; the nearby title carries the meaning. A dialog header nests it (default or lg, soft, circle).',
+    usage: 'Always decorative; the nearby title carries the meaning. A dialog header nests it (default or lg, always rounded).',
     // The Figma file's axes, value for value (design-plans/featured-icon-contract.md).
     axes: [
       { name: 'Size', values: ['default', 'sm', 'lg', 'xl'] },
@@ -1594,7 +1594,8 @@ export const COMPONENTS: ComponentDef[] = [
     figmaSets: ['ModalHeader'],
     props: [
       { name: 'title / description', type: 'ReactNode', description: 'Figma Title and Description (DescriptionVisible hides the second).' },
-      { name: 'icon / iconVisible', type: 'ReactNode / boolean', description: 'A FeaturedIcon (soft, circle) before the text.' },
+      { name: 'icon / iconVisible', type: 'ReactNode / boolean', description: 'A FeaturedIcon (always rounded) before the text.' },
+      { name: 'iconVariant / iconAppearance', type: 'FeaturedIconVariant / FeaturedIconAppearance', description: 'The icon\'s tone and appearance: soft by default, gradient on the screen that opens an account.' },
       { name: 'trailing / trailingVisible', type: 'ReactNode / boolean', description: 'Header actions or a count (horizontal only).' },
       { name: 'align', type: "'horizontal' | 'vertical-left' | 'vertical-center'", description: 'Figma Align.' },
     ],

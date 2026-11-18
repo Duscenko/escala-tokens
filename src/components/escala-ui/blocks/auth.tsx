@@ -464,11 +464,11 @@ export function AuthSignInPasskey({ title = 'Welcome back', description = 'Sign 
   )
 }
 
-/** The viewport is at or above the Tablet breakpoint (`--breakpoint-md`). True until measured, so a page opens on its full layout. */
+/** The viewport is at or above the Tablet breakpoint (`--breakpoint-tablet`). True until measured, so a page opens on its full layout. */
 function useTabletUp() {
   const [up, setUp] = React.useState(true)
   React.useEffect(() => {
-    const value = getComputedStyle(document.documentElement).getPropertyValue('--breakpoint-md').trim() || BREAKPOINT_STANDARD.md
+    const value = getComputedStyle(document.documentElement).getPropertyValue('--breakpoint-tablet').trim() || BREAKPOINT_STANDARD.sm
     const query = window.matchMedia(`(min-width: ${value})`)
     const sync = () => setUp(query.matches)
     sync()
@@ -501,14 +501,14 @@ export function AuthSplit({ title = 'One source of tokens. Every surface in sync
       {...props}
     >
       {/* 520 = 4 × spacing-32 + spacing-2. */}
-      <div data-part="media" style={{ flex: '0 0 calc(var(--spacing-32) * 4 + var(--spacing-2))', minWidth: 0, display: 'flex', flexDirection: 'column', justifyContent: 'space-between', gap: v('spacing.gap-section'), padding: page, background: v('color.surface.accent') }}>
+      <div data-part="media" style={{ flex: '0 1 calc(var(--spacing-32) * 4 + var(--spacing-2))', minWidth: 0, display: 'flex', flexDirection: 'column', justifyContent: 'space-between', gap: v('spacing.gap-section'), padding: page, background: v('color.surface.accent') }}>
         <FeaturedIcon size="xl" variant="default" appearance="gradient" shape="rounded" icon={mediaIcon} />
         <div data-part="copy" style={{ display: 'flex', flexDirection: 'column', gap: v('spacing.gap-control') }}>
           <h2 style={{ margin: 0, color: v('color.content.primary'), ...type('heading-lg') }}>{title}</h2>
           <p style={{ margin: 0, color: v('color.content.secondary'), ...type('body-lg') }}>{description}</p>
         </div>
       </div>
-      <div data-part="content" style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: page }}>{content}</div>
+      <div data-part="content" style={{ flex: '1 1 calc(var(--spacing-32) * 3 + var(--spacing-24))', minWidth: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: page }}>{content}</div>
     </section>
   )
 }

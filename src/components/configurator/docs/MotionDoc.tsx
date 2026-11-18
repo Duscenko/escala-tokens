@@ -463,7 +463,7 @@ export const MOTION_DOC: FoundationDoc = {
   ships: {
     json: 'motion · foundationsByTheme[brand].motion',
     css: '--motion-*  (durations · easings · transforms · roles · choreographies, @keyframes motion-*, reduced-motion block)',
-    figma: 'Not in Figma yet — the plugin’s Motion collection is still to come',
+    figma: 'Motion collection: durations, easings, transforms and role/<name>/duration · easing. Figma owns the names, values and curves (DEC-2026-11-18-001)',
   },
   tokenCount: (c) => motionTokenTotal(c.motion),
   sections: [

@@ -33,7 +33,7 @@ const FIELD_FIXED: SlotProps = {
 }
 
 // ── Input ──────────────────────────────────────────────────────────────────
-// The Figma `Input` set (design-plans/input-contract.md, 4:12380, 114 variants):
+// The Figma `Input` set (design-plans/input-contract.md, 4:12380, 222 variants):
 // the box with the text field inside it. `Size` × `State` × `Type` × `Value`, as in
 // the file. The box is the root (fill, edge, halo, height, insets); the <input> is
 // `text`; `icon` is every glyph (leading, trailing, the 16px chevron of a select

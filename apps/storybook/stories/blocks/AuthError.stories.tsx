@@ -19,7 +19,7 @@ const meta: Meta<Args> = {
   args: { container: 'card', layout: 'stacked' },
   argTypes: {
     container: { name: 'Container', control: 'select', options: [...AUTH_CONTAINERS] },
-    layout: { name: 'Layout', control: 'select', options: [...AUTH_LAYOUTS], if: { arg: 'container', eq: 'plain' }, description: 'inline: the desktop page. Modals and phones stay stacked.' },
+    layout: { name: 'Layout', control: 'select', options: [...AUTH_LAYOUTS], description: 'inline: the desktop page, only with Container plain. Modals and phones stay stacked.' },
   },
 }
 export default meta

@@ -37,12 +37,12 @@ el contenido empieza en x 13. Icono y spinner sin variable de tamaño (instancia
 
 | State | Fill | Stroke | Texto | Icono | Halo |
 |---|---|---|---|---|---|
-| Default | `Surface/input` | `Border/control` 1 | placeholder `Content/subtle` · valor `Content/primary` | `Content/secondary` | — |
+| Default | `Surface/input` | `Border/control` 1 | placeholder `Content/subtle` · valor `Content/primary` | `Content/subtle` | — |
 | Hover | `Surface/input` | `Border/control-hover` 1 | igual | igual | — |
 | Focused | `Surface/input` | `Border/focus` **2** (dentro del layout: contenido en x 14, texto 2px más estrecho) | igual | igual | `focus-ring` rect. `Border/ring/default` 2 OUTSIDE |
 | Invalid | `Surface/input` | `Status/critical/border-strong` 1 | igual | igual | **ninguno** |
 | Disabled | `Surface/muted` | `Border/control` 1 | `Content/disabled` | `Content/disabled` | — |
-| Loading | `Surface/input` | `Border/control` 1 | igual que Default | Spinner `Content/secondary` en lugar del icono | — |
+| Loading | `Surface/input` | `Border/control` 1 | igual que Default | Spinner `Content/subtle` en lugar del icono | — |
 
 Sin efectos (drop / inner shadow) en ninguna variante.
 

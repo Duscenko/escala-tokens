@@ -99,7 +99,12 @@
       {
         "name": "icon / iconVisible",
         "type": "ReactNode / boolean",
-        "description": "A FeaturedIcon (soft, circle) before the text."
+        "description": "A FeaturedIcon (always rounded) before the text."
+      },
+      {
+        "name": "iconVariant / iconAppearance",
+        "type": "FeaturedIconVariant / FeaturedIconAppearance",
+        "description": "The icon's tone and appearance: soft by default, gradient on the screen that opens an account."
       },
       {
         "name": "trailing / trailingVisible",

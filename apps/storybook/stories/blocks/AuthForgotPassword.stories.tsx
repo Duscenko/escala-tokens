@@ -21,7 +21,7 @@ const meta: Meta<Args> = {
   args: { container: 'card', layout: 'stacked', status: 'idle', method: 'email' },
   argTypes: {
     container: { name: 'Container', control: 'select', options: [...AUTH_CONTAINERS] },
-    layout: { name: 'Layout', control: 'select', options: [...AUTH_LAYOUTS], if: { arg: 'container', eq: 'plain' }, description: 'inline: the desktop page. Modals and phones stay stacked.' },
+    layout: { name: 'Layout', control: 'select', options: [...AUTH_LAYOUTS], description: 'inline: the desktop page, only with Container plain. Modals and phones stay stacked.' },
     status: { name: 'Status', control: 'select', options: [...AUTH_STATUSES], description: 'The state the form is in: idle · invalid · loading · success.' },
     method: { name: 'Method', control: 'select', options: ['email', 'sms'] },
   },
