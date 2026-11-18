@@ -254,13 +254,13 @@ describe('the categorical catalogue is complete', () => {
     // a fill.
     // DEC-2026-11-16-004: the Figma file is the rule, so the field outline is the soft hairline again (Alpha/03, hover /04).
     expect(label('control')?.light.label).toBe('black-a.3')
-    // DEC-2026-11-18-002: Dark is Alpha/03 in the file, one step under its hover.
-    expect(label('control')?.dark.label).toBe('white-a.3')
+    // DEC-2026-11-18-008: Dark is soft in the file, Alpha/01 at rest, one step under its hover.
+    expect(label('control')?.dark.label).toBe('white-a.1')
     expect(label('control-hover')?.light.label).toBe('black-a.4')
-    expect(label('control-hover')?.dark.label).toBe('white-a.4')
-    // Emphasis keeps the stricter ui-component solve.
+    expect(label('control-hover')?.dark.label).toBe('white-a.2')
+    // Emphasis keeps the stricter ui-component solve in Light; Dark is pinned soft (DEC-2026-11-18-008).
     expect(label('strong')?.light.label).toBe('black-a.7')
-    expect(label('strong')?.dark.label).toBe('white-a.8')
+    expect(label('strong')?.dark.label).toBe('white-a.3')
   })
 
   // The decorative ladder is `black-a`/`white-a` steps 2, 3, 4. Step 1
@@ -272,7 +272,8 @@ describe('the categorical catalogue is complete', () => {
     expect(label('subtle')?.light.label).toBe('black-a.1')
     expect(label('default')?.light.label).toBe('black-a.2')
     expect(label('subtle')?.dark.label).toBe('white-a.1')
-    expect(label('default')?.dark.label).toBe('white-a.2')
+    // In Dark the two rungs share a value on purpose (DEC-2026-11-18-008).
+    expect(label('default')?.dark.label).toBe('white-a.1')
     // And every decorative rung stays lighter (lower alpha step) than the
     // control boundary — a decorative stroke that outweighs the boundary is
     // the bug this split was made to remove, just pointing the other way.

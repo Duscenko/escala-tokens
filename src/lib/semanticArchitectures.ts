@@ -897,15 +897,17 @@ const CATEGORICAL_ROLES: { group: string; key: string; light: string; dark: stri
   // what those parts read off `action.secondary` before it became the
   // secondary CTA alone: a system may darken its secondary button without
   // turning every track black.
-  { group: 'surface', key: 'muted',       light: '{neutral.4}', dark: '{neutral-dark.4}' },
-  { group: 'surface', key: 'muted-hover', light: '{neutral.5}', dark: '{neutral-dark.5}' },
+  // Light moved one step lighter in the file (DEC-2026-11-18-009).
+  { group: 'surface', key: 'muted',       light: '{neutral.3}', dark: '{neutral-dark.4}' },
+  { group: 'surface', key: 'muted-hover', light: '{neutral.4}', dark: '{neutral-dark.5}' },
   // Form background, named separately so a form field has its own token. Light is
   // the page tone; Dark sits one step under its card (DEC-2026-11-18-002).
   { group: 'surface', key: 'input', light: '{neutral.1}', dark: '{neutral-dark.2}' },
   // A part lifted above the track or surface it sits on — the selected segment
-  // of a SegmentedControl. Light takes the form tone; Dark is Gray Dark/04 since
-  // DEC-2026-11-18-002 (was /06, DEC-2026-11-17-003), the same step as `surface.muted`.
-  { group: 'surface', key: 'raised', light: '{neutral.1}', dark: '{neutral-dark.4}' },
+  // of a SegmentedControl. Light takes the form tone; Dark is Gray Dark/06
+  // (DEC-2026-11-17-003, restored by DEC-2026-11-18-009): at /04 it equalled
+  // `surface.muted` and the selected segment disappeared. Invariant: raised ≠ muted in both themes.
+  { group: 'surface', key: 'raised', light: '{neutral.1}', dark: '{neutral-dark.6}' },
   // Accent-tinted row/item selection — one step up from `surface.accent`,
   // the same tone `action.secondary` already uses for a component-level fill.
   // A selected row is the textbook alpha case: it can sit on the page OR on a
@@ -1157,7 +1159,8 @@ const CATEGORICAL_ROLES: { group: string; key: string; light: string; dark: stri
   // APCA Lc 0 (below the algorithm's noise floor) via `check_contrast`.
   // Step 2 is the smallest lift that leaves that floor in light (Lc ~12)
   // while staying decoration — still under `border.strong` (step 7 / 8).
-  { group: 'border', key: 'default',  light: '{black-a.2}', dark: '{white-a.2}' },
+  // Escala Dark borders are soft by owner decision (DEC-2026-11-18-008): `subtle` and `default` share White Alpha/01.
+  { group: 'border', key: 'default',  light: '{black-a.2}', dark: '{white-a.1}' },
   // Lightest decorative rung — a hairline divider, a quiet grouping edge.
   { group: 'border', key: 'subtle',   light: '{black-a.1}', dark: '{white-a.1}' },
   // ── The control boundary — SOLVED on the alpha ladder (`{ui-a:…}` composites
@@ -1183,10 +1186,11 @@ const CATEGORICAL_ROLES: { group: string; key: string; light: string; dark: stri
   // neighbours — and keeps the ui-component solve (black-a.7 / white-a.8).
   // OWNER DECISION 2026-11-16 (DEC-2026-11-16-004): the Figma file is the rule. `Border/control` sits at Black Alpha/03 ·
   // White Alpha/03 and its hover at /04, a soft hairline below the 3:1 of WCAG 1.4.11. Pinned to the file's steps, not solved.
-  // DEC-2026-11-18-002: Dark `Border/control` is White Alpha/03 again, so rest and hover differ (closes COL-003).
-  { group: 'border', key: 'control',       light: '{black-a.3}', dark: '{white-a.3}' },
-  { group: 'border', key: 'control-hover', light: '{black-a.4}', dark: '{white-a.4}' },
-  { group: 'border', key: 'strong',        light: '{ui-a:black-a.5}',  dark: '{ui-a:white-a.5}' },
+  // DEC-2026-11-18-008: Escala Dark is soft: control White Alpha/01, hover /02, strong /03. Rest and hover still differ
+  // (COL-003 stays closed); the 3:1 of WCAG 1.4.11 moves to the future high-contrast mode (EXC-2026-11-16-001).
+  { group: 'border', key: 'control',       light: '{black-a.3}', dark: '{white-a.1}' },
+  { group: 'border', key: 'control-hover', light: '{black-a.4}', dark: '{white-a.2}' },
+  { group: 'border', key: 'strong',        light: '{ui-a:black-a.5}',  dark: '{white-a.3}' },
   // DECORATIVE brand emphasis — a tinted card edge or a grouping stroke. It is
   // NOT a state indicator: anything that says "this control is selected /
   // focused / active" conveys information and falls under WCAG 1.4.11, so it
@@ -1317,14 +1321,14 @@ export const CATEGORICAL_ROLE_COMMENTS: Record<string, string> = {
   'surface.layer-1': '[ROLE: Container Background] Elevation level 1. Cards, panels, grouped content. Must read slightly distinct from surface.page.',
   'surface.layer-2': '[ROLE: Elevated Background] Elevation level 2. Popovers, dropdowns, modals. Pair with box-shadow in CSS — the color step alone does not convey floating.',
   'surface.input': "[ROLE: Form Background] Background for interactive data-entry fields. Ensures content.primary typed by the user stays legible. Same tone as surface.page by design — named separately so forms have their own token.",
-  'surface.raised': "[ROLE: Raised Surface] A part lifted above the track or surface it sits on: the selected segment of a SegmentedControl. Lighter than surface.muted in both themes (Light = surface.input's tone, Dark = action.secondary.default's tone). DEC-2026-11-17-003.",
+  'surface.raised': "[ROLE: Raised Surface] A part lifted above the track or surface it sits on: the selected segment of a SegmentedControl. Lighter than surface.muted in both themes (Light = surface.input's tone, Dark = action.secondary.default's tone). DEC-2026-11-17-003, DEC-2026-11-18-009.",
   'surface.selected': '[ROLE: Active State Background] Subtle fill for mutual selection (e.g. a selected table row). Must guarantee 4.5:1 against content.primary on top.',
   'surface.selected-pressed': '[ROLE: Active State Background Pressed] A pressed soft brand control (Button Soft / Outline pressed). {accent-a.5}, two steps deeper than surface.selected — the brand twin of status.*.surface-pressed.',
   'surface.inverse': '[ROLE: Inverted Background] High-contrast background for tooltips, snackbars and inverse alerts or badges. Always pair with content.inverse (title) and content.inverse-secondary (body, icons). {neutral.12} in both themes: a dark chip in Light, a light one in Dark.',
   'surface.overlay': '[ROLE: Scrim] Semi-transparent layer over surface.page to focus attention on modals (layer-2 surfaces). Ships at 60% black alpha (`{black-a.8}`), same in both themes.',
   'surface.accent': '[ROLE: Accent Wash] Ambient brand-tinted background — a section that leans brand without being an interactive fill. {accent.2} in Light, {accent.4} in Dark (the Figma file is the rule, 2026-11-17).',
-  'surface.muted': "[ROLE: Control Track] Neutral fill of a control's passive part — a Switch's off track, a Slider or Progress track, an OTP segment, a step connector. {neutral.4} in light. Not a button: a secondary CTA uses action.secondary.default.",
-  'surface.muted-hover': '[ROLE: Control Track Hover] Hover twin of surface.muted (a hovered off Switch, a scrollbar thumb). {neutral.5} in light — one step past the track.',
+  'surface.muted': "[ROLE: Control Track] Neutral fill of a control's passive part — a Switch's off track, a Slider or Progress track, an OTP segment, a step connector. {neutral.3} in light. Not a button: a secondary CTA uses action.secondary.default.",
+  'surface.muted-hover': '[ROLE: Control Track Hover] Hover twin of surface.muted (a hovered off Switch, a scrollbar thumb). {neutral.4} in light — one step past the track.',
   'content.primary': '[ROLE: High Contrast Text] Main body and headings. STRICT: must pass WCAG AA (4.5:1) against surface.page and surface.layer-1.',
   'content.secondary': '[ROLE: Medium Contrast Text] Supporting copy and descriptions. STRICT: WCAG AA (4.5:1) against standard surface backgrounds.',
   'content.subtle': '[ROLE: Low Contrast Text] Placeholders and decorative de-emphasis only — not a third readable body tier. Minimum ~3:1; do not convey information.',
@@ -1382,10 +1386,10 @@ export const CATEGORICAL_ROLE_COMMENTS: Record<string, string> = {
   'status.success.border-strong': '[ROLE: Success Control Boundary] Affects validated / success-state form fields. {success.10} — one step lighter than warning/critical; this ramp clears both metrics a full step earlier (3.32:1/Lc60 light, 8.21:1/Lc56 dark).',
   'status.info.border-strong': '[ROLE: Info Control Boundary] Affects informational-state form fields. Light {info.9} = 3.24:1/Lc59. Dark {info.10} = 7.15:1/Lc49 — info.9 fails APCA in dark (Lc 42), one step earlier than error needs.',
   'border.subtle': '[ROLE: Decorative Border 1/3] Affects hairline dividers, table rules, the edge of a quiet grouping. Lightest neutral stroke — {black-a.1} in light, {white-a.1} in dark (the FIXED alpha ladder, so it composites correctly on any surface): 5 %, owner decision 2026-11-16 (DEC-2026-11-16-003). It measures APCA Lc 0 on the dark page, which is accepted: shadow and surface carry the separation. DECORATION: separates regions, carries no state, no contrast floor. If the stroke is the only thing telling the user a control is there, that is border.control.',
-  'border.default': '[ROLE: Decorative Border 2/3] Affects a card edge, a panel boundary, a grouping box. {black-a.2} / {white-a.2} (10 %, owner decision 2026-11-16, DEC-2026-11-16-003). DECORATION, no contrast floor. One step above border.subtle so a panel edge still outranks a hairline. Never the only boundary of a control.',
-  'border.control': '[ROLE: Control Boundary] Affects the resting border of inputs, textareas, selects, checkboxes, radios, switch tracks and outline buttons. {black-a.3} in Light, {white-a.4} in Dark: a soft hairline, below the 3:1 of WCAG 1.4.11 BY OWNER DECISION (DEC-2026-11-16-004 and -006, the Figma file is the rule); a field is identified by its fill and its focus ring, not by this stroke alone.',
-  'border.control-hover': '[ROLE: Control Boundary Hover] Affects the hover state of a control\'s resting (border.control) border. One step past border.control: {black-a.4} in Light, {white-a.4} in Dark (DEC-2026-11-16-004).',
-  'border.strong': '[ROLE: Strong Border] Affects the edge of a grouping or a selected container that must read before its neighbours. Not the field outline — that is border.control. WCAG 1.4.11 + APCA Lc 45 against the page, SOLVED on the alpha ladder ({ui-a:…}): {black-a.7} in light, {white-a.8} in dark for the default system.',
+  'border.default': '[ROLE: Decorative Border 2/3] Affects a card edge, a panel boundary, a grouping box. {black-a.2} in Light (10 %, DEC-2026-11-16-003), {white-a.1} in Dark (5 %, DEC-2026-11-18-008). DECORATION, no contrast floor. In Light one step above border.subtle; in Dark both share a value on purpose. Never the only boundary of a control.',
+  'border.control': '[ROLE: Control Boundary] Affects the resting border of inputs, textareas, selects, checkboxes, radios, switch tracks and outline buttons. {black-a.3} in Light, {white-a.1} in Dark: a soft hairline, below the 3:1 of WCAG 1.4.11 BY OWNER DECISION (DEC-2026-11-16-004 and DEC-2026-11-18-008, the Figma file is the rule); a field is identified by its fill and its focus ring, not by this stroke alone.',
+  'border.control-hover': '[ROLE: Control Boundary Hover] Affects the hover state of a control\'s resting (border.control) border. One step past border.control: {black-a.4} in Light, {white-a.2} in Dark (DEC-2026-11-18-008).',
+  'border.strong': '[ROLE: Strong Border] Affects the edge of a grouping or a selected container that must read before its neighbours. Not the field outline — that is border.control. Light is SOLVED on the alpha ladder ({ui-a:…}) to WCAG 1.4.11 + APCA Lc 45 against the page: {black-a.7} for the default system. Dark is pinned soft at {white-a.3} (DEC-2026-11-18-008).',
   'border.focus': '[ROLE: A11y Focus Ring] The keyboard focus-visible boundary on every interactive element of the default / accent variant. SOLVED per theme ({focus:accent.9}): the first accent tone from 9 that clears WCAG 1.4.11 (3:1) on the page — tone 9 in both themes for the default system. Severity, neutral and inverse variants take their own boundary (status.<sev>.border-strong, border.strong, border.inverse). The translucent halo outside it is border.ring.*.',
   'border.ring.default': '[ROLE: Focus Ring · accent] The 2px focus ring drawn 1px OUTSIDE a focused control, with the page showing in the gap (owner decision 2026-11-17). Accent Alpha/06 in each mode. Used by every default-intent control. Decoration, never the only focus cue and never measured as a boundary; border.focus is the contrast-bearing edge of a field. Neutral controls use border.ring.neutral, critical ones status.critical.ring.',
   'border.ring.neutral': '[ROLE: Focus Ring · neutral] The 2px focus ring, 1px outside a focused neutral (secondary) control. Gray Alpha/06 in each mode, the neutral twin of border.ring.default.',

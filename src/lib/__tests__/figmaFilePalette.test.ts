@@ -28,10 +28,15 @@ const hasInventory = existsSync(INVENTORY)
  * carries it.
  */
 const SINCE_INVENTORY: Record<string, string> = {
-  'Border/default': '{CP:Neutrals/Black Alpha/02} ; {CP:Neutrals/White Alpha/02}',
+  // DEC-2026-11-18-008: Escala Dark borders are soft.
+  'Border/default': '{CP:Neutrals/Black Alpha/02} ; {CP:Neutrals/White Alpha/01}',
   'Border/subtle': '{CP:Neutrals/Black Alpha/01} ; {CP:Neutrals/White Alpha/01}',
-  'Border/control': '{CP:Neutrals/Black Alpha/03} ; {CP:Neutrals/White Alpha/03}',
-  'Border/control-hover': '{CP:Neutrals/Black Alpha/04} ; {CP:Neutrals/White Alpha/04}',
+  'Border/control': '{CP:Neutrals/Black Alpha/03} ; {CP:Neutrals/White Alpha/01}',
+  'Border/control-hover': '{CP:Neutrals/Black Alpha/04} ; {CP:Neutrals/White Alpha/02}',
+  'Border/strong': '{CP:Neutrals/Black Alpha/07} ; {CP:Neutrals/White Alpha/03}',
+  // DEC-2026-11-18-009: the track is lighter in Light.
+  'Surface/muted': '{CP:Neutrals/EscalaDS Gray/03} ; {CP:Neutrals/EscalaDS Gray Dark/04}',
+  'Surface/muted-hover': '{CP:Neutrals/EscalaDS Gray/04} ; {CP:Neutrals/EscalaDS Gray Dark/05}',
   'Status/critical/surface': '{CP:States/EscalaDS/Error/Alpha/03} ; {CP:States/EscalaDS/Error Dark/Alpha/03}',
   // DEC-2026-11-16-006: curated again in the file after DEC-004 — Dark critical text, Dark control border, Light highlight.
   'Status/critical/content': '{CP:States/EscalaDS/Error/11} ; {CP:States/EscalaDS/Error Dark/10}',
@@ -123,11 +128,15 @@ describe.skipIf(!hasInventory)('every Color Semantics role resolves to the Figma
     expect(mismatches).toEqual([])
   })
 
-  // `Surface/raised` is newer than the inventory, so the walk above cannot see it (DEC-2026-11-18-002).
-  it('Surface/raised: Light Accents/01, Dark Gray Dark/04', () => {
+  // `Surface/raised` is newer than the inventory, so the walk above cannot see it (DEC-2026-11-18-009).
+  it('Surface/raised: Light Accents/01, Dark Gray Dark/06, never the track', () => {
     const s = useDesignStore.getState()
     expect(resolvePreviewTokens(s, brand, 'light').archTokens?.['surface.raised']?.toLowerCase()).toBe(FIGMA_FILE_PALETTE.families.accent.light[1])
-    expect(resolvePreviewTokens(s, brand, 'dark').archTokens?.['surface.raised']?.toLowerCase()).toBe(FIGMA_FILE_PALETTE.families.gray.dark[4])
+    expect(resolvePreviewTokens(s, brand, 'dark').archTokens?.['surface.raised']?.toLowerCase()).toBe(FIGMA_FILE_PALETTE.families.gray.dark[6])
+    for (const mode of ['light', 'dark'] as const) {
+      const t = resolvePreviewTokens(s, brand, mode).archTokens
+      expect(t?.['surface.raised']).not.toBe(t?.['surface.muted'])
+    }
   })
 })
 

@@ -221,12 +221,13 @@ export const CURATED_PAIRINGS: Partial<Record<SemanticArchitecture, Pairing[]>> 
     // the surface it's drawn on. Resolves to {black-a.7} = 4.00/Lc67 light,
     // {white-a.8} = 7.29/Lc50 dark for the default system. The ladder is not
     // accent-tinted, so this holds across every seed rather than drifting.
-    { fg: 'border.strong',        bg: 'surface.page', intent: 'ui-component' },
+    // Dark is pinned soft by the owner (DEC-2026-11-18-008).
+    { fg: 'border.strong',        bg: 'surface.page', intent: 'ui-component', intentDark: 'dark-soft-border' },
     // The FIELD outline: WCAG 1.4.11 3:1 (`control-boundary`) — black-a.7
     // light, white-a.6 dark for the default system (the Escala Figma file).
-    { fg: 'border.control',       bg: 'surface.page', intent: 'control-hairline' },
+    { fg: 'border.control',       bg: 'surface.page', intent: 'control-hairline', intentDark: 'dark-soft-border' },
     // Its hover, one step past whatever it resolved to.
-    { fg: 'border.control-hover', bg: 'surface.page', intent: 'control-hairline' },
+    { fg: 'border.control-hover', bg: 'surface.page', intent: 'control-hairline', intentDark: 'dark-soft-border' },
     // The focus BOUNDARY: WCAG 1.4.11 on the page, like the file's invariant.
     { fg: 'border.focus',     bg: 'surface.page',    intent: 'control-boundary' },
     // DECORATIVE by decision — brand emphasis, not a state indicator. Anything
@@ -361,7 +362,8 @@ export function auditResolvedRoles(
         }
       }
       if (!OPAQUE_HEX.test(bg)) continue
-      const pairIntent = theme === 'dark' && p.intentDark ? p.intentDark : p.intent
+      // A live system names its modes `<brand>::dark`; the matrix names them `dark`.
+      const pairIntent = (theme === 'dark' || theme.endsWith('::dark')) && p.intentDark ? p.intentDark : p.intent
       const v = evaluate(measuredFg, bg, pairIntent)
       out.push({
         architecture: arch, system, theme, role: p.fg, against: p.bg,
