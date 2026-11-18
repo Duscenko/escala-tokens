@@ -1,5 +1,5 @@
 {
-  "generated": "2026-11-17",
+  "generated": "2026-11-18",
   "findings": [
     {
       "id": "COL-002:Border/control",
@@ -7,13 +7,13 @@
       "severity": "error",
       "side": "both",
       "entity": "Border/control",
-      "evidence": "Black/White Alpha 03 ≈ 1.4:1, floor 3:1 (07/06)",
-      "status": "Accepted",
+      "evidence": "Border/control 1.41:1 Light, 1.57:1 Dark, floor 3:1. Accepted for the default themes; open for the future high-contrast mode",
+      "status": "Open",
       "resolution": {
         "ref": "DEC-2026-11-16-004 · EXC-2026-11-16-001"
       },
       "firstSeen": "2026-11-16",
-      "lastSeen": "2026-11-16",
+      "lastSeen": "2026-11-18",
       "regression": false,
       "ticket": 12
     },
@@ -305,6 +305,132 @@
       "firstSeen": "2026-11-17",
       "lastSeen": "2026-11-17",
       "regression": false
+    },
+    {
+      "id": "TOK-006:SYN-001",
+      "rule": "TOK-006",
+      "severity": "error",
+      "side": "code",
+      "entity": "Surface/layer-2",
+      "evidence": "Surface/layer-2 Light: Figma is white, code is Gray/03",
+      "status": "Open",
+      "resolution": null,
+      "firstSeen": "2026-11-18",
+      "lastSeen": "2026-11-18",
+      "regression": false,
+      "ticket": 53
+    },
+    {
+      "id": "PAR-001:SYN-002",
+      "rule": "PAR-001",
+      "severity": "warn",
+      "side": "figma",
+      "entity": "AuthSignIn, AuthSignInPhone, AuthSocialSignIn",
+      "evidence": "Auth header icons: the change list says gradient, the components are soft",
+      "status": "Open",
+      "resolution": null,
+      "firstSeen": "2026-11-18",
+      "lastSeen": "2026-11-18",
+      "regression": false,
+      "ticket": 54
+    },
+    {
+      "id": "COL-002:SYN-003",
+      "rule": "COL-002",
+      "severity": "warn",
+      "side": "figma",
+      "entity": "SegmentedControl",
+      "evidence": "Surface/raised equals Surface/muted in Dark: the selected segment loses its fill",
+      "status": "Open",
+      "resolution": null,
+      "firstSeen": "2026-11-18",
+      "lastSeen": "2026-11-18",
+      "regression": false,
+      "ticket": 55
+    },
+    {
+      "id": "PAR-001:SYN-004",
+      "rule": "PAR-001",
+      "severity": "warn",
+      "side": "code",
+      "entity": "SocialLoginButton, Accordion, Modal, ModalFooter, DropdownMenuItem",
+      "evidence": "Figma changed axes the code does not have yet",
+      "status": "Open",
+      "resolution": null,
+      "firstSeen": "2026-11-18",
+      "lastSeen": "2026-11-18",
+      "regression": false,
+      "ticket": 56
+    },
+    {
+      "id": "PAR-001:SYN-005",
+      "rule": "PAR-001",
+      "severity": "warn",
+      "side": "code",
+      "entity": "Auth blocks",
+      "evidence": "Auth blocks: copy, field icons and header glyphs differ from Figma",
+      "status": "Open",
+      "resolution": null,
+      "firstSeen": "2026-11-18",
+      "lastSeen": "2026-11-18",
+      "regression": false,
+      "ticket": 57
+    },
+    {
+      "id": "TOK-002:SYN-006",
+      "rule": "TOK-002",
+      "severity": "warn",
+      "side": "figma",
+      "entity": "Input",
+      "evidence": "Input text binds Typography primitives instead of a type role",
+      "status": "Open",
+      "resolution": null,
+      "firstSeen": "2026-11-18",
+      "lastSeen": "2026-11-18",
+      "regression": false,
+      "ticket": 58
+    },
+    {
+      "id": "COL-002:SYN-007",
+      "rule": "COL-002",
+      "severity": "warn",
+      "side": "figma",
+      "entity": "SocialLoginButton",
+      "evidence": "Social Media Brands has one mode: Apple and X stay #000 on dark cards",
+      "status": "Open",
+      "resolution": null,
+      "firstSeen": "2026-11-18",
+      "lastSeen": "2026-11-18",
+      "regression": false,
+      "ticket": 59
+    },
+    {
+      "id": "DOC-001:SYN-008",
+      "rule": "DOC-001",
+      "severity": "warn",
+      "side": "figma",
+      "entity": "AuthSignInPasskey, AuthSplit",
+      "evidence": "AuthSignInPasskey and AuthSplit have no documentation boards",
+      "status": "Open",
+      "resolution": null,
+      "firstSeen": "2026-11-18",
+      "lastSeen": "2026-11-18",
+      "regression": false,
+      "ticket": 60
+    },
+    {
+      "id": "PAR-001:SYN-009",
+      "rule": "PAR-001",
+      "severity": "warn",
+      "side": "code",
+      "entity": "FeaturedIcon",
+      "evidence": "FeaturedIcon gradient: Figma paints no shadow spread, the CSS has -1 and -2",
+      "status": "Open",
+      "resolution": null,
+      "firstSeen": "2026-11-18",
+      "lastSeen": "2026-11-18",
+      "regression": false,
+      "ticket": 61
     }
   ]
 }
