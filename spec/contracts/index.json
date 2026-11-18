@@ -751,7 +751,7 @@
     "file": "spec/contracts/FeaturedIcon.json",
     "figmaSet": "FeaturedIcon",
     "story": "indicators-featuredicon--playground",
-    "tokens": 48
+    "tokens": 50
   },
   {
     "key": "Kbd",

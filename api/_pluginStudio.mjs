@@ -12629,7 +12629,7 @@ var init_indicators = __esm({
         part({ Variant: FEATURED_ICON_VARIANTS, Appearance: FEATURED_ICON_APPEARANCES }, (variant, appearance) => {
           if (appearance === "gradient") {
             const g = FEATURED_ICON_GRADIENT[variant];
-            return { root: { fill: c(g.stops[0]), fillMid: c(g.stops[1]), fillEnd: c(g.stops[2]), text: c(g.ink), highlight: c("elevation.highlight") } };
+            return { root: { fill: c(g.stops[0]), fillMid: c(g.stops[1]), fillEnd: c(g.stops[2]), text: c(g.ink), highlight: c("elevation.highlight"), lift: "feature" } };
           }
           const [fill, ink] = AVATAR_TONE[variant][appearance];
           return { root: { fill: c(fill), text: c(ink) } };

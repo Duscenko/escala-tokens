@@ -82,6 +82,8 @@ const LIFT: Record<string, (key: string, ambient: string, ring: string) => strin
   'card-sm': (k) => [`0 1px 3px ${k}`, `0 1px 2px ${k}`],
   // The FloatingHeader's Shadow/md on a frame that does not clip: no ring, no spreads.
   'floating-md': (k, a) => [`0 4px 6px ${k}`, `0 2px 4px ${a}`],
+  // FeaturedIcon `Appearance=gradient` (DEC-2026-11-18-003): the two drops under its top highlight, every tone, size and shape.
+  feature: (k, a) => [`0 4px 6px -1px ${k}`, `0 2px 4px -2px ${a}`],
 }
 /** A named elevation as one CSS `box-shadow` value on the Elevation roles (a block's card draws the Modal's `modal`). */
 export function liftShadow(name: keyof typeof LIFT): string {
