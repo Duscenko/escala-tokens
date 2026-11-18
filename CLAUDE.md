@@ -71,6 +71,7 @@ npm test                      # vitest (node env). Not a type check.
 npm run build                 # audit:exports + tsc -b (app AND tests) + api typecheck + vite build
 npm run storybook             # :6006   · npm run build-storybook
 npm run check:story-parity    # every escala-ui component has a story
+npm run check:web-storybook   # the web draws what Storybook documents (needs both builds; exceptions in spec/web-storybook-parity.exceptions.json)
 npm run figma:inventory:check # spec/figma-components.json was not hand-edited
 npm run audit:exports         # every export agrees with tokens.json, value for value
 npm run color:report          # contrast audit → reports/ (gitignored)

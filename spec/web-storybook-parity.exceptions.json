@@ -1,0 +1,47 @@
+{
+  "$comment": "Known differences between the web platform and Storybook, read by scripts/check-web-storybook-parity.mjs. `ignore` names what may differ on the component's root. An exception that is no longer needed fails the check.",
+  "components": {
+    "Field": {
+      "ignore": [
+        "height"
+      ],
+      "reason": "Different example content: the web's specimen also shows the required mark, a link and a hint."
+    },
+    "Slider": {
+      "ignore": [
+        "height"
+      ],
+      "reason": "Different example content: the web's specimen also shows the value."
+    },
+    "Card": {
+      "ignore": [
+        "height"
+      ],
+      "reason": "Different example content."
+    },
+    "Table": {
+      "ignore": [
+        "height"
+      ],
+      "reason": "Different example rows and columns."
+    },
+    "Sidebar": {
+      "ignore": [
+        "height"
+      ],
+      "reason": "Different example navigation."
+    },
+    "Sheet": {
+      "ignore": [
+        "height"
+      ],
+      "reason": "The story and the web's stage give the sheet different heights."
+    },
+    "DatePickerTrigger": {
+      "ignore": [
+        "no-match"
+      ],
+      "reason": "The story's trigger carries data-state=closed; the web's specimen draws it with no state attribute."
+    }
+  }
+}

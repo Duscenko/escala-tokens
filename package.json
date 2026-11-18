@@ -33,6 +33,7 @@
     "storybook": "storybook dev -p 6006 -c apps/storybook/.storybook",
     "build-storybook": "storybook build -c apps/storybook/.storybook -o apps/storybook/storybook-static",
     "check:story-parity": "node scripts/check-story-parity.mjs",
+    "check:web-storybook": "node scripts/check-web-storybook-parity.mjs",
     "typecheck:storybook": "tsc -p apps/storybook/tsconfig.json --noEmit",
     "gen:figma-palette": "tsx scripts/gen-figma-palette.ts",
     "gen:contracts": "tsx scripts/gen-component-contracts.ts"
