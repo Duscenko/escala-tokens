@@ -1,7 +1,7 @@
 - id: EXC-2026-11-16-001
   rule: COL-002
   scope: Border/control, Border/control-hover (Light and Dark)
-  rationale: "Owner decisions DEC-2026-11-16-004 and DEC-2026-11-18-002: the Figma file is the rule. Soft hairline at Alpha/03 in both themes (hover /04): Light 1.41:1, Dark 1.57:1, below the 3:1 of WCAG 1.4.11. Strong borders belong to the future high-contrast mode."
+  rationale: "Owner decisions DEC-2026-11-16-004 and DEC-2026-11-18-008: the Figma file is the rule. Light Black Alpha/03 (hover /04) reads 1.41:1; Escala Dark White Alpha/01 (hover /02) reads about 1.09:1 (hover 1.26:1), below the 3:1 of WCAG 1.4.11. Strong borders belong to the future high-contrast mode; review when that mode is planned."
   owner: Cesar Durango
   reviewBy: 2027-02-16
 
@@ -25,3 +25,10 @@
   rationale: "Owner decision DEC-2026-11-18-005: the only modal with a left-aligned title; the rule for every other modal is a centred header."
   owner: Cesar Durango
   reviewBy: 2027-02-18
+
+- id: EXC-2026-11-18-002
+  rule: STG-001
+  scope: SettingsRow, SettingsSection, IssueCard, BoardColumn, UserMenu, MorphNav (Figma library)
+  rationale: "Built Figma-first on 2026-11-18, skipping Workshop and Storybook. They stay in the library while they pass Storybook and owner approval."
+  owner: Cesar Durango
+  reviewBy: 2026-12-02
