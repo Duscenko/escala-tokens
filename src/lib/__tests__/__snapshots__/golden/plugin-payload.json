@@ -712,7 +712,7 @@
             "core--minimalist::dark": "#1b1b1c"
           },
           "layer-2": {
-            "core--minimalist::light": "#ececee",
+            "core--minimalist::light": "#fefdff",
             "core--minimalist::dark": "#222223"
           },
           "accent": {
@@ -1306,7 +1306,8 @@
         "gap-group": "4",
         "gap-section": "6",
         "inset-control": "3",
-        "inset-surface": "5",
+        "inset-surface": "6",
+        "inset-action": "4",
         "inset-page": "8",
         "inset-section": "24",
         "overlap-sm": "dimension--4",
@@ -1319,7 +1320,8 @@
         "gap-group": "section-sm",
         "gap-section": "section-md",
         "inset-control": "3",
-        "inset-surface": "5",
+        "inset-surface": "6",
+        "inset-action": "4",
         "inset-page": "8",
         "inset-section": "24",
         "overlap-sm": "dimension--4",
@@ -1327,19 +1329,22 @@
       },
       "spacingRoleViewports": {
         "tablet": {
+          "inset-surface": "5",
           "inset-page": "4",
           "inset-section": "16"
         },
         "mobile": {
+          "inset-surface": "4",
+          "inset-action": "3",
           "inset-page": "4",
           "inset-section": "12"
         }
       },
       "padding": {
-        "top": "20px",
-        "right": "20px",
-        "bottom": "20px",
-        "left": "20px"
+        "top": "24px",
+        "right": "24px",
+        "bottom": "24px",
+        "left": "24px"
       },
       "radius": {
         "none": "0px",
@@ -1786,10 +1791,10 @@
           "2_5": "{dimension.10}"
         },
         "padding": {
-          "top": "{dimension.20}",
-          "right": "{dimension.20}",
-          "bottom": "{dimension.20}",
-          "left": "{dimension.20}"
+          "top": "{dimension.24}",
+          "right": "{dimension.24}",
+          "bottom": "{dimension.24}",
+          "left": "{dimension.24}"
         },
         "radius": {
           "none": "{dimension.0}",
@@ -2169,7 +2174,8 @@
         "gap-group": "4",
         "gap-section": "6",
         "inset-control": "3",
-        "inset-surface": "5",
+        "inset-surface": "6",
+        "inset-action": "4",
         "inset-page": "8",
         "inset-section": "24",
         "overlap-sm": "dimension--4",
@@ -2182,7 +2188,8 @@
         "gap-group": "section-sm",
         "gap-section": "section-md",
         "inset-control": "3",
-        "inset-surface": "5",
+        "inset-surface": "6",
+        "inset-action": "4",
         "inset-page": "8",
         "inset-section": "24",
         "overlap-sm": "dimension--4",
@@ -2190,19 +2197,22 @@
       },
       "spacingRoleViewports": {
         "tablet": {
+          "inset-surface": "5",
           "inset-page": "4",
           "inset-section": "16"
         },
         "mobile": {
+          "inset-surface": "4",
+          "inset-action": "3",
           "inset-page": "4",
           "inset-section": "12"
         }
       },
       "padding": {
-        "top": "20px",
-        "right": "20px",
-        "bottom": "20px",
-        "left": "20px"
+        "top": "24px",
+        "right": "24px",
+        "bottom": "24px",
+        "left": "24px"
       },
       "radius": {
         "none": "0px",
@@ -2649,10 +2659,10 @@
           "2_5": "{dimension.10}"
         },
         "padding": {
-          "top": "{dimension.20}",
-          "right": "{dimension.20}",
-          "bottom": "{dimension.20}",
-          "left": "{dimension.20}"
+          "top": "{dimension.24}",
+          "right": "{dimension.24}",
+          "bottom": "{dimension.24}",
+          "left": "{dimension.24}"
         },
         "radius": {
           "none": "{dimension.0}",
@@ -3086,10 +3096,10 @@
       "2_5": "{dimension.10}"
     },
     "padding": {
-      "top": "{dimension.20}",
-      "right": "{dimension.20}",
-      "bottom": "{dimension.20}",
-      "left": "{dimension.20}"
+      "top": "{dimension.24}",
+      "right": "{dimension.24}",
+      "bottom": "{dimension.24}",
+      "left": "{dimension.24}"
     },
     "radius": {
       "none": "{dimension.0}",
@@ -3161,7 +3171,8 @@
     "gap-group": "4",
     "gap-section": "6",
     "inset-control": "3",
-    "inset-surface": "5",
+    "inset-surface": "6",
+    "inset-action": "4",
     "inset-page": "8",
     "inset-section": "24",
     "overlap-sm": "dimension--4",
@@ -3174,7 +3185,8 @@
     "gap-group": "section-sm",
     "gap-section": "section-md",
     "inset-control": "3",
-    "inset-surface": "5",
+    "inset-surface": "6",
+    "inset-action": "4",
     "inset-page": "8",
     "inset-section": "24",
     "overlap-sm": "dimension--4",
@@ -3274,19 +3286,22 @@
   },
   "spacingRoleViewports": {
     "tablet": {
+      "inset-surface": "5",
       "inset-page": "4",
       "inset-section": "16"
     },
     "mobile": {
+      "inset-surface": "4",
+      "inset-action": "3",
       "inset-page": "4",
       "inset-section": "12"
     }
   },
   "padding": {
-    "top": "20px",
-    "right": "20px",
-    "bottom": "20px",
-    "left": "20px"
+    "top": "24px",
+    "right": "24px",
+    "bottom": "24px",
+    "left": "24px"
   },
   "radius": {
     "none": "0px",
@@ -5478,7 +5493,8 @@
         "pressed": "700"
       },
       "onAction": "white",
-      "focus": "black"
+      "focus": "black",
+      "focusRing": "#db44374f"
     },
     "apple": {
       "label": "Apple",
@@ -5493,7 +5509,8 @@
         "pressed": "300"
       },
       "onAction": "white",
-      "focus": "white"
+      "focus": "white",
+      "focusRing": "neutral"
     },
     "discord": {
       "label": "Discord",
@@ -5508,7 +5525,8 @@
         "pressed": "700"
       },
       "onAction": "white",
-      "focus": "white"
+      "focus": "white",
+      "focusRing": "#5865f24f"
     },
     "dribbble": {
       "label": "Dribbble",
@@ -5523,7 +5541,8 @@
         "pressed": "700"
       },
       "onAction": "white",
-      "focus": "black"
+      "focus": "black",
+      "focusRing": "#ea4c894f"
     },
     "facebook": {
       "label": "Facebook",
@@ -5538,7 +5557,8 @@
         "pressed": "700"
       },
       "onAction": "white",
-      "focus": "black"
+      "focus": "black",
+      "focusRing": "#1877f24f"
     },
     "github": {
       "label": "GitHub",
@@ -5553,7 +5573,8 @@
         "pressed": "300"
       },
       "onAction": "white",
-      "focus": "white"
+      "focus": "white",
+      "focusRing": "neutral"
     },
     "linkedin": {
       "label": "LinkedIn",
@@ -5568,7 +5589,8 @@
         "pressed": "700"
       },
       "onAction": "white",
-      "focus": "white"
+      "focus": "white",
+      "focusRing": "#0a66c24f"
     },
     "slack": {
       "label": "Slack",
@@ -5583,7 +5605,8 @@
         "pressed": "300"
       },
       "onAction": "white",
-      "focus": "white"
+      "focus": "white",
+      "focusRing": "#4a154b4f"
     },
     "x": {
       "label": "X",
@@ -5598,7 +5621,8 @@
         "pressed": "300"
       },
       "onAction": "white",
-      "focus": "white"
+      "focus": "white",
+      "focusRing": "neutral"
     }
   },
   "style": null,
@@ -5652,29 +5676,113 @@
             "default": {
               "root": {
                 "height": "size.control",
-                "paddingX": "spacing.inset-control",
                 "gap": "spacing.gap-control"
               }
             },
             "xs": {
               "root": {
                 "height": "size.hit",
-                "paddingX": "spacing.inset-control",
                 "gap": "spacing.gap-tight"
               }
             },
             "sm": {
               "root": {
                 "height": "size.compact",
-                "paddingX": "spacing.inset-control",
                 "gap": "spacing.gap-control"
               }
             },
             "lg": {
               "root": {
                 "height": "size.touch",
-                "paddingX": "spacing.inset-control",
                 "gap": "spacing.gap-control"
+              }
+            }
+          }
+        },
+        {
+          "axes": [
+            "Appearance",
+            "Size"
+          ],
+          "values": {
+            "solid|default": {
+              "root": {
+                "paddingX": "spacing.inset-action"
+              }
+            },
+            "solid|xs": {
+              "root": {
+                "paddingX": "spacing.inset-control"
+              }
+            },
+            "solid|sm": {
+              "root": {
+                "paddingX": "spacing.inset-control"
+              }
+            },
+            "solid|lg": {
+              "root": {
+                "paddingX": "spacing.inset-action"
+              }
+            },
+            "outline|default": {
+              "root": {
+                "paddingX": "spacing.inset-action"
+              }
+            },
+            "outline|xs": {
+              "root": {
+                "paddingX": "spacing.inset-control"
+              }
+            },
+            "outline|sm": {
+              "root": {
+                "paddingX": "spacing.inset-control"
+              }
+            },
+            "outline|lg": {
+              "root": {
+                "paddingX": "spacing.inset-action"
+              }
+            },
+            "ghost|default": {
+              "root": {
+                "paddingX": "spacing.inset-action"
+              }
+            },
+            "ghost|xs": {
+              "root": {
+                "paddingX": "spacing.inset-control"
+              }
+            },
+            "ghost|sm": {
+              "root": {
+                "paddingX": "spacing.inset-control"
+              }
+            },
+            "ghost|lg": {
+              "root": {
+                "paddingX": "spacing.inset-action"
+              }
+            },
+            "link|default": {
+              "root": {
+                "paddingX": "spacing.inset-control"
+              }
+            },
+            "link|xs": {
+              "root": {
+                "paddingX": "spacing.inset-control"
+              }
+            },
+            "link|sm": {
+              "root": {
+                "paddingX": "spacing.inset-control"
+              }
+            },
+            "link|lg": {
+              "root": {
+                "paddingX": "spacing.inset-control"
               }
             }
           }
@@ -9430,7 +9538,8 @@
             "lg|false": {
               "root": {
                 "height": "size.touch",
-                "paddingX": "spacing.inset-control"
+                "paddingX": "spacing.inset-action",
+                "fontStep": "type.text-lg"
               }
             },
             "lg|true": {
@@ -9443,7 +9552,8 @@
             "default|false": {
               "root": {
                 "height": "size.control",
-                "paddingX": "spacing.inset-control"
+                "paddingX": "spacing.inset-action",
+                "fontStep": "type.text-md"
               }
             },
             "default|true": {
@@ -9495,8 +9605,8 @@
             "white|Google|Focused": {
               "root": {
                 "fill": "color.surface.page",
-                "stroke": "color.border.focus",
-                "ring": "color.border.ring.default",
+                "stroke": "color.border.control",
+                "gapRing": "social.google.border.focus",
                 "text": "color.content.primary"
               },
               "label": {
@@ -9546,8 +9656,8 @@
             "white|Apple|Focused": {
               "root": {
                 "fill": "color.surface.page",
-                "stroke": "color.border.focus",
-                "ring": "color.border.ring.default",
+                "stroke": "color.border.control",
+                "gapRing": "social.apple.border.focus",
                 "text": "color.content.primary"
               },
               "label": {
@@ -9597,8 +9707,8 @@
             "white|Discord|Focused": {
               "root": {
                 "fill": "color.surface.page",
-                "stroke": "color.border.focus",
-                "ring": "color.border.ring.default",
+                "stroke": "color.border.control",
+                "gapRing": "social.discord.border.focus",
                 "text": "color.content.primary"
               },
               "label": {
@@ -9648,8 +9758,8 @@
             "white|Dribbble|Focused": {
               "root": {
                 "fill": "color.surface.page",
-                "stroke": "color.border.focus",
-                "ring": "color.border.ring.default",
+                "stroke": "color.border.control",
+                "gapRing": "social.dribbble.border.focus",
                 "text": "color.content.primary"
               },
               "label": {
@@ -9699,8 +9809,8 @@
             "white|Facebook|Focused": {
               "root": {
                 "fill": "color.surface.page",
-                "stroke": "color.border.focus",
-                "ring": "color.border.ring.default",
+                "stroke": "color.border.control",
+                "gapRing": "social.facebook.border.focus",
                 "text": "color.content.primary"
               },
               "label": {
@@ -9750,8 +9860,8 @@
             "white|GitHub|Focused": {
               "root": {
                 "fill": "color.surface.page",
-                "stroke": "color.border.focus",
-                "ring": "color.border.ring.default",
+                "stroke": "color.border.control",
+                "gapRing": "social.github.border.focus",
                 "text": "color.content.primary"
               },
               "label": {
@@ -9801,8 +9911,8 @@
             "white|LinkedIn|Focused": {
               "root": {
                 "fill": "color.surface.page",
-                "stroke": "color.border.focus",
-                "ring": "color.border.ring.default",
+                "stroke": "color.border.control",
+                "gapRing": "social.linkedin.border.focus",
                 "text": "color.content.primary"
               },
               "label": {
@@ -9852,8 +9962,8 @@
             "white|Slack|Focused": {
               "root": {
                 "fill": "color.surface.page",
-                "stroke": "color.border.focus",
-                "ring": "color.border.ring.default",
+                "stroke": "color.border.control",
+                "gapRing": "social.slack.border.focus",
                 "text": "color.content.primary"
               },
               "label": {
@@ -9903,8 +10013,8 @@
             "white|X|Focused": {
               "root": {
                 "fill": "color.surface.page",
-                "stroke": "color.border.focus",
-                "ring": "color.border.ring.default",
+                "stroke": "color.border.control",
+                "gapRing": "social.x.border.focus",
                 "text": "color.content.primary"
               },
               "label": {
@@ -9959,8 +10069,8 @@
                 "fill": "social.google.action.default",
                 "text": "social.google.content.on-action",
                 "highlight": "color.elevation.highlight",
-                "stroke": "social.google.border.focus",
-                "ring": "color.border.ring.default"
+                "stroke": "social.google.action.pressed",
+                "gapRing": "social.google.border.focus"
               },
               "label": {
                 "text": "social.google.content.on-action"
@@ -10014,8 +10124,8 @@
                 "fill": "social.apple.action.default",
                 "text": "social.apple.content.on-action",
                 "highlight": "color.elevation.highlight",
-                "stroke": "social.apple.border.focus",
-                "ring": "color.border.ring.default"
+                "stroke": "social.apple.action.pressed",
+                "gapRing": "social.apple.border.focus"
               },
               "label": {
                 "text": "social.apple.content.on-action"
@@ -10069,8 +10179,8 @@
                 "fill": "social.discord.action.default",
                 "text": "social.discord.content.on-action",
                 "highlight": "color.elevation.highlight",
-                "stroke": "social.discord.border.focus",
-                "ring": "color.border.ring.default"
+                "stroke": "social.discord.action.pressed",
+                "gapRing": "social.discord.border.focus"
               },
               "label": {
                 "text": "social.discord.content.on-action"
@@ -10124,8 +10234,8 @@
                 "fill": "social.dribbble.action.default",
                 "text": "social.dribbble.content.on-action",
                 "highlight": "color.elevation.highlight",
-                "stroke": "social.dribbble.border.focus",
-                "ring": "color.border.ring.default"
+                "stroke": "social.dribbble.action.pressed",
+                "gapRing": "social.dribbble.border.focus"
               },
               "label": {
                 "text": "social.dribbble.content.on-action"
@@ -10179,8 +10289,8 @@
                 "fill": "social.facebook.action.default",
                 "text": "social.facebook.content.on-action",
                 "highlight": "color.elevation.highlight",
-                "stroke": "social.facebook.border.focus",
-                "ring": "color.border.ring.default"
+                "stroke": "social.facebook.action.pressed",
+                "gapRing": "social.facebook.border.focus"
               },
               "label": {
                 "text": "social.facebook.content.on-action"
@@ -10234,8 +10344,8 @@
                 "fill": "social.github.action.default",
                 "text": "social.github.content.on-action",
                 "highlight": "color.elevation.highlight",
-                "stroke": "social.github.border.focus",
-                "ring": "color.border.ring.default"
+                "stroke": "social.github.action.pressed",
+                "gapRing": "social.github.border.focus"
               },
               "label": {
                 "text": "social.github.content.on-action"
@@ -10289,8 +10399,8 @@
                 "fill": "social.linkedin.action.default",
                 "text": "social.linkedin.content.on-action",
                 "highlight": "color.elevation.highlight",
-                "stroke": "social.linkedin.border.focus",
-                "ring": "color.border.ring.default"
+                "stroke": "social.linkedin.action.pressed",
+                "gapRing": "social.linkedin.border.focus"
               },
               "label": {
                 "text": "social.linkedin.content.on-action"
@@ -10344,8 +10454,8 @@
                 "fill": "social.slack.action.default",
                 "text": "social.slack.content.on-action",
                 "highlight": "color.elevation.highlight",
-                "stroke": "social.slack.border.focus",
-                "ring": "color.border.ring.default"
+                "stroke": "social.slack.action.pressed",
+                "gapRing": "social.slack.border.focus"
               },
               "label": {
                 "text": "social.slack.content.on-action"
@@ -10399,8 +10509,8 @@
                 "fill": "social.x.action.default",
                 "text": "social.x.content.on-action",
                 "highlight": "color.elevation.highlight",
-                "stroke": "social.x.border.focus",
-                "ring": "color.border.ring.default"
+                "stroke": "social.x.action.pressed",
+                "gapRing": "social.x.border.focus"
               },
               "label": {
                 "text": "social.x.content.on-action"
@@ -10539,7 +10649,7 @@
             "default": {
               "root": {
                 "height": "size.control",
-                "font": "type.placeholder"
+                "font": "type.body-md"
               },
               "icon": {
                 "width": "icon.medium",
@@ -10557,7 +10667,7 @@
             "sm": {
               "root": {
                 "height": "size.compact",
-                "font": "type.placeholder"
+                "font": "type.body-md"
               },
               "icon": {
                 "width": "icon.small",
@@ -30453,7 +30563,7 @@
           "values": {
             "default": {
               "title": {
-                "font": "type.heading-sm"
+                "font": "type.heading-2xs"
               },
               "description": {
                 "font": "type.body-md"
@@ -30465,7 +30575,7 @@
             },
             "lg": {
               "title": {
-                "font": "type.heading-md"
+                "font": "type.heading-xs"
               },
               "description": {
                 "font": "type.body-md"
@@ -30661,6 +30771,7 @@
       "role/gap-section": "Between sections, modal header → body.",
       "role/inset-control": "Padding inside buttons, inputs, chips.",
       "role/inset-surface": "Card / modal / alert padding.",
+      "role/inset-action": "Side padding of default and lg buttons.",
       "role/inset-page": "Page and sheet margins when Grid is unused.",
       "role/inset-section": "Top and bottom padding of a full-width page section (hero, pricing, footer). Sides use inset-page.",
       "role/overlap-sm": "A hairline tuck.",

@@ -17,8 +17,12 @@
     "page": "Modal (✓) (D)",
     "pageNodeId": "931:87046",
     "set": "Modal",
-    "variants": 2,
+    "variants": 3,
     "axes": {
+      "Layout": [
+        "tray",
+        "simple"
+      ],
       "Size": [
         "default",
         "lg"

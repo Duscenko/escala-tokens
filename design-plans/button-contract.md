@@ -31,14 +31,14 @@ llamada.
 |---|---|---|---|---|
 | xs | `size.hit` (Size/control-xs, 24) | `spacing.inset-control` | `spacing.gap-tight` | `icon.small` (Size/icon-sm) |
 | sm | `size.compact` (control-sm, 32) | `spacing.inset-control` | `spacing.gap-control` | `icon.small` |
-| default | `size.control` (control-md, 40) | `spacing.inset-control` | `spacing.gap-control` | `icon.medium` |
-| lg | `size.touch` (control-lg, 48) | `spacing.inset-control` | `spacing.gap-control` | `icon.large` |
+| default | `size.control` (control-md, 40) | `spacing.inset-action` (16 · 16 · 12) | `spacing.gap-control` | `icon.medium` |
+| lg | `size.touch` (control-lg, 48) | `spacing.inset-action` (16 · 16 · 12) | `spacing.gap-control` | `icon.large` |
 
 Común: radio `radius.action`, borde `stroke.control`, foco `stroke.focus`, texto
 `type.button`. IconButton: padding 0, ancho = alto.
 
 **Cambia respecto al código de hoy:** el padding X era una escalera (spacing.2 · 3 · 4 · 5);
-Figma usa `inset-control` en los cuatro tamaños. El gap de xs era `spacing.1`; Figma
+Figma usa `inset-action` en default y lg e `inset-control` en xs, sm y en `link` (DEC-2026-11-18-007). El gap de xs era `spacing.1`; Figma
 `gap-tight`.
 
 ## Color por combinación y estado

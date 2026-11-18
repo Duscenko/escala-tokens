@@ -12,7 +12,7 @@
     "file": "spec/contracts/Button.json",
     "figmaSet": "Button",
     "story": "buttons-button--playground",
-    "tokens": 42
+    "tokens": 43
   },
   {
     "key": "IconButton",

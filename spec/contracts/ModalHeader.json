@@ -99,7 +99,12 @@
       {
         "name": "icon / iconVisible",
         "type": "ReactNode / boolean",
-        "description": "A FeaturedIcon (soft, circle) before the text."
+        "description": "A FeaturedIcon (always rounded) before the text."
+      },
+      {
+        "name": "iconVariant / iconAppearance",
+        "type": "FeaturedIconVariant / FeaturedIconAppearance",
+        "description": "The icon's tone and appearance: soft by default, gradient on the screen that opens an account."
       },
       {
         "name": "trailing / trailingVisible",
@@ -139,8 +144,8 @@
     ],
     "type": [
       "type.body-md",
-      "type.heading-md",
-      "type.heading-sm"
+      "type.heading-2xs",
+      "type.heading-xs"
     ]
   },
   "usage": "Inside a Modal. Align sets the layout; vertical-center suits confirmations and has no trailing slot. Never hide the title: it is the dialog name.",

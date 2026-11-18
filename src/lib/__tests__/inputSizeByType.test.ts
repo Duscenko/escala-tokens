@@ -6,8 +6,8 @@ import { Input, INPUT_SIZES, INPUT_TYPES } from '../../components/escala-ui/inpu
 import { COMPONENT_RECIPES, resolveRecipe } from '../componentRecipes'
 
 const GEOMETRY = {
-  sm: { height: 'size.compact', icon: 'icon.small', font: 'type.placeholder' },
-  default: { height: 'size.control', icon: 'icon.medium', font: 'type.placeholder' },
+  sm: { height: 'size.compact', icon: 'icon.small', font: 'type.body-md' },
+  default: { height: 'size.control', icon: 'icon.medium', font: 'type.body-md' },
   lg: { height: 'size.touch', icon: 'icon.medium', font: 'type.body-lg' },
 } as const
 

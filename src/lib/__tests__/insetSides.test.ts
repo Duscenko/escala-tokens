@@ -68,7 +68,7 @@ describe('inset sides', () => {
       expect(json.spacingRoleRefs[key]).toBeUndefined()
     }
     const css = buildCSS(useDesignStore.getState())
-    expect(css).toContain('--padding-bottom: var(--dimension-20);')
+    expect(css).toContain('--padding-bottom: var(--dimension-24);')
     expect(css).toContain('--padding-top: var(--spacing-inset-surface);')
     useDesignStore.setState({ spacingRoles: defaultLayoutRoles('spacing') })
   })

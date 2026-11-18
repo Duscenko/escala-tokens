@@ -45,6 +45,8 @@ const SINCE_INVENTORY: Record<string, string> = {
   'Action/secondary/default': '{CP:Neutrals/EscalaDS Gray/05} ; {CP:Neutrals/EscalaDS Gray Dark/06}',
   'Action/secondary/hover': '{CP:Neutrals/EscalaDS Gray/06} ; {CP:Neutrals/EscalaDS Gray Dark/07}',
   'Action/secondary/pressed': '{CP:Neutrals/EscalaDS Gray/07} ; {CP:Neutrals/EscalaDS Gray Dark/08}',
+  // DEC-2026-11-18-006: Light cards and dialogs are white in the file.
+  'Surface/layer-2': '{CP:Accents/EscalaDS/01} ; {CP:Neutrals/EscalaDS Gray Dark/03}',
   // DEC-2026-11-18-002: the dark inputs calibration.
   'Surface/input': '{CP:Accents/EscalaDS/01} ; {CP:Neutrals/EscalaDS Gray Dark/02}',
   'Content/subtle': '{CP:Neutrals/EscalaDS Gray/10} ; {CP:Neutrals/EscalaDS Gray Dark/10}',

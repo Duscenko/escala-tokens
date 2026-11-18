@@ -11,6 +11,9 @@ export type TokenRef = string
 export const RECIPE_PROPS = [
   'fill', 'stroke', 'text', 'ring', 'focus',
   'height', 'minHeight', 'minWidth', 'width', 'travel', 'paint', 'strokeTop', 'strokeTopWidth', 'strokeBottomWidth', 'strokeRightWidth', 'strokeLeftWidth', 'radius', 'radiusTop', 'radiusLeft', 'radiusRight', 'maxWidth', 'paddingTop', 'paddingX', 'paddingY', 'paddingBottom', 'paddingRight', 'gap', 'rowGap', 'strokeWidth', 'font', 'shadow', 'hit',
+  // A label the file binds to a scale step while it keeps its role's family and weight (SocialLoginButton:
+  // `size/text-md` with `role/button/weight`). Size, line height and tracking of the step, over `font`.
+  'fontStep',
   // The top highlight of a solid control (Figma: an inner shadow 0 · 2 · 0
   // painted `Elevation/highlight`). Its value is a colour role.
   'highlight',

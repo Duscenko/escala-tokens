@@ -11,8 +11,8 @@
 import type { ReactNode } from 'react'
 import {
   AuthAccountLocked, AuthCheckEmail, AuthError, AuthForgotPassword, AuthMagicLinkSent, AuthNewPassword,
-  AuthOTPVerification, AuthSignIn, AuthSignInPhone, AuthSignUp, AuthSocialSignIn, AuthTwoFactor,
-  AUTH_CONTAINERS, AUTH_STATUSES, type AuthContainer, type AuthStatus,
+  AuthOTPVerification, AuthSignIn, AuthSignInPasskey, AuthSignInPhone, AuthSplit, AuthSignUp, AuthSocialSignIn, AuthTwoFactor,
+  AUTH_CONTAINERS, AUTH_LAYOUTS, AUTH_STATUSES, authPlacement, type AuthLayout, type AuthPlacement, type AuthContainer, type AuthStatus,
 } from '../../escala-ui/blocks/auth'
 import {
   HeroHeader, FAQSection, PricingCard, PricingSection, ContactSection, Footer,
@@ -86,17 +86,18 @@ const CONTRACTS = new Map<string, BlockContract>(
 )
 
 const containerCtl: BlockControl = { key: 'container', label: 'Container', options: AUTH_CONTAINERS, default: 'card' }
+const layoutCtl: BlockControl = { key: 'layout', label: 'Layout', options: AUTH_LAYOUTS, default: 'stacked' }
 const statusCtl: BlockControl = { key: 'status', label: 'Status', options: AUTH_STATUSES, default: 'idle' }
 const floatingNav: BlockControl = { key: 'nav', label: 'Nav', options: FLOATING_NAVS, default: 'links' }
 const panelVisible: BlockControl = { key: 'panelVisible', label: 'PanelVisible', options: ['true', 'false'], default: 'true' }
 
 type Def = Omit<BlockDef, 'id' | 'contract'> & { contractName?: string }
 
-function auth(name: string, description: string, Block: (p: { container?: AuthContainer; status?: AuthStatus }) => ReactNode, withStatus = true): Def {
+function auth(name: string, description: string, Block: (p: AuthPlacement & { status?: AuthStatus }) => ReactNode, withStatus = true): Def {
   return {
     group: 'Auth', name, description, wide: false,
-    controls: withStatus ? [containerCtl, statusCtl] : [containerCtl],
-    render: (v) => <Block container={v.container as AuthContainer} {...(withStatus ? { status: v.status as AuthStatus } : {})} />,
+    controls: withStatus ? [containerCtl, layoutCtl, statusCtl] : [containerCtl, layoutCtl],
+    render: (v) => <Block {...authPlacement(v.container as AuthContainer, v.layout as AuthLayout)} {...(withStatus ? { status: v.status as AuthStatus } : {})} />,
     contractName: `Auth${name}`,
   }
 }
@@ -116,13 +117,15 @@ const DEFS: Def[] = [
   auth('Error', 'A sign-in error screen with a way to try again.', AuthError, false),
   {
     ...auth('ForgotPassword', 'Asks for an email or a phone number to send a reset link or code.', AuthForgotPassword),
-    controls: [containerCtl, statusCtl, { key: 'method', label: 'Method', options: ['email', 'sms'], default: 'email' }],
-    render: (v) => <AuthForgotPassword key={v.method} container={v.container as AuthContainer} status={v.status as AuthStatus} defaultMethod={v.method as 'email' | 'sms'} />,
+    controls: [containerCtl, layoutCtl, statusCtl, { key: 'method', label: 'Method', options: ['email', 'sms'], default: 'email' }],
+    render: (v) => <AuthForgotPassword key={v.method} {...authPlacement(v.container as AuthContainer, v.layout as AuthLayout)} status={v.status as AuthStatus} defaultMethod={v.method as 'email' | 'sms'} />,
   },
   auth('MagicLinkSent', 'Confirms a magic sign-in link was sent, with a way to resend it.', AuthMagicLinkSent, false),
   auth('NewPassword', 'Sets a new password, with the strength rules shown as the person types.', AuthNewPassword),
   auth('OTPVerification', 'Asks for the one-time code sent by email or SMS.', AuthOTPVerification),
   auth('SignIn', 'Email and password sign-in, with social sign-in and a link to sign up.', AuthSignIn),
+  { group: 'Auth', name: 'SignInPasskey', description: 'Email-first sign-in with a passkey and social providers, in a tray modal.', wide: false, controls: [], render: () => <AuthSignInPasskey />, contractName: 'AuthSignInPasskey' },
+  { group: 'Auth', name: 'Split', description: 'A brand panel beside any Auth block, for a full sign-in page.', wide: true, controls: [], render: () => <AuthSplit><AuthSignIn container="plain" /></AuthSplit>, contractName: 'AuthSplit' },
   auth('SignInPhone', 'Sign-in with a phone number and its country code.', AuthSignInPhone),
   auth('SignUp', 'Creates an account: name, email, password and the terms.', AuthSignUp),
   auth('SocialSignIn', 'Sign-in with social providers only.', AuthSocialSignIn, false),

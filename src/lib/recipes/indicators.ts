@@ -422,8 +422,8 @@ export const AVATAR_GROUP: ComponentRecipe = {
 }
 
 // ── FeaturedIcon ───────────────────────────────────────────────────────────
-// The Figma set (design-plans/featured-icon-contract.md, 1119:10857, 96 variants): Size sm · default · lg ·
-// xl (32 · 40 · 48 · 56) × Variant × Appearance soft · solid × Shape circle (Radius/full) · rounded
+// The Figma set (design-plans/featured-icon-contract.md, 1119:10857, 144 variants): Size sm · default · lg ·
+// xl (32 · 40 · 48 · 56) × Variant × Appearance soft · solid · gradient × Shape circle (Radius/full) · rounded
 // (Radius/action), a glyph centred in it: 20 on sm, 24 from default up. Same tones as an Avatar.
 export const FEATURED_ICON_APPEARANCES = ['soft', 'solid', 'gradient'] as const
 export const FEATURED_ICON_SIZES = ['default', 'sm', 'lg', 'xl'] as const

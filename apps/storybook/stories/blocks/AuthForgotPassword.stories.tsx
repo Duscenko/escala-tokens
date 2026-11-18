@@ -1,11 +1,12 @@
 import * as React from 'react'
 import type { Meta, StoryObj } from '@storybook/react-vite'
-import { AuthForgotPassword, AUTH_CONTAINERS, AUTH_STATUSES, type AuthContainer, type AuthStatus } from '../../../../src/components/escala-ui/blocks/auth'
+import { AuthForgotPassword, AUTH_CONTAINERS, AUTH_LAYOUTS, authPlacement, type AuthLayout, AUTH_STATUSES, type AuthContainer, type AuthStatus } from '../../../../src/components/escala-ui/blocks/auth'
 
 /** Story args = the Figma `AuthForgotPassword` set (Auth page): `Container` card · plain, and Method email · sms. `Status` is the state the form can reach
  *  (code only; Figma draws idle). The block is built from escala-ui components and role tokens alone. */
 interface Args {
   container: AuthContainer
+  layout: AuthLayout
   status: AuthStatus
   method: 'email' | 'sms'
 }
@@ -16,10 +17,11 @@ const meta: Meta<Args> = {
   title: 'Blocks/Auth/ForgotPassword',
   tags: ['stage:storybook'],
   parameters: { layout: 'padded' },
-  render: (args) => <AuthForgotPassword container={args.container} status={args.status} key={args.method} defaultMethod={args.method} />,
-  args: { container: 'card', status: 'idle', method: 'email' },
+  render: (args) => <AuthForgotPassword {...authPlacement(args.container, args.layout)} status={args.status} key={args.method} defaultMethod={args.method} />,
+  args: { container: 'card', layout: 'stacked', status: 'idle', method: 'email' },
   argTypes: {
     container: { name: 'Container', control: 'select', options: [...AUTH_CONTAINERS] },
+    layout: { name: 'Layout', control: 'select', options: [...AUTH_LAYOUTS], description: 'inline: the desktop page, only with Container plain. Modals and phones stay stacked.' },
     status: { name: 'Status', control: 'select', options: [...AUTH_STATUSES], description: 'The state the form is in: idle · invalid · loading · success.' },
     method: { name: 'Method', control: 'select', options: ['email', 'sms'] },
   },
@@ -67,3 +69,12 @@ export const Motion: Story = {
     )
   },
 }
+
+/** The desktop page: `plain` + `inline`. */
+export const DesktopPage: Story = { name: 'Desktop page', render: () => <AuthForgotPassword container="plain" layout="inline" /> }
+
+/** The mobile page: `plain` + `stacked`. */
+export const MobilePage: Story = { name: 'Mobile page', render: () => <AuthForgotPassword container="plain" layout="stacked" /> }
+
+/** The modal: `card` + `stacked`. */
+export const ModalCard: Story = { name: 'Modal', render: () => <AuthForgotPassword container="card" layout="stacked" /> }

@@ -65,7 +65,7 @@ Combobox (Size, Variant, Shape and Value do not change it — checked on all 168
 
 | State | Fill | Stroke | Halo (2px outside) | Inks |
 |---|---|---|---|---|
-| Default | Surface/input | Border/control | — | Content/primary; placeholder Content/subtle |
+| Default | Surface/input | Border/control | — | Value Content/primary; placeholder and every glyph Content/subtle |
 | Hover | Surface/input | Border/control-hover | — | idem |
 | Focused, Open | Surface/input | Border/focus | Border/ring/default | idem |
 | Invalid | Surface/input | Status/critical/border-strong | Status/critical/border | idem |
@@ -78,7 +78,7 @@ Label Content/primary, description Content/secondary, trailing Content/subtle.
 
 ## Odd things in the file (copied, not fixed)
 
-- The ✕ (`icon-clear`) is an empty instance with no ink; the code inks it Content/primary like
+- The ✕ (`icon-clear`) is an empty instance with no ink; the code inks it Content/subtle like
   its sibling glyphs.
 - In the `Shape=pill` variants the leading / clear / chevron layers are not bound to their
   boolean properties; the code honours the props on every shape.

@@ -824,9 +824,9 @@ const CATEGORICAL_ROLES: { group: string; key: string; light: string; dark: stri
   // pin it replaces, which wasn't a state at all for those hues.
   { group: 'action', key: 'primary.hover',   light: '{step:accent+1}', dark: '{step:accent+1}' },
   { group: 'action', key: 'primary.pressed', light: '{step:accent+2}', dark: '{step:accent+2}' },
-  // Two steps above `surface.layer-2` in both appearances (owner, 2026-11-17,
-  // decided in the Figma file first — DEC-2026-11-17-001). One step (tone 4
-  // on layer-2's tone 3) read 1.09–1.15:1 on a card in every style, so the
+  // Set apart from the card it sits on (owner, 2026-11-17, decided in the Figma
+  // file first — DEC-2026-11-17-001; Light cards are white since DEC-2026-11-18-006).
+  // One step above a tone 3 card read 1.09–1.15:1 in every style, so the
   // button was only its top highlight. Light: the resting fill takes the tone
   // hover used to have (5) and hover · pressed walk the ramp (6 · 7). Dark:
   // 6 · 7 · 8. No border in either appearance: one rule for both.
@@ -887,7 +887,7 @@ const CATEGORICAL_ROLES: { group: string; key: string; light: string; dark: stri
   // Surface — elevation levels
   { group: 'surface', key: 'page',    light: '{neutral.1}',  dark: '{neutral-dark.1}' },
   { group: 'surface', key: 'layer-1', light: '{neutral.2}',  dark: '{neutral-dark.2}' },
-  { group: 'surface', key: 'layer-2', light: '{neutral.3}',  dark: '{neutral-dark.3}' },
+  { group: 'surface', key: 'layer-2', light: '{neutral.1}',  dark: '{neutral-dark.3}' },
   // OWNER DECISION 2026-11-17: the Figma file is the rule. `Surface/accent` is Accents/EscalaDS/02 in Light and Dark/04 in Dark (a
   // brand wash needs a step more to read on the dark page). Pinned to the file's steps; `content.accent` (#b29bf9) reads on it at WCAG 6.3 · Lc 52 (the
   // file's own pair).

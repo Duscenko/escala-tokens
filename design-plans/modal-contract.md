@@ -15,7 +15,7 @@ Ledger: `Modal` = rename de `Dialog` (code `Dialog`); `ModalHeader` / `ModalFoot
 | Modal | `Size` default · lg | VARIANT | default | `size` |
 | ModalHeader | `Title` | TEXT | "System notification" | `title` |
 | ModalHeader | `DescriptionVisible` / `Description` | BOOL / TEXT | true / "Review the details and take action." | `description` |
-| ModalHeader | `IconVisible` | BOOLEAN | true | `icon` (FeaturedIcon soft circle default) |
+| ModalHeader | `IconVisible` | BOOLEAN | true | `icon` (FeaturedIcon soft rounded default) |
 | ModalHeader | `TrailingVisible` / `Trailing` | BOOL / SLOT | false | `trailing` |
 | ModalHeader | `CloseClearanceVisible` | BOOLEAN | false | `closeClearance` (lo pone el Modal) |
 | ModalHeader | `Size` default · lg | VARIANT | default | `size` |
@@ -36,9 +36,9 @@ Efectos (Shadow/xl, el frame CLIPA contenido: los spreads SÍ se pintan): `0 0 0
 Scrim: `Surface/overlay` (el Modal no lo dibuja; es la descripción).
 
 **ModalHeader**: ancho 440 default / 600 lg (FILL en el Modal). Horizontal: HORIZONTAL, gap `gap-group` 16, centro;
-vertical-left: VERTICAL MIN gap 16; vertical-center: VERTICAL centro. Icono = FeaturedIcon (default soft circle,
-40 default / 48 lg). `header-content` VERTICAL gap `gap-tight` 4, FILL: título `Type/heading-sm` (default) / `heading-md` (lg),
-`Content/primary`; descripción `Type/body-sm` / `body-md`, `Content/secondary`. `Trailing` (oculto): HORIZONTAL gap
+vertical-left: VERTICAL MIN gap 16; vertical-center: VERTICAL centro. Icono = FeaturedIcon (default soft rounded,
+40 default / 48 lg). `header-content` VERTICAL gap `gap-tight` 4, FILL: título `Type/heading-2xs` (default) / `heading-xs` (lg),
+`Content/primary`; descripción `Type/body-md` en los dos tamaños, `Content/secondary`. `Trailing` (oculto): HORIZONTAL gap
 `gap-control` 8 (Button secondary ghost sm / default). `close-clearance` (oculto): cuadrado `Size/control-sm` (32) / `control-md` (40).
 Sin padding propio (el del Modal).
 

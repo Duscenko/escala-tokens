@@ -5,7 +5,7 @@ import { SPACING_ROLES, SPACING_STANDARD, roleValuePx } from '../layoutTokens'
 import { groupLabelRecipe } from '../recipes/groupLabel'
 import { LIST_ITEM_METRICS, listItemRecipe } from '../recipes/listItem'
 import {
-  COMPONENT_RECIPES, cssVarOf, recipeColorRoles, recipeTokenRefs, resolveRecipe, serializeRecipes,
+  COMPONENT_RECIPES, cssVarOf, recipeColorRoles, recipeRows, recipeTokenRefs, resolveRecipe, serializeRecipes,
 } from '../componentRecipes'
 import { RECIPE_CSS, recipeCss, recipeCssVars, slotName } from '../recipeStyles'
 import { COMPONENTS } from '../componentCatalogue'
@@ -120,9 +120,17 @@ describe('the generated stylesheet', () => {
   it('declares exactly the variables the recipe references', () => {
     for (const recipe of Object.values(COMPONENT_RECIPES)) {
       const expected = new Set<string>()
+      // `font` writes the five facets of its reference. `fontStep` writes only the three of the scale step: the
+      // family and the weight stay those of the slot's `font`.
+      const rows = recipeRows(recipe)
+      const fullFont = new Set(rows.filter((r) => r.prop === 'font').map((r) => r.ref))
+      const stepFacets = ['font-size', 'line-height', 'letter-spacing']
+      const facetsOf = (ref: string) => (rows.some((r) => r.prop === 'fontStep' && r.ref === ref) && !fullFont.has(ref)
+        ? stepFacets
+        : ['font-family', ...stepFacets, 'font-weight'])
       for (const ref of recipeTokenRefs(recipe)) {
         if (ref.startsWith('type.')) {
-          for (const f of ['font-family', 'font-size', 'line-height', 'font-weight', 'letter-spacing']) expected.add(cssVarOf(ref, f))
+          for (const f of facetsOf(ref)) expected.add(cssVarOf(ref, f))
         } else expected.add(cssVarOf(ref))
       }
       // The focus halo reads `stroke.focus` + `stroke.control` (and a solid's top

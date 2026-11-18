@@ -223,6 +223,7 @@
     "spacing": [
       "spacing.gap-control",
       "spacing.gap-tight",
+      "spacing.inset-action",
       "spacing.inset-control"
     ],
     "stroke": [

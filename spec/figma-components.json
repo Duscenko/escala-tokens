@@ -4,8 +4,8 @@
     "key": "7j5zukN5HpihGVJMmyjA20",
     "name": "Escala Design System (Real)"
   },
-  "exportedAt": "2026-11-16",
-  "checksum": "36442fad",
+  "exportedAt": "2026-11-18",
+  "checksum": "2881bc15",
   "pages": [
     {
       "page": "Button (✓)  (D)",
@@ -87,7 +87,7 @@
           "name": "SocialLoginButton",
           "variants": 360,
           "axes": {
-            "Appearance": "white|brand",
+            "Appearance": "outline|solid",
             "Brand": "Google|Apple|Discord|Dribbble|Facebook|GitHub|LinkedIn|Slack|X",
             "IconOnly": "false|true",
             "Size": "lg|default",
@@ -184,7 +184,7 @@
       "sets": [
         {
           "name": "Input",
-          "variants": 126,
+          "variants": 222,
           "axes": {
             "Size": "default|sm|lg",
             "State": "Default|Hover|Focused|Invalid|Disabled",
@@ -817,19 +817,19 @@
       "sets": [
         {
           "name": "Accordion",
-          "variants": 6,
+          "variants": 7,
           "axes": {
-            "Variant": "ghost-default|ghost-underline|ghost-rounded|outline-rounded|outline-sharp|filled-rounded"
+            "Variant": "ghost-default|ghost-underline|ghost-rounded|outline-rounded|outline-sharp|filled-rounded|card"
           }
         },
         {
           "name": "AccordionItem",
-          "variants": 18,
+          "variants": 21,
           "axes": {
             "State": "Closed|Open|Disabled",
-            "Variant": "ghost-default|ghost-underline|ghost-rounded|outline-rounded|outline-sharp|filled-rounded"
+            "Variant": "ghost-default|ghost-underline|ghost-rounded|outline-rounded|outline-sharp|filled-rounded|card"
           },
-          "props": "Content:TEXT,Icon:INSTANCE_SWAP,IconVisible:BOOLEAN,Label:TEXT"
+          "props": "BadgeVisible:BOOLEAN,Content:TEXT,Icon:INSTANCE_SWAP,IconVisible:BOOLEAN,Label:TEXT"
         }
       ]
     },
@@ -1022,17 +1022,18 @@
       "sets": [
         {
           "name": "Modal",
-          "variants": 2,
+          "variants": 3,
           "axes": {
+            "Layout": "tray|simple",
             "Size": "default|lg"
           },
           "props": "CloseVisible:BOOLEAN,Content:SLOT,ContentVisible:BOOLEAN,FooterVisible:BOOLEAN"
         },
         {
           "name": "ModalFooter",
-          "variants": 4,
+          "variants": 6,
           "axes": {
-            "Layout": "inline|stacked",
+            "Layout": "inline|stacked|equal",
             "Size": "default|lg"
           },
           "props": "Actions:SLOT,ActionsVisible:BOOLEAN,Leading:SLOT,LeadingVisible:BOOLEAN"
@@ -1101,7 +1102,7 @@
           "axes": {
             "Size": "sm|default|lg",
             "State": "Default|Hover|Focused|Selected|Disabled",
-            "Variant": "default|destructive"
+            "Variant": "default|critical"
           },
           "props": "Control:SLOT,ControlVisible:BOOLEAN,Description:TEXT,DescriptionVisible:BOOLEAN,IconLeadingIcon:INSTANCE_SWAP,IconLeadingVisible:BOOLEAN,IconTrailingIcon:INSTANCE_SWAP,IconTrailingVisible:BOOLEAN,IndicatorVisible:BOOLEAN,Label:TEXT,Media:SLOT,MediaVisible:BOOLEAN,Trailing:TEXT,TrailingVisible:BOOLEAN"
         },
@@ -1467,87 +1468,108 @@
       "sets": [
         {
           "name": "AuthAccountLocked",
-          "variants": 2,
+          "variants": 3,
           "axes": {
-            "Container": "card|plain"
+            "Container": "card|plain",
+            "Layout": "stacked|inline"
           }
         },
         {
           "name": "AuthCheckEmail",
-          "variants": 2,
+          "variants": 3,
           "axes": {
-            "Container": "card|plain"
+            "Container": "card|plain",
+            "Layout": "stacked|inline"
           }
         },
         {
           "name": "AuthError",
-          "variants": 2,
+          "variants": 3,
           "axes": {
-            "Container": "card|plain"
+            "Container": "card|plain",
+            "Layout": "stacked|inline"
           }
         },
         {
           "name": "AuthForgotPassword",
-          "variants": 4,
+          "variants": 6,
           "axes": {
             "Container": "card|plain",
+            "Layout": "stacked|inline",
             "Method": "email|sms"
           }
         },
         {
           "name": "AuthMagicLinkSent",
-          "variants": 2,
+          "variants": 3,
           "axes": {
-            "Container": "card|plain"
+            "Container": "card|plain",
+            "Layout": "stacked|inline"
           }
         },
         {
           "name": "AuthNewPassword",
-          "variants": 2,
+          "variants": 3,
           "axes": {
-            "Container": "card|plain"
+            "Container": "card|plain",
+            "Layout": "stacked|inline"
           }
         },
         {
           "name": "AuthOTPVerification",
-          "variants": 2,
+          "variants": 3,
           "axes": {
-            "Container": "card|plain"
+            "Container": "card|plain",
+            "Layout": "stacked|inline"
           }
         },
         {
           "name": "AuthSignIn",
-          "variants": 2,
+          "variants": 3,
           "axes": {
-            "Container": "card|plain"
+            "Container": "card|plain",
+            "Layout": "stacked|inline"
           }
         },
         {
+          "name": "AuthSignInPasskey",
+          "variants": 1
+        },
+        {
           "name": "AuthSignInPhone",
-          "variants": 2,
+          "variants": 3,
           "axes": {
-            "Container": "card|plain"
+            "Container": "card|plain",
+            "Layout": "stacked|inline"
           }
         },
         {
           "name": "AuthSignUp",
-          "variants": 2,
+          "variants": 3,
           "axes": {
-            "Container": "card|plain"
+            "Container": "card|plain",
+            "Layout": "stacked|inline"
           }
         },
         {
           "name": "AuthSocialSignIn",
-          "variants": 2,
+          "variants": 3,
           "axes": {
-            "Container": "card|plain"
+            "Container": "card|plain",
+            "Layout": "stacked|inline"
           }
         },
         {
+          "name": "AuthSplit",
+          "variants": 1,
+          "props": "Content:SLOT,Description:TEXT,MediaIcon:INSTANCE_SWAP,Title:TEXT"
+        },
+        {
           "name": "AuthTwoFactor",
-          "variants": 2,
+          "variants": 3,
           "axes": {
-            "Container": "card|plain"
+            "Container": "card|plain",
+            "Layout": "stacked|inline"
           }
         }
       ]

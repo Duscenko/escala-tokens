@@ -182,7 +182,7 @@
       "size.xl"
     ]
   },
-  "usage": "Always decorative; the nearby title carries the meaning. A dialog header nests it (default or lg, soft, circle).",
+  "usage": "Always decorative; the nearby title carries the meaning. A dialog header nests it (default or lg, always rounded).",
   "accessibility": "aria-hidden: decorative. The title or text beside it carries the meaning.",
   "code": {
     "files": [

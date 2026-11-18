@@ -261,6 +261,9 @@ function declarations(props: SlotProps): string[] {
       case 'shadow': out.push(`box-shadow: ${v(ref)}`); break
       // The target itself is the `::before` (see `hitRule`); its host anchors it.
       case 'hit': out.push('position: relative'); break
+      case 'fontStep':
+        out.push(`font-size: ${v(ref, 'font-size')}`, `line-height: ${v(ref, 'line-height')}`, `letter-spacing: ${v(ref, 'letter-spacing')}`)
+        break
       case 'font':
         out.push(
           `font-family: ${v(ref, 'font-family')}`,

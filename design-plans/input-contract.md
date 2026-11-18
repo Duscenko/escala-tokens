@@ -1,7 +1,7 @@
 # Contrato · Input (de Figma a código)
 
 Fecha: 2026-11-12 · Fuente: Figma `Escala Design System (Real)`, set `Input` (`4:12380`,
-114 variantes, página «❖ Input»), leído con la Plugin API (solo lectura). **Figma manda.**
+222 variantes, página «❖ Input»), leído con la Plugin API (solo lectura). **Figma manda.**
 
 Descripción del set: «Input — the box itself. Type Default: Size (sm · default · lg) × Value
 (Placeholder · Filled) × State, with optional Icon leading (search) / Icon trailing (eye). Other
@@ -55,13 +55,13 @@ Raíz: horizontal, centrada, gap `Spacing/gap-control` (8), padding X `Spacing/i
 
 ## Color por State
 
-| State | Fill | Stroke | Halo (2px, monta el borde) | Tintas: valor · icono · addon / placeholder |
+| State | Fill | Stroke | Halo (2px, monta el borde) | Tintas: valor · addon / placeholder · icono |
 |---|---|---|---|---|
-| Default | `Surface/input` | `Border/control` | — | `Content/primary` / `Content/subtle` |
+| Default | `Surface/input` | `Border/control` | — | `Content/primary` / `Content/subtle` · icono `Content/subtle` |
 | Hover | `Surface/input` | `Border/control-hover` | — | igual |
 | Focused | `Surface/input` | `Border/focus` | `Border/ring/default` | igual (+ caret) |
 | Invalid | `Surface/input` | `Status/critical/border-strong` | `Status/critical/border` | igual |
-| Disabled | `Action/disabled/default` | **`Border/control`** | — | `Content/disabled` / `Content/disabled` |
+| Disabled | `Action/disabled/default` | **`Border/control`** | — | `Content/disabled` / `Content/disabled` (icono incluido) |
 
 Disabled conserva el stroke neutro (antes `fieldBox()` lo repintaba: bug corregido, afecta también
 a Textarea/InputGroup/Select/InputTag).

@@ -17,7 +17,7 @@
     "page": "Accordion (✓) (P)",
     "pageNodeId": "89:25",
     "set": "AccordionItem",
-    "variants": 18,
+    "variants": 21,
     "axes": {
       "State": [
         "Closed",
@@ -30,10 +30,15 @@
         "ghost-rounded",
         "outline-rounded",
         "outline-sharp",
-        "filled-rounded"
+        "filled-rounded",
+        "card"
       ]
     },
     "properties": [
+      {
+        "name": "BadgeVisible",
+        "type": "BOOLEAN"
+      },
       {
         "name": "Content",
         "type": "TEXT"

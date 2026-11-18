@@ -131,7 +131,11 @@ export const BUTTON: ComponentRecipe = {
       root: { radius: 'radius.action', font: 'type.button' },
     })),
     part({ Size: BUTTON_SIZES }, (size) => ({
-      root: { height: BUTTON_HEIGHT[size], paddingX: 'spacing.inset-control', gap: BUTTON_GAP[size] },
+      root: { height: BUTTON_HEIGHT[size], gap: BUTTON_GAP[size] },
+    })),
+    // Figma: default and lg on `Spacing/inset-action`; xs, sm and every `link` on `inset-control` (DEC-2026-11-18-007).
+    part({ Appearance: BUTTON_APPEARANCES, Size: BUTTON_SIZES }, (appearance, size) => ({
+      root: { paddingX: appearance !== 'link' && (size === 'default' || size === 'lg') ? 'spacing.inset-action' : 'spacing.inset-control' },
     })),
     part({ Variant: BUTTON_VARIANTS, Appearance: BUTTON_APPEARANCES, State: BUTTON_STATES }, (v, a, s) => buttonPaint(v, a, s, true)),
   ],
@@ -580,7 +584,7 @@ export const BUTTON_GROUP_DIVIDER: ComponentRecipe = {
 // `brand` is the provider's own fill from the Social Media Brands collection (`<Brand>/Action/default|hover|pressed`,
 // `Content/on-action`, `Border/focus`) with a 1px edge in its pressed step and the solid-control highlight; Disabled
 // drops to Action/disabled/default with no edge. Radius/action, Size/control-md (40) · control-lg (48), padding
-// inset-control, gap gap-control, Type/button, a 20px mark. IconOnly is a square of the Size and no label.
+// inset-action, gap gap-control, the label on `size/text-md` (lg `text-lg`) with Type/button's family and weight, a 20px mark. Focused: one 2px ring 1px outside the edge, in `<Brand>/Border/focus`. IconOnly is a square of the Size and no label.
 // The provider mark is the file's `logo/<Brand>` (brandLogos.ts): in colour on `white`, one colour in the label's ink on
 // `brand` and Disabled.
 
@@ -605,7 +609,7 @@ function socialPaint(appearance: string, brand: string, state: string): SlotMap 
   if (appearance === 'white') {
     const root: SlotProps = state === 'Hover' || state === 'Pressed'
       ? { fill: c(state === 'Hover' ? 'surface.layer-1' : 'surface.muted'), stroke: c('border.control-hover') }
-      : state === 'Focused' ? { fill: c('surface.page'), stroke: c('border.focus'), ring: c('border.ring.default') }
+      : state === 'Focused' ? { fill: c('surface.page'), stroke: c('border.control'), gapRing: `social.${id}.border.focus` }
       : { fill: c('surface.page'), stroke: c('border.control') }
     return { root: { ...root, text: c('content.primary') }, label: { text: c('content.primary') } }
   }
@@ -613,8 +617,8 @@ function socialPaint(appearance: string, brand: string, state: string): SlotMap 
   const root: SlotProps = {
     // `social.*` refs are not Categorical roles: written whole, never through `c()`.
     fill, text: `social.${id}.content.on-action`, highlight: c('elevation.highlight'),
-    stroke: state === 'Focused' ? `social.${id}.border.focus` : `social.${id}.action.pressed`,
-    ...(state === 'Focused' ? { ring: c('border.ring.default') } : {}),
+    stroke: `social.${id}.action.pressed`,
+    ...(state === 'Focused' ? { gapRing: `social.${id}.border.focus` } : {}),
   }
   return { root, label: { text: `social.${id}.content.on-action` } }
 }
@@ -631,7 +635,7 @@ export const SOCIAL_LOGIN_BUTTON: ComponentRecipe = {
     part({ Size: SOCIAL_SIZES, IconOnly: ['false', 'true'] as const }, (size, iconOnly) => ({
       root: iconOnly === 'true'
         ? { ...SOCIAL_GEOMETRY[size], width: SOCIAL_GEOMETRY[size].height, paddingX: 'spacing.none' }
-        : { ...SOCIAL_GEOMETRY[size], paddingX: 'spacing.inset-control' },
+        : { ...SOCIAL_GEOMETRY[size], paddingX: 'spacing.inset-action', fontStep: size === 'lg' ? 'type.text-lg' : 'type.text-md' },
     })),
     part({ Appearance: SOCIAL_APPEARANCES, Brand: SOCIAL_BRAND_NAMES, State: SOCIAL_STATES }, socialPaint),
   ],

@@ -24,8 +24,8 @@
     "variants": 360,
     "axes": {
       "Appearance": [
-        "white",
-        "brand"
+        "outline",
+        "solid"
       ],
       "Brand": [
         "Google",
@@ -160,8 +160,6 @@
       "color.action.disabled.default",
       "color.border.control",
       "color.border.control-hover",
-      "color.border.focus",
-      "color.border.ring.default",
       "color.border.subtle",
       "color.content.disabled",
       "color.content.primary",
@@ -229,14 +227,16 @@
     ],
     "spacing": [
       "spacing.gap-control",
-      "spacing.inset-control",
+      "spacing.inset-action",
       "spacing.none"
     ],
     "stroke": [
       "stroke.control"
     ],
     "type": [
-      "type.button"
+      "type.button",
+      "type.text-lg",
+      "type.text-md"
     ]
   },
   "usage": "Stack vertically above the email form, or lay the icon-only form in a row. Keep provider order consistent across screens.",

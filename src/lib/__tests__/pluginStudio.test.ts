@@ -155,7 +155,7 @@ describe('plugin studio build', () => {
     expect(pill.field).toBe(32)
     expect(pill.control).toBe(6) // selectors md: a checkbox stays a square
     expect(pill.controlH).toBe(40)
-    expect(pill.pad).toBe(20)
+    expect(pill.pad).toBe(24)
     expect(pill.accentRamp).toHaveLength(12)
     expect(pill.accentRamp[8].toLowerCase()).toBe('#9522e9')
     expect(pill.page.toLowerCase()).toBe(pill.neutralRamp[0].toLowerCase())
@@ -171,7 +171,7 @@ describe('plugin studio build', () => {
     const o = studioOptions()
     const quiet = o.spacingModes.find((m) => m.id === 'quiet')
     expect(quiet?.controlH).toBe(40)
-    expect(quiet?.pad).toBe(20)
+    expect(quiet?.pad).toBe(24)
     expect(o.shadows.find((s) => s.label === 'Strong')?.mdDark).toBe(dark.shadow)
     const core = o.styles.find((s) => s.id === 'core-minimal')
     const styled = studioLook({ style: 'core-minimal' })

@@ -10,14 +10,16 @@
       "name": "AuthAccountLocked",
       "figmaSet": "1006:1473",
       "axes": {
-        "Container": "card|plain"
+        "Container": "card|plain",
+        "Layout": "stacked|inline"
       },
-      "variants": 2,
+      "variants": 3,
       "anatomy": [
         "header-area (ModalHeader, Align vertical-center in card · horizontal in plain)",
         "divider (Separator, Tone subtle)",
         "body (gap-group)",
-        "footer (sentence + TextLink)"
+        "footer (sentence + TextLink)",
+        "layout inline: ModalHeader Align horizontal Size lg; Field, Button, SocialLoginButton, InputOTP, SegmentedControl lg; CheckboxItem, Checkbox, PasswordStrength, Alert default; footer body-md + TextLink sm"
       ],
       "nests": [
         "ModalHeader",
@@ -29,6 +31,7 @@
       "slots": [],
       "props": [
         "container",
+        "layout",
         "onSubmit",
         "onNavigate"
       ],
@@ -57,14 +60,16 @@
       "name": "AuthCheckEmail",
       "figmaSet": "1006:1036",
       "axes": {
-        "Container": "card|plain"
+        "Container": "card|plain",
+        "Layout": "stacked|inline"
       },
-      "variants": 2,
+      "variants": 3,
       "anatomy": [
         "header-area (ModalHeader, Align vertical-center in card · horizontal in plain)",
         "divider (Separator, Tone subtle)",
         "body (gap-group)",
-        "footer (sentence + TextLink)"
+        "footer (sentence + TextLink)",
+        "layout inline: ModalHeader Align horizontal Size lg; Field, Button, SocialLoginButton, InputOTP, SegmentedControl lg; CheckboxItem, Checkbox, PasswordStrength, Alert default; footer body-md + TextLink sm"
       ],
       "nests": [
         "ModalHeader",
@@ -75,6 +80,7 @@
       "slots": [],
       "props": [
         "container",
+        "layout",
         "onSubmit",
         "onNavigate"
       ],
@@ -109,13 +115,15 @@
       "name": "AuthError",
       "figmaSet": "1006:1635",
       "axes": {
-        "Container": "card|plain"
+        "Container": "card|plain",
+        "Layout": "stacked|inline"
       },
-      "variants": 2,
+      "variants": 3,
       "anatomy": [
         "header-area (ModalHeader, Align vertical-center in card · horizontal in plain)",
         "divider (Separator, Tone subtle)",
-        "body (gap-group)"
+        "body (gap-group)",
+        "layout inline: ModalHeader Align horizontal Size lg; Field, Button, SocialLoginButton, InputOTP, SegmentedControl lg; CheckboxItem, Checkbox, PasswordStrength, Alert default; footer body-md + TextLink sm"
       ],
       "nests": [
         "ModalHeader",
@@ -126,6 +134,7 @@
       "slots": [],
       "props": [
         "container",
+        "layout",
         "onSubmit",
         "onNavigate"
       ],
@@ -155,13 +164,15 @@
       "figmaSet": "1005:1497",
       "axes": {
         "Container": "card|plain",
-        "Method": "email|sms"
+        "Method": "email|sms",
+        "Layout": "stacked|inline"
       },
-      "variants": 4,
+      "variants": 6,
       "anatomy": [
         "header-area (ModalHeader, Align vertical-center in card · horizontal in plain)",
         "divider (Separator, Tone subtle)",
-        "body (gap-group)"
+        "body (gap-group)",
+        "layout inline: ModalHeader Align horizontal Size lg; Field, Button, SocialLoginButton, InputOTP, SegmentedControl lg; CheckboxItem, Checkbox, PasswordStrength, Alert default; footer body-md + TextLink sm"
       ],
       "nests": [
         "ModalHeader",
@@ -174,6 +185,7 @@
       "slots": [],
       "props": [
         "container",
+        "layout",
         "status",
         "error",
         "onSubmit",
@@ -210,14 +222,16 @@
       "name": "AuthMagicLinkSent",
       "figmaSet": "1006:1261",
       "axes": {
-        "Container": "card|plain"
+        "Container": "card|plain",
+        "Layout": "stacked|inline"
       },
-      "variants": 2,
+      "variants": 3,
       "anatomy": [
         "header-area (ModalHeader, Align vertical-center in card · horizontal in plain)",
         "divider (Separator, Tone subtle)",
         "body (gap-group)",
-        "footer (sentence + TextLink)"
+        "footer (sentence + TextLink)",
+        "layout inline: ModalHeader Align horizontal Size lg; Field, Button, SocialLoginButton, InputOTP, SegmentedControl lg; CheckboxItem, Checkbox, PasswordStrength, Alert default; footer body-md + TextLink sm"
       ],
       "nests": [
         "ModalHeader",
@@ -229,6 +243,7 @@
       "slots": [],
       "props": [
         "container",
+        "layout",
         "onSubmit",
         "onNavigate"
       ],
@@ -263,13 +278,15 @@
       "name": "AuthNewPassword",
       "figmaSet": "1005:1838",
       "axes": {
-        "Container": "card|plain"
+        "Container": "card|plain",
+        "Layout": "stacked|inline"
       },
-      "variants": 2,
+      "variants": 3,
       "anatomy": [
         "header-area (ModalHeader, Align vertical-center in card · horizontal in plain)",
         "divider (Separator, Tone subtle)",
-        "body (gap-group)"
+        "body (gap-group)",
+        "layout inline: ModalHeader Align horizontal Size lg; Field, Button, SocialLoginButton, InputOTP, SegmentedControl lg; CheckboxItem, Checkbox, PasswordStrength, Alert default; footer body-md + TextLink sm"
       ],
       "nests": [
         "ModalHeader",
@@ -282,6 +299,7 @@
       "slots": [],
       "props": [
         "container",
+        "layout",
         "status",
         "error",
         "onSubmit",
@@ -318,14 +336,16 @@
       "name": "AuthOTPVerification",
       "figmaSet": "1005:640",
       "axes": {
-        "Container": "card|plain"
+        "Container": "card|plain",
+        "Layout": "stacked|inline"
       },
-      "variants": 2,
+      "variants": 3,
       "anatomy": [
         "header-area (ModalHeader, Align vertical-center in card · horizontal in plain)",
         "divider (Separator, Tone subtle)",
         "body (gap-group)",
-        "footer (sentence + TextLink)"
+        "footer (sentence + TextLink)",
+        "layout inline: ModalHeader Align horizontal Size lg; Field, Button, SocialLoginButton, InputOTP, SegmentedControl lg; CheckboxItem, Checkbox, PasswordStrength, Alert default; footer body-md + TextLink sm"
       ],
       "nests": [
         "ModalHeader",
@@ -338,6 +358,7 @@
       "slots": [],
       "props": [
         "container",
+        "layout",
         "status",
         "error",
         "onSubmit",
@@ -374,14 +395,16 @@
       "name": "AuthSignIn",
       "figmaSet": "1004:436",
       "axes": {
-        "Container": "card|plain"
+        "Container": "card|plain",
+        "Layout": "stacked|inline"
       },
-      "variants": 2,
+      "variants": 3,
       "anatomy": [
         "header-area (ModalHeader, Align vertical-center in card · horizontal in plain)",
         "divider (Separator, Tone subtle)",
         "body (gap-group)",
-        "footer (sentence + TextLink)"
+        "footer (sentence + TextLink)",
+        "layout inline: ModalHeader Align horizontal Size lg; Field, Button, SocialLoginButton, InputOTP, SegmentedControl lg; CheckboxItem, Checkbox, PasswordStrength, Alert default; footer body-md + TextLink sm"
       ],
       "nests": [
         "ModalHeader",
@@ -397,6 +420,7 @@
       "slots": [],
       "props": [
         "container",
+        "layout",
         "status",
         "error",
         "onSubmit",
@@ -430,19 +454,64 @@
       ]
     },
     {
+      "name": "AuthSignInPasskey",
+      "figmaSet": "2146:8197",
+      "axes": {},
+      "variants": 1,
+      "anatomy": [
+        "panel (Surface/raised, Border/subtle, bottom Radius/container)",
+        "header-area (ModalHeader, Size lg, Align vertical-left, icon hidden)",
+        "body (Field email, Button Continue, Separator OR, Button passkey, three SocialLoginButtons)",
+        "footer tray (filled, sentence + TextLink, right-aligned)"
+      ],
+      "nests": [
+        "ModalHeader",
+        "Field",
+        "Input",
+        "Button",
+        "Separator",
+        "SocialLoginButton",
+        "TextLink"
+      ],
+      "slots": [],
+      "props": [
+        "title",
+        "description",
+        "onContinue",
+        "onPasskey",
+        "onProvider",
+        "onSignUp"
+      ],
+      "a11y": [
+        "The block is a <section> named by its title",
+        "Every field is a Field (label, description, error tied to the control)",
+        "Inside a Modal the title is the dialog's accessible name"
+      ],
+      "motion": [
+        {
+          "moment": "modal opens / closes",
+          "mechanism": "the Modal's choreography",
+          "role": "dialog-enter / dialog-exit",
+          "reduced": "handled by the overlay"
+        }
+      ]
+    },
+    {
       "name": "AuthSignInPhone",
       "figmaSet": "1004:1199",
       "axes": {
-        "Container": "card|plain"
+        "Container": "card|plain",
+        "Layout": "stacked|inline"
       },
-      "variants": 2,
+      "variants": 3,
       "anatomy": [
         "header-area (ModalHeader, Align vertical-center in card · horizontal in plain; FeaturedIcon secondary, a phone)",
         "divider (Separator, Tone subtle)",
         "body (gap-section between two groups)",
         "form (gap-group): Field (Phone number, required) + CheckboxItem",
         "actions (gap-group): Button · Separator (OR) · Button (secondary, mail icon)",
-        "country picker: an anchored Popover on every viewport (search Input + ComboboxItem rows)"
+        "country picker: an anchored Popover on every viewport (search Input + ComboboxItem rows)",
+        "layout inline: ModalHeader Align horizontal Size lg; Field, Button, SocialLoginButton, InputOTP, SegmentedControl lg; CheckboxItem, Checkbox, PasswordStrength, Alert default; footer body-md + TextLink sm"
       ],
       "nests": [
         "ModalHeader",
@@ -455,6 +524,7 @@
       "slots": [],
       "props": [
         "container",
+        "layout",
         "status",
         "error",
         "defaultCountry",
@@ -501,14 +571,16 @@
       "name": "AuthSignUp",
       "figmaSet": "1004:971",
       "axes": {
-        "Container": "card|plain"
+        "Container": "card|plain",
+        "Layout": "stacked|inline"
       },
-      "variants": 2,
+      "variants": 3,
       "anatomy": [
         "header-area (ModalHeader, Align vertical-center in card · horizontal in plain)",
         "divider (Separator, Tone subtle)",
         "body (gap-group)",
-        "footer (sentence + TextLink)"
+        "footer (sentence + TextLink)",
+        "layout inline: ModalHeader Align horizontal Size lg; Field, Button, SocialLoginButton, InputOTP, SegmentedControl lg; CheckboxItem, Checkbox, PasswordStrength, Alert default; footer body-md + TextLink sm"
       ],
       "nests": [
         "ModalHeader",
@@ -524,6 +596,7 @@
       "slots": [],
       "props": [
         "container",
+        "layout",
         "status",
         "error",
         "onSubmit",
@@ -560,14 +633,16 @@
       "name": "AuthSocialSignIn",
       "figmaSet": "1006:1904",
       "axes": {
-        "Container": "card|plain"
+        "Container": "card|plain",
+        "Layout": "stacked|inline"
       },
-      "variants": 2,
+      "variants": 3,
       "anatomy": [
         "header-area (ModalHeader, Align vertical-center in card · horizontal in plain)",
         "divider (Separator, Tone subtle)",
         "body (gap-group)",
-        "footer (sentence + TextLink)"
+        "footer (sentence + TextLink)",
+        "layout inline: ModalHeader Align horizontal Size lg; Field, Button, SocialLoginButton, InputOTP, SegmentedControl lg; CheckboxItem, Checkbox, PasswordStrength, Alert default; footer body-md + TextLink sm"
       ],
       "nests": [
         "ModalHeader",
@@ -579,6 +654,7 @@
       "slots": [],
       "props": [
         "container",
+        "layout",
         "onSubmit",
         "onNavigate"
       ],
@@ -604,17 +680,52 @@
       ]
     },
     {
+      "name": "AuthSplit",
+      "figmaSet": "2146:8199",
+      "axes": {},
+      "variants": 1,
+      "anatomy": [
+        "media (Surface/accent, FeaturedIcon xl gradient, title heading-lg, description body-lg)",
+        "content slot (any Auth block in Container=plain, header vertical-left, icon hidden)"
+      ],
+      "nests": [
+        "FeaturedIcon"
+      ],
+      "slots": [
+        "children"
+      ],
+      "props": [
+        "title",
+        "description",
+        "mediaIcon",
+        "children"
+      ],
+      "a11y": [
+        "Below the Tablet breakpoint only the Auth block is drawn"
+      ],
+      "motion": [
+        {
+          "moment": "load",
+          "mechanism": "none",
+          "role": "none",
+          "reduced": "n/a"
+        }
+      ]
+    },
+    {
       "name": "AuthTwoFactor",
       "figmaSet": "1005:905",
       "axes": {
-        "Container": "card|plain"
+        "Container": "card|plain",
+        "Layout": "stacked|inline"
       },
-      "variants": 2,
+      "variants": 3,
       "anatomy": [
         "header-area (ModalHeader, Align vertical-center in card · horizontal in plain)",
         "divider (Separator, Tone subtle)",
         "body (gap-group)",
-        "footer (sentence + TextLink)"
+        "footer (sentence + TextLink)",
+        "layout inline: ModalHeader Align horizontal Size lg; Field, Button, SocialLoginButton, InputOTP, SegmentedControl lg; CheckboxItem, Checkbox, PasswordStrength, Alert default; footer body-md + TextLink sm"
       ],
       "nests": [
         "ModalHeader",
@@ -628,6 +739,7 @@
       "slots": [],
       "props": [
         "container",
+        "layout",
         "status",
         "error",
         "onSubmit",
