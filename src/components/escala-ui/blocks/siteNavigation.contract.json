@@ -81,20 +81,39 @@
         "A nav landmark named Main",
         "Product opens on pointer enter and from the keyboard; its trigger reports aria-expanded",
         "Search opens on click and Cmd K and takes focus",
-        "Escape returns to the bar and restores focus to the control that opened it"
+        "Escape returns to the bar and restores focus to the control that opened it",
+        "Hover intent: the panel waits 60 ms to open and 140 ms to close, so crossing the bar does not flicker it"
       ],
       "motion": [
         {
           "moment": "open product or search",
-          "mechanism": "transitions on the container's width and height, content cross-fade",
-          "role": "use-overlay-in",
-          "reduced": "no size travel, the fade stays"
+          "mechanism": "transitions on the container's width and height; the bar stays mounted",
+          "role": "use-travel-in",
+          "reduced": "no size travel, the fades stay"
+        },
+        {
+          "moment": "panel content appears",
+          "mechanism": "opacity and rise, row by row after the container starts to grow",
+          "role": "use-stagger-in + --motion-stagger",
+          "reduced": "fade only, the rise is neutral in the tokens"
+        },
+        {
+          "moment": "panel content leaves",
+          "mechanism": "opacity, all rows together, before the container closes",
+          "role": "use-stagger-out",
+          "reduced": "fade only"
         },
         {
           "moment": "return to the bar",
           "mechanism": "transitions on the container's width and height",
-          "role": "use-overlay-out",
-          "reduced": "no size travel, the fade stays"
+          "role": "use-travel-out",
+          "reduced": "no size travel, the fades stay"
+        },
+        {
+          "moment": "Product caret",
+          "mechanism": "rotation",
+          "role": "use-disclosure-in",
+          "reduced": "unchanged"
         },
         {
           "moment": "Compact",

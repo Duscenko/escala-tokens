@@ -729,6 +729,20 @@
       "firstSeen": "2026-11-18",
       "lastSeen": "2026-11-18",
       "regression": false
+    },
+    {
+      "id": "COL-002:Border/strong:dark-neutral-focus",
+      "rule": "COL-002",
+      "severity": "error",
+      "side": "figma",
+      "entity": "Border/strong",
+      "evidence": "Escala Dark White Alpha/03 reads 1.51:1 on Surface/page (was 7.24:1); it is the keyboard focus edge of the neutral variants",
+      "status": "Open",
+      "resolution": null,
+      "firstSeen": "2026-11-18",
+      "lastSeen": "2026-11-18",
+      "regression": false,
+      "ticket": 77
     }
   ]
 }

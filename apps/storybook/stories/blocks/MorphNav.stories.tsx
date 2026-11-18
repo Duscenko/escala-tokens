@@ -17,5 +17,5 @@ const meta: Meta<Args> = {
 export default meta
 type Story = StoryObj<Args>
 export const Playground: Story = {}
-/** Hover Product, click search or press Cmd K; Escape returns to the bar. Open `use-overlay-in`, close `use-overlay-out`; reduced motion keeps the fade only. */
+/** Hover Product, click search or press Cmd K; Escape returns to the bar. The container travels on `use-travel-in` / `-out`, the panel rises row by row on `use-stagger-in`; reduced motion keeps the fades only. */
 export const Motion: Story = {}

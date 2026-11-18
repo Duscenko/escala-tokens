@@ -38,7 +38,12 @@ function stateSuffixes(recipe: ComponentRecipe, state: string): string[] {
     case 'Hover': return recipe.hover === 'highlight' ? [forced] : [`:hover${free}`, forced]
     case 'Pressed': return [`:active${free}`, forced]
     // The root itself (a button) or a wrapper around the focusable control.
-    case 'Focused': return [`:focus-visible${free}`, `:has(:focus-visible)${free}`, forced]
+    // A menu row: Radix moves focus to the row under the pointer and the browser still calls it `:focus-visible`,
+    // so a row reached with the pointer keeps the fill alone. The ring is for the keyboard (`data-modality`, DropdownMenuContent).
+    case 'Focused': {
+      const live = recipe.hover === 'highlight' ? `${free}:not([data-modality="pointer"] *)` : free
+      return [`:focus-visible${live}`, `:has(:focus-visible)${live}`, forced]
+    }
     case 'Disabled': return ['[aria-disabled="true"]', forced]
     case 'Error': return ['[aria-invalid="true"]', forced]
     default: return [forced]

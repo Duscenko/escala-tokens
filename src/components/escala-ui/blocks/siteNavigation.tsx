@@ -103,6 +103,25 @@ const SUGGESTIONS = [
   { title: 'Changelog', text: 'What changed this week', group: 'Resources' },
 ]
 const LINKS = ['Solutions', 'Resources', 'Pricing']
+/** Hover intent, not motion: how long the pointer must stay before the panel opens, or stay away before it closes. */
+const HOVER_OPEN_MS = 60
+const HOVER_CLOSE_MS = 140
+const SEARCH_WIDTH = 640
+
+/** One piece of the panel: it rises in after the container starts to grow, row by row, and leaves at once, together. */
+function reveal(shown: boolean, step: number): React.CSSProperties {
+  // A fraction of the stagger, so the last row lands as the container finishes growing.
+  const delay = `calc(var(--motion-stagger) * ${0.6 + step * 0.4})`
+  return {
+    opacity: shown ? 1 : 0,
+    transform: shown ? 'none' : 'translateY(var(--motion-transform-enter))',
+    transition: shown
+      ? `opacity var(--motion-use-stagger-in) ${delay}, transform var(--motion-use-stagger-in) ${delay}`
+      : 'opacity var(--motion-use-stagger-out), transform var(--motion-use-stagger-out)',
+  }
+}
+const px = (el: Element, name: string) => parseFloat(getComputedStyle(el).getPropertyValue(name)) || 0
+
 const titleText: React.CSSProperties = { ...blockType('label'), color: 'var(--color-content-primary)' }
 const bodyText: React.CSSProperties = { ...blockType('body-sm'), color: 'var(--color-content-secondary)' }
 
@@ -116,33 +135,56 @@ export interface MorphNavProps extends Omit<React.ComponentProps<'nav'>, 'conten
   compact?: boolean
 }
 
-/** Figma `MorphNav`: one container that grows from the bar into the Product panel or the search palette. */
-export function MorphNav({ content, defaultContent = 'bar', onContentChange, compact = false, className, style, ...props }: MorphNavProps) {
+/**
+ * Figma `MorphNav`: one container that grows from the bar into the Product panel or the search palette.
+ * The bar never remounts: it stays in place while the container travels (`use-travel-in` / `-out`) around it, the panel
+ * rises in row by row once the container is moving (`use-stagger-in`) and leaves first, at once (`use-stagger-out`).
+ */
+export function MorphNav({ content, defaultContent = 'bar', onContentChange, compact = false, className, style, onPointerEnter, onPointerLeave, ...props }: MorphNavProps) {
   const [own, setOwn] = React.useState<MorphNavContent>(defaultContent)
   const current = content ?? own
   const reduced = useReducedMotion() ?? false
-  const inner = React.useRef<HTMLDivElement>(null)
+  const root = React.useRef<HTMLElement>(null)
+  const barRef = React.useRef<HTMLDivElement>(null)
+  const panelRef = React.useRef<HTMLDivElement>(null)
+  const searchRef = React.useRef<HTMLDivElement>(null)
   const productTrigger = React.useRef<HTMLButtonElement>(null)
   const searchTrigger = React.useRef<HTMLButtonElement>(null)
   const searchInput = React.useRef<HTMLInputElement>(null)
+  const hoverTimer = React.useRef<number | undefined>(undefined)
   const [size, setSize] = React.useState<{ width: number; height: number } | null>(null)
 
   const go = React.useCallback((next: MorphNavContent) => { setOwn(next); onContentChange?.(next) }, [onContentChange])
+  const cancelHover = () => window.clearTimeout(hoverTimer.current)
+  const hoverTo = (next: MorphNavContent, ms: number) => { cancelHover(); hoverTimer.current = window.setTimeout(() => go(next), ms) }
+  React.useEffect(() => () => window.clearTimeout(hoverTimer.current), [])
+
   const close = React.useCallback(() => {
     const from = current
     go('bar')
-    // Back to the control that opened it, once the bar is drawn again.
+    // Back to the control that opened it, once the bar can take focus again.
     window.setTimeout(() => (from === 'search' ? searchTrigger : productTrigger).current?.focus({ preventScroll: true }), 0)
   }, [current, go])
 
-  // The container's size is what morphs: measured from its content, so CSS can transition between two lengths.
+  // The container's size is what travels: worked out from the parts, so CSS can transition between two lengths.
   React.useLayoutEffect(() => {
-    const el = inner.current
-    if (!el) return
-    const measure = () => setSize({ width: el.offsetWidth, height: el.offsetHeight })
+    const nav = root.current, bar = barRef.current, panel = panelRef.current, search = searchRef.current
+    if (!nav || !bar || !panel || !search) return
+    const measure = () => {
+      const edge = px(nav, '--stroke-divider') * 2
+      const gap = px(nav, '--spacing-gap-control')
+      const inset = current === 'product' ? px(nav, '--spacing-inset-surface') : gap
+      const fill = bar.style.width
+      bar.style.width = 'max-content'
+      const barWidth = bar.offsetWidth
+      bar.style.width = fill
+      if (current === 'search') setSize({ width: search.offsetWidth + edge, height: search.offsetHeight + edge })
+      else if (current === 'product') setSize({ width: Math.max(barWidth, panel.offsetWidth) + inset * 2 + edge, height: bar.offsetHeight + gap + panel.offsetHeight + inset * 2 + edge })
+      else setSize({ width: barWidth + inset * 2 + edge, height: bar.offsetHeight + inset * 2 + edge })
+    }
     measure()
     const observer = new ResizeObserver(measure)
-    observer.observe(el)
+    for (const el of [bar, panel, search]) observer.observe(el)
     return () => observer.disconnect()
   }, [current, compact])
 
@@ -157,89 +199,117 @@ export function MorphNav({ content, defaultContent = 'bar', onContentChange, com
 
   React.useEffect(() => { if (current === 'search') searchInput.current?.focus({ preventScroll: true }) }, [current])
 
-  const morph = current === 'bar' ? '--motion-use-overlay-out' : '--motion-use-overlay-in'
-  const caret = boxedGlyph(current === 'product' ? 'caret-up' : 'chevron-down', 'icon.small')
-  const bar = (
-    <div data-part="MorphNav.bar" className="flex items-center" style={{ gap: 'var(--spacing-gap-tight)', paddingInlineStart: 'var(--spacing-gap-tight)' }}>
-      <Brand size="sm" name={compact ? '' : 'Ohmewn'} versionVisible={false} aria-label="Ohmewn" />
-      <NavItem asChild size="sm" iconTrailing={caret} forceState={current === 'product' ? 'Hover' : undefined}>
-        <button ref={productTrigger} type="button" aria-expanded={current === 'product'} aria-haspopup="true" onPointerEnter={() => go('product')} onClick={() => go(current === 'product' ? 'bar' : 'product')}>Product</button>
-      </NavItem>
-      {LINKS.map((label) => <NavItem key={label} size="sm" href="#" iconTrailing={label === 'Pricing' ? undefined : boxedGlyph('chevron-down', 'icon.small')}>{label}</NavItem>)}
-      <span className="flex-1" />
-      <IconButton ref={searchTrigger} variant="secondary" appearance="ghost" icon={boxedGlyph('search')} aria-label="Search" aria-keyshortcuts="Meta+K" onClick={() => go('search')} />
-      <Button size="sm">Start free</Button>
-    </div>
+  const product = current === 'product'
+  const searching = current === 'search'
+  const travel = current === 'bar' ? '--motion-use-travel-out' : '--motion-use-travel-in'
+  const caret = (
+    <span aria-hidden className="inline-flex" style={{ transform: product ? 'rotate(180deg)' : 'none', transition: 'transform var(--motion-use-disclosure-in)' }}>
+      {boxedGlyph('chevron-down', 'icon.small')}
+    </span>
   )
 
   return (
     <nav
+      ref={root}
       data-slot="morph-nav"
       data-content={current}
       data-compact={compact}
       aria-label="Main"
-      onPointerLeave={() => { if (current === 'product') go('bar') }}
-      className={cn('relative inline-block max-w-full overflow-hidden', className)}
+      onPointerEnter={(e) => { if (product) cancelHover(); onPointerEnter?.(e) }}
+      onPointerLeave={(e) => { if (product) hoverTo('bar', HOVER_CLOSE_MS); else cancelHover(); onPointerLeave?.(e) }}
+      className={cn('relative mx-auto block max-w-full overflow-hidden', className)}
       style={{
         background: 'var(--color-surface-layer-2)', border: 'var(--stroke-divider) solid var(--color-border-default)', borderRadius: 'var(--radius-overlay)', boxShadow: 'var(--shadow-lg)',
-        // Open on `use-overlay-in`, back to the bar on `use-overlay-out`; reduced motion drops the size travel and keeps the fade.
-        transition: reduced ? undefined : `width var(${morph}), height var(${morph})`,
-        ...(size && !reduced ? { width: size.width, height: size.height } : {}),
+        // Reduced motion drops the size travel; the fades stay.
+        transition: reduced ? undefined : `width var(${travel}), height var(${travel})`,
+        ...(size ?? {}),
         ...style,
       }}
       {...props}
     >
       <div
-        ref={inner}
-        key={current}
-        data-part="MorphNav.content"
-        className="flex w-max max-w-[100vw] flex-col starting:opacity-0"
-        style={{ gap: 'var(--spacing-gap-control)', padding: current === 'product' ? 'var(--spacing-inset-surface)' : 'var(--spacing-gap-control)', transition: 'opacity var(--motion-use-overlay-in)' }}
+        inert={searching}
+        data-part="MorphNav.main"
+        className="absolute inset-x-0 top-0 flex flex-col"
+        style={{
+          gap: 'var(--spacing-gap-control)',
+          padding: product ? 'var(--spacing-inset-surface)' : 'var(--spacing-gap-control)',
+          opacity: searching ? 0 : 1,
+          transition: `padding var(${travel}), opacity var(${searching ? '--motion-use-stagger-out' : '--motion-use-stagger-in'})`,
+        }}
       >
-        {current === 'search' ? (
-          <div role="search" className="flex flex-col" style={{ width: 622, gap: 'var(--spacing-gap-control)' }}>
-            <div className="flex items-center" style={{ gap: 'var(--spacing-gap-control)' }}>
-              <Input ref={searchInput} size="lg" type="search" placeholder="Search Ohmewn" aria-label="Search Ohmewn" className="flex-1" />
-              <IconButton variant="secondary" appearance="ghost" icon={boxedGlyph('close')} aria-label="Close search" onClick={close} />
+        <div ref={barRef} data-part="MorphNav.bar" className="flex w-full items-center" style={{ gap: 'var(--spacing-gap-tight)', paddingInlineStart: 'var(--spacing-gap-tight)' }}>
+          <Brand size="sm" name="Ohmewn" versionVisible={false} className={compact ? '[&_[data-part="Brand.name"]]:hidden' : undefined} />
+          <NavItem asChild size="sm" iconTrailing={caret} forceState={product ? 'Hover' : undefined}>
+            <button
+              ref={productTrigger}
+              type="button"
+              aria-expanded={product}
+              aria-haspopup="true"
+              onPointerEnter={(e) => { if (e.pointerType === 'mouse') hoverTo('product', HOVER_OPEN_MS) }}
+              onClick={(e) => { cancelHover(); go(e.detail === 0 && product ? 'bar' : 'product') }}
+            >
+              Product
+            </button>
+          </NavItem>
+          {LINKS.map((label) => (
+            <NavItem key={label} size="sm" href="#" iconTrailing={label === 'Pricing' ? undefined : boxedGlyph('chevron-down', 'icon.small')} onPointerEnter={() => { if (product) hoverTo('bar', HOVER_CLOSE_MS); else cancelHover() }}>{label}</NavItem>
+          ))}
+          <span className="flex-1" />
+          <IconButton ref={searchTrigger} variant="secondary" appearance="ghost" icon={boxedGlyph('search')} aria-label="Search" aria-keyshortcuts="Meta+K" onClick={() => go('search')} />
+          <Button size="sm">Start free</Button>
+        </div>
+        <div ref={panelRef} inert={!product} data-part="MorphNav.product" className="flex w-max flex-col" style={{ gap: 'var(--spacing-gap-control)' }}>
+          <div data-part="MorphNav.panel" className="flex" style={{ gap: 'var(--spacing-gap-group)' }}>
+            <ul className="m-0 grid list-none grid-cols-2 p-0" style={{ gap: 'var(--spacing-gap-tight)' }}>
+              {DESTINATIONS.map((d, i) => (
+                <li key={d.title} style={{ width: 256, ...reveal(product, Math.floor(i / 2)) }}>
+                  <a
+                    data-part="MorphNav.destination"
+                    href="#"
+                    className="flex no-underline outline-none hover:bg-(--color-action-ghost-hover) focus-visible:outline-2 focus-visible:outline-(--color-border-focus)"
+                    style={{ gap: 'var(--spacing-gap-control)', padding: 'var(--spacing-inset-control)', borderRadius: 'var(--radius-action)' }}
+                  >
+                    <span aria-hidden className="inline-flex shrink-0" style={{ color: 'var(--color-content-secondary)' }}>{boxedGlyph(d.icon)}</span>
+                    <span className="flex flex-col" style={{ gap: 'var(--spacing-gap-tight)' }}>
+                      <span style={titleText}>{d.title}</span>
+                      <span style={bodyText}>{d.text}</span>
+                    </span>
+                  </a>
+                </li>
+              ))}
+            </ul>
+            <div className="flex flex-col" style={{ width: 240, gap: 'var(--spacing-gap-control)', ...reveal(product, 1) }}>
+              <Image ratio="16:9" shape="rounded" alt="" />
+              <span style={titleText}>Ohmewn 5 is here</span>
+              <span style={bodyText}>Roadmap to release, in one workspace.</span>
             </div>
-            <DropdownMenu>
-              <DropdownMenuContent inline style={{ background: 'none', border: 0, boxShadow: 'none', padding: 0, width: '100%' }}>
-                <DropdownMenuLabel>Suggested</DropdownMenuLabel>
-                {SUGGESTIONS.map((s, i) => <DropdownMenuItem key={s.title} description={s.text} trailing={s.group} highlighted={i === 0}>{s.title}</DropdownMenuItem>)}
-              </DropdownMenuContent>
-            </DropdownMenu>
           </div>
-        ) : bar}
-        {current === 'product' && (
-          <>
-            <div data-part="MorphNav.panel" className="flex" style={{ gap: 'var(--spacing-gap-group)' }}>
-              <ul className="m-0 grid list-none grid-cols-2 p-0" style={{ gap: 'var(--spacing-gap-tight)' }}>
-                {DESTINATIONS.map((d) => (
-                  <li key={d.title} style={{ width: 256 }}>
-                    <a
-                      data-part="MorphNav.destination"
-                      href="#"
-                      className="flex no-underline outline-none hover:bg-(--color-action-ghost-hover) focus-visible:outline-2 focus-visible:outline-(--color-border-focus)"
-                      style={{ gap: 'var(--spacing-gap-control)', padding: 'var(--spacing-inset-control)', borderRadius: 'var(--radius-action)' }}
-                    >
-                      <span aria-hidden className="inline-flex shrink-0" style={{ color: 'var(--color-content-secondary)' }}>{boxedGlyph(d.icon)}</span>
-                      <span className="flex flex-col" style={{ gap: 'var(--spacing-gap-tight)' }}>
-                        <span style={titleText}>{d.title}</span>
-                        <span style={bodyText}>{d.text}</span>
-                      </span>
-                    </a>
-                  </li>
-                ))}
-              </ul>
-              <div className="flex flex-col" style={{ width: 240, gap: 'var(--spacing-gap-control)' }}>
-                <Image ratio="16:9" shape="rounded" alt="" />
-                <span style={titleText}>Ohmewn 5 is here</span>
-                <span style={bodyText}>Roadmap to release, in one workspace.</span>
-              </div>
-            </div>
-            <div data-part="MorphNav.announcement" className="flex" style={{ borderTop: 'var(--stroke-divider) solid var(--color-border-subtle)', paddingTop: 'var(--spacing-gap-control)' }}><Button asChild variant="default" appearance="link" size="sm"><a href="#">New: automations can run on a timetable</a></Button></div>
-          </>
-        )}
+          <div data-part="MorphNav.announcement" className="flex" style={{ borderTop: 'var(--stroke-divider) solid var(--color-border-subtle)', paddingTop: 'var(--spacing-gap-control)', ...reveal(product, 3) }}>
+            <Button asChild variant="default" appearance="link" size="sm"><a href="#">New: automations can run on a timetable</a></Button>
+          </div>
+        </div>
+      </div>
+      <div
+        ref={searchRef}
+        inert={!searching}
+        role="search"
+        data-part="MorphNav.search"
+        className="absolute top-0 left-1/2 flex -translate-x-1/2 flex-col"
+        style={{ width: SEARCH_WIDTH, gap: 'var(--spacing-gap-control)', padding: 'var(--spacing-gap-control)', pointerEvents: searching ? undefined : 'none' }}
+      >
+        <div className="flex items-center" style={{ gap: 'var(--spacing-gap-control)', ...reveal(searching, 0) }}>
+          <Input ref={searchInput} size="lg" type="search" placeholder="Search Ohmewn" aria-label="Search Ohmewn" className="flex-1" />
+          <IconButton variant="secondary" appearance="ghost" icon={boxedGlyph('close')} aria-label="Close search" onClick={close} />
+        </div>
+        <div style={reveal(searching, 1)}>
+          <DropdownMenu>
+            <DropdownMenuContent inline style={{ background: 'none', border: 0, boxShadow: 'none', padding: 0, width: '100%' }}>
+              <DropdownMenuLabel>Suggested</DropdownMenuLabel>
+              {SUGGESTIONS.map((s, i) => <DropdownMenuItem key={s.title} description={s.text} trailing={s.group} highlighted={i === 0}>{s.title}</DropdownMenuItem>)}
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
       </div>
     </nav>
   )
