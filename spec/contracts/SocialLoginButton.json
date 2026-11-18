@@ -160,8 +160,6 @@
       "color.action.disabled.default",
       "color.border.control",
       "color.border.control-hover",
-      "color.border.focus",
-      "color.border.ring.default",
       "color.border.subtle",
       "color.content.disabled",
       "color.content.primary",
@@ -229,7 +227,7 @@
     ],
     "spacing": [
       "spacing.gap-control",
-      "spacing.inset-control",
+      "spacing.inset-action",
       "spacing.none"
     ],
     "stroke": [

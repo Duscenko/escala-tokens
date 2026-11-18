@@ -12,7 +12,7 @@
     "file": "spec/contracts/Button.json",
     "figmaSet": "Button",
     "story": "buttons-button--playground",
-    "tokens": 42
+    "tokens": 43
   },
   {
     "key": "IconButton",
@@ -148,7 +148,7 @@
     "file": "spec/contracts/SocialLoginButton.json",
     "figmaSet": "SocialLoginButton",
     "story": "buttons-socialloginbutton--playground",
-    "tokens": 66
+    "tokens": 64
   },
   {
     "key": "Input",

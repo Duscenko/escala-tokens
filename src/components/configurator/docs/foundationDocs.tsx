@@ -1183,9 +1183,9 @@ line-height: var(--text-label-line-height);
   {
     key: 'spacing',
     label: 'Spacing',
-    lead: 'Two layers: a 4px-grid primitive scale (0–16, including step 5 = 20px) and intent aliases for gaps and insets. Surface padding aliases `spacing-inset-surface` — not a raw 20px collection. In Variables the number list is Dimensions: every step here points at one of those primitives.',
+    lead: 'Two layers: a 4px-grid primitive scale (0–16, including step 5 = 20px) and intent aliases for gaps and insets. Surface padding aliases `spacing-inset-surface` (24 · 20 · 16 by viewport) — not a raw px collection. In Variables the number list is Dimensions: every step here points at one of those primitives.',
     why: 'Spacing is what makes a layout read as deliberate. A scale removes the middle values that cause trouble: with 8 and 12 available and nothing between, nobody ships an 11. Semantics then name the job — gap between siblings vs inset inside a surface — so a card never copies a button’s padding by accident.',
-    usage: 'Reach for a semantic first: `spacing-gap-control` between related controls, `spacing-gap-section` between blocks, `spacing-inset-control` inside a button, `spacing-inset-surface` inside a card. Use a primitive step only when you are defining a new role.',
+    usage: 'Reach for a semantic first: `spacing-gap-control` between related controls, `spacing-gap-section` between blocks, `spacing-inset-action` at the sides of a default or lg button, `spacing-inset-control` inside smaller controls, `spacing-inset-surface` inside a card. Use a primitive step only when you are defining a new role.',
     usageCode: `gap:     var(--spacing-gap-group);
 padding: var(--spacing-inset-surface);
 
@@ -1261,7 +1261,7 @@ padding: var(--spacing-inset-surface);
       {
         id: 'roles',
         title: 'Spacing roles',
-        description: 'Gap vs inset. Aliases of primitive steps — surface padding resolves to step 5 (20px on the 4px grid).',
+        description: 'Gap vs inset. Aliases of primitive steps — surface padding is 24 on Desktop, 20 on Tablet and 16 on Mobile.',
         render: (c) => (
           <LayoutRolesBlock family="spacing" primitives={c.spacing} roles={c.spacingRoles} />
         ),

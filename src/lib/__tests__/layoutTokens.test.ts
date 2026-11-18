@@ -276,7 +276,7 @@ describe('layout primitives', () => {
     expect(SPACING_STANDARD['0']).toBe('0px')
     expect(SPACING_STANDARD['5']).toBe('20px')
     expect(SPACING_STANDARD['16']).toBe('64px')
-    expect(PADDING_STANDARD.top).toBe('20px')
+    expect(PADDING_STANDARD.top).toBe('24px')
     expect(buildSpacingFromBase(8)['5']).toBe('40px')
   })
 
@@ -297,7 +297,7 @@ describe('layout semantics', () => {
     expect(radius.container).toBe('dimension-20')
     expect(radius.overlay).toBe('3xl')
     expect(radius.pill).toBe('full')
-    expect(defaultLayoutRoles('spacing')['inset-surface']).toBe('5')
+    expect(defaultLayoutRoles('spacing')['inset-surface']).toBe('6')
     expect(defaultLayoutRoles('size').control).toBe('md')
     expect(defaultLayoutRoles('stroke').focus).toBe('md')
     expect(defaultLayoutRoles('stroke').divider).toBe('sm')
@@ -355,7 +355,7 @@ describe('layout semantics', () => {
       breakpoint: defaultLayoutRoles('breakpoint'),
     }).join('\n')
     expect(css).toContain('--radius-action: var(--radius-xl);')
-    expect(css).toContain('--spacing-inset-surface: var(--spacing-5);')
+    expect(css).toContain('--spacing-inset-surface: var(--spacing-6);')
     // Size roles take the Figma file's code syntax (`Size/control-md`).
     expect(css).toContain('--size-control-md: var(--size-md);')
     expect(layoutRoleVar('size', 'hit')).toBe('--size-control-xs')
@@ -501,11 +501,11 @@ describe('concentric radius nesting', () => {
     const report = radiusNestingReport(RADIUS_STANDARD, roles, spacing, spacingRoles)
     const pair = report.find((r) => r.inner === 'container')!
     // Boxes keeps container 20 and overlay 24, and the pair still reports broken:
-    // 20px of padding sits between them and r_inner must clear r_outer − p
-    // (24 − 20 = 4). That is geometry, not a bug: a card FILLING a modal body
+    // 24px of padding sits between them and r_inner must clear r_outer − p
+    // (24 − 24 = 0). That is geometry, not a bug: a card FILLING a modal body
     // wants a nearly square corner. It stays a report.
     expect(pair.innerPx).toBe(20)
-    expect(pair.limitPx).toBe(4) // overlay 24 − inset-surface 20
+    expect(pair.limitPx).toBe(0) // overlay 24 − inset-surface 24
     expect(pair.broken).toBe(true)
     const after = concentricRadiusRoles(RADIUS_STANDARD, RADIUS_PRESETS[2].values, roles, spacing, spacingRoles)
     expect(after.container).toBe(roles.container)

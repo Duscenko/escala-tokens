@@ -2324,7 +2324,7 @@ var init_layoutTokens = __esm({
     SPACING_STEPS = ["0", "0_5", "1", "1_5", "2", "2_5", "3", "4", "5", "6", "8", "10", "12", "16", "24", "32"];
     SPACING_DEFAULT_BASE = 4;
     SPACING_STANDARD = buildSpacingFromBase(SPACING_DEFAULT_BASE);
-    PADDING_DEFAULT_STEP = "5";
+    PADDING_DEFAULT_STEP = "6";
     PADDING_STANDARD = {
       top: SPACING_STANDARD[PADDING_DEFAULT_STEP],
       right: SPACING_STANDARD[PADDING_DEFAULT_STEP],
@@ -2517,7 +2517,8 @@ var init_layoutTokens = __esm({
       { key: "gap-group", label: "Gap group", description: "Stacked fields, nav item groups.", group: "gap", primitive: "section-sm" },
       { key: "gap-section", label: "Gap section", description: "Between sections, modal header \u2192 body.", group: "gap", primitive: "section-md" },
       { key: "inset-control", label: "Inset control", description: "Padding inside buttons, inputs, chips.", group: "inset", primitive: "3" },
-      { key: "inset-surface", label: "Inset surface", description: "Card / modal / alert padding.", group: "inset", primitive: "5" },
+      { key: "inset-surface", label: "Inset surface", description: "Card / modal / alert padding.", group: "inset", primitive: "6", viewports: { tablet: "5", mobile: "4" } },
+      { key: "inset-action", label: "Inset action", description: "Side padding of default and lg buttons.", group: "inset", primitive: "4", viewports: { mobile: "3" } },
       { key: "inset-page", label: "Inset page", description: "Page and sheet margins when Grid is unused.", group: "inset", primitive: "8", viewports: { tablet: "4", mobile: "4" } },
       { key: "inset-section", label: "Inset section", description: "Top and bottom padding of a full-width page section (hero, pricing, footer). Sides use inset-page.", group: "inset", primitive: "24", viewports: { tablet: "16", mobile: "12" } },
       { key: "overlap-sm", label: "Overlap sm", description: "A hairline tuck.", group: "overlap", primitive: "dimension--4" },
@@ -2529,9 +2530,9 @@ var init_layoutTokens = __esm({
     INSET_SIDE_BY_KEY = new Map(INSET_SIDE_KEYS.map((entry) => [entry.key, entry]));
     SPACING_MODES = [
       { id: "compact", label: "Compact", description: "Dense: smaller controls, tight cards.", fieldBase: FIELD_BASE_MIN, insetStep: "3", border: 1 },
-      { id: "quiet", label: "Quiet", description: "The standard: calm, nothing shouts.", fieldBase: 4, insetStep: "5", border: 1 },
-      { id: "bold", label: "Bold", description: "Larger controls, heavier strokes.", fieldBase: 4.5, insetStep: "5", border: 2 },
-      { id: "airy", label: "Airy", description: "Roomy: big targets, generous cards.", fieldBase: 5, insetStep: "6", border: 1 }
+      { id: "quiet", label: "Quiet", description: "The standard: calm, nothing shouts.", fieldBase: 4, insetStep: "6", border: 1 },
+      { id: "bold", label: "Bold", description: "Larger controls, heavier strokes.", fieldBase: 4.5, insetStep: "6", border: 2 },
+      { id: "airy", label: "Airy", description: "Roomy: big targets, generous cards.", fieldBase: 5, insetStep: "8", border: 1 }
     ];
     LEGACY_SPACING_ROLE_STEPS = {
       "gap-tight": "1",
@@ -9375,6 +9376,9 @@ var init_elevationTokens = __esm({
 });
 
 // src/lib/socialBrands.ts
+function socialFocusRing(b) {
+  return b.focusRing === "neutral" ? "var(--color-border-ring-neutral)" : b.focusRing;
+}
 function socialBrandTokens() {
   return structuredClone(SOCIAL_BRANDS);
 }
@@ -9385,7 +9389,7 @@ function socialCssVars() {
       out.push(`--social-${id}-action-${state2}: ${b.ramp[b.action[state2]]};`);
     }
     out.push(`--social-${id}-content-on-action: ${SOCIAL_INK[b.onAction]};`);
-    out.push(`--social-${id}-border-focus: ${SOCIAL_INK[b.focus]};`);
+    out.push(`--social-${id}-border-focus: ${socialFocusRing(b)};`);
   }
   return out;
 }
@@ -9396,15 +9400,15 @@ var init_socialBrands = __esm({
     darkens = { default: "500", hover: "600", pressed: "700" };
     lightens = { default: "500", hover: "400", pressed: "300" };
     SOCIAL_BRANDS = {
-      google: { label: "Google", ramp: { 500: "#db4437", 600: "#c53d32", 700: "#af362c" }, action: darkens, onAction: "white", focus: "black" },
-      apple: { label: "Apple", ramp: { 500: "#000000", 400: "#1f1f1f", 300: "#333333" }, action: lightens, onAction: "white", focus: "white" },
-      discord: { label: "Discord", ramp: { 500: "#5865f2", 600: "#4f5bda", 700: "#4651c2" }, action: darkens, onAction: "white", focus: "white" },
-      dribbble: { label: "Dribbble", ramp: { 500: "#ea4c89", 600: "#d3447b", 700: "#bb3d6e" }, action: darkens, onAction: "white", focus: "black" },
-      facebook: { label: "Facebook", ramp: { 500: "#1877f2", 600: "#166bda", 700: "#135fc2" }, action: darkens, onAction: "white", focus: "black" },
-      github: { label: "GitHub", ramp: { 500: "#24292f", 400: "#3e4348", 300: "#505459" }, action: lightens, onAction: "white", focus: "white" },
-      linkedin: { label: "LinkedIn", ramp: { 500: "#0a66c2", 600: "#095caf", 700: "#08529b" }, action: darkens, onAction: "white", focus: "white" },
-      slack: { label: "Slack", ramp: { 500: "#4a154b", 400: "#603161", 300: "#6e446f" }, action: lightens, onAction: "white", focus: "white" },
-      x: { label: "X", ramp: { 500: "#000000", 400: "#1f1f1f", 300: "#333333" }, action: lightens, onAction: "white", focus: "white" }
+      google: { label: "Google", ramp: { 500: "#db4437", 600: "#c53d32", 700: "#af362c" }, action: darkens, onAction: "white", focus: "black", focusRing: "#db44374f" },
+      apple: { label: "Apple", ramp: { 500: "#000000", 400: "#1f1f1f", 300: "#333333" }, action: lightens, onAction: "white", focus: "white", focusRing: "neutral" },
+      discord: { label: "Discord", ramp: { 500: "#5865f2", 600: "#4f5bda", 700: "#4651c2" }, action: darkens, onAction: "white", focus: "white", focusRing: "#5865f24f" },
+      dribbble: { label: "Dribbble", ramp: { 500: "#ea4c89", 600: "#d3447b", 700: "#bb3d6e" }, action: darkens, onAction: "white", focus: "black", focusRing: "#ea4c894f" },
+      facebook: { label: "Facebook", ramp: { 500: "#1877f2", 600: "#166bda", 700: "#135fc2" }, action: darkens, onAction: "white", focus: "black", focusRing: "#1877f24f" },
+      github: { label: "GitHub", ramp: { 500: "#24292f", 400: "#3e4348", 300: "#505459" }, action: lightens, onAction: "white", focus: "white", focusRing: "neutral" },
+      linkedin: { label: "LinkedIn", ramp: { 500: "#0a66c2", 600: "#095caf", 700: "#08529b" }, action: darkens, onAction: "white", focus: "white", focusRing: "#0a66c24f" },
+      slack: { label: "Slack", ramp: { 500: "#4a154b", 400: "#603161", 300: "#6e446f" }, action: lightens, onAction: "white", focus: "white", focusRing: "#4a154b4f" },
+      x: { label: "X", ramp: { 500: "#000000", 400: "#1f1f1f", 300: "#333333" }, action: lightens, onAction: "white", focus: "white", focusRing: "neutral" }
     };
   }
 });
@@ -9667,7 +9671,7 @@ function socialPaint(appearance, brand, state2) {
     };
   }
   if (appearance === "white") {
-    const root2 = state2 === "Hover" || state2 === "Pressed" ? { fill: c(state2 === "Hover" ? "surface.layer-1" : "surface.muted"), stroke: c("border.control-hover") } : state2 === "Focused" ? { fill: c("surface.page"), stroke: c("border.focus"), ring: c("border.ring.default") } : { fill: c("surface.page"), stroke: c("border.control") };
+    const root2 = state2 === "Hover" || state2 === "Pressed" ? { fill: c(state2 === "Hover" ? "surface.layer-1" : "surface.muted"), stroke: c("border.control-hover") } : state2 === "Focused" ? { fill: c("surface.page"), stroke: c("border.control"), gapRing: `social.${id}.border.focus` } : { fill: c("surface.page"), stroke: c("border.control") };
     return { root: { ...root2, text: c("content.primary") }, label: { text: c("content.primary") } };
   }
   const fill = state2 === "Hover" ? `social.${id}.action.hover` : state2 === "Pressed" ? `social.${id}.action.pressed` : `social.${id}.action.default`;
@@ -9676,8 +9680,8 @@ function socialPaint(appearance, brand, state2) {
     fill,
     text: `social.${id}.content.on-action`,
     highlight: c("elevation.highlight"),
-    stroke: state2 === "Focused" ? `social.${id}.border.focus` : `social.${id}.action.pressed`,
-    ...state2 === "Focused" ? { ring: c("border.ring.default") } : {}
+    stroke: `social.${id}.action.pressed`,
+    ...state2 === "Focused" ? { gapRing: `social.${id}.border.focus` } : {}
   };
   return { root, label: { text: `social.${id}.content.on-action` } };
 }
@@ -9722,7 +9726,11 @@ var init_actions = __esm({
           root: { radius: "radius.action", font: "type.button" }
         })),
         part({ Size: BUTTON_SIZES }, (size) => ({
-          root: { height: BUTTON_HEIGHT[size], paddingX: "spacing.inset-control", gap: BUTTON_GAP[size] }
+          root: { height: BUTTON_HEIGHT[size], gap: BUTTON_GAP[size] }
+        })),
+        // Figma: default and lg on `Spacing/inset-action`; xs, sm and every `link` on `inset-control` (DEC-2026-11-18-007).
+        part({ Appearance: BUTTON_APPEARANCES, Size: BUTTON_SIZES }, (appearance, size) => ({
+          root: { paddingX: appearance !== "link" && (size === "default" || size === "lg") ? "spacing.inset-action" : "spacing.inset-control" }
         })),
         part({ Variant: BUTTON_VARIANTS, Appearance: BUTTON_APPEARANCES, State: BUTTON_STATES }, (v, a2, s) => buttonPaint(v, a2, s, true))
       ]
@@ -10016,7 +10024,7 @@ var init_actions = __esm({
           icon: { width: "icon.medium", height: "icon.medium" }
         })),
         part({ Size: SOCIAL_SIZES, IconOnly: ["false", "true"] }, (size, iconOnly) => ({
-          root: iconOnly === "true" ? { ...SOCIAL_GEOMETRY[size], width: SOCIAL_GEOMETRY[size].height, paddingX: "spacing.none" } : { ...SOCIAL_GEOMETRY[size], paddingX: "spacing.inset-control" }
+          root: iconOnly === "true" ? { ...SOCIAL_GEOMETRY[size], width: SOCIAL_GEOMETRY[size].height, paddingX: "spacing.none" } : { ...SOCIAL_GEOMETRY[size], paddingX: "spacing.inset-action" }
         })),
         part({ Appearance: SOCIAL_APPEARANCES, Brand: SOCIAL_BRAND_NAMES, State: SOCIAL_STATES }, socialPaint)
       ]

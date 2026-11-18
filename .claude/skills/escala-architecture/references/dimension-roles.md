@@ -80,7 +80,8 @@ The AIR between and inside things. Tightens on smaller viewports.
 | Role | CSS | Figma | Default step | Default px | Use |
 | --- | --- | --- | --- | --- | --- |
 | `spacing.inset-control` | `--spacing-inset-control` | `Spacing/inset-control` | `3` | 12px | Padding inside buttons, inputs, chips. |
-| `spacing.inset-surface` | `--spacing-inset-surface` | `Spacing/inset-surface` | `5` | 20px | Card / modal / alert padding. |
+| `spacing.inset-surface` | `--spacing-inset-surface` | `Spacing/inset-surface` | `6` | 24px / 20px / 16px | Card / modal / alert padding. |
+| `spacing.inset-action` | `--spacing-inset-action` | `Spacing/inset-action` | `4` | 16px / 16px / 12px | Side padding of default and lg buttons. |
 | `spacing.inset-page` | `--spacing-inset-page` | `Spacing/inset-page` | `8` | 32px / 16px / 16px | Page and sheet margins when Grid is unused. |
 | `spacing.inset-section` | `--spacing-inset-section` | `Spacing/inset-section` | `24` | 96px / 64px / 48px | Top and bottom padding of a full-width page section (hero, pricing, footer). Sides use inset-page. |
 
