@@ -1,7 +1,7 @@
 import { createElement } from 'react'
 import { renderToStaticMarkup } from 'react-dom/server'
 import { describe, expect, it } from 'vitest'
-import { AUTH_BLOCKS, AuthSignIn, AuthSignInPasskey, AuthSignUp, AuthSplit, authPlacement, type AuthPlacement } from '../../components/escala-ui/blocks/auth'
+import { AUTH_BLOCKS, AuthDeviceFrameContext, AuthSignIn, AuthSignInPasskey, AuthSignUp, AuthSplit, authPlacement, type AuthPlacement } from '../../components/escala-ui/blocks/auth'
 
 // `layout="inline"` exists only on a plain container: this line must not compile.
 // @ts-expect-error a card is always stacked
@@ -49,5 +49,12 @@ describe('AuthSignInPasskey and AuthSplit', () => {
     const out = html(createElement(AuthSplit, null, createElement(AuthSignIn, { container: 'plain' })))
     expect(out).toContain('data-size="default" data-align="vertical-left"')
     expect((out.match(/data-escala="FeaturedIcon"/g) ?? []).length).toBe(1)
+  })
+  it('a phone frame draws only the block, whatever the width of the window around it', () => {
+    const split = createElement(AuthSplit, null, createElement(AuthSignIn, { container: 'plain' }))
+    const inFrame = (tabletUp: boolean) => html(createElement(AuthDeviceFrameContext.Provider, { value: { tabletUp } }, split))
+    expect(inFrame(false)).not.toContain('data-block="AuthSplit"')
+    expect(inFrame(false)).toContain('data-block="AuthSignIn"')
+    expect(inFrame(true)).toContain('data-block="AuthSplit"')
   })
 })

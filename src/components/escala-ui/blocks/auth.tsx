@@ -465,7 +465,12 @@ export function AuthSignInPasskey({ title = 'Welcome back', description = 'Sign 
 }
 
 /** The viewport is at or above the Tablet breakpoint (`--breakpoint-tablet`). True until measured, so a page opens on its full layout. */
+/** A stage that draws a block inside a device frame says whether that frame is Tablet or wider: the window it runs in is not the
+ *  viewport the block is shown at. A real page provides nothing and the window decides. */
+export const AuthDeviceFrameContext = React.createContext<{ tabletUp: boolean } | null>(null)
+
 function useTabletUp() {
+  const frame = React.useContext(AuthDeviceFrameContext)
   const [up, setUp] = React.useState(true)
   React.useEffect(() => {
     const value = getComputedStyle(document.documentElement).getPropertyValue('--breakpoint-tablet').trim() || BREAKPOINT_STANDARD.sm
@@ -475,7 +480,7 @@ function useTabletUp() {
     query.addEventListener('change', sync)
     return () => query.removeEventListener('change', sync)
   }, [])
-  return up
+  return frame ? frame.tabletUp : up
 }
 
 /** Figma `AuthSplit` (2146:8199): a brand panel beside any Auth block. `children` is the block, in `container="plain"`: its header

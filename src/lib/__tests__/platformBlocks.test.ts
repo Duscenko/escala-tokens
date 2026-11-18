@@ -4,7 +4,7 @@
 import { describe, expect, it } from 'vitest'
 import { readdirSync, readFileSync } from 'node:fs'
 import { join } from 'node:path'
-import { BLOCKS, BLOCK_GROUPS } from '../../components/configurator/blocks/blockRegistry'
+import { BLOCKS, BLOCK_GROUPS, stageBlockValues } from '../../components/configurator/blocks/blockRegistry'
 import { decodeWorkspaceSection, encodeWorkspaceSection } from '../workspaceLink'
 import { isPlatformComponent } from '../platformCatalogue'
 
@@ -38,6 +38,14 @@ describe('platform Blocks = the Storybook block stories', () => {
     const unknown = [...new Set(BLOCKS.flatMap((b) => b.contract?.nests ?? []).filter((n) => !isPlatformComponent(n)))]
     // Named, not linked: kept visible so a nest that should link is noticed.
     expect(unknown.every((n) => typeof n === 'string')).toBe(true)
+  })
+
+  it('the frame sets the viewport layout, never a layout the block offers as a control', () => {
+    const signIn = BLOCKS.find((b) => b.id === 'Auth/SignIn')!
+    const hero = BLOCKS.find((b) => b.id === 'Marketing/HeroHeader')!
+    expect(stageBlockValues(signIn, { container: 'plain', layout: 'inline' }, 'desktop').layout).toBe('inline')
+    expect(stageBlockValues(hero, {}, 'tablet').layout).toBe('mobile')
+    expect(stageBlockValues(hero, {}, 'desktop').layout).toBe('desktop')
   })
 
   it('round-trips a block link', () => {
