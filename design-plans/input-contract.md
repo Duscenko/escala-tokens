@@ -81,3 +81,6 @@ a Textarea/InputGroup/Select/InputTag).
 `Kbd` (pintado por la parte `kbd` de Input con los valores del set Kbd; el componente Kbd aún no se
 ha reconstruido desde el archivo). Partes nuevas (`addon`, `divider`, `kbd`) son web + Storybook:
 el plugin está congelado (`WEB_ONLY_SLOTS` en `componentRecipesPluginParity.test.ts`).
+
+## Tamaños por tipo e iconos (2026-11-18, DEC-2026-11-18-004)
+`Size` sm · default · lg existe para los 11 `Type`. Alto `size.compact` 32 · `size.control` 40 · `size.touch` 48; icono `icon.small` · `icon.medium` · `icon.medium`; texto nivel text-md en sm y default, text-lg en lg. El caret de phone y currency-select sigue en `icon.small`. Todo icono dentro del campo usa `Content/subtle` (Disabled: `Content/disabled`) y no se oscurece con hover ni focus; el valor escrito y los addons siguen en `Content/primary`.

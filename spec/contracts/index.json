@@ -163,7 +163,7 @@
     "file": "spec/contracts/Input.json",
     "figmaSet": "Input",
     "story": "forms-input--playground",
-    "tokens": 28
+    "tokens": 29
   },
   {
     "key": "Textarea",
@@ -285,7 +285,7 @@
     "file": "spec/contracts/DatePickerTrigger.json",
     "figmaSet": "DatePickerTrigger",
     "story": "forms-datepicker--date-picker-trigger-playground",
-    "tokens": 23
+    "tokens": 22
   },
   {
     "key": "DatePickerPopover",

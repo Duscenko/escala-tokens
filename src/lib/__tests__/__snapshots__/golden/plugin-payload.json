@@ -10451,8 +10451,7 @@
               "root": {
                 "radius": "radius.action",
                 "strokeWidth": "stroke.control",
-                "gap": "spacing.gap-control",
-                "font": "type.placeholder"
+                "gap": "spacing.gap-control"
               },
               "divider": {
                 "fill": "color.border.subtle",
@@ -10539,7 +10538,8 @@
           "values": {
             "default": {
               "root": {
-                "height": "size.control"
+                "height": "size.control",
+                "font": "type.placeholder"
               },
               "icon": {
                 "width": "icon.medium",
@@ -10556,7 +10556,8 @@
             },
             "sm": {
               "root": {
-                "height": "size.compact"
+                "height": "size.compact",
+                "font": "type.placeholder"
               },
               "icon": {
                 "width": "icon.small",
@@ -10573,7 +10574,8 @@
             },
             "lg": {
               "root": {
-                "height": "size.touch"
+                "height": "size.touch",
+                "font": "type.body-lg"
               },
               "icon": {
                 "width": "icon.medium",
@@ -10608,7 +10610,7 @@
                 "text": "color.content.subtle"
               },
               "icon": {
-                "text": "color.content.primary"
+                "text": "color.content.subtle"
               },
               "addon": {
                 "text": "color.content.primary"
@@ -10627,7 +10629,7 @@
                 "text": "color.content.subtle"
               },
               "icon": {
-                "text": "color.content.primary"
+                "text": "color.content.subtle"
               },
               "addon": {
                 "text": "color.content.primary"
@@ -10646,7 +10648,7 @@
                 "text": "color.content.subtle"
               },
               "icon": {
-                "text": "color.content.primary"
+                "text": "color.content.subtle"
               },
               "addon": {
                 "text": "color.content.primary"
@@ -10665,7 +10667,7 @@
                 "text": "color.content.subtle"
               },
               "icon": {
-                "text": "color.content.primary"
+                "text": "color.content.subtle"
               },
               "addon": {
                 "text": "color.content.primary"
@@ -11027,10 +11029,10 @@
           "values": {
             "Default": {
               "icon": {
-                "text": "color.content.secondary"
+                "text": "color.content.subtle"
               },
               "spinner": {
-                "text": "color.content.secondary"
+                "text": "color.content.subtle"
               },
               "text": {
                 "text": "color.content.primary"
@@ -11046,10 +11048,10 @@
             },
             "Hover": {
               "icon": {
-                "text": "color.content.secondary"
+                "text": "color.content.subtle"
               },
               "spinner": {
-                "text": "color.content.secondary"
+                "text": "color.content.subtle"
               },
               "text": {
                 "text": "color.content.primary"
@@ -11065,10 +11067,10 @@
             },
             "Focused": {
               "icon": {
-                "text": "color.content.secondary"
+                "text": "color.content.subtle"
               },
               "spinner": {
-                "text": "color.content.secondary"
+                "text": "color.content.subtle"
               },
               "text": {
                 "text": "color.content.primary"
@@ -11086,10 +11088,10 @@
             },
             "Invalid": {
               "icon": {
-                "text": "color.content.secondary"
+                "text": "color.content.subtle"
               },
               "spinner": {
-                "text": "color.content.secondary"
+                "text": "color.content.subtle"
               },
               "text": {
                 "text": "color.content.primary"
@@ -11108,7 +11110,7 @@
                 "text": "color.content.disabled"
               },
               "spinner": {
-                "text": "color.content.secondary"
+                "text": "color.content.subtle"
               },
               "text": {
                 "text": "color.content.disabled"
@@ -11124,10 +11126,10 @@
             },
             "Loading": {
               "icon": {
-                "text": "color.content.secondary"
+                "text": "color.content.subtle"
               },
               "spinner": {
-                "text": "color.content.secondary"
+                "text": "color.content.subtle"
               },
               "text": {
                 "text": "color.content.primary"
@@ -13375,7 +13377,7 @@
                 "text": "color.content.subtle"
               },
               "icon": {
-                "text": "color.content.primary"
+                "text": "color.content.subtle"
               },
               "root": {
                 "fill": "color.surface.input",
@@ -13390,7 +13392,7 @@
                 "text": "color.content.subtle"
               },
               "icon": {
-                "text": "color.content.primary"
+                "text": "color.content.subtle"
               },
               "root": {
                 "fill": "color.surface.input",
@@ -13405,7 +13407,7 @@
                 "text": "color.content.subtle"
               },
               "icon": {
-                "text": "color.content.primary"
+                "text": "color.content.subtle"
               },
               "root": {
                 "fill": "color.surface.input",
@@ -13421,7 +13423,7 @@
                 "text": "color.content.subtle"
               },
               "icon": {
-                "text": "color.content.primary"
+                "text": "color.content.subtle"
               },
               "root": {
                 "fill": "color.surface.input",
@@ -13437,7 +13439,7 @@
                 "text": "color.content.subtle"
               },
               "icon": {
-                "text": "color.content.primary"
+                "text": "color.content.subtle"
               },
               "root": {
                 "fill": "color.surface.input",
@@ -13469,7 +13471,7 @@
                 "text": "color.content.subtle"
               },
               "icon": {
-                "text": "color.content.primary"
+                "text": "color.content.subtle"
               },
               "root": {
                 "fill": "color.surface.input",
