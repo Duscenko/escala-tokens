@@ -2091,7 +2091,7 @@ export const useDesignStore = create<DesignStore>()(
     }),
     {
       name: 'scalable-designs-store',
-      version: 153,
+      version: 154,
       migrate: (persisted: any, version: number) => {
         if (persisted) {
           // v1→v2: remove styleDirection, rename selectedAtoms → selectedComponents
@@ -4510,6 +4510,22 @@ export const useDesignStore = create<DesignStore>()(
           capSelectorsRadiusV153(persisted)
           if (Array.isArray(persisted.savedSystems)) {
             for (const sys of persisted.savedSystems) capSelectorsRadiusV153(sys?.snapshot)
+          }
+        }
+        if (version < 154) {
+          // v153→v154: six new motion roles (notifications, countdown, progress,
+          // release). A system takes them from the preset it was on, so it keeps
+          // reading as that preset.
+          const addMotionRoles = (state: any) => {
+            if (!state || typeof state !== 'object') return
+            if (state.motion) state.motion = normalizeMotionSettings(state.motion)
+            for (const own of Object.values(state.themeFoundations ?? {}) as any[]) {
+              if (own?.motion) own.motion = normalizeMotionSettings(own.motion)
+            }
+          }
+          addMotionRoles(persisted)
+          if (Array.isArray(persisted.savedSystems)) {
+            for (const sys of persisted.savedSystems) addMotionRoles(sys?.snapshot)
           }
         }
         if (version < 133) {

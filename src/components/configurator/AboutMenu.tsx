@@ -723,7 +723,7 @@ const DOCS_CYCLE: AboutCycleSpec = {
   cycle: [
     { file: 'docs-color', size: [1200, 980], alt: 'The Color docs page: each Action role with the primitive and hex it resolves to in light and dark' },
     { file: 'docs-font', size: [1200, 980], alt: 'The Font docs page: every type role, the scale step it points at and its resolved value' },
-    { file: 'docs-motion', size: [1200, 980], alt: 'The Motion docs page: the eight easings, each drawn from its own value and playable' },
+    { file: 'docs-motion', size: [1200, 980], alt: 'The Motion docs page: the ten easings, each drawn from its own value and playable' },
   ],
 }
 

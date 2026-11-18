@@ -32,18 +32,28 @@ export const MOTION_DURATIONS = {
   'extra-long': 560,
   'super-long': 800,
   cinematic: 1200,
+  // How long a self-dismissing message stays: reading time, so no preset scales it.
+  'lifetime-brief': 4000,
+  'lifetime-default': 6000,
+  'lifetime-long': 10000,
 } as const
 
 export type MotionDurationKey = keyof typeof MOTION_DURATIONS
 
 export const MOTION_DURATION_KEYS = Object.keys(MOTION_DURATIONS) as MotionDurationKey[]
 
+/** The lifetimes: what `use-countdown` picks from (Figma `lifetime/<name>`). */
+export const MOTION_LIFETIME_KEYS = ['lifetime-brief', 'lifetime-default', 'lifetime-long'] as const satisfies readonly MotionDurationKey[]
+
+/** The ladder every other role picks from. */
+export const MOTION_LADDER_KEYS = MOTION_DURATION_KEYS.filter((k) => !k.startsWith('lifetime-'))
+
 /** Rungs the duration factor scales. */
 export const SCALED_DURATION_KEYS: readonly MotionDurationKey[] = [
   'quick', 'short', 'medium', 'long', 'extra-long', 'super-long', 'cinematic',
 ]
 
-const FIXED_DURATION_KEYS = new Set<MotionDurationKey>(['instant', 'fade'])
+const FIXED_DURATION_KEYS = new Set<MotionDurationKey>(['instant', 'fade', ...MOTION_LIFETIME_KEYS])
 
 /** How far a factor may take a rung: 0.7× to 1.5× of the published value. A
  *  preset (or a hand-set factor) that lands outside fails `motion.test.ts`. */
@@ -60,6 +70,10 @@ export function durationRange(key: MotionDurationKey): { min: number; max: numbe
 const SPRING = 'linear(0, 0.035, 0.127, 0.257, 0.408, 0.566, 0.717, 0.854, 0.97, 1.062, 1.129, 1.173, 1.195, 1.2, 1.189, 1.169, 1.141, 1.111, 1.079, 1.05, 1.023, 1.001, 0.984, 0.972, 0.964, 0.96, 0.96, 0.963, 0.967, 0.973, 0.979, 0.986, 0.991, 0.997, 1.001, 1.004, 1.006, 1.007, 1.008, 1.008, 1.007, 1.006, 1)'
 const SPRING_BOUNCY = 'linear(0, 0.071, 0.256, 0.507, 0.776, 1.023, 1.217, 1.343, 1.397, 1.386, 1.323, 1.229, 1.122, 1.019, 0.934, 0.875, 0.845, 0.842, 0.861, 0.896, 0.938, 0.981, 1.017, 1.044, 1.06, 1.064, 1.059, 1.046, 1.03, 1.013, 0.997, 0.985, 0.977, 0.974, 0.976, 0.98, 0.986, 0.993, 0.999, 1.005, 1.008, 1.01, 1.01, 1.009, 1.006, 1.004, 1.001, 0.999, 1)'
 
+/** Springs for product UI, from Figma's `bounce` (0.15 and 0.3): they overshoot 0.6 % and 4.6 %. */
+const SPRING_SMOOTH = 'linear(0, 0.032, 0.111, 0.213, 0.325, 0.435, 0.538, 0.63, 0.71, 0.778, 0.834, 0.878, 0.914, 0.941, 0.962, 0.977, 0.988, 0.996, 1.001, 1.004, 1.005, 1.006, 1.006, 1.006, 1.005, 1.005, 1.004, 1.003, 1.003, 1.002, 1.002, 1.001, 1.001, 1.001, 1, 1, 1, 1, 1, 1, 1)'
+const SPRING_SNAPPY = 'linear(0, 0.045, 0.154, 0.295, 0.443, 0.584, 0.708, 0.812, 0.893, 0.954, 0.996, 1.024, 1.039, 1.045, 1.046, 1.042, 1.036, 1.029, 1.023, 1.016, 1.011, 1.007, 1.003, 1.001, 1, 0.999, 0.998, 0.998, 0.998, 0.998, 0.998, 0.999, 0.999, 0.999, 1, 1, 1, 1, 1, 1, 1)'
+
 export const MOTION_EASINGS = {
   standard: 'cubic-bezier(0.45, 0.05, 0.25, 0.95)',
   entrance: 'cubic-bezier(0, 0, 0.2, 1)',
@@ -69,6 +83,8 @@ export const MOTION_EASINGS = {
   linear: 'cubic-bezier(0, 0, 1, 1)',
   spring: SPRING,
   'spring-bouncy': SPRING_BOUNCY,
+  'spring-smooth': SPRING_SMOOTH,
+  'spring-snappy': SPRING_SNAPPY,
 } as const
 
 export type MotionEasingKey = keyof typeof MOTION_EASINGS
@@ -85,6 +101,8 @@ export const MOTION_EASING_ALIASES: Record<string, MotionEasingKey> = {
 export const MOTION_EASING_FALLBACK: Partial<Record<MotionEasingKey, MotionEasingKey>> = {
   spring: 'emphasized',
   'spring-bouncy': 'emphasized',
+  'spring-smooth': 'emphasized',
+  'spring-snappy': 'emphasized',
 }
 
 /** The cubic-bezier a consumer without `linear()` can always read. */
@@ -134,6 +152,7 @@ export const MOTION_ROLES = [
   'use-page-transition', 'use-celebration', 'use-color', 'use-loop',
   'base-functional-entrance', 'base-functional-exit', 'base-functional-standard',
   'base-expressive-entrance', 'base-expressive-exit', 'base-expressive-standard',
+  'use-notify-in', 'use-notify-out', 'use-reflow', 'use-countdown', 'use-progress', 'use-release',
 ] as const
 
 export type MotionRole = typeof MOTION_ROLES[number]
@@ -144,6 +163,7 @@ export const MOTION_ROLE_GROUPS: readonly { label: string; roles: readonly Motio
   { label: 'Interaction', roles: ['use-hover', 'use-focus', 'use-press', 'use-toggle'] },
   { label: 'Overlays', roles: ['use-disclosure-in', 'use-disclosure-out', 'use-overlay-in', 'use-overlay-out', 'use-emphasis-in', 'use-travel-in', 'use-travel-out'] },
   { label: 'Sequences', roles: ['use-stagger-in', 'use-stagger-out', 'use-page-transition', 'use-reveal'] },
+  { label: 'Feedback', roles: ['use-notify-in', 'use-notify-out', 'use-reflow', 'use-countdown', 'use-progress', 'use-release'] },
   { label: 'Moments', roles: ['use-celebration', 'use-color', 'use-loop'] },
   { label: 'Bases', roles: ['base-functional-entrance', 'base-functional-exit', 'base-functional-standard', 'base-expressive-entrance', 'base-expressive-exit', 'base-expressive-standard'] },
 ]
@@ -188,6 +208,7 @@ export const MOTION_ROLE_PAIRS: readonly [MotionRole, MotionRole][] = [
   ['use-disclosure-in', 'use-disclosure-out'],
   ['use-overlay-in', 'use-overlay-out'],
   ['use-travel-in', 'use-travel-out'],
+  ['use-notify-in', 'use-notify-out'],
   ['use-stagger-in', 'use-stagger-out'],
   ['base-functional-entrance', 'base-functional-exit'],
   ['base-expressive-entrance', 'base-expressive-exit'],
@@ -219,6 +240,12 @@ export const MOTION_ROLE_INTENT: Record<MotionRole, { usage: string[]; direction
   'base-expressive-entrance': { usage: ['any expressive entrance'], direction: 'Fallback for storytelling arrivals.' },
   'base-expressive-exit': { usage: ['any expressive exit'], direction: 'Fallback for storytelling departures.' },
   'base-expressive-standard': { usage: ['any expressive change in place'], direction: 'Fallback for storytelling changes.' },
+  'use-notify-in': { usage: ['toast', 'notification'], direction: 'A message arriving: it settles in without calling attention to the bounce.' },
+  'use-notify-out': { usage: ['toast', 'notification'], direction: 'A message leaving, quickly and completely.' },
+  'use-reflow': { usage: ['toast stack', 'list reorder'], direction: 'Neighbours moving to make room or close a gap.' },
+  'use-countdown': { usage: ['toast time bar'], direction: 'Time left: always linear, so the bar tells the truth.' },
+  'use-progress': { usage: ['progress bar value'], direction: 'A real value advancing; it never overshoots what was measured.' },
+  'use-release': { usage: ['swipe release', 'drag release'], direction: 'An element going back after a gesture lets go.' },
 }
 
 /** What an agent is told about each duration rung. */
@@ -232,6 +259,9 @@ export const MOTION_DURATION_INTENT: Record<MotionDurationKey, { usage: string[]
   'extra-long': { usage: ['celebration', 'colour change'], direction: 'Expressive, still part of using the product.' },
   'super-long': { usage: ['storytelling', 'loops'], direction: 'Meant to be noticed rather than used.' },
   cinematic: { usage: ['hero moments'], direction: 'Storytelling only; never on a control.' },
+  'lifetime-brief': { usage: ['one-line confirmation'], direction: 'A message read at a glance.' },
+  'lifetime-default': { usage: ['title and description'], direction: 'A message with a sentence to read.' },
+  'lifetime-long': { usage: ['message with an action'], direction: 'Time to read it and decide, as with Undo.' },
 }
 
 const p = (duration: MotionDurationKey, easing: MotionEasingKey): MotionPick => ({ duration, easing })
@@ -263,6 +293,12 @@ const STANDARD_ROLES: Record<MotionRole, MotionPick> = {
   'base-expressive-entrance': p('long', 'emphasized'),
   'base-expressive-exit': p('medium', 'exit'),
   'base-expressive-standard': p('long', 'standard'),
+  'use-notify-in': p('long', 'spring-smooth'),
+  'use-notify-out': p('short', 'exit'),
+  'use-reflow': p('medium', 'spring-smooth'),
+  'use-countdown': p('lifetime-default', 'linear'),
+  'use-progress': p('medium', 'entrance'),
+  'use-release': p('medium', 'spring-snappy'),
 }
 
 // ── Settings (what a system stores) ────────────────────────────────────────
@@ -312,6 +348,7 @@ export const MOTION_PRESETS: Record<MotionPresetKey, MotionPreset> = {
         'use-celebration': p('long', 'entrance'),
         'base-expressive-entrance': p('medium', 'entrance'),
         'base-expressive-standard': p('medium', 'standard'),
+        'use-notify-in': p('medium', 'spring-smooth'),
       }),
       transforms: T(4, 24, 0.97, 0.98, 0.95, 1, 1, 0.85, 0.75, -120),
       stagger: 60,
@@ -341,6 +378,7 @@ export const MOTION_PRESETS: Record<MotionPresetKey, MotionPreset> = {
         'use-travel-in': p('long', 'emphasized'),
         'use-stagger-in': p('short', 'emphasized'),
         'use-celebration': p('extra-long', 'spring'),
+        'use-notify-in': p('long', 'spring-snappy'),
       }),
       transforms: T(12, 56, 0.92, 0.95, 0.88, 1.06, 1.02, 0.65, 0.5, -320),
       stagger: 100,
@@ -361,6 +399,8 @@ export const MOTION_PRESETS: Record<MotionPresetKey, MotionPreset> = {
         'use-page-transition': p('long', 'spring'),
         'use-celebration': p('extra-long', 'spring-bouncy'),
         'base-expressive-entrance': p('long', 'spring'),
+        'use-notify-in': p('long', 'spring'),
+        'use-release': p('medium', 'spring'),
       }),
       transforms: T(12, 56, 0.9, 0.94, 0.85, 1.1, 1.03, 0.6, 0.45, -320),
       stagger: 120,
@@ -388,6 +428,12 @@ export const MOTION_PRESETS: Record<MotionPresetKey, MotionPreset> = {
         'base-functional-standard': p('short', 'gentle'),
         'base-expressive-entrance': p('long', 'gentle'),
         'base-expressive-standard': p('long', 'gentle'),
+        'use-notify-in': p('long', 'gentle'),
+        // Sonner unmounts a toast 200 ms after it is dismissed: quick × 1.5 still fits.
+        'use-notify-out': p('quick', 'exit'),
+        'use-reflow': p('medium', 'gentle'),
+        'use-progress': p('medium', 'gentle'),
+        'use-release': p('medium', 'gentle'),
       }),
       transforms: T(0, 0, 1, 1, 1, 1, 1, 1, 1, 0),
       stagger: 140,
@@ -439,13 +485,22 @@ export function normalizeMotionSettings(input: unknown): MotionSettings {
     ? Math.min(MOTION_FACTOR_MAX, Math.max(MOTION_FACTOR_MIN, raw.durationFactor))
     : base.durationFactor
   const roles = { ...base.roles }
+  const given = new Set<MotionRole>()
   if (raw.roles && typeof raw.roles === 'object') {
     for (const r of MOTION_ROLES) {
       const pick = (raw.roles as Record<string, unknown>)[r] as Partial<MotionPick> | undefined
       if (pick && typeof pick === 'object' && pick.duration && pick.duration in MOTION_DURATIONS && pick.easing && pick.easing in MOTION_EASINGS) {
         roles[r] = { duration: pick.duration, easing: pick.easing }
+        given.add(r)
       }
     }
+  }
+  // Settings written before a role existed: the roles they lack come from the
+  // preset they were on, so an untouched preset still reads as that preset.
+  if (given.size >= MOTION_ROLES.indexOf('use-notify-in') && given.size < MOTION_ROLES.length) {
+    const origin = MOTION_PRESET_KEYS.map((k) => MOTION_PRESETS[k].settings).find((p) => p.durationFactor === factor
+      && [...given].every((r) => p.roles[r].duration === roles[r].duration && p.roles[r].easing === roles[r].easing))
+    if (origin) for (const r of MOTION_ROLES) if (!given.has(r)) roles[r] = { ...origin.roles[r] }
   }
   const transforms = { ...base.transforms }
   if (raw.transforms && typeof raw.transforms === 'object') {
@@ -517,6 +572,8 @@ export type MotionRef = { role: MotionRole } | MotionPick
 export interface ChoreographyTrack {
   /** The recipe slot the track animates (`data-slot`). Absent = the root. */
   slot?: string
+  /** Names the track when one element plays several at once. */
+  id?: string
   keyframes: string
   motion: MotionRef
   /** A duration rung, or 0. */
@@ -586,6 +643,10 @@ export const MOTION_KEYFRAMES: Record<string, MotionKeyframes> = {
     offset: [0, 0.278, 0.722, 1],
     easing: ['entrance', 'gentle', 'exit'],
   },
+  'toast-rise': { transform: ['translateY(var(--motion-transform-enter)) scale(var(--motion-transform-pop))', 'translateY(0) scale(1)'] },
+  'toast-leave': { opacity: ['1', '0'], transform: ['translateY(0) scale(1)', 'translateY(var(--motion-transform-enter)) scale(var(--motion-transform-shrink))'] },
+  'icon-pop': { transform: ['scale(var(--motion-transform-zoom))', 'scale(1)'] },
+  countdown: { transform: ['scaleX(1)', 'scaleX(0)'] },
   'spring-in': {
     opacity: ['0', '1', '1', '1', '1'],
     transform: [
@@ -737,9 +798,42 @@ export function motionChoreographies(settings: MotionSettings): Record<string, C
       tracks: [{ keyframes: s.shrink < 1 ? 'shrink' : 'fade-out', motion: r('use-disclosure-out'), delay: 0 }],
       reducedMotion: { collapseTo: 'coordinated', pattern: 'coordinated', tracks: [{ keyframes: 'fade-out', motion: FADE_OUT, delay: 0 }] },
     },
-    'sonner-enter': {
+    'toast-enter': {
       pattern: 'coordinated',
       components: ['Toast'],
+      intent: { usage: ['toasts', 'notifications'], direction: 'The toast fades in while it rises and grows into place; its icon lands a beat later.' },
+      tracks: [
+        { id: 'fade', keyframes: 'fade-in', motion: { duration: 'short', easing: 'entrance' }, delay: 0 },
+        { id: 'rise', keyframes: 'toast-rise', motion: r('use-notify-in'), delay: 0 },
+        { slot: 'icon', keyframes: 'icon-pop', motion: { duration: 'medium', easing: 'spring-snappy' }, delay: 'quick' },
+      ],
+      reducedMotion: {
+        collapseTo: 'coordinated',
+        pattern: 'coordinated',
+        tracks: [
+          { id: 'fade', keyframes: 'fade-in', motion: FADE_IN, delay: 0 },
+          { id: 'rise', keyframes: 'fade-in', motion: FADE_IN, delay: 0 },
+          { slot: 'icon', keyframes: 'fade-in', motion: FADE_IN, delay: 0 },
+        ],
+      },
+    },
+    'toast-exit': {
+      pattern: 'coordinated',
+      components: ['Toast'],
+      intent: { usage: ['toasts', 'notifications'], direction: 'The toast fades, sinks and shrinks; it finishes before the queue unmounts it.' },
+      tracks: [{ keyframes: 'toast-leave', motion: r('use-notify-out'), delay: 0 }],
+      reducedMotion: { collapseTo: 'coordinated', pattern: 'coordinated', tracks: [{ keyframes: 'fade-out', motion: FADE_OUT, delay: 0 }] },
+    },
+    'toast-countdown': {
+      pattern: 'coordinated',
+      components: ['Toast'],
+      intent: { usage: ['toast time bar'], direction: 'The bar is the clock: it empties linearly, pauses with the toast, and closes it when it ends.' },
+      tracks: [{ slot: 'bar', keyframes: 'countdown', motion: r('use-countdown'), delay: 0 }],
+      reducedMotion: { collapseTo: 'coordinated', pattern: 'coordinated', tracks: [{ slot: 'bar', keyframes: 'countdown', motion: r('use-countdown'), delay: 0 }] },
+    },
+    'sonner-enter': {
+      pattern: 'coordinated',
+      components: [],
       intent: { usage: ['toasts', 'notifications'], direction: bounces ? 'The toast springs in: pop, overshoot, settle.' : travels ? 'The toast rises into place.' : 'The toast fades in.' },
       tracks: [bounces
         ? { keyframes: 'spring-in', motion: { duration: 'cinematic', easing: 'standard' }, delay: 0 }
@@ -803,7 +897,7 @@ export function motionThemeTokens(settings: MotionSettings) {
 
 /** Roles that keep their duration under reduced motion: interaction feedback
  *  (a colour change, not travel) and loaders (the motion IS the information). */
-const KEEP_UNDER_REDUCED = new Set<MotionRole>(['use-hover', 'use-focus', 'use-press', 'use-loop'])
+const KEEP_UNDER_REDUCED = new Set<MotionRole>(['use-hover', 'use-focus', 'use-press', 'use-loop', 'use-countdown'])
 
 /** The custom property one choreography track writes. A disclosure (no
  *  tracks) is `--motion-choreo-<name>`. */
@@ -825,7 +919,7 @@ function animationCss(keyframes: string, ref: MotionRef, delay: MotionDurationKe
  *  one body: the full one or its reduced-motion version). */
 function choreographyVarsOf(name: string, body: Choreography | Choreography['reducedMotion']): Record<string, string> {
   const out: Record<string, string> = {}
-  for (const t of body.tracks ?? []) out[choreographyVar(name, t.slot)] = animationCss(t.keyframes, t.motion, t.delay)
+  for (const t of body.tracks ?? []) out[choreographyVar(name, t.id ?? t.slot)] = animationCss(t.keyframes, t.motion, t.delay)
   if (body.pattern === 'disclosure' && body.motion) {
     out[choreographyVar(name)] = animationCss(body.direction === 'collapse' ? 'disclosure-collapse' : 'disclosure-expand', body.motion, 0)
   }
@@ -868,7 +962,8 @@ export function motionCssVars(settings: MotionSettings, opts: { reduced?: boolea
     vars[`--motion-${role}-easing`] = easing
   })
   for (const [name, c] of Object.entries(motionChoreographies(settings))) {
-    if (!c.components.length) continue // no component plays it (list, text): data only
+    // No component plays it (list, text): data only. `sonner-enter` stays published for whoever already reads it.
+    if (!c.components.length && name !== 'sonner-enter') continue
     Object.assign(vars, choreographyVarsOf(name, opts.reduced ? c.reducedMotion : c))
   }
   return vars
@@ -1143,6 +1238,9 @@ export interface MotionFigmaVariable {
 
 const springFallbackName = (k: MotionEasingKey) => `easing/${k}-fallback`
 
+/** A rung's variable: `duration/<rung>`, a lifetime `lifetime/<name>`. */
+const durationVariable = (k: MotionDurationKey) => (k.startsWith('lifetime-') ? `lifetime/${k.slice('lifetime-'.length)}` : `duration/${k}`)
+
 /** Every variable of one mode of the `Motion` collection. `easings` takes the
  *  curves a payload ships (`motion.easings`) over the built-in ones. */
 export function motionFigmaVariables(settings: MotionSettings, easings: Partial<Record<string, string>> = {}): MotionFigmaVariable[] {
@@ -1151,7 +1249,7 @@ export function motionFigmaVariables(settings: MotionSettings, easings: Partial<
   for (const k of MOTION_DURATION_KEYS) {
     const range = durationRange(k)
     out.push({
-      name: `duration/${k}`, type: 'FLOAT', value: durations[k],
+      name: durationVariable(k), type: 'FLOAT', value: durations[k],
       description: `${MOTION_DURATION_INTENT[k].direction} ms${range.min === range.max ? '' : ` · range ${range.min}–${range.max}`}.`,
     })
   }
@@ -1177,7 +1275,7 @@ export function motionFigmaVariables(settings: MotionSettings, easings: Partial<
   for (const r of MOTION_ROLES) {
     const pick = settings.roles[r] ?? STANDARD_ROLES[r]
     const direction = MOTION_ROLE_INTENT[r].direction
-    out.push({ name: `role/${r}/duration`, type: 'FLOAT', value: { alias: `duration/${pick.duration}` }, description: direction })
+    out.push({ name: `role/${r}/duration`, type: 'FLOAT', value: { alias: durationVariable(pick.duration) }, description: direction })
     out.push({ name: `role/${r}/easing`, type: 'STRING', value: { alias: `easing/${pick.easing}` }, description: direction })
   }
   return out
@@ -1195,7 +1293,8 @@ export function motionSettingsFromFigma(read: (name: string) => MotionFigmaValue
   const long = num('duration/long')
   const roles: Record<string, Partial<MotionPick>> = {}
   for (const r of MOTION_ROLES) {
-    roles[r] = { duration: target(`role/${r}/duration`, 'duration/') as MotionDurationKey, easing: target(`role/${r}/easing`, 'easing/') as MotionEasingKey }
+    const lifetime = target(`role/${r}/duration`, 'lifetime/')
+    roles[r] = { duration: (lifetime ? `lifetime-${lifetime}` : target(`role/${r}/duration`, 'duration/')) as MotionDurationKey, easing: target(`role/${r}/easing`, 'easing/') as MotionEasingKey }
   }
   const transforms: Record<string, number | undefined> = {}
   for (const t of MOTION_TRANSFORM_ROLES) transforms[t] = num(`transform/${t}`)

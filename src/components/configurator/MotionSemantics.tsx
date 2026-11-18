@@ -1,5 +1,5 @@
 /**
- * Variables · Motion — one collection, `Motion semantics`: the 24 roles a
+ * Variables · Motion — one collection, `Motion semantics`: the 30 roles a
  * component, an agent or a product's own code times its movement with. Each
  * row is a PICK (a duration rung + an easing), never free milliseconds — the
  * same rule radius follows — so a preset's duration factor still moves every
@@ -12,7 +12,7 @@ import { useRef, useState } from 'react'
 import { useReducedMotion } from 'framer-motion'
 import { useThemeFoundations } from '../../lib/useThemeFoundations'
 import {
-  MOTION_DURATION_KEYS, MOTION_EASINGS, MOTION_EASING_KEYS, MOTION_PRESETS, MOTION_PRESET_KEYS, MOTION_ROLE_GROUPS,
+  MOTION_LADDER_KEYS, MOTION_LIFETIME_KEYS, MOTION_EASINGS, MOTION_EASING_KEYS, MOTION_PRESETS, MOTION_PRESET_KEYS, MOTION_ROLE_GROUPS,
   MOTION_ROLE_INTENT, durationMs, matchMotionPreset, motionPairViolation, motionPresetPatch, nearestMotionPreset, normalizeMotionSettings,
   resolveMotionRole, withMotionRole, type MotionDurationKey, type MotionEasingKey, type MotionPresetKey, type MotionRole,
 } from '../../lib/motion'
@@ -138,7 +138,7 @@ export default function MotionSemantics({ previewTheme, query }: { previewTheme?
                           value={pick.duration}
                           onChange={(v) => setPick(role, v as MotionDurationKey, pick.easing)}
                         >
-                          {MOTION_DURATION_KEYS.map((k) => (
+                          {(role === 'use-countdown' ? MOTION_LIFETIME_KEYS : MOTION_LADDER_KEYS).map((k) => (
                             <option key={k} value={k}>{k} · {durationMs(k, settings)}ms</option>
                           ))}
                         </VariableSelect>

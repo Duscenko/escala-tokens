@@ -2043,7 +2043,7 @@ export const COMPONENTS: ComponentDef[] = [
     box: 'gray',
     locks: ['size', 'hit', 'motion'],
     description: 'A short, non-blocking confirmation over the page that dismisses itself: an icon told apart by severity, a title, an optional description, actions, a close and a progress hairline.',
-    usage: 'Use for transient feedback (saved, copied, undone). Keep the title under six words; an action such as Undo needs a second way to be reached because the toast times out. For a persistent notice use Alert, for form validation Field.',
+    usage: 'Use for transient feedback (saved, copied, undone). Keep the title under six words; an action such as Undo needs a second way to be reached because the toast times out. It rises into place, its bar shows the time left, and it closes when the bar runs out: 4 s for one line, 6 s with a description, 10 s with an action. Hover or focus pause it. A critical toast stays until it is closed. For a persistent notice use Alert, for form validation Field.',
     // The Figma file's axes, value for value (design-plans/toast-contract.md).
     axes: [
       { name: 'Appearance', values: ['solid', 'soft', 'filled', 'outline'] },
@@ -2054,9 +2054,10 @@ export const COMPONENTS: ComponentDef[] = [
       { name: 'appearance / variant', type: 'Figma axes', description: 'Variant is the severity: it picks the icon (Sparkle, Info, CheckCircle, Warning, WarningCircle) and the colour.' },
       { name: 'title / description / descriptionVisible', type: 'ReactNode / boolean', description: 'Figma Title, Description and DescriptionVisible.' },
       { name: 'iconVisible / actionsVisible / closeVisible / progressVisible', type: 'boolean', description: 'The Figma booleans; progress is the time-left hairline (progress = 0–100).' },
-      { name: 'showToast(props)', type: 'function', description: 'Puts a Toast in the Toaster queue; mount <Toaster /> once.' },
+      { name: 'countdown / onCountdownEnd', type: 'number (ms) / () => void', description: 'Makes the bar the clock: it empties over this time, pauses on hover and focus, and calls onCountdownEnd when it runs out.' },
+      { name: 'showToast(props)', type: 'function', description: 'Puts a Toast in the Toaster queue and picks its lifetime from the content; `duration` overrides it. Mount <Toaster /> once.' },
     ],
-    accessibility: 'role="status" (polite), and role="alert" for critical. Do not rely on colour alone: the icon and the text carry the severity. Keep the toast on screen long enough to read.',
+    accessibility: 'role="status" (polite), and role="alert" for critical. Do not rely on colour alone: the icon and the text carry the severity. The time left pauses on hover, on focus and while the page is hidden; a critical toast never closes by itself. With reduced motion it fades instead of moving, and the bar keeps running because it is information.',
   },
   {
     key: 'Alert',

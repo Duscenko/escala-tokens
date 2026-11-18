@@ -10,3 +10,5 @@ Colour (Appearance × Variant):
 - soft: fill default Surface/accent · secondary Surface/muted · status Status/<s>/surface; icon like filled; title and description Content/primary; track default Border/accent · secondary Border/default · status Status/<s>/border; bar like filled.
 - outline: fill Surface/layer-1, stroke default Border/accent · secondary Border/default · status Status/<s>/border; icon like filled; title + description default Content/accent · status Status/<s>/content (secondary: primary / secondary); track and bar like filled.
 Odd: the close button does not change on solid (ghost, default ink on a solid fill); the progress bar is a ProgressLine instance resized to 360 with Value 25 (a countdown sample).
+
+Motion (DEC-2026-11-18-001): enters on `toast-enter`, leaves on `toast-exit`; `countdown` (ms) makes the bar the clock (`toast-countdown`, linear `scaleX`), paused by hover, focus, swipe or a hidden page. `showToast` picks the lifetime: one line 4 s, description 6 s, action 10 s, critical stays open with no bar. Figma: `Toast Motion` (2099:2320), styles `Motion/Toast/*`.

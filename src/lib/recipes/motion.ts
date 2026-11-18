@@ -5,8 +5,8 @@
  *  (`componentRecipes.ts`), so the stylesheet, the inspector and tokens.json
  *  read one table. Plan: design-plans/motion-foundation.md (phase 2).
  *
- * Not here, on purpose: Sonner and Drawer (the `sonner` and `vaul` libraries
- * own their motion — vaul ties it to the drag gesture), Spinner and Skeleton
+ * Not here, on purpose: Drawer (the `vaul` library ties its motion to the drag
+ * gesture), Spinner and Skeleton
  * (a loop keyed to the library's own keyframes). */
 import type { RecipeMotion } from './helpers.js'
 
@@ -71,7 +71,22 @@ export const RECIPE_MOTION: Record<string, RecipeMotion> = {
   Switch: { transitions: { root: states('background-color', 'box-shadow'), thumb: { transform: 'use-toggle' } } },
   RatingGroupItem: { transitions: { root: FILL } },
   SliderThumb: { transitions: { root: states('border-color', 'box-shadow') } },
-  ProgressLine: { transitions: { indicator: { width: 'base-functional-standard' } } },
+  ProgressLine: { transitions: { indicator: { width: 'use-progress' } } },
+  // Sonner keeps the queue, the stack and the live region; the toast itself moves on the system's roles (DEC-2026-11-18-001).
+  Toast: {
+    enter: { name: 'toast-enter' },
+    exit: { name: 'toast-exit' },
+    // In the queue, or on a page that shows the toast living in place (`data-toast-state`).
+    host: {
+      enter: ['[data-sonner-toast][data-removed="false"]', '[data-toast-state="open"]'],
+      exit: ['[data-sonner-toast][data-removed="true"]', '[data-toast-state="closing"]'],
+    },
+    timer: {
+      name: 'toast-countdown', slot: 'bar', attr: '[data-countdown]',
+      pausedBy: ['[data-sonner-toast][data-expanded="true"]', '[data-sonner-toast][data-swiping="true"]'],
+    },
+    queue: { item: '[data-slot="toaster"] [data-sonner-toast]', reflow: 'use-reflow', release: 'use-release' },
+  },
   // AccordionItem (the Figma file, 2026-11-12): the item owns the trigger and the content, so the chevron
   // and the expand / collapse play on it; the Accordion only stacks items.
   AccordionItem: { ...disclosure('--radix-accordion-content-height'), transitions: { chevron: { transform: 'use-disclosure-in' } } },

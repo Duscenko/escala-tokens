@@ -331,7 +331,7 @@ const TOAST_COPY: Record<string, [string, string]> = {
 const TOAST_PLAY_STEPS = 7
 
 /** The Figma Toast, drawn in place at its 360px (the `Toaster` queue is the consumer's). While the board plays it
- *  leaves and arrives again on the brand's own `sonner-enter` choreography. */
+ *  leaves and arrives again on the brand's own `toast-enter` choreography. */
 export function SkeletonToastSpecimen({ t, v, w, children }: SpecimenProps) {
   const variant = (v.Variant ?? 'default') as ToastVariant
   const [title, description] = TOAST_COPY[variant] ?? TOAST_COPY.default
@@ -339,7 +339,7 @@ export function SkeletonToastSpecimen({ t, v, w, children }: SpecimenProps) {
   const play: React.CSSProperties | undefined = beat == null ? undefined
     : beat === TOAST_PLAY_STEPS - 1
       ? { opacity: 0, transition: 'opacity var(--motion-use-overlay-out)' }
-      : { animation: `var(${choreographyVar('sonner-enter')})` }
+      : { animation: `var(${choreographyVar('toast-enter', 'fade')}), var(${choreographyVar('toast-enter', 'rise')})` }
   return (
     <RecipeScope t={t}>
       <div style={{ width: w ?? 360, maxWidth: '100%', ...play }}>

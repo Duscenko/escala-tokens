@@ -27,9 +27,9 @@ About + the phone generator (`MobileThemeSheet.tsx`, picks only, no free inputs)
 
 | Domain | Owner | The other side |
 |---|---|---|
-| Foundations: variable names, values, modes, aliases, text and effect styles | **Figma library** | Code follows (`src/lib/figmaFilePalette.generated.ts` etc.) |
+| Foundations: variable names, values, modes, aliases, text and effect styles, the `Motion` collection (DEC-2026-11-18-001) | **Figma library** | Code follows (`src/lib/figmaFilePalette.generated.ts` etc.) |
 | Anatomy: component names, layers, variant axes and values, properties, slots, the role each state binds | **Figma library** | Code is the twin; a mismatch is fixed in code |
-| Behaviour: keyboard, focus, ARIA, logic, code API, motion (incl. the `Motion` collection) | **Storybook / code** | Figma prototypes copy it |
+| Behaviour: keyboard, focus, ARIA, logic, code API, how motion plays | **Storybook / code** | Figma prototypes copy it |
 | Compilation: how a token becomes CSS, recipes | **Code** | Figma never describes it |
 
 - Never edit the Figma file to make it consistent with code. If it looks wrong, say so in one line
@@ -44,7 +44,7 @@ About + the phone generator (`MobileThemeSheet.tsx`, picks only, no free inputs)
 | What | Where |
 |---|---|
 | App shell | `src/pages/Configurator.tsx` (rail · canvas card · right inspector) |
-| Store (persisted, **version 153**) | `src/store/useDesignStore.ts` |
+| Store (persisted, **version 154**) | `src/store/useDesignStore.ts` |
 | Colour maths (DOM-free) | `src/lib/color/` (`apca.ts`, `gamut.ts`, `cvd.ts`, `audit.ts`), `src/lib/colorUtils.ts` |
 | Semantic roles (Categorical, the only architecture) | `src/lib/semanticArchitectures.ts` (`CATEGORICAL_ROLES`), `src/lib/roleNames.ts` |
 | Dimensions, radius, spacing, sizes, grid | `src/lib/dimensions.ts`, `src/lib/layoutTokens.ts` |
@@ -139,8 +139,8 @@ One line each. Detail: search the archive or the plan named.
   viewports Desktop · Tablet · Mobile. (`dimension-primitives.md`)
 - **Typography:** type scale ×0.875; headings step one rung per viewport; tracking derived;
   roles by viewport mode in Figma. (`typography-three-platforms.md`)
-- **Motion:** a foundation (24 roles, presets, choreographies, reduced motion); components read it
-  through recipes. (`motion-foundation.md`)
+- **Motion:** a foundation (30 roles, presets, choreographies, reduced motion); components read it
+  through recipes. The Toast's bar is its clock (DEC-2026-11-18-001). (`motion-foundation.md`)
 - **Icons:** Phosphor, weight per System Style; one component icon list; icon sizes are tokens.
 - **Components:** the files in `escala-ui`, each the twin of a Figma set; contracts in
   `design-plans/*-contract.md`; Storybook grouped by family (one Figma page = one entry).

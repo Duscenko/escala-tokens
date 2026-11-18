@@ -91,6 +91,12 @@ export interface RecipeMotion {
   origin?: string
   /** The root attribute naming the edge a panel slides from (`side` → `data-side`). */
   sideAttr?: string
+  /** A component a queue mounts and unmounts: these ancestor states play `enter` and `exit` instead of Radix's. */
+  host?: { enter: string[]; exit: string[] }
+  /** A choreography that runs while it is shown and stops under these ancestor states. */
+  timer?: RecipeChoreo & { attr: string; pausedBy: string[] }
+  /** The queue's own item: how neighbours move, in place of the library's timing. */
+  queue?: { item: string; reflow: string; release: string }
 }
 
 export interface ComponentRecipe {

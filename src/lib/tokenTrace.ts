@@ -352,7 +352,7 @@ export function motionRows(t: PreviewTokens, recipeKey: string): TraceRow[] {
     const facets: TraceFacet[] = def.tracks?.length
       ? def.tracks.map((track) => ({
           label: track.slot ?? recipe.slots[0],
-          cssVar: choreographyVar(c.name, track.slot),
+          cssVar: choreographyVar(c.name, track.id ?? track.slot),
           value: `${track.keyframes} · ${timing(track.motion, track.delay)}`,
         }))
       : def.motion

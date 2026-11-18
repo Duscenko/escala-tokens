@@ -361,21 +361,27 @@ const SIDES = ['top', 'right', 'bottom', 'left'] as const
  *  preset — only the values behind the custom properties change. */
 const CHOREOGRAPHIES = motionChoreographies(defaultMotionSettings())
 
-function choreographyRules(recipe: ComponentRecipe, root: string, c: RecipeChoreo, states: string[]): string[] {
+function choreographyRules(recipe: ComponentRecipe, root: string, c: RecipeChoreo, states: string[], hosts?: string[]): string[] {
   const def = CHOREOGRAPHIES[c.name]
   if (!def) return []
   const rules: string[] = []
-  const at = (el: string) => states.map((st) => `${el}${st}${LIVE}`).join(',\n')
+  const at = (el: string) => (hosts ? hosts.map((h) => `${h} ${el}${LIVE}`) : states.map((st) => `${el}${st}${LIVE}`)).join(',\n')
   if (def.pattern === 'disclosure') {
     const el = slotSelector(recipe, root, c.slot ?? recipe.slots[0])
     if (c.heightVar) rules.push(`${el} {\n  --escala-disclosure-height: var(${c.heightVar});\n  overflow: hidden;\n}`)
     rules.push(`${at(el)} {\n  animation: var(${choreographyVar(c.name)}, none);\n}`)
     return rules
   }
+  // Tracks on one element play together, as one `animation` list.
+  const playing = new Map<string, string[]>()
+  for (const t of def.tracks ?? []) {
+    const el = slotSelector(recipe, root, t.slot ?? c.slot ?? recipe.slots[0])
+    playing.set(el, [...(playing.get(el) ?? []), `var(${choreographyVar(c.name, t.id ?? t.slot)}, none)`])
+  }
+  for (const [el, list] of playing) rules.push(`${at(el)} {\n  animation: ${list.join(', ')};\n}`)
   for (const t of def.tracks ?? []) {
     const slot = t.slot ?? c.slot ?? recipe.slots[0]
     const el = slotSelector(recipe, root, slot)
-    rules.push(`${at(el)} {\n  animation: var(${choreographyVar(c.name, t.slot)}, none);\n}`)
     // A panel that slides: the keyframes follow the edge it is attached to.
     // Only with full motion — reduced motion swaps the slide for a fade.
     const side = recipe.motion?.sideAttr
@@ -385,6 +391,36 @@ function choreographyRules(recipe: ComponentRecipe, root: string, c: RecipeChore
     }
   }
   return rules
+}
+
+/** A running clock: it plays on the slot carrying `attr` and holds under the given states, on hover and on focus. */
+function timerRules(recipe: ComponentRecipe, root: string, timer: NonNullable<ComponentRecipe['motion']>['timer']): string[] {
+  if (!timer) return []
+  const el = slotSelector(recipe, root, timer.slot ?? recipe.slots[0])
+  const on = `${el}${timer.attr}`
+  const track = CHOREOGRAPHIES[timer.name]?.tracks?.[0]
+  const held = [...timer.pausedBy.map((state) => `${state} ${on}`), ...[':hover', ':focus-within', '[data-paused]'].map((state) => `${root}${state}${on.slice(root.length)}`)]
+  return [
+    `${el} {\n  transform-origin: left center;\n}`,
+    `${on}${LIVE} {\n  animation: var(${choreographyVar(timer.name, track?.id ?? track?.slot)}, motion-${track?.keyframes} 6s linear both);\n}`,
+    `${held.join(',\n')} {\n  animation-play-state: paused;\n}`,
+  ]
+}
+
+/** The queue's item stays put while the component inside it enters and leaves; only the stack moves it. */
+function queueRules(queue: NonNullable<ComponentRecipe['motion']>['queue']): string[] {
+  if (!queue) return []
+  const { item, reflow, release } = queue
+  const move = (role: string) => `transform var(--motion-${role}, ${TRANSITION_FALLBACK}), height var(--motion-${role}, ${TRANSITION_FALLBACK})`
+  const gone = `${item}[data-removed="true"][data-swipe-out="false"]`
+  return [
+    `${item}[data-swiping="false"] {\n  transition: ${move(reflow)};\n}`,
+    `${item}[data-swiping="false"][data-swiped="true"] {\n  transition: ${move(release)};\n}`,
+    `${item}[data-mounted="false"] {\n  --y: translateY(0);\n  opacity: 1;\n}`,
+    `${gone}[data-front="true"][data-expanded="false"] {\n  --y: translateY(0);\n  opacity: 1;\n}`,
+    `${gone}[data-front="true"][data-expanded="true"],\n${gone}[data-front="false"][data-expanded="true"] {\n  --y: translateY(calc(var(--lift) * var(--offset)));\n  opacity: 1;\n}`,
+    `${gone}[data-front="false"][data-expanded="false"] {\n  --y: translateY(calc(var(--lift-amount) * var(--toasts-before))) scale(calc(-1 * var(--scale)));\n  opacity: 1;\n}`,
+  ]
 }
 
 /** The transitions and choreographies of one recipe. */
@@ -400,8 +436,9 @@ export function recipeMotionCss(recipe: ComponentRecipe): string {
     rules.push(`${sel} {\n  transition: ${list.join(', ')};\n}`)
   }
   if (m.origin) rules.push(`${slotSelector(recipe, root, m.enter?.slot ?? recipe.slots[0])} {\n  transform-origin: ${m.origin};\n}`)
-  if (m.enter) rules.push(...choreographyRules(recipe, root, m.enter, OPEN))
-  if (m.exit) rules.push(...choreographyRules(recipe, root, m.exit, CLOSED))
+  if (m.enter) rules.push(...choreographyRules(recipe, root, m.enter, OPEN, m.host?.enter))
+  if (m.exit) rules.push(...choreographyRules(recipe, root, m.exit, CLOSED, m.host?.exit))
+  rules.push(...timerRules(recipe, root, m.timer), ...queueRules(m.queue))
   // A disclosure's enter and exit both declare its height: once is enough.
   return [...new Set(rules)].join('\n')
 }
@@ -411,7 +448,7 @@ export function recipeMotionCss(recipe: ComponentRecipe): string {
  *  (a list's stagger, a switch's squash are data for a product's own runtime). */
 export function playedKeyframes(recipes: readonly ComponentRecipe[] = Object.values(COMPONENT_RECIPES)): string[] {
   const names = new Set<string>()
-  const used = new Set(recipes.flatMap((r) => [r.motion?.enter?.name, r.motion?.exit?.name]).filter(Boolean))
+  const used = new Set(recipes.flatMap((r) => [r.motion?.enter?.name, r.motion?.exit?.name, r.motion?.timer?.name]).filter(Boolean))
   const add = (body: Choreography | Choreography['reducedMotion']) => {
     for (const t of body.tracks ?? []) {
       names.add(t.keyframes)
@@ -446,6 +483,9 @@ export const RECIPE_CSS: string = [
   motionKeyframesCss(playedKeyframes()).join('\n'),
 ].join('\n\n')
 
+/** What Sonner publishes on each toast of its queue: never a token. */
+const QUEUE_VARS = new Set(['--lift', '--lift-amount', '--offset', '--scale', '--toasts-before'])
+
 /** Every custom property the sheet reads — what a container must provide.
  *  Not counted: a property the sheet declares itself (a disclosure's height)
  *  and one Radix publishes on its own element (`--radix-*`, a popper's origin
@@ -454,6 +494,6 @@ export const RECIPE_CSS: string = [
 export function recipeCssVars(css: string = RECIPE_CSS): string[] {
   const own = new Set(css.match(/--[a-z0-9_-]+(?=:)/g) ?? [])
   return [...new Set(css.match(/var\((--[a-z0-9_-]+)/g)?.map((m) => m.slice(4)) ?? [])]
-    .filter((v) => !own.has(v) && !v.startsWith('--radix-') && v !== STROKE_WIDTH_VAR)
+    .filter((v) => !own.has(v) && !v.startsWith('--radix-') && !QUEUE_VARS.has(v) && v !== STROKE_WIDTH_VAR)
     .sort()
 }

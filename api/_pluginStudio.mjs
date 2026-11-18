@@ -133,12 +133,20 @@ function normalizeMotionSettings(input) {
   const raw = input;
   const factor = typeof raw.durationFactor === "number" && Number.isFinite(raw.durationFactor) ? Math.min(MOTION_FACTOR_MAX, Math.max(MOTION_FACTOR_MIN, raw.durationFactor)) : base.durationFactor;
   const roles = { ...base.roles };
+  const given = /* @__PURE__ */ new Set();
   if (raw.roles && typeof raw.roles === "object") {
     for (const r of MOTION_ROLES) {
       const pick = raw.roles[r];
       if (pick && typeof pick === "object" && pick.duration && pick.duration in MOTION_DURATIONS && pick.easing && pick.easing in MOTION_EASINGS) {
         roles[r] = { duration: pick.duration, easing: pick.easing };
+        given.add(r);
       }
+    }
+  }
+  if (given.size >= MOTION_ROLES.indexOf("use-notify-in") && given.size < MOTION_ROLES.length) {
+    const origin = MOTION_PRESET_KEYS.map((k) => MOTION_PRESETS[k].settings).find((p2) => p2.durationFactor === factor && [...given].every((r) => p2.roles[r].duration === roles[r].duration && p2.roles[r].easing === roles[r].easing));
+    if (origin) {
+      for (const r of MOTION_ROLES) if (!given.has(r)) roles[r] = { ...origin.roles[r] };
     }
   }
   const transforms = { ...base.transforms };
@@ -289,9 +297,42 @@ function motionChoreographies(settings) {
       tracks: [{ keyframes: s.shrink < 1 ? "shrink" : "fade-out", motion: r("use-disclosure-out"), delay: 0 }],
       reducedMotion: { collapseTo: "coordinated", pattern: "coordinated", tracks: [{ keyframes: "fade-out", motion: FADE_OUT, delay: 0 }] }
     },
-    "sonner-enter": {
+    "toast-enter": {
       pattern: "coordinated",
       components: ["Toast"],
+      intent: { usage: ["toasts", "notifications"], direction: "The toast fades in while it rises and grows into place; its icon lands a beat later." },
+      tracks: [
+        { id: "fade", keyframes: "fade-in", motion: { duration: "short", easing: "entrance" }, delay: 0 },
+        { id: "rise", keyframes: "toast-rise", motion: r("use-notify-in"), delay: 0 },
+        { slot: "icon", keyframes: "icon-pop", motion: { duration: "medium", easing: "spring-snappy" }, delay: "quick" }
+      ],
+      reducedMotion: {
+        collapseTo: "coordinated",
+        pattern: "coordinated",
+        tracks: [
+          { id: "fade", keyframes: "fade-in", motion: FADE_IN, delay: 0 },
+          { id: "rise", keyframes: "fade-in", motion: FADE_IN, delay: 0 },
+          { slot: "icon", keyframes: "fade-in", motion: FADE_IN, delay: 0 }
+        ]
+      }
+    },
+    "toast-exit": {
+      pattern: "coordinated",
+      components: ["Toast"],
+      intent: { usage: ["toasts", "notifications"], direction: "The toast fades, sinks and shrinks; it finishes before the queue unmounts it." },
+      tracks: [{ keyframes: "toast-leave", motion: r("use-notify-out"), delay: 0 }],
+      reducedMotion: { collapseTo: "coordinated", pattern: "coordinated", tracks: [{ keyframes: "fade-out", motion: FADE_OUT, delay: 0 }] }
+    },
+    "toast-countdown": {
+      pattern: "coordinated",
+      components: ["Toast"],
+      intent: { usage: ["toast time bar"], direction: "The bar is the clock: it empties linearly, pauses with the toast, and closes it when it ends." },
+      tracks: [{ slot: "bar", keyframes: "countdown", motion: r("use-countdown"), delay: 0 }],
+      reducedMotion: { collapseTo: "coordinated", pattern: "coordinated", tracks: [{ slot: "bar", keyframes: "countdown", motion: r("use-countdown"), delay: 0 }] }
+    },
+    "sonner-enter": {
+      pattern: "coordinated",
+      components: [],
       intent: { usage: ["toasts", "notifications"], direction: bounces ? "The toast springs in: pop, overshoot, settle." : travels ? "The toast rises into place." : "The toast fades in." },
       tracks: [bounces ? { keyframes: "spring-in", motion: { duration: "cinematic", easing: "standard" }, delay: 0 } : { keyframes: travels ? "rise" : "fade-in", motion: r("use-disclosure-in"), delay: 0 }],
       reducedMotion: { collapseTo: "coordinated", pattern: "coordinated", tracks: [{ keyframes: "fade-in", motion: FADE_IN, delay: 0 }] }
@@ -348,7 +389,7 @@ function animationCss(keyframes, ref, delay) {
 }
 function choreographyVarsOf(name, body) {
   const out = {};
-  for (const t of body.tracks ?? []) out[choreographyVar(name, t.slot)] = animationCss(t.keyframes, t.motion, t.delay);
+  for (const t of body.tracks ?? []) out[choreographyVar(name, t.id ?? t.slot)] = animationCss(t.keyframes, t.motion, t.delay);
   if (body.pattern === "disclosure" && body.motion) {
     out[choreographyVar(name)] = animationCss(body.direction === "collapse" ? "disclosure-collapse" : "disclosure-expand", body.motion, 0);
   }
@@ -385,7 +426,7 @@ function motionCssVars(settings, opts = {}) {
     vars[`--motion-${role}-easing`] = easing;
   });
   for (const [name, c2] of Object.entries(motionChoreographies(settings))) {
-    if (!c2.components.length) continue;
+    if (!c2.components.length && name !== "sonner-enter") continue;
     Object.assign(vars, choreographyVarsOf(name, opts.reduced ? c2.reducedMotion : c2));
   }
   return vars;
@@ -446,7 +487,7 @@ function motionTrailingCss(settings, themed = []) {
   lines.push("}");
   return lines;
 }
-var MOTION_DURATIONS, MOTION_DURATION_KEYS, FIXED_DURATION_KEYS, MOTION_FACTOR_MIN, MOTION_FACTOR_MAX, SPRING, SPRING_BOUNCY, MOTION_EASINGS, MOTION_EASING_KEYS, MOTION_EASING_ALIASES, MOTION_EASING_FALLBACK, MOTION_TRANSFORM_ROLES, MOTION_DISTANCE_ROLES, neutralTransform, MOTION_ROLES, MOTION_ROLE_INTENT, MOTION_DURATION_INTENT, p, STANDARD_ROLES, MOTION_PRESET_KEYS, T, withRoles, MOTION_PRESETS, DEFAULT_MOTION_PRESET, FADE_IN, FADE_OUT, INSTANT, MOTION_KEYFRAMES, KEEP_UNDER_REDUCED, pct;
+var MOTION_DURATIONS, MOTION_DURATION_KEYS, MOTION_LIFETIME_KEYS, MOTION_LADDER_KEYS, FIXED_DURATION_KEYS, MOTION_FACTOR_MIN, MOTION_FACTOR_MAX, SPRING, SPRING_BOUNCY, SPRING_SMOOTH, SPRING_SNAPPY, MOTION_EASINGS, MOTION_EASING_KEYS, MOTION_EASING_ALIASES, MOTION_EASING_FALLBACK, MOTION_TRANSFORM_ROLES, MOTION_DISTANCE_ROLES, neutralTransform, MOTION_ROLES, MOTION_ROLE_INTENT, MOTION_DURATION_INTENT, p, STANDARD_ROLES, MOTION_PRESET_KEYS, T, withRoles, MOTION_PRESETS, DEFAULT_MOTION_PRESET, FADE_IN, FADE_OUT, INSTANT, MOTION_KEYFRAMES, KEEP_UNDER_REDUCED, pct;
 var init_motion = __esm({
   "src/lib/motion.ts"() {
     MOTION_DURATIONS = {
@@ -458,14 +499,22 @@ var init_motion = __esm({
       long: 360,
       "extra-long": 560,
       "super-long": 800,
-      cinematic: 1200
+      cinematic: 1200,
+      // How long a self-dismissing message stays: reading time, so no preset scales it.
+      "lifetime-brief": 4e3,
+      "lifetime-default": 6e3,
+      "lifetime-long": 1e4
     };
     MOTION_DURATION_KEYS = Object.keys(MOTION_DURATIONS);
-    FIXED_DURATION_KEYS = /* @__PURE__ */ new Set(["instant", "fade"]);
+    MOTION_LIFETIME_KEYS = ["lifetime-brief", "lifetime-default", "lifetime-long"];
+    MOTION_LADDER_KEYS = MOTION_DURATION_KEYS.filter((k) => !k.startsWith("lifetime-"));
+    FIXED_DURATION_KEYS = /* @__PURE__ */ new Set(["instant", "fade", ...MOTION_LIFETIME_KEYS]);
     MOTION_FACTOR_MIN = 0.7;
     MOTION_FACTOR_MAX = 1.5;
     SPRING = "linear(0, 0.035, 0.127, 0.257, 0.408, 0.566, 0.717, 0.854, 0.97, 1.062, 1.129, 1.173, 1.195, 1.2, 1.189, 1.169, 1.141, 1.111, 1.079, 1.05, 1.023, 1.001, 0.984, 0.972, 0.964, 0.96, 0.96, 0.963, 0.967, 0.973, 0.979, 0.986, 0.991, 0.997, 1.001, 1.004, 1.006, 1.007, 1.008, 1.008, 1.007, 1.006, 1)";
     SPRING_BOUNCY = "linear(0, 0.071, 0.256, 0.507, 0.776, 1.023, 1.217, 1.343, 1.397, 1.386, 1.323, 1.229, 1.122, 1.019, 0.934, 0.875, 0.845, 0.842, 0.861, 0.896, 0.938, 0.981, 1.017, 1.044, 1.06, 1.064, 1.059, 1.046, 1.03, 1.013, 0.997, 0.985, 0.977, 0.974, 0.976, 0.98, 0.986, 0.993, 0.999, 1.005, 1.008, 1.01, 1.01, 1.009, 1.006, 1.004, 1.001, 0.999, 1)";
+    SPRING_SMOOTH = "linear(0, 0.032, 0.111, 0.213, 0.325, 0.435, 0.538, 0.63, 0.71, 0.778, 0.834, 0.878, 0.914, 0.941, 0.962, 0.977, 0.988, 0.996, 1.001, 1.004, 1.005, 1.006, 1.006, 1.006, 1.005, 1.005, 1.004, 1.003, 1.003, 1.002, 1.002, 1.001, 1.001, 1.001, 1, 1, 1, 1, 1, 1, 1)";
+    SPRING_SNAPPY = "linear(0, 0.045, 0.154, 0.295, 0.443, 0.584, 0.708, 0.812, 0.893, 0.954, 0.996, 1.024, 1.039, 1.045, 1.046, 1.042, 1.036, 1.029, 1.023, 1.016, 1.011, 1.007, 1.003, 1.001, 1, 0.999, 0.998, 0.998, 0.998, 0.998, 0.998, 0.999, 0.999, 0.999, 1, 1, 1, 1, 1, 1, 1)";
     MOTION_EASINGS = {
       standard: "cubic-bezier(0.45, 0.05, 0.25, 0.95)",
       entrance: "cubic-bezier(0, 0, 0.2, 1)",
@@ -474,7 +523,9 @@ var init_motion = __esm({
       gentle: "cubic-bezier(0.76, 0, 0.24, 1)",
       linear: "cubic-bezier(0, 0, 1, 1)",
       spring: SPRING,
-      "spring-bouncy": SPRING_BOUNCY
+      "spring-bouncy": SPRING_BOUNCY,
+      "spring-smooth": SPRING_SMOOTH,
+      "spring-snappy": SPRING_SNAPPY
     };
     MOTION_EASING_KEYS = Object.keys(MOTION_EASINGS);
     MOTION_EASING_ALIASES = {
@@ -483,7 +534,9 @@ var init_motion = __esm({
     };
     MOTION_EASING_FALLBACK = {
       spring: "emphasized",
-      "spring-bouncy": "emphasized"
+      "spring-bouncy": "emphasized",
+      "spring-smooth": "emphasized",
+      "spring-snappy": "emphasized"
     };
     MOTION_TRANSFORM_ROLES = [
       "enter",
@@ -524,7 +577,13 @@ var init_motion = __esm({
       "base-functional-standard",
       "base-expressive-entrance",
       "base-expressive-exit",
-      "base-expressive-standard"
+      "base-expressive-standard",
+      "use-notify-in",
+      "use-notify-out",
+      "use-reflow",
+      "use-countdown",
+      "use-progress",
+      "use-release"
     ];
     MOTION_ROLE_INTENT = {
       "use-hover": { usage: ["hover"], direction: "Fast and responsive; the most frequent interaction on desktop." },
@@ -550,7 +609,13 @@ var init_motion = __esm({
       "base-functional-standard": { usage: ["any functional change in place"], direction: "Fallback for UI that changes without entering or leaving." },
       "base-expressive-entrance": { usage: ["any expressive entrance"], direction: "Fallback for storytelling arrivals." },
       "base-expressive-exit": { usage: ["any expressive exit"], direction: "Fallback for storytelling departures." },
-      "base-expressive-standard": { usage: ["any expressive change in place"], direction: "Fallback for storytelling changes." }
+      "base-expressive-standard": { usage: ["any expressive change in place"], direction: "Fallback for storytelling changes." },
+      "use-notify-in": { usage: ["toast", "notification"], direction: "A message arriving: it settles in without calling attention to the bounce." },
+      "use-notify-out": { usage: ["toast", "notification"], direction: "A message leaving, quickly and completely." },
+      "use-reflow": { usage: ["toast stack", "list reorder"], direction: "Neighbours moving to make room or close a gap." },
+      "use-countdown": { usage: ["toast time bar"], direction: "Time left: always linear, so the bar tells the truth." },
+      "use-progress": { usage: ["progress bar value"], direction: "A real value advancing; it never overshoots what was measured." },
+      "use-release": { usage: ["swipe release", "drag release"], direction: "An element going back after a gesture lets go." }
     };
     MOTION_DURATION_INTENT = {
       instant: { usage: ["reduced motion"], direction: "No animation: the change happens at once." },
@@ -561,7 +626,10 @@ var init_motion = __esm({
       long: { usage: ["choreography", "panels"], direction: "Coordinated motion between elements." },
       "extra-long": { usage: ["celebration", "colour change"], direction: "Expressive, still part of using the product." },
       "super-long": { usage: ["storytelling", "loops"], direction: "Meant to be noticed rather than used." },
-      cinematic: { usage: ["hero moments"], direction: "Storytelling only; never on a control." }
+      cinematic: { usage: ["hero moments"], direction: "Storytelling only; never on a control." },
+      "lifetime-brief": { usage: ["one-line confirmation"], direction: "A message read at a glance." },
+      "lifetime-default": { usage: ["title and description"], direction: "A message with a sentence to read." },
+      "lifetime-long": { usage: ["message with an action"], direction: "Time to read it and decide, as with Undo." }
     };
     p = (duration, easing) => ({ duration, easing });
     STANDARD_ROLES = {
@@ -588,7 +656,13 @@ var init_motion = __esm({
       "base-functional-standard": p("short", "standard"),
       "base-expressive-entrance": p("long", "emphasized"),
       "base-expressive-exit": p("medium", "exit"),
-      "base-expressive-standard": p("long", "standard")
+      "base-expressive-standard": p("long", "standard"),
+      "use-notify-in": p("long", "spring-smooth"),
+      "use-notify-out": p("short", "exit"),
+      "use-reflow": p("medium", "spring-smooth"),
+      "use-countdown": p("lifetime-default", "linear"),
+      "use-progress": p("medium", "entrance"),
+      "use-release": p("medium", "spring-snappy")
     };
     MOTION_PRESET_KEYS = ["snappy", "standard", "expressive", "playful", "calm"];
     T = (enter, far, pop, shrink, anticipate, overshoot, settle, zoom, clone, dolly) => ({ enter, glide: enter, far, pop, shrink, anticipate, overshoot, settle, zoom, clone, dolly });
@@ -609,7 +683,8 @@ var init_motion = __esm({
             "use-page-transition": p("medium", "entrance"),
             "use-celebration": p("long", "entrance"),
             "base-expressive-entrance": p("medium", "entrance"),
-            "base-expressive-standard": p("medium", "standard")
+            "base-expressive-standard": p("medium", "standard"),
+            "use-notify-in": p("medium", "spring-smooth")
           }),
           transforms: T(4, 24, 0.97, 0.98, 0.95, 1, 1, 0.85, 0.75, -120),
           stagger: 60
@@ -638,7 +713,8 @@ var init_motion = __esm({
             "use-emphasis-in": p("long", "spring"),
             "use-travel-in": p("long", "emphasized"),
             "use-stagger-in": p("short", "emphasized"),
-            "use-celebration": p("extra-long", "spring")
+            "use-celebration": p("extra-long", "spring"),
+            "use-notify-in": p("long", "spring-snappy")
           }),
           transforms: T(12, 56, 0.92, 0.95, 0.88, 1.06, 1.02, 0.65, 0.5, -320),
           stagger: 100
@@ -658,7 +734,9 @@ var init_motion = __esm({
             "use-stagger-in": p("short", "spring"),
             "use-page-transition": p("long", "spring"),
             "use-celebration": p("extra-long", "spring-bouncy"),
-            "base-expressive-entrance": p("long", "spring")
+            "base-expressive-entrance": p("long", "spring"),
+            "use-notify-in": p("long", "spring"),
+            "use-release": p("medium", "spring")
           }),
           transforms: T(12, 56, 0.9, 0.94, 0.85, 1.1, 1.03, 0.6, 0.45, -320),
           stagger: 120
@@ -685,7 +763,13 @@ var init_motion = __esm({
             "base-functional-entrance": p("short", "gentle"),
             "base-functional-standard": p("short", "gentle"),
             "base-expressive-entrance": p("long", "gentle"),
-            "base-expressive-standard": p("long", "gentle")
+            "base-expressive-standard": p("long", "gentle"),
+            "use-notify-in": p("long", "gentle"),
+            // Sonner unmounts a toast 200 ms after it is dismissed: quick × 1.5 still fits.
+            "use-notify-out": p("quick", "exit"),
+            "use-reflow": p("medium", "gentle"),
+            "use-progress": p("medium", "gentle"),
+            "use-release": p("medium", "gentle")
           }),
           transforms: T(0, 0, 1, 1, 1, 1, 1, 1, 1, 0),
           stagger: 140
@@ -731,6 +815,10 @@ var init_motion = __esm({
         offset: [0, 0.278, 0.722, 1],
         easing: ["entrance", "gentle", "exit"]
       },
+      "toast-rise": { transform: ["translateY(var(--motion-transform-enter)) scale(var(--motion-transform-pop))", "translateY(0) scale(1)"] },
+      "toast-leave": { opacity: ["1", "0"], transform: ["translateY(0) scale(1)", "translateY(var(--motion-transform-enter)) scale(var(--motion-transform-shrink))"] },
+      "icon-pop": { transform: ["scale(var(--motion-transform-zoom))", "scale(1)"] },
+      countdown: { transform: ["scaleX(1)", "scaleX(0)"] },
       "spring-in": {
         opacity: ["0", "1", "1", "1", "1"],
         transform: [
@@ -744,7 +832,7 @@ var init_motion = __esm({
         easing: ["entrance", "standard", "standard", "entrance"]
       }
     };
-    KEEP_UNDER_REDUCED = /* @__PURE__ */ new Set(["use-hover", "use-focus", "use-press", "use-loop"]);
+    KEEP_UNDER_REDUCED = /* @__PURE__ */ new Set(["use-hover", "use-focus", "use-press", "use-loop", "use-countdown"]);
     pct = (n) => `${+(n * 100).toFixed(1)}%`;
   }
 });
@@ -5992,7 +6080,7 @@ var init_componentCatalogue = __esm({
         box: "gray",
         locks: ["size", "hit", "motion"],
         description: "A short, non-blocking confirmation over the page that dismisses itself: an icon told apart by severity, a title, an optional description, actions, a close and a progress hairline.",
-        usage: "Use for transient feedback (saved, copied, undone). Keep the title under six words; an action such as Undo needs a second way to be reached because the toast times out. For a persistent notice use Alert, for form validation Field.",
+        usage: "Use for transient feedback (saved, copied, undone). Keep the title under six words; an action such as Undo needs a second way to be reached because the toast times out. It rises into place, its bar shows the time left, and it closes when the bar runs out: 4 s for one line, 6 s with a description, 10 s with an action. Hover or focus pause it. A critical toast stays until it is closed. For a persistent notice use Alert, for form validation Field.",
         // The Figma file's axes, value for value (design-plans/toast-contract.md).
         axes: [
           { name: "Appearance", values: ["solid", "soft", "filled", "outline"] },
@@ -6003,9 +6091,10 @@ var init_componentCatalogue = __esm({
           { name: "appearance / variant", type: "Figma axes", description: "Variant is the severity: it picks the icon (Sparkle, Info, CheckCircle, Warning, WarningCircle) and the colour." },
           { name: "title / description / descriptionVisible", type: "ReactNode / boolean", description: "Figma Title, Description and DescriptionVisible." },
           { name: "iconVisible / actionsVisible / closeVisible / progressVisible", type: "boolean", description: "The Figma booleans; progress is the time-left hairline (progress = 0\u2013100)." },
-          { name: "showToast(props)", type: "function", description: "Puts a Toast in the Toaster queue; mount <Toaster /> once." }
+          { name: "countdown / onCountdownEnd", type: "number (ms) / () => void", description: "Makes the bar the clock: it empties over this time, pauses on hover and focus, and calls onCountdownEnd when it runs out." },
+          { name: "showToast(props)", type: "function", description: "Puts a Toast in the Toaster queue and picks its lifetime from the content; `duration` overrides it. Mount <Toaster /> once." }
         ],
-        accessibility: 'role="status" (polite), and role="alert" for critical. Do not rely on colour alone: the icon and the text carry the severity. Keep the toast on screen long enough to read.'
+        accessibility: 'role="status" (polite), and role="alert" for critical. Do not rely on colour alone: the icon and the text carry the severity. The time left pauses on hover, on focus and while the page is hidden; a critical toast never closes by itself. With reduced motion it fades instead of moving, and the bar keeps running because it is information.'
       },
       {
         key: "Alert",
@@ -12876,7 +12965,24 @@ var init_motion2 = __esm({
       Switch: { transitions: { root: states("background-color", "box-shadow"), thumb: { transform: "use-toggle" } } },
       RatingGroupItem: { transitions: { root: FILL } },
       SliderThumb: { transitions: { root: states("border-color", "box-shadow") } },
-      ProgressLine: { transitions: { indicator: { width: "base-functional-standard" } } },
+      ProgressLine: { transitions: { indicator: { width: "use-progress" } } },
+      // Sonner keeps the queue, the stack and the live region; the toast itself moves on the system's roles (DEC-2026-11-18-001).
+      Toast: {
+        enter: { name: "toast-enter" },
+        exit: { name: "toast-exit" },
+        // In the queue, or on a page that shows the toast living in place (`data-toast-state`).
+        host: {
+          enter: ['[data-sonner-toast][data-removed="false"]', '[data-toast-state="open"]'],
+          exit: ['[data-sonner-toast][data-removed="true"]', '[data-toast-state="closing"]']
+        },
+        timer: {
+          name: "toast-countdown",
+          slot: "bar",
+          attr: "[data-countdown]",
+          pausedBy: ['[data-sonner-toast][data-expanded="true"]', '[data-sonner-toast][data-swiping="true"]']
+        },
+        queue: { item: '[data-slot="toaster"] [data-sonner-toast]', reflow: "use-reflow", release: "use-release" }
+      },
       // AccordionItem (the Figma file, 2026-11-12): the item owns the trigger and the content, so the chevron
       // and the expand / collapse play on it; the Accordion only stacks items.
       AccordionItem: { ...disclosure("--radix-accordion-content-height"), transitions: { chevron: { transform: "use-disclosure-in" } } },
@@ -15858,7 +15964,7 @@ var init_useDesignStore = __esm({
         }),
         {
           name: "scalable-designs-store",
-          version: 153,
+          version: 154,
           migrate: (persisted, version) => {
             if (persisted) {
               delete persisted.styleDirection;
@@ -17740,6 +17846,19 @@ var init_useDesignStore = __esm({
               capSelectorsRadiusV153(persisted);
               if (Array.isArray(persisted.savedSystems)) {
                 for (const sys of persisted.savedSystems) capSelectorsRadiusV153(sys?.snapshot);
+              }
+            }
+            if (version < 154) {
+              const addMotionRoles = (state2) => {
+                if (!state2 || typeof state2 !== "object") return;
+                if (state2.motion) state2.motion = normalizeMotionSettings(state2.motion);
+                for (const own of Object.values(state2.themeFoundations ?? {})) {
+                  if (own?.motion) own.motion = normalizeMotionSettings(own.motion);
+                }
+              };
+              addMotionRoles(persisted);
+              if (Array.isArray(persisted.savedSystems)) {
+                for (const sys of persisted.savedSystems) addMotionRoles(sys?.snapshot);
               }
             }
             if (version < 133) {

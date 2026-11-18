@@ -1,6 +1,6 @@
 // Docs · Motion — the brand's motion, read from its own settings
 // (`SystemDoc.motion`, resolved per brand by `resolveThemeFoundations`). The
-// duration ladder, the easings drawn as curves, the 24 roles in the editor's
+// duration ladder, the easings drawn as curves, the 30 roles in the editor's
 // five groups, the transforms, and every choreography PLAYABLE, full and
 // reduced side by side.
 //
@@ -16,7 +16,7 @@
 import { useState, type CSSProperties, type ReactNode } from 'react'
 import { useI18n } from '../../../lib/i18n'
 import {
-  MOTION_DURATION_KEYS, MOTION_EASINGS, MOTION_EASING_KEYS, MOTION_EASING_FALLBACK,
+  MOTION_LADDER_KEYS, MOTION_EASINGS, MOTION_EASING_KEYS, MOTION_EASING_FALLBACK,
   MOTION_ROLE_GROUPS, MOTION_ROLE_INTENT, MOTION_TRANSFORM_ROLES, SCALED_DURATION_KEYS,
   durationMs, durationRange, matchMotionPreset, motionChoreographies, motionCssVars,
   motionTokens, resolveMotionRef, transformCss,
@@ -51,10 +51,10 @@ function trackAnimation(keyframes: string, ref: MotionRef, delay: number, settin
 
 function DurationLadder({ settings }: { settings: MotionSettings }) {
   const { t } = useI18n()
-  const max = Math.max(...MOTION_DURATION_KEYS.map((k) => durationMs(k, settings)), 1)
+  const max = Math.max(...MOTION_LADDER_KEYS.map((k) => durationMs(k, settings)), 1)
   return (
     <div className="flex flex-col gap-2">
-      {MOTION_DURATION_KEYS.map((key) => {
+      {MOTION_LADDER_KEYS.map((key) => {
         const ms = durationMs(key, settings)
         const scaled = SCALED_DURATION_KEYS.includes(key)
         const range = durationRange(key)
@@ -229,7 +229,7 @@ function sceneOf(name: string): Scene {
   if (name.startsWith('sheet')) return 'sheet'
   if (name.startsWith('drawer')) return 'drawer'
   if (name.startsWith('popover')) return 'popover'
-  if (name.startsWith('sonner')) return 'sonner'
+  if (name.startsWith('sonner') || name.startsWith('toast')) return 'sonner'
   if (name.startsWith('switch')) return 'switch'
   if (name.startsWith('list')) return 'list'
   if (name.startsWith('text')) return 'text'
@@ -247,8 +247,8 @@ function Stage({ name, body, settings, reduced, run }: {
   const vars = motionCssVars(settings, { reduced }) as CSSProperties
   const anim = (slot?: string): CSSProperties | undefined => {
     if (!run) return undefined
-    const track = body.tracks?.find((tr) => (tr.slot ?? undefined) === slot)
-    return track ? { animation: trackAnimation(track.keyframes, track.motion, delayMs(track.delay, settings), settings) } : undefined
+    const tracks = body.tracks?.filter((tr) => (tr.slot ?? undefined) === slot) ?? []
+    return tracks.length ? { animation: tracks.map((tr) => trackAnimation(tr.keyframes, tr.motion, delayMs(tr.delay, settings), settings)).join(', ') } : undefined
   }
   const childAnim = (i: number, n: number): CSSProperties | undefined => {
     if (!run || !body.child) return undefined
@@ -293,9 +293,10 @@ function Stage({ name, body, settings, reduced, run }: {
   } else if (scene === 'sonner') {
     content = (
       <div className="absolute inset-x-0 bottom-3 flex justify-center">
-        <div className="flex w-3/4 items-center gap-2 rounded-md border border-line bg-elevated p-2 shadow-sm" style={anim(undefined)}>
-          <span className="h-3 w-3 flex-shrink-0 rounded-full bg-accent-solid" />
+        <div className="relative flex w-3/4 items-center gap-2 overflow-hidden rounded-md border border-line bg-elevated p-2 shadow-sm" style={anim(undefined)}>
+          <span className="h-3 w-3 flex-shrink-0 rounded-full bg-accent-solid" style={anim('icon')} />
           <span className="h-1.5 flex-1 rounded-full bg-fg/30" />
+          {name === 'toast-countdown' && <span className="absolute inset-x-0 bottom-0 h-0.5 origin-left bg-accent-solid" style={anim('bar')} />}
         </div>
       </div>
     )
@@ -450,7 +451,7 @@ export function motionTokenTotal(settings: MotionSettings): number {
 export const MOTION_DOC: FoundationDoc = {
   key: 'motion',
   label: 'Motion',
-  lead: 'How the system moves: a duration ladder, eight easings, 24 roles that name a duration and an easing for one job, and choreographies that time several parts together. Every role has a reduced-motion version.',
+  lead: 'How the system moves: a duration ladder, ten easings, 30 roles that name a duration and an easing for one job, and choreographies that time several parts together. Every role has a reduced-motion version.',
   why: 'A 200ms here and a 300ms ease-in-out there is how a product ends up feeling like five products. Naming the job (`use-overlay-in`, `use-hover`) instead of the number means one preset retimes every component, an entrance is never shorter than its exit, and reduced motion is handled once, in the tokens, instead of in every component.',
   usage: 'Reach for a role, never a raw duration: `transition: background-color var(--motion-use-hover)`. Open and close layers play a choreography (`--motion-choreo-*`). `variables.css` carries the `prefers-reduced-motion` block, so do not add your own override.',
   usageCode: `.button { transition: background-color var(--motion-use-hover); }
