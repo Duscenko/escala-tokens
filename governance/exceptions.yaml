@@ -1,7 +1,7 @@
 - id: EXC-2026-11-16-001
   rule: COL-002
   scope: Border/control, Border/control-hover (Light and Dark)
-  rationale: "Owner decision DEC-2026-11-16-004: the Figma file is the rule. Soft hairline at Alpha/03 in Light and Alpha/04 in Dark (hover /04; DEC-2026-11-16-006 moved Dark to /04), below the 3:1 of WCAG 1.4.11."
+  rationale: "Owner decisions DEC-2026-11-16-004 and DEC-2026-11-18-002: the Figma file is the rule. Soft hairline at Alpha/03 in both themes (hover /04): Light 1.41:1, Dark 1.57:1, below the 3:1 of WCAG 1.4.11. Strong borders belong to the future high-contrast mode."
   owner: Cesar Durango
   reviewBy: 2027-02-16
 

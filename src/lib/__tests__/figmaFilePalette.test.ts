@@ -30,7 +30,7 @@ const hasInventory = existsSync(INVENTORY)
 const SINCE_INVENTORY: Record<string, string> = {
   'Border/default': '{CP:Neutrals/Black Alpha/02} ; {CP:Neutrals/White Alpha/02}',
   'Border/subtle': '{CP:Neutrals/Black Alpha/01} ; {CP:Neutrals/White Alpha/01}',
-  'Border/control': '{CP:Neutrals/Black Alpha/03} ; {CP:Neutrals/White Alpha/04}',
+  'Border/control': '{CP:Neutrals/Black Alpha/03} ; {CP:Neutrals/White Alpha/03}',
   'Border/control-hover': '{CP:Neutrals/Black Alpha/04} ; {CP:Neutrals/White Alpha/04}',
   'Status/critical/surface': '{CP:States/EscalaDS/Error/Alpha/03} ; {CP:States/EscalaDS/Error Dark/Alpha/03}',
   // DEC-2026-11-16-006: curated again in the file after DEC-004 — Dark critical text, Dark control border, Light highlight.
@@ -41,6 +41,13 @@ const SINCE_INVENTORY: Record<string, string> = {
   // 2026-11-17: Dark brand wash moved from Dark/02 to Dark/04 in the file.
   'Surface/accent': '{CP:Accents/EscalaDS/02} ; {CP:Accents/EscalaDS Dark/04}',
   'Elevation/highlight': '{CP:Neutrals/White Alpha/05} ; {CP:Neutrals/White Alpha/03}',
+  // DEC-2026-11-17-001: the secondary button walks its ramp two steps above the card.
+  'Action/secondary/default': '{CP:Neutrals/EscalaDS Gray/05} ; {CP:Neutrals/EscalaDS Gray Dark/06}',
+  'Action/secondary/hover': '{CP:Neutrals/EscalaDS Gray/06} ; {CP:Neutrals/EscalaDS Gray Dark/07}',
+  'Action/secondary/pressed': '{CP:Neutrals/EscalaDS Gray/07} ; {CP:Neutrals/EscalaDS Gray Dark/08}',
+  // DEC-2026-11-18-002: the dark inputs calibration.
+  'Surface/input': '{CP:Accents/EscalaDS/01} ; {CP:Neutrals/EscalaDS Gray Dark/02}',
+  'Content/subtle': '{CP:Neutrals/EscalaDS Gray/10} ; {CP:Neutrals/EscalaDS Gray Dark/10}',
 }
 function inventoryText(): string {
   return readFileSync(INVENTORY, 'utf8').split('\n').map((line) => {
@@ -112,6 +119,13 @@ describe.skipIf(!hasInventory)('every Color Semantics role resolves to the Figma
     }
     expect(checked).toBeGreaterThan(150)
     expect(mismatches).toEqual([])
+  })
+
+  // `Surface/raised` is newer than the inventory, so the walk above cannot see it (DEC-2026-11-18-002).
+  it('Surface/raised: Light Accents/01, Dark Gray Dark/04', () => {
+    const s = useDesignStore.getState()
+    expect(resolvePreviewTokens(s, brand, 'light').archTokens?.['surface.raised']?.toLowerCase()).toBe(FIGMA_FILE_PALETTE.families.accent.light[1])
+    expect(resolvePreviewTokens(s, brand, 'dark').archTokens?.['surface.raised']?.toLowerCase()).toBe(FIGMA_FILE_PALETTE.families.gray.dark[4])
   })
 })
 
