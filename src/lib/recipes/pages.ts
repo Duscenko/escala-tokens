@@ -41,7 +41,8 @@ export const ISSUE_CARD: ComponentRecipe = {
   defaults: { State: 'Default' },
   parts: [
     part({}, () => ({
-      root: { fill: c('surface.layer-2'), radius: 'radius.action', paddingX: 'spacing.inset-control', paddingY: 'spacing.inset-control', gap: 'spacing.gap-control', strokeWidth: 'stroke.divider' },
+      // Figma lays the card's 1px stroke out (`strokesIncludedInLayout`): content starts at 13, so 104 = 1 + 12 + 78 + 12 + 1.
+      root: { fill: c('surface.layer-2'), radius: 'radius.action', paddingX: 'spacing.inset-control+stroke.divider', paddingY: 'spacing.inset-control+stroke.divider', gap: 'spacing.gap-control', strokeWidth: 'stroke.divider' },
       'root:focus-visible': { ...FOCUS },
       key: { gap: 'spacing.gap-control' },
       issueKey: { text: c('content.secondary'), font: 'type.caption' },

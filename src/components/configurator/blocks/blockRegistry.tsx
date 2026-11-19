@@ -34,7 +34,8 @@ import {
   type OverlayBlockProps,
 } from '../../escala-ui/blocks/overlay'
 import { MorphNav, UserMenu, MORPH_NAV_CONTENTS, type MorphNavContent } from '../../escala-ui/blocks/siteNavigation'
-import { IssueBoardPage, SettingsPage, type ScreenLayout } from '../../escala-ui/screens/screens'
+import { ScreenPrototype } from '../../escala-ui/screens/prototype'
+import { SCREEN_ROUTES } from '../../escala-ui/screens/sitemap'
 import { SettingsRow } from '../../escala-ui/settings-row'
 import { SettingsSection } from '../../escala-ui/settings-section'
 import { BoardColumn } from '../../escala-ui/board-column'
@@ -191,7 +192,7 @@ const screenPart = (screen: string, name: string, description: string, render: (
   group: 'Screens', name, description, wide: false, partOf: `Screens/${screen}`, controls: [], render,
 })
 const SCREEN_DEFS: Def[] = [
-  { group: 'Screens', name: 'SettingsPage', description: 'Account settings: a Profile and a Notifications section, each a list of rows with their control.', wide: true, responsive: true, controls: [], render: (v) => <SettingsPage layout={v.layout as ScreenLayout} /> },
+  { group: 'Screens', name: 'SettingsPage', description: 'Workspace settings: a sidebar of sections beside a scrolling page of SettingsSections, each a list of rows with their control.', wide: true, controls: [], render: () => <ScreenPrototype initialPath={SCREEN_ROUTES.settings} />, mockup: (_v, layout) => <ScreenPrototype layout={layout} initialPath={SCREEN_ROUTES.settings} /> },
   screenPart('SettingsPage', 'SettingsSection', 'A titled group of SettingsRow.', () => (
     <SettingsSection title="Notifications" description="What this group of settings controls.">
       <SettingsRow title="Email notifications" control={<Switch defaultChecked />} />
@@ -200,7 +201,7 @@ const SCREEN_DEFS: Def[] = [
   screenPart('SettingsPage', 'SettingsRow', 'One setting: its title, an optional description and a single control.', () => (
     <SettingsRow layout="stacked" title="Setting name" description="One line that explains what this setting changes." control={<Switch defaultChecked />} />
   )),
-  { group: 'Screens', name: 'IssueBoardPage', description: 'An issue board: one BoardColumn per status, each a list of IssueCards.', wide: true, controls: [], render: () => <IssueBoardPage /> },
+  { group: 'Screens', name: 'IssueBoardPage', description: 'An issue board: the workspace sidebar, a header and filters, and one BoardColumn per status, each a list of IssueCards.', wide: true, controls: [], render: () => <ScreenPrototype initialPath={SCREEN_ROUTES.board} />, mockup: (_v, layout) => <ScreenPrototype layout={layout} initialPath={SCREEN_ROUTES.board} /> },
   screenPart('IssueBoardPage', 'BoardColumn', 'One status lane: status icon, title, count, add action and a list of IssueCard.', () => (
     <BoardColumn title="Backlog" count="1" newIssueVisible={false}>
       <IssueCard href="#" issueKey="PAY-312" title="Support split payments across two cards" tag={<Badge appearance="soft" shape="rounded" size="sm" type="default" variant="info">Payments</Badge>} />
