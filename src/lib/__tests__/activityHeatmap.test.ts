@@ -9,6 +9,7 @@ import {
 } from '../activityHeatmap'
 import { COMPONENT_RECIPES, recipeTokenRefs } from '../componentRecipes'
 import { ACTIVITY_HEATMAP_CELL_STATES, ACTIVITY_HEATMAP_CELL_VALUES } from '../recipes/activityHeatmap'
+import { ACTIVITY_HEATMAP_CELL_STATES as COMPONENT_CELL_STATES, ACTIVITY_HEATMAP_CELL_VALUES as COMPONENT_CELL_VALUES } from '../../components/escala-ui/activity-heatmap'
 
 // The Figma file's picture (2400:58): 52 full weeks from Sunday 2024-12-29 and three days of the last one, ending Tuesday 2025-12-30.
 const END = '2025-12-30'
@@ -120,6 +121,9 @@ describe('recipes', () => {
       expect(part.values[v].root.fill).toBe(`color.chart.sequential.${v}`)
     }
     expect(ACTIVITY_HEATMAP_CELL_STATES).toEqual(['Default', 'Focused'])
+    // The component ships its own copy (the registry serves it without the recipe module): both lists stay equal.
+    expect(COMPONENT_CELL_STATES).toEqual(ACTIVITY_HEATMAP_CELL_STATES)
+    expect(COMPONENT_CELL_VALUES).toEqual(ACTIVITY_HEATMAP_CELL_VALUES)
     expect(recipeTokenRefs(cell).length).toBeGreaterThan(0)
   })
 })

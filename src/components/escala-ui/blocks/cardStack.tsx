@@ -71,7 +71,7 @@ export const CardStackCard = React.forwardRef<HTMLDivElement, CardStackCardProps
     <div
       ref={ref} data-escala="CardStackCard" data-state={state}
       style={{
-        position: 'relative', boxSizing: 'border-box', display: 'flex', flexDirection: 'column', gap: v('spacing.gap-group'), width: 'calc(var(--spacing-32) * 2.5)',
+        position: 'relative', boxSizing: 'border-box', display: 'flex', flexDirection: 'column', gap: v('spacing.gap-group'), width: `calc(${v('spacing.32')} * 2.5)`,
         padding: v('spacing.inset-surface'), background: v('color.surface.layer-2'), border: `${v('stroke.divider')} solid ${v('color.border.default')}`,
         borderRadius: v('radius.container'), boxShadow: dragging ? v('shadow.md') : v('shadow.sm'), ...style,
       }}
@@ -97,7 +97,7 @@ export const CardStackCard = React.forwardRef<HTMLDivElement, CardStackCardProps
         ))}
       </ul>
       {(stampVisible ?? dragging) && (
-        <span aria-hidden style={{ position: 'absolute', top: 'calc(var(--spacing-8) * 1)', right: 'calc(var(--spacing-8) * 1)', transform: 'rotate(-8deg)' }}>
+        <span aria-hidden style={{ position: 'absolute', top: `calc(${v('spacing.8')} * 1)`, right: `calc(${v('spacing.8')} * 1)`, transform: 'rotate(-8deg)' }}>
           <Badge variant={stamp === 'Skip' ? 'critical' : 'success'} appearance="solid" shape="rounded">{stamp}</Badge>
         </span>
       )}
@@ -112,7 +112,8 @@ export type CardStackState = (typeof CARD_STACK_STATES)[number]
 
 type Decision = { id: string; choice: 'skip' | 'shortlist' }
 const THRESHOLD = 96 // px of drag that decides
-const DECK_STEP = 'calc(var(--spacing-8) * 1)'
+/** The deck layers step 8 down and in per layer (Figma deck-2 at 8, deck-3 at 16). */
+const DECK_STEP = v('spacing.2')
 
 export interface CardStackProps extends Omit<React.ComponentProps<'div'>, 'children' | 'onChange'> {
   items?: CardStackItem[]
@@ -182,7 +183,7 @@ export function CardStack({ items = CARD_STACK_ITEMS, forceState, onDecision, st
       <div
         role="group" aria-roledescription="card stack" aria-label={`Destinations, ${left.length} left`} tabIndex={0} onKeyDown={onKeyDown}
         className="outline-none focus-visible:outline-solid focus-visible:[outline-width:var(--stroke-focus)] focus-visible:[outline-color:var(--color-border-ring-default)] focus-visible:[outline-offset:var(--stroke-divider)]"
-        style={{ position: 'relative', width: 'calc(var(--spacing-32) * 2.5)', height: 'calc(var(--spacing-32) * 4.05078125)', borderRadius: v('radius.container') }}
+        style={{ position: 'relative', width: `calc(${v('spacing.32')} * 2.5)`, height: `calc(${v('spacing.32')} * 4.05078125)`, borderRadius: v('radius.container') }}
       >
         {empty ? (
           <div
@@ -199,7 +200,7 @@ export function CardStack({ items = CARD_STACK_ITEMS, forceState, onDecision, st
           <>
             {[2, 1].map((n) => left[n] && (
               <div key={left[n].id} aria-hidden style={{
-                position: 'absolute', top: `calc(${DECK_STEP} * ${n})`, left: `calc(${DECK_STEP} * ${n})`, right: `calc(${DECK_STEP} * ${n})`, bottom: 0, boxSizing: 'border-box',
+                position: 'absolute', top: `calc(${DECK_STEP} * ${n})`, left: `calc(${DECK_STEP} * ${n})`, right: `calc(${DECK_STEP} * ${n})`, bottom: `calc(${DECK_STEP} * ${2 - n})`, boxSizing: 'border-box',
                 background: v('color.surface.layer-2'), border: `${v('stroke.divider')} solid ${v('color.border.default')}`, borderRadius: v('radius.container'), boxShadow: v('shadow.sm'),
                 transition: `top ${motion('use-travel-in')}, left ${motion('use-travel-in')}, right ${motion('use-travel-in')}`,
               }} />

@@ -22,7 +22,10 @@ import {
 
 export { ACTIVITY_DEFAULT_THRESHOLDS } from '../../lib/activityHeatmap'
 export type { ActivityDay, ActivityLevel, ActivityThresholds } from '../../lib/activityHeatmap'
-export { ACTIVITY_HEATMAP_CELL_STATES, ACTIVITY_HEATMAP_CELL_VALUES } from '../../lib/recipes/activityHeatmap'
+/** Figma ActivityHeatmapCell axes (the recipe keeps the same lists; activityHeatmap.test.ts holds them equal). Defined here so the
+ *  shipped file needs no recipe module. */
+export const ACTIVITY_HEATMAP_CELL_VALUES = ['0', '1', '2', '3', '4', '5'] as const
+export const ACTIVITY_HEATMAP_CELL_STATES = ['Default', 'Focused'] as const
 
 export type ActivityHeatmapCellState = 'Default' | 'Focused'
 

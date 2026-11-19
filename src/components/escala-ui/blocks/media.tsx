@@ -71,7 +71,7 @@ export function MediaPlayerTrack({ title = 'Morning tide', duration = '0:24', cu
       <span style={{ ...type('body-sm'), color: secondary, whiteSpace: 'nowrap' }}>{duration}</span>
       {isCurrent && (
         <span aria-hidden style={{
-          position: 'absolute', left: 0, top: '50%', transform: 'translateY(-50%)', width: v('stroke.focus'), height: 'calc(var(--spacing-4) * 1)',
+          position: 'absolute', left: 0, top: '50%', transform: 'translateY(-50%)', width: v('stroke.focus'), height: `calc(${v('spacing.4')} * 1)`,
           borderRadius: v('radius.full'), background: v('color.action.primary.default'), transition: `opacity ${motion('use-travel-in')}`,
         }} />
       )}
@@ -84,7 +84,7 @@ export function MediaPlayerTrack({ title = 'Morning tide', duration = '0:24', cu
 function Equalizer({ playing }: { playing: boolean }) {
   const bars = [0.6, 1, 0.45, 0.8]
   return (
-    <span aria-hidden data-part="NowPlaying.equalizer" style={{ display: 'inline-flex', alignItems: 'flex-end', gap: 'calc(var(--spacing-1) * 1)', width: v('icon.medium'), height: v('icon.medium'), flexShrink: 0, color: playing ? v('color.content.accent') : v('color.content.subtle') }}>
+    <span aria-hidden data-part="NowPlaying.equalizer" style={{ display: 'inline-flex', alignItems: 'flex-end', gap: `calc(${v('spacing.1')} * 1)`, width: v('icon.medium'), height: v('icon.medium'), flexShrink: 0, color: playing ? v('color.content.accent') : v('color.content.subtle') }}>
       {bars.map((h, i) => (
         <span key={i} style={{
           flex: '1 1 0', height: `${h * 100}%`, background: 'currentColor', borderRadius: v('radius.control'), transformOrigin: 'bottom',
@@ -135,7 +135,7 @@ export function NowPlaying({ playing, defaultPlaying = true, onPlayingChange, ti
       }}
       {...props}
     >
-      <div style={{ width: 'calc(var(--spacing-8) * 1.75)', flexShrink: 0, borderRadius: v('radius.action'), overflow: 'hidden', background: v('color.surface.muted') }}>
+      <div style={{ width: `calc(${v('spacing.8')} * 1.75)`, flexShrink: 0, borderRadius: v('radius.action'), overflow: 'hidden', background: v('color.surface.muted') }}>
         <Image ratio="1:1" src={artwork} alt="" />
       </div>
       <div style={{ display: 'flex', flexDirection: 'column', paddingRight: v('spacing.gap-group'), whiteSpace: 'nowrap' }}>
@@ -200,9 +200,9 @@ export function MediaPlayer({
     <div
       role="region" aria-label="Media player" data-escala="MediaPlayer" data-playing={on ? 'true' : 'false'}
       style={{
-        boxSizing: 'border-box', display: 'flex', flexDirection: 'column', gap: v('spacing.gap-group'), width: 'calc(var(--spacing-32) * 5)', maxWidth: '100%',
+        boxSizing: 'border-box', display: 'flex', flexDirection: 'column', gap: v('spacing.gap-group'), width: `calc(${v('spacing.32')} * 5)`, maxWidth: '100%',
         padding: v('spacing.inset-surface'), background: v('color.surface.layer-1'),
-        border: `${v('stroke.divider')} solid ${v('color.border.default')}`, borderRadius: 'calc(var(--spacing-8) * 1.25)', ...style,
+        border: `${v('stroke.divider')} solid ${v('color.border.default')}`, borderRadius: `calc(${v('spacing.8')} * 1.25)`, ...style,
       }}
       {...props}
     >
@@ -232,7 +232,7 @@ export function MediaPlayer({
         <span style={{ ...type('label'), color: primary }}>Playlist</span>
         <div style={{ display: 'flex', alignItems: 'center', gap: v('spacing.gap-control') }}>
           <IconButton variant="secondary" appearance="ghost" size="sm" aria-label={muted ? 'Unmute' : 'Mute'} icon={icon(muted || volume === 0 ? 'speaker-slash' : 'speaker-high')} onClick={() => setMuted(!muted)} />
-          <div style={{ width: 'calc(var(--spacing-32) * 1.25)' }}>
+          <div style={{ width: `calc(${v('spacing.32')} * 1.25)` }}>
             <Slider size="xs" className="w-full!" aria-label="Volume" value={muted ? 0 : volume} onValueChange={(n) => { setMuted(false); setVolume(Array.isArray(n) ? n[0] : n) }} format={(n) => `${n}%`} />
           </div>
         </div>

@@ -55,7 +55,8 @@ export const AllVariantsDark: Story = { ...AllVariants, name: 'All variants · D
 /** The parts the page keeps: the QR artwork, the simulated authenticator row and the backup codes. */
 export const Parts: Story = {
   render: () => (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 24, alignItems: 'flex-start', width: 592, maxWidth: '100%' }}>
+    // A container, as the block's step is: the codes take four columns from 24rem of width.
+    <div className="@container" style={{ display: 'flex', flexDirection: 'column', gap: 24, alignItems: 'flex-start', width: 592, maxWidth: '100%' }}>
       <AuthTwoFactorSetupQR />
       <AuthTwoFactorSetupItem />
       <AuthTwoFactorSetupGroup />

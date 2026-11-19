@@ -8,12 +8,17 @@ import { join } from 'node:path'
 import { anatomyIconPx } from '../src/lib/iconSizing'
 import { transformEscalaUi, type RegistrySource } from '../src/lib/registry/escalaUiTransform'
 
+/** `src/lib/<name>.ts` files a component may import: pure (no DOM, no imports of their own), inlined by the transform. */
+export const PURE_LIBS = ['activityHeatmap']
+
 export const GENERATED_PATH = 'src/lib/registry/escalaUiSources.generated.ts'
 
 export function readEscalaUiSources(root: string): RegistrySource[] {
   const dir = join(root, 'src/components/escala-ui')
   const iconsSource = readFileSync(join(root, 'src/components/ui/icons.tsx'), 'utf8')
   const iconsLibSource = readFileSync(join(root, 'src/lib/icons.ts'), 'utf8')
+  // DOM-free modules a component may import: shipped inside that component's file.
+  const pureLibs = Object.fromEntries(PURE_LIBS.map((n) => [n, readFileSync(join(root, `src/lib/${n}.ts`), 'utf8')]))
   const flat = readdirSync(dir).filter((f) => /\.(tsx|ts)$/.test(f)).map((f) => ({ f, text: readFileSync(join(dir, f), 'utf8') }))
   // `_skeleton/` holds the shadcn skeletons with no story yet. They are still part of the system and the registry
   // ships them, flat like every other file: a user's project has no `_skeleton` folder, so the two extra levels of
@@ -23,7 +28,7 @@ export function readEscalaUiSources(root: string): RegistrySource[] {
     : []
   return [...flat, ...skeleton]
     .sort((a, b) => a.f.localeCompare(b.f))
-    .map(({ f, text }) => transformEscalaUi(f, text, { iconsSource, iconsLibSource, iconOf: anatomyIconPx }))
+    .map(({ f, text }) => transformEscalaUi(f, text, { iconsSource, iconsLibSource, iconOf: anatomyIconPx, pureLibs }))
 }
 
 /** `../../../lib/x` → `../../lib/x`, `../../ui/icons` → `../ui/icons`, `../button` → `./button` (a sibling that stayed in escala-ui). */

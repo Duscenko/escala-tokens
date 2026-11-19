@@ -30,10 +30,10 @@ const shell = (width: string): React.CSSProperties => ({
 })
 
 // The widths the file draws (320 · 400 · 924 · 1008) on the dimension scale.
-const W_GAUGE = 'calc(var(--spacing-32) * 2.5)'
-const W_METRIC = 'calc(var(--spacing-32) * 3.125)'
-const W_ACTIVITY = 'calc(var(--spacing-32) * 7.21875)'
-const W_TRAFFIC = 'calc(var(--spacing-32) * 7.875)'
+const W_GAUGE = `calc(${v('spacing.32')} * 2.5)`
+const W_METRIC = `calc(${v('spacing.32')} * 3.125)`
+const W_ACTIVITY = `calc(${v('spacing.32')} * 7.21875)`
+const W_TRAFFIC = `calc(${v('spacing.32')} * 7.875)`
 
 const primary = v('color.content.primary')
 const secondary = v('color.content.secondary')

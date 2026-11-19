@@ -157,7 +157,8 @@ function SetupShell({ block, step, status, inline = true, open = true, onOpenCha
           {[1, 2, 3].map((n) => <ProgressLine key={n} size="xs" value={n <= index ? 100 : 0} style={{ flex: 1, minWidth: 0 }} />)}
         </div>
         {/* A minimum, not a height: every step is shorter on the 640 card, so it keeps one size; on a phone the text wraps and the step grows. */}
-        <div ref={region} data-part="step" style={{ minHeight: height, flexShrink: 0 }}>
+        {/* A container: the step lays out by its own width (the phone frame of the web stage is not a narrow viewport). */}
+        <div ref={region} data-part="step" className="@container" style={{ minHeight: height, flexShrink: 0 }}>
           <Appear key={step} role="use-page-transition" style={col()}>{children}</Appear>
         </div>
       </ModalContent>
@@ -403,7 +404,7 @@ export interface AuthTwoFactorSetupGroupProps extends Omit<React.ComponentProps<
  *  announced and can be copied by hand. */
 export function AuthTwoFactorSetupGroup({ codes = AUTH_TWO_FACTOR_SETUP_CODES, label = 'Backup codes', style, ...props }: AuthTwoFactorSetupGroupProps) {
   return (
-    <ul data-block="AuthTwoFactorSetupGroup" aria-label={label} className="grid grid-cols-2 sm:grid-cols-4" style={{ ...well('spacing.inset-surface'), margin: 0, listStyle: 'none', columnGap: v('spacing.gap-group'), rowGap: v('spacing.gap-control'), ...style }} {...props}>
+    <ul data-block="AuthTwoFactorSetupGroup" aria-label={label} className="grid grid-cols-2 @sm:grid-cols-4" style={{ ...well('spacing.inset-surface'), margin: 0, listStyle: 'none', columnGap: v('spacing.gap-group'), rowGap: v('spacing.gap-control'), ...style }} {...props}>
       {codes.map((code) => <li key={code} data-part="code" style={{ color: primary, userSelect: 'text', ...type('code') }}>{code}</li>)}
     </ul>
   )
@@ -477,9 +478,9 @@ export function AuthTwoFactorSetup({
   return (
     <SetupShell block="AuthTwoFactorSetup" {...shell} step={step} status={status} title="Two-factor authentication" index={AUTH_TWO_FACTOR_SETUP_TYPES.indexOf(step) + 1} height={TWO_FACTOR_STEP_HEIGHT} focus={step === 'verify' ? 'code' : 'heading'} describedBy={describedBy} footer={footer}>
       {step === 'scan' && (
-        <div data-part="scan" className="flex flex-col items-start sm:flex-row" style={{ gap: v('spacing.gap-section') }}>
+        <div data-part="scan" className="flex flex-col items-start @sm:flex-row" style={{ gap: v('spacing.gap-section') }}>
           <AuthTwoFactorSetupQR />
-          <div data-part="details" className="self-stretch sm:flex-1" style={{ ...col(), minWidth: 0 }}>
+          <div data-part="details" className="self-stretch @sm:flex-1" style={{ ...col(), minWidth: 0 }}>
             <StepIntro id={describedBy} title="Scan the QR code" description={`Point your authenticator app at this code to link it to ${PRODUCT}.`} />
             <div data-part="apps" style={{ display: 'flex', flexWrap: 'wrap', gap: v('spacing.gap-control') }}>
               <Badge size="default" variant="secondary" appearance="soft" shape="pill" iconLeading={glyph('device-mobile')}>Google Authenticator</Badge>

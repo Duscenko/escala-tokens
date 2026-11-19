@@ -26,6 +26,8 @@ import {
   SkeletonRatingGroupSpecimen, SkeletonRatingGroupItemSpecimen, SkeletonAvatarSpecimen, SkeletonAvatarStatusSpecimen, SkeletonAvatarGroupSpecimen, SkeletonFeaturedIconSpecimen,
   SkeletonKbdSpecimen,
 } from './skeleton/indicators'
+import { SkeletonTabBarSpecimen, SkeletonTabBarItemSpecimen } from './skeleton/tabBar'
+import { SkeletonActivityHeatmapSpecimen, SkeletonActivityHeatmapCellSpecimen } from './skeleton/activityHeatmap'
 import { SkeletonSplitBarSpecimen, SkeletonSplitBarSegmentSpecimen, SkeletonSplitBarLegendItemSpecimen } from './skeleton/splitBar'
 import {
   SkeletonTabMenuSpecimen, SkeletonTabMenuItemSpecimen, SkeletonTabMenuLineItemSpecimen, SkeletonNavItemSpecimen, SkeletonBrandSpecimen, SkeletonAccountMenuTriggerSpecimen, SkeletonSegmentedControlSpecimen, SkeletonSegmentedControlItemSpecimen, SkeletonBreadcrumbSpecimen, SkeletonBreadcrumbItemSpecimen, SkeletonBreadcrumbEllipsisSpecimen, SkeletonBreadcrumbSeparatorSpecimen,
@@ -426,6 +428,10 @@ export const SPECIMENS: Record<string, (p: SpecimenProps) => ReactNode> = {
   SplitBarSegment: SkeletonSplitBarSegmentSpecimen,
   SplitBarLegendItem: SkeletonSplitBarLegendItemSpecimen,
   Sparkline: SkeletonSparklineSpecimen,
+  ActivityHeatmap: SkeletonActivityHeatmapSpecimen,
+  ActivityHeatmapCell: SkeletonActivityHeatmapCellSpecimen,
+  TabBar: SkeletonTabBarSpecimen,
+  TabBarItem: SkeletonTabBarItemSpecimen,
   Spinner: SkeletonSpinnerSpecimen,
   FeaturedIcon: SkeletonFeaturedIconSpecimen,
   RatingGroup: SkeletonRatingGroupSpecimen,
