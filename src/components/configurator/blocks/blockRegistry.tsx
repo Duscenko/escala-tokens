@@ -25,6 +25,11 @@ import {
 } from '../../escala-ui/blocks/authSetup'
 import { AuthPasskeySetupDemo, AuthTwoFactorSetupDemo } from '../../escala-ui/blocks/authSetupDemo'
 import {
+  DashboardGaugeCard, DashboardMetricCard, DashboardActivityCard, DashboardTrafficCard,
+} from '../../escala-ui/blocks/dashboard'
+import { CardStack, CardStackCard, CARD_STACK_STATES, CARD_STACK_CARD_STATES, type CardStackState, type CardStackCardState } from '../../escala-ui/blocks/cardStack'
+import { MediaPlayer, MediaPlayerTrack, NowPlaying, MEDIA_PLAYER_TRACK_STATES, type MediaPlayerTrackState } from '../../escala-ui/blocks/media'
+import {
   HeroHeader, FAQSection, PricingCard, PricingSection, ContactSection, Footer,
   FAQ_STYLES, type MarketingLayout, type FaqStyle,
 } from '../../escala-ui/blocks/marketing'
@@ -52,11 +57,14 @@ import authContract from '../../escala-ui/blocks/auth.contract.json'
 import authSetupContract from '../../escala-ui/blocks/authSetup.contract.json'
 import marketingContract from '../../escala-ui/blocks/marketing.contract.json'
 import navigationContract from '../../escala-ui/blocks/navigation.contract.json'
+import cardStackContract from '../../escala-ui/blocks/cardStack.contract.json'
+import mediaContract from '../../escala-ui/blocks/media.contract.json'
+import dashboardContract from '../../escala-ui/blocks/dashboard.contract.json'
 import overlayContract from '../../escala-ui/blocks/overlay.contract.json'
 import siteNavigationContract from '../../escala-ui/blocks/siteNavigation.contract.json'
 import screensContract from '../../escala-ui/screens/screens.contract.json'
 
-export const BLOCK_GROUPS = ['Auth', 'Marketing', 'Navigation', 'Overlay'] as const
+export const BLOCK_GROUPS = ['Auth', 'CardStack', 'Dashboard', 'Marketing', 'Media', 'Navigation', 'Overlay'] as const
 /** The Screens tab's one group: whole screens, each holding its own pieces. */
 export const SCREEN_GROUPS = ['Screens'] as const
 export type BlockGroup = typeof BLOCK_GROUPS[number] | typeof SCREEN_GROUPS[number]
@@ -109,7 +117,7 @@ export interface BlockDef {
 }
 
 const CONTRACTS = new Map<string, BlockContract>(
-  [authContract, authSetupContract, marketingContract, navigationContract, overlayContract, siteNavigationContract, screensContract]
+  [authContract, authSetupContract, cardStackContract, dashboardContract, mediaContract, marketingContract, navigationContract, overlayContract, siteNavigationContract, screensContract]
     .flatMap((c) => c.blocks as unknown as BlockContract[])
     .map((b) => [b.name, b]),
 )
@@ -174,6 +182,14 @@ const DEFS: Def[] = [
     dialog: ({ open, onOpenChange }) => <AuthTwoFactorSetupDemo inline={false} open={open} onOpenChange={onOpenChange} />,
     contractName: 'AuthTwoFactorSetup',
   },
+  // ── CardStack ──
+  { group: 'CardStack', name: 'CardStack', description: 'A decision deck: drag the top card, or use the keys or buttons to skip or shortlist it.', wide: false, controls: [{ key: 'state', label: 'State', options: CARD_STACK_STATES, default: 'Default' }], render: (v) => <CardStack key={v.state} forceState={v.state === 'Default' ? undefined : (v.state as CardStackState)} /> },
+  { group: 'CardStack', name: 'CardStackCard', description: 'One travel card: photo, code, city, description and three facts.', wide: false, partOf: 'CardStack/CardStack', controls: [{ key: 'state', label: 'State', options: CARD_STACK_CARD_STATES, default: 'Default' }], render: (v) => <CardStackCard state={v.state as CardStackCardState} /> },
+  // ── Dashboard ──
+  { group: 'Dashboard', name: 'DashboardGaugeCard', description: 'One health score: a Gauge, a title and a status line.', wide: false, controls: [], render: () => <DashboardGaugeCard /> },
+  { group: 'Dashboard', name: 'DashboardMetricCard', description: 'One KPI: label, value, delta, a Sparkline and a range switch.', wide: false, controls: [], render: () => <DashboardMetricCard /> },
+  { group: 'Dashboard', name: 'DashboardActivityCard', description: 'A year of activity: total, year switch, ActivityHeatmap and a caption.', wide: true, controls: [], render: () => <DashboardActivityCard /> },
+  { group: 'Dashboard', name: 'DashboardTrafficCard', description: 'Traffic by source: range switch, title, total and a SplitBar.', wide: true, controls: [], render: () => <DashboardTrafficCard /> },
   // ── Marketing ──
   { group: 'Marketing', name: 'ContactSection', description: 'A contact form beside an image, with the services to choose from.', wide: true, responsive: true, controls: [], render: (v) => <ContactSection layout={v.layout as MarketingLayout} /> },
   { group: 'Marketing', name: 'FAQSection', description: 'Frequently asked questions as an accordion, split or centred.', wide: true, responsive: true, controls: [{ key: 'faqStyle', label: 'Style', options: FAQ_STYLES, default: 'split' }], render: (v) => <FAQSection layout={v.layout as MarketingLayout} faqStyle={v.faqStyle as FaqStyle} /> },
@@ -181,6 +197,10 @@ const DEFS: Def[] = [
   { group: 'Marketing', name: 'HeroHeader', description: 'The page opener: badge, headline, supporting copy, an email form and media.', wide: true, responsive: true, controls: [], render: (v) => <HeroHeader layout={v.layout as MarketingLayout} /> },
   { group: 'Marketing', name: 'PricingCard', description: 'One plan: name, price, billing, features and its call to action.', wide: false, partOf: 'Marketing/PricingSection', controls: [], render: () => <PricingCard /> },
   { group: 'Marketing', name: 'PricingSection', description: 'The pricing page section: heading and the plans side by side.', wide: true, responsive: true, controls: [], render: (v) => <PricingSection layout={v.layout as MarketingLayout} /> },
+  // ── Media ──
+  { group: 'Media', name: 'MediaPlayer', description: 'An audio player: cover, transport, seek, volume and a playlist.', wide: false, controls: [{ key: 'playing', label: 'Playing', options: ['true', 'false'], default: 'true' }], render: (v) => <MediaPlayer key={v.playing} defaultPlaying={v.playing !== 'false'} /> },
+  { group: 'Media', name: 'MediaPlayerTrack', description: 'One playlist row: title and duration, with the current row marked.', wide: false, partOf: 'Media/MediaPlayer', controls: [{ key: 'state', label: 'State', options: MEDIA_PLAYER_TRACK_STATES, default: 'Default' }], render: (v) => <MediaPlayerTrack forceState={v.state === 'Default' ? undefined : (v.state as MediaPlayerTrackState)} /> },
+  { group: 'Media', name: 'NowPlaying', description: 'A compact floating player: artwork, title, artist and transport.', wide: false, controls: [{ key: 'playing', label: 'Playing', options: ['true', 'false'], default: 'true' }], render: (v) => <NowPlaying key={v.playing} defaultPlaying={v.playing !== 'false'} /> },
   // ── Navigation ──
   { group: 'Navigation', name: 'AnnouncementBar', description: 'A one-line message across the top of the page, dismissible.', wide: true, controls: [], render: () => <AnnouncementBar /> },
   { group: 'Navigation', name: 'AppHeader', description: 'The product header: brand, navigation, search and account.', wide: true, controls: [], render: (v) => <AppHeader layout={v.layout as NavLayout} />, mockup: (_v, layout) => <HeaderMockup block="AppHeader" layout={layout} /> },

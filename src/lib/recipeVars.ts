@@ -18,9 +18,9 @@ import {
 
 /** Roles a BLOCK reads that no recipe does: a section's own vertical padding and the display type of a hero or a
  *  section title, the SidebarStatCard's headline value (Type/heading-lg) and the ReleaseModal's headline (Type/heading-md),
- *  the DocWindow screen frame's url pill (Radius/full) and lift (Shadow/xl), and the codes of AuthTwoFactorSetup (Type/code). (blockRefsProvided.test.ts fails on any other.) Without them the custom property is undefined and the
+ *  the DocWindow screen frame's url pill (Radius/full) and lift (Shadow/xl), the CardStack's deck layers (Shadow/sm), and the codes of AuthTwoFactorSetup (Type/code). (blockRefsProvided.test.ts fails on any other.) Without them the custom property is undefined and the
  *  block's headline fell back to the inherited 18px. */
-export const BLOCK_ONLY_REFS = ['spacing.inset-section', 'type.display-lg', 'type.display-sm', 'type.heading-lg', 'type.heading-md', 'radius.full', 'shadow.xl', 'type.code']
+export const BLOCK_ONLY_REFS = ['spacing.inset-section', 'type.display-lg', 'type.display-sm', 'type.heading-lg', 'type.heading-md', 'radius.full', 'shadow.xl', 'shadow.sm', 'type.code']
 
 const REFS: string[] = [
   ...new Set([...Object.values(COMPONENT_RECIPES).flatMap(recipeTokenRefs), ...BLOCK_ONLY_REFS]),
