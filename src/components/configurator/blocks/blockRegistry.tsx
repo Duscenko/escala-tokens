@@ -1,5 +1,5 @@
 // The platform's Blocks: the Figma file's composed blocks (Auth · Marketing ·
-// Navigation · Overlay), the same 40 the Storybook documents under `Blocks/`.
+// Navigation · Overlay), the same ones the Storybook documents under `Blocks/`.
 //
 // Nothing is re-drawn here. Each entry renders the real block from
 // `escala-ui/blocks` with the controls its story exposes (same names, same
@@ -19,6 +19,11 @@ import {
   AuthOTPVerification, AuthSignIn, AuthSignInPasskey, AuthSignInPhone, AuthSplit, AuthSignUp, AuthSocialSignIn, AuthTwoFactor,
   AUTH_CONTAINERS, AUTH_LAYOUTS, AUTH_STATUSES, authPlacement, type AuthLayout, type AuthPlacement, type AuthContainer, type AuthStatus,
 } from '../../escala-ui/blocks/auth'
+import {
+  AuthPasskeySetup, AuthTwoFactorSetup, AUTH_PASSKEY_SETUP_TYPES, AUTH_SETUP_STATUSES, AUTH_TWO_FACTOR_SETUP_TYPES,
+  type AuthPasskeySetupType, type AuthSetupStatus, type AuthTwoFactorSetupType,
+} from '../../escala-ui/blocks/authSetup'
+import { AuthPasskeySetupDemo, AuthTwoFactorSetupDemo } from '../../escala-ui/blocks/authSetupDemo'
 import {
   HeroHeader, FAQSection, PricingCard, PricingSection, ContactSection, Footer,
   FAQ_STYLES, type MarketingLayout, type FaqStyle,
@@ -44,6 +49,7 @@ import { IssueCard } from '../../escala-ui/issue-card'
 import { Badge } from '../../escala-ui/badge'
 import { Switch } from '../../escala-ui/switch'
 import authContract from '../../escala-ui/blocks/auth.contract.json'
+import authSetupContract from '../../escala-ui/blocks/authSetup.contract.json'
 import marketingContract from '../../escala-ui/blocks/marketing.contract.json'
 import navigationContract from '../../escala-ui/blocks/navigation.contract.json'
 import overlayContract from '../../escala-ui/blocks/overlay.contract.json'
@@ -103,7 +109,7 @@ export interface BlockDef {
 }
 
 const CONTRACTS = new Map<string, BlockContract>(
-  [authContract, marketingContract, navigationContract, overlayContract, siteNavigationContract, screensContract]
+  [authContract, authSetupContract, marketingContract, navigationContract, overlayContract, siteNavigationContract, screensContract]
     .flatMap((c) => c.blocks as unknown as BlockContract[])
     .map((b) => [b.name, b]),
 )
@@ -111,6 +117,7 @@ const CONTRACTS = new Map<string, BlockContract>(
 const containerCtl: BlockControl = { key: 'container', label: 'Container', options: AUTH_CONTAINERS, default: 'card' }
 const layoutCtl: BlockControl = { key: 'layout', label: 'Layout', options: AUTH_LAYOUTS, default: 'stacked' }
 const statusCtl: BlockControl = { key: 'status', label: 'Status', options: AUTH_STATUSES, default: 'idle' }
+const setupStatusCtl: BlockControl = { key: 'status', label: 'Status', options: AUTH_SETUP_STATUSES, default: 'active' }
 const floatingNav: BlockControl = { key: 'nav', label: 'Nav', options: FLOATING_NAVS, default: 'links' }
 const panelVisible: BlockControl = { key: 'panelVisible', label: 'PanelVisible', options: ['true', 'false'], default: 'true' }
 
@@ -147,12 +154,26 @@ const DEFS: Def[] = [
   auth('NewPassword', 'Sets a new password, with the strength rules shown as the person types.', AuthNewPassword),
   auth('OTPVerification', 'Asks for the one-time code sent by email or SMS.', AuthOTPVerification),
   auth('SignIn', 'Email and password sign-in, with social sign-in and a link to sign up.', AuthSignIn),
+  {
+    group: 'Auth', name: 'PasskeySetup', description: 'Passkey enrolment in three steps: why, the device prompt, and naming the new passkey.', wide: false,
+    controls: [{ key: 'type', label: 'Type', options: AUTH_PASSKEY_SETUP_TYPES, default: 'intro' }, setupStatusCtl],
+    render: (v) => <AuthPasskeySetup inline type={v.type as AuthPasskeySetupType} status={v.status as AuthSetupStatus} />,
+    dialog: ({ open, onOpenChange }) => <AuthPasskeySetupDemo inline={false} open={open} onOpenChange={onOpenChange} />,
+    contractName: 'AuthPasskeySetup',
+  },
   { group: 'Auth', name: 'SignInPasskey', description: 'Email-first sign-in with a passkey and social providers, in a tray modal.', wide: false, controls: [], render: () => <AuthSignInPasskey />, contractName: 'AuthSignInPasskey' },
   { group: 'Auth', name: 'Split', description: 'A brand panel beside any Auth block, for a full sign-in page.', wide: true, phoneInset: true, controls: [], render: () => <AuthSplit><AuthSignIn container="plain" /></AuthSplit>, contractName: 'AuthSplit' },
   auth('SignInPhone', 'Sign-in with a phone number and its country code.', AuthSignInPhone),
   auth('SignUp', 'Creates an account: name, email, password and the terms.', AuthSignUp),
   auth('SocialSignIn', 'Sign-in with social providers only.', AuthSocialSignIn, false),
   auth('TwoFactor', 'Asks for the code from an authenticator app.', AuthTwoFactor),
+  {
+    group: 'Auth', name: 'TwoFactorSetup', description: 'Authenticator-app enrolment in three steps: scan the QR, verify one code, keep the backup codes.', wide: false,
+    controls: [{ key: 'type', label: 'Type', options: AUTH_TWO_FACTOR_SETUP_TYPES, default: 'scan' }, setupStatusCtl],
+    render: (v) => <AuthTwoFactorSetup key={`${v.type}-${v.status}`} inline type={v.type as AuthTwoFactorSetupType} status={v.status as AuthSetupStatus} defaultCode={v.type !== 'verify' || v.status === 'active' ? '' : v.status === 'error' ? '318205' : '440912'} />,
+    dialog: ({ open, onOpenChange }) => <AuthTwoFactorSetupDemo inline={false} open={open} onOpenChange={onOpenChange} />,
+    contractName: 'AuthTwoFactorSetup',
+  },
   // ── Marketing ──
   { group: 'Marketing', name: 'ContactSection', description: 'A contact form beside an image, with the services to choose from.', wide: true, responsive: true, controls: [], render: (v) => <ContactSection layout={v.layout as MarketingLayout} /> },
   { group: 'Marketing', name: 'FAQSection', description: 'Frequently asked questions as an accordion, split or centred.', wide: true, responsive: true, controls: [{ key: 'faqStyle', label: 'Style', options: FAQ_STYLES, default: 'split' }], render: (v) => <FAQSection layout={v.layout as MarketingLayout} faqStyle={v.faqStyle as FaqStyle} /> },

@@ -624,3 +624,29 @@ Measured in the built Storybook, 2026-11-17 (Button + IconButton, 3 intents × 4
 |---|---|---|
 | One role for unrelated jobs: `Radius/control` drove Checkbox **and** Badge rounded, Kbd, InputTagChip | Raising Selectors for rounder badges turned a 16 px checkbox into a circle (reads as Radio) | Figma moved the tag family to `Radius/item`; recipes `BADGE` (rounded), `KBD`, `INPUT` › `kbd`, `INPUT_TAG_CHIP` read `radius.item` (DEC-2026-11-17-002) |
 | A new tag-, key- or badge-like part | Tempting to copy the checkbox's `Radius/control` | Bind `Radius/item`; read the role from the Figma node, never from a sibling |
+
+# Lessons from the ReactionGroup family (2026-11-19)
+
+| Trap | What it looked like | The fix (where it lives) |
+|---|---|---|
+| A stroke that lays out | The picker measured 236 × 56, the file 238 × 58 | The file's stroke takes room here (as on Chip): `paddingX/Y: 'spacing.inset-control+stroke.divider'` (`REACTION_GROUP_POPOVER`) |
+| `tabular-nums` on a count | «1» came out as wide as «3» (58 vs the file's 56) | Proportional digits; only the six-digit code is tabular |
+| Two `transition` rules on one element | A wrapper slot and the Chip inside both wanted `transition` | The row's motion lives on an `item` wrapper, never on the Chip root |
+| A list's motion without a duration in the component | Stagger, reflow, exit and a rolling count | Poses are classes on `data-motion` / `data-roll`; timing is `RECIPE_MOTION` (`transitions` with a slot suffix + the new `stagger`); `afterTransition` reads the computed time instead of naming one |
+| Radix's offset is a number | The picker sits 8px above the trigger | `useTokenPx('--spacing-gap-control')` reads the token where the picker lives |
+| The Browser pane was hidden | A screenshot showed one pill of five, the picker at 93 % | Frames only advance when one is drawn: measure `offsetWidth` and computed styles, retake the screenshot |
+| A new set needs more than a story | 17 guards failed at once | Checklist: recipe + `componentRecipes.ts`, catalogue, `componentFiles.ts`, overview, specimens + snippets, families + `apply-families`, `gen:contracts`, `gen:registry-sources`, plugin `WEB_ONLY`, a choreography's `components`, sitemap, registry.json, goldens, plugin bundle |
+
+# Lessons from the Auth setup blocks (2026-11-19)
+
+| Trap | What it looked like | The fix (where it lives) |
+|---|---|---|
+| The Browser pane had no size | Every Modal measured 2px wide, the story looked broken | `resize_window` first (1280 × 900), then measure; a first load after `npm install` also fails once with "Outdated Optimize Dep": reload |
+| A well's stroke lays out | 165 = 24 + 56 + 16 + 43 + 24 **+ 2** | Border plus the role's full padding (`well()` in `blocks/authSetup.tsx`), as on the QR tile (198 = 164 + 32 + 2) |
+| A fixed step height | Right on the 640 card, cut on a phone | `minHeight`: every step is shorter on the card, so it still keeps one size |
+| A nested component's motion in a handoff | "segments on `use-travel-in`, Turn on on `use-color`" | The component's recipe keeps its role (`use-progress`, `use-hover`); the block times only what it draws (DEC-2026-11-19-004) |
+| A block's own `<button>` | The sensor and the authenticator's code needed a focus ring | Classes in role tokens (`FOCUS_RING`), never a bare outline |
+| `transition-` / `duration-` in a block | The guard forbids the words | Build the names (`motion(role)`), put a loop in a class (`animate-[spin_var(--motion-use-loop-duration)_…]`) |
+| The mono family in Storybook | `Type/code` computed "Geist Mono" but no face was loaded | Storybook loads no web font: `EscalaScope` now fetches the mono family |
+| The QR | Is it really scannable? | Draw the path on a canvas with a quiet zone and read it back with the browser's `BarcodeDetector` |
+| Button labels in a block | Buttons 6–20px narrower than the file | Not the block: the file sizes Button labels by Size (12 · 14 · 14 · 16), the recipe uses `type.button` (12) for all (finding TYP-001 Button) |

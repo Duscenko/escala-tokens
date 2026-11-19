@@ -1,7 +1,7 @@
 import { motionThemeTokens, motionTokens, normalizeMotionSettings } from './motion'
 import { useDesignStore, DEFAULT_GRAY_DARK_SCALE, type DesignSnapshot } from '../store/useDesignStore'
 import { darkShadowsOf } from './shadowTokens'
-import { letterSpacingsFor } from './typographyStandard'
+import { FONT_FAMILY_MONO, letterSpacingsFor } from './typographyStandard'
 import { iconSizeTokens } from './iconSizing'
 import { getIconAiSource, PHOSPHOR_LIBRARY } from './iconLibraries'
 import { toneLabel, pinnedOrSolvedAlpha, darkShadowMap, BLACK_ALPHA_SCALE, WHITE_ALPHA_SCALE, type ColorNaming } from './colorUtils'
@@ -479,6 +479,7 @@ export function generateTokenJSON(
     return [theme, {
       typography: {
         ...resolved.typography,
+        monoFontFamily: FONT_FAMILY_MONO,
         letterSpacings: letterSpacingsFor(resolved.typography.sizes),
         roles: mergeTypeRoles(resolved.typography.roles),
       },
@@ -734,6 +735,8 @@ export function generateTokenJSON(
     typography: {
       fontFamily: typography.fontFamily,
       headingFontFamily: typography.headingFontFamily ?? typography.fontFamily,
+      // The code family: fixed, read only by the `code` role (additive key).
+      monoFontFamily: FONT_FAMILY_MONO,
       sizes: typography.sizes,
       lineHeights: typography.lineHeights,
       // Derived from each size (letterSpacingFor). The plugin binds

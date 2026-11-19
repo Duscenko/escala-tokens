@@ -19,6 +19,9 @@
   <url><loc>https://www.escalatokens.com/components/ButtonGroup</loc></url>
   <url><loc>https://www.escalatokens.com/components/ButtonGroupDivider</loc></url>
   <url><loc>https://www.escalatokens.com/components/ButtonGroupItem</loc></url>
+  <url><loc>https://www.escalatokens.com/components/ReactionGroup</loc></url>
+  <url><loc>https://www.escalatokens.com/components/ReactionGroupPopover</loc></url>
+  <url><loc>https://www.escalatokens.com/components/ReactionGroupTrigger</loc></url>
   <url><loc>https://www.escalatokens.com/components/Field</loc></url>
   <url><loc>https://www.escalatokens.com/components/Label</loc></url>
   <url><loc>https://www.escalatokens.com/components/Input</loc></url>

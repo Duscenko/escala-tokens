@@ -203,6 +203,32 @@
     "UserMenu": {
       "status": "block",
       "page": "UserMenu & MorphNav"
+    },
+    "ActionButton": {
+      "status": "new"
+    },
+    "SplitButton": {
+      "status": "new"
+    },
+    "AuthPasskeySetup": {
+      "status": "block",
+      "page": "AuthPasskeySetup (PRO)"
+    },
+    "AuthPasskeySetupIndicator": {
+      "status": "block",
+      "page": "AuthPasskeySetup (PRO)"
+    },
+    "AuthTwoFactorSetup": {
+      "status": "block",
+      "page": "AuthTwoFactorSetup (PRO)"
+    },
+    "AuthTwoFactorSetupGroup": {
+      "status": "block",
+      "page": "AuthTwoFactorSetup (PRO)"
+    },
+    "AuthTwoFactorSetupItem": {
+      "status": "block",
+      "page": "AuthTwoFactorSetup (PRO)"
     }
   },
   "codeOnly": [

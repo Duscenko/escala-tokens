@@ -136,6 +136,51 @@
     "tokens": 5
   },
   {
+    "key": "ReactionGroup",
+    "label": "Reaction Group",
+    "category": "Button & Actions",
+    "box": "gray",
+    "locks": [
+      "size",
+      "hit",
+      "motion"
+    ],
+    "file": "spec/contracts/ReactionGroup.json",
+    "figmaSet": "ReactionGroup",
+    "story": "buttons-reactiongroup--playground",
+    "tokens": 3
+  },
+  {
+    "key": "ReactionGroupTrigger",
+    "label": "Reaction Group Trigger",
+    "category": "Button & Actions",
+    "box": "gray",
+    "locks": [
+      "size",
+      "hit",
+      "motion"
+    ],
+    "file": "spec/contracts/ReactionGroupTrigger.json",
+    "figmaSet": "ReactionGroupTrigger",
+    "story": "buttons-reactiongroup--reaction-group-trigger-playground",
+    "tokens": 22
+  },
+  {
+    "key": "ReactionGroupPopover",
+    "label": "Reaction Group Popover",
+    "category": "Button & Actions",
+    "box": "gray",
+    "locks": [
+      "size",
+      "hit",
+      "motion"
+    ],
+    "file": "spec/contracts/ReactionGroupPopover.json",
+    "figmaSet": "ReactionGroupPopover",
+    "story": "buttons-reactiongroup--reaction-group-popover-playground",
+    "tokens": 9
+  },
+  {
     "key": "SocialLoginButton",
     "label": "Social Login Button",
     "category": "Button & Actions",

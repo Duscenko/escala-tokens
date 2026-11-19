@@ -11,7 +11,8 @@ import { ICON_PX, iconSwapArg } from './iconSwap'
 /** Story args = the Figma `Input` set's properties (design-plans/input-contract.md), in
  *  the file's panel order: Size · State · Type · Value (variant axes), then
  *  IconLeadingVisible · Placeholder · IconTrailingVisible · IconLeadingIcon ·
- *  IconTrailingIcon · ShortcutVisible. Value is a typed value or none. */
+ *  IconTrailingIcon · ShortcutVisible · Value (TEXT, since 2026-11-19: the text of every filled variant; its default
+ *  in the file is the card number, whatever the Type). The Value AXIS says whether a value is present. */
 interface InputStoryArgs {
   size: InputSize
   forceState: InputState
@@ -23,6 +24,8 @@ interface InputStoryArgs {
   iconLeadingIcon: ComponentIconName
   iconTrailingIcon: ComponentIconName
   shortcutVisible: boolean
+  /** Figma `Value` (TEXT). Empty = each Type's own sample (the matrices). */
+  valueText: string
 }
 
 const STATES: InputState[] = ['Default', 'Hover', 'Focused', 'Invalid', 'Disabled']
@@ -49,13 +52,13 @@ function render(a: InputStoryArgs) {
   const own = a.type !== 'default'
   return (
     <Input
-      key={`${a.type}-${a.value}`}
+      key={`${a.type}-${a.value}-${a.valueText}`}
       size={a.size}
       type={a.type}
       forceState={a.forceState}
       disabled={a.forceState === 'Disabled'}
       placeholder={a.placeholder || COPY[a.type].placeholder}
-      defaultValue={a.value === 'filled' ? COPY[a.type].filled : undefined}
+      defaultValue={a.value === 'filled' ? (a.valueText || COPY[a.type].filled) : undefined}
       aria-label={COPY[a.type].placeholder}
       leading={!a.iconLeadingVisible ? null : own ? undefined : <PreviewIcon concept={a.iconLeadingIcon} size={px} />}
       trailing={!a.iconTrailingVisible ? null : own ? undefined : <PreviewIcon concept={a.iconTrailingIcon} size={px} />}
@@ -71,7 +74,7 @@ const meta: Meta<InputStoryArgs> = {
   args: {
     size: 'default', forceState: 'Default', type: 'default', value: 'placeholder',
     iconLeadingVisible: true, placeholder: 'Jane Doe', iconTrailingVisible: true,
-    iconLeadingIcon: 'search', iconTrailingIcon: 'eye', shortcutVisible: true,
+    iconLeadingIcon: 'search', iconTrailingIcon: 'eye', shortcutVisible: true, valueText: '4242 4242 4242 4242',
   },
   argTypes: {
     size: { name: 'Size', control: 'select', options: [...INPUT_SIZES], description: 'Size/control-md 40 · control-sm 32 · control-lg 48.' },
@@ -84,6 +87,7 @@ const meta: Meta<InputStoryArgs> = {
     iconLeadingIcon: { ...iconSwapArg('IconLeadingIcon'), if: { arg: 'type', eq: 'default' } },
     iconTrailingIcon: { ...iconSwapArg('IconTrailingIcon'), if: { arg: 'type', eq: 'default' } },
     shortcutVisible: { name: 'ShortcutVisible', control: 'boolean', if: { arg: 'type', eq: 'search' } },
+    valueText: { name: 'Value (text)', control: 'text', if: { arg: 'value', eq: 'filled' }, description: 'Figma Value (TEXT): the text a filled field shows. In code it is `value` / `defaultValue`.' },
   },
 }
 export default meta
@@ -194,7 +198,7 @@ export const Types: Story = {
     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 260px)', gap: 16 }}>
       {INPUT_TYPES.flatMap((type) => (['placeholder', 'filled'] as const).map((value) => (
         <div key={`${type}-${value}`}>
-          {render({ ...(meta.args as InputStoryArgs), type, value, placeholder: '' })}
+          {render({ ...(meta.args as InputStoryArgs), type, value, placeholder: '', valueText: '' })}
         </div>
       )))}
     </div>
@@ -215,7 +219,7 @@ export const States: Story = {
     <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
       {(['placeholder', 'filled'] as const).map((value) => (
         <div key={value} style={{ display: 'flex', gap: 16, flexWrap: 'wrap' }}>
-          {STATES.map((forceState) => <div key={forceState}>{render({ ...args, forceState, value })}</div>)}
+          {STATES.map((forceState) => <div key={forceState}>{render({ ...args, forceState, value, valueText: '' })}</div>)}
         </div>
       ))}
     </div>
@@ -234,7 +238,7 @@ export const PhoneFilledStates: Story = {
       {STATES.map((forceState) => (
         <div key={forceState}>
           <p style={label}>{forceState}</p>
-          {render({ ...args, type: 'phone', value: 'filled', forceState })}
+          {render({ ...args, type: 'phone', value: 'filled', forceState, valueText: '' })}
         </div>
       ))}
     </div>

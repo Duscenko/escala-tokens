@@ -285,14 +285,14 @@ function motionChoreographies(settings) {
     },
     "popover-enter": {
       pattern: "coordinated",
-      components: ["Popover", "DatePickerPopover", "TooltipContent", "DropdownMenu"],
+      components: ["Popover", "DatePickerPopover", "TooltipContent", "DropdownMenu", "ReactionGroupPopover"],
       intent: { usage: ["popovers", "tooltips", "menus"], direction: "A floating layer grows out of its trigger: a short pop on the disclosure role." },
       tracks: [{ keyframes: s.pop < 1 ? "pop" : "fade-in", motion: r("use-disclosure-in"), delay: 0 }],
       reducedMotion: { collapseTo: "coordinated", pattern: "coordinated", tracks: [{ keyframes: "fade-in", motion: FADE_IN, delay: 0 }] }
     },
     "popover-exit": {
       pattern: "coordinated",
-      components: ["Popover", "DatePickerPopover", "TooltipContent", "DropdownMenu"],
+      components: ["Popover", "DatePickerPopover", "TooltipContent", "DropdownMenu", "ReactionGroupPopover"],
       intent: { usage: ["popovers", "tooltips", "menus"], direction: "Gets out of the way, faster than it came." },
       tracks: [{ keyframes: s.shrink < 1 ? "shrink" : "fade-out", motion: r("use-disclosure-out"), delay: 0 }],
       reducedMotion: { collapseTo: "coordinated", pattern: "coordinated", tracks: [{ keyframes: "fade-out", motion: FADE_OUT, delay: 0 }] }
@@ -2846,7 +2846,7 @@ function buildTypeScale(factor) {
   }
   return { sizes, lineHeights };
 }
-var TYPE_SCALE_KEYS, FONT_SIZE_STANDARD, LINE_HEIGHT_STANDARD, LETTER_SPACING_RATIO, TYPE_SCALE_MODES, DEFAULT_TYPE_SCALE_FACTOR, FONT_WEIGHT_BASES, FONT_WEIGHT_STANDARD, FONT_WEIGHT_ROWS, FONT_FAMILY_ROWS, TYPO_GROUP_COUNT, TYPO_CATEGORIES;
+var TYPE_SCALE_KEYS, FONT_SIZE_STANDARD, LINE_HEIGHT_STANDARD, LETTER_SPACING_RATIO, TYPE_SCALE_MODES, DEFAULT_TYPE_SCALE_FACTOR, FONT_WEIGHT_BASES, FONT_WEIGHT_STANDARD, FONT_WEIGHT_ROWS, FONT_FAMILY_ROWS, FONT_FAMILY_MONO, TYPO_GROUP_COUNT, TYPO_CATEGORIES;
 var init_typographyStandard = __esm({
   "src/lib/typographyStandard.ts"() {
     TYPE_SCALE_KEYS = [
@@ -2929,6 +2929,7 @@ var init_typographyStandard = __esm({
       { key: "font-family-heading", role: "display", label: "font-family-heading" },
       { key: "font-family-body", role: "body", label: "font-family-body" }
     ];
+    FONT_FAMILY_MONO = "Geist Mono";
     TYPO_GROUP_COUNT = FONT_FAMILY_ROWS.length + FONT_WEIGHT_ROWS.length + TYPE_SCALE_KEYS.length * 3;
     TYPO_CATEGORIES = [
       { key: "all", label: "All", count: TYPO_GROUP_COUNT },
@@ -2947,9 +2948,11 @@ var init_typographyStandard = __esm({
 function isAlias(v) {
   if (!v || typeof v !== "object") return false;
   const a2 = v;
-  return (a2.family === "display" || a2.family === "body") && SIZE_KEYS.has(a2.size) && WEIGHT_KEYS.has(a2.weight);
+  return (a2.family === "display" || a2.family === "body" || a2.family === "mono") && SIZE_KEYS.has(a2.size) && WEIGHT_KEYS.has(a2.weight);
 }
 function withLockedFamily(role, alias) {
+  if (role.key === "code") return alias.family === "mono" ? alias : { ...alias, family: "mono" };
+  if (alias.family === "mono") return { ...alias, family: "body" };
   if (role.group !== "heading") return alias;
   return alias.family === "body" ? alias : { ...alias, family: "body" };
 }
@@ -3037,8 +3040,11 @@ function typeRoleVar(key2, facet, viewport = "desktop") {
   const base = `--text-${key2}-${suffix}`;
   return viewport === "desktop" ? base : `${base}-${viewport}`;
 }
+function familyVarStem(family) {
+  return family === "display" ? "heading" : family === "mono" ? "mono" : "body";
+}
 function primitiveVar(alias, facet) {
-  if (facet === "family") return `var(--font-family-${alias.family === "display" ? "heading" : "body"})`;
+  if (facet === "family") return `var(--font-family-${familyVarStem(alias.family)})`;
   if (facet === "size") return `var(--font-size-${alias.size})`;
   if (facet === "weight") return `var(--font-weight-${alias.weight})`;
   if (facet === "tracking") return `var(--letter-spacing-${alias.size})`;
@@ -3156,6 +3162,17 @@ var init_typeRoles = __esm({
         desktop: a("body", "text-sm", "regular"),
         tablet: a("body", "text-sm", "regular"),
         mobile: a("body", "text-sm", "regular")
+      },
+      {
+        key: "code",
+        label: "Code",
+        description: "Codes a person copies or types: backup codes, secret keys.",
+        group: "body",
+        // The Figma file's `Type/code`: ONE size (14 / 21 on the file's scale) in the mono family, the
+        // same on every cut. Kbd keeps its own smaller sizes (owner decision 2026-11-19).
+        desktop: a("mono", "text-md", "regular"),
+        tablet: a("mono", "text-md", "regular"),
+        mobile: a("mono", "text-md", "regular")
       },
       {
         key: "label",
@@ -4365,6 +4382,72 @@ var init_componentCatalogue = __esm({
         accessibility: "Decorative: aria-hidden."
       },
       {
+        key: "ReactionGroup",
+        label: "Reaction Group",
+        category: "Button & Actions",
+        box: "gray",
+        locks: ["size", "hit", "motion"],
+        description: "A lightweight acknowledgement under a post or comment: a wrapping row of reaction pills (the outline pill Chip, Selected when you reacted, its label the count), a trigger that opens the picker, and an optional summary line.",
+        usage: "Use under a post, comment or message to collect quick reactions. A pill whose count reaches zero leaves the row. For a single like or favourite use a toggle IconButton; for a score use RatingGroup.",
+        // The Figma set has no variant axis: Content (slot), Summary and SummaryVisible are properties.
+        axes: [],
+        figmaSets: ["ReactionGroup"],
+        props: [
+          { name: "options", type: "{ id, label, icon }[]", description: "The reactions on offer, in the picker's order (default: Like, Love, Celebrate, Insightful, Question, Applause)." },
+          { name: "value / defaultValue", type: "{ id, count, reacted }[]", description: "The reactions on the post, in the row's order (Figma Content: one Chip each)." },
+          { name: "onValueChange", type: "(next, change: { id, reacted, count }) => void", description: "Fires when a pill is toggled or an option is picked, with the next list and what changed." },
+          { name: "label", type: "string", description: 'Accessible name of the group (default "Reactions").' },
+          { name: "summary", type: "ReactNode", description: 'Figma Summary. Omitted, it is written from the value ("27 reactions \xB7 You reacted with Celebrate and Like").' },
+          { name: "summaryVisible", type: "boolean", description: "Figma SummaryVisible." },
+          { name: "size", type: '"xs" | "sm" | "default" | "lg" | "xl"', description: "The pills' and the trigger's size (Chip Size)." },
+          { name: "open / defaultOpen / onOpenChange", type: "boolean / (open) => void", description: "The picker's open state." },
+          { name: "disabled", type: "boolean", description: "Disables the pills and the trigger." }
+        ],
+        accessibility: 'role="group" named "Reactions". Each pill is a toggle button (aria-pressed) named "{reaction}, {count} reactions, you reacted". Removing the last count moves focus to the neighbour pill or the trigger. Every change is announced in a role="status" region.'
+      },
+      {
+        key: "ReactionGroupTrigger",
+        label: "Reaction Group Trigger",
+        category: "Button & Actions",
+        box: "gray",
+        locks: ["size", "hit", "motion"],
+        description: "The add-reaction button of a ReactionGroup: an icon-only pill that opens ReactionGroupPopover. It mirrors the outline pill Chip (same sizes, edge and ink) so it sits in the row with the reaction pills.",
+        usage: "Only inside a ReactionGroup, after the last pill. It stays in its family until a second consumer needs an icon-only pill button.",
+        // The Figma file's axes, value for value. State is pseudo-classes in code; Open is aria-expanded.
+        axes: [
+          { name: "Size", values: ["default", "xs", "sm", "lg", "xl"] },
+          { name: "State", values: ["Default", "Hover", "Focused", "Open", "Disabled"] }
+        ],
+        figmaSets: ["ReactionGroupTrigger"],
+        props: [
+          { name: "size", type: '"default" | "xs" | "sm" | "lg" | "xl"', description: "Figma Size: 40 \xB7 24 \xB7 32 \xB7 48 \xB7 56 across (Size/control-md \xB7 xs \xB7 sm \xB7 lg \xB7 xl); the glyph is icon md \xB7 sm \xB7 sm \xB7 md \xB7 lg." },
+          { name: "aria-expanded", type: "boolean", description: "Figma State Open: set by the popover it opens." },
+          { name: "disabled / forceState", type: "boolean / State", description: "Figma State Disabled; forceState pins any state for docs." },
+          { name: "icon", type: "ReactNode", description: "The glyph (default: the file's Smiley)." },
+          { name: "aria-label", type: "string", description: 'Accessible name (default "Add reaction").' }
+        ],
+        accessibility: 'A native <button> named "Add reaction" with aria-haspopup and aria-expanded. Focus draws one 2px ring 1px outside the pill.'
+      },
+      {
+        key: "ReactionGroupPopover",
+        label: "Reaction Group Popover",
+        category: "Button & Actions",
+        box: "gray",
+        locks: ["size", "hit", "motion"],
+        description: "The reaction picker of a ReactionGroup: a toolbar of ghost IconButtons on an overlay surface. Concentric: the overlay radius minus its inset is the IconButton radius.",
+        usage: "Only as the popover of a ReactionGroupTrigger. It opens above the trigger and closes when an option is picked.",
+        axes: [],
+        figmaSets: ["ReactionGroupPopover"],
+        props: [
+          { name: "options", type: "{ id, label, icon }[]", description: "Figma Content: one ghost IconButton (secondary, sm) per reaction." },
+          { name: "onSelect", type: "(id: string) => void", description: "Fires with the option a person picks." },
+          { name: "label", type: "string", description: 'Accessible name of the toolbar (default "Add reaction").' },
+          { name: "side / sideOffset", type: "Radix", description: "Opens on top, one gap-control (8px) from the trigger." },
+          { name: "highlighted / inline", type: "string / boolean", description: "Docs: pin one option's Hover; draw the picker in place." }
+        ],
+        accessibility: 'role="toolbar" with a roving tabindex: arrow keys move and wrap, Home and End jump, Escape closes and returns focus to the trigger. Every option has an aria-label.'
+      },
+      {
         key: "SocialLoginButton",
         label: "Social Login Button",
         category: "Button & Actions",
@@ -4415,6 +4498,7 @@ var init_componentCatalogue = __esm({
           { name: "size", type: "'sm' | 'default' | 'lg'", description: "Height on the Size roles: compact 32 \xB7 control 40 \xB7 touch 48." },
           { name: "type", type: "'default' | 'phone' | 'currency' | 'currency-select' | 'password' | 'url' | 'upload' | 'tag' | 'copy-link' | 'credit-card' | 'search'", description: "Figma Type: the parts the field composes. Another value is an HTML input type on the default layout." },
           { name: "placeholder", type: "string", description: "Figma Placeholder." },
+          { name: "value / defaultValue", type: "string", description: "Figma Value (TEXT): the text a filled field shows. The variant Value=filled only says a value is present; it is not a prop." },
           { name: "leading", type: "ReactNode | null", description: "Leading icon (IconLeadingVisible + IconLeadingIcon). Types bring their own (search, lock, folder); null hides it." },
           { name: "trailing", type: "ReactNode | null", description: "Trailing icon (IconTrailingVisible + IconTrailingIcon). Password brings its show / hide toggle." },
           { name: "shortcut", type: "string[] | null", description: "The search shortcut keys (ShortcutVisible + Shortcut). \u2318 K by default on search." },
@@ -6822,7 +6906,7 @@ function roleFollowsPlatform(key2) {
 function isAlias2(v) {
   if (!v || typeof v !== "object") return false;
   const a2 = v;
-  return (a2.family === "display" || a2.family === "body") && typeof a2.size === "string" && typeof a2.weight === "string";
+  return (a2.family === "display" || a2.family === "body" || a2.family === "mono") && typeof a2.size === "string" && typeof a2.weight === "string";
 }
 function isSizeStepOrPin(v) {
   return typeof v === "string" && (SIZE_STEPS.includes(v) || roleDimensionPx(v) !== null);
@@ -9800,7 +9884,24 @@ function socialPaint(appearance, brand, state2) {
   };
   return { root, label: { text: `social.${id}.content.on-action` } };
 }
-var BUTTON_VARIANTS, BUTTON_APPEARANCES, BUTTON_SIZES, BUTTON_STATES, SOLID, FOCUS_RING, focusRing, QUIET, LINK, strokeOf, BUTTON_HEIGHT, BUTTON_GAP, BUTTON, ICON_BUTTON_GLYPH, ICON_BUTTON, CLOSE_BUTTON_APPEARANCES, CLOSE_BUTTON_SHAPES, CLOSE_BUTTON_SIZES, CLOSE_BUTTON_VARIANTS, CLOSE_STATES, same3, NO_OVER, MUTED, CLOSE, CLOSE_SIZE, CLOSE_RADIUS, CLOSE_BUTTON, TEXT_LINK_VARIANTS, TEXT_LINK_SIZES, TEXT_LINK_STATES, LINK_INK, LINK_FOCUS, LINK_FONT, LINK_ICON, LINK_GAP, TEXT_LINK, FAB_APPEARANCES, FAB_SHAPES, FAB_SIZES, FAB_VARIANTS, FAB_STATES, FAB_MUTED, FAB, FAB_SIZE, FAB_BUTTON, FAB_GROUP_LAYOUTS, FAB_GROUP, BUTTON_GROUP_VARIANTS, BUTTON_GROUP_SHAPES, BUTTON_GROUP_ORIENTATIONS, BUTTON_GROUP_ITEM_SIZES, BUTTON_GROUP_ITEM_STATES, GROUP_RADIUS, BUTTON_GROUP, ITEM_SOLID, MUTED_INV, ITEM_GEOMETRY, BUTTON_GROUP_ITEM, DIVIDER_FILL, BUTTON_GROUP_DIVIDER, SOCIAL_BRAND_NAMES, SOCIAL_APPEARANCES, SOCIAL_SIZES, SOCIAL_STATES, SOCIAL_GEOMETRY, SOCIAL_LOGIN_BUTTON;
+function reactionTriggerPaint(state2) {
+  const rest = { fill: NONE, stroke: c("border.control"), strokeWidth: "stroke.control", text: c("content.secondary"), gapRing: NONE };
+  switch (state2) {
+    case "Hover":
+      return { ...rest, fill: c("surface.muted"), stroke: c("border.control-hover"), text: c("content.primary") };
+    // The Button rule: the Default look plus ONE ring, 1px off the edge.
+    case "Focused":
+      return { ...rest, gapRing: c("border.ring.default") };
+    // The picker is open: the look of a selected pill.
+    case "Open":
+      return { ...rest, fill: c("surface.selected"), stroke: c("border.accent"), text: c("content.accent") };
+    case "Disabled":
+      return { ...rest, stroke: c("border.subtle"), text: c("content.disabled") };
+    default:
+      return rest;
+  }
+}
+var BUTTON_VARIANTS, BUTTON_APPEARANCES, BUTTON_SIZES, BUTTON_STATES, SOLID, FOCUS_RING, focusRing, QUIET, LINK, strokeOf, BUTTON_HEIGHT, BUTTON_GAP, BUTTON, ICON_BUTTON_GLYPH, ICON_BUTTON, CLOSE_BUTTON_APPEARANCES, CLOSE_BUTTON_SHAPES, CLOSE_BUTTON_SIZES, CLOSE_BUTTON_VARIANTS, CLOSE_STATES, same3, NO_OVER, MUTED, CLOSE, CLOSE_SIZE, CLOSE_RADIUS, CLOSE_BUTTON, TEXT_LINK_VARIANTS, TEXT_LINK_SIZES, TEXT_LINK_STATES, LINK_INK, LINK_FOCUS, LINK_FONT, LINK_ICON, LINK_GAP, TEXT_LINK, FAB_APPEARANCES, FAB_SHAPES, FAB_SIZES, FAB_VARIANTS, FAB_STATES, FAB_MUTED, FAB, FAB_SIZE, FAB_BUTTON, FAB_GROUP_LAYOUTS, FAB_GROUP, BUTTON_GROUP_VARIANTS, BUTTON_GROUP_SHAPES, BUTTON_GROUP_ORIENTATIONS, BUTTON_GROUP_ITEM_SIZES, BUTTON_GROUP_ITEM_STATES, GROUP_RADIUS, BUTTON_GROUP, ITEM_SOLID, MUTED_INV, ITEM_GEOMETRY, BUTTON_GROUP_ITEM, DIVIDER_FILL, BUTTON_GROUP_DIVIDER, SOCIAL_BRAND_NAMES, SOCIAL_APPEARANCES, SOCIAL_SIZES, SOCIAL_STATES, SOCIAL_GEOMETRY, SOCIAL_LOGIN_BUTTON, REACTION_GROUP_TRIGGER_SIZES, REACTION_GROUP_TRIGGER_STATES, REACTION_TRIGGER_GEOMETRY, REACTION_GROUP_TRIGGER, REACTION_GROUP_POPOVER, REACTION_GROUP;
 var init_actions = __esm({
   "src/lib/recipes/actions.ts"() {
     init_helpers();
@@ -10142,6 +10243,62 @@ var init_actions = __esm({
           root: iconOnly === "true" ? { ...SOCIAL_GEOMETRY[size], width: SOCIAL_GEOMETRY[size].height, paddingX: "spacing.none" } : { ...SOCIAL_GEOMETRY[size], paddingX: "spacing.inset-action", fontStep: size === "lg" ? "type.text-lg" : "type.text-md" }
         })),
         part({ Appearance: SOCIAL_APPEARANCES, Brand: SOCIAL_BRAND_NAMES, State: SOCIAL_STATES }, socialPaint)
+      ]
+    };
+    REACTION_GROUP_TRIGGER_SIZES = ["default", "xs", "sm", "lg", "xl"];
+    REACTION_GROUP_TRIGGER_STATES = ["Default", "Hover", "Focused", "Open", "Disabled"];
+    REACTION_TRIGGER_GEOMETRY = {
+      xs: { box: "size.xs", icon: "icon.small" },
+      sm: { box: "size.sm", icon: "icon.small" },
+      default: { box: "size.md", icon: "icon.medium" },
+      lg: { box: "size.lg", icon: "icon.medium" },
+      xl: { box: "size.xl", icon: "icon.large" }
+    };
+    REACTION_GROUP_TRIGGER = {
+      key: "ReactionGroupTrigger",
+      slots: ["root", "icon"],
+      defaults: { Size: "default", State: "Default" },
+      parts: [
+        part({ Size: REACTION_GROUP_TRIGGER_SIZES }, (size) => {
+          const g = REACTION_TRIGGER_GEOMETRY[size];
+          return {
+            root: { height: g.box, width: g.box, paddingX: "spacing.0", radius: "radius.pill" },
+            icon: { width: g.icon, height: g.icon }
+          };
+        }),
+        part({ State: REACTION_GROUP_TRIGGER_STATES }, (state2) => ({ root: reactionTriggerPaint(state2) }))
+      ]
+    };
+    REACTION_GROUP_POPOVER = {
+      key: "ReactionGroupPopover",
+      slots: ["root", "content"],
+      defaults: {},
+      parts: [
+        part({}, () => ({
+          root: {
+            fill: c("surface.layer-2"),
+            stroke: c("border.default"),
+            strokeWidth: "stroke.divider",
+            radius: "radius.overlay",
+            // The file's stroke lays out: the picker is its content plus the inset AND the edge on every side (238 × 58).
+            paddingX: "spacing.inset-control+stroke.divider",
+            paddingY: "spacing.inset-control+stroke.divider",
+            lift: "popover-md"
+          },
+          content: { gap: "spacing.gap-tight" }
+        }))
+      ]
+    };
+    REACTION_GROUP = {
+      key: "ReactionGroup",
+      slots: ["root", "content", "item", "digit", "summary"],
+      defaults: {},
+      parts: [
+        part({}, () => ({
+          root: { gap: "spacing.gap-control" },
+          content: { gap: "spacing.gap-control" },
+          summary: { font: "type.body-sm", text: c("content.secondary") }
+        }))
       ]
     };
   }
@@ -13207,7 +13364,22 @@ var init_motion2 = __esm({
       Button: { transitions: { root: { ...states("background-color", "color", "border-color", "box-shadow"), scale: "use-hover" } }, press: {} },
       IconButton: { transitions: { root: { ...states("background-color", "color", "border-color", "box-shadow"), scale: "use-hover" } }, press: {} },
       Badge: { transitions: { root: states("background-color", "color", "border-color") } },
-      Chip: { transitions: { root: states("background-color", "border-color", "color") } },
+      // A pressed chip sinks like a button (`use-press`): the file draws no Pressed state, so the press is motion only (owner decision 2026-11-19).
+      Chip: { transitions: { root: { ...states("background-color", "border-color", "color"), scale: "use-hover" } }, press: {} },
+      // The row. First render: the pills arrive one after another (`use-stagger-in`, each `--motion-stagger` behind the last). After
+      // that a pill that arrives or a neighbour that makes room travels on `use-travel-in`, a pill that leaves on `use-travel-out`,
+      // and a count rolls its changed digits on `use-toggle`. Reduced motion comes from the roles themselves.
+      ReactionGroup: {
+        transitions: {
+          item: { opacity: "use-travel-in", transform: "use-travel-in" },
+          'item[data-motion="enter"]': { opacity: "use-stagger-in", transform: "use-stagger-in" },
+          'item[data-motion="exit"]': { opacity: "use-travel-out", transform: "use-travel-out" },
+          digit: { opacity: "use-toggle", transform: "use-toggle" }
+        },
+        stagger: { slot: "item", when: '[data-motion="enter"]' }
+      },
+      ReactionGroupTrigger: { transitions: { root: states("background-color", "color", "border-color") } },
+      ReactionGroupPopover: popover("--radix-popover-content-transform-origin"),
       PaginationLink: { transitions: { root: FILL } },
       TabMenuItem: { transitions: { root: FILL } },
       TabMenuLineItem: { transitions: { root: FILL } },
@@ -13301,6 +13473,9 @@ var init_componentRecipes = __esm({
     COMPONENT_RECIPES = {
       Button: BUTTON,
       IconButton: ICON_BUTTON,
+      ReactionGroup: REACTION_GROUP,
+      ReactionGroupTrigger: REACTION_GROUP_TRIGGER,
+      ReactionGroupPopover: REACTION_GROUP_POPOVER,
       CloseButton: CLOSE_BUTTON,
       TextLink: TEXT_LINK,
       FABButton: FAB_BUTTON,
@@ -13615,6 +13790,7 @@ function generateTokenJSON(source, opts) {
     return [theme, {
       typography: {
         ...resolved.typography,
+        monoFontFamily: FONT_FAMILY_MONO,
         letterSpacings: letterSpacingsFor(resolved.typography.sizes),
         roles: mergeTypeRoles(resolved.typography.roles)
       },
@@ -13820,6 +13996,8 @@ function generateTokenJSON(source, opts) {
     typography: {
       fontFamily: typography2.fontFamily,
       headingFontFamily: typography2.headingFontFamily ?? typography2.fontFamily,
+      // The code family: fixed, read only by the `code` role (additive key).
+      monoFontFamily: FONT_FAMILY_MONO,
       sizes: typography2.sizes,
       lineHeights: typography2.lineHeights,
       // Derived from each size (letterSpacingFor). The plugin binds
@@ -14287,6 +14465,7 @@ function loadGoogleFont(family) {
 var init_fonts = __esm({
   "src/lib/fonts.ts"() {
     init_platformAxis();
+    init_typographyStandard();
     init_useDesignStore();
     init_fontStack();
     init_customFonts();
@@ -14406,6 +14585,7 @@ function buildCSS(store, opts) {
   lines.push("  /* --font-family-heading is the Display font: display-* roles only. heading-* roles use --font-family-body. */");
   lines.push(`  --font-family-heading: ${stackFor(typography2.headingFontFamily ?? typography2.fontFamily)};`);
   lines.push(`  --font-family-body: ${stackFor(typography2.fontFamily)};`);
+  lines.push(`  --font-family-mono: ${stackFor(FONT_FAMILY_MONO)};`);
   Object.entries(typography2.sizes).forEach(([k, v]) => lines.push(`  --font-size-${k}: ${v};`));
   Object.entries(typography2.lineHeights ?? {}).forEach(([k, v]) => lines.push(`  --line-height-${k}: ${v};`));
   Object.entries(letterSpacingsFor(typography2.sizes)).forEach(([k, v]) => lines.push(`  --letter-spacing-${k}: ${v};`));
@@ -18850,6 +19030,7 @@ var init_previewTokens = __esm({
     init_fonts();
     init_iconLibraries();
     init_typeRoles();
+    init_typographyStandard();
     init_layoutTokens();
     init_themeModes();
     init_themeFoundations();

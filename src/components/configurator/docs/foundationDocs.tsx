@@ -975,7 +975,7 @@ line-height: var(--text-label-line-height);
       css: '--text-{role}-font-size  ·  --text-{role}-font-size-mobile  ·  --font-size-*',
       figma: 'Typography role/{role}/size — one value per viewport mode (Desktop · Tablet · Mobile) · Type/{role} (Tablet) · Type/{role} (Mobile)',
     },
-    tokenCount: (c) => TYPE_SCALE_KEYS.length * 2 + FONT_WEIGHT_BASES.length + 2 + TYPE_ROLES.length,
+    tokenCount: (c) => TYPE_SCALE_KEYS.length * 2 + FONT_WEIGHT_BASES.length + 3 + TYPE_ROLES.length,
     sections: [
       {
         id: 'families',

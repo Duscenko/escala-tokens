@@ -27,24 +27,43 @@ const primitives = {
 }
 
 describe('type roles', () => {
-  it('catalogues fifteen roles across four groups, each with desktop and mobile aliases', () => {
+  it('catalogues sixteen roles across four groups, each with desktop and mobile aliases', () => {
     expect(TYPE_ROLE_GROUPS).toHaveLength(4)
-    expect(TYPE_ROLES).toHaveLength(15)
+    expect(TYPE_ROLES).toHaveLength(16)
     const sizes = new Set<string>(TYPE_SCALE_KEYS)
     for (const role of TYPE_ROLES) {
       expect(sizes.has(role.desktop.size)).toBe(true)
       expect(sizes.has(role.mobile.size)).toBe(true)
-      expect(['display', 'body']).toContain(role.desktop.family)
+      expect(['display', 'body', 'mono']).toContain(role.desktop.family)
       expect(['regular', 'medium', 'semibold', 'bold']).toContain(role.desktop.weight)
     }
     expect(TYPE_ROLES.some((r) => r.key === 'label')).toBe(true)
     expect(TYPE_ROLES.some((r) => r.key === 'placeholder')).toBe(true)
   })
 
-  it('only the display role aliases the heading font family', () => {
+  it('only the display role aliases the heading font family, and only code the mono one', () => {
     for (const role of TYPE_ROLES) {
-      expect(role.desktop.family).toBe(role.key === 'display' ? 'display' : 'body')
+      expect(role.desktop.family).toBe(role.key === 'display' ? 'display' : role.key === 'code' ? 'mono' : 'body')
     }
+  })
+
+  it('code is the Figma file\'s Type/code: text-md, regular, mono on every cut, and a stored edit cannot move its family', () => {
+    const code = TYPE_ROLES.find((r) => r.key === 'code')!
+    for (const cut of ['desktop', 'tablet', 'mobile'] as const) {
+      expect(code[cut]).toEqual({ family: 'mono', size: 'text-md', weight: 'regular' })
+    }
+    const edited = { family: 'body', size: 'text-md', weight: 'regular' }
+    const stored = { code: { desktop: edited, tablet: edited, mobile: edited }, label: { desktop: { family: 'mono', size: 'text-sm', weight: 'medium' }, tablet: { family: 'mono', size: 'text-sm', weight: 'medium' }, mobile: { family: 'mono', size: 'text-sm', weight: 'medium' } } }
+    const merged = mergeTypeRoles(stored)
+    expect(merged.code.desktop.family).toBe('mono')
+    expect(merged.label.desktop.family).toBe('body')
+    expect(typeRoleCssVars().filter((l) => l.startsWith('--text-code-') && !/-(tablet|mobile):/.test(l))).toEqual([
+      '--text-code-font-family: var(--font-family-mono);',
+      '--text-code-font-size: var(--font-size-text-md);',
+      '--text-code-font-weight: var(--font-weight-regular);',
+      '--text-code-line-height: var(--line-height-text-md);',
+      '--text-code-letter-spacing: var(--letter-spacing-text-md);',
+    ])
   })
 
   it('body and control aliases are the same on desktop and mobile; display and headings step', () => {

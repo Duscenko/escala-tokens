@@ -65,6 +65,30 @@
       ]
     },
     {
+      "id": "ReactionGroup",
+      "page": "ReactionGroup (PRO)",
+      "folder": "Buttons",
+      "root": "ReactionGroup",
+      "parts": [
+        "ReactionGroupPopover",
+        "ReactionGroupTrigger"
+      ]
+    },
+    {
+      "id": "ActionButton",
+      "page": "ActionButton",
+      "folder": "Buttons",
+      "root": "ActionButton",
+      "parts": []
+    },
+    {
+      "id": "SplitButton",
+      "page": "SplitButton",
+      "folder": "Buttons",
+      "root": "SplitButton",
+      "parts": []
+    },
+    {
       "id": "Field",
       "page": "Field (✓) (D) ",
       "folder": "Forms",
@@ -517,6 +541,8 @@
   "noStory": {
     "Radio": "pending rebuild (spec/figma-components.status.json)",
     "RadioCard": "pending rebuild (spec/figma-components.status.json)",
-    "RadioItem": "pending rebuild (spec/figma-components.status.json)"
+    "RadioItem": "pending rebuild (spec/figma-components.status.json)",
+    "ActionButton": "new in the Figma file (2026-11-19), not built yet (spec/figma-components.status.json)",
+    "SplitButton": "new in the Figma file (2026-11-19), not built yet (spec/figma-components.status.json)"
   }
 }

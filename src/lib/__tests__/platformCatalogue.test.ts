@@ -21,7 +21,12 @@ const manifest = JSON.parse(readFileSync(join(ROOT, 'spec/storybook-families.jso
  *  removed from the catalogue (DEC-2026-11-16-008); they stay listed so none can
  *  come back. Label · Spinner · Card have stories now and are families. */
 /** The Storybook's Screens are the Screens tab's: they and their pieces are never Elements. */
-const elementFamilies = manifest.families.filter((f) => f.folder !== SCREENS_FOLDER)
+/** A family whose sets are all `noStory` is in the Figma file but not built yet (ActionButton, SplitButton, 2026-11-19):
+ *  it keeps its place in the manifest and has nothing to show on the platform until it is. */
+const unbuilt = new Set(Object.keys((manifest as { noStory?: Record<string, string> }).noStory ?? {}))
+const elementFamilies = manifest.families
+  .filter((f) => f.folder !== SCREENS_FOLDER)
+  .filter((f) => ![f.root, ...f.parts].filter((k): k is string => Boolean(k)).every((k) => unbuilt.has(k)))
 const screenPieces = manifest.families.filter((f) => f.folder === SCREENS_FOLDER).flatMap((f) => [f.root, ...f.parts]).filter((k): k is string => Boolean(k))
 
 const HIDDEN = [

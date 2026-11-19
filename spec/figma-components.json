@@ -5,7 +5,7 @@
     "name": "Escala Design System (Real)"
   },
   "exportedAt": "2026-11-19",
-  "checksum": "d3a5c801",
+  "checksum": "fc838b97",
   "pages": [
     {
       "page": "Button (✓)  (D)",
@@ -162,6 +162,63 @@
       ]
     },
     {
+      "page": "ReactionGroup (PRO)",
+      "stable": false,
+      "id": "2381:42",
+      "sets": [
+        {
+          "name": "ReactionGroup",
+          "variants": 1,
+          "props": "Content:SLOT,Summary:TEXT,SummaryVisible:BOOLEAN"
+        },
+        {
+          "name": "ReactionGroupPopover",
+          "variants": 1,
+          "props": "Content:SLOT"
+        },
+        {
+          "name": "ReactionGroupTrigger",
+          "variants": 25,
+          "axes": {
+            "Size": "default|xs|sm|lg|xl",
+            "State": "Default|Hover|Focused|Open|Disabled"
+          }
+        }
+      ]
+    },
+    {
+      "page": "ActionButton",
+      "stable": false,
+      "id": "2389:42",
+      "sets": [
+        {
+          "name": "ActionButton",
+          "variants": 24,
+          "axes": {
+            "Size": "default|xs|sm|lg",
+            "Status": "idle|pending|completed",
+            "Variant": "default|secondary"
+          }
+        }
+      ]
+    },
+    {
+      "page": "SplitButton",
+      "stable": false,
+      "id": "2391:78",
+      "sets": [
+        {
+          "name": "SplitButton",
+          "variants": 16,
+          "axes": {
+            "Open": "false|true",
+            "Size": "default|xs|sm|lg",
+            "Variant": "default|secondary"
+          }
+        }
+      ]
+    },
+    {
       "page": "Field (✓) (D) ",
       "stable": false,
       "id": "1003:2",
@@ -191,7 +248,7 @@
             "Type": "default|phone|currency|currency-select|password|url|upload|tag|copy-link|credit-card|search",
             "Value": "placeholder|filled"
           },
-          "props": "IconLeadingIcon:INSTANCE_SWAP,IconLeadingVisible:BOOLEAN,IconTrailingIcon:INSTANCE_SWAP,IconTrailingVisible:BOOLEAN,Placeholder:TEXT,Shortcut:SLOT,ShortcutVisible:BOOLEAN"
+          "props": "IconLeadingIcon:INSTANCE_SWAP,IconLeadingVisible:BOOLEAN,IconTrailingIcon:INSTANCE_SWAP,IconTrailingVisible:BOOLEAN,Placeholder:TEXT,Shortcut:SLOT,ShortcutVisible:BOOLEAN,Value:TEXT"
         }
       ]
     },
@@ -1773,10 +1830,56 @@
       ]
     },
     {
-      "page": "AuthSignInPhone",
+      "page": "AuthSignInPhone (PR0)",
       "stable": false,
       "id": "1662:8",
       "sets": []
+    },
+    {
+      "page": "AuthPasskeySetup (PRO)",
+      "stable": false,
+      "id": "2370:42",
+      "sets": [
+        {
+          "name": "AuthPasskeySetup",
+          "variants": 5,
+          "axes": {
+            "Status": "active|error|completed",
+            "Type": "intro|confirm|saved"
+          }
+        },
+        {
+          "name": "AuthPasskeySetupIndicator",
+          "variants": 3,
+          "axes": {
+            "Status": "active|error|completed"
+          }
+        }
+      ]
+    },
+    {
+      "page": "AuthTwoFactorSetup (PRO)",
+      "stable": false,
+      "id": "2374:42",
+      "sets": [
+        {
+          "name": "AuthTwoFactorSetup",
+          "variants": 6,
+          "axes": {
+            "Status": "active|error|completed",
+            "Type": "scan|verify|backup"
+          }
+        },
+        {
+          "name": "AuthTwoFactorSetupGroup",
+          "variants": 1
+        },
+        {
+          "name": "AuthTwoFactorSetupItem",
+          "variants": 1,
+          "props": "Code:TEXT,Countdown:TEXT"
+        }
+      ]
     },
     {
       "page": "UserMenu & MorphNav",

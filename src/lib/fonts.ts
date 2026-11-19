@@ -3,6 +3,7 @@
 
 import { useEffect } from 'react'
 import { isSystemFontFamily } from './platformAxis'
+import { FONT_FAMILY_MONO } from './typographyStandard'
 import { useDesignStore } from '../store/useDesignStore'
 
 // The catalogue and `fontStack` live in `fontStack.ts` (no React, no store),
@@ -90,6 +91,7 @@ export function useLoadActiveFonts() {
   useEffect(() => {
     loadGoogleFont(fontFamily)
     loadGoogleFont(headingFontFamily ?? fontFamily)
+    loadGoogleFont(FONT_FAMILY_MONO)
     for (const source of fontSources ?? []) loadGoogleFont(source.family)
   }, [fontFamily, headingFontFamily, fontSources])
 }

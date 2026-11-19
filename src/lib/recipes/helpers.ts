@@ -106,6 +106,9 @@ export interface RecipeMotion {
   /** A live press (`:active`, never a pinned Pressed state in docs) sinks the slot to the `shrink` transform role
    *  (0.98 in Standard, 1 under reduced motion) on `use-press`; it springs back on release. */
   press?: { slot?: string }
+  /** Items that arrive one after another: while `when` holds, each `slot` waits its place in the row (`--escala-index`,
+   *  set by the component) times the system's stagger (`--motion-stagger`, 0 under reduced motion). */
+  stagger?: { slot: string; when: string }
 }
 
 export interface ComponentRecipe {

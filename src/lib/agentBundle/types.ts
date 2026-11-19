@@ -78,6 +78,8 @@ export interface TokenJSON {
   typography: {
     fontFamily: string
     headingFontFamily?: string
+    /** The code family (`font-family-mono`); older files omit it. */
+    monoFontFamily?: string
     sizes: Record<string, string>
     lineHeights?: Record<string, string>
     /** Derived tracking per size step (`letterSpacingFor`). */

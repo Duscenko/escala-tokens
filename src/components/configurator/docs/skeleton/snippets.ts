@@ -278,6 +278,12 @@ export const SKELETON_SNIPPETS: Record<string, Snippet> = {
   },
   ButtonGroupItem: (v) =>
     `import { ButtonGroup, ButtonGroupItem } from "@/components/ui/button-group"\n\n<ButtonGroup${v.Variant && v.Variant !== 'default' ? ` variant="${v.Variant}"` : ''}${v.Size && v.Size !== 'default' ? ` size="${v.Size}"` : ''} aria-label="View">\n  <ButtonGroupItem${v.Active === 'true' ? ' active' : ''}${v.State === 'Disabled' ? ' disabled' : ''}>Label</ButtonGroupItem>\n</ButtonGroup>`,
+  ReactionGroup: () =>
+    `import { ReactionGroup } from "@/components/ui/reaction-group"\n\n<ReactionGroup\n  defaultValue={[\n    { id: "celebrate", count: 13, reacted: true },\n    { id: "like", count: 10, reacted: true },\n    { id: "insightful", count: 3 },\n  ]}\n  onValueChange={(next, change) => save(change)}\n/>`,
+  ReactionGroupTrigger: (v) =>
+    `// ReactionGroup draws its own trigger after the last pill.\nimport { ReactionGroupTrigger } from "@/components/ui/reaction-group"\n\n<ReactionGroupTrigger${v.Size && v.Size !== 'default' ? ` size="${v.Size}"` : ''}${v.State === 'Disabled' ? ' disabled' : ''} />`,
+  ReactionGroupPopover: () =>
+    `// ReactionGroup opens its own picker from the trigger.\nimport { ReactionGroupPopover } from "@/components/ui/reaction-group"\n\n<ReactionGroupPopover onSelect={(id) => react(id)} />`,
   ButtonGroupDivider: () =>
     `// ButtonGroup draws a ButtonGroupDivider between its items by itself.\nimport { ButtonGroup, ButtonGroupItem } from "@/components/ui/button-group"\n\n<ButtonGroup aria-label="Range">\n  <ButtonGroupItem>Day</ButtonGroupItem>\n  <ButtonGroupItem>Week</ButtonGroupItem>\n</ButtonGroup>`,
   SocialLoginButton: (v) =>

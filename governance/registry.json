@@ -580,5 +580,93 @@
     "codeConnect": null,
     "story": "navigation-tabbar--tab-bar-item-playground",
     "figmaNode": "2354:84"
+  },
+  "ReactionGroup": {
+    "kind": "component",
+    "stage": "storybook",
+    "version": null,
+    "workshopPage": null,
+    "lastAudit": "2026-11-19",
+    "lastSyncSha": null,
+    "codeConnect": null,
+    "story": "buttons-reactiongroup--playground",
+    "figmaNode": "2381:169"
+  },
+  "ReactionGroupTrigger": {
+    "kind": "component",
+    "stage": "storybook",
+    "version": null,
+    "workshopPage": null,
+    "lastAudit": "2026-11-19",
+    "lastSyncSha": null,
+    "codeConnect": null,
+    "story": "buttons-reactiongroup--reaction-group-trigger-playground",
+    "figmaNode": "2381:124"
+  },
+  "ReactionGroupPopover": {
+    "kind": "component",
+    "stage": "storybook",
+    "version": null,
+    "workshopPage": null,
+    "lastAudit": "2026-11-19",
+    "lastSyncSha": null,
+    "codeConnect": null,
+    "story": "buttons-reactiongroup--reaction-group-popover-playground",
+    "figmaNode": "2381:130"
+  },
+  "AuthPasskeySetup": {
+    "kind": "block",
+    "stage": "storybook",
+    "version": null,
+    "workshopPage": null,
+    "story": "blocks-auth-passkeysetup--playground",
+    "figmaNode": "2373:768",
+    "lastAudit": "2026-11-19",
+    "lastSyncSha": null,
+    "codeConnect": null
+  },
+  "AuthPasskeySetupIndicator": {
+    "kind": "block",
+    "stage": "storybook",
+    "version": null,
+    "workshopPage": null,
+    "story": "blocks-auth-passkeysetup--indicator",
+    "figmaNode": "2373:708",
+    "lastAudit": "2026-11-19",
+    "lastSyncSha": null,
+    "codeConnect": null
+  },
+  "AuthTwoFactorSetup": {
+    "kind": "block",
+    "stage": "storybook",
+    "version": null,
+    "workshopPage": null,
+    "story": "blocks-auth-twofactorsetup--playground",
+    "figmaNode": "2374:837",
+    "lastAudit": "2026-11-19",
+    "lastSyncSha": null,
+    "codeConnect": null
+  },
+  "AuthTwoFactorSetupGroup": {
+    "kind": "block",
+    "stage": "storybook",
+    "version": null,
+    "workshopPage": null,
+    "story": "blocks-auth-twofactorsetup--parts",
+    "figmaNode": "2374:64",
+    "lastAudit": "2026-11-19",
+    "lastSyncSha": null,
+    "codeConnect": null
+  },
+  "AuthTwoFactorSetupItem": {
+    "kind": "block",
+    "stage": "storybook",
+    "version": null,
+    "workshopPage": null,
+    "story": "blocks-auth-twofactorsetup--parts",
+    "figmaNode": "2374:47",
+    "lastAudit": "2026-11-19",
+    "lastSyncSha": null,
+    "codeConnect": null
   }
 }

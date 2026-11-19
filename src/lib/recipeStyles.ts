@@ -462,6 +462,7 @@ export function recipeMotionCss(recipe: ComponentRecipe): string {
       .flatMap(([prop, role]) => (prop === 'transform' ? ['transform', 'translate', 'rotate', 'scale'] : [prop]).map((p) => `${p} var(--motion-${role}, ${TRANSITION_FALLBACK})`))
     rules.push(`${slotSelector(recipe, `${root}:active${live}`, slot)} {\n  scale: var(--motion-transform-shrink, 1);\n  transition: ${down.join(', ')};\n}`)
   }
+  if (m.stagger) rules.push(`${slotSelector(recipe, root, m.stagger.slot)}${m.stagger.when} {\n  transition-delay: calc(var(--escala-index, 0) * var(--motion-stagger, 0ms));\n}`)
   rules.push(...timerRules(recipe, root, m.timer), ...queueRules(m.queue))
   // A disclosure's enter and exit both declare its height: once is enough.
   return [...new Set(rules)].join('\n')
@@ -507,6 +508,9 @@ export const RECIPE_CSS: string = [
   motionKeyframesCss(playedKeyframes()).join('\n'),
 ].join('\n\n')
 
+/** An item's place in its row, set inline by the component that staggers it (`motion.stagger`): never a token. */
+const INDEX_VAR = '--escala-index'
+
 /** What Sonner publishes on each toast of its queue: never a token. */
 const QUEUE_VARS = new Set(['--lift', '--lift-amount', '--offset', '--scale', '--toasts-before'])
 
@@ -518,6 +522,6 @@ const QUEUE_VARS = new Set(['--lift', '--lift-amount', '--offset', '--scale', '-
 export function recipeCssVars(css: string = RECIPE_CSS): string[] {
   const own = new Set(css.match(/--[a-z0-9_-]+(?=:)/g) ?? [])
   return [...new Set(css.match(/var\((--[a-z0-9_-]+)/g)?.map((m) => m.slice(4)) ?? [])]
-    .filter((v) => !own.has(v) && !v.startsWith('--radix-') && !QUEUE_VARS.has(v) && v !== STROKE_WIDTH_VAR)
+    .filter((v) => !own.has(v) && !v.startsWith('--radix-') && !QUEUE_VARS.has(v) && v !== STROKE_WIDTH_VAR && v !== INDEX_VAR)
     .sort()
 }

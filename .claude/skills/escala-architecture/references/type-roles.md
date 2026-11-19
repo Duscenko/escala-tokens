@@ -38,6 +38,7 @@ Reading text. Body family, regular.
 | `type.body-lg` | `--text-body-lg-*` | `Type/body-lg` | text-lg · regular | text-lg · regular | text-lg · regular | Lead paragraphs. |
 | `type.body-md` | `--text-body-md-*` | `Type/body-md` | text-md · regular | text-md · regular | text-md · regular | Default reading size. |
 | `type.body-sm` | `--text-body-sm-*` | `Type/body-sm` | text-sm · regular | text-sm · regular | text-sm · regular | Dense supporting copy. |
+| `type.code` | `--text-code-*` | `Type/code` | text-md · regular · mono font | text-md · regular · mono font | text-md · regular · mono font | Codes a person copies or types: backup codes, secret keys. |
 
 ## Control
 
@@ -53,7 +54,7 @@ Labels, placeholders, captions, buttons.
 
 ## Primitives
 
-**Families:** `--font-family-heading` (heading / display) · `--font-family-body` (body, headings by default).
+**Families:** `--font-family-heading` (heading / display) · `--font-family-body` (body, headings by default) · `--font-family-mono` (Geist Mono: the `code` role only, the same for every system).
 
 **Weights:** `--font-weight-regular` 400 · `--font-weight-medium` 500 · `--font-weight-semibold` 600 · `--font-weight-bold` 700 (each with an `-italic` row in Figma).
 

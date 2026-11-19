@@ -82,7 +82,9 @@ export const BUDGETS = {
   // 140k → 145k (2026-11-14): the Sidebar became five Figma components (Sidebar, SidebarMenuButton with 30
   // variants, SidebarGroup, SidebarGroupLabel, SidebarBrand), each with its own design-skill file.
   // 145k → 150k (2026-11-16): SocialLoginButton is the Figma set (Brand × Appearance × State: 90 painted combinations).
-  contextAllTokens: 150_000,
+  // 150k → 155k (2026-11-19): the ReactionGroup family (row, trigger with 25 variants, picker), each with its design-skill file, and the
+  // `code` type role with the mono family.
+  contextAllTokens: 155_000,
   contextFoundationTokens: 12_000,
 }
 

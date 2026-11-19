@@ -4,7 +4,7 @@
 
 import { motionMarkdown, motionRootCss, motionTokens, motionTrailingCss, normalizeMotionSettings } from './motion'
 import { findFontSource } from './customFonts'
-import { letterSpacingFor, letterSpacingsFor } from './typographyStandard'
+import { FONT_FAMILY_MONO, letterSpacingFor, letterSpacingsFor } from './typographyStandard'
 import { ICON_MIN_WEIGHT_PX, ICON_ROLE_DESCRIPTION, ICON_ROLES, iconSizeCssVars, iconSizePx, iconRoleVar } from './iconSizing'
 import chroma from 'chroma-js'
 import { toneLabel, withAlpha, darkShadowMap, pinnedOrSolvedAlpha, BLACK_ALPHA_SCALE, WHITE_ALPHA_SCALE } from './colorUtils'
@@ -350,6 +350,7 @@ function cssLines(section: SectionKey, store: Store, cf: ColorFormat, opts: Sect
     const lines = [
       `--font-family-heading: ${fontStack(t.headingFontFamily ?? t.fontFamily, findFontSource(store.fontSources, t.headingFontFamily ?? t.fontFamily)?.category)};`,
       `--font-family-body: ${fontStack(t.fontFamily, findFontSource(store.fontSources, t.fontFamily)?.category)};`,
+      `--font-family-mono: ${fontStack(FONT_FAMILY_MONO)};`,
     ]
     Object.entries(t.sizes).forEach(([k, v]) => lines.push(`--font-size-${k}: ${v};`))
     Object.entries(t.lineHeights ?? {}).forEach(([k, v]) => lines.push(`--line-height-${k}: ${v};`))

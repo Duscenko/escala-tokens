@@ -31,6 +31,7 @@ import { brandLabelOf, brandOfKey, brandSlugsOf, figmaPrimitiveName, type Primit
 import type { generateTokenJSON } from '../tokenGenerator'
 import type { CollectionsSnapshot, SnapCollection, SnapValue, SnapVariable } from './w3cTree'
 import { roleFigmaName } from '../roleNames'
+import { FONT_FAMILY_MONO } from '../typographyStandard'
 
 type TokenJSON = ReturnType<typeof generateTokenJSON>
 type Viewport = 'desktop' | 'tablet' | 'mobile'
@@ -46,6 +47,7 @@ const ICON_SIZE_PX = { small: 16, medium: 20, large: 24 } as const
 const ICON_SIZE_NAMES = ['small', 'medium', 'large'] as const
 const FAMILY_BODY = 'font-family-body'
 const FAMILY_DISPLAY = 'font-family-display'
+const FAMILY_MONO = 'font-family-mono'
 export const BRAND_COLLECTION = 'Brand'
 
 // ── Plugin helpers, mirrored ─────────────────────────────────────────────────
@@ -583,6 +585,8 @@ export function figmaCollectionsSnapshot(tokens: TokenJSON): CollectionsSnapshot
   // the type scale stays shared.
   typo.all(FAMILY_BODY, 'STRING', brandFamilies?.body ?? normalizeFontFamilyName(tf?.fontFamily ?? ty.fontFamily))
   typo.all(FAMILY_DISPLAY, 'STRING', brandFamilies?.display ?? normalizeFontFamilyName(tf?.headingFontFamily ?? tf?.fontFamily ?? ty.headingFontFamily ?? ty.fontFamily))
+  // The code family: one fixed primitive, the same for every brand and viewport.
+  typo.all(FAMILY_MONO, 'STRING', normalizeFontFamilyName(String(ty.monoFontFamily ?? FONT_FAMILY_MONO)))
   const roles = (tf?.roles ?? ty.roles) as Record<string, Partial<Record<Viewport, { family?: string; size?: string; weight?: string }>>> | undefined
   if (roles) {
     const typoAlias = (name: string | undefined): SnapValue | undefined => (name && typo.vars.has(name) ? alias('Typography', name) : undefined)
@@ -600,7 +604,7 @@ export function figmaCollectionsSnapshot(tokens: TokenJSON): CollectionsSnapshot
       writeRole(`role/${key}/letter-spacing`, 'FLOAT', (vp) => typoAlias(cut(vp)?.size ? `letter-spacing/${cut(vp)!.size}` : undefined))
       writeRole(`role/${key}/family`, 'STRING', (vp) => {
         const fam = cut(vp)?.family
-        return fam ? typoAlias(fam === 'display' ? FAMILY_DISPLAY : FAMILY_BODY) : undefined
+        return fam ? typoAlias(fam === 'display' ? FAMILY_DISPLAY : fam === 'mono' ? FAMILY_MONO : FAMILY_BODY) : undefined
       })
     }
   }

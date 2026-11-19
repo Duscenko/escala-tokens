@@ -3,7 +3,7 @@ export interface ColorScale {
 }
 
 export interface TypeRoleAlias {
-  family: 'display' | 'body'
+  family: 'display' | 'body' | 'mono'
   size: string
   weight: string
 }

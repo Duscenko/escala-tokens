@@ -119,6 +119,10 @@ export const OVERVIEWS: Record<string, Overview> = {
     each('Variant', ['default', 'secondary', 'outline', 'inverse']),
     each('Orientation', ['horizontal', 'vertical']),
   ],
+  ReactionGroupTrigger: [
+    each('Size', ['xs', 'sm', 'default', 'lg', 'xl']),
+    each('State', ['Default', 'Hover', 'Focused', 'Open', 'Disabled']),
+  ],
   SocialLoginButton: [
     each('Brand', ['Google', 'Apple', 'Discord'], { Appearance: 'white' }, 260),
     each('Brand', ['Google', 'GitHub', 'X'], { Appearance: 'brand' }, 260),

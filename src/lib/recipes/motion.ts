@@ -37,7 +37,22 @@ export const RECIPE_MOTION: Record<string, RecipeMotion> = {
   Button: { transitions: { root: { ...states('background-color', 'color', 'border-color', 'box-shadow'), scale: 'use-hover' } }, press: {} },
   IconButton: { transitions: { root: { ...states('background-color', 'color', 'border-color', 'box-shadow'), scale: 'use-hover' } }, press: {} },
   Badge: { transitions: { root: states('background-color', 'color', 'border-color') } },
-  Chip: { transitions: { root: states('background-color', 'border-color', 'color') } },
+  // A pressed chip sinks like a button (`use-press`): the file draws no Pressed state, so the press is motion only (owner decision 2026-11-19).
+  Chip: { transitions: { root: { ...states('background-color', 'border-color', 'color'), scale: 'use-hover' } }, press: {} },
+  // The row. First render: the pills arrive one after another (`use-stagger-in`, each `--motion-stagger` behind the last). After
+  // that a pill that arrives or a neighbour that makes room travels on `use-travel-in`, a pill that leaves on `use-travel-out`,
+  // and a count rolls its changed digits on `use-toggle`. Reduced motion comes from the roles themselves.
+  ReactionGroup: {
+    transitions: {
+      item: { opacity: 'use-travel-in', transform: 'use-travel-in' },
+      'item[data-motion="enter"]': { opacity: 'use-stagger-in', transform: 'use-stagger-in' },
+      'item[data-motion="exit"]': { opacity: 'use-travel-out', transform: 'use-travel-out' },
+      digit: { opacity: 'use-toggle', transform: 'use-toggle' },
+    },
+    stagger: { slot: 'item', when: '[data-motion="enter"]' },
+  },
+  ReactionGroupTrigger: { transitions: { root: states('background-color', 'color', 'border-color') } },
+  ReactionGroupPopover: popover('--radix-popover-content-transform-origin'),
   PaginationLink: { transitions: { root: FILL } },
   TabMenuItem: { transitions: { root: FILL } },
   TabMenuLineItem: { transitions: { root: FILL } },

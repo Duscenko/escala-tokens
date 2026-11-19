@@ -19,7 +19,7 @@ import { PHOSPHOR_CORE, PHOSPHOR_CORE_COMPONENT, type IconConcept } from '../../
 import { PHOSPHOR_CORE_BODIES, loadPhosphorWeight, peekPhosphorWeight, phosphorCoreBody, phosphorIconMaskUrl, type PhosphorWeight } from '../../../lib/phosphorIcons'
 import {
   SkeletonButtonSpecimen, SkeletonIconButtonSpecimen, SkeletonCloseButtonSpecimen, SkeletonTextLinkSpecimen, SkeletonFABButtonSpecimen, SkeletonFABGroupSpecimen, SkeletonButtonGroupSpecimen, SkeletonButtonGroupItemSpecimen, SkeletonButtonGroupDividerSpecimen,
-  SkeletonSocialLoginButtonSpecimen, 
+  SkeletonSocialLoginButtonSpecimen, SkeletonReactionGroupSpecimen, SkeletonReactionGroupTriggerSpecimen, SkeletonReactionGroupPopoverSpecimen, 
 } from './skeleton/actions'
 import {
   SkeletonBadgeSpecimen, SkeletonChipSpecimen, SkeletonProgressLineSpecimen, SkeletonProgressCircleSpecimen, SkeletonSpinnerSpecimen,
@@ -374,6 +374,9 @@ export const SPECIMENS: Record<string, (p: SpecimenProps) => ReactNode> = {
   ButtonGroupItem: SkeletonButtonGroupItemSpecimen,
   ButtonGroupDivider: SkeletonButtonGroupDividerSpecimen,
   SocialLoginButton: SkeletonSocialLoginButtonSpecimen,
+  ReactionGroup: SkeletonReactionGroupSpecimen,
+  ReactionGroupTrigger: SkeletonReactionGroupTriggerSpecimen,
+  ReactionGroupPopover: SkeletonReactionGroupPopoverSpecimen,
   // Form Controls
   Input: SkeletonInputSpecimen,
   Textarea: SkeletonTextareaSpecimen,
