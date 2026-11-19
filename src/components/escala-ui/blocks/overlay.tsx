@@ -61,17 +61,20 @@ interface ShellProps extends OverlayBlockProps {
   focusPanel?: boolean
   /** No ModalHeader (ReleaseModal draws its own title in the Content slot). */
   headerless?: boolean
+  /** Figma override of the tray's Content slot padding: `flush` lets a media band run edge to edge (ReleaseModal). */
+  contentInset?: 'default' | 'flush'
   leading?: React.ReactNode
   children?: React.ReactNode
 }
 
 /** The Modal every Overlay block is: header · content · footer. `data-block` names the Figma set. */
-function OverlayShell({ block, inline = true, open = true, onOpenChange, title, description, icon, iconVariant, align = 'vertical-center', trailing, footer, footerLayout = 'inline', layout, focusPanel, headerless, leading, children }: ShellProps) {
+function OverlayShell({ block, inline = true, open = true, onOpenChange, title, description, icon, iconVariant, align = 'vertical-center', trailing, footer, footerLayout = 'inline', layout, focusPanel, headerless, contentInset, leading, children }: ShellProps) {
   return (
     <Modal open={open} onOpenChange={onOpenChange} modal={!inline}>
       <ModalContent
         inline={inline}
         layout={layout}
+        contentInset={contentInset}
         data-block={block}
         closeLabel="Close"
         {...(focusPanel ? { onOpenAutoFocus: (e: Event) => { e.preventDefault(); if (!inline) (e.currentTarget as HTMLElement).focus() } } : {})}
@@ -327,27 +330,31 @@ export function FilterModal(p: OverlayBlockProps) {
   )
 }
 
-/** Figma `ReleaseModal` (1074:3824): Modal tray with no ModalHeader. A media tile, a badge, the headline and the highlights all sit in the Content slot. */
+/** Figma `ReleaseModal` (1074:3824): Modal tray with no ModalHeader and a FLUSH Content slot (padding 0, only the hairline).
+ *  Content = a full-bleed 160 Media band (Surface/accent, a FeaturedIcon xl gradient) over a `body` that pads itself
+ *  (inset-surface, gap-group): `intro` (badge · title · description, gap-control) and `highlights` (check · text, gap-control). */
 export function ReleaseModal(p: OverlayBlockProps) {
   const highlights = ['15 overlay blocks built on Modal', 'Desktop and mobile layouts on every section', 'Light and Dark through Color Semantics modes']
   return (
-    <OverlayShell block="ReleaseModal" {...p} layout="tray" headerless title="Blocks are here"
+    <OverlayShell block="ReleaseModal" {...p} layout="tray" headerless contentInset="flush" title="Blocks are here"
       leading={<Button variant="secondary" appearance="ghost">Read the changelog</Button>} footer={<Button onClick={p.onConfirm}>Explore blocks</Button>}>
-      {body(<>
-        <div data-part="media" style={{ display: 'grid', placeItems: 'center', height: 'calc(var(--spacing-32) + var(--spacing-8))', overflow: 'hidden', borderRadius: v('radius.container'), backgroundColor: v('color.surface.accent') }}>
-          <FeaturedIcon size="xl" variant="default" appearance="solid" shape="rounded" icon={glyph('sparkle')} />
+      <div data-part="media" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: 'calc(var(--spacing-32) + var(--spacing-8))', flexShrink: 0, overflow: 'hidden', backgroundColor: v('color.surface.accent') }}>
+        <FeaturedIcon size="xl" variant="default" appearance="gradient" shape="rounded" icon={glyph('sparkle')} />
+      </div>
+      <div data-part="content" style={{ ...col(), padding: v('spacing.inset-surface') }}>
+        <div data-part="intro" style={col('spacing.gap-control')}>
+          <div style={{ display: 'flex' }}><Badge size="sm" variant="default" appearance="soft" shape="rounded">Released today</Badge></div>
+          <ModalTitle style={{ color: v('color.content.primary'), ...type('heading-sm') }}>Blocks are here</ModalTitle>
+          <ModalDescription style={{ color: v('color.content.secondary'), ...type('body-md') }}>Ready-to-use compositions across Auth, Navigation, Overlay and Marketing, all built from component instances.</ModalDescription>
         </div>
-        <div style={{ display: 'flex' }}><Badge size="sm" variant="info" appearance="soft" shape="rounded">Released today</Badge></div>
-        <ModalTitle style={{ color: v('color.content.primary'), ...type('heading-md') }}>Blocks are here</ModalTitle>
-        <ModalDescription style={{ color: v('color.content.secondary'), ...type('body-md') }}>Ready-to-use compositions across Auth, Navigation, Overlay and Marketing, all built from component instances.</ModalDescription>
         <ul data-part="highlights" style={{ ...col('spacing.gap-control'), margin: 0, padding: 0, listStyle: 'none' }}>
           {highlights.map((h) => (
-            <li key={h} style={{ ...row(), padding: v('spacing.gap-control'), borderRadius: v('radius.action'), backgroundColor: v('color.surface.muted'), color: v('color.content.primary'), ...type('body-sm') }}>
-              <span style={{ display: 'inline-flex', color: v('color.content.accent') }}>{boxedGlyph('check', 'icon.small')}</span>{h}
+            <li key={h} style={{ display: 'flex', alignItems: 'flex-start', gap: v('spacing.gap-control'), color: v('color.content.primary'), ...type('body-md') }}>
+              <span style={{ display: 'inline-flex', color: v('color.content.accent') }}>{boxedGlyph('check', 'icon.medium')}</span>{h}
             </li>
           ))}
         </ul>
-      </>)}
+      </div>
     </OverlayShell>
   )
 }

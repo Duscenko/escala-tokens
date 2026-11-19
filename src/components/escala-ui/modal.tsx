@@ -63,6 +63,8 @@ export interface ModalContentProps extends Omit<React.ComponentProps<typeof Dial
   /** The close glyph — icons are the system's, passed in. */
   closeIcon?: React.ReactNode
   closeLabel?: string
+  /** Figma instance override of the tray's Content slot: `flush` = no padding and no gap of its own (only the hairline), so a child (a media band) runs edge to edge and pads itself. */
+  contentInset?: 'default' | 'flush'
   /** The ModalHeader (inside `main`, above the Content). */
   header?: React.ReactNode
   /** Figma FooterVisible: the ModalFooter, under `main`. */
@@ -76,7 +78,7 @@ export interface ModalContentProps extends Omit<React.ComponentProps<typeof Dial
 
 /** Figma Modal. `children` is the Content slot. */
 function ModalContent({
-  size = 'default', layout, className, children, header, footer, showCloseButton = true, closeIcon, closeLabel = 'Close', inline = false, ...props
+  size = 'default', layout, contentInset = 'default', className, children, header, footer, showCloseButton = true, closeIcon, closeLabel = 'Close', inline = false, ...props
 }: ModalContentProps) {
   const content = (
     <ModalContext.Provider value={{ size, closeClearance: showCloseButton, dialog: true, layout }}>
@@ -99,7 +101,9 @@ function ModalContent({
           <div data-part="Modal.panel" className="flex min-h-0 flex-col overflow-hidden">
             {header != null && <div data-part="Modal.header">{header}</div>}
             {/* The tray's Content carries its own 24 inset (the recipe), which already holds a focus halo: no HALO_BLEED here. */}
-            {children != null && <div data-part="Modal.content" className="flex min-h-0 flex-col overflow-y-auto">{children}</div>}
+            {children != null && (
+              <div data-part="Modal.content" data-inset={contentInset} className="flex min-h-0 flex-col overflow-y-auto" style={contentInset === 'flush' ? { padding: 'var(--spacing-0)', gap: 'var(--spacing-0)' } : undefined}>{children}</div>
+            )}
           </div>
         ) : (
           <div data-part="Modal.main" className="flex min-h-0 flex-col">
