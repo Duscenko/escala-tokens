@@ -13,6 +13,7 @@ import { resolveFamilyPages } from './colorActions'
 import { architectureLabel } from './semanticArchitectures'
 import { typeRoleCssVars, TYPE_ROLES, mergeTypeRoles } from './typeRoles'
 import { elevationCssVars } from './elevationTokens'
+import { CHART_RAMPS } from './chartRamps.generated'
 import { socialCssVars } from './socialBrands'
 import { allLayoutRoleCssVars, layoutRoleVar, sizeRolesViewportCss, LAYOUT_ROLES, mergeLayoutRoles, mergeGridFrame, extractBreakpoints, BREAKPOINT_STEPS, breakpointKey, gridFrameRootCss, gridFrameMediaCss, layoutValueCss, resolveLayoutRole, radiusRolesViewportCss, radiusComponentCss, spacingRolesViewportCss, withInsetSides, insetSideCssVars, breakpointTabletMax, breakpointMobileMax, RADIUS_RESPONSIVE_STEPS, RADIUS_RESPONSIVE, type RadiusRoleViewports } from './layoutTokens'
 import { gradientToCss, gradientSlug } from './gradients'
@@ -86,6 +87,11 @@ function primitiveRampLines(store: ReturnType<typeof useDesignStore.getState>, k
     if (!Object.keys(scale).length) continue
     out.push(`\n  /* ${name.charAt(0).toUpperCase() + name.slice(1)} */`)
     sorted(scale).forEach(([k, v]) => { if (v) out.push(`  --color-${name}-${toneLabel(colorNaming, Number(k))}: ${v};`) })
+  }
+  // The Chart hue ramps (series 2–8): fixed data, the same names tokens.json ships (`chart-teal`, `chart-teal-dark`).
+  for (const [hue, ramp] of Object.entries(CHART_RAMPS)) {
+    out.push(`\n  /* Chart ${hue.charAt(0).toUpperCase() + hue.slice(1)} */`)
+    sorted(ramp[dark ? 'dark' : 'light']).forEach(([k, v]) => out.push(`  --color-chart-${hue}-${toneLabel(colorNaming, Number(k))}: ${v};`))
   }
   // Alpha twins — reproduce each solid tone when composited over THIS
   // appearance's page (tokens.json `colors.primitiveAlpha`). CSS is a flat

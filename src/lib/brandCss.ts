@@ -40,8 +40,9 @@ export function brandCssFor(store: DesignSnapshot, keys: string[]): BrandCss[] {
 }
 
 /** Bodies over this stay without `brandCss` (the plugin then builds its own):
- *  /api/tokens refuses anything over 2 MB. */
-const ROOM = 1_800_000
+ *  /api/tokens refuses anything over 2 MB. 1.8 MB → 1.9 MB (2026-11-19): the Chart layer (30 roles + 168 primitives per brand)
+ *  took ten brands from about 1.75 MB to 1.87 MB; the beta caps a system at five brands, so ten is the extreme. */
+const ROOM = 1_900_000
 
 /** The payload with `brandCss` for every brand it carries — or unchanged when
  *  that would not fit the publish limit. */

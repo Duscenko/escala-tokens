@@ -668,5 +668,49 @@
     "lastAudit": "2026-11-19",
     "lastSyncSha": null,
     "codeConnect": null
+  },
+  "Gauge": {
+    "kind": "component",
+    "stage": "storybook",
+    "version": null,
+    "workshopPage": null,
+    "story": "indicators-gauge--playground",
+    "figmaNode": "2398:762",
+    "lastAudit": "2026-11-19",
+    "lastSyncSha": null,
+    "codeConnect": null
+  },
+  "Sparkline": {
+    "kind": "component",
+    "stage": "storybook",
+    "version": null,
+    "workshopPage": null,
+    "story": "indicators-sparkline--playground",
+    "figmaNode": "2399:90",
+    "lastAudit": "2026-11-19",
+    "lastSyncSha": null,
+    "codeConnect": null
+  },
+  "ActivityHeatmap": {
+    "kind": "component",
+    "stage": "storybook",
+    "version": null,
+    "workshopPage": null,
+    "lastAudit": "2026-11-19",
+    "lastSyncSha": null,
+    "codeConnect": null,
+    "story": "indicators-activityheatmap--playground",
+    "figmaNode": "2400:58"
+  },
+  "ActivityHeatmapCell": {
+    "kind": "component",
+    "stage": "storybook",
+    "version": null,
+    "workshopPage": null,
+    "lastAudit": "2026-11-19",
+    "lastSyncSha": null,
+    "codeConnect": null,
+    "story": "indicators-activityheatmap--activity-heatmap-cell-playground",
+    "figmaNode": "2400:57"
   }
 }

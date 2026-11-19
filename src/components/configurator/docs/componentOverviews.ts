@@ -90,6 +90,11 @@ export const OVERVIEWS: Record<string, Overview> = {
       { v: { State: 'Disabled' }, label: 'Create' },
     ],
   ],
+  SplitButton: [
+    each('Variant', ['default', 'secondary']),
+    each('Size', ['default', 'xs', 'sm', 'lg']),
+    each('Open', ['false', 'true']),
+  ],
   FABGroup: [
     each('Layout', ['stack', 'fan-center', 'fan-left', 'fan-right'], { Open: 'true' }),
   ],
@@ -369,6 +374,8 @@ export const OVERVIEWS: Record<string, Overview> = {
   TableFooter: [each('Size', ['default', 'xs', 'sm', 'lg'], {}, 800), each('Dividers', ['rows', 'grid'], {}, 800)],
   TableLoadMore: [each('State', ['Default', 'Loading'], {}, 800)],
   ProgressLine: [each('Size', ['xs', 'sm', 'default', 'lg'], {}, 240), each('Appearance', ['solid', 'gradient'], {}, 240), each('Value', ['0', '25', '50', '75', '100'], {}, 240)],
+  Gauge: [each('Variant', ['default', 'success', 'warning', 'critical'], { Value: '75' }), each('Size', ['sm', 'default', 'lg'], { Value: '75' }), each('Value', ['0', '25', '50', '75', '100'])],
+  Sparkline: [each('Variant', ['default', 'secondary', 'success', 'critical']), each('Size', ['sm', 'default', 'lg'])],
   ProgressCircle: [each('Size', ['xs', 'sm', 'default', 'lg']), each('Cap', ['round', 'butt'], { Value: '75' }), each('Appearance', ['solid', 'gradient'], { Value: '75' }), each('Value', ['0', '25', '50', '75', '100'])],
   Alert: [
     each('Variant', ['success', 'info', 'warning', 'default', 'critical', 'secondary'], { Layout: 'vertical' }, 320),
@@ -390,6 +397,9 @@ export const OVERVIEWS: Record<string, Overview> = {
   IssueCard: [each('State', ['Default', 'Hover', 'Dragging'])],
   NavItem: [each('State', ['Default', 'Hover', 'Focused', 'Current', 'Disabled']), each('Size', ['default', 'sm', 'lg'])],
   TabBarItem: [each('State', ['Default', 'Hover', 'Focused', 'Current', 'Disabled'])],
+  SplitBarSegment: [each('Series', ['1', '2', '3', '4', '5', '6', '7', '8'], {}, 240), each('State', ['Default', 'Focused'], {}, 240)],
+  SplitBarLegendItem: [each('Series', ['1', '2', '3', '4', '5', '6', '7', '8']), each('Checked', ['true', 'false']), each('State', ['Default', 'Focused'])],
+  ActivityHeatmapCell: [each('Value', ['0', '1', '2', '3', '4', '5']), each('State', ['Default', 'Focused'])],
   Brand: [each('Size', ['default', 'sm'])],
   AccountMenuTrigger: [each('State', ['Default', 'Hover', 'Pressed', 'Focused']), each('Size', ['default', 'sm'])],
   Pagination: [each('Variant', ['compact-grouped', 'compact'], {}, 380), each('Size', ['default', 'xs', 'sm', 'lg'], {}, 380)],

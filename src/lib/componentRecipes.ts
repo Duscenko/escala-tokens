@@ -44,6 +44,8 @@ import {
   TAB_MENU, TAB_MENU_ITEM, TAB_MENU_LINE_ITEM, NAV_ITEM, TAB_BAR, TAB_BAR_ITEM, BRAND, ACCOUNT_MENU_TRIGGER, SEGMENTED_CONTROL, SEGMENTED_CONTROL_ITEM, BREADCRUMB, BREADCRUMB_ITEM, BREADCRUMB_ELLIPSIS, BREADCRUMB_SEPARATOR, PAGINATION, PAGINATION_LINK, PAGINATION_ELLIPSIS, STEPPER, STEPPER_ITEM, STEPPER_INDICATOR, STEPPER_ICON, DROPDOWN_MENU, DROPDOWN_MENU_LABEL, DROPDOWN_MENU_ITEM, DROPDOWN_MENU_FOOTER, SIDEBAR, SIDEBAR_BRAND, SIDEBAR_GROUP, SIDEBAR_GROUP_LABEL, SIDEBAR_MENU_BUTTON,
 } from './recipes/navigation.js'
 import { SETTINGS_ROW, SETTINGS_SECTION, ISSUE_CARD, BOARD_COLUMN } from './recipes/pages.js'
+import { ACTIVITY_HEATMAP, ACTIVITY_HEATMAP_CELL } from './recipes/activityHeatmap.js'
+import { SPLIT_BAR, SPLIT_BAR_SEGMENT, SPLIT_BAR_LEGEND_ITEM } from './recipes/splitBar.js'
 import { ALERT, TOAST } from './recipes/feedback.js'
 import { BADGE, CHIP, PROGRESS_LINE, PROGRESS_CIRCLE, SPINNER, RATING_GROUP, RATING_GROUP_ITEM, AVATAR, AVATAR_STATUS, AVATAR_GROUP, FEATURED_ICON, KBD } from './recipes/indicators.js'
 export {
@@ -52,6 +54,8 @@ export {
 } from './recipes/helpers.js'
 import { TABLE, TABLE_CELL, TABLE_HEAD, TABLE_MEDIA_CELL, TABLE_TREND_CELL, TABLE_RESIZER, TABLE_ROW, TABLE_HEADER, TABLE_FOOTER, TABLE_CAPTION, TABLE_DROP_INDICATOR, TABLE_EMPTY, TABLE_LOADING, TABLE_LOAD_MORE } from './recipes/table.js'
 import { RECIPE_MOTION } from './recipes/motion.js'
+import { SPLIT_BUTTON } from './recipes/splitButton.js'
+import { GAUGE, SPARKLINE } from './recipes/dataDisplay.js'
 import { roleCssVar } from './roleNames.js'
 import { NONE, NON_TOKEN_PROPS, type ComponentRecipe, type AxisValues, type SlotMap, type TokenRef, type RecipeProp } from './recipes/helpers.js'
 
@@ -68,6 +72,7 @@ export const COMPONENT_RECIPES: Record<string, ComponentRecipe> = {
   ButtonGroup: BUTTON_GROUP,
   ButtonGroupItem: BUTTON_GROUP_ITEM,
   ButtonGroupDivider: BUTTON_GROUP_DIVIDER,
+  SplitButton: SPLIT_BUTTON,
   SocialLoginButton: SOCIAL_LOGIN_BUTTON,
   Input: INPUT,
   Textarea: TEXTAREA,
@@ -108,6 +113,8 @@ export const COMPONENT_RECIPES: Record<string, ComponentRecipe> = {
   Chip: CHIP,
   ProgressLine: PROGRESS_LINE,
   ProgressCircle: PROGRESS_CIRCLE,
+  Gauge: GAUGE,
+  Sparkline: SPARKLINE,
   Spinner: SPINNER,
   FeaturedIcon: FEATURED_ICON,
   RatingGroup: RATING_GROUP,
@@ -150,9 +157,14 @@ export const COMPONENT_RECIPES: Record<string, ComponentRecipe> = {
   NavItem: NAV_ITEM,
   TabBar: TAB_BAR,
   TabBarItem: TAB_BAR_ITEM,
+  ActivityHeatmap: ACTIVITY_HEATMAP,
+  ActivityHeatmapCell: ACTIVITY_HEATMAP_CELL,
   SettingsRow: SETTINGS_ROW,
   SettingsSection: SETTINGS_SECTION,
   IssueCard: ISSUE_CARD,
+  SplitBar: SPLIT_BAR,
+  SplitBarSegment: SPLIT_BAR_SEGMENT,
+  SplitBarLegendItem: SPLIT_BAR_LEGEND_ITEM,
   BoardColumn: BOARD_COLUMN,
   Brand: BRAND,
   AccountMenuTrigger: ACCOUNT_MENU_TRIGGER,

@@ -860,7 +860,7 @@ export const FOUNDATION_DOCS: FoundationDoc[] = [
     label: 'Color',
     lead: `Two layers: twelve-step primitive ramps that hold the raw values, and a categorical semantic contract that names what each value is FOR — grouped as ${groupList(COLOR_ROLE_GROUPS)} with nested role ids like \`content.primary\` and \`action.primary.default\`. Designs reference the roles; only the roles reference the ramps.`,
     why: 'A hex in a component is a decision nobody can revisit. A role — `action.primary.default` — is a decision you can re-point once and have the whole system follow, in every theme at once. It is also the only way light and dark can be the same design rather than two hand-tuned ones: a role resolves to its own ramp per appearance, so `content.primary` means "the readable ink on this page" in both, and neither is a copy of the other.',
-    usage: `Reach for a categorical semantic role first — \`surface.*\` for page and card levels, \`action.*\` for control fills, \`status.*\` for feedback, \`content.*\` for ink, \`border.*\` for edges, \`elevation.*\` for the colours inside a shadow. Use a primitive directly only when you are defining a new role. Steps are ordered by ROLE, not lightness: 1–2 page background · 3–5 component · 6–8 border · 9 the solid (your brand hex, verbatim) · 10 solid hover · 11–12 accessible text. ${COLOR_ALPHA_ROLES} of the ${COLOR_ROLES.length} roles resolve to a TRANSLUCENT primitive instead of a solid tone — see Alpha below — so a semantic value can be 8-digit \`#rrggbbaa\`.`,
+    usage: `Reach for a categorical semantic role first — \`surface.*\` for page and card levels, \`action.*\` for control fills, \`status.*\` for feedback, \`content.*\` for ink, \`border.*\` for edges, \`elevation.*\` for the colours inside a shadow, \`chart.*\` for the series of a chart. Use a primitive directly only when you are defining a new role. Steps are ordered by ROLE, not lightness: 1–2 page background · 3–5 component · 6–8 border · 9 the solid (your brand hex, verbatim) · 10 solid hover · 11–12 accessible text. ${COLOR_ALPHA_ROLES} of the ${COLOR_ROLES.length} roles resolve to a TRANSLUCENT primitive instead of a solid tone — see Alpha below — so a semantic value can be 8-digit \`#rrggbbaa\`.`,
     usageCode: `/* semantic — what it is FOR */
 background: var(--color-action-primary-default);
 color:      var(--color-content-on-action);
@@ -946,6 +946,12 @@ color:      var(--color-content-on-action);
         title: 'Elevation',
         description: 'Effect colours only — the key and ambient layers of a shadow, its hairline ring and the top highlight of a raised control. Bound inside a Shadow / Depth effect style, never used as a fill or a stroke.',
         render: renderCategoricalCategory('elevation', () => []),
+      },
+      {
+        id: 'chart',
+        title: 'Chart',
+        description: 'The data-viz layer, in both themes: eight categorical series in a fixed order (series 1 is the brand accent, 2–8 fixed hue ramps), each with `solid` (lines, bars, dots, swatches, segment edges), `soft` (area fills, segment backgrounds) and `content` (labels), plus a six-step sequential ramp (0 = no data … 5 = most intense) for heatmaps. Use `chart.*` for categories that carry no meaning and `status.*` when the colour means good or bad; never add opacity on a chart role.',
+        render: renderCategoricalCategory('chart', () => []),
       },
     ],
   },

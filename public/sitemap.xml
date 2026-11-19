@@ -22,6 +22,7 @@
   <url><loc>https://www.escalatokens.com/components/ReactionGroup</loc></url>
   <url><loc>https://www.escalatokens.com/components/ReactionGroupPopover</loc></url>
   <url><loc>https://www.escalatokens.com/components/ReactionGroupTrigger</loc></url>
+  <url><loc>https://www.escalatokens.com/components/SplitButton</loc></url>
   <url><loc>https://www.escalatokens.com/components/Field</loc></url>
   <url><loc>https://www.escalatokens.com/components/Label</loc></url>
   <url><loc>https://www.escalatokens.com/components/Input</loc></url>
@@ -92,6 +93,13 @@
   <url><loc>https://www.escalatokens.com/components/ProgressLine</loc></url>
   <url><loc>https://www.escalatokens.com/components/Spinner</loc></url>
   <url><loc>https://www.escalatokens.com/components/ProgressCircle</loc></url>
+  <url><loc>https://www.escalatokens.com/components/Gauge</loc></url>
+  <url><loc>https://www.escalatokens.com/components/Sparkline</loc></url>
+  <url><loc>https://www.escalatokens.com/components/ActivityHeatmap</loc></url>
+  <url><loc>https://www.escalatokens.com/components/ActivityHeatmapCell</loc></url>
+  <url><loc>https://www.escalatokens.com/components/SplitBar</loc></url>
+  <url><loc>https://www.escalatokens.com/components/SplitBarSegment</loc></url>
+  <url><loc>https://www.escalatokens.com/components/SplitBarLegendItem</loc></url>
   <url><loc>https://www.escalatokens.com/components/Modal</loc></url>
   <url><loc>https://www.escalatokens.com/components/ModalFooter</loc></url>
   <url><loc>https://www.escalatokens.com/components/ModalHeader</loc></url>

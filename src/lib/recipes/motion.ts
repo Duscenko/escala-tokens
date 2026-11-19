@@ -60,9 +60,33 @@ export const RECIPE_MOTION: Record<string, RecipeMotion> = {
   // The pill fills and the icon and label re-ink on `use-hover`, the same roles as NavItem; becoming Current uses the same
   // transition. No mount animation. TabBar itself: motion none (it does not change state).
   TabBarItem: { transitions: { indicator: FILL, icon: FILL, label: FILL } },
+  // A day square: no motion on load, none on a data change (the consumer cross-fades a year switch). Only the ring follows `use-focus`.
+  ActivityHeatmapCell: { transitions: { root: { 'outline-color': 'use-focus' } } },
   // The card's edge and lift ease; the position that follows the pointer never does (MOT-005).
   IssueCard: { transitions: { root: { 'border-color': 'use-hover', 'box-shadow': 'use-hover' } } },
   AccountMenuTrigger: { transitions: { root: FILL } },
+  // SplitBar: a segment widens on hover or focus on `use-hover` (its width is its share of the bar, so it is `width` that moves). Turning
+  // a series off reflows the bar: the segments that grow travel on `use-travel-in`, the ones that shrink on `use-travel-out`.
+  // The focus ring and the colours do not animate here: the file draws no Hover colour.
+  SplitBarSegment: {
+    transitions: {
+      root: { width: 'use-hover' },
+      'root[data-motion="in"]': { width: 'use-travel-in' },
+      'root[data-motion="out"]': { width: 'use-travel-out' },
+    },
+  },
+  // The callouts under the bar follow their segment: the same roles, the same direction.
+  SplitBar: {
+    transitions: {
+      leaderLine: { left: 'use-hover' },
+      'leaderLine[data-motion="in"]': { left: 'use-travel-in' },
+      'leaderLine[data-motion="out"]': { left: 'use-travel-out' },
+      leaderText: { left: 'use-hover', right: 'use-hover' },
+      'leaderText[data-motion="in"]': { left: 'use-travel-in', right: 'use-travel-in' },
+      'leaderText[data-motion="out"]': { left: 'use-travel-out', right: 'use-travel-out' },
+    },
+  },
+  SplitBarLegendItem: { transitions: { swatch: states('background-color'), label: states('color'), value: states('color') } },
   SegmentedControlItem: { transitions: { root: FILL } },
   SidebarMenuButton: { transitions: { root: FILL } },
   TableRow: { transitions: { root: states('background-color') } },
@@ -95,6 +119,18 @@ export const RECIPE_MOTION: Record<string, RecipeMotion> = {
   RatingGroupItem: { transitions: { root: FILL } },
   SliderThumb: { transitions: { root: states('border-color', 'box-shadow') } },
   ProgressLine: { transitions: { indicator: { width: 'use-progress' } } },
+  // A new value sweeps the fill along the arc on `use-travel-in` (the arc's dash is the value). Reduced motion comes from the role.
+  Gauge: { transitions: { arc: { 'stroke-dasharray': 'use-travel-in' } } },
+  // The line draws once on mount (`use-reveal`: its dash offset, with the area and the dot fading in); new data cross-fades the old
+  // layer into the new one on `use-color`.
+  Sparkline: {
+    transitions: {
+      layer: { opacity: 'use-color' },
+      line: { 'stroke-dashoffset': 'use-reveal', opacity: 'use-reveal' },
+      area: { opacity: 'use-reveal' },
+      dot: { opacity: 'use-reveal' },
+    },
+  },
   // Sonner keeps the queue, the stack and the live region; the toast itself moves on the system's roles (DEC-2026-11-18-001).
   Toast: {
     enter: { name: 'toast-enter' },

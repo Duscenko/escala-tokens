@@ -91,6 +91,21 @@
     "tokens": 1
   },
   {
+    "key": "SplitButton",
+    "label": "Split Button",
+    "category": "Button & Actions",
+    "box": "gray",
+    "locks": [
+      "size",
+      "hit",
+      "motion"
+    ],
+    "file": "spec/contracts/SplitButton.json",
+    "figmaSet": "SplitButton",
+    "story": "buttons-splitbutton--playground",
+    "tokens": 1
+  },
+  {
     "key": "ButtonGroup",
     "label": "Button Group",
     "category": "Button & Actions",
@@ -1418,6 +1433,38 @@
     "tokens": 18
   },
   {
+    "key": "Gauge",
+    "label": "Gauge",
+    "category": "Data Display",
+    "box": "black",
+    "locks": [
+      "shape",
+      "size",
+      "hit",
+      "motion"
+    ],
+    "file": "spec/contracts/Gauge.json",
+    "figmaSet": null,
+    "story": "indicators-gauge--playground",
+    "tokens": 23
+  },
+  {
+    "key": "Sparkline",
+    "label": "Sparkline",
+    "category": "Data Display",
+    "box": "black",
+    "locks": [
+      "shape",
+      "size",
+      "hit",
+      "motion"
+    ],
+    "file": "spec/contracts/Sparkline.json",
+    "figmaSet": null,
+    "story": "indicators-sparkline--playground",
+    "tokens": 17
+  },
+  {
     "key": "BoardColumn",
     "label": "Board Column",
     "category": "Layout",
@@ -1476,6 +1523,83 @@
     "figmaSet": "TabBarItem",
     "story": "navigation-tabbar--tab-bar-item-playground",
     "tokens": 14
+  },
+  {
+    "key": "ActivityHeatmap",
+    "label": "Activity Heatmap",
+    "category": "Data Display",
+    "box": "gray",
+    "locks": [
+      "size",
+      "hit",
+      "motion"
+    ],
+    "file": "spec/contracts/ActivityHeatmap.json",
+    "figmaSet": null,
+    "story": "indicators-activityheatmap--playground",
+    "tokens": 7
+  },
+  {
+    "key": "ActivityHeatmapCell",
+    "label": "Activity Heatmap Cell",
+    "category": "Data Display",
+    "box": "black",
+    "locks": [
+      "shape",
+      "radius",
+      "size",
+      "hit",
+      "motion"
+    ],
+    "file": "spec/contracts/ActivityHeatmapCell.json",
+    "figmaSet": null,
+    "story": "indicators-activityheatmap--activity-heatmap-cell-playground",
+    "tokens": 10
+  },
+  {
+    "key": "SplitBar",
+    "label": "Split Bar",
+    "category": "Indicators",
+    "box": "gray",
+    "locks": [
+      "size",
+      "hit",
+      "motion"
+    ],
+    "file": "spec/contracts/SplitBar.json",
+    "figmaSet": null,
+    "story": "indicators-splitbar--playground",
+    "tokens": 17
+  },
+  {
+    "key": "SplitBarSegment",
+    "label": "Split Bar Segment",
+    "category": "Indicators",
+    "box": "gray",
+    "locks": [
+      "size",
+      "hit",
+      "motion"
+    ],
+    "file": "spec/contracts/SplitBarSegment.json",
+    "figmaSet": null,
+    "story": "indicators-splitbar--split-bar-segment-playground",
+    "tokens": 32
+  },
+  {
+    "key": "SplitBarLegendItem",
+    "label": "Split Bar Legend Item",
+    "category": "Indicators",
+    "box": "gray",
+    "locks": [
+      "size",
+      "hit",
+      "motion"
+    ],
+    "file": "spec/contracts/SplitBarLegendItem.json",
+    "figmaSet": null,
+    "story": "indicators-splitbar--split-bar-legend-item-playground",
+    "tokens": 20
   },
   {
     "key": "Brand",
@@ -1713,7 +1837,7 @@
     "file": "spec/contracts/DropdownMenu.json",
     "figmaSet": "DropdownMenu",
     "story": "navigation-dropdownmenu--playground",
-    "tokens": 11
+    "tokens": 12
   },
   {
     "key": "DropdownMenuLabel",

@@ -207,9 +207,6 @@
     "ActionButton": {
       "status": "new"
     },
-    "SplitButton": {
-      "status": "new"
-    },
     "AuthPasskeySetup": {
       "status": "block",
       "page": "AuthPasskeySetup (PRO)"

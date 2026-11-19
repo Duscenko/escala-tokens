@@ -371,6 +371,39 @@
       "parts": []
     },
     {
+      "id": "Gauge",
+      "page": "Gauge (PRO)",
+      "folder": "Indicators",
+      "root": "Gauge",
+      "parts": []
+    },
+    {
+      "id": "Sparkline",
+      "page": "Sparkline (PRO)",
+      "folder": "Indicators",
+      "root": "Sparkline",
+      "parts": []
+    },
+    {
+      "id": "ActivityHeatmap",
+      "page": "ActivityHeatmap (PRO)",
+      "folder": "Indicators",
+      "root": "ActivityHeatmap",
+      "parts": [
+        "ActivityHeatmapCell"
+      ]
+    },
+    {
+      "id": "SplitBar",
+      "page": "SplitBar (PRO)",
+      "folder": "Indicators",
+      "root": "SplitBar",
+      "parts": [
+        "SplitBarSegment",
+        "SplitBarLegendItem"
+      ]
+    },
+    {
       "id": "Modal",
       "page": "Modal (✓) (D)",
       "folder": "Content & Surfaces",
@@ -542,7 +575,6 @@
     "Radio": "pending rebuild (spec/figma-components.status.json)",
     "RadioCard": "pending rebuild (spec/figma-components.status.json)",
     "RadioItem": "pending rebuild (spec/figma-components.status.json)",
-    "ActionButton": "new in the Figma file (2026-11-19), not built yet (spec/figma-components.status.json)",
-    "SplitButton": "new in the Figma file (2026-11-19), not built yet (spec/figma-components.status.json)"
+    "ActionButton": "new in the Figma file (2026-11-19), not built yet (spec/figma-components.status.json)"
   }
 }

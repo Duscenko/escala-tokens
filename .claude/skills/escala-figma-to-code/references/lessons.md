@@ -650,3 +650,30 @@ Measured in the built Storybook, 2026-11-17 (Button + IconButton, 3 intents × 4
 | The mono family in Storybook | `Type/code` computed "Geist Mono" but no face was loaded | Storybook loads no web font: `EscalaScope` now fetches the mono family |
 | The QR | Is it really scannable? | Draw the path on a canvas with a quiet zone and read it back with the browser's `BarcodeDetector` |
 | Button labels in a block | Buttons 6–20px narrower than the file | Not the block: the file sizes Button labels by Size (12 · 14 · 14 · 16), the recipe uses `type.button` (12) for all (finding TYP-001 Button) |
+
+# Lessons from the SplitButton (2026-11-19)
+
+| Trap | What it looked like | The fix (where it lives) |
+|---|---|---|
+| A set that is only a composition (ButtonGroup + DropdownMenu), no TEXT / BOOLEAN / SWAP property | Tempting to invent props from the nested items | Axes = the file's three (`Variant · Size · Open`); the label, icon and rows are the nested items' CONTENT (`children`, `leading`, `menu`), listed in the contract as "not Figma properties". The recipe holds only the one measure the composition adds (`gap: spacing.gap-control` = the 8px menu offset, read as Radix's `sideOffset`) |
+| A nested DropdownMenu measured 4px short (256×118, rows 234 wide at x 11, file 256×122 · 230 at x 13) | The Playground of DropdownMenu itself had the same numbers: `HALO_BLEED` (padding + equal negative margin) lost to the recipe's own `padding: 12`, so only the −2px margin applied | `DROPDOWN_MENU.content` padding = `spacing.inset-control+stroke.focus`. Check the menu's size AND its first row's x, not only the panel's box. Modal / Sheet use the same bleed: not measured here |
+| The menu has no `xs` | The file nests `DropdownMenu Size=sm` under `Size=xs` | A map in the component (`MENU_SIZE`) and a line in the contract |
+| A story's JSDoc containing `Action/*/pressed` | Storybook: `Unable to index … Missing semicolon` and a 500 on `/index.json` for the whole Storybook (every other session's too) | Never write `*/` inside a comment. Curl `/index.json` after the first save of a story |
+| An element that is a flex child of the story's cell | The root stretched to the cell's height (220) and `top-full` put the inline menu 228px down | `self-start items-start` on the root so it hugs the group; measure the menu's y against the GROUP, not the cell |
+| `menu ?? <SampleMenu />` before a `Children.map` that clones props into the rows | The stagger style went to the wrapper function component, the rows had `animation: none` | A flat array of keyed elements (`SAMPLE_MENU`); then the computed delays were 0 · 100 · 200 ms |
+| Radix `DropdownMenu` arrows do not loop by default | The file says «arrows move through items and loop» | `loop` on the Content; measured ↓ ×4 → first row, ↑ → last, Home / End |
+| `ButtonGroupItem` writes `aria-pressed` on every segment | A menu trigger with `aria-pressed` and `aria-expanded`, and a plain action marked "not pressed" | Pass `aria-pressed={undefined}` on both segments (props spread after the default) |
+| A file artefact: `Variant=default · Size=xs` is 113 wide | A visible `divider-3` (1×24, x 112) with no third segment behind it; `secondary · xs` and the other 14 variants have none | Not copied (the group is 112 in both), said in the contract and the report |
+
+# Lessons from the Gauge and Sparkline (2026-11-19)
+
+| Trap | What it looked like | The fix (where it lives) |
+|---|---|---|
+| The file's arc is an ELLIPSE with `arcData` (135°→405°, `innerRadius` .85 · .875 · .833) and its round ends are separate dots | Tempting to port the vector paths | An SVG circle (`pathLength` 100, `rotate(135)`, `stroke-linecap: round`) paints the same shape; the thickness is `50 × (1 − innerRadius)` as in ProgressCircle. A zero-length round dash leaves a dot: Value 0 uses `butt` |
+| A frame centred a few px off its parent's centre (Gauge content 6 · 4 · 6 px under the centre) | A `top: 53.125%` fits two sizes and misses the third by 1px | Read `y` per size from the file, then express the offset as the recipe's `travel` (`--escala-travel`) and `top: calc(50% + var(--escala-travel))` |
+| Dimension primitives named `160`, `256`, `480` bound to a width (DIM-01) | No `Size/*` role | Summed `spacing` steps (`spacing.32+spacing.8` = 160; step N = N × 4 px), same as the Modal widths |
+| A data stroke bound to `Stroke/focus` (2) with a raw 1.5 on sm (DIM-03) | The recipe has no 1.5 | `strokeWidth: stroke.focus`, and `hairline: '1.5'` (the recipe's hand-set px width) on sm; an SVG path reads it as `stroke-width: var(--escala-stroke-width)` |
+| A chart whose width is "fluid" but whose geometry is in px (dot Ø, stroke, caps) | A scaled viewBox would squash the dot | Measure the root (`ResizeObserver`) and draw in real px; the dot is an HTML span the recipe sizes, so its box gives the inset |
+| The file's sample curve has hand-set paddings (5.32 · 3.12 · 8.8) | No rule reproduces all three | One dot diameter of air above and below (6 · 4 · 8): within 0.9px of all three; said in the contract |
+| Transitions never start in a hidden Browser pane | `getComputedStyle` showed the final value for seconds | A `computer` screenshot forces frames; or listen for `transitionrun` before clicking and read `getAnimations()` |
+| A shared dev server (6006) stops answering while several sessions edit | `page.goto` timeouts, a blank iframe | Check `curl localhost:6006/index.json`; point the pane and `BASE_URL=… node scripts/storybook-checks/axe.mjs` at another running server (6016) |

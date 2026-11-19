@@ -38,6 +38,7 @@ const APCA_UI = INTENT_THRESHOLDS['ui-component'].apcaLc ?? 45
 const WCAG_CONTROL = WCAG_UI
 const APCA_CONTROL = 0
 import { chartPalette } from './chartPalette'
+import { CHART_RAMPS } from './chartRamps.generated'
 import type { ThemePalette } from '../store/useDesignStore'
 
 export type SemanticArchitecture = 'flat' | 'categorical'
@@ -1261,6 +1262,41 @@ const CATEGORICAL_ROLES: { group: string; key: string; light: string; dark: stri
   { group: 'elevation', key: 'shadow-ring',    light: '{white-a.1}', dark: '{white-a.1}' },
   // DEC-2026-11-16-006: the file's Light highlight is White Alpha/05 (#ffffff4d); Dark stays at /03.
   { group: 'elevation', key: 'highlight',      light: '{white-a.5}', dark: '{white-a.3}' },
+  // Chart — the data-viz layer (Figma `Chart/*`, DEC-2026-11-19 ARC-CHART-01). Series order is fixed: series 1 is the
+  // brand accent, 2–8 are fixed hue ramps (`chartRamps.generated.ts`, from the file's `Charts/EscalaDS/<Hue>`). `solid`
+  // (step 9) draws lines, bars, dots, swatches and segment edges; `soft` (4) area fills and segment backgrounds; `content`
+  // (11) labels on `soft` or on the page. Categories with no meaning only; a colour that means good or bad stays in `status`.
+  { group: 'chart', key: 'series-1.solid', light: '{accent.9}', dark: '{accent.9}' },
+  { group: 'chart', key: 'series-1.soft', light: '{accent.4}', dark: '{accent.4}' },
+  { group: 'chart', key: 'series-1.content', light: '{accent.11}', dark: '{accent.11}' },
+  { group: 'chart', key: 'series-2.solid', light: '{chart-teal.9}', dark: '{chart-teal.9}' },
+  { group: 'chart', key: 'series-2.soft', light: '{chart-teal.4}', dark: '{chart-teal.4}' },
+  { group: 'chart', key: 'series-2.content', light: '{chart-teal.11}', dark: '{chart-teal.11}' },
+  { group: 'chart', key: 'series-3.solid', light: '{chart-amber.9}', dark: '{chart-amber.9}' },
+  { group: 'chart', key: 'series-3.soft', light: '{chart-amber.4}', dark: '{chart-amber.4}' },
+  { group: 'chart', key: 'series-3.content', light: '{chart-amber.11}', dark: '{chart-amber.11}' },
+  { group: 'chart', key: 'series-4.solid', light: '{chart-blue.9}', dark: '{chart-blue.9}' },
+  { group: 'chart', key: 'series-4.soft', light: '{chart-blue.4}', dark: '{chart-blue.4}' },
+  { group: 'chart', key: 'series-4.content', light: '{chart-blue.11}', dark: '{chart-blue.11}' },
+  { group: 'chart', key: 'series-5.solid', light: '{chart-rose.9}', dark: '{chart-rose.9}' },
+  { group: 'chart', key: 'series-5.soft', light: '{chart-rose.4}', dark: '{chart-rose.4}' },
+  { group: 'chart', key: 'series-5.content', light: '{chart-rose.11}', dark: '{chart-rose.11}' },
+  { group: 'chart', key: 'series-6.solid', light: '{chart-lime.9}', dark: '{chart-lime.9}' },
+  { group: 'chart', key: 'series-6.soft', light: '{chart-lime.4}', dark: '{chart-lime.4}' },
+  { group: 'chart', key: 'series-6.content', light: '{chart-lime.11}', dark: '{chart-lime.11}' },
+  { group: 'chart', key: 'series-7.solid', light: '{chart-magenta.9}', dark: '{chart-magenta.9}' },
+  { group: 'chart', key: 'series-7.soft', light: '{chart-magenta.4}', dark: '{chart-magenta.4}' },
+  { group: 'chart', key: 'series-7.content', light: '{chart-magenta.11}', dark: '{chart-magenta.11}' },
+  { group: 'chart', key: 'series-8.solid', light: '{chart-orange.9}', dark: '{chart-orange.9}' },
+  { group: 'chart', key: 'series-8.soft', light: '{chart-orange.4}', dark: '{chart-orange.4}' },
+  { group: 'chart', key: 'series-8.content', light: '{chart-orange.11}', dark: '{chart-orange.11}' },
+  // Sequential — heatmaps and density: 0 = no data … 5 = most intense, in both themes.
+  { group: 'chart', key: 'sequential.0', light: '{neutral.3}', dark: '{neutral-dark.3}' },
+  { group: 'chart', key: 'sequential.1', light: '{accent.3}', dark: '{accent.3}' },
+  { group: 'chart', key: 'sequential.2', light: '{accent.5}', dark: '{accent.5}' },
+  { group: 'chart', key: 'sequential.3', light: '{accent.7}', dark: '{accent.7}' },
+  { group: 'chart', key: 'sequential.4', light: '{accent.9}', dark: '{accent.9}' },
+  { group: 'chart', key: 'sequential.5', light: '{accent.11}', dark: '{accent.11}' },
   // `border.critical` / `border.warning` / `border.success` moved to
   // `status.<sev>.border-strong` (audit F3 — a severity-family stroke belongs in
   // the `status` group, beside `status.<sev>.border`), and `info` joined them so
@@ -1398,6 +1434,22 @@ export const CATEGORICAL_ROLE_COMMENTS: Record<string, string> = {
   'border.accent': '[ROLE: Accent Border] Border painted in the brand accent — a selected card, a toggled button, any element that needs its stroke to read as the primary accent. For keyboard focus use border.focus.',
 }
 
+// Chart roles (DEC-2026-11-19, ARC-CHART-01): one comment per slot, generated from the table so it cannot drift.
+const CHART_SLOT_COMMENT: Record<string, string> = {
+  solid: 'step 9 — lines, bars, dots, legend swatches and segment edges. 3:1 on the page in both themes (WCAG 1.4.11). Never add opacity on top of it.',
+  soft: 'step 4 — area fills and segment backgrounds. A fill, never a line or text.',
+  content: 'step 11 — labels on `soft` or on the page. 4.5:1.',
+}
+const CHART_HUE_NAME = ['', 'accent (the brand violet)', 'Teal', 'Amber', 'Blue', 'Rose', 'Lime', 'Magenta', 'Orange']
+for (let n = 1; n <= 8; n++) {
+  for (const slot of ['solid', 'soft', 'content'] as const) {
+    CATEGORICAL_ROLE_COMMENTS[`chart.series-${n}.${slot}`] = `[ROLE: Chart Series ${n} ${slot[0].toUpperCase()}${slot.slice(1)}] Series ${n} of a categorical chart (${CHART_HUE_NAME[n]}): ${CHART_SLOT_COMMENT[slot]} Series order is fixed. Use Chart/* for categories with no meaning; Status/* when the colour means good or bad.`
+  }
+}
+for (let n = 0; n <= 5; n++) {
+  CATEGORICAL_ROLE_COMMENTS[`chart.sequential.${n}`] = `[ROLE: Chart Sequential ${n}] Heatmap and density ramp, level ${n}: ${n === 0 ? 'no data' : n === 5 ? 'most intense' : 'increasing intensity'}, in both themes. A fill only.`
+}
+
 /** Flat role id → nested export path segments. `content.link.default` → ['content','link','default']. */
 export function categoricalNestedPath(group: string, key: string): string[] {
   return [group, ...key.split('.')]
@@ -1507,6 +1559,8 @@ export function scaleLookup(
     warning: palette?.warning ?? darkTwin('warning') ?? scales.warning,
     success: palette?.success ?? darkTwin('success') ?? scales.success,
     info: palette?.info ?? darkTwin('info') ?? scales.info,
+    // The Chart hue ramps (series 2–8): fixed data from the Figma file, kind-aware like `accent`.
+    ...Object.fromEntries(Object.entries(CHART_RAMPS).map(([hue, r]) => [`chart-${hue}`, r[kind] as Record<number, string>])),
     // The theme's extra brand palettes — only defined when it carries them.
     secondary: palette?.secondary,
     tertiary: palette?.tertiary,

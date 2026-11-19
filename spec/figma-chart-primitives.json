@@ -1,0 +1,20 @@
+{
+  "source": "Figma file 7j5zukN5HpihGVJMmyjA20 · Color Primitives · Charts/EscalaDS/<Hue>[ Dark] (read-only dump via use_figma, 2026-11-19)",
+  "note": "Series 1 reuses Accents/EscalaDS (no violet ramp here). Hidden from publishing in Figma. Never hand-edit: re-dump, then `npm run gen:chart-ramps`.",
+  "groups": {
+    "Charts/EscalaDS/Teal": "01=fefdff 02=e2faf6 03=c4f4ec 04=9deee3 05=62e9d9 06=00d9c9 07=00c5b6 08=00b1a3 09=00a598 10=009488 11=00736a 12=00423c",
+    "Charts/EscalaDS/Teal Dark": "01=100e13 02=001c19 03=002622 04=00312c 05=003d38 06=005049 07=00635b 08=007b71 09=00a99b 10=00baac 11=4cd7c8 12=cff4ef",
+    "Charts/EscalaDS/Amber": "01=fefdff 02=fef2e1 03=fce4c4 04=fcd5a0 05=fdc471 06=fbaa00 07=e49a00 08=d59000 09=c78600 10=b37800 11=865900 12=4d3200",
+    "Charts/EscalaDS/Amber Dark": "01=100e13 02=221400 03=2d1b00 04=3a2400 05=482e00 06=5d3d00 07=744c00 08=8e5f00 09=c38400 10=d79200 11=ebb25f 12=fbe8ce",
+    "Charts/EscalaDS/Blue": "01=fefdff 02=edf5ff 03=daeaff 04=c6dfff 05=afd2ff 06=8fc0ff 07=6daeff 08=529fff 09=3893ff 10=0081f9 11=0061be 12=123865",
+    "Charts/EscalaDS/Blue Dark": "01=100e13 02=06172e 03=031f41 04=002855 05=003369 06=004386 07=0053a5 08=0067c9 09=3492ff 10=5aa3ff 11=91c1ff 12=dfedff",
+    "Charts/EscalaDS/Rose": "01=fefdff 02=fff0f0 03=ffdfe1 04=ffced0 05=ffbabe 06=ff9da4 07=ff8793 08=ff7183 09=ff5772 10=ff1359 11=b9003c 12=5e2029",
+    "Charts/EscalaDS/Rose Dark": "01=100e13 02=2a0b0f 03=3b0c14 04=4f0818 05=67001d 06=830028 07=a10033 08=c50041 09=ff3963 10=ff677c 11=ff9ea6 12=ffe3e5",
+    "Charts/EscalaDS/Lime": "01=fefdff 02=eff7e5 03=dfefcc 04=cde7ae 05=b8de88 06=9cd146 07=87c000 08=79ad00 09=70a100 10=649000 11=4d7000 12=2a4000",
+    "Charts/EscalaDS/Lime Dark": "01=100e13 02=101b01 03=162500 04=1e2f00 05=273c00 06=344e00 07=426100 08=527700 09=73a500 10=80b600 11=a7cd77 12=e3f1d5",
+    "Charts/EscalaDS/Magenta": "01=fefdff 02=ffeef9 03=ffddf2 04=ffcaec 05=ffb4e5 06=ff96de 07=ff7fd9 08=ff64d4 09=ff3fd0 10=f200c3 11=ab0089 12=552247",
+    "Charts/EscalaDS/Magenta Dark": "01=100e13 02=260c1e 03=350e2a 04=470d38 05=5c0749 06=78005f 07=940076 08=b50091 09=f700c7 10=ff4bd1 11=f19fd6 12=ffe1f4",
+    "Charts/EscalaDS/Orange": "01=fefdff 02=fff0e9 03=ffe1d3 04=ffd1ba 05=ffbe9e 06=ffa372 07=ff8946 08=ff7407 09=ef6c00 10=d86100 11=9e4500 12=5c2603",
+    "Charts/EscalaDS/Orange Dark": "01=100e13 02=290e02 03=371300 04=461a00 05=572200 06=6f2e00 07=893b00 08=a84a00 09=e66700 10=fd7200 11=fda578 12=ffe5d8"
+  }
+}

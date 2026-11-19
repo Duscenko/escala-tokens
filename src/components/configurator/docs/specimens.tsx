@@ -18,14 +18,15 @@ import { COMPONENTS, type ComponentDef } from '../../../lib/componentCatalogue'
 import { PHOSPHOR_CORE, PHOSPHOR_CORE_COMPONENT, type IconConcept } from '../../../lib/iconLibraries'
 import { PHOSPHOR_CORE_BODIES, loadPhosphorWeight, peekPhosphorWeight, phosphorCoreBody, phosphorIconMaskUrl, type PhosphorWeight } from '../../../lib/phosphorIcons'
 import {
-  SkeletonButtonSpecimen, SkeletonIconButtonSpecimen, SkeletonCloseButtonSpecimen, SkeletonTextLinkSpecimen, SkeletonFABButtonSpecimen, SkeletonFABGroupSpecimen, SkeletonButtonGroupSpecimen, SkeletonButtonGroupItemSpecimen, SkeletonButtonGroupDividerSpecimen,
+  SkeletonButtonSpecimen, SkeletonIconButtonSpecimen, SkeletonCloseButtonSpecimen, SkeletonTextLinkSpecimen, SkeletonFABButtonSpecimen, SkeletonFABGroupSpecimen, SkeletonSplitButtonSpecimen, SkeletonButtonGroupSpecimen, SkeletonButtonGroupItemSpecimen, SkeletonButtonGroupDividerSpecimen,
   SkeletonSocialLoginButtonSpecimen, SkeletonReactionGroupSpecimen, SkeletonReactionGroupTriggerSpecimen, SkeletonReactionGroupPopoverSpecimen, 
 } from './skeleton/actions'
 import {
-  SkeletonBadgeSpecimen, SkeletonChipSpecimen, SkeletonProgressLineSpecimen, SkeletonProgressCircleSpecimen, SkeletonSpinnerSpecimen,
+  SkeletonBadgeSpecimen, SkeletonChipSpecimen, SkeletonProgressLineSpecimen, SkeletonProgressCircleSpecimen, SkeletonGaugeSpecimen, SkeletonSparklineSpecimen, SkeletonSpinnerSpecimen,
   SkeletonRatingGroupSpecimen, SkeletonRatingGroupItemSpecimen, SkeletonAvatarSpecimen, SkeletonAvatarStatusSpecimen, SkeletonAvatarGroupSpecimen, SkeletonFeaturedIconSpecimen,
   SkeletonKbdSpecimen,
 } from './skeleton/indicators'
+import { SkeletonSplitBarSpecimen, SkeletonSplitBarSegmentSpecimen, SkeletonSplitBarLegendItemSpecimen } from './skeleton/splitBar'
 import {
   SkeletonTabMenuSpecimen, SkeletonTabMenuItemSpecimen, SkeletonTabMenuLineItemSpecimen, SkeletonNavItemSpecimen, SkeletonBrandSpecimen, SkeletonAccountMenuTriggerSpecimen, SkeletonSegmentedControlSpecimen, SkeletonSegmentedControlItemSpecimen, SkeletonBreadcrumbSpecimen, SkeletonBreadcrumbItemSpecimen, SkeletonBreadcrumbEllipsisSpecimen, SkeletonBreadcrumbSeparatorSpecimen,
   SkeletonPaginationSpecimen, SkeletonPaginationLinkSpecimen, SkeletonPaginationEllipsisSpecimen, SkeletonStepperSpecimen, SkeletonStepperItemSpecimen, SkeletonStepperIndicatorSpecimen, SkeletonStepperIconSpecimen, SkeletonDropdownMenuSpecimen, SkeletonDropdownMenuLabelSpecimen, SkeletonDropdownMenuItemSpecimen, SkeletonDropdownMenuFooterSpecimen, 
@@ -370,6 +371,7 @@ export const SPECIMENS: Record<string, (p: SpecimenProps) => ReactNode> = {
   TextLink: SkeletonTextLinkSpecimen,
   FABButton: SkeletonFABButtonSpecimen,
   FABGroup: SkeletonFABGroupSpecimen,
+  SplitButton: SkeletonSplitButtonSpecimen,
   ButtonGroup: SkeletonButtonGroupSpecimen,
   ButtonGroupItem: SkeletonButtonGroupItemSpecimen,
   ButtonGroupDivider: SkeletonButtonGroupDividerSpecimen,
@@ -419,6 +421,11 @@ export const SPECIMENS: Record<string, (p: SpecimenProps) => ReactNode> = {
   Chip: SkeletonChipSpecimen,
   ProgressLine: SkeletonProgressLineSpecimen,
   ProgressCircle: SkeletonProgressCircleSpecimen,
+  Gauge: SkeletonGaugeSpecimen,
+  SplitBar: SkeletonSplitBarSpecimen,
+  SplitBarSegment: SkeletonSplitBarSegmentSpecimen,
+  SplitBarLegendItem: SkeletonSplitBarLegendItemSpecimen,
+  Sparkline: SkeletonSparklineSpecimen,
   Spinner: SkeletonSpinnerSpecimen,
   FeaturedIcon: SkeletonFeaturedIconSpecimen,
   RatingGroup: SkeletonRatingGroupSpecimen,

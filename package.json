@@ -36,6 +36,7 @@
     "check:web-storybook": "node scripts/check-web-storybook-parity.mjs",
     "typecheck:storybook": "tsc -p apps/storybook/tsconfig.json --noEmit",
     "gen:figma-palette": "tsx scripts/gen-figma-palette.ts",
+    "gen:chart-ramps": "tsx scripts/gen-chart-ramps.ts",
     "gen:contracts": "tsx scripts/gen-component-contracts.ts"
   },
   "dependencies": {

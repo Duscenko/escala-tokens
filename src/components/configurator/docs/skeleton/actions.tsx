@@ -7,6 +7,7 @@ import { Button as SkButton, buttonAxes, type ButtonAppearance, type ButtonSize,
 import { IconButton as SkIconButton } from '../../../escala-ui/icon-button'
 import { FABButton as SkFABButton, type FABButtonAppearance, type FABButtonShape, type FABButtonSize, type FABButtonState, type FABButtonVariant } from '../../../escala-ui/fab-button'
 import { FABGroup as SkFABGroup, type FABGroupLayout } from '../../../escala-ui/fab-group'
+import { SplitButton as SkSplitButton, type SplitButtonSize, type SplitButtonVariant } from '../../../escala-ui/split-button'
 import { TextLink as SkTextLink, type TextLinkSize, type TextLinkState, type TextLinkVariant } from '../../../escala-ui/text-link'
 import { CloseButton as SkCloseButton, type CloseButtonAppearance, type CloseButtonShape, type CloseButtonSize, type CloseButtonState, type CloseButtonVariant } from '../../../escala-ui/close-button'
 import {
@@ -127,6 +128,22 @@ export function SkeletonFABButtonSpecimen({ t, v, icons, children }: SpecimenPro
       >
         {children ?? 'Create'}
       </SkFABButton>
+    </RecipeScope>
+  )
+}
+
+/** The file's own sample: «Publish» over three rows. `Open` draws the menu in place (`inline`), so a board of them never portals. */
+export function SkeletonSplitButtonSpecimen({ t, v }: SpecimenProps) {
+  return (
+    <RecipeScope t={t}>
+      <SkSplitButton
+        variant={(v.Variant ?? 'default') as SplitButtonVariant}
+        size={(v.Size ?? 'default') as SplitButtonSize}
+        open={(v.Open ?? 'false') === 'true'}
+        inline
+      >
+        Publish
+      </SkSplitButton>
     </RecipeScope>
   )
 }

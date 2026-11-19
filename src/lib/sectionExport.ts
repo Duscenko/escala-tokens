@@ -42,6 +42,8 @@ import {
   type LayoutFamily,
 } from './layoutTokens'
 
+import { CHART_RAMPS, type ChartHue } from './chartRamps.generated'
+
 type Store = ReturnType<typeof useDesignStore.getState>
 
 export type SectionKey =
@@ -212,9 +214,12 @@ function colorFamilies(store: Store, opts: SectionExportOptions = {}): [string, 
   // One explicit appearance — the per-column quick export. Unchanged.
   if (opts.appearance) {
     const dark = opts.appearance === 'dark'
-    return fams
-      .filter((f) => filled(dark ? f.dark : f.light))
-      .map((f) => [dark ? `${f.family}-dark` : f.family, (dark ? f.dark : f.light)!])
+    return [
+      ...fams
+        .filter((f) => filled(dark ? f.dark : f.light))
+        .map((f): [string, Record<number, string>] => [dark ? `${f.family}-dark` : f.family, (dark ? f.dark : f.light)!]),
+      ...chartRampFamilies(opts).map(([hue, r]): [string, Record<number, string>] => [dark ? `${hue}-dark` : hue, (dark ? r.dark : r.light) as Record<number, string>]),
+    ]
   }
 
   // Unscoped — every light ramp, then every dark twin, but only for a system
@@ -262,7 +267,20 @@ function colorFamilies(store: Store, opts: SectionExportOptions = {}): [string, 
     out.push(['black-a', BLACK_ALPHA_SCALE], ['white-a', WHITE_ALPHA_SCALE])
   }
 
+  // The Chart hue ramps (series 2–8): fixed data, light then dark twin, the names tokens.json ships.
+  for (const [hue, r] of chartRampFamilies(opts)) {
+    out.push([hue, r.light as Record<number, string>])
+    if (hasDark) out.push([`${hue}-dark`, r.dark as Record<number, string>])
+  }
+
   return out
+}
+
+/** The Chart hue ramps a (possibly scoped) colour export carries: `chart-teal` … `chart-orange`. */
+function chartRampFamilies(opts: SectionExportOptions): [string, (typeof CHART_RAMPS)[ChartHue]][] {
+  return (Object.entries(CHART_RAMPS) as [ChartHue, (typeof CHART_RAMPS)[ChartHue]][])
+    .map(([hue, r]): [string, (typeof CHART_RAMPS)[ChartHue]] => [`chart-${hue}`, r])
+    .filter(([name]) => !opts.families || opts.families.includes(name))
 }
 
 const sortedEntries = (o: Record<string, string>) =>

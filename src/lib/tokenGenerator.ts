@@ -17,6 +17,7 @@ import { platformPayload } from './platformAxis'
 import { fontSourceUrl } from './customFonts'
 import { mergeLayoutRoles, mergeGridFrame, resolveGridStyles, RADIUS_RESPONSIVE, SPACING_RESPONSIVE, spacingRolesAtViewport, extractBreakpoints, roleViewportsOf, resolvedRadiusRoleViewports, LAYOUT_ROLES, type GridFrameModes, type GridStyleKey } from './layoutTokens'
 import { elevationTokens } from './elevationTokens'
+import { CHART_RAMPS } from './chartRamps.generated'
 import { socialBrandTokens } from './socialBrands'
 import { gradientToCss, gradientSlug } from './gradients'
 import { semanticModesFor, type ThemeAppearance } from './themeModes'
@@ -554,6 +555,13 @@ export function generateTokenJSON(
     addFamily('warning-dark', store.warningDarkScale)
     addFamily('success-dark', store.successDarkScale)
     addFamily('info-dark', store.infoDarkScale)
+  }
+
+  // The Chart hue ramps (series 2–8 of `color.chart.*`): fixed data from the Figma file, always shipped, so the
+  // `{chart-teal.9}` aliases of the Chart roles resolve. Series 1 and the sequential ramp reuse the accent.
+  for (const [hue, ramp] of Object.entries(CHART_RAMPS)) {
+    Object.assign(primitive, flattenScale(`chart-${hue}`, ramp.light, colorNaming))
+    if (hasDarkTheme) Object.assign(primitive, flattenScale(`chart-${hue}-dark`, ramp.dark, colorNaming))
   }
 
   // Custom color families adopt the same prefixed structure (teal-1 … teal-12),

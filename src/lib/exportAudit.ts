@@ -84,8 +84,10 @@ export const BUDGETS = {
   // 145k → 150k (2026-11-16): SocialLoginButton is the Figma set (Brand × Appearance × State: 90 painted combinations).
   // 150k → 155k (2026-11-19): the ReactionGroup family (row, trigger with 25 variants, picker), each with its design-skill file, and the
   // `code` type role with the mono family.
-  contextAllTokens: 155_000,
-  contextFoundationTokens: 12_000,
+  // 155k → 165k and 12k → 18k per foundation (2026-11-19): the Chart layer — 30 roles and 168 primitives (the seven hue
+  // ramps in both appearances) — is real content in the colour section, not bloat.
+  contextAllTokens: 165_000,
+  contextFoundationTokens: 18_000,
 }
 
 const THEMES = ['light', 'dark'] as const

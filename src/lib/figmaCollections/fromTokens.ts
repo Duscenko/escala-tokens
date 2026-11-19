@@ -41,7 +41,7 @@ type Loose = Record<string, any>
 const SINGLE_MODE = 'Mode 1'
 const VIEWPORTS: [Viewport, string][] = [['desktop', 'Desktop'], ['tablet', 'Tablet'], ['mobile', 'Mobile']]
 const CATEGORICAL_GROUPS: [string, string][] = [
-  ['content', 'Content'], ['action', 'Action'], ['surface', 'Surface'], ['status', 'Status'], ['border', 'Border'], ['elevation', 'Elevation'],
+  ['content', 'Content'], ['action', 'Action'], ['surface', 'Surface'], ['status', 'Status'], ['border', 'Border'], ['elevation', 'Elevation'], ['chart', 'Chart'],
 ]
 const ICON_SIZE_PX = { small: 16, medium: 20, large: 24 } as const
 const ICON_SIZE_NAMES = ['small', 'medium', 'large'] as const

@@ -157,6 +157,14 @@ export const SKELETON_SNIPPETS: Record<string, Snippet> = {
     `import { ProgressCircle } from "@/components/ui/progress-line"
 
 <ProgressCircle${v.Size && v.Size !== 'default' ? ` size="${v.Size}"` : ''}${v.Cap === 'butt' ? ' cap="butt"' : ''}${v.Appearance === 'gradient' ? ' appearance="gradient"' : ''} aria-label="Uploading" value={${v.Value ?? 50}} />`,
+  Gauge: (v) =>
+    `import { Gauge } from "@/components/ui/gauge"
+
+<Gauge${v.Variant && v.Variant !== 'default' ? ` variant="${v.Variant}"` : ''}${v.Size && v.Size !== 'default' ? ` size="${v.Size}"` : ''} aria-label="Workspace health" value={${v.Value ?? 72}} unit="%" label="Healthy" />`,
+  Sparkline: (v) =>
+    `import { Sparkline } from "@/components/ui/sparkline"
+
+<Sparkline${v.Variant && v.Variant !== 'default' ? ` variant="${v.Variant}"` : ''}${v.Size && v.Size !== 'default' ? ` size="${v.Size}"` : ''} aria-label="Daily active users, up 7.2 % this week" data={[18, 37, 40, 36, 51, 50, 45, 37, 64]} />`,
   FeaturedIcon: (v) =>
     `import { FeaturedIcon } from "@/components/ui/featured-icon"\n\n<FeaturedIcon${v.Size && v.Size !== 'default' ? ` size="${v.Size}"` : ''}${v.Variant && v.Variant !== 'default' ? ` variant="${v.Variant}"` : ''}${v.Appearance === 'solid' ? ' appearance="solid"' : ''}${v.Shape === 'rounded' ? ' shape="rounded"' : ''} />`,
   RatingGroup: (v) =>
@@ -311,6 +319,12 @@ export const SKELETON_SNIPPETS: Record<string, Snippet> = {
     const variant = v.Variant && v.Variant !== 'default' ? ` variant="${v.Variant}"` : ''
     const flags = v.State === 'Disabled' ? ' disabled' : ''
     return `import { FABButton } from "@/components/ui/fab-button"\n\n<FABButton${appearance}${shape}${size}${variant}${flags}>\n  Create\n</FABButton>`
+  },
+  SplitButton: (v) => {
+    const variant = v.Variant && v.Variant !== 'default' ? ` variant="${v.Variant}"` : ''
+    const size = v.Size && v.Size !== 'default' ? ` size="${v.Size}"` : ''
+    const open = v.Open === 'true' ? ' defaultOpen' : ''
+    return `import { SplitButton } from "@/components/ui/split-button"\nimport { DropdownMenuItem } from "@/components/ui/dropdown-menu"\n\n<SplitButton${variant}${size}${open}\n  menu={<>\n    <DropdownMenuItem>Publish and notify</DropdownMenuItem>\n    <DropdownMenuItem>Save as draft</DropdownMenuItem>\n    <DropdownMenuItem variant="critical">Delete draft</DropdownMenuItem>\n  </>}\n>\n  Publish\n</SplitButton>`
   },
   FABGroup: (v) => {
     const layout = v.Layout && v.Layout !== 'stack' ? ` layout="${v.Layout}"` : ''
