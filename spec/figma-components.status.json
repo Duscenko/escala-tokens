@@ -196,9 +196,6 @@
     "ModalFooter": {
       "status": "rebuild"
     },
-    "DropdownMenuItem": {
-      "status": "rebuild"
-    },
     "MorphNav": {
       "status": "block",
       "page": "UserMenu & MorphNav"

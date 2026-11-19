@@ -415,6 +415,15 @@
       "parts": []
     },
     {
+      "id": "TabBar",
+      "page": "TabBar",
+      "folder": "Navigation",
+      "root": "TabBar",
+      "parts": [
+        "TabBarItem"
+      ]
+    },
+    {
       "id": "Brand",
       "page": "Brand (✓) WIP",
       "folder": "Navigation",

@@ -575,10 +575,11 @@ describe('recipe lint', () => {
 
   it('DropdownMenuItem, ComboboxItem and SidebarMenuButton paint their rows with listItemRecipe', () => {
     const paintOf = (slots: Record<string, Record<string, string | undefined>>) =>
-      ['fill', 'stroke', 'focus', 'ring', 'halo'].map((k) => `${k}=${slots.root?.[k] ?? ''}`).join('|')
+      ['fill', 'stroke', 'focus', 'ring', 'halo', 'gapRing'].map((k) => `${k}=${slots.root?.[k] ?? ''}`).join('|')
     for (const size of ['sm', 'default', 'lg']) {
       for (const state of ['Default', 'Hover', 'Focused', 'Selected', 'Disabled']) {
-        const expected = paintOf(listItemRecipe(size, state, 'default') as never)
+        // DropdownMenuItem focuses like a Button: the gap ring (DEC-2026-11-19-001).
+        const expected = paintOf(listItemRecipe(size, state, 'default', { focusRing: 'gap' }) as never)
         expect(paintOf(resolveRecipe(COMPONENT_RECIPES.DropdownMenuItem, { Size: size, State: state, Variant: 'default' }) as never), `DropdownMenuItem ${size} ${state}`).toBe(expected)
         const combo = paintOf(listItemRecipe(size, state, 'default', { metrics: { [size]: { ...LIST_ITEM_METRICS[size], edge: 'stroke.control' } } }) as never)
         expect(paintOf(resolveRecipe(COMPONENT_RECIPES.ComboboxItem, { Size: size, State: state }) as never), `ComboboxItem ${size} ${state}`).toBe(combo)
@@ -588,6 +589,14 @@ describe('recipe lint', () => {
       expect(resolveRecipe(COMPONENT_RECIPES.DropdownMenuLabel, { Size: size }).root, `DropdownMenuLabel ${size}`).toEqual(groupLabelRecipe(size))
       expect(resolveRecipe(COMPONENT_RECIPES.ComboboxGroupLabel, { Size: size }).root, `ComboboxGroupLabel ${size}`).toEqual(groupLabelRecipe(size))
     }
+  })
+
+  it('a focused DropdownMenuItem is its fill plus the Button gap ring, nothing inside (DEC-2026-11-19-001)', () => {
+    const def = resolveRecipe(COMPONENT_RECIPES.DropdownMenuItem, { Size: 'default', State: 'Focused', Variant: 'default' }).root
+    expect(def).toMatchObject({ fill: 'color.surface.muted', gapRing: 'color.border.ring.default' })
+    expect(def.focus ?? 'none').toBe('none')
+    const crit = resolveRecipe(COMPONENT_RECIPES.DropdownMenuItem, { Size: 'default', State: 'Focused', Variant: 'critical' }).root
+    expect(crit).toMatchObject({ fill: 'color.status.critical.surface', gapRing: 'color.status.critical.ring' })
   })
 
   it('no second paint function for a list row or a group label (listItemRecipe / groupLabelRecipe cover them)', () => {

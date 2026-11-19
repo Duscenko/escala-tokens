@@ -12,7 +12,7 @@
     "file": "spec/contracts/Button.json",
     "figmaSet": "Button",
     "story": "buttons-button--playground",
-    "tokens": 43
+    "tokens": 44
   },
   {
     "key": "IconButton",
@@ -1403,6 +1403,36 @@
     "tokens": 19
   },
   {
+    "key": "TabBar",
+    "label": "Tab Bar",
+    "category": "Navigation",
+    "box": "gray",
+    "locks": [
+      "size",
+      "hit",
+      "motion"
+    ],
+    "file": "spec/contracts/TabBar.json",
+    "figmaSet": "TabBar",
+    "story": "navigation-tabbar--playground",
+    "tokens": 5
+  },
+  {
+    "key": "TabBarItem",
+    "label": "Tab Bar Item",
+    "category": "Navigation",
+    "box": "gray",
+    "locks": [
+      "size",
+      "hit",
+      "motion"
+    ],
+    "file": "spec/contracts/TabBarItem.json",
+    "figmaSet": "TabBarItem",
+    "story": "navigation-tabbar--tab-bar-item-playground",
+    "tokens": 14
+  },
+  {
     "key": "Brand",
     "label": "Brand",
     "category": "Navigation",
@@ -1668,7 +1698,7 @@
     "file": "spec/contracts/DropdownMenuItem.json",
     "figmaSet": "DropdownMenuItem",
     "story": "navigation-dropdownmenu--dropdown-menu-item-playground",
-    "tokens": 24
+    "tokens": 22
   },
   {
     "key": "DropdownMenuFooter",

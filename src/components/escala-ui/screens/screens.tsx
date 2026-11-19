@@ -92,7 +92,7 @@ function AccountMenu({ photos, onNavigate }: Pick<ScreenProps, 'photos' | 'onNav
         <DropdownMenuItem iconLeading={ic('user')}>Profile</DropdownMenuItem>
         <DropdownMenuItem iconLeading={ic('gear')} onSelect={() => onNavigate?.(settingsPath('general'))}>Settings</DropdownMenuItem>
         <DropdownMenuSeparator />
-        <DropdownMenuItem variant="destructive" iconLeading={ic('sign-out')}>Log out</DropdownMenuItem>
+        <DropdownMenuItem variant="critical" iconLeading={ic('sign-out')}>Log out</DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
   )

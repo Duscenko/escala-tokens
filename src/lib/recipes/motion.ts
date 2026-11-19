@@ -42,6 +42,9 @@ export const RECIPE_MOTION: Record<string, RecipeMotion> = {
   TabMenuItem: { transitions: { root: FILL } },
   TabMenuLineItem: { transitions: { root: FILL } },
   NavItem: { transitions: { root: FILL } },
+  // The pill fills and the icon and label re-ink on `use-hover`, the same roles as NavItem; becoming Current uses the same
+  // transition. No mount animation. TabBar itself: motion none (it does not change state).
+  TabBarItem: { transitions: { indicator: FILL, icon: FILL, label: FILL } },
   // The card's edge and lift ease; the position that follows the pointer never does (MOT-005).
   IssueCard: { transitions: { root: { 'border-color': 'use-hover', 'box-shadow': 'use-hover' } } },
   AccountMenuTrigger: { transitions: { root: FILL } },

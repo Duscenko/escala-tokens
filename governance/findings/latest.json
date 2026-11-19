@@ -1,5 +1,5 @@
 {
-  "generated": "2026-11-18",
+  "generated": "2026-11-19",
   "findings": [
     {
       "id": "COL-002:Border/control",
@@ -442,11 +442,13 @@
       "severity": "error",
       "side": "figma",
       "entity": "DropdownMenuItem",
-      "evidence": "The 6 State=Hover variants have Media and Control as frames and 0 property links; State=Default has slots and 7 links",
-      "status": "Open",
-      "resolution": null,
+      "evidence": "The 6 State=Hover variants have Media and Control as frames and 0 property links; State=Default has slots and 7 links · 2026-11-19: the 6 Hover variants now have the Media and Control slots, 7 property links and fill only (Surface/muted · Status/critical/surface), no ring (read with use_figma)",
+      "status": "Fixed",
+      "resolution": {
+        "ref": "figma-read-2026-11-19"
+      },
       "firstSeen": "2026-11-18",
-      "lastSeen": "2026-11-18",
+      "lastSeen": "2026-11-19",
       "regression": false,
       "ticket": 69
     },
@@ -743,6 +745,75 @@
       "lastSeen": "2026-11-18",
       "regression": false,
       "ticket": 77
+    },
+    {
+      "id": "STG-001:TabBar",
+      "rule": "STG-001",
+      "severity": "error",
+      "side": "figma",
+      "entity": "TabBar",
+      "evidence": "TabBar (2354:124) and TabBarItem (2354:84) were built in the library before Storybook and approval; accepted by the owner (iterating in Figma is easier for now)",
+      "status": "Accepted",
+      "resolution": {
+        "ref": "EXC-2026-11-19-001"
+      },
+      "firstSeen": "2026-11-19",
+      "lastSeen": "2026-11-19",
+      "regression": false
+    },
+    {
+      "id": "PAR-001:DropdownMenuItem:State=Focused/ring",
+      "rule": "PAR-001",
+      "severity": "error",
+      "side": "figma",
+      "entity": "DropdownMenuItem",
+      "evidence": "Figma Focused (all sizes, both variants): a 2px INSIDE stroke (Border/focus · Status/critical/border-strong) plus a focus-ring frame of the SAME bounds stroked OUTSIDE (Border/ring/default · Status/critical/border); the 2026-11-17 rule for controls is one gapRing 1px off the edge with nothing inside. Code (listItemRootPaint) draws the inset edge + halo, the same geometry as the file today. Decide whether menu rows follow the gapRing rule · Decided 2026-11-19: menu rows take the gap ring; code done, Figma Focused variants still to update",
+      "status": "Decided",
+      "resolution": {
+        "ref": "DEC-2026-11-19-001"
+      },
+      "firstSeen": "2026-11-19",
+      "lastSeen": "2026-11-19",
+      "regression": false
+    },
+    {
+      "id": "PAR-001:Button:State=Default/property-links",
+      "rule": "PAR-001",
+      "severity": "error",
+      "side": "figma",
+      "entity": "Button",
+      "evidence": "20 State=Default variants (default·outline, default·ghost, secondary·link, critical·ghost, critical·link, every size) do not wire Label / IconLeadingVisible to their layers. The owner is fixing it in Figma; code is unaffected",
+      "status": "Open",
+      "resolution": null,
+      "firstSeen": "2026-11-19",
+      "lastSeen": "2026-11-19",
+      "regression": false
+    },
+    {
+      "id": "TYP-001:Button:Size=sm,default,lg/label",
+      "rule": "TYP-001",
+      "severity": "error",
+      "side": "figma",
+      "entity": "Button",
+      "evidence": "Only Size=xs applies Type/button to the label; sm, default and lg labels carry no text style",
+      "status": "Open",
+      "resolution": null,
+      "firstSeen": "2026-11-19",
+      "lastSeen": "2026-11-19",
+      "regression": false
+    },
+    {
+      "id": "TOK-002:Badge:Size=xs,sm/height",
+      "rule": "TOK-002",
+      "severity": "error",
+      "side": "figma",
+      "entity": "Badge",
+      "evidence": "Badge xs / sm heights are bound to Dimension primitives (xs height bound to \"16\"), not a role: the existing missing role. TabBarItem inherits it through its exposed Badge (Type=number · critical · solid · xs · pill)",
+      "status": "Open",
+      "resolution": null,
+      "firstSeen": "2026-11-19",
+      "lastSeen": "2026-11-19",
+      "regression": false
     }
   ]
 }

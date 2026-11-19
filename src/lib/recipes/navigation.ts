@@ -98,6 +98,54 @@ export const NAV_ITEM: ComponentRecipe = {
   ],
 }
 
+// ── TabBar and TabBarItem ──────────────────────────────────────────────────
+// The Figma `TabBarItem` set (2354:84, one axis: State) and `TabBar` component (2354:124)
+// (design-plans/tab-bar-contract.md). The bottom navigation of a mobile app: each item is a LINK
+// (NavItem's semantics, `Current` = aria-current="page"), never a tab. The state paints the pill
+// `indicator` (fill + the Button gap ring) and inks the icon and the label; the root never fills.
+export const TAB_BAR_ITEM_STATES = ['Default', 'Hover', 'Focused', 'Current', 'Disabled'] as const
+
+const TAB_BAR_ITEM_INK: Record<string, string> = { Hover: 'content.primary', Current: 'content.accent', Disabled: 'content.disabled' }
+const TAB_BAR_ITEM_FILL: Record<string, string> = { Hover: 'surface.muted', Current: 'surface.selected' }
+
+export const TAB_BAR_ITEM: ComponentRecipe = {
+  key: 'TabBarItem',
+  slots: ['root', 'indicator', 'icon', 'media', 'badge', 'label'],
+  defaults: { State: 'Default' },
+  parts: [
+    part({}, () => ({
+      root: { gap: 'spacing.gap-tight', paddingY: 'spacing.gap-tight', paddingX: 'spacing.none', minHeight: 'size.target-min', font: 'type.caption' },
+      indicator: { radius: 'radius.pill', paddingX: 'spacing.inset-control', paddingY: 'spacing.gap-tight', gap: 'spacing.none' },
+      icon: { width: 'icon.large', height: 'icon.large' },
+      // The Media slot (an Avatar xs) sits in the icon's box.
+      media: { width: 'icon.large', height: 'icon.large' },
+    })),
+    part({ State: TAB_BAR_ITEM_STATES }, (state) => {
+      const ink = c(TAB_BAR_ITEM_INK[state] ?? 'content.secondary')
+      return {
+        // Focused: Figma's `focus-ring`, 1px outside the pill, `Stroke/focus`, `Border/ring/default` (the Button `gapRing`).
+        indicator: { fill: TAB_BAR_ITEM_FILL[state] ? c(TAB_BAR_ITEM_FILL[state]) : NONE, gapRing: state === 'Focused' ? c('border.ring.default') : NONE },
+        icon: { text: ink },
+        media: { text: ink },
+        label: { text: ink },
+      }
+    }),
+  ],
+}
+
+export const TAB_BAR: ComponentRecipe = {
+  key: 'TabBar',
+  slots: ['root', 'content'],
+  defaults: {},
+  parts: [
+    part({}, () => ({
+      // A `Border/subtle` hairline on the top edge only; the file counts it in the layout (390 × 69).
+      root: { fill: c('surface.page'), stroke: c('border.subtle'), strokeTopWidth: 'stroke.divider', paddingX: 'spacing.gap-tight', paddingY: 'spacing.gap-tight', gap: 'spacing.none' },
+      content: { gap: 'spacing.none' },
+    })),
+  ],
+}
+
 export const BRAND_SIZES = ['default', 'sm'] as const
 export const BRAND: ComponentRecipe = {
   key: 'Brand',
@@ -427,7 +475,7 @@ export const STEPPER_ICON: ComponentRecipe = {
 
 export const DROPDOWN_SIZES = ['default', 'sm', 'lg'] as const
 export const DROPDOWN_ITEM_STATES = ['Default', 'Hover', 'Focused', 'Selected', 'Disabled'] as const
-export const DROPDOWN_ITEM_VARIANTS = ['default', 'destructive'] as const
+export const DROPDOWN_ITEM_VARIANTS = ['default', 'critical'] as const
 export const DROPDOWN_FOOTER_LAYOUTS = ['inline', 'stacked'] as const
 
 export const DROPDOWN_MENU: ComponentRecipe = {
@@ -465,9 +513,10 @@ export const DROPDOWN_MENU_ITEM: ComponentRecipe = {
   slots: ['root', 'iconLeading', 'media', 'text', 'label', 'description', 'trailing', 'control', 'iconTrailing', 'indicator'],
   defaults: { Size: 'default', State: 'Default', Variant: 'default' },
   parts: [
-    // Geometry per Size (the Dropdown file's); the paint is the shared `listItemRecipe`.
+    // Geometry per Size (the Dropdown file's); the paint is the shared `listItemRecipe`. Focused: the Button's gap ring,
+    // 1px off the row (DEC-2026-11-19-001); the Content's 4px inset holds it.
     part({ Size: DROPDOWN_SIZES, Variant: DROPDOWN_ITEM_VARIANTS, State: DROPDOWN_ITEM_STATES }, (size, variant, state) => ({
-      ...listItemRecipe(size, state, variant, { iconSlot: 'iconLeading' }),
+      ...listItemRecipe(size, state, variant, { iconSlot: 'iconLeading', focusRing: 'gap' }),
       iconTrailing: { text: c('content.secondary'), width: LIST_ITEM_METRICS[size].icon, height: LIST_ITEM_METRICS[size].icon },
     })),
   ],

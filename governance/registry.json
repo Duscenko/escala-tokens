@@ -558,5 +558,27 @@
     "lastAudit": "2026-11-16",
     "lastSyncSha": null,
     "codeConnect": null
+  },
+  "TabBar": {
+    "kind": "component",
+    "stage": "storybook",
+    "version": null,
+    "workshopPage": null,
+    "lastAudit": "2026-11-19",
+    "lastSyncSha": null,
+    "codeConnect": null,
+    "story": "navigation-tabbar--playground",
+    "figmaNode": "2354:124"
+  },
+  "TabBarItem": {
+    "kind": "component",
+    "stage": "storybook",
+    "version": null,
+    "workshopPage": null,
+    "lastAudit": "2026-11-19",
+    "lastSyncSha": null,
+    "codeConnect": null,
+    "story": "navigation-tabbar--tab-bar-item-playground",
+    "figmaNode": "2354:84"
   }
 }

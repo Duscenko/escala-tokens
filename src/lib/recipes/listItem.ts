@@ -5,8 +5,10 @@
  * The rule it holds for all three:
  *  · the FILL follows the pointer or the arrow keys (`[data-highlighted]`, the
  *    row Radix / the listbox marks) — hovering a row never draws a ring;
- *  · the RING (`border.focus` + `border.ring.default`) belongs to keyboard focus
- *    alone (`:focus-visible`) and to the pinned Figma state `Focused`;
+ *  · the RING belongs to keyboard focus alone (`:focus-visible`) and to the pinned
+ *    Figma state `Focused`: the 2px inset edge + halo (`border.focus` +
+ *    `border.ring.default`), or, with `focusRing: 'gap'`, the Button's ONE ring
+ *    1px off the edge (DropdownMenuItem, DEC-2026-11-19-001);
  *  · Selected is `surface.selected`; Disabled turns every ink `content.disabled`;
  *  · the trailing text (a shortcut, a count) is `content.secondary`.
  *
@@ -18,7 +20,7 @@ import { c, NONE, type SlotMap, type SlotProps } from './helpers.js'
 
 export const LIST_ITEM_SIZES = ['sm', 'default', 'lg'] as const
 export const LIST_ITEM_STATES = ['Default', 'Hover', 'Focused', 'Selected', 'Disabled'] as const
-export const LIST_ITEM_VARIANTS = ['default', 'destructive'] as const
+export const LIST_ITEM_VARIANTS = ['default', 'critical'] as const
 
 export interface ListItemMetrics {
   minHeight: string
@@ -44,10 +46,16 @@ export const LIST_ITEM_METRICS: Record<string, ListItemMetrics> = {
 
 /** The fill a highlighted row takes and the ring a focused one adds. */
 function highlight(variant: string): { fill: string; focus: string; ring: string } {
-  return variant === 'destructive'
+  return variant === 'critical'
     ? { fill: c('status.critical.surface'), focus: c('status.critical.border-strong'), ring: c('status.critical.border') }
     : { fill: c('surface.muted'), focus: c('border.focus'), ring: c('border.ring.default') }
 }
+
+/** The Button's focus ring, 1px off the row, in the intent's colour (DEC-2026-11-19-001: menu rows focus like buttons). */
+const GAP_RING: Record<string, string> = { default: 'border.ring.default', critical: 'status.critical.ring' }
+
+/** How a focused row draws its ring: `edge` (2px inset edge + halo, the default) or `gap` (one ring 1px outside). */
+export type ListItemFocusRing = 'edge' | 'gap'
 
 /** The fill alone: a row under the pointer or the arrow keys. */
 export function listItemHighlightFill(variant: string = 'default'): SlotProps {
@@ -55,13 +63,14 @@ export function listItemHighlightFill(variant: string = 'default'): SlotProps {
 }
 
 /** The root paint of one state: the fill, and the ring only for `Focused`. */
-export function listItemRootPaint(state: string, variant: string = 'default', metrics?: ListItemMetrics): SlotProps {
+export function listItemRootPaint(state: string, variant: string = 'default', metrics?: ListItemMetrics, focusRing: ListItemFocusRing = 'edge'): SlotProps {
   const h = highlight(variant)
   switch (state) {
     case 'Hover':
       // The fill alone: a pointer over a row never draws the ring.
       return { fill: h.fill }
     case 'Focused':
+      if (focusRing === 'gap') return { fill: h.fill, gapRing: c(GAP_RING[variant] ?? GAP_RING.default) }
       return metrics?.edge
         ? { fill: h.fill, stroke: h.focus, halo: h.ring }
         : { fill: h.fill, focus: h.focus, ring: h.ring }
@@ -74,7 +83,7 @@ export function listItemRootPaint(state: string, variant: string = 'default', me
 
 /** The ink of a row: the label and the leading glyph take the variant's, the rest the quiet text. */
 export function listItemInk(variant: string, disabled: boolean): { label: string; quiet: string } {
-  const label = disabled ? c('content.disabled') : variant === 'destructive' ? c('status.critical.content') : c('content.primary')
+  const label = disabled ? c('content.disabled') : variant === 'critical' ? c('status.critical.content') : c('content.primary')
   return { label, quiet: disabled ? c('content.disabled') : c('content.secondary') }
 }
 
@@ -87,7 +96,7 @@ export function listItemRecipe(
   size: string,
   state: string,
   variant: string = 'default',
-  opts: { metrics?: Record<string, ListItemMetrics>; iconSlot?: string; radius?: string } = {},
+  opts: { metrics?: Record<string, ListItemMetrics>; iconSlot?: string; radius?: string; focusRing?: ListItemFocusRing } = {},
 ): SlotMap {
   const metrics = (opts.metrics ?? LIST_ITEM_METRICS)[size]
   const iconSlot = opts.iconSlot ?? 'icon'
@@ -99,7 +108,7 @@ export function listItemRecipe(
     minHeight: metrics.minHeight, radius: opts.radius ?? metrics.radius ?? 'radius.action', gap: metrics.gap,
     paddingX: edge ? `${metrics.paddingX}+${metrics.edge}` : metrics.paddingX,
     paddingY: edge ? `${metrics.paddingY}+${metrics.edge}` : metrics.paddingY,
-    ...listItemRootPaint(state, variant, metrics),
+    ...listItemRootPaint(state, variant, metrics, opts.focusRing),
   }
   if (metrics.edge) root.strokeWidth = edge ? metrics.edge : 'stroke.none'
 

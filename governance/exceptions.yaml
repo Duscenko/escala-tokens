@@ -32,3 +32,10 @@
   rationale: "Built Figma-first on 2026-11-18, skipping Workshop and Storybook. They stay in the library while they pass Storybook and owner approval."
   owner: Cesar Durango
   reviewBy: 2026-12-02
+
+- id: EXC-2026-11-19-001
+  rule: STG-001
+  scope: TabBar, TabBarItem (Figma library, page ❖ TabBar 2354:42)
+  rationale: "Owner decision 2026-11-19: built Figma-first because iterating in Figma is still easier for the owner than in Storybook. Code followed the same day (design-plans/tab-bar-contract.md, stories navigation-tabbar--*). Kept until the stories are approved."
+  owner: Cesar Durango
+  reviewBy: 2026-12-03

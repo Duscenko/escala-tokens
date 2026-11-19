@@ -10,7 +10,7 @@ import { PreviewIcon } from '../../../src/components/configurator/docs/specimens
 
 /** Story args = the Figma `DropdownMenu` set (design-plans/dropdown-menu-contract.md), in the panel's order and with its
  *  defaults: Size (the variant axis), HeaderVisible · FooterVisible. Content is the file's example (a label, three rows and a
- *  destructive one). */
+ *  critical one). */
 interface DropdownMenuStoryArgs {
   size: DropdownMenuSize
   headerVisible: boolean
@@ -38,7 +38,7 @@ function menu({ size, headerVisible, footerVisible }: DropdownMenuStoryArgs) {
         <DropdownMenuItem iconLeading={<PreviewIcon concept="file" size={px} />} trailing="⌘B">Billing</DropdownMenuItem>
         <DropdownMenuItem iconLeading={<PreviewIcon concept="settings" size={px} />} trailing="⌘S">Settings</DropdownMenuItem>
         <DropdownMenuSeparator />
-        <DropdownMenuItem variant="destructive" iconLeading={<PreviewIcon concept="sign-out" size={px} />} trailing="⇧⌘Q">Log out</DropdownMenuItem>
+        <DropdownMenuItem variant="critical" iconLeading={<PreviewIcon concept="sign-out" size={px} />} trailing="⇧⌘Q">Log out</DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
   )
@@ -81,7 +81,7 @@ export const WithTrigger: Story = {
             <DropdownMenuItem>Rename</DropdownMenuItem>
             <DropdownMenuItem disabled>Archive</DropdownMenuItem>
             <DropdownMenuSeparator />
-            <DropdownMenuItem variant="destructive">Delete</DropdownMenuItem>
+            <DropdownMenuItem variant="critical">Delete</DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
       </div>

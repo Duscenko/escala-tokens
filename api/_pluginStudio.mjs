@@ -6285,6 +6285,41 @@ var init_componentCatalogue = __esm({
         accessibility: 'A link; the current one is aria-current="page". As a menu trigger add aria-expanded.'
       },
       {
+        key: "TabBar",
+        label: "Tab Bar",
+        category: "Navigation",
+        box: "gray",
+        locks: ["size", "hit", "motion"],
+        description: "Bottom navigation of a mobile app: three to five TabBarItem destinations on Surface/page with a Border/subtle hairline on top. Not a tablist: each item changes the page.",
+        usage: "Top-level destinations of a mobile app, 3 to 5, always visible at the bottom; exactly one is current. Views or filters inside one page use TabMenu; desktop navigation uses Sidebar or NavItem. Related: NavItem, TabMenu, Badge, Avatar.",
+        axes: [],
+        figmaSets: ["TabBar"],
+        props: [
+          { name: "aria-label", type: "string", description: 'The name of the nav landmark ("Main").' },
+          { name: "children", type: "ReactNode", description: "Figma Content slot: 3 to 5 TabBarItem, each filling an equal share." }
+        ],
+        accessibility: "A nav landmark wrapping a list of links, in natural Tab order: no roving tabindex and no arrow keys (it is not a tablist)."
+      },
+      {
+        key: "TabBarItem",
+        label: "Tab Bar Item",
+        category: "Navigation",
+        box: "gray",
+        locks: ["size", "hit", "motion"],
+        description: "One destination of a TabBar: an icon (or an Avatar) in a pill over a short label, with an optional unread count. Current fills the pill Surface/selected.",
+        usage: "Inside a TabBar. One axis, State; no Size on purpose (one platform size).",
+        axes: [{ name: "State", values: ["Default", "Hover", "Focused", "Current", "Disabled"] }],
+        figmaSets: ["TabBarItem"],
+        props: [
+          { name: "children / label / hideLabel", type: "ReactNode / boolean", description: "Figma Label and LabelVisible (inverted); a hidden label needs aria-label." },
+          { name: "icon / media", type: "ReactNode", description: "Figma Icon (IconVisible) and the Media slot (MediaVisible), e.g. an Avatar xs." },
+          { name: "badge", type: "number | string", description: "Figma BadgeVisible: the count Badge (number \xB7 critical \xB7 solid \xB7 xs \xB7 pill)." },
+          { name: "current / disabled / forceState", type: "boolean / string", description: 'Figma State; Current is aria-current="page".' },
+          { name: "href / asChild", type: "string / boolean", description: "A link; asChild for your router link." }
+        ],
+        accessibility: 'A link; the current one is aria-current="page", a disabled one aria-disabled and out of the Tab order.'
+      },
+      {
         key: "Brand",
         label: "Brand",
         category: "Navigation",
@@ -6625,19 +6660,19 @@ var init_componentCatalogue = __esm({
         category: "Navigation",
         box: "gray",
         locks: ["size", "hit", "motion"],
-        description: "A command row: optional leading icon, media, description, shortcut, control, caret and a selection check; destructive for irreversible commands.",
-        usage: "One command per row. Put irreversible commands last as a destructive variant.",
+        description: "A command row: optional leading icon, media, description, shortcut, control, caret and a selection check; critical for irreversible commands.",
+        usage: "One command per row. Put irreversible commands last as the critical variant.",
         axes: [
           { name: "Size", values: ["default", "sm", "lg"] },
           { name: "State", values: ["Default", "Hover", "Focused", "Selected", "Disabled"] },
-          { name: "Variant", values: ["default", "destructive"] }
+          { name: "Variant", values: ["default", "critical"] }
         ],
         figmaSets: ["DropdownMenuItem"],
         props: [
           { name: "children", type: "ReactNode", description: "Figma Label." },
           { name: "description / trailing / iconLeading / iconTrailing / media / control", type: "ReactNode", description: "The optional parts of the row, as the file lists them." },
           { name: "checked", type: "boolean", description: "Selected: shows the check (a menuitemcheckbox)." },
-          { name: "variant", type: "'default' | 'destructive'", description: "Figma Variant." }
+          { name: "variant", type: "'default' | 'critical'", description: "Figma Variant." }
         ],
         accessibility: "role menuitem (menuitemcheckbox when selectable); reachable by arrow keys; skipped when disabled."
       },
@@ -9260,9 +9295,9 @@ var init_semanticArchitectures = __esm({
       CATEGORICAL_ROLES.splice(0, CATEGORICAL_ROLES.length, ...rest.slice(0, first), ...status, ...rest.slice(first));
     }
     CATEGORICAL_ROLE_COMMENTS = {
-      "elevation.highlight": "[ROLE: Solid Control Highlight] The inner 2px top highlight of a solid filled control (primary and destructive buttons, every state but disabled): box-shadow: inset 0 2px 0 var(--color-elevation-highlight). {white-a.5} in Light, {white-a.3} in Dark (DEC-2026-11-16-006, the Figma file is the rule). EFFECT colour only.",
+      "elevation.highlight": "[ROLE: Solid Control Highlight] The inner 1px top highlight of a solid filled control (Figma style Highlight/solid; Button, IconButton, SocialLoginButton, every state but disabled): box-shadow: inset 0 1px 0 var(--color-elevation-highlight). FABButton and the gradient FeaturedIcon hand-set it at 2px. {white-a.5} in Light, {white-a.3} in Dark (DEC-2026-11-16-006, the Figma file is the rule). EFFECT colour only.",
       "elevation.shadow-ring": "[ROLE: Shadow Ring] The 0 0 0 1px highlight edge every shadow and depth recipe starts with. EFFECT colour only. {white-a.1} in both themes: invisible on a light surface, the rim that buys elevation on a dark page.",
-      "elevation.shadow-ambient": "[ROLE: Shadow Ambient] The tight, secondary layer of the shadow and depth recipes. EFFECT colour only. {black-a.1} (5%) in Light, {black-a.4} (20%) in Dark.",
+      "elevation.shadow-ambient": "[ROLE: Shadow Ambient] The tight, secondary layer of the shadow and depth recipes, and the solid Button label shadow (Shadow/text-2xs, 0 1px 0.5px). EFFECT colour only. {black-a.1} (5%) in Light, {black-a.4} (20%) in Dark.",
       "elevation.shadow-key": "[ROLE: Shadow Key] The main, larger-offset layer of every Shadow/* and Depth/* recipe. EFFECT colour only, never a fill or stroke. {black-a.2} (10%) in Light, {black-a.6} (40%) in Dark, so one shadow style follows the theme.",
       "border.inverse": "[ROLE: Inverse Border] Any stroke ON surface.inverse \u2014 an outline badge, a divider in a tooltip, a group edge. {white-a.5} in Light, {black-a.5} in Dark. Decoration: no 1.4.11 floor, never the only boundary of a control.",
       "content.inverse-secondary": "[ROLE: Inverse Secondary Text] Body copy, icons and the dismiss icon on surface.inverse \u2014 content.secondary points the wrong way there. {white-a.9} in Light, {black-a.9} in Dark. STRICT 4.5:1 against surface.inverse.",
@@ -9711,6 +9746,7 @@ function fabPaint(variant, appearance, state2) {
   if (k.over[step][1]) root.overlay2 = k.over[step][1];
   root.lift = step === 2 ? "pressed" : step === 1 ? "hover" : "rest";
   root.highlight = c("elevation.highlight");
+  root.highlightWidth = "2";
   if (state2 === "Focused") root.halo = k.halo;
   return { root };
 }
@@ -10129,17 +10165,18 @@ var init_groupLabel = __esm({
 
 // src/lib/recipes/listItem.ts
 function highlight(variant) {
-  return variant === "destructive" ? { fill: c("status.critical.surface"), focus: c("status.critical.border-strong"), ring: c("status.critical.border") } : { fill: c("surface.muted"), focus: c("border.focus"), ring: c("border.ring.default") };
+  return variant === "critical" ? { fill: c("status.critical.surface"), focus: c("status.critical.border-strong"), ring: c("status.critical.border") } : { fill: c("surface.muted"), focus: c("border.focus"), ring: c("border.ring.default") };
 }
 function listItemHighlightFill(variant = "default") {
   return { fill: highlight(variant).fill };
 }
-function listItemRootPaint(state2, variant = "default", metrics) {
+function listItemRootPaint(state2, variant = "default", metrics, focusRing2 = "edge") {
   const h = highlight(variant);
   switch (state2) {
     case "Hover":
       return { fill: h.fill };
     case "Focused":
+      if (focusRing2 === "gap") return { fill: h.fill, gapRing: c(GAP_RING[variant] ?? GAP_RING.default) };
       return metrics?.edge ? { fill: h.fill, stroke: h.focus, halo: h.ring } : { fill: h.fill, focus: h.focus, ring: h.ring };
     case "Selected":
       return { fill: c("surface.selected") };
@@ -10148,7 +10185,7 @@ function listItemRootPaint(state2, variant = "default", metrics) {
   }
 }
 function listItemInk(variant, disabled) {
-  const label = disabled ? c("content.disabled") : variant === "destructive" ? c("status.critical.content") : c("content.primary");
+  const label = disabled ? c("content.disabled") : variant === "critical" ? c("status.critical.content") : c("content.primary");
   return { label, quiet: disabled ? c("content.disabled") : c("content.secondary") };
 }
 function listItemRecipe(size, state2, variant = "default", opts = {}) {
@@ -10163,7 +10200,7 @@ function listItemRecipe(size, state2, variant = "default", opts = {}) {
     gap: metrics.gap,
     paddingX: edge ? `${metrics.paddingX}+${metrics.edge}` : metrics.paddingX,
     paddingY: edge ? `${metrics.paddingY}+${metrics.edge}` : metrics.paddingY,
-    ...listItemRootPaint(state2, variant, metrics)
+    ...listItemRootPaint(state2, variant, metrics, opts.focusRing)
   };
   if (metrics.edge) root.strokeWidth = edge ? metrics.edge : "stroke.none";
   return {
@@ -10178,7 +10215,7 @@ function listItemRecipe(size, state2, variant = "default", opts = {}) {
     ...state2 === "Default" ? { "root[data-highlighted]": listItemHighlightFill(variant) } : {}
   };
 }
-var LIST_ITEM_METRICS;
+var LIST_ITEM_METRICS, GAP_RING;
 var init_listItem = __esm({
   "src/lib/recipes/listItem.ts"() {
     init_helpers();
@@ -10187,6 +10224,7 @@ var init_listItem = __esm({
       default: { minHeight: "size.sm", paddingX: "spacing.gap-control", paddingY: "spacing.gap-tight", gap: "spacing.gap-control", icon: "icon.small", label: "type.body-sm" },
       lg: { minHeight: "size.md", paddingX: "spacing.inset-control", paddingY: "spacing.gap-tight", gap: "spacing.gap-control", icon: "icon.medium", label: "type.body-md" }
     };
+    GAP_RING = { default: "border.ring.default", critical: "status.critical.ring" };
   }
 });
 
@@ -11773,7 +11811,7 @@ function breadcrumbPaint(variant, appearance, state2) {
   }
   return root;
 }
-var TAB_MENU_SIZES, TAB_MENU_VARIANTS, TAB_MENU_ITEM_STATES, TAB_MENU_INDICATORS, TAB_MENU, tabMenuSizeSlots, TAB_MENU_ITEM, TAB_MENU_LINE_ITEM, NAV_ITEM_SIZES, NAV_ITEM_STATES, NAV_ITEM, BRAND_SIZES, BRAND, ACCOUNT_MENU_TRIGGER_SIZES, ACCOUNT_MENU_TRIGGER_STATES, ACCOUNT_MENU_TRIGGER, SEGMENTED_CONTROL_SIZES, SEGMENTED_CONTROL, SEGMENTED_CONTROL_ITEM_STATES, SEGMENT_ITEM, SEGMENTED_CONTROL_ITEM, BREADCRUMB_SIZES, BREADCRUMB_APPEARANCES, BREADCRUMB_SEPARATORS, BREADCRUMB_VARIANTS, BREADCRUMB_ITEM_STATES, BREADCRUMB_ELLIPSIS_STATES, BREADCRUMB, BREADCRUMB_ITEM, BREADCRUMB_ELLIPSIS, BREADCRUMB_SEPARATOR, PAGINATION_SIZES, PAGINATION_VARIANTS, PAGINATION_LINK_STATES, PAGINATION_LINK_ACTIVE, paginationBox, paginationIcon, PAGINATION, PAGINATION_LINK, PAGINATION_ELLIPSIS, STEPPER_SIZES, STEPPER_ORIENTATIONS, STEPPER_STATUSES, STEPPER_STATES, stepperBox, STEPPER, STEPPER_ITEM, STEPPER_INDICATOR, STEPPER_ICON, DROPDOWN_SIZES, DROPDOWN_ITEM_STATES, DROPDOWN_ITEM_VARIANTS, DROPDOWN_MENU, DROPDOWN_MENU_LABEL, DROPDOWN_MENU_ITEM, DROPDOWN_MENU_FOOTER, SIDEBAR_COLLAPSED, SIDEBAR_SIZES, SIDEBAR_MENU_BUTTON_STATES, SIDEBAR, SIDEBAR_BRAND, SIDEBAR_GROUP, SIDEBAR_GROUP_LABEL, SIDEBAR_MENU_BUTTON;
+var TAB_MENU_SIZES, TAB_MENU_VARIANTS, TAB_MENU_ITEM_STATES, TAB_MENU_INDICATORS, TAB_MENU, tabMenuSizeSlots, TAB_MENU_ITEM, TAB_MENU_LINE_ITEM, NAV_ITEM_SIZES, NAV_ITEM_STATES, NAV_ITEM, TAB_BAR_ITEM_STATES, TAB_BAR_ITEM_INK, TAB_BAR_ITEM_FILL, TAB_BAR_ITEM, TAB_BAR, BRAND_SIZES, BRAND, ACCOUNT_MENU_TRIGGER_SIZES, ACCOUNT_MENU_TRIGGER_STATES, ACCOUNT_MENU_TRIGGER, SEGMENTED_CONTROL_SIZES, SEGMENTED_CONTROL, SEGMENTED_CONTROL_ITEM_STATES, SEGMENT_ITEM, SEGMENTED_CONTROL_ITEM, BREADCRUMB_SIZES, BREADCRUMB_APPEARANCES, BREADCRUMB_SEPARATORS, BREADCRUMB_VARIANTS, BREADCRUMB_ITEM_STATES, BREADCRUMB_ELLIPSIS_STATES, BREADCRUMB, BREADCRUMB_ITEM, BREADCRUMB_ELLIPSIS, BREADCRUMB_SEPARATOR, PAGINATION_SIZES, PAGINATION_VARIANTS, PAGINATION_LINK_STATES, PAGINATION_LINK_ACTIVE, paginationBox, paginationIcon, PAGINATION, PAGINATION_LINK, PAGINATION_ELLIPSIS, STEPPER_SIZES, STEPPER_ORIENTATIONS, STEPPER_STATUSES, STEPPER_STATES, stepperBox, STEPPER, STEPPER_ITEM, STEPPER_INDICATOR, STEPPER_ICON, DROPDOWN_SIZES, DROPDOWN_ITEM_STATES, DROPDOWN_ITEM_VARIANTS, DROPDOWN_MENU, DROPDOWN_MENU_LABEL, DROPDOWN_MENU_ITEM, DROPDOWN_MENU_FOOTER, SIDEBAR_COLLAPSED, SIDEBAR_SIZES, SIDEBAR_MENU_BUTTON_STATES, SIDEBAR, SIDEBAR_BRAND, SIDEBAR_GROUP, SIDEBAR_GROUP_LABEL, SIDEBAR_MENU_BUTTON;
 var init_navigation = __esm({
   "src/lib/recipes/navigation.ts"() {
     init_groupLabel();
@@ -11846,6 +11884,45 @@ var init_navigation = __esm({
         part({ State: NAV_ITEM_STATES }, (state2) => ({
           root: tabMenuItemPaint(state2 === "Current" ? "Selected" : state2, false),
           iconTrailing: { text: c(state2 === "Disabled" ? "content.disabled" : "content.secondary") }
+        }))
+      ]
+    };
+    TAB_BAR_ITEM_STATES = ["Default", "Hover", "Focused", "Current", "Disabled"];
+    TAB_BAR_ITEM_INK = { Hover: "content.primary", Current: "content.accent", Disabled: "content.disabled" };
+    TAB_BAR_ITEM_FILL = { Hover: "surface.muted", Current: "surface.selected" };
+    TAB_BAR_ITEM = {
+      key: "TabBarItem",
+      slots: ["root", "indicator", "icon", "media", "badge", "label"],
+      defaults: { State: "Default" },
+      parts: [
+        part({}, () => ({
+          root: { gap: "spacing.gap-tight", paddingY: "spacing.gap-tight", paddingX: "spacing.none", minHeight: "size.target-min", font: "type.caption" },
+          indicator: { radius: "radius.pill", paddingX: "spacing.inset-control", paddingY: "spacing.gap-tight", gap: "spacing.none" },
+          icon: { width: "icon.large", height: "icon.large" },
+          // The Media slot (an Avatar xs) sits in the icon's box.
+          media: { width: "icon.large", height: "icon.large" }
+        })),
+        part({ State: TAB_BAR_ITEM_STATES }, (state2) => {
+          const ink = c(TAB_BAR_ITEM_INK[state2] ?? "content.secondary");
+          return {
+            // Focused: Figma's `focus-ring`, 1px outside the pill, `Stroke/focus`, `Border/ring/default` (the Button `gapRing`).
+            indicator: { fill: TAB_BAR_ITEM_FILL[state2] ? c(TAB_BAR_ITEM_FILL[state2]) : NONE, gapRing: state2 === "Focused" ? c("border.ring.default") : NONE },
+            icon: { text: ink },
+            media: { text: ink },
+            label: { text: ink }
+          };
+        })
+      ]
+    };
+    TAB_BAR = {
+      key: "TabBar",
+      slots: ["root", "content"],
+      defaults: {},
+      parts: [
+        part({}, () => ({
+          // A `Border/subtle` hairline on the top edge only; the file counts it in the layout (390 × 69).
+          root: { fill: c("surface.page"), stroke: c("border.subtle"), strokeTopWidth: "stroke.divider", paddingX: "spacing.gap-tight", paddingY: "spacing.gap-tight", gap: "spacing.none" },
+          content: { gap: "spacing.none" }
         }))
       ]
     };
@@ -12111,7 +12188,7 @@ var init_navigation = __esm({
     };
     DROPDOWN_SIZES = ["default", "sm", "lg"];
     DROPDOWN_ITEM_STATES = ["Default", "Hover", "Focused", "Selected", "Disabled"];
-    DROPDOWN_ITEM_VARIANTS = ["default", "destructive"];
+    DROPDOWN_ITEM_VARIANTS = ["default", "critical"];
     DROPDOWN_MENU = {
       key: "DropdownMenu",
       slots: ["root", "header", "content", "separator"],
@@ -12149,9 +12226,10 @@ var init_navigation = __esm({
       slots: ["root", "iconLeading", "media", "text", "label", "description", "trailing", "control", "iconTrailing", "indicator"],
       defaults: { Size: "default", State: "Default", Variant: "default" },
       parts: [
-        // Geometry per Size (the Dropdown file's); the paint is the shared `listItemRecipe`.
+        // Geometry per Size (the Dropdown file's); the paint is the shared `listItemRecipe`. Focused: the Button's gap ring,
+        // 1px off the row (DEC-2026-11-19-001); the Content's 4px inset holds it.
         part({ Size: DROPDOWN_SIZES, Variant: DROPDOWN_ITEM_VARIANTS, State: DROPDOWN_ITEM_STATES }, (size, variant, state2) => ({
-          ...listItemRecipe(size, state2, variant, { iconSlot: "iconLeading" }),
+          ...listItemRecipe(size, state2, variant, { iconSlot: "iconLeading", focusRing: "gap" }),
           iconTrailing: { text: c("content.secondary"), width: LIST_ITEM_METRICS[size].icon, height: LIST_ITEM_METRICS[size].icon }
         }))
       ]
@@ -12822,7 +12900,7 @@ var init_indicators = __esm({
         part({ Variant: FEATURED_ICON_VARIANTS, Appearance: FEATURED_ICON_APPEARANCES }, (variant, appearance) => {
           if (appearance === "gradient") {
             const g = FEATURED_ICON_GRADIENT[variant];
-            return { root: { fill: c(g.stops[0]), fillMid: c(g.stops[1]), fillEnd: c(g.stops[2]), text: c(g.ink), highlight: c("elevation.highlight"), lift: "feature" } };
+            return { root: { fill: c(g.stops[0]), fillMid: c(g.stops[1]), fillEnd: c(g.stops[2]), text: c(g.ink), highlight: c("elevation.highlight"), highlightWidth: "2", lift: "feature" } };
           }
           const [fill, ink] = AVATAR_TONE[variant][appearance];
           return { root: { fill: c(fill), text: c(ink) } };
@@ -13134,6 +13212,9 @@ var init_motion2 = __esm({
       TabMenuItem: { transitions: { root: FILL } },
       TabMenuLineItem: { transitions: { root: FILL } },
       NavItem: { transitions: { root: FILL } },
+      // The pill fills and the icon and label re-ink on `use-hover`, the same roles as NavItem; becoming Current uses the same
+      // transition. No mount animation. TabBar itself: motion none (it does not change state).
+      TabBarItem: { transitions: { indicator: FILL, icon: FILL, label: FILL } },
       // The card's edge and lift ease; the position that follows the pointer never does (MOT-005).
       IssueCard: { transitions: { root: { "border-color": "use-hover", "box-shadow": "use-hover" } } },
       AccountMenuTrigger: { transitions: { root: FILL } },
@@ -13307,6 +13388,8 @@ var init_componentRecipes = __esm({
       TabMenuItem: TAB_MENU_ITEM,
       TabMenuLineItem: TAB_MENU_LINE_ITEM,
       NavItem: NAV_ITEM,
+      TabBar: TAB_BAR,
+      TabBarItem: TAB_BAR_ITEM,
       SettingsRow: SETTINGS_ROW,
       SettingsSection: SETTINGS_SECTION,
       IssueCard: ISSUE_CARD,

@@ -4,8 +4,8 @@
     "key": "7j5zukN5HpihGVJMmyjA20",
     "name": "Escala Design System (Real)"
   },
-  "exportedAt": "2026-11-18",
-  "checksum": "15f1a95a",
+  "exportedAt": "2026-11-19",
+  "checksum": "d3a5c801",
   "pages": [
     {
       "page": "Button (✓)  (D)",
@@ -1414,6 +1414,26 @@
             "Status": "active|completed|error|locked"
           },
           "props": "Description:TEXT,DescriptionVisible:BOOLEAN,Title:TEXT"
+        }
+      ]
+    },
+    {
+      "page": "TabBar",
+      "stable": false,
+      "id": "2354:42",
+      "sets": [
+        {
+          "name": "TabBar",
+          "variants": 1,
+          "props": "Content:SLOT"
+        },
+        {
+          "name": "TabBarItem",
+          "variants": 5,
+          "axes": {
+            "State": "Default|Hover|Focused|Current|Disabled"
+          },
+          "props": "BadgeVisible:BOOLEAN,Icon:INSTANCE_SWAP,IconVisible:BOOLEAN,Label:TEXT,LabelVisible:BOOLEAN,Media:SLOT,MediaVisible:BOOLEAN"
         }
       ]
     },

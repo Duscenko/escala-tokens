@@ -237,7 +237,7 @@ export function SkeletonStepperIconSpecimen({ t, v }: SpecimenProps) {
   return <RecipeScope t={t}><SkStepperIcon size={(v.Size ?? 'default') as StepperSize} status={(v.Status ?? 'active') as StepperStatus} disabled={v.State === 'Disabled'} /></RecipeScope>
 }
 
-/** The Figma DropdownMenu (947:299) in place: a label, three rows (Profile focused), a rule and a destructive row. */
+/** The Figma DropdownMenu (947:299) in place: a label, three rows (Profile focused), a rule and a critical row. */
 export function SkeletonDropdownMenuSpecimen({ t, v }: SpecimenProps) {
   const size = (v.Size ?? 'default') as DropdownMenuSize
   const px = size === 'lg' ? 20 : 16
@@ -251,7 +251,7 @@ export function SkeletonDropdownMenuSpecimen({ t, v }: SpecimenProps) {
           <SkDropdownMenuItem iconLeading={icon('file')} trailing="⌘B">Billing</SkDropdownMenuItem>
           <SkDropdownMenuItem iconLeading={icon('settings')} trailing="⌘S">Settings</SkDropdownMenuItem>
           <SkDropdownMenuSeparator />
-          <SkDropdownMenuItem variant="destructive" iconLeading={icon('sign-out')} trailing="⇧⌘Q">Log out</SkDropdownMenuItem>
+          <SkDropdownMenuItem variant="critical" iconLeading={icon('sign-out')} trailing="⇧⌘Q">Log out</SkDropdownMenuItem>
         </SkDropdownMenuContent>
       </SkDropdownMenu>
     </RecipeScope>
