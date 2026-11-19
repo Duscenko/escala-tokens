@@ -79,7 +79,7 @@ function buttonPaint(variant: string, appearance: string, state: string, shadowL
   if (appearance === 'solid') {
     const k = SOLID[variant]
     // Every solid state but Disabled carries the top highlight and, on a Button,
-    // the label's 0 1px 0 shadow (`Shadow/text-2xs`). No outside stroke any more
+    // the label's 0 1px 0.5px shadow (`Shadow/text-2xs`). No outside stroke any more
     // (owner's call 2026-11-17, after Create UI): the fill is the control, and
     // the hard edge round a vivid fill read as noise — a pale halo in Dark.
     return {
@@ -405,7 +405,9 @@ function fabPaint(variant: string, appearance: string, state: string): SlotMap {
   if (k.over[step][0]) root.overlay = k.over[step][0]
   if (k.over[step][1]) root.overlay2 = k.over[step][1]
   root.lift = step === 2 ? 'pressed' : step === 1 ? 'hover' : 'rest'
+  // The FAB's inner shadow is hand-set in the file (0 · 2 · 0), not the shared `Highlight/solid` (0 · 1 · 0).
   root.highlight = c('elevation.highlight')
+  root.highlightWidth = '2'
   if (state === 'Focused') root.halo = k.halo
   return { root }
 }

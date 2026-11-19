@@ -59,9 +59,9 @@ function dim(ref: string): string {
 
 /** The focus halo is `stroke.focus` wide (2px), as in the Figma file. */
 const HALO = 'var(--stroke-focus, 2px)'
-/** The top highlight of a solid control: Figma's inner shadow 0 · 2 · 0 · 0
- *  (the same 2px the focus edge is drawn at). */
-const highlightShadow = (color: string) => `inset 0 var(--stroke-focus, 2px) 0 0 ${color}`
+/** The top highlight of a solid control: Figma's shared style `Highlight/solid`, an inner shadow 0 · 1 · 0 · 0.
+ *  A set that hand-sets it instead (FABButton, FeaturedIcon gradient: 0 · 2 · 0) gives `highlightWidth`. */
+const highlightShadow = (color: string, width = '1') => `inset 0 ${width}px 0 0 ${color}`
 /** The named elevations a recipe can lift on, as the Figma FAB draws them: a key
  *  shadow and an ambient one. The file hand-sets the numbers per state (offset and
  *  blur 12·16 / 20·24 / 4·6 and 4·6 / 8·8 / 2·4) and gives each a negative spread
@@ -105,7 +105,7 @@ const outerStrokeShadow = (props: SlotProps, v: (ref: string) => string) =>
 function surfaceShadows(props: SlotProps, v: (ref: string) => string): string[] {
   const lift = props.lift && LIFT[props.lift] ? LIFT[props.lift](v('color.elevation.shadow-key'), v('color.elevation.shadow-ambient'), v('color.elevation.shadow-ring')) : []
   const outer = props.outerStroke && props.outerStroke !== 'none' ? [outerStrokeShadow(props, v)] : []
-  return [...lift, ...outer, ...(props.highlight && props.highlight !== 'none' ? [highlightShadow(v(props.highlight))] : [])]
+  return [...lift, ...outer, ...(props.highlight && props.highlight !== 'none' ? [highlightShadow(v(props.highlight), props.highlightWidth && props.highlightWidth !== 'none' ? props.highlightWidth : undefined)] : [])]
 }
 /** A slot whose box-shadow is written by `focus`, `halo`, `lift` or `highlight`
  *  (each composes `surfaceShadows`), so `outerStroke` must not write its own. */
@@ -149,7 +149,8 @@ function declarations(props: SlotProps): string[] {
         if (ref === 'none' || composesShadow(props)) break // composed into that box-shadow
         out.push(`box-shadow: ${outerStrokeShadow(props, v)}`)
         break
-      case 'textShadow': out.push(ref === 'none' ? 'text-shadow: none' : 'text-shadow: 0 1px 0 rgb(0 0 0 / 0.15)'); break
+      // Figma's shared style `Shadow/text-2xs`: a drop 0 · 1 · 0.5 · 0 on `Elevation/shadow-ambient`.
+      case 'textShadow': out.push(ref === 'none' ? 'text-shadow: none' : `text-shadow: 0 1px 0.5px ${v('color.elevation.shadow-ambient')}`); break
       case 'fontLiteral': out.push(`font-size: ${ref}px`, 'line-height: 100%', 'font-weight: 500', 'letter-spacing: 0'); break
       // A halo fully outside the control (no edge): Figma's `focus-ring` frame,
       // `stroke.focus` wide, stroked OUTSIDE. The transparent outline is what

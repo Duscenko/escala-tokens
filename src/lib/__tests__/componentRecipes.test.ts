@@ -231,7 +231,7 @@ describe('focus', () => {
     expect(RECIPE_CSS).toContain('outline-offset: 1px')
   })
   it('the label shadow is the file\'s Shadow/text-2xs', () => {
-    expect(RECIPE_CSS).toContain('text-shadow: 0 1px 0 rgb(0 0 0 / 0.15)')
+    expect(RECIPE_CSS).toContain('text-shadow: 0 1px 0.5px var(--color-elevation-shadow-ambient)')
   })
 
 
@@ -503,7 +503,7 @@ describe('FABButton (Figma)', () => {
   })
   it('writes the lift as offset and blur only, composed with the highlight and the halo', () => {
     const css = recipeCss(COMPONENT_RECIPES.FABButton)
-    expect(css).toContain('box-shadow: 0 12px 16px var(--color-elevation-shadow-key), 0 4px 6px var(--color-elevation-shadow-ambient), inset 0 var(--stroke-focus, 2px) 0 0 var(--color-elevation-highlight)')
+    expect(css).toContain('box-shadow: 0 12px 16px var(--color-elevation-shadow-key), 0 4px 6px var(--color-elevation-shadow-ambient), inset 0 2px 0 0 var(--color-elevation-highlight)')
     expect(css).toContain('0 0 0 var(--stroke-focus, 2px) var(--color-border-ring-default), 0 12px 16px var(--color-elevation-shadow-key)')
     expect(css).not.toMatch(/16px -4px/)
   })

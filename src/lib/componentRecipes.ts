@@ -228,6 +228,8 @@ export function recipeTokenRefs(recipe: ComponentRecipe): string[] {
           if (!ref || ref === NONE) continue
           // A named elevation paints with the two Elevation colours (recipeStyles `LIFT`).
           if (prop === 'lift') { refs.add('color.elevation.shadow-key'); refs.add('color.elevation.shadow-ambient'); if (ref === 'modal' || String(ref).startsWith('popover-')) refs.add('color.elevation.shadow-ring'); continue }
+          // The label's `Shadow/text-2xs` paints with `Elevation/shadow-ambient` (recipeStyles `textShadow`).
+          if (prop === 'textShadow') { refs.add('color.elevation.shadow-ambient'); continue }
           if (NON_TOKEN_PROPS.includes(prop)) continue
           for (const term of refFn(ref)?.terms ?? ref.split('+')) refs.add(term)
         }

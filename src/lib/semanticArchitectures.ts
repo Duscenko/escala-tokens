@@ -1310,9 +1310,9 @@ export function projectCategorical(
  * actually ship.
  */
 export const CATEGORICAL_ROLE_COMMENTS: Record<string, string> = {
-  'elevation.highlight': '[ROLE: Solid Control Highlight] The inner 2px top highlight of a solid filled control (primary and destructive buttons, every state but disabled): box-shadow: inset 0 2px 0 var(--color-elevation-highlight). {white-a.5} in Light, {white-a.3} in Dark (DEC-2026-11-16-006, the Figma file is the rule). EFFECT colour only.',
+  'elevation.highlight': '[ROLE: Solid Control Highlight] The inner 1px top highlight of a solid filled control (Figma style Highlight/solid; Button, IconButton, SocialLoginButton, every state but disabled): box-shadow: inset 0 1px 0 var(--color-elevation-highlight). FABButton and the gradient FeaturedIcon hand-set it at 2px. {white-a.5} in Light, {white-a.3} in Dark (DEC-2026-11-16-006, the Figma file is the rule). EFFECT colour only.',
   'elevation.shadow-ring': '[ROLE: Shadow Ring] The 0 0 0 1px highlight edge every shadow and depth recipe starts with. EFFECT colour only. {white-a.1} in both themes: invisible on a light surface, the rim that buys elevation on a dark page.',
-  'elevation.shadow-ambient': '[ROLE: Shadow Ambient] The tight, secondary layer of the shadow and depth recipes. EFFECT colour only. {black-a.1} (5%) in Light, {black-a.4} (20%) in Dark.',
+  'elevation.shadow-ambient': '[ROLE: Shadow Ambient] The tight, secondary layer of the shadow and depth recipes, and the solid Button label shadow (Shadow/text-2xs, 0 1px 0.5px). EFFECT colour only. {black-a.1} (5%) in Light, {black-a.4} (20%) in Dark.',
   'elevation.shadow-key': '[ROLE: Shadow Key] The main, larger-offset layer of every Shadow/* and Depth/* recipe. EFFECT colour only, never a fill or stroke. {black-a.2} (10%) in Light, {black-a.6} (40%) in Dark, so one shadow style follows the theme.',
   'border.inverse': '[ROLE: Inverse Border] Any stroke ON surface.inverse — an outline badge, a divider in a tooltip, a group edge. {white-a.5} in Light, {black-a.5} in Dark. Decoration: no 1.4.11 floor, never the only boundary of a control.',
   'content.inverse-secondary': '[ROLE: Inverse Secondary Text] Body copy, icons and the dismiss icon on surface.inverse — content.secondary points the wrong way there. {white-a.9} in Light, {black-a.9} in Dark. STRICT 4.5:1 against surface.inverse.',

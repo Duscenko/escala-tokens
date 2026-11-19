@@ -116,6 +116,7 @@ const PROP_LABEL: Record<RecipeProp, string> = {
   lift: 'Elevation',
   fontLiteral: 'Typography (literal)',
   hairline: 'Border width (hairline)',
+  highlightWidth: 'Top highlight offset',
   outerStroke: 'Outside border',
   outerStrokeWidth: 'Outside border width',
   textShadow: 'Text shadow',

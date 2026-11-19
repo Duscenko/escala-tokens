@@ -19,7 +19,7 @@ Cuadrado 32 (sm) · 40 (default) · 48 (lg) · 56 (xl) = `Size/control-sm … xl
 Igual que Avatar: default soft `Surface/accent` + `Content/accent`; secondary soft `Surface/muted` + `Content/secondary`; critical/success/warning/info soft `Status/<s>/surface` + `content`, solid `Status/<s>/surface-solid` + `on-solid`.
 
 ## Gradient (2026-11-18, DEC-2026-11-18-003)
-`Appearance=gradient` lleva, en todos los tonos, tamaños y formas: `0 4px 6px -1px Elevation/shadow-key`, `0 2px 4px -2px Elevation/shadow-ambient` e `inset 0 2px 0 Elevation/highlight`. Paradas: default `Action/primary/*`, secondary `Action/secondary/*`, estados `Status/<s>/surface-solid*`.
+`Appearance=gradient` lleva, en todos los tonos, tamaños y formas: `0 4px 6px -1px Elevation/shadow-key`, `0 2px 4px -2px Elevation/shadow-ambient` e `inset 0 2px 0 Elevation/highlight` (puesto a mano, no usa el estilo `Highlight/solid` de 1 px). Paradas: default `Action/primary/*`, secondary `Action/secondary/*`, estados `Status/<s>/surface-solid*`.
 
 ## Dentro de overlays
 En `ModalHeader` el icono es siempre `Shape=rounded` (`Radius/action`).
