@@ -10,7 +10,7 @@ export type TokenRef = string
  *  centred on a glyph smaller than 24px — the glyph itself does not grow. */
 export const RECIPE_PROPS = [
   'fill', 'stroke', 'text', 'ring', 'focus',
-  'height', 'minHeight', 'minWidth', 'width', 'travel', 'paint', 'strokeTop', 'strokeTopWidth', 'strokeBottomWidth', 'strokeRightWidth', 'strokeLeftWidth', 'radius', 'radiusTop', 'radiusLeft', 'radiusRight', 'maxWidth', 'paddingTop', 'paddingX', 'paddingY', 'paddingBottom', 'paddingRight', 'gap', 'rowGap', 'strokeWidth', 'font', 'shadow', 'hit',
+  'height', 'minHeight', 'minWidth', 'width', 'travel', 'paint', 'strokeTop', 'strokeTopWidth', 'strokeBottomWidth', 'strokeRightWidth', 'strokeLeftWidth', 'radius', 'radiusTop', 'radiusBottom', 'radiusLeft', 'radiusRight', 'maxWidth', 'paddingTop', 'paddingX', 'paddingY', 'paddingBottom', 'paddingRight', 'gap', 'rowGap', 'strokeWidth', 'font', 'shadow', 'hit',
   // A label the file binds to a scale step while it keeps its role's family and weight (SocialLoginButton:
   // `size/text-md` with `role/button/weight`). Size, line height and tracking of the step, over `font`.
   'fontStep',
@@ -100,6 +100,9 @@ export interface RecipeMotion {
   timer?: RecipeChoreo & { attr: string; pausedBy: string[] }
   /** The queue's own item: how neighbours move, in place of the library's timing. */
   queue?: { item: string; reflow: string; release: string }
+  /** A live press (`:active`, never a pinned Pressed state in docs) sinks the slot to the `shrink` transform role
+   *  (0.98 in Standard, 1 under reduced motion) on `use-press`; it springs back on release. */
+  press?: { slot?: string }
 }
 
 export interface ComponentRecipe {

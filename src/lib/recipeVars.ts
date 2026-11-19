@@ -17,9 +17,9 @@ import {
 } from './previewTokens'
 
 /** Roles a BLOCK reads that no recipe does: a section's own vertical padding and the display type of a hero or a
- *  section title, and the SidebarStatCard's headline value (Type/heading-lg). (blockRefsProvided.test.ts fails on any other.) Without them the custom property is undefined and the
+ *  section title, the SidebarStatCard's headline value (Type/heading-lg) and the ReleaseModal's headline (Type/heading-md). (blockRefsProvided.test.ts fails on any other.) Without them the custom property is undefined and the
  *  block's headline fell back to the inherited 18px. */
-export const BLOCK_ONLY_REFS = ['spacing.inset-section', 'type.display-lg', 'type.display-sm', 'type.heading-lg']
+export const BLOCK_ONLY_REFS = ['spacing.inset-section', 'type.display-lg', 'type.display-sm', 'type.heading-lg', 'type.heading-md']
 
 const REFS: string[] = [
   ...new Set([...Object.values(COMPONENT_RECIPES).flatMap(recipeTokenRefs), ...BLOCK_ONLY_REFS]),

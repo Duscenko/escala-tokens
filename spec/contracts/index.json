@@ -917,7 +917,7 @@
     "file": "spec/contracts/Modal.json",
     "figmaSet": "Modal",
     "story": "content-surfaces-modal--playground",
-    "tokens": 14
+    "tokens": 20
   },
   {
     "key": "ModalHeader",
@@ -947,7 +947,7 @@
     "file": "spec/contracts/ModalFooter.json",
     "figmaSet": "ModalFooter",
     "story": "content-surfaces-modal--modal-footer-playground",
-    "tokens": 7
+    "tokens": 10
   },
   {
     "key": "Sheet",

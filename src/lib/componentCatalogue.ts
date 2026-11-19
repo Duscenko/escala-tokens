@@ -1568,11 +1568,13 @@ export const COMPONENTS: ComponentDef[] = [
     usage: 'Use for a decision or a short task that needs full attention (a confirmation, a small form). Not for notifications: use a Toast or an Alert.',
     axes: [
       { name: 'Size', values: ['default', 'lg'] },
+      { name: 'Layout', values: ['tray', 'simple'] },
     ],
     figmaSets: ['Modal'],
     props: [
       { name: 'open / onOpenChange', type: 'boolean / (open) => void', description: 'Controlled visibility (Escape and the scrim close it).' },
       { name: 'size', type: "'default' | 'lg'", description: 'Figma Size: 480 or 640 wide. It cascades to the header and the footer.' },
+      { name: 'layout', type: "'tray' | 'simple'", description: "Figma Layout: `tray` is a layer-1 shell around a layer-2 panel (header + content) with the footer on the tray; `simple` (the default for now) is the bare card." },
       { name: 'header / footer', type: 'ReactNode', description: 'A ModalHeader above the content and a ModalFooter under it (Figma FooterVisible).' },
       { name: 'children', type: 'ReactNode', description: 'The Content slot.' },
       { name: 'showCloseButton', type: 'boolean', description: 'Figma CloseVisible: the ghost pill close in the corner (default true).' },
@@ -1611,7 +1613,9 @@ export const COMPONENTS: ComponentDef[] = [
     usage: 'Inline puts the actions at the end, primary last; stacked gives full-width buttons for narrow viewports.',
     axes: [
       { name: 'Size', values: ['default', 'lg'] },
-      { name: 'Layout', values: ['inline', 'stacked'] },
+      { name: 'Layout', values: ['inline', 'stacked', 'equal'] },
+      // Code-only until the ModalFooter is rebuilt: what it sits on (the plain card, a tray Modal's tray, or the simple card).
+      { name: 'Surface', values: ['plain', 'tray', 'simple'] },
     ],
     figmaSets: ['ModalFooter'],
     props: [

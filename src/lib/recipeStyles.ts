@@ -245,6 +245,8 @@ function declarations(props: SlotProps): string[] {
       }
       // The corners that face the page on an edge panel (a Sheet): two corners, one radius.
       case 'radiusTop': { const r = v(ref); out.push(`border-top-left-radius: ${r}`, `border-top-right-radius: ${r}`); break }
+      // The corners that face the footer of a tray Modal's panel.
+      case 'radiusBottom': { const r = v(ref); out.push(`border-bottom-left-radius: ${r}`, `border-bottom-right-radius: ${r}`); break }
       case 'radiusLeft': { const r = v(ref); out.push(`border-top-left-radius: ${r}`, `border-bottom-left-radius: ${r}`); break }
       case 'radiusRight': { const r = v(ref); out.push(`border-top-right-radius: ${r}`, `border-bottom-right-radius: ${r}`); break }
       // Figma draws a stroke INSIDE the frame; a CSS border sits outside the
@@ -442,12 +444,23 @@ export function recipeMotionCss(recipe: ComponentRecipe): string {
   for (const [slotKey, props] of Object.entries(m.transitions ?? {})) {
     const [slot, suffix] = splitSlotKey(slotKey)
     const sel = slotSelector(recipe, root, slot) + suffix
-    const list = Object.entries(props).map(([prop, role]) => `${prop} var(--motion-${role}, ${TRANSITION_FALLBACK})`)
+    // `transform` also covers the individual transform properties: Tailwind v4's `translate-x-*`, `rotate-*` and `scale-*`
+    // write `translate` / `rotate` / `scale`, not `transform`, so a Switch thumb or an Accordion chevron jumped with no motion.
+    const expand = (prop: string) => (prop === 'transform' ? ['transform', 'translate', 'rotate', 'scale'] : [prop])
+    const list = Object.entries(props).flatMap(([prop, role]) => expand(prop).map((p) => `${p} var(--motion-${role}, ${TRANSITION_FALLBACK})`))
     rules.push(`${sel} {\n  transition: ${list.join(', ')};\n}`)
   }
   if (m.origin) rules.push(`${slotSelector(recipe, root, m.enter?.slot ?? recipe.slots[0])} {\n  transform-origin: ${m.origin};\n}`)
   if (m.enter) rules.push(...choreographyRules(recipe, root, m.enter, OPEN, m.host?.enter))
   if (m.exit) rules.push(...choreographyRules(recipe, root, m.exit, CLOSED, m.host?.exit))
+  if (m.press) {
+    const live = ':not([data-force-state]):not([aria-disabled="true"]):not(:disabled)'
+    const slot = m.press.slot ?? recipe.slots[0]
+    // Going down plays `use-press` (the exit curve: a press); coming back plays the slot's own scale role (`use-hover`).
+    const down = Object.entries({ ...(m.transitions?.[slot] ?? {}), scale: 'use-press' })
+      .flatMap(([prop, role]) => (prop === 'transform' ? ['transform', 'translate', 'rotate', 'scale'] : [prop]).map((p) => `${p} var(--motion-${role}, ${TRANSITION_FALLBACK})`))
+    rules.push(`${slotSelector(recipe, `${root}:active${live}`, slot)} {\n  scale: var(--motion-transform-shrink, 1);\n  transition: ${down.join(', ')};\n}`)
+  }
   rules.push(...timerRules(recipe, root, m.timer), ...queueRules(m.queue))
   // A disclosure's enter and exit both declare its height: once is enough.
   return [...new Set(rules)].join('\n')

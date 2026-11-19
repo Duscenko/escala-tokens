@@ -3,6 +3,7 @@ import type { Meta, StoryObj } from '@storybook/react-vite'
 import { Avatar } from '../../../src/components/escala-ui/avatar'
 import { Badge } from '../../../src/components/escala-ui/badge'
 import { IssueCard, ISSUE_CARD_STATES, type IssueCardState } from '../../../src/components/escala-ui/issue-card'
+import { AVATAR_PHOTOS } from './avatarPhotos'
 
 /** Story args = the Figma `IssueCard` set (2228:160). */
 interface Args {
@@ -14,7 +15,7 @@ function card(a: Args) {
     <IssueCard
       href="#" onClick={(e) => e.preventDefault()} forceState={a.forceState} issueKey={a.issueKey} title={a.title}
       pullRequest={a.pullRequestVisible ? a.pullRequest : undefined}
-      assignee={a.assigneeVisible ? <Avatar type="initials" size="xs" shape="circle" variant="secondary" appearance="soft">IM</Avatar> : undefined}
+      assignee={a.assigneeVisible ? <Avatar type="image" size="xs" shape="circle" src={AVATAR_PHOTOS['photo-9']} aria-label="Assignee" /> : undefined}
       tag={<Badge appearance="soft" shape="rounded" size="sm" type="default" variant="info">Payments</Badge>}
       tagSecondary={a.tagSecondaryVisible ? <Badge appearance="soft" shape="rounded" size="sm" type="default" variant="critical">Bug</Badge> : undefined}
       comments={a.commentsVisible ? a.comments : undefined} due={a.dueVisible ? a.due : undefined}

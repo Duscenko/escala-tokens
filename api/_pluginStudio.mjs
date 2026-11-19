@@ -5613,12 +5613,14 @@ var init_componentCatalogue = __esm({
         description: "Dialog card that interrupts the flow for a decision or a short task: a header, a content slot and a footer over a scrim.",
         usage: "Use for a decision or a short task that needs full attention (a confirmation, a small form). Not for notifications: use a Toast or an Alert.",
         axes: [
-          { name: "Size", values: ["default", "lg"] }
+          { name: "Size", values: ["default", "lg"] },
+          { name: "Layout", values: ["tray", "simple"] }
         ],
         figmaSets: ["Modal"],
         props: [
           { name: "open / onOpenChange", type: "boolean / (open) => void", description: "Controlled visibility (Escape and the scrim close it)." },
           { name: "size", type: "'default' | 'lg'", description: "Figma Size: 480 or 640 wide. It cascades to the header and the footer." },
+          { name: "layout", type: "'tray' | 'simple'", description: "Figma Layout: `tray` is a layer-1 shell around a layer-2 panel (header + content) with the footer on the tray; `simple` (the default for now) is the bare card." },
           { name: "header / footer", type: "ReactNode", description: "A ModalHeader above the content and a ModalFooter under it (Figma FooterVisible)." },
           { name: "children", type: "ReactNode", description: "The Content slot." },
           { name: "showCloseButton", type: "boolean", description: "Figma CloseVisible: the ghost pill close in the corner (default true)." }
@@ -5657,7 +5659,9 @@ var init_componentCatalogue = __esm({
         usage: "Inline puts the actions at the end, primary last; stacked gives full-width buttons for narrow viewports.",
         axes: [
           { name: "Size", values: ["default", "lg"] },
-          { name: "Layout", values: ["inline", "stacked"] }
+          { name: "Layout", values: ["inline", "stacked", "equal"] },
+          // Code-only until the ModalFooter is rebuilt: what it sits on (the plain card, a tray Modal's tray, or the simple card).
+          { name: "Surface", values: ["plain", "tray", "simple"] }
         ],
         figmaSets: ["ModalFooter"],
         props: [
@@ -11397,7 +11401,7 @@ function tooltipTriggerInk(variant, state2) {
       return hot ? "action.primary.hover" : "action.primary.default";
   }
 }
-var CARD, MODAL_SIZES, MODAL, MODAL_HEADER, MODAL_FOOTER, SEPARATOR_ORIENTATIONS, SEPARATOR_TONES, SEPARATOR, ACCORDION_VARIANTS, ACCORDION_ITEM_STATES, ACCORDION, ACCORDION_ITEM, IMAGE_RATIOS, IMAGE_SHAPES, IMAGE, POPOVER_SIZES, POPOVER, POPOVER_FOOTER, TOOLTIP_SIZES, TOOLTIP_VARIANTS, TOOLTIP_TRIGGER_STATES, TOOLTIP_TONE, TOOLTIP_CONTENT, TOOLTIP_INFO_TRIGGER, SCROLL_AREA_SIZES, SCROLL_BAR_ORIENTATIONS, SCROLL_APPEARANCES, SCROLL_AREA, SCROLL_BAR_THICKNESS, SCROLL_BAR, SHEET_SIDES, SHEET;
+var CARD, MODAL_SIZES, MODAL_LAYOUTS, MODAL_SURFACES, MODAL_FOOTER_LAYOUTS, MODAL, MODAL_HEADER, MODAL_FOOTER, SEPARATOR_ORIENTATIONS, SEPARATOR_TONES, SEPARATOR, ACCORDION_VARIANTS, ACCORDION_ITEM_STATES, ACCORDION, ACCORDION_ITEM, IMAGE_RATIOS, IMAGE_SHAPES, IMAGE, POPOVER_SIZES, POPOVER, POPOVER_FOOTER, TOOLTIP_SIZES, TOOLTIP_VARIANTS, TOOLTIP_TRIGGER_STATES, TOOLTIP_TONE, TOOLTIP_CONTENT, TOOLTIP_INFO_TRIGGER, SCROLL_AREA_SIZES, SCROLL_BAR_ORIENTATIONS, SCROLL_APPEARANCES, SCROLL_AREA, SCROLL_BAR_THICKNESS, SCROLL_BAR, SHEET_SIDES, SHEET;
 var init_surfaces = __esm({
   "src/lib/recipes/surfaces.ts"() {
     init_helpers();
@@ -11427,11 +11431,14 @@ var init_surfaces = __esm({
       ]
     };
     MODAL_SIZES = ["default", "lg"];
+    MODAL_LAYOUTS = ["tray", "simple"];
+    MODAL_SURFACES = ["plain", "tray", "simple"];
+    MODAL_FOOTER_LAYOUTS = ["inline", "stacked", "equal"];
     MODAL = {
       key: "Modal",
-      slots: ["root", "overlay", "main", "content", "close"],
+      slots: ["root", "overlay", "main", "panel", "header", "content", "close"],
       detachedSlots: ["overlay"],
-      defaults: { Size: "default" },
+      defaults: { Size: "default", Layout: "simple" },
       parts: [
         part({}, () => ({
           overlay: { fill: c("surface.overlay") },
@@ -11448,7 +11455,20 @@ var init_surfaces = __esm({
         part({ Size: MODAL_SIZES }, (size) => ({
           // 480 = 3 × 128 + 96; 640 = 5 × 128 (the file's widths have no variable).
           root: { width: size === "lg" ? "spacing.32+spacing.32+spacing.32+spacing.32+spacing.32" : "spacing.32+spacing.32+spacing.32+spacing.24" }
-        }))
+        })),
+        part({ Layout: MODAL_LAYOUTS }, (layout) => layout === "tray" ? {
+          root: { fill: c("surface.layer-1") },
+          // The panel (header + Content) is Surface/layer-2 with a hairline under it, round at the bottom (Radius/container); its top
+          // corners are the shell's own, clipped. The Content slot carries its own inset and the hairline that closes the header.
+          panel: { fill: c("surface.layer-2"), stroke: c("border.subtle"), strokeBottomWidth: "stroke.divider", radiusBottom: "radius.container" },
+          header: { paddingX: "spacing.inset-surface", paddingY: "spacing.inset-surface" },
+          content: { stroke: c("border.subtle"), strokeTopWidth: "stroke.divider", paddingX: "spacing.inset-surface", paddingY: "spacing.inset-surface" }
+        } : {
+          // `simple` (400 wide): the card pads itself (inset-surface), `main` = header + Content with no padding of its own, 24 apart.
+          // Figma pads from INSIDE the 1px stroke (inner width 350, not 352), and the recipe gives the border back: ask for the inset plus the stroke.
+          root: { width: "spacing.32+spacing.32+spacing.32+spacing.4", paddingX: "spacing.inset-surface+stroke.divider", paddingY: "spacing.inset-surface+stroke.divider", gap: "spacing.gap-section" },
+          main: { paddingX: "spacing.0", paddingY: "spacing.0", gap: "spacing.gap-section" }
+        })
       ]
     };
     MODAL_HEADER = {
@@ -11468,14 +11488,16 @@ var init_surfaces = __esm({
           // The file's ModalHeader set draws the description at Type/body-md in BOTH sizes (header 53 / 58 tall; it was body-sm at
           // default when the Modal was first built, 2026-11-13).
           description: { font: "type.body-md" },
-          clearance: size === "lg" ? { width: "size.md", height: "size.md" } : { width: "size.sm", height: "size.sm" }
+          clearance: size === "lg" ? { width: "size.md", height: "size.md" } : { width: "size.sm", height: "size.sm" },
+          // The Trailing slot is as tall as the close clearance (32 · 40), so a small trailing item (a Badge) centres on the title's row.
+          trailing: { minHeight: size === "lg" ? "size.md" : "size.sm" }
         }))
       ]
     };
     MODAL_FOOTER = {
       key: "ModalFooter",
       slots: ["root", "leading", "actions"],
-      defaults: { Size: "default", Layout: "inline" },
+      defaults: { Size: "default", Layout: "inline", Surface: "plain" },
       parts: [
         part({}, () => ({
           // A hairline along the TOP only (Border/subtle, inside); the padding is the surface inset on every side.
@@ -11488,7 +11510,9 @@ var init_surfaces = __esm({
           },
           leading: { gap: "spacing.gap-tight", text: c("content.secondary"), font: "type.caption" },
           actions: { gap: "spacing.gap-control" }
-        }))
+        })),
+        // On the tray (Surface/layer-1) the footer has no hairline; inline sits 12 above and below its buttons, stacked the full inset.
+        part({ Surface: MODAL_SURFACES, Layout: MODAL_FOOTER_LAYOUTS }, (surface, layout) => surface === "tray" ? { root: { strokeTopWidth: "stroke.none", paddingY: layout === "stacked" ? "spacing.inset-surface" : "spacing.inset-control" } } : surface === "simple" ? { root: { strokeTopWidth: "stroke.none", paddingX: "spacing.0", paddingY: "spacing.0" } } : {})
       ]
     };
     SEPARATOR_ORIENTATIONS = ["horizontal", "vertical"];
@@ -13100,7 +13124,9 @@ var init_motion2 = __esm({
       exit: { name: "accordion-collapse", slot: "content", heightVar }
     });
     RECIPE_MOTION = {
-      Button: { transitions: { root: states("background-color", "color", "border-color", "box-shadow") } },
+      // A press sinks the button to the `shrink` scale on `use-press` (recipeStyles, `press`) and comes back on `use-hover`, with the colours.
+      Button: { transitions: { root: { ...states("background-color", "color", "border-color", "box-shadow"), scale: "use-hover" } }, press: {} },
+      IconButton: { transitions: { root: { ...states("background-color", "color", "border-color", "box-shadow"), scale: "use-hover" } }, press: {} },
       Badge: { transitions: { root: states("background-color", "color", "border-color") } },
       Chip: { transitions: { root: states("background-color", "border-color", "color") } },
       PaginationLink: { transitions: { root: FILL } },
@@ -13137,7 +13163,8 @@ var init_motion2 = __esm({
       ComboboxItem: { transitions: { root: states("background-color", "border-color", "box-shadow") } },
       Checkbox: { transitions: { root: states("background-color", "border-color", "box-shadow") } },
       RadioGroup: { transitions: { item: states("background-color", "border-color", "box-shadow") } },
-      Switch: { transitions: { root: states("background-color", "box-shadow"), thumb: { transform: "use-toggle" } } },
+      // The track's colour and the thumb's travel share `use-toggle`, so the fill arrives with the thumb (it flipped in 100 ms while the thumb took 360).
+      Switch: { transitions: { root: { "background-color": "use-toggle", "box-shadow": "use-focus" }, thumb: { transform: "use-toggle" } } },
       RatingGroupItem: { transitions: { root: FILL } },
       SliderThumb: { transitions: { root: states("border-color", "box-shadow") } },
       ProgressLine: { transitions: { indicator: { width: "use-progress" } } },

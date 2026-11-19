@@ -33,7 +33,9 @@ const disclosure = (heightVar: string): RecipeMotion => ({
 })
 
 export const RECIPE_MOTION: Record<string, RecipeMotion> = {
-  Button: { transitions: { root: states('background-color', 'color', 'border-color', 'box-shadow') } },
+  // A press sinks the button to the `shrink` scale on `use-press` (recipeStyles, `press`) and comes back on `use-hover`, with the colours.
+  Button: { transitions: { root: { ...states('background-color', 'color', 'border-color', 'box-shadow'), scale: 'use-hover' } }, press: {} },
+  IconButton: { transitions: { root: { ...states('background-color', 'color', 'border-color', 'box-shadow'), scale: 'use-hover' } }, press: {} },
   Badge: { transitions: { root: states('background-color', 'color', 'border-color') } },
   Chip: { transitions: { root: states('background-color', 'border-color', 'color') } },
   PaginationLink: { transitions: { root: FILL } },
@@ -70,7 +72,8 @@ export const RECIPE_MOTION: Record<string, RecipeMotion> = {
   ComboboxItem: { transitions: { root: states('background-color', 'border-color', 'box-shadow') } },
   Checkbox: { transitions: { root: states('background-color', 'border-color', 'box-shadow') } },
   RadioGroup: { transitions: { item: states('background-color', 'border-color', 'box-shadow') } },
-  Switch: { transitions: { root: states('background-color', 'box-shadow'), thumb: { transform: 'use-toggle' } } },
+  // The track's colour and the thumb's travel share `use-toggle`, so the fill arrives with the thumb (it flipped in 100 ms while the thumb took 360).
+  Switch: { transitions: { root: { 'background-color': 'use-toggle', 'box-shadow': 'use-focus' }, thumb: { transform: 'use-toggle' } } },
   RatingGroupItem: { transitions: { root: FILL } },
   SliderThumb: { transitions: { root: states('border-color', 'box-shadow') } },
   ProgressLine: { transitions: { indicator: { width: 'use-progress' } } },

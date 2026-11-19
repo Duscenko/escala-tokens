@@ -1,5 +1,5 @@
 {
-  "$comment": "Contract of the Overlay blocks. Each block is the system's Modal (Modal · ModalHeader · Content slot · ModalFooter · CloseButton) filled with escala-ui components; the two drawers (CartDrawer, FilterDrawer) are the system's Sheet instead. Motion: the Modal's own choreography (the Sheet's sheet-enter / sheet-exit for the drawers); a block adds none.",
+  "$comment": "Contract of the Overlay blocks. Each block is the system's Modal (Modal · ModalHeader · Content slot · ModalFooter · CloseButton) filled with escala-ui components; six blocks are the Modal with Layout=simple (400 wide) and the rest Layout=tray (480 wide). Motion: the Modal's own choreography (dialog-enter / exit); a block adds none.",
   "figma": {
     "file": "7j5zukN5HpihGVJMmyjA20",
     "page": "Overlay",
@@ -12,10 +12,10 @@
       "axes": {},
       "variants": 1,
       "anatomy": [
-        "Modal (Size default)",
-        "ModalHeader",
+        "Modal (Layout simple, 400 wide: one padded card)",
+        "ModalHeader (Align vertical-center)",
         "Content slot",
-        "ModalFooter",
+        "ModalFooter (Layout equal: two buttons of one width)",
         "CloseButton"
       ],
       "nests": [
@@ -53,10 +53,10 @@
       "axes": {},
       "variants": 1,
       "anatomy": [
-        "Modal (Size default)",
-        "ModalHeader",
+        "Modal (Layout simple, 400 wide: one padded card)",
+        "ModalHeader (Align vertical-center)",
         "Content slot",
-        "ModalFooter",
+        "ModalFooter (Layout equal: two buttons of one width)",
         "CloseButton"
       ],
       "nests": [
@@ -96,8 +96,8 @@
       "axes": {},
       "variants": 1,
       "anatomy": [
-        "Modal (Size default)",
-        "ModalHeader",
+        "Modal (Layout tray, 480 wide: Surface/layer-1 shell, layer-2 panel)",
+        "ModalHeader (Align vertical-center)",
         "Content slot",
         "ModalFooter",
         "CloseButton"
@@ -107,7 +107,6 @@
         "ModalFooter",
         "Field",
         "Input",
-        "Textarea",
         "RadioGroup",
         "Button"
       ],
@@ -141,10 +140,10 @@
       "axes": {},
       "variants": 1,
       "anatomy": [
-        "Modal (Size default)",
-        "ModalHeader",
+        "Modal (Layout simple, 400 wide: one padded card)",
+        "ModalHeader (Align vertical-center)",
         "Content slot",
-        "ModalFooter",
+        "ModalFooter (Layout equal: two buttons of one width)",
         "CloseButton"
       ],
       "nests": [
@@ -182,10 +181,10 @@
       "axes": {},
       "variants": 1,
       "anatomy": [
-        "Modal (Size default)",
-        "ModalHeader",
+        "Modal (Layout simple, 400 wide: one padded card)",
+        "ModalHeader (Align vertical-center)",
         "Content slot",
-        "ModalFooter",
+        "ModalFooter (Layout equal: two buttons of one width)",
         "CloseButton"
       ],
       "nests": [
@@ -223,8 +222,8 @@
       "axes": {},
       "variants": 1,
       "anatomy": [
-        "Modal (Size default)",
-        "ModalHeader",
+        "Modal (Layout tray, 480 wide: Surface/layer-1 shell, layer-2 panel)",
+        "ModalHeader (Align vertical-center)",
         "Content slot",
         "ModalFooter",
         "CloseButton"
@@ -234,7 +233,7 @@
         "ModalFooter",
         "RatingGroup",
         "Field",
-        "Textarea",
+        "Input",
         "CheckboxItem",
         "Button"
       ],
@@ -268,10 +267,10 @@
       "axes": {},
       "variants": 1,
       "anatomy": [
-        "Modal (Size default)",
-        "ModalHeader",
+        "Modal (Layout simple, 400 wide: one padded card)",
+        "ModalHeader (Align vertical-center)",
         "Content slot",
-        "ModalFooter",
+        "ModalFooter (Layout equal: two buttons of one width)",
         "CloseButton"
       ],
       "nests": [
@@ -310,8 +309,8 @@
       "axes": {},
       "variants": 1,
       "anatomy": [
-        "Modal (Size default)",
-        "ModalHeader",
+        "Modal (Layout tray, 480 wide: Surface/layer-1 shell, layer-2 panel)",
+        "ModalHeader (Align vertical-center)",
         "Content slot",
         "ModalFooter",
         "CloseButton"
@@ -329,6 +328,7 @@
         "Actions"
       ],
       "props": [
+        "photos",
         "inline",
         "open",
         "onOpenChange",
@@ -354,10 +354,10 @@
       "axes": {},
       "variants": 1,
       "anatomy": [
-        "Modal (Size default)",
-        "ModalHeader",
+        "Modal (Layout simple, 400 wide: one padded card)",
+        "ModalHeader (Align vertical-center)",
         "Content slot",
-        "ModalFooter",
+        "ModalFooter (Layout equal: two buttons of one width)",
         "CloseButton"
       ],
       "nests": [
@@ -395,14 +395,14 @@
       "axes": {},
       "variants": 1,
       "anatomy": [
-        "Sheet (Side right on desktop · bottom on a phone)",
-        "ModalHeader (SheetHeader)",
+        "Modal (Layout tray, 480 wide: Surface/layer-1 shell, layer-2 panel)",
+        "ModalHeader (title + a number Badge in Trailing)",
         "Content slot",
-        "ModalFooter (SheetFooter)",
+        "ModalFooter (Layout stacked, one Button)",
         "CloseButton"
       ],
       "nests": [
-        "Sheet",
+        "Modal",
         "ModalHeader",
         "ModalFooter",
         "Badge",
@@ -417,21 +417,20 @@
         "Actions"
       ],
       "props": [
-        "side",
         "inline",
         "open",
         "onOpenChange",
         "onConfirm"
       ],
       "a11y": [
-        "Rendered as the Sheet: dialog role, focus trap and Escape when not inline",
+        "Rendered as the Modal: dialog role, focus trap and Escape when not inline",
         "The header's title names the dialog",
-        "The bottom side is capped by the visual viewport and keeps the safe area under the footer"
+        "Each quantity stepper turns its minus Disabled at 1"
       ],
       "motion": [
         {
           "moment": "open / close",
-          "mechanism": "the Sheet's own choreography (sheet-enter / sheet-exit, from its edge); the block adds none",
+          "mechanism": "the Modal's own choreography (dialog-enter / exit); the block adds none",
           "role": "none",
           "reduced": "from the tokens"
         }
@@ -443,8 +442,8 @@
       "axes": {},
       "variants": 1,
       "anatomy": [
-        "Modal (Size default)",
-        "ModalHeader",
+        "Modal (Layout tray, 480 wide: Surface/layer-1 shell, layer-2 panel)",
+        "ModalHeader (Align vertical-center)",
         "Content slot",
         "ModalFooter",
         "CloseButton"
@@ -486,14 +485,14 @@
       "axes": {},
       "variants": 1,
       "anatomy": [
-        "Sheet (Side right on desktop · bottom on a phone)",
-        "ModalHeader (SheetHeader)",
+        "Modal (Layout tray, 480 wide; a drawer in name only)",
+        "ModalHeader (Align horizontal, a Reset button in Trailing)",
         "Content slot",
-        "ModalFooter (SheetFooter)",
+        "ModalFooter (Layout inline)",
         "CloseButton"
       ],
       "nests": [
-        "Sheet",
+        "Modal",
         "ModalHeader",
         "ModalFooter",
         "Slider",
@@ -506,21 +505,20 @@
         "Actions"
       ],
       "props": [
-        "side",
         "inline",
         "open",
         "onOpenChange",
         "onConfirm"
       ],
       "a11y": [
-        "Rendered as the Sheet: dialog role, focus trap and Escape when not inline",
+        "Rendered as the Modal: dialog role, focus trap and Escape when not inline",
         "The header's title names the dialog",
         "The bottom side is capped by the visual viewport and keeps the safe area under the footer"
       ],
       "motion": [
         {
           "moment": "open / close",
-          "mechanism": "the Sheet's own choreography (sheet-enter / sheet-exit, from its edge); the block adds none",
+          "mechanism": "the Modal's own choreography (dialog-enter / exit); the block adds none",
           "role": "none",
           "reduced": "from the tokens"
         }
@@ -532,8 +530,8 @@
       "axes": {},
       "variants": 1,
       "anatomy": [
-        "Modal (Size default)",
-        "ModalHeader",
+        "Modal (Layout tray, 480 wide: Surface/layer-1 shell, layer-2 panel)",
+        "ModalHeader (Align vertical-center)",
         "Content slot",
         "ModalFooter",
         "CloseButton"
@@ -575,14 +573,12 @@
       "axes": {},
       "variants": 1,
       "anatomy": [
-        "Modal (Size default)",
-        "ModalHeader",
+        "Modal (Layout tray, 480 wide: Surface/layer-1 shell, layer-2 panel)",
         "Content slot",
         "ModalFooter",
         "CloseButton"
       ],
       "nests": [
-        "ModalHeader",
         "ModalFooter",
         "FeaturedIcon",
         "Badge",
@@ -618,8 +614,8 @@
       "axes": {},
       "variants": 1,
       "anatomy": [
-        "Modal (Size default)",
-        "ModalHeader",
+        "Modal (Layout tray, 480 wide: Surface/layer-1 shell, layer-2 panel)",
+        "ModalHeader (Align vertical-center)",
         "Content slot",
         "ModalFooter",
         "CloseButton"

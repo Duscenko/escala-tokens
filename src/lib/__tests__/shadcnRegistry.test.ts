@@ -92,7 +92,8 @@ describe('registry item (shadcn CLI format)', () => {
     expect(item.registryDependencies).toEqual(['utils'])
     // Values ride in `css`, never `cssVars` (the CLI would mirror them into @theme).
     expect(item.cssVars).toBeUndefined()
-    expect(Object.keys(item.css!)).toEqual([':root', '.dark', '@layer components'])
+    // The press reads `--motion-transform-shrink`, which reduced motion sets back to 1: its own media block ships too.
+    expect(Object.keys(item.css!)).toEqual([':root', '@media (prefers-reduced-motion: reduce)', '.dark', '@layer components'])
   })
 
   it('internal imports become registry dependencies on this registry, for the same system', () => {

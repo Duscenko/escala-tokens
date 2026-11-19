@@ -193,9 +193,6 @@
     "AccordionItem": {
       "status": "rebuild"
     },
-    "Modal": {
-      "status": "rebuild"
-    },
     "ModalFooter": {
       "status": "rebuild"
     },
