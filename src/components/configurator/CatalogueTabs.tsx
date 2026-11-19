@@ -24,7 +24,10 @@ const TABS: { key: CatalogueTabKey; label: string }[] = [
  *  toward the ink with an inner highlight in dark) that slides between them.
  *  An inverted white pill was tried first and read as a heavy button, not a tab
  *  (reported). Active also gains full ink and semibold, so the state never rests
- *  on the fill alone. */
+ *  on the fill alone.
+ *
+ *  Each tab opens its catalogue's landing page (title, lead and a card per item),
+ *  never the last item opened there; clicking the active tab goes back to it. */
 export function CatalogueTabs({ active, onSelect }: {
   active: CatalogueTabKey
   onSelect: (key: CatalogueTabKey) => void
@@ -41,7 +44,8 @@ export function CatalogueTabs({ active, onSelect }: {
             key={key}
             type="button"
             aria-current={on ? 'page' : undefined}
-            onClick={() => { if (!on) onSelect(key) }}
+            // The active tab too: it brings that catalogue back to its landing page.
+            onClick={() => onSelect(key)}
             className={`relative inline-flex h-7 items-center rounded-md px-3 text-ui transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50 ${
               on ? 'font-semibold text-fg' : SEGMENT_INACTIVE
             }`}

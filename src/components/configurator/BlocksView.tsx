@@ -197,10 +197,11 @@ function BlocksIndex({ kind, previewTheme, onSelect, search, onClearSearch }: {
                   {t(g)} <span className="ml-1 text-caption font-normal text-fg-faint">{items.length}</span>
                 </h2>
               )}
-              <ul className="grid grid-cols-[repeat(auto-fill,minmax(260px,1fr))] gap-3">
+              {/* Screens are few and whole pages: two to a row, a taller preview and their description. */}
+              <ul className={`grid gap-3 ${kind === 'screens' ? 'grid-cols-[repeat(auto-fill,minmax(400px,1fr))]' : 'grid-cols-[repeat(auto-fill,minmax(260px,1fr))]'}`}>
                 {items.map((b) => (
                   <li key={b.id}>
-                    <BlockCard block={b} appearance={appearance} surface={tokens.surface} tokens={tokens} onSelect={onSelect} />
+                    <BlockCard block={b} appearance={appearance} surface={tokens.surface} tokens={tokens} onSelect={onSelect} large={kind === 'screens'} />
                   </li>
                 ))}
               </ul>
@@ -212,12 +213,14 @@ function BlocksIndex({ kind, previewTheme, onSelect, search, onClearSearch }: {
   )
 }
 
-function BlockCard({ block, appearance, surface, tokens, onSelect }: {
+function BlockCard({ block, appearance, surface, tokens, onSelect, large = false }: {
   block: BlockDef
   appearance: ThemeAppearance
   surface: string
   tokens: ReturnType<typeof usePreviewTokens>
   onSelect: (b: BlockDef) => void
+  /** A screen's card: a taller preview and the description under the name. */
+  large?: boolean
 }) {
   const { t } = useI18n()
   return (
@@ -225,7 +228,7 @@ function BlockCard({ block, appearance, surface, tokens, onSelect }: {
       <span
         aria-hidden
         inert
-        className={`relative block h-[180px] w-full overflow-hidden border-b border-line ${appearance}`}
+        className={`relative block w-full overflow-hidden border-b border-line ${large ? 'h-[280px]' : 'h-[180px]'} ${appearance}`}
         style={{ background: surface }}
       >
         <span className="absolute inset-3 transition-transform duration-200 ease-out group-hover:scale-[1.02]">
@@ -241,6 +244,7 @@ function BlockCard({ block, appearance, surface, tokens, onSelect }: {
       <span aria-hidden className="flex flex-col gap-0.5 px-3.5 py-3">
         <span className="truncate text-caption text-fg-faint">{t(block.group)}</span>
         <span className="truncate text-strong font-medium text-fg">{block.name}</span>
+        {large && <span className="mt-1 line-clamp-2 text-caption leading-relaxed text-fg-muted">{t(block.description)}</span>}
       </span>
       <button
         type="button"

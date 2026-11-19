@@ -1992,6 +1992,13 @@ export default function Configurator() {
     setActiveBlock(b)
   }
   const openComponentsIndex = () => setActiveComponent(null)
+  /** Elements · Blocks · Screens: a tab opens its catalogue's landing page, not the last item opened there. */
+  const openCatalogue = (t: 'components' | 'blocks' | 'screens') => {
+    if (t === 'components') openComponentsIndex()
+    else if (t === 'blocks') setActiveBlock(null)
+    else setActiveScreen(null)
+    if (t !== tab) changeTab(t)
+  }
   const changeTab = (t: Tab) => {
     commitVisit()
     if (t === 'components') markFoundationComplete('components')
@@ -2842,7 +2849,7 @@ export default function Configurator() {
                 (find another page, Storybook, Figma). The name of what is open rides on the canvas. */}
             {catalogueTab && !skipCenterHeader && (
               <div className="flex h-[52px] flex-shrink-0 items-center justify-between gap-3 border-b border-line px-4">
-                <CatalogueTabs active={tab === 'blocks' || tab === 'screens' ? tab : 'components'} onSelect={changeTab} />
+                <CatalogueTabs active={tab === 'blocks' || tab === 'screens' ? tab : 'components'} onSelect={openCatalogue} />
                 <StageActionsSlot />
               </div>
             )}
