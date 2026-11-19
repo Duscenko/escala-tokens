@@ -59,8 +59,13 @@ function useScreenLayout(layout: ScreenProps['layout'], ref: React.RefObject<HTM
   React.useLayoutEffect(() => {
     const el = ref.current
     if (layout !== 'auto' || !el || typeof ResizeObserver === 'undefined') return
-    const md = parseFloat(getComputedStyle(el).getPropertyValue(cssVarOf('breakpoint.md'))) || 768
-    const ro = new ResizeObserver(([e]) => setMeasured(e.contentRect.width < md ? 'mobile' : 'desktop'))
+    // The role ships as rem (`48rem`) or px; anything unreadable falls back to the standard 768.
+    const raw = getComputedStyle(el).getPropertyValue(cssVarOf('breakpoint.md')).trim()
+    const n = parseFloat(raw)
+    const rootPx = parseFloat(getComputedStyle(document.documentElement).fontSize) || 16
+    const md = !n ? 768 : /r?em$/.test(raw) ? n * rootPx : n
+    // offsetWidth is in layout pixels, so a zoomed preview (DocWindow, the stage's fit) does not move the breakpoint.
+    const ro = new ResizeObserver(() => setMeasured(el.offsetWidth < md ? 'mobile' : 'desktop'))
     ro.observe(el)
     return () => ro.disconnect()
   }, [layout, ref])
