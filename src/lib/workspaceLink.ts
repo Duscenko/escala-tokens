@@ -28,6 +28,8 @@
  *   components/<componentKey>
  *   blocks
  *   blocks/<Group>/<Name>
+ *   screens
+ *   screens/<Name>
  *   docs
  *   docs/<docKey>
  *
@@ -72,7 +74,7 @@ export type FoundationSectionKey = (typeof FOUNDATION_SECTION_KEYS)[number]
 export type CollectionSectionKey = (typeof COLLECTION_SECTION_KEYS)[number]
 export type HubSurfaceKey = (typeof HUB_SURFACE_KEYS)[number]
 export type WorkspaceTabKey = 'preview' | 'primitives' | 'documentation' | 'code' | 'library' | 'system'
-export type AppTabKey = 'about' | 'foundations' | 'components' | 'blocks' | 'docs'
+export type AppTabKey = 'about' | 'foundations' | 'components' | 'blocks' | 'screens' | 'docs'
 
 export type WorkspacePlace = {
   tab: AppTabKey
@@ -84,6 +86,8 @@ export type WorkspacePlace = {
   component?: string
   /** `<Group>/<Name>` of a block (Blocks tab). */
   block?: string
+  /** `<Name>` of a screen (Screens tab). */
+  screen?: string
   doc?: string
 }
 
@@ -125,6 +129,7 @@ export function encodeWorkspaceSection(place: {
   collection?: string
   component?: string
   block?: string
+  screen?: string
   doc?: string
 }): string {
   const theme = isSegment(place.theme) ? place.theme : undefined
@@ -138,6 +143,9 @@ export function encodeWorkspaceSection(place: {
   if (place.tab === 'blocks') {
     const segs = (place.block ?? '').split('/')
     return segs.length === 2 && segs.every(isSegment) ? `blocks/${segs.join('/')}` : 'blocks'
+  }
+  if (place.tab === 'screens') {
+    return isSegment(place.screen) ? `screens/${place.screen}` : 'screens'
   }
   if (place.tab === 'docs') {
     return isSegment(place.doc) ? `docs/${place.doc}` : 'docs'
@@ -182,6 +190,14 @@ export function decodeWorkspaceSection(section: string | null | undefined): Work
       workspace: 'preview',
       surface: 'artefacts',
       component: isSegment(rest[0]) ? rest[0] : undefined,
+    }
+  }
+  if (root === 'screens') {
+    return {
+      tab: 'screens',
+      workspace: 'preview',
+      surface: 'artefacts',
+      screen: isSegment(rest[0]) ? rest[0] : undefined,
     }
   }
   if (root === 'blocks') {

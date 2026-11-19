@@ -12,8 +12,8 @@ const tags = { tag: <Badge appearance="soft" shape="rounded" size="sm" type="def
 /** Story args = the Figma `BoardColumn` (2228:161): Title, Count, NewIssueVisible and the Content slot. Motion: none. */
 interface Args { title: string; count: string; newIssueVisible: boolean }
 const meta: Meta<Args> = {
-  title: 'Pages/BoardColumn',
-  tags: ['stage:storybook'],
+  title: 'Screens/IssueBoardPage',
+  tags: ['!autodocs', 'part'],
   render: (a) => (
     <div style={{ width: 272 }}>
       <BoardColumn title={a.title} count={a.count} newIssueVisible={a.newIssueVisible}>
@@ -27,4 +27,4 @@ const meta: Meta<Args> = {
 }
 export default meta
 type Story = StoryObj<Args>
-export const Playground: Story = {}
+export const BoardColumnPlayground: Story = { name: 'BoardColumn · Playground' }

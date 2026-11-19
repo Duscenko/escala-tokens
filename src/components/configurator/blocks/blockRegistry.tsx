@@ -7,6 +7,11 @@
 // (`*.contract.json`: what it nests, accessibility, motion). A test holds the
 // list equal to the Storybook's block stories, so a block added there fails
 // here until it is listed.
+//
+// The Screens tab reads the same shape: a screen (SettingsPage, IssueBoardPage)
+// is a BlockDef of group `Screens`, and the pieces it is made of (SettingsRow,
+// IssueCard…) are its parts (`partOf`), shown on its page and never listed on
+// their own. Screens are kept apart from `BLOCKS`, which mirrors `Blocks/`.
 
 import type { ReactNode } from 'react'
 import {
@@ -29,14 +34,26 @@ import {
   type OverlayBlockProps,
 } from '../../escala-ui/blocks/overlay'
 import { MorphNav, UserMenu, MORPH_NAV_CONTENTS, type MorphNavContent } from '../../escala-ui/blocks/siteNavigation'
+import { IssueBoardPage, SettingsPage, type ScreenLayout } from '../../escala-ui/screens/screens'
+import { SettingsRow } from '../../escala-ui/settings-row'
+import { SettingsSection } from '../../escala-ui/settings-section'
+import { BoardColumn } from '../../escala-ui/board-column'
+import { IssueCard } from '../../escala-ui/issue-card'
+import { Badge } from '../../escala-ui/badge'
+import { Switch } from '../../escala-ui/switch'
 import authContract from '../../escala-ui/blocks/auth.contract.json'
 import marketingContract from '../../escala-ui/blocks/marketing.contract.json'
 import navigationContract from '../../escala-ui/blocks/navigation.contract.json'
 import overlayContract from '../../escala-ui/blocks/overlay.contract.json'
 import siteNavigationContract from '../../escala-ui/blocks/siteNavigation.contract.json'
+import screensContract from '../../escala-ui/screens/screens.contract.json'
 
 export const BLOCK_GROUPS = ['Auth', 'Marketing', 'Navigation', 'Overlay'] as const
-export type BlockGroup = typeof BLOCK_GROUPS[number]
+/** The Screens tab's one group: whole screens, each holding its own pieces. */
+export const SCREEN_GROUPS = ['Screens'] as const
+export type BlockGroup = typeof BLOCK_GROUPS[number] | typeof SCREEN_GROUPS[number]
+/** Which catalogue tab a BlockDef belongs to: Blocks or Screens. */
+export type BlockCatalogue = 'blocks' | 'screens'
 
 export interface BlockControl {
   /** The story arg. */
@@ -84,7 +101,7 @@ export interface BlockDef {
 }
 
 const CONTRACTS = new Map<string, BlockContract>(
-  [authContract, marketingContract, navigationContract, overlayContract, siteNavigationContract]
+  [authContract, marketingContract, navigationContract, overlayContract, siteNavigationContract, screensContract]
     .flatMap((c) => c.blocks as unknown as BlockContract[])
     .map((b) => [b.name, b]),
 )
@@ -169,17 +186,56 @@ const DEFS: Def[] = [
   overlay('WarningDialog', 'Warns about a risk before the person goes on.', WarningDialog),
 ]
 
-export const BLOCKS: BlockDef[] = DEFS.map(({ contractName, ...d }) => ({
+// ── Screens ── the Figma file's SettingsPage and IssueBoardPage, with the pieces each one keeps inside.
+const screenPart = (screen: string, name: string, description: string, render: () => ReactNode): Def => ({
+  group: 'Screens', name, description, wide: false, partOf: `Screens/${screen}`, controls: [], render,
+})
+const SCREEN_DEFS: Def[] = [
+  { group: 'Screens', name: 'SettingsPage', description: 'Account settings: a Profile and a Notifications section, each a list of rows with their control.', wide: true, responsive: true, controls: [], render: (v) => <SettingsPage layout={v.layout as ScreenLayout} /> },
+  screenPart('SettingsPage', 'SettingsSection', 'A titled group of SettingsRow.', () => (
+    <SettingsSection title="Notifications" description="What this group of settings controls.">
+      <SettingsRow title="Email notifications" control={<Switch defaultChecked />} />
+    </SettingsSection>
+  )),
+  screenPart('SettingsPage', 'SettingsRow', 'One setting: its title, an optional description and a single control.', () => (
+    <SettingsRow layout="stacked" title="Setting name" description="One line that explains what this setting changes." control={<Switch defaultChecked />} />
+  )),
+  { group: 'Screens', name: 'IssueBoardPage', description: 'An issue board: one BoardColumn per status, each a list of IssueCards.', wide: true, controls: [], render: () => <IssueBoardPage /> },
+  screenPart('IssueBoardPage', 'BoardColumn', 'One status lane: status icon, title, count, add action and a list of IssueCard.', () => (
+    <BoardColumn title="Backlog" count="1" newIssueVisible={false}>
+      <IssueCard href="#" issueKey="PAY-312" title="Support split payments across two cards" tag={<Badge appearance="soft" shape="rounded" size="sm" type="default" variant="info">Payments</Badge>} />
+    </BoardColumn>
+  )),
+  screenPart('IssueBoardPage', 'IssueCard', 'One issue on a board: key, linked pull request, assignee, title, priority, tags, comments and due date.', () => (
+    <IssueCard href="#" issueKey="PAY-312" title="Support split payments across two cards" pullRequest="#2041" comments="3" due="Nov 20" tag={<Badge appearance="soft" shape="rounded" size="sm" type="default" variant="info">Payments</Badge>} />
+  )),
+]
+
+const toBlock = ({ contractName, ...d }: Def): BlockDef => ({
   ...d,
   id: `${d.group}/${d.name}`,
   contract: CONTRACTS.get(contractName ?? d.name) ?? null,
-}))
+})
+
+export const BLOCKS: BlockDef[] = DEFS.map(toBlock)
+/** The Screens tab: each screen and, as its parts, the pieces it is made of. */
+export const SCREENS: BlockDef[] = SCREEN_DEFS.map(toBlock)
 
 /** What the catalogue lists: a complementary piece lives on its parent's page. */
 export const LISTED_BLOCKS = BLOCKS.filter((b) => !b.partOf)
+export const LISTED_SCREENS = SCREENS.filter((b) => !b.partOf)
+
+/** The groups and the listed entries of one catalogue tab. */
+export function catalogue(kind: BlockCatalogue): { groups: readonly BlockGroup[]; listed: BlockDef[] } {
+  return kind === 'screens' ? { groups: SCREEN_GROUPS, listed: LISTED_SCREENS } : { groups: BLOCK_GROUPS, listed: LISTED_BLOCKS }
+}
+
+export function catalogueOf(b: Pick<BlockDef, 'group'>): BlockCatalogue {
+  return (SCREEN_GROUPS as readonly string[]).includes(b.group) ? 'screens' : 'blocks'
+}
 
 /** A link to a complementary piece opens the block it belongs to. */
-export const BLOCK_BY_ID = new Map(BLOCKS.map((b) => [b.id, b]))
+export const BLOCK_BY_ID = new Map([...BLOCKS, ...SCREENS].map((b) => [b.id, b]))
 export function resolveBlock(id: string | undefined): BlockDef | null {
   const block = id ? BLOCK_BY_ID.get(id) : undefined
   if (!block) return null
@@ -187,12 +243,12 @@ export function resolveBlock(id: string | undefined): BlockDef | null {
 }
 
 export function blocksIn(group: BlockGroup): BlockDef[] {
-  return LISTED_BLOCKS.filter((b) => b.group === group)
+  return catalogue(catalogueOf({ group })).listed.filter((b) => b.group === group)
 }
 
-/** The complementary pieces shown on a block's page. */
+/** The complementary pieces shown on a block's page (a screen's: the pieces it is made of). */
 export function partsOf(block: BlockDef): BlockDef[] {
-  return BLOCKS.filter((b) => b.partOf === block.id)
+  return [...BLOCKS, ...SCREENS].filter((b) => b.partOf === block.id)
 }
 
 /** The values a block draws with on the stage. The frame is the one switch for the viewport: Tablet and Mobile draw the block's

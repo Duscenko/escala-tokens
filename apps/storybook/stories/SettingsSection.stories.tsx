@@ -6,8 +6,8 @@ import { Switch } from '../../../src/components/escala-ui/switch'
 /** Story args = the Figma `SettingsSection` (2224:123): Title, Description, DescriptionVisible and the Content slot. Motion: none. */
 interface Args { title: string; description: string; descriptionVisible: boolean }
 const meta: Meta<Args> = {
-  title: 'Pages/SettingsSection',
-  tags: ['stage:storybook'],
+  title: 'Screens/SettingsPage',
+  tags: ['!autodocs', 'part'],
   render: (a) => (
     <div style={{ maxWidth: 720 }}>
       <SettingsSection title={a.title} description={a.description} descriptionVisible={a.descriptionVisible}>
@@ -25,4 +25,4 @@ const meta: Meta<Args> = {
 }
 export default meta
 type Story = StoryObj<Args>
-export const Playground: Story = {}
+export const SettingsSectionPlayground: Story = { name: 'SettingsSection · Playground' }

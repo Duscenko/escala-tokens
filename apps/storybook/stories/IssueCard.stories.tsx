@@ -23,8 +23,8 @@ function card(a: Args) {
   )
 }
 const meta: Meta<Args> = {
-  title: 'Pages/IssueCard',
-  tags: ['stage:storybook'],
+  title: 'Screens/IssueBoardPage',
+  tags: ['!autodocs', 'part'],
   render: (a) => <div style={{ width: 256 }}>{card(a)}</div>,
   args: { forceState: 'Default', issueKey: 'PAY-312', title: 'Support split payments across two cards', pullRequestVisible: true, pullRequest: '#2041', tagSecondaryVisible: true, commentsVisible: true, comments: '3', dueVisible: true, due: 'Nov 20', assigneeVisible: true },
   argTypes: {
@@ -39,11 +39,12 @@ const meta: Meta<Args> = {
 }
 export default meta
 type Story = StoryObj<Args>
-export const Playground: Story = {}
+export const IssueCardPlayground: Story = { name: 'IssueCard · Playground' }
 /** Every State. */
-export const States: Story = { render: (a) => <div style={{ display: 'flex', gap: 24, flexWrap: 'wrap' }}>{ISSUE_CARD_STATES.map((s) => <div key={s} style={{ width: 256 }}>{card({ ...a, forceState: s })}</div>)}</div> }
+export const IssueCardStates: Story = { name: 'IssueCard · States', render: (a) => <div style={{ display: 'flex', gap: 24, flexWrap: 'wrap' }}>{ISSUE_CARD_STATES.map((s) => <div key={s} style={{ width: 256 }}>{card({ ...a, forceState: s })}</div>)}</div> }
 /** Drag the card: the position follows the pointer with no transition (MOT-005); only the edge and the shadow ease. */
-export const Motion: Story = {
+export const IssueCardMotion: Story = {
+  name: 'IssueCard · Motion',
   render: function Render(a) {
     const [drag, setDrag] = React.useState<{ x: number; y: number; ox: number; oy: number } | null>(null)
     const [at, setAt] = React.useState({ x: 0, y: 0 })

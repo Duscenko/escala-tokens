@@ -1339,7 +1339,7 @@
     ],
     "file": "spec/contracts/SettingsRow.json",
     "figmaSet": "SettingsRow",
-    "story": "pages-settingsrow--playground",
+    "story": "screens-settingspage--settings-row-playground",
     "tokens": 10
   },
   {
@@ -1354,7 +1354,7 @@
     ],
     "file": "spec/contracts/SettingsSection.json",
     "figmaSet": "SettingsSection",
-    "story": "pages-settingssection--playground",
+    "story": "screens-settingspage--settings-section-playground",
     "tokens": 6
   },
   {
@@ -1369,7 +1369,7 @@
     ],
     "file": "spec/contracts/IssueCard.json",
     "figmaSet": "IssueCard",
-    "story": "pages-issuecard--playground",
+    "story": "screens-issueboardpage--issue-card-playground",
     "tokens": 18
   },
   {
@@ -1384,7 +1384,7 @@
     ],
     "file": "spec/contracts/BoardColumn.json",
     "figmaSet": "BoardColumn",
-    "story": "pages-boardcolumn--playground",
+    "story": "screens-issueboardpage--board-column-playground",
     "tokens": 8
   },
   {

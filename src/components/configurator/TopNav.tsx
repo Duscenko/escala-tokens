@@ -190,9 +190,9 @@ const NAV_ITEMS: { key: TopNavKey; label: string }[] = [
   { key: 'about', label: 'About' },
   { key: 'variables', label: 'Generator' },
   { key: 'components', label: 'Components' },
-  // Blocks is a tab INSIDE Components (Elements · Blocks, `CatalogueTabs`),
-  // so the bar keeps one door to the whole library. `blocks` stays a key:
-  // old `?section=blocks/…` links still land there, with Components lit.
+  // Blocks and Screens are tabs INSIDE Components (Elements · Blocks · Screens,
+  // `CatalogueTabs`), so the bar keeps one door to the whole library. `blocks`
+  // stays a key: old `?section=blocks/…` links still land there, with Components lit.
   { key: 'docs', label: 'Docs' },
   // Open beta (`/pricing`) is NOT a section tab: it lives in the Docs menu
   // (`DOCS_MENU_PAGES`), so the top bar carries only the four places you work

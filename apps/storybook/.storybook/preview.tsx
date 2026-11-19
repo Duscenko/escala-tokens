@@ -56,7 +56,7 @@ const preview: Preview = {
       // Getting started, then the tokens (Variables), then the components by Figma page. A literal list: storySort must be
       // self-contained (Storybook evaluates it on its own). The Variables names are FOUNDATION_DOCS' labels.
       storySort: {
-        order: ['Getting started', ['Introduction'], 'Variables', ['Color', 'Font', 'Radius', 'Spacing', 'Shadow', 'Grid', 'Sizes', 'Stroke', 'Icons', 'Motion'], 'Buttons', 'Forms', 'Indicators', 'Content & Surfaces', 'Feedback', 'Navigation', 'Blocks', 'Pages'],
+        order: ['Getting started', ['Introduction'], 'Variables', ['Color', 'Font', 'Radius', 'Spacing', 'Shadow', 'Grid', 'Sizes', 'Stroke', 'Icons', 'Motion'], 'Buttons', 'Forms', 'Indicators', 'Content & Surfaces', 'Feedback', 'Navigation', 'Blocks', 'Screens'],
       },
     },
   },

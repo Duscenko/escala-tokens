@@ -119,9 +119,9 @@
     ],
     "story": {
       "file": "apps/storybook/stories/SettingsRow.stories.tsx",
-      "title": "Pages/SettingsRow",
-      "id": "pages-settingsrow--playground",
-      "url": "https://escala-storybook.vercel.app/?path=/story/pages-settingsrow--playground"
+      "title": "Screens/SettingsPage",
+      "id": "screens-settingspage--settings-row-playground",
+      "url": "https://escala-storybook.vercel.app/?path=/story/screens-settingspage--settings-row-playground"
     }
   },
   "docs": {

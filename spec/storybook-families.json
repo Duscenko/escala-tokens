@@ -7,37 +7,9 @@
     "Content & Surfaces",
     "Feedback",
     "Navigation",
-    "Pages"
+    "Screens"
   ],
   "families": [
-    {
-      "id": "SettingsRow",
-      "page": "SettingsPage",
-      "folder": "Pages",
-      "root": "SettingsRow",
-      "parts": []
-    },
-    {
-      "id": "SettingsSection",
-      "page": "SettingsPage",
-      "folder": "Pages",
-      "root": "SettingsSection",
-      "parts": []
-    },
-    {
-      "id": "IssueCard",
-      "page": "IssueBoardPage",
-      "folder": "Pages",
-      "root": "IssueCard",
-      "parts": []
-    },
-    {
-      "id": "BoardColumn",
-      "page": "IssueBoardPage",
-      "folder": "Pages",
-      "root": "BoardColumn",
-      "parts": []
-    },
     {
       "id": "Button",
       "page": "Button (✓)  (D)",
@@ -511,6 +483,26 @@
       "folder": "Content & Surfaces",
       "root": "Sheet",
       "parts": []
+    },
+    {
+      "id": "SettingsPage",
+      "page": "SettingsPage",
+      "folder": "Screens",
+      "root": null,
+      "parts": [
+        "SettingsSection",
+        "SettingsRow"
+      ]
+    },
+    {
+      "id": "IssueBoardPage",
+      "page": "IssueBoardPage",
+      "folder": "Screens",
+      "root": null,
+      "parts": [
+        "BoardColumn",
+        "IssueCard"
+      ]
     }
   ],
   "noStory": {

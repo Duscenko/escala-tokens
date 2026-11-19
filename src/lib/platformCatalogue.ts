@@ -10,11 +10,18 @@
 // row in the platform's directory. A family's anatomy sets (CalendarDay,
 // TableCell…) are PARTS: they open from inside their family's page, never as
 // rows of their own.
+//
+// The manifest's `Screens` folder is not Elements: a screen (SettingsPage,
+// IssueBoardPage) is the Screens tab's, and its pieces (SettingsRow,
+// IssueCard…) live inside it there, never as loose components here.
 
 import manifest from '../../spec/storybook-families.json'
 import { COMPONENTS, type ComponentDef } from './componentCatalogue'
 
-export const PLATFORM_FOLDERS = manifest.folders as readonly string[]
+/** The Storybook folder whose families are whole screens: the Screens tab, not Elements. */
+export const SCREENS_FOLDER = 'Screens'
+
+export const PLATFORM_FOLDERS = (manifest.folders as readonly string[]).filter((f) => f !== SCREENS_FOLDER)
 
 /** The catalogue's category for each Storybook folder (icons are keyed by it). */
 export const FOLDER_CATEGORY: Record<string, string> = {
@@ -45,6 +52,7 @@ interface ManifestFamily { id: string; folder: string; root: string | null; part
 const noStory = new Set(Object.keys((manifest as { noStory?: Record<string, string> }).noStory ?? {}))
 
 export const PLATFORM_FAMILIES: PlatformFamily[] = (manifest.families as ManifestFamily[]).flatMap((f) => {
+  if (f.folder === SCREENS_FOLDER) return []
   const root = f.root ? BY_KEY.get(f.root) ?? null : null
   const parts = f.parts
     .filter((p) => !noStory.has(p))

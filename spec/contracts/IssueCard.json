@@ -173,9 +173,9 @@
     ],
     "story": {
       "file": "apps/storybook/stories/IssueCard.stories.tsx",
-      "title": "Pages/IssueCard",
-      "id": "pages-issuecard--playground",
-      "url": "https://escala-storybook.vercel.app/?path=/story/pages-issuecard--playground"
+      "title": "Screens/IssueBoardPage",
+      "id": "screens-issueboardpage--issue-card-playground",
+      "url": "https://escala-storybook.vercel.app/?path=/story/screens-issueboardpage--issue-card-playground"
     }
   },
   "docs": {

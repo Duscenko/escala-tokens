@@ -3,23 +3,25 @@ import { useI18n } from '../../lib/i18n'
 import { INSPECTOR_DURATION, INSPECTOR_EASE } from '../../lib/inspectorMotion'
 import { CHROME_CONTROL_SHELL, SEGMENT_INACTIVE, SEGMENT_SELECTED_FILL } from './themeWorkspaceLayout'
 
-/** What the Components section holds, smallest to largest. Templates join as
- *  a third entry once the first one exists — an empty tab reads as unfinished. */
-export type CatalogueTabKey = 'components' | 'blocks'
+/** What the Components section holds, smallest to largest: a component, a
+ *  block made of components, a whole screen made of both. */
+export type CatalogueTabKey = 'components' | 'blocks' | 'screens'
 
 const TABS: { key: CatalogueTabKey; label: string }[] = [
   { key: 'components', label: 'Elements' },
   { key: 'blocks', label: 'Blocks' },
+  { key: 'screens', label: 'Screens' },
 ]
 
-/** Elements · Blocks — the switch at the head of the Components section. The
- *  shell keeps them as two tabs (`components` / `blocks`, so every link keeps
- *  working); this strip is the only door between them.
+/** Elements · Blocks · Screens — the switch at the head of the Components
+ *  section. The shell keeps them as three tabs (`components` / `blocks` /
+ *  `screens`, so every link keeps working); this strip is the only door
+ *  between them.
  *
  *  It is the workspace's own segmented control — the inspector's switch
  *  (`FoundationSwitchStrip`): the chip track, and a RAISED key for the active
  *  option (`SEGMENT_SELECTED_FILL`: white with a soft shadow in light, a lift
- *  toward the ink with an inner highlight in dark) that slides between the two.
+ *  toward the ink with an inner highlight in dark) that slides between them.
  *  An inverted white pill was tried first and read as a heavy button, not a tab
  *  (reported). Active also gains full ink and semibold, so the state never rests
  *  on the fill alone. */

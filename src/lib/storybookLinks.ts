@@ -45,9 +45,10 @@ export function componentStorybookUrl(key: string): string | null {
   return title ? storybookDocsUrl(title) : null
 }
 
-/** A block's Storybook title from its registry id (`<group>/<name>`). */
+/** A block's Storybook title from its registry id (`<group>/<name>`). A screen's id is
+ *  already its title (`Screens/<name>`). */
 export function blockStoryTitle(blockId: string): string {
-  return `Blocks/${blockId}`
+  return blockId.startsWith('Screens/') ? blockId : `Blocks/${blockId}`
 }
 
 export function blockStorybookUrl(blockId: string): string {

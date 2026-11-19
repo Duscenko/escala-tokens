@@ -110,9 +110,9 @@
     ],
     "story": {
       "file": "apps/storybook/stories/BoardColumn.stories.tsx",
-      "title": "Pages/BoardColumn",
-      "id": "pages-boardcolumn--playground",
-      "url": "https://escala-storybook.vercel.app/?path=/story/pages-boardcolumn--playground"
+      "title": "Screens/IssueBoardPage",
+      "id": "screens-issueboardpage--board-column-playground",
+      "url": "https://escala-storybook.vercel.app/?path=/story/screens-issueboardpage--board-column-playground"
     }
   },
   "docs": {

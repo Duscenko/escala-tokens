@@ -35,7 +35,7 @@ export function CatalogueSwitcher({ groups, currentId, onPick, noun, bridgePrev,
   currentId: string
   onPick: (id: string) => void
   /** "component" / "block": names the list and the arrows. */
-  noun: 'component' | 'block'
+  noun: 'component' | 'block' | 'screen'
 }) {
   const { t } = useI18n()
   const [open, setOpen] = useState(false)
@@ -74,7 +74,7 @@ export function CatalogueSwitcher({ groups, currentId, onPick, noun, bridgePrev,
     setQuery('')
     if (id !== currentId) onPick(id)
   }
-  const label = noun === 'block' ? t('Go to block') : t('Go to component')
+  const label = noun === 'block' ? t('Go to block') : noun === 'screen' ? t('Go to screen') : t('Go to component')
 
   return (
     <div className="flex items-center gap-1">

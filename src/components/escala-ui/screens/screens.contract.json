@@ -1,0 +1,42 @@
+{
+  "$comment": "Contract of the SettingsPage and IssueBoardPage screens. Each screen is composed from components only and keeps its own pieces: SettingsSection and SettingsRow on SettingsPage, BoardColumn and IssueCard on IssueBoardPage. Figma owns the anatomy, Storybook the behaviour.",
+  "figma": {
+    "file": "7j5zukN5HpihGVJMmyjA20",
+    "pages": [
+      "SettingsPage 2223:838",
+      "IssueBoardPage 2223:839"
+    ]
+  },
+  "blocks": [
+    {
+      "name": "SettingsPage",
+      "axes": {},
+      "variants": 1,
+      "nests": ["SettingsSection", "SettingsRow", "Input", "Switch"],
+      "parts": ["SettingsSection", "SettingsRow"],
+      "slots": [],
+      "props": ["layout"],
+      "a11y": [
+        "One main landmark; each SettingsSection is a section named by its h2 title",
+        "Each row's control is named by the row's title",
+        "On a phone the switch rows stack, so the control never leaves its label"
+      ],
+      "motion": []
+    },
+    {
+      "name": "IssueBoardPage",
+      "axes": {},
+      "variants": 1,
+      "nests": ["BoardColumn", "IssueCard", "Avatar", "Badge", "IconButton", "Button"],
+      "parts": ["BoardColumn", "IssueCard"],
+      "slots": [],
+      "props": ["photos"],
+      "a11y": [
+        "One main landmark; each BoardColumn is a section named by its title and count",
+        "Each IssueCard is one link named by its title",
+        "The lanes scroll sideways when they do not fit, without hiding a lane"
+      ],
+      "motion": []
+    }
+  ]
+}

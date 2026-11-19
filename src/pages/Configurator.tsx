@@ -73,7 +73,7 @@ import type { GridFrameAlias, GridViewport } from '../lib/layoutTokens'
 // Components and Docs used to be folded into one 'docs' tab (a single rail
 // with two groups); split back into their own tabs, each with its own
 // single-purpose rail.
-type Tab = 'about' | 'foundations' | 'components' | 'blocks' | 'docs'
+type Tab = 'about' | 'foundations' | 'components' | 'blocks' | 'screens' | 'docs'
 import PreviewPanel from '../components/preview/PreviewPanel'
 import ExportView from '../components/configurator/ExportView'
 import FigmaSyncView from '../components/configurator/FigmaSyncView'
@@ -84,7 +84,7 @@ import ComponentsRail from '../components/configurator/ComponentsRail'
 import BlocksRail from '../components/configurator/BlocksRail'
 import BlocksView from '../components/configurator/BlocksView'
 import { CatalogueTabs } from '../components/configurator/CatalogueTabs'
-import { LISTED_BLOCKS, resolveBlock, type BlockDef } from '../components/configurator/blocks/blockRegistry'
+import { LISTED_BLOCKS, catalogueOf, resolveBlock, type BlockDef } from '../components/configurator/blocks/blockRegistry'
 import { StageActionsSlot } from '../components/configurator/docs/stageActions'
 import ComponentsView from '../components/configurator/ComponentsView'
 import DocsView, { CHANGELOG_KEY, FAQ_KEY } from '../components/configurator/DocsView'
@@ -302,6 +302,7 @@ const BLOCK_GROUP_ICONS: Record<string, ComponentType> = {
   Marketing:  ic('M3 10v4h4l6 4V6l-6 4H3z|M17 9a4 4 0 0 1 0 6', '1.8'),
   Navigation: ic('M3 5h18v4H3z|M3 13h11|M3 18h7', '1.8'),
   Overlay:    ic('M3 8h13v12H3z|M8 4h13v12', '1.8'),
+  Screens:    ic('M3 4h18v13H3z|M3 8h18|M8 21h8|M12 17v4', '1.8'),
 }
 
 // The editor follows the Figma Variables hierarchy: foundation → collection
@@ -932,6 +933,11 @@ export default function Configurator() {
     () => resolveBlock(incomingPlace?.block),
   )
   const [blockSearch, setBlockSearch] = useState('')
+  // Screens: null = the index. A link names the screen (`screens/SettingsPage`).
+  const [activeScreen, setActiveScreen] = useState<BlockDef | null>(
+    () => resolveBlock(incomingPlace?.screen ? `Screens/${incomingPlace.screen}` : undefined),
+  )
+  const [screenSearch, setScreenSearch] = useState('')
   const [exportMode, setExportMode] = useState<ExportMode>(null)
   // About is a reading page: the top bar floats over it on a blurred fill and
   // the hairline under it shows once the page has scrolled.
@@ -1973,9 +1979,15 @@ export default function Configurator() {
     // key from the board's inspector or an old link) opens the catalogue.
     setActiveComponent(isPlatformComponent(c.key) ? c : null)
   }
+  // One door for both catalogues: a screen opens in Screens, a block in Blocks.
   const selectBlock = (b: BlockDef) => {
     commitVisit()
     setExportMode(null)
+    if (catalogueOf(b) === 'screens') {
+      setTab('screens')
+      setActiveScreen(b)
+      return
+    }
     setTab('blocks')
     setActiveBlock(b)
   }
@@ -2024,6 +2036,7 @@ export default function Configurator() {
     collection: activeCollection,
     component: activeComponent?.key,
     block: activeBlock?.id,
+    screen: activeScreen?.name,
     doc: themeWorkspaceTab === 'system' && tab === 'foundations'
       ? (systemPlace.page === 'docs' ? systemPlace.doc : undefined)
       : docFoundationKey,
@@ -2382,6 +2395,22 @@ export default function Configurator() {
       />
     )
     centerKey = 'blocks'
+  } else if (tab === 'screens') {
+    header = { Icon: ComponentsIcon, title: 'Screens', subtitle: '' }
+    body = (
+      <BlocksView
+        catalogue="screens"
+        previewTheme={previewTheme}
+        active={activeScreen}
+        onSelect={selectBlock}
+        onOpenComponent={selectComponent}
+        onInspectRole={(roleId) => openTokenInVariables(roleId, true)}
+        onOpenFoundation={selectFoundation}
+        search={screenSearch}
+        onClearSearch={() => setScreenSearch('')}
+      />
+    )
+    centerKey = 'screens'
   } else {
     // tab === 'docs'
     header = {
@@ -2425,7 +2454,7 @@ export default function Configurator() {
   // of focused pages selected in its top-menu.
   const outerRailVisible = false
   // Blocks is the same canvas as Components: [rail] [page CARD] [directory].
-  const catalogueTab = tab === 'components' || tab === 'blocks'
+  const catalogueTab = tab === 'components' || tab === 'blocks' || tab === 'screens'
   const componentsCanvas = railVisible && catalogueTab
   // Every Variables foundation paints a 198px Groups column (Color owns it
   // inside ColorHub; the rest wrap with FoundationWorkbench). It's not an
@@ -2445,8 +2474,8 @@ export default function Configurator() {
   const navActive: TopNavKey | null =
     (!exportMode && tab === 'about') ? 'about'
     : (!exportMode && tab === 'components') ? 'components'
-    // Blocks is a tab OF Components (Elements · Blocks), not a section.
-    : (!exportMode && tab === 'blocks') ? 'components'
+    // Blocks and Screens are tabs OF Components (Elements · Blocks · Screens), not sections.
+    : (!exportMode && (tab === 'blocks' || tab === 'screens')) ? 'components'
     : (!exportMode && tab === 'docs') ? 'docs'
     : (!exportMode && tab === 'foundations') ? 'variables'
     : null
@@ -2512,7 +2541,7 @@ export default function Configurator() {
   // chrome (`chromeAccent` for ink, `brandSolidPair` for the fill).
   const canvasAccentStyle = useMemo<CSSProperties | undefined>(() => {
     if (homeFileBrowser) return undefined
-    const componentsWithSystem = (tab === 'components' || tab === 'blocks') && myThemeKeys(themeOrder, themes).length > 0
+    const componentsWithSystem = catalogueTab && myThemeKeys(themeOrder, themes).length > 0
     if (!themesCanvas && !componentsWithSystem) return undefined
     const appearance = stylePreview ? stylePreview.appearance : previewAppearance
     const ramp = stylePreview
@@ -2527,7 +2556,7 @@ export default function Configurator() {
       '--accent-solid': solid,
       '--accent-ink': readableInk(solid),
     } as CSSProperties
-  }, [themesCanvas, homeFileBrowser, tab, themeOrder, themes, stylePreview, previewAppearance, previewTheme, store, themeKinds])
+  }, [themesCanvas, homeFileBrowser, catalogueTab, themeOrder, themes, stylePreview, previewAppearance, previewTheme, store, themeKinds])
   /** Foundation icon rail on the Generator. Preview lights the widget that
    *  exists (Color → color edition, Font → text edition, …); Variables keeps
    *  all nine tables. Code, Docs and Home show only the Home tile. */
@@ -2563,7 +2592,7 @@ export default function Configurator() {
   // pages reached from elsewhere (the top bar, the Export menu): none.
   const workspaceNav: WorkspaceNavKey | null =
     tab === 'components' ? 'components'
-    : tab === 'blocks' ? 'components'
+    : tab === 'blocks' || tab === 'screens' ? 'components'
     : !themesCanvas ? null
     : themeWorkspaceTab === 'primitives' ? 'variables'
     : themeWorkspaceTab === 'code' ? 'code'
@@ -2665,7 +2694,7 @@ export default function Configurator() {
         nav={navActive}
         onNav={handleNav}
         hamburgerNav={tab === 'foundations'}
-        // Components (Elements · Blocks) is a workspace like the Generator:
+        // Components (Elements · Blocks · Screens) is a workspace like the Generator:
         // the section tags fold into ☰ and the brand names the page.
         navInMenu={catalogueTab}
         // Inside the Generator and Components the Figma door is the inspector
@@ -2809,11 +2838,11 @@ export default function Configurator() {
                 the section named at the left (the active category, where
                 Variables names its collection) and the controls at the right —
                 so the two canvases read as one product. */}
-            {/* One row for the whole catalogue: Elements · Blocks, then the page's own tools
+            {/* One row for the whole catalogue: Elements · Blocks · Screens, then the page's own tools
                 (find another page, Storybook, Figma). The name of what is open rides on the canvas. */}
             {catalogueTab && !skipCenterHeader && (
               <div className="flex h-[52px] flex-shrink-0 items-center justify-between gap-3 border-b border-line px-4">
-                <CatalogueTabs active={tab === 'blocks' ? 'blocks' : 'components'} onSelect={changeTab} />
+                <CatalogueTabs active={tab === 'blocks' || tab === 'screens' ? tab : 'components'} onSelect={changeTab} />
                 <StageActionsSlot />
               </div>
             )}
@@ -3086,6 +3115,18 @@ export default function Configurator() {
               onOpenIndex={() => setActiveBlock(null)}
               search={blockSearch}
               onSearch={setBlockSearch}
+              onInspectorSlot={setComponentsSlot}
+            />
+          )}
+          {componentsCanvas && tab === 'screens' && (
+            <BlocksRail
+              catalogue="screens"
+              icons={BLOCK_GROUP_ICONS}
+              active={activeScreen}
+              onSelect={selectBlock}
+              onOpenIndex={() => setActiveScreen(null)}
+              search={screenSearch}
+              onSearch={setScreenSearch}
               onInspectorSlot={setComponentsSlot}
             />
           )}
