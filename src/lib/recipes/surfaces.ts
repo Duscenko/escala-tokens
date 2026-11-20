@@ -113,20 +113,22 @@ export const MODAL_FOOTER: ComponentRecipe = {
   defaults: { Size: 'default', Layout: 'inline', Surface: 'plain' },
   parts: [
     part({}, () => ({
-      // A hairline along the TOP only (Border/subtle, inside); the padding is the surface inset on every side.
+      // The padding is the surface inset on every side. The Figma set binds no stroke (966:114); only the code-only
+      // `plain` surface below draws a hairline along the TOP (Border/subtle, inside).
       root: {
         paddingX: 'spacing.inset-surface', paddingY: 'spacing.inset-surface', gap: 'spacing.gap-control',
-        stroke: c('border.subtle'), strokeTopWidth: 'stroke.divider',
+        stroke: NONE, strokeTopWidth: 'stroke.none',
       },
       leading: { gap: 'spacing.gap-tight', text: c('content.secondary'), font: 'type.caption' },
       actions: { gap: 'spacing.gap-control' },
     })),
     // On the tray (Surface/layer-1) the footer has no hairline; inline sits 12 above and below its buttons, stacked the full inset.
+    // The hairline is the code-only `plain` card's (the Modal built before the file's Layout axis; PAR-001 baseline).
     part({ Surface: MODAL_SURFACES, Layout: MODAL_FOOTER_LAYOUTS }, (surface, layout): SlotMap => (surface === 'tray'
-      ? { root: { strokeTopWidth: 'stroke.none', paddingY: layout === 'stacked' ? 'spacing.inset-surface' : 'spacing.inset-control' } }
+      ? { root: { paddingY: layout === 'stacked' ? 'spacing.inset-surface' : 'spacing.inset-control' } }
       : surface === 'simple'
-        ? { root: { strokeTopWidth: 'stroke.none', paddingX: 'spacing.0', paddingY: 'spacing.0' } }
-        : {})),
+        ? { root: { paddingX: 'spacing.0', paddingY: 'spacing.0' } }
+        : { root: { stroke: c('border.subtle'), strokeTopWidth: 'stroke.divider' } })),
   ],
 }
 
