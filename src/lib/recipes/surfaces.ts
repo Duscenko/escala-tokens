@@ -158,8 +158,15 @@ export const SEPARATOR: ComponentRecipe = {
 // only when open), outline-rounded / outline-sharp (Surface/layer-1, 1px edge: Border/default closed, /strong open,
 // /subtle disabled; Radius/container or none), filled-rounded (Surface/muted). Rounded and outline variants
 // pad the sides 20px. Items sit 0 apart (ghost-default, ghost-underline) or 8 apart (the rest).
+// card (Figma 2121:2677 · 2696 · 2713; Accordion 2121:2730, 2026-11-20): a denser item. Trigger padding Y inset-control,
+// X inset-surface; the glyph sits in a Size/control-sm `iconBox` (Radius/action, Surface/muted; Action/disabled/default
+// when Disabled); label Type/label, content Type/body-sm with paddingBottom inset-control and an `iconOffset`
+// (Size/control-sm, always drawn: the file binds IconVisible to the box only) before the text. Each item draws a 1px
+// Border/subtle rule below (Radius/none, no fill). The card Accordion is the frame: Surface/layer-2, a 1px
+// Border/default edge INSIDE, Radius/container, clipped, items 0 apart; its last item drops the rule (an instance
+// override in the file).
 
-export const ACCORDION_VARIANTS = ['ghost-default', 'ghost-underline', 'ghost-rounded', 'outline-rounded', 'outline-sharp', 'filled-rounded'] as const
+export const ACCORDION_VARIANTS = ['ghost-default', 'ghost-underline', 'ghost-rounded', 'outline-rounded', 'outline-sharp', 'filled-rounded', 'card'] as const
 export const ACCORDION_ITEM_STATES = ['Closed', 'Open', 'Disabled'] as const
 
 export const ACCORDION: ComponentRecipe = {
@@ -167,9 +174,15 @@ export const ACCORDION: ComponentRecipe = {
   slots: ['root'],
   defaults: { Variant: 'ghost-default' },
   parts: [
-    part({ Variant: ACCORDION_VARIANTS }, (variant) => ({
-      root: { gap: variant === 'ghost-default' || variant === 'ghost-underline' ? 'spacing.none' : 'spacing.gap-control' },
-    })),
+    part({ Variant: ACCORDION_VARIANTS }, (variant): SlotMap => (variant === 'card'
+      ? {
+          root: { gap: 'spacing.none' },
+          // The frame and the last item's dropped rule belong to the Accordion only: a lone item's own wrapper
+          // (`data-standalone`) draws neither, as Figma's AccordionItem has none.
+          'root:not([data-standalone])': { fill: c('surface.layer-2'), stroke: c('border.default'), strokeWidth: 'stroke.divider', radius: 'radius.container' },
+          'root:not([data-standalone]) > :last-child': { strokeBottomWidth: 'stroke.none' },
+        }
+      : { root: { gap: variant === 'ghost-default' || variant === 'ghost-underline' ? 'spacing.none' : 'spacing.gap-control' } })),
   ],
 }
 
@@ -188,6 +201,8 @@ function accordionItemShell(variant: string, state: string): SlotProps {
       }
     case 'filled-rounded':
       return { fill: c('surface.muted'), radius: 'radius.container' }
+    case 'card':
+      return { fill: NONE, stroke: c('border.subtle'), strokeBottomWidth: 'stroke.divider', radius: 'radius.none' }
     default:
       return { fill: NONE }
   }
@@ -195,7 +210,7 @@ function accordionItemShell(variant: string, state: string): SlotProps {
 
 export const ACCORDION_ITEM: ComponentRecipe = {
   key: 'AccordionItem',
-  slots: ['root', 'trigger', 'icon', 'label', 'chevron', 'content'],
+  slots: ['root', 'trigger', 'iconBox', 'icon', 'label', 'chevron', 'content', 'contentRow', 'iconOffset'],
   defaults: { Variant: 'ghost-default', State: 'Closed' },
   parts: [
     part({}, () => ({
@@ -206,14 +221,25 @@ export const ACCORDION_ITEM: ComponentRecipe = {
       chevron: { width: 'icon.medium', height: 'icon.medium', text: c('content.secondary') },
       content: { font: 'type.body-md', text: c('content.secondary'), paddingBottom: 'spacing.inset-surface' },
     })),
-    part({ Variant: ACCORDION_VARIANTS }, (variant) => {
+    part({ Variant: ACCORDION_VARIANTS }, (variant): SlotMap => {
       const side = variant === 'ghost-default' || variant === 'ghost-underline' ? 'spacing.none' : 'spacing.inset-surface'
+      if (variant === 'card') {
+        return {
+          trigger: { paddingX: side, paddingY: 'spacing.inset-control' },
+          iconBox: { width: 'size.compact', height: 'size.compact', radius: 'radius.action' },
+          label: { font: 'type.label' },
+          content: { paddingX: side, paddingBottom: 'spacing.inset-control', font: 'type.body-sm' },
+          contentRow: { gap: 'spacing.gap-group' },
+          iconOffset: { width: 'size.compact' },
+        }
+      }
       return { trigger: { paddingX: side }, content: { paddingX: side } }
     }),
     part({ Variant: ACCORDION_VARIANTS, State: ACCORDION_ITEM_STATES }, (variant, state) => {
       const disabled = state === 'Disabled'
       return {
         root: accordionItemShell(variant, state),
+        ...(variant === 'card' ? { iconBox: { fill: c(disabled ? 'action.disabled.default' : 'surface.muted') } } : {}),
         ...(disabled ? { icon: { text: c('content.disabled') }, label: { text: c('content.disabled') }, chevron: { text: c('content.disabled') } } : {}),
       }
     }),

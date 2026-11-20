@@ -24748,6 +24748,20 @@
               "root": {
                 "gap": "spacing.gap-control"
               }
+            },
+            "card": {
+              "root": {
+                "gap": "spacing.none"
+              },
+              "root:not([data-standalone])": {
+                "fill": "color.surface.layer-2",
+                "stroke": "color.border.default",
+                "strokeWidth": "stroke.divider",
+                "radius": "radius.container"
+              },
+              "root:not([data-standalone]) > :last-child": {
+                "strokeBottomWidth": "stroke.none"
+              }
             }
           }
         }
@@ -24758,10 +24772,13 @@
       "slots": [
         "root",
         "trigger",
+        "iconBox",
         "icon",
         "label",
         "chevron",
-        "content"
+        "content",
+        "contentRow",
+        "iconOffset"
       ],
       "defaults": {
         "Variant": "ghost-default",
@@ -24849,6 +24866,31 @@
               },
               "content": {
                 "paddingX": "spacing.inset-surface"
+              }
+            },
+            "card": {
+              "trigger": {
+                "paddingX": "spacing.inset-surface",
+                "paddingY": "spacing.inset-control"
+              },
+              "iconBox": {
+                "width": "size.compact",
+                "height": "size.compact",
+                "radius": "radius.action"
+              },
+              "label": {
+                "font": "type.label"
+              },
+              "content": {
+                "paddingX": "spacing.inset-surface",
+                "paddingBottom": "spacing.inset-control",
+                "font": "type.body-sm"
+              },
+              "contentRow": {
+                "gap": "spacing.gap-group"
+              },
+              "iconOffset": {
+                "width": "size.compact"
               }
             }
           }
@@ -25022,6 +25064,48 @@
               "root": {
                 "fill": "color.surface.muted",
                 "radius": "radius.container"
+              },
+              "icon": {
+                "text": "color.content.disabled"
+              },
+              "label": {
+                "text": "color.content.disabled"
+              },
+              "chevron": {
+                "text": "color.content.disabled"
+              }
+            },
+            "card|Closed": {
+              "root": {
+                "fill": "none",
+                "stroke": "color.border.subtle",
+                "strokeBottomWidth": "stroke.divider",
+                "radius": "radius.none"
+              },
+              "iconBox": {
+                "fill": "color.surface.muted"
+              }
+            },
+            "card|Open": {
+              "root": {
+                "fill": "none",
+                "stroke": "color.border.subtle",
+                "strokeBottomWidth": "stroke.divider",
+                "radius": "radius.none"
+              },
+              "iconBox": {
+                "fill": "color.surface.muted"
+              }
+            },
+            "card|Disabled": {
+              "root": {
+                "fill": "none",
+                "stroke": "color.border.subtle",
+                "strokeBottomWidth": "stroke.divider",
+                "radius": "radius.none"
+              },
+              "iconBox": {
+                "fill": "color.action.disabled.default"
               },
               "icon": {
                 "text": "color.content.disabled"

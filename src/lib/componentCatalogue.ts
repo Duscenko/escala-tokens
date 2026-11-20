@@ -1605,10 +1605,10 @@ export const COMPONENTS: ComponentDef[] = [
     description: 'A stack of AccordionItem sharing one Variant. The first item is open by default; items open and close independently.',
     usage: 'Use for several stacked sections (FAQ, settings). For a single expandable region use Collapsible.',
     // The Figma file's axes, value for value (design-plans/accordion-contract.md).
-    axes: [{ name: 'Variant', values: ['ghost-default', 'ghost-underline', 'ghost-rounded', 'outline-rounded', 'outline-sharp', 'filled-rounded'] }],
+    axes: [{ name: 'Variant', values: ['ghost-default', 'ghost-underline', 'ghost-rounded', 'outline-rounded', 'outline-sharp', 'filled-rounded', 'card'] }],
     figmaSets: ['Accordion'],
     props: [
-      { name: 'variant', type: 'Figma Variant', description: 'Shared by every item; ghost-default and ghost-underline sit 0 apart, the rest 8.' },
+      { name: 'variant', type: 'Figma Variant', description: 'Shared by every item; ghost-default, ghost-underline and card sit 0 apart, the rest 8; card frames the items (Surface/layer-2, Border/default, Radius/container).' },
       { name: 'value / defaultValue / onValueChange', type: 'string[]', description: 'The open items (independent).' },
       { name: 'children', type: 'AccordionItem[]', description: 'The items.' },
     ],
@@ -1623,7 +1623,7 @@ export const COMPONENTS: ComponentDef[] = [
     description: 'One section: a trigger (optional icon, label, a chevron that flips when open) and collapsible content.',
     usage: 'Always inside an Accordion; give every item a value.',
     axes: [
-      { name: 'Variant', values: ['ghost-default', 'ghost-underline', 'ghost-rounded', 'outline-rounded', 'outline-sharp', 'filled-rounded'] },
+      { name: 'Variant', values: ['ghost-default', 'ghost-underline', 'ghost-rounded', 'outline-rounded', 'outline-sharp', 'filled-rounded', 'card'] },
       { name: 'State', values: ['Closed', 'Open', 'Disabled'] },
     ],
     figmaSets: ['AccordionItem'],

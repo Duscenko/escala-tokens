@@ -14,7 +14,7 @@ import { Accordion, AccordionItem } from 'src/components/escala-ui/accordion'
 
 | Axis | Values | Default |
 |---|---|---|
-| Variant | ghost-default · ghost-underline · ghost-rounded · outline-rounded · outline-sharp · filled-rounded | ghost-default |
+| Variant | ghost-default · ghost-underline · ghost-rounded · outline-rounded · outline-sharp · filled-rounded · card | ghost-default |
 | State | Closed · Open · Disabled | Closed |
 
 **Figma properties** BadgeVisible (boolean) · Content (text) · Icon (instance_swap) · IconVisible (boolean) · Label (text)
@@ -29,7 +29,7 @@ import { Accordion, AccordionItem } from 'src/components/escala-ui/accordion'
 
 ## Anatomy
 
-`root` · `trigger` · `icon` · `label` · `chevron` · `content`
+`root` · `trigger` · `iconBox` · `icon` · `label` · `chevron` · `content` · `contentRow` · `iconOffset`
 
 ## Tokens at the defaults
 

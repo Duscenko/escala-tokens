@@ -1202,7 +1202,7 @@
     "figmaSet": "Accordion",
     "figmaNode": "451:375",
     "story": "content-surfaces-accordion--playground",
-    "tokens": 2,
+    "tokens": 7,
     "motion": null,
     "stage": null
   },
@@ -1217,7 +1217,7 @@
     "figmaSet": "AccordionItem",
     "figmaNode": "451:188",
     "story": "content-surfaces-accordion--accordion-item-playground",
-    "tokens": 18,
+    "tokens": 24,
     "motion": "declared",
     "stage": null
   },

@@ -5667,10 +5667,10 @@ var init_componentCatalogue = __esm({
         description: "A stack of AccordionItem sharing one Variant. The first item is open by default; items open and close independently.",
         usage: "Use for several stacked sections (FAQ, settings). For a single expandable region use Collapsible.",
         // The Figma file's axes, value for value (design-plans/accordion-contract.md).
-        axes: [{ name: "Variant", values: ["ghost-default", "ghost-underline", "ghost-rounded", "outline-rounded", "outline-sharp", "filled-rounded"] }],
+        axes: [{ name: "Variant", values: ["ghost-default", "ghost-underline", "ghost-rounded", "outline-rounded", "outline-sharp", "filled-rounded", "card"] }],
         figmaSets: ["Accordion"],
         props: [
-          { name: "variant", type: "Figma Variant", description: "Shared by every item; ghost-default and ghost-underline sit 0 apart, the rest 8." },
+          { name: "variant", type: "Figma Variant", description: "Shared by every item; ghost-default, ghost-underline and card sit 0 apart, the rest 8; card frames the items (Surface/layer-2, Border/default, Radius/container)." },
           { name: "value / defaultValue / onValueChange", type: "string[]", description: "The open items (independent)." },
           { name: "children", type: "AccordionItem[]", description: "The items." }
         ],
@@ -5685,7 +5685,7 @@ var init_componentCatalogue = __esm({
         description: "One section: a trigger (optional icon, label, a chevron that flips when open) and collapsible content.",
         usage: "Always inside an Accordion; give every item a value.",
         axes: [
-          { name: "Variant", values: ["ghost-default", "ghost-underline", "ghost-rounded", "outline-rounded", "outline-sharp", "filled-rounded"] },
+          { name: "Variant", values: ["ghost-default", "ghost-underline", "ghost-rounded", "outline-rounded", "outline-sharp", "filled-rounded", "card"] },
           { name: "State", values: ["Closed", "Open", "Disabled"] }
         ],
         figmaSets: ["AccordionItem"],
@@ -10611,7 +10611,7 @@ var init_actions = __esm({
     FAB_GROUP_LAYOUTS = ["stack", "fan-center", "fan-left", "fan-right"];
     FAB_GROUP = {
       key: "FABGroup",
-      slots: ["root"],
+      slots: ["root", "item"],
       defaults: { Layout: "stack", Open: "false" },
       parts: [
         part({ Layout: FAB_GROUP_LAYOUTS }, (layout) => ({
@@ -12048,6 +12048,8 @@ function accordionItemShell(variant, state2) {
       };
     case "filled-rounded":
       return { fill: c("surface.muted"), radius: "radius.container" };
+    case "card":
+      return { fill: NONE, stroke: c("border.subtle"), strokeBottomWidth: "stroke.divider", radius: "radius.none" };
     default:
       return { fill: NONE };
   }
@@ -12192,21 +12194,25 @@ var init_surfaces = __esm({
         part({ Tone: SEPARATOR_TONES }, (tone2) => ({ line: { paint: c(tone2 === "subtle" ? "border.subtle" : tone2 === "strong" ? "border.strong" : "border.default") } }))
       ]
     };
-    ACCORDION_VARIANTS = ["ghost-default", "ghost-underline", "ghost-rounded", "outline-rounded", "outline-sharp", "filled-rounded"];
+    ACCORDION_VARIANTS = ["ghost-default", "ghost-underline", "ghost-rounded", "outline-rounded", "outline-sharp", "filled-rounded", "card"];
     ACCORDION_ITEM_STATES = ["Closed", "Open", "Disabled"];
     ACCORDION = {
       key: "Accordion",
       slots: ["root"],
       defaults: { Variant: "ghost-default" },
       parts: [
-        part({ Variant: ACCORDION_VARIANTS }, (variant) => ({
-          root: { gap: variant === "ghost-default" || variant === "ghost-underline" ? "spacing.none" : "spacing.gap-control" }
-        }))
+        part({ Variant: ACCORDION_VARIANTS }, (variant) => variant === "card" ? {
+          root: { gap: "spacing.none" },
+          // The frame and the last item's dropped rule belong to the Accordion only: a lone item's own wrapper
+          // (`data-standalone`) draws neither, as Figma's AccordionItem has none.
+          "root:not([data-standalone])": { fill: c("surface.layer-2"), stroke: c("border.default"), strokeWidth: "stroke.divider", radius: "radius.container" },
+          "root:not([data-standalone]) > :last-child": { strokeBottomWidth: "stroke.none" }
+        } : { root: { gap: variant === "ghost-default" || variant === "ghost-underline" ? "spacing.none" : "spacing.gap-control" } })
       ]
     };
     ACCORDION_ITEM = {
       key: "AccordionItem",
-      slots: ["root", "trigger", "icon", "label", "chevron", "content"],
+      slots: ["root", "trigger", "iconBox", "icon", "label", "chevron", "content", "contentRow", "iconOffset"],
       defaults: { Variant: "ghost-default", State: "Closed" },
       parts: [
         part({}, () => ({
@@ -12219,12 +12225,23 @@ var init_surfaces = __esm({
         })),
         part({ Variant: ACCORDION_VARIANTS }, (variant) => {
           const side = variant === "ghost-default" || variant === "ghost-underline" ? "spacing.none" : "spacing.inset-surface";
+          if (variant === "card") {
+            return {
+              trigger: { paddingX: side, paddingY: "spacing.inset-control" },
+              iconBox: { width: "size.compact", height: "size.compact", radius: "radius.action" },
+              label: { font: "type.label" },
+              content: { paddingX: side, paddingBottom: "spacing.inset-control", font: "type.body-sm" },
+              contentRow: { gap: "spacing.gap-group" },
+              iconOffset: { width: "size.compact" }
+            };
+          }
           return { trigger: { paddingX: side }, content: { paddingX: side } };
         }),
         part({ Variant: ACCORDION_VARIANTS, State: ACCORDION_ITEM_STATES }, (variant, state2) => {
           const disabled = state2 === "Disabled";
           return {
             root: accordionItemShell(variant, state2),
+            ...variant === "card" ? { iconBox: { fill: c(disabled ? "action.disabled.default" : "surface.muted") } } : {},
             ...disabled ? { icon: { text: c("content.disabled") }, label: { text: c("content.disabled") }, chevron: { text: c("content.disabled") } } : {}
           };
         })
@@ -14080,7 +14097,83 @@ var init_motion2 = __esm({
       Sheet: { enter: { name: "sheet-enter" }, exit: { name: "sheet-exit" }, sideAttr: "side" },
       Popover: popover("--radix-popover-content-transform-origin"),
       TooltipContent: popover("--radix-tooltip-content-transform-origin"),
-      DropdownMenu: popover("--radix-dropdown-menu-content-transform-origin")
+      DropdownMenu: popover("--radix-dropdown-menu-content-transform-origin"),
+      // ── MOT-002 closed (owner decision 2026-11-20). An empty `{}` is an explicit decision: the contract carries it
+      // (motion is no longer null) and the stylesheet emits nothing for it.
+      // Press: sink and colours exactly like Button.
+      CloseButton: { transitions: { root: { ...states("background-color", "color", "border-color", "box-shadow"), scale: "use-hover" } }, press: {} },
+      FABButton: { transitions: { root: { ...states("background-color", "color", "border-color", "box-shadow"), scale: "use-hover" } }, press: {} },
+      ButtonGroupItem: { transitions: { root: { ...states("background-color", "color", "border-color", "box-shadow"), scale: "use-hover" } }, press: {} },
+      SocialLoginButton: { transitions: { root: { ...states("background-color", "color", "border-color", "box-shadow"), scale: "use-hover" } }, press: {} },
+      // Fill: colour only, no press.
+      TextLink: { transitions: { root: FILL } },
+      BreadcrumbItem: { transitions: { root: FILL } },
+      BreadcrumbEllipsis: { transitions: { root: FILL } },
+      TooltipInfoTrigger: { transitions: { root: FILL } },
+      // Field: the edge and the focus halo, like Input.
+      Textarea: { transitions: { root: FIELD2 } },
+      NumberInput: { transitions: { root: FIELD2 } },
+      // A child carries the motion; the wrapper itself does not move.
+      InputOTP: {},
+      // InputOTPSlot animates (FIELD).
+      CheckboxItem: {},
+      // Checkbox animates.
+      CheckboxGroup: {},
+      // Checkbox animates.
+      SwitchGroup: {},
+      // Switch animates.
+      Slider: {},
+      // SliderThumb animates; the range follows the pointer and must not lag.
+      // Static: Disabled/Loading are not animated.
+      TableCell: {},
+      TableMediaCell: {},
+      TableTrendCell: {},
+      TableLoadMore: {},
+      // Disabled/Loading are not animated; the Spinner has its own loop.
+      StepperItem: {},
+      StepperIndicator: {},
+      StepperIcon: {},
+      // ── MOT-002 closed, batch 2 (owner decision 2026-11-20).
+      // The menu is the DropdownMenu's own panel (`data-escala="DropdownMenu"`, portaled outside the group), so it already grows out
+      // of the caret on `popover-enter` / `popover-exit` (the DropdownMenu entry above) and its rows arrive on `use-stagger-in`
+      // (split-button.tsx). A second popover here would play the panel twice: the empty entry records the decision.
+      SplitButton: {},
+      // Open: the items arrive one after another on `use-travel-in` (opacity + transform, each `--motion-stagger` behind the last,
+      // `--escala-index` set by the component); closing fades and travels back on `use-travel-out`, all at once. The item keeps
+      // the FABButton's own colour and press timing (a slot's `transition` replaces the button's). Reduced motion: the roles
+      // shorten to the fade, the stagger and the travel go to 0 (`--motion-stagger: 0`, neutral transforms).
+      FABGroup: {
+        transitions: {
+          item: {
+            ...states("background-color", "color", "border-color", "box-shadow"),
+            scale: "use-hover",
+            opacity: "use-travel-out",
+            transform: "use-travel-out",
+            visibility: "use-travel-out"
+          },
+          'item[data-open="true"]': {
+            ...states("background-color", "color", "border-color", "box-shadow"),
+            scale: "use-hover",
+            opacity: "use-travel-in",
+            transform: "use-travel-in",
+            visibility: "use-travel-in"
+          }
+        },
+        stagger: { slot: "item", when: '[data-open="true"]' }
+      },
+      // Collapse: the rail's width (the recipe's two widths, 48 px and 272 px) eases open on `use-disclosure-in` and shut on
+      // `use-disclosure-out`. Under reduced motion both roles shorten to the fade.
+      Sidebar: {
+        transitions: {
+          root: { width: "use-disclosure-out" },
+          'root[data-collapsed="false"]': { width: "use-disclosure-in" }
+        }
+      },
+      // The title and subtitle mount when the rail expands and fade in on `use-disclosure-in` (`appear`); collapsing unmounts
+      // them at once, under the rail's `use-disclosure-out`.
+      SidebarBrand: { transitions: { text: { opacity: "use-disclosure-in" } }, appear: ["text"] },
+      // The group's heading (SidebarGroupLabel, `SidebarGroup.label`): the same fade as the brand's text, the same roles.
+      SidebarGroup: { transitions: { label: { opacity: "use-disclosure-in" } }, appear: ["label"] }
     };
   }
 });

@@ -341,7 +341,7 @@ export const OVERVIEWS: Record<string, Overview> = {
   // variant and the Variant control walks them (owner, 2026-11-18).
   AccordionItem: [
     each('State', ['Closed', 'Open', 'Disabled'], { Variant: 'outline-rounded' }),
-    each('Variant', ['ghost-default', 'ghost-underline', 'ghost-rounded', 'outline-rounded', 'outline-sharp', 'filled-rounded'], { State: 'Open' }),
+    each('Variant', ['ghost-default', 'ghost-underline', 'ghost-rounded', 'outline-rounded', 'outline-sharp', 'filled-rounded', 'card'], { State: 'Open' }),
   ],
   Table: [
     // The file's two prototype examples: Dividers rows = «Example Light» (resting · hover · selected · disabled),

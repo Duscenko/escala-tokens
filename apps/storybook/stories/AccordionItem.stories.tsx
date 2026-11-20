@@ -22,7 +22,7 @@ function render({ iconVisible, icon, label, content, variant, state }: ItemStory
   return (
     <div style={{ width: 480 }}>
       {/* The State is part of the playground: Open starts the item open, Disabled mutes it. */}
-      <Accordion key={state} variant={variant} defaultValue={state === 'Open' ? ['item'] : []}>
+      <Accordion key={state} standalone variant={variant} defaultValue={state === 'Open' ? ['item'] : []}>
         <AccordionItem value="item" disabled={state === 'Disabled'} label={label} iconVisible={iconVisible} icon={icon ? <PreviewIcon concept={icon} size={20} /> : undefined}>
           {content}
         </AccordionItem>
