@@ -8,13 +8,15 @@
 | Slot | Piece | Stage | Since |
 |---|---|---|---|
 | Design (Workshop) | — | design | — |
-| Build (Storybook) | — | storybook | — |
+| Build (Storybook) | AccordionItem `Variant=card` (in Figma, missing in code) | storybook | 2026-11-20 |
 
 ## Next (ordered, max 5)
 
-1. Foundations pull: port the 2026-11-18 foundation changes into `tokens/` (blocks every component sync)
-2. Library sync of the components already approved in Storybook
+1. César approves the first piece in Storybook, starting with Button (all 65 registry pieces are at `storybook`; none approved)
+2. Library sync of the pieces César approves
 3. escalatokens.com showing approved components only
+
+Done: Foundations pull of the 18–19 Nov changes (`b6fc747`, `governance/runs/2026-11-18-pull-unversioned.json`, `2026-11-19-pull-unversioned.json`).
 
 ## Paused (do not start)
 
