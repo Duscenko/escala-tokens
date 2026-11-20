@@ -52,7 +52,7 @@ About + the phone generator (`MobileThemeSheet.tsx`, picks only, no free inputs)
 | Figma file palette (Storybook only) | `src/lib/figmaFilePalette.ts` + `.generated.ts` |
 | Components | `src/components/escala-ui/*.tsx` (Figma twins; Radix for behaviour) |
 | Styling of every component | recipes: `src/lib/componentRecipes.ts` + `src/lib/recipes/*.ts` (`motion.ts` for motion) |
-| Component contracts | **machine:** `spec/contracts/<Key>.json` + `index.json` (GENERATED, `npm run gen:contracts`: Figma set + axes, API, slots, every token consumed, story id, files); **human:** `design-plans/<component>-contract.md`; blocks also `src/components/escala-ui/blocks/*.contract.json` |
+| Component contracts | **machine:** `spec/contracts/<Key>.json` schema v2 + `index.json` (components AND blocks) + `schema.json` + `README.md` (GENERATED, `npm run gen:contracts`: Figma set, API, bindings per state, CSS/Figma names, motion, behaviour, import, story); **human:** `design-plans/<component>-contract.md`; block source `src/components/escala-ui/blocks/*.contract.json`. Mission: `design-plans/agent-ready-contracts.md` |
 | Catalogue (mirrors the plugin's CATALOG) | `src/lib/componentCatalogue.ts` |
 | Figma component snapshot | `spec/figma-components.json` (generated) + `spec/figma-components.status.json` (debt ledger) |
 | Storybook | `apps/storybook` (stories, `.storybook`), families in `spec/storybook-families.json` |

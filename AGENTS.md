@@ -12,7 +12,7 @@ A desktop token configurator. Designers pick tokens; the app emits `tokens.json`
 |---|---|
 | What not to break | `docs/agent-native/CONTRACTS.md` |
 | Payload shape | `docs/agent-native/tokens.schema.json` |
-| One component: API, Figma set, slots, tokens it consumes, story | `spec/contracts/<Key>.json` (index: `spec/contracts/index.json`) |
+| One component or block: API, Figma set, slots, the token each state binds, CSS + Figma names, motion, keyboard, import, story | `spec/contracts/<Key>.json` (index + how to use: `spec/contracts/index.json`, `spec/contracts/README.md`) |
 | Five-layer roadmap | `docs/agent-native/PLAN.md` |
 | Current rules, repo map, sources of truth | `CLAUDE.md` (short, current state) |
 | Why a rule exists (history, 86 dated notes) | `docs/history/CLAUDE-archive-2026-11-16.md` (search by keyword, never load whole) |
