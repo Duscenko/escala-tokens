@@ -148,8 +148,10 @@ export default function WorkspaceNavColumn({
       {folded && foldedChildren && (
         <div className="flex min-h-0 flex-1 flex-col items-center gap-0.5 overflow-y-auto py-2">{foldedChildren}</div>
       )}
-      {/* Folded, the list stays mounted (hidden) so the panels portaled into
-          it keep their place and their state; opening it again shows them. */}
+      {/* Folded, the list is hidden. Variables then points its NavPortal back
+          at the inspector (Configurator), so the portaled panels remount
+          there: folding is a layout change, local scroll and accordion state
+          inside them reset. */}
       <div className={`flex min-h-0 flex-1 flex-col overflow-y-auto overflow-x-hidden ${folded ? 'hidden' : ''}`} style={slotStyle}>
         {children}
         <div

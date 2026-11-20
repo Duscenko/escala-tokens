@@ -1,6 +1,7 @@
 import { useState, type ReactNode } from 'react'
 import ScrubInput, { isScrubbable } from '../ui/ScrubInput'
 import VariableCollectionRail, { RailNoGroups } from './VariableCollectionRail'
+import { useInNavColumn } from './WorkspaceNavColumn'
 import {
   TABLE_CELL_DIVIDER, TABLE_GROUP_LABEL, TABLE_HEAD_CELL,
   tableHeaderClass, tableMatchClass, tableRowClass,
@@ -134,6 +135,7 @@ export default function VariablesTable({
    */
   footer?: ReactNode
 }) {
+  const inColumn = useInNavColumn()
   const controlled = query !== undefined
   const [innerQuery, setInnerQuery] = useState('')
   const activeQuery = controlled ? query : innerQuery
@@ -251,10 +253,12 @@ export default function VariablesTable({
   return (
     <div className="flex flex-col bg-app flex-1 min-h-0 h-full">
       <div className="flex items-stretch flex-1 min-h-0">
-        <VariableCollectionRail>
+        {/* `railBody` is a setting (Shadow's preset): with the left nav column
+            it goes to the inspector, and the column says there are no groups. */}
+        <VariableCollectionRail settings={inColumn ? railBody : undefined}>
           {/* A heading over nothing reads as a section that failed to load —
               Stroke and Grid genuinely have no groups, so they say so. */}
-          {railBody ? <div className="flex flex-col gap-0.5">{railBody}</div> : <RailNoGroups />}
+          {railBody && !inColumn ? <div className="flex flex-col gap-0.5">{railBody}</div> : <RailNoGroups />}
         </VariableCollectionRail>
         <div className="flex-1 min-w-0 flex flex-col min-h-0">
           {topBar}
