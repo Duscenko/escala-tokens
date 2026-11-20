@@ -207,7 +207,7 @@ export const RECIPE_MOTION: Record<string, RecipeMotion> = {
     },
     stagger: { slot: 'item', when: '[data-open="true"]' },
   },
-  // Collapse: the rail's width (the recipe's two widths, 48 px and 260 px) eases open on `use-disclosure-in` and shut on
+  // Collapse: the rail's width (the recipe's two widths, 48 px and 272 px) eases open on `use-disclosure-in` and shut on
   // `use-disclosure-out`. Under reduced motion both roles shorten to the fade.
   Sidebar: {
     transitions: {
