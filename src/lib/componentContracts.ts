@@ -17,17 +17,13 @@
  * when the committed files drift from what this builds.
  */
 import { COMPONENTS, type ComponentBox, type ComponentDef, type ComponentLock } from './componentCatalogue'
-import { COMPONENT_RECIPES, cssVarOf, recipeTokenRefs, splitRef, type ComponentRecipe } from './componentRecipes'
 import type { RecipeMotion, SlotMap } from './recipes/helpers'
-import { figmaSemanticName } from './agentBundle/names'
-import { roleFigmaName } from './roleNames'
 import { PRIMITIVE_BEHAVIOUR, ariaIn, primitivesIn, type PrimitiveBehaviour } from './contractBehaviour'
-import { COMPONENT_BEHAVIOUR, type AuthoredBehaviour } from './componentBehaviour'
+import type { AuthoredBehaviour } from './componentBehaviour'
 import { motionTrigger } from './contractGates'
+import { CONTRACT_SCHEMA, FIGMA_FILE_KEY, contractCore, kebab } from './contractCore'
 
-/** v2 (2026-11-20) is additive over v1: bindings, names, motion, behaviour, code.import. */
-export const CONTRACT_SCHEMA = 'escala-component-contract/2'
-export const FIGMA_FILE_KEY = '7j5zukN5HpihGVJMmyjA20'
+export { CONTRACT_SCHEMA, FIGMA_FILE_KEY, figmaNameOf } from './contractCore'
 export const STORYBOOK_URL = 'https://escala-storybook.vercel.app'
 
 export interface FigmaSnapshotSet {
@@ -130,10 +126,6 @@ export function exportToIdPart(name: string): string {
   return storybookSanitize(name.replace(/([a-z0-9])([A-Z])/g, '$1 $2').replace(/([A-Z])([A-Z][a-z])/g, '$1 $2'))
 }
 
-function kebab(key: string): string {
-  return key.replace(/([a-z0-9])([A-Z])/g, '$1-$2').replace(/([A-Z])([A-Z][a-z])/g, '$1-$2').toLowerCase()
-}
-
 const NAME_RE = /data-escala(?:=|['"]?\s*:\s*)\s*['"]([A-Za-z][A-Za-z0-9]*)['"]/g
 
 function filesDrawing(key: string, uiFiles: Record<string, string>): string[] {
@@ -172,33 +164,6 @@ function findStory(key: string, storyFiles: Record<string, string>): ComponentCo
   return { file: `apps/storybook/stories/${file}`, title, id, url: id ? `${STORYBOOK_URL}/?path=/story/${id}` : null }
 }
 
-function groupTokens(refs: string[]): Record<string, string[]> {
-  const out: Record<string, string[]> = {}
-  for (const ref of refs) {
-    const kind = ref.split('.')[0]
-    ;(out[kind] ??= []).push(ref)
-  }
-  for (const k of Object.keys(out)) out[k] = [...new Set(out[k])].sort()
-  return Object.fromEntries(Object.entries(out).sort(([a], [b]) => a.localeCompare(b)))
-}
-
-/** `color.action.primary.hover` → `Action/primary/hover`; dimension roles by their Figma path; type roles are text styles. */
-export function figmaNameOf(ref: string): string | null {
-  const [ns, name] = splitRef(ref)
-  if (ns === 'color') return figmaSemanticName(name)
-  if (ns === 'type') return /^(text|display)-(xs|sm|md|lg|xl|2xl)$/.test(name) ? null : `Type/${name}`
-  if (ns === 'icon' || ns === 'selector' || ns === 'size' || ns === 'spacing' || ns === 'radius' || ns === 'stroke') return roleFigmaName(ns, name)
-  return null
-}
-
-function namesOf(refs: string[]): ComponentContract['names'] {
-  return Object.fromEntries(refs.map((ref) => [ref, { css: cssVarOf(ref), figma: figmaNameOf(ref) }]))
-}
-
-function bindingsOf(recipe: ComponentRecipe | undefined): ComponentContract['bindings'] {
-  return recipe ? recipe.parts.map((p) => ({ axes: p.axes, values: p.values })) : []
-}
-
 const EXPORT_RE = /export\s+(?:const|function|class)\s+([A-Z][A-Za-z0-9]*)|export\s*\{([^}]*)\}/g
 
 function exportsOf(src: string): string[] {
@@ -221,7 +186,7 @@ function importOf(key: string, files: string[], uiFiles: Record<string, string>)
   return exports.length ? { name: exports[0], module: first.replace(/\.tsx?$/, ''), exports } : null
 }
 
-function behaviourOf(key: string, files: string[], uiFiles: Record<string, string>): ComponentContract['behaviour'] {
+function behaviourOf(authored: AuthoredBehaviour | null, files: string[], uiFiles: Record<string, string>): ComponentContract['behaviour'] {
   const srcs = files.map((f) => uiFiles[f.replace('src/components/escala-ui/', '')] ?? '')
   const names = [...new Set(srcs.flatMap(primitivesIn))]
   const roles = new Set<string>()
@@ -231,12 +196,12 @@ function behaviourOf(key: string, files: string[], uiFiles: Record<string, strin
     primitives: names.filter((n) => PRIMITIVE_BEHAVIOUR[n]).map((name) => ({ name, ...PRIMITIVE_BEHAVIOUR[name] })),
     roles: [...roles].sort(),
     ariaAttributes: [...attributes].sort(),
-    authored: COMPONENT_BEHAVIOUR[key] ?? null,
+    authored,
   }
 }
 
 export function buildContract(def: ComponentDef, src: ContractSources): ComponentContract {
-  const recipe = COMPONENT_RECIPES[def.key]
+  const core = contractCore(def)
   const files = filesDrawing(def.key, src.uiFiles)
   const hit = findSet(def, src.figmaPages)
   const humanContract = `${kebab(def.key)}-contract.md`
@@ -246,16 +211,17 @@ export function buildContract(def: ComponentDef, src: ContractSources): Componen
   const properties = hit?.set.props
     ? hit.set.props.split(',').filter(Boolean).map((p) => { const [name, type] = p.split(':'); return { name, type } })
     : null
+  // Key order is the committed files' order: core fields where they always were.
   return {
-    $schema: CONTRACT_SCHEMA,
+    $schema: core.$schema,
     $comment: 'GENERATED by `npm run gen:contracts` from the catalogue, the recipe, spec/figma-components.json and the repo. Never edit by hand.',
-    key: def.key,
-    label: def.label,
-    category: def.category,
-    box: def.box,
-    locks: def.locks,
-    description: def.description,
-    owners: { anatomy: 'figma', foundations: 'figma', behaviour: 'storybook' },
+    key: core.key,
+    label: core.label,
+    category: core.category,
+    box: core.box,
+    locks: core.locks,
+    description: core.description,
+    owners: core.owners,
     figma: {
       file: FIGMA_FILE_KEY,
       page: hit?.page.page ?? null,
@@ -267,15 +233,15 @@ export function buildContract(def: ComponentDef, src: ContractSources): Componen
       catalogueSets: def.figmaSets,
       url: hit ? `https://www.figma.com/design/${FIGMA_FILE_KEY}/?node-id=${hit.page.id.replace(':', '-')}` : null,
     },
-    api: { axes: def.axes, defaults: recipe?.defaults ?? {}, props: def.props },
-    anatomy: { slots: recipe?.slots ?? [] },
-    tokens: recipe ? groupTokens(recipeTokenRefs(recipe)) : {},
-    names: recipe ? namesOf(recipeTokenRefs(recipe)) : {},
-    bindings: bindingsOf(recipe),
-    motion: recipe?.motion ?? null,
-    behaviour: behaviourOf(def.key, files, src.uiFiles),
-    usage: def.usage,
-    accessibility: def.accessibility,
+    api: core.api,
+    anatomy: core.anatomy,
+    tokens: core.tokens,
+    names: core.names,
+    bindings: core.bindings,
+    motion: core.motion,
+    behaviour: behaviourOf(core.authored, files, src.uiFiles),
+    usage: core.usage,
+    accessibility: core.accessibility,
     code: { files, import: importOf(def.key, files, src.uiFiles), story: findStory(def.key, src.storyFiles) },
     docs: { humanContract: src.designPlans.includes(humanContract) ? `design-plans/${humanContract}` : null, readable: `spec/contracts/${def.key}.md` },
   }
