@@ -23,11 +23,9 @@ async function vname(id) {
 // What a paint list binds: 'none' · '<Variable/name>' · 'unbound', plus an opacity only when the
 // paint's opacity differs from the variable's own resolved alpha (Figma mirrors that alpha into
 // `paint.opacity` when a translucent role is bound, which is not an opacity on the role).
-async function readPaints(list, consumer) {
-  if (!Array.isArray(list)) return { got: 'none' }
-  const vis = list.filter((p) => p.visible !== false && (p.opacity ?? 1) > 0)
-  if (!vis.length) return { got: 'none' }
-  const p = vis[vis.length - 1]
+// `stack`: a fill reads every visible paint bottom to top, joined ' + ' (a state drawn as a
+// translucent fill over the rest fill is a stack in the contract too: `overlay`, `overlay2`).
+async function readOne(p, consumer) {
   const b = p.boundVariables && p.boundVariables.color
   if (!b) return { got: p.type === 'SOLID' ? 'unbound' : p.type.toLowerCase() }
   const op = p.opacity ?? 1
@@ -36,6 +34,16 @@ async function readPaints(list, consumer) {
   const r = v ? v.resolveForConsumer(consumer) : null
   const alpha = r && r.value && typeof r.value === 'object' && 'a' in r.value ? r.value.a : 1
   return { got: await vname(b.id), opacity: Math.abs(alpha - op) < 0.011 ? null : Math.round(op * 100) / 100 }
+}
+async function readPaints(list, consumer, stack) {
+  if (!Array.isArray(list)) return { got: 'none' }
+  const vis = list.filter((p) => p.visible !== false && (p.opacity ?? 1) > 0)
+  if (!vis.length) return { got: 'none' }
+  const top = await readOne(vis[vis.length - 1], consumer)
+  if (!stack || vis.length === 1) return top
+  const all = []
+  for (const p of vis) all.push((await readOne(p, consumer)).got)
+  return { got: all.join(' + '), opacity: top.opacity }
 }
 function variantProps(name) {
   const out = {}
@@ -79,6 +87,9 @@ for (const set of EXPECT.sets) {
   const skipped = {}
   for (const variant of variants) {
     const props = node.type === 'COMPONENT_SET' ? variantProps(variant.name) : {}
+    // A variant with an axis value the contract does not know (not built in code yet): not compared.
+    const unknown = Object.entries(set.ax || {}).find(([ax, vals]) => ax in props && !vals.includes(props[ax]))
+    if (unknown) { skipped[`${unknown[0]}=${props[unknown[0]]} not in the contract`] = 1; continue }
     // Merge every rule that applies to this variant, general → specific (contract order).
     const want = {}
     for (const r of set.rules) {
@@ -95,7 +106,11 @@ for (const set of EXPECT.sets) {
     }
     const layers = layersOf(variant)
     const claimedText = new Set()
-    for (const [part, slots] of Object.entries(want)) if (part !== 'root' && 't' in slots && layers[norm(part)]) claimedText.add(layers[norm(part)])
+    // A part's text target is claimed, so the root's text never reads it.
+    for (const [part, slots] of Object.entries(want)) {
+      const l = part !== 'root' && 't' in slots ? layers[norm(part)] : null
+      if (l) { claimedText.add(l); const t = l.type === 'TEXT' ? l : firstPainted(l); if (t) claimedText.add(t) }
+    }
     for (const [part, slots] of Object.entries(want)) {
       const layer = part === 'root' ? variant : layers[norm(part)]
       if (!layer) { skipped[`no layer named ${part}`] = 1; continue }
@@ -112,8 +127,13 @@ for (const set of EXPECT.sets) {
         if (slot === 't' && target.type !== 'TEXT' && !visible(target.fills) && visible(target.strokes)) key = 'strokes'
         // A part drawn by one nested instance (e.g. a Separator): the paint is that component's, not this one's.
         if (slot !== 't' && target.type === 'FRAME' && !visible(target[key]) && target.children.length === 1 && target.children[0].type === 'INSTANCE') { skipped[`${part} drawn by a nested instance`] = 1; continue }
-        const read = await readPaints(target[key], target)
+        let read = await readPaints(target[key], target, slot === 'f')
         const w = idx < 0 ? 'none' : EXPECT.names[idx]
+        // A text colour on a vector with both a fill and a stroke (an arrow: fill + edge) may paint either.
+        if (slot === 't' && target.type !== 'TEXT' && read.got !== w && visible(target.fills) && visible(target.strokes)) {
+          const other = await readPaints(target.strokes, target)
+          if (other.got === w) read = other
+        }
         compared++
         const issues = []
         if (read.got !== w) issues.push(['role', read.got])

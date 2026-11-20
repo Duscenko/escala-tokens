@@ -3,11 +3,12 @@ import { join } from 'node:path'
 import { describe, expect, it } from 'vitest'
 import type { ComponentContract } from '../componentContracts'
 import { mergeFindings, type GovernanceFinding } from '../contractGates'
-import { BINDINGS_SOURCE, encode, expectationOf, findingsOf, prepare } from '../../../scripts/figma-bindings'
+import { BINDINGS_SOURCE, encode, expectationOf, findingsOf, PART_LAYER, prepare } from '../../../scripts/figma-bindings'
 
 /** Phase 5 (2/2) of design-plans/agent-ready-contracts.md: Figma per-state bindings vs `bindings`. */
 const ROOT = join(__dirname, '../../..')
-const button: ComponentContract = JSON.parse(readFileSync(join(ROOT, 'spec/contracts/Button.json'), 'utf8'))
+const load = (key: string): ComponentContract => JSON.parse(readFileSync(join(ROOT, `spec/contracts/${key}.json`), 'utf8'))
+const button = load('Button')
 const TEMPLATE = readFileSync(join(ROOT, 'scripts/figma/bindings-check.figma.js'), 'utf8')
 
 type Paint = { type: string; visible?: boolean; opacity?: number; boundVariables?: { color?: { id: string } } }
@@ -75,5 +76,33 @@ describe('figma bindings check', () => {
     const by = Object.fromEntries(out.map((f) => [f.id, f]))
     expect(by['PAR-001:Badge:root.fill=x'].status).toBe('Open') // not checked this run: kept
     expect(by['PAR-001:Button:root.fill=x'].status).toBe('Fixed')
+  })
+
+  it('Phase 6: reads a stacked fill, the focus edge as the stroke, and Figma layer names', () => {
+    const names: string[] = []
+    const close = expectationOf(load('CloseButton'), names)!
+    const v = close.rules.find((r) => r.a.join() === 'Variant,Appearance,State')!.v
+    expect(names[v['default|solid|Pressed'].root.f!]).toBe('Surface/inverse + Surface/inverse-muted + Surface/inverse-muted')
+    expect(names[v['default|outline|Focused'].root.s!]).toBe('Border/strong') // `focus` repaints the border
+    expect(close.ax?.Variant).toEqual(['default', 'inverse'])
+    const group = expectationOf(load('AvatarGroup'), names)!
+    expect(Object.keys(group.rules[0].v['']).sort()).toContain(PART_LAYER.AvatarGroup.action)
+  })
+
+  it('Phase 6: the Figma script matches a paint stack and skips a variant value the contract lacks', async () => {
+    const names: string[] = []
+    const e = expectationOf(load('CloseButton'), names)!
+    const wire = encode({ names, sets: [e] })
+    const vars = { a: { name: 'Surface/inverse' }, b: { name: 'Surface/inverse-muted', a: 0.2 }, c: { name: 'Content/inverse' } }
+    const icon = (id: string): FakeNode => ({ id, name: 'label', type: 'TEXT', fills: [solid('c')] })
+    const set: FakeNode = {
+      id: e.id, name: 'CloseButton', type: 'COMPONENT_SET', children: [
+        { id: '2:1', name: 'Appearance=solid, Shape=rounded, Size=sm, State=Hover, Variant=default', type: 'COMPONENT', fills: [solid('a'), solid('b', 0.2)], strokes: [], children: [icon('2:2')] },
+        { id: '2:3', name: 'Appearance=solid, Shape=rounded, Size=sm, State=Hover, Variant=brand', type: 'COMPONENT', fills: [solid('a')], strokes: [], children: [icon('2:4')] },
+      ],
+    }
+    const out = await runTemplate(wire, [set], vars)
+    expect(out.diffs).toEqual([])
+    expect(out.checked.CloseButton).toContain('Variant=brand not in the contract')
   })
 })

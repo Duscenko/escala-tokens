@@ -33,40 +33,68 @@ const BATCH_BUDGET = 42_000
 const SLOT = { fill: 'f', stroke: 's', text: 't' } as const
 
 interface Rule { a: string[]; v: Record<string, Record<string, Partial<Record<'f' | 's' | 't', number>>>> }
-interface SetExpectation { key: string; id: string; rules: Rule[] }
+interface SetExpectation { key: string; id: string; rules: Rule[]; ax?: Record<string, string[]> }
 
 function contracts(root = ROOT): ComponentContract[] {
   const index: ContractIndexEntry[] = JSON.parse(readFileSync(join(root, 'spec/contracts/index.json'), 'utf8'))
   return index.filter((e) => e.kind === 'component').map((e) => JSON.parse(readFileSync(join(root, e.file), 'utf8')))
 }
 
+/**
+ * Where the code's part name and the Figma layer name differ for the same layer (layers are not
+ * mapped to code by name; Figma owns the layer name). Checked 2026-11-20 on the library: the
+ * CalendarPresets rail label, the ComboboxPopover empty state and the AvatarGroup +N tile (code
+ * wraps it in an `item` ring, Figma names the ring `action` and the tile `action-surface`).
+ */
+export const PART_LAYER: Record<string, Record<string, string>> = {
+  CalendarPresets: { label: 'rail-label' },
+  ComboboxPopover: { empty: 'empty-state' },
+  AvatarGroup: { action: 'action-surface' },
+}
+
 /** The colour roles a contract binds per state, under their Figma names (a table shared per batch). */
 export function expectationOf(c: ComponentContract, names: string[]): SetExpectation | null {
   if (!c.figma.setNodeId || !c.bindings?.length) return null
   const at = (figma: string) => { let i = names.indexOf(figma); if (i < 0) { names.push(figma); i = names.length - 1 } return i }
+  const figmaOf = (ref: unknown) => (typeof ref === 'string' && ref.startsWith('color.') ? c.names[ref]?.figma ?? null : null)
   const rules: Rule[] = []
+  const seen: Record<string, Set<string>> = {}
   for (const b of c.bindings) {
     const v: Rule['v'] = {}
     for (const [combo, parts] of Object.entries(b.values)) {
+      combo.split('|').forEach((val, i) => { if (b.axes[i]) (seen[b.axes[i]] ??= new Set()).add(val) })
       for (const [part, props] of Object.entries(parts)) {
         if (!/^[A-Za-z][A-Za-z0-9-]*$/.test(part)) continue // pseudo parts (`root::after`, `root[data-…]`)
-        for (const [slot, ref] of Object.entries(props)) {
-          if (!(slot in SLOT) || typeof ref !== 'string') continue
+        const layer = PART_LAYER[c.key]?.[part] ?? part
+        for (const [slot, raw] of Object.entries(props)) {
+          if (!(slot in SLOT) || typeof raw !== 'string') continue
+          let ref: string = raw
+          // A focused control's `focus` edge repaints its border (recipeStyles: border-color + inset),
+          // so Figma's stroke at that state is the focus role, not the resting `stroke`.
+          if (slot === 'stroke' && typeof props.focus === 'string' && props.focus !== 'none') ref = props.focus
           let idx: number | null = null
-          if (ref === 'none') idx = -1
-          else if (ref.startsWith('color.') && c.names[ref]?.figma) idx = at(c.names[ref].figma!)
+          if (slot === 'fill' && (typeof props.overlay === 'string' || typeof props.overlay2 === 'string')) {
+            // Translucent fills stacked over the fill (`overlay`, `overlay2`): Figma draws them as a
+            // paint stack, read bottom to top.
+            const stack = [ref, props.overlay, props.overlay2].filter((r) => typeof r === 'string' && r !== 'none').map(figmaOf)
+            if (stack.length && stack.every(Boolean)) idx = at(stack.join(' + '))
+          } else if (ref === 'none') idx = -1
+          else if (figmaOf(ref)) idx = at(figmaOf(ref)!)
           if (idx == null) continue
-          ;((v[combo] ??= {})[part] ??= {})[SLOT[slot as keyof typeof SLOT]] = idx
+          ;((v[combo] ??= {})[layer] ??= {})[SLOT[slot as keyof typeof SLOT]] = idx
         }
       }
     }
     if (Object.keys(v).length) rules.push({ a: b.axes, v })
   }
-  return rules.length ? { key: c.key, id: c.figma.setNodeId, rules } : null
+  // The values the contract knows per axis: a Figma variant with another value (a variant the code
+  // has not built yet) is not compared, it is listed as not checked.
+  const ax = Object.fromEntries(Object.entries(seen).map(([k, vals]) => [k, [...vals]]))
+  return rules.length ? { key: c.key, id: c.figma.setNodeId, rules, ax } : null
 }
 
 /** Compact wire form: slot objects deduplicated into a table (`use_figma` takes 50 000 characters). */
-interface WireBatch { names: string[]; parts: (string | number | null)[][]; sets: { key: string; id: string; rules: { a: string[]; v: Record<string, number[]> }[] }[] }
+interface WireBatch { names: string[]; parts: (string | number | null)[][]; sets: { key: string; id: string; ax?: Record<string, string[]>; rules: { a: string[]; v: Record<string, number[]> }[] }[] }
 export function encode(b: { names: string[]; sets: SetExpectation[] }): WireBatch {
   const parts: WireBatch['parts'] = []
   const seen = new Map<string, number>()
@@ -79,7 +107,7 @@ export function encode(b: { names: string[]; sets: SetExpectation[] }): WireBatc
     names: b.names,
     parts,
     sets: b.sets.map((st) => ({
-      key: st.key, id: st.id,
+      key: st.key, id: st.id, ax: st.ax,
       rules: st.rules.map((r) => ({
         a: r.a,
         v: Object.fromEntries(Object.entries(r.v).map(([combo, ps]) => [combo, Object.entries(ps).map(([part, sl]) => at([part, sl.f ?? null, sl.s ?? null, sl.t ?? null]))])),
