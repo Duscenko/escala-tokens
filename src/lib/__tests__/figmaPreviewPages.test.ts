@@ -6,8 +6,8 @@ import { figmaPageFor, figmaPreviewPageUrl } from '../figmaPreviewPages'
 // One link for the design system (owner, 2026-11-17): the PREVIEW library.
 describe('Preview library links', () => {
   it('every link is built from the one Preview key', () => {
-    expect(FIGMA_PREVIEW_FILE_KEY).toBe('X736U9ffkni3gg6rmvEEnJ')
-    expect(FIGMA_KIT_FILE_URL).toBe('https://www.figma.com/design/X736U9ffkni3gg6rmvEEnJ/Escala-Design-System--Preview-?node-id=4-17005')
+    expect(FIGMA_PREVIEW_FILE_KEY).toBe('H9Z5O6RSCpOnTJbE8PkTo1')
+    expect(FIGMA_KIT_FILE_URL).toBe('https://www.figma.com/design/H9Z5O6RSCpOnTJbE8PkTo1/Escala-Design-System--Pro-?node-id=4-17005')
     expect(FIGMA_KIT_EMBED_URL).toContain(`/design/${FIGMA_PREVIEW_FILE_KEY}/`)
     expect(figmaPreviewUrl('4:2185')).toContain('node-id=4-2185')
     expect(figmaPreviewUrl('4-2185')).toContain('node-id=4-2185')
@@ -16,7 +16,7 @@ describe('Preview library links', () => {
   it('Button opens the Button page', () => {
     expect(figmaPageFor('Button')?.id).toBe('4:2185')
     expect(figmaPreviewPageUrl('Button', ['Button'])).toBe(
-      'https://www.figma.com/design/X736U9ffkni3gg6rmvEEnJ/Escala-Design-System--Preview-?node-id=4-2185',
+      'https://www.figma.com/design/H9Z5O6RSCpOnTJbE8PkTo1/Escala-Design-System--Pro-?node-id=4-2185',
     )
   })
 

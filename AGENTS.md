@@ -108,7 +108,7 @@ Plugin: `cd ../escala-figma-plugin && npm run build`.
 |---|---|---|---|
 | Escala design system (core library) | `7j5zukN5HpihGVJMmyjA20` | Foundations + official components | César: variables and styles only. `library-sync`: components |
 | Escala Workshop | `iwUf3PSrZpJbUOKFjRCqyC` | The only place new things are designed (opens on `◉ Cover`) | César, and Claude when César asks for design help |
-| Escala Preview (sold to customers) | `X736U9ffkni3gg6rmvEEnJ` (`src/lib/figmaKit.ts`) | Released, approved versions only, with a changelog | Nobody by hand; updated by César at a release |
+| Escala Preview (sold to customers) | `H9Z5O6RSCpOnTJbE8PkTo1` (`src/lib/figmaKit.ts`) | Released, approved versions only, with a changelog | Nobody by hand; updated by César at a release |
 
 ### 1. Before any work
 
