@@ -14,9 +14,9 @@ Medidas: ghost-default Closed 480×60 / Open 480×101 (contenido 41 = 21 de text
 |---|---|---|---|---|
 | ghost-default | 0 | — | — | 0 / 0 |
 | ghost-underline | 0 | — | solo inferior 1px `Border/default` INSIDE (alto +1: 61 / 102) | 0 / 0 |
-| ghost-rounded | `Radius/container` (16) | Closed: —; Open: `Surface/muted` | — | 20 / 20 |
-| outline-rounded | container | `Surface/page` | 1px INSIDE: Closed `Border/default`, Open `Border/strong`, Disabled `Border/subtle` (alto +2: 62 / 124; trigger 478 ancho) | 20 / 20 |
-| outline-sharp | `Radius/none` | `Surface/page` | igual que outline-rounded | 20 / 20 |
+| ghost-rounded | `Radius/container` (16) | Closed: —; Open: `Surface/layer-1` (Figma 450:78, 2026-11-20) | — | 20 / 20 |
+| outline-rounded | container | `Surface/layer-1` (Figma 450:98, 2026-11-20) | 1px INSIDE: Closed `Border/default`, Open `Border/strong`, Disabled `Border/subtle` (alto +2: 62 / 124; trigger 478 ancho) | 20 / 20 |
+| outline-sharp | `Radius/none` | `Surface/layer-1` | igual que outline-rounded | 20 / 20 |
 | filled-rounded | container | `Surface/muted` (siempre) | — | 20 / 20 |
 Disabled: icon, label y caret `Content/disabled` (el contenido sigue siendo `Content/secondary` pero oculto). Sin estados hover/foco/pressed en el archivo.
 

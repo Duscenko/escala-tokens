@@ -154,8 +154,8 @@ export const SEPARATOR: ComponentRecipe = {
 // The Figma sets (design-plans/accordion-contract.md; Accordion 451:375, 6 variants; AccordionItem 451:188, 18:
 // Variant × State Closed · Open · Disabled). An item is a trigger (20px glyph, the label, a chevron; 20px of
 // padding above and below, 16px between them) over a content block (20px below; text on Content/secondary).
-// Variant: ghost-default (bare), ghost-underline (a 1px rule below), ghost-rounded (Radius/container, Surface/muted
-// only when open), outline-rounded / outline-sharp (Surface/page, 1px edge: Border/default closed, /strong open,
+// Variant: ghost-default (bare), ghost-underline (a 1px rule below), ghost-rounded (Radius/container, Surface/layer-1
+// only when open), outline-rounded / outline-sharp (Surface/layer-1, 1px edge: Border/default closed, /strong open,
 // /subtle disabled; Radius/container or none), filled-rounded (Surface/muted). Rounded and outline variants
 // pad the sides 20px. Items sit 0 apart (ghost-default, ghost-underline) or 8 apart (the rest).
 
@@ -179,11 +179,11 @@ function accordionItemShell(variant: string, state: string): SlotProps {
     case 'ghost-underline':
       return { fill: NONE, stroke: c(state === 'Disabled' ? 'border.subtle' : 'border.default'), strokeBottomWidth: 'stroke.divider' }
     case 'ghost-rounded':
-      return { fill: open ? c('surface.muted') : NONE, radius: 'radius.container' }
+      return { fill: open ? c('surface.layer-1') : NONE, radius: 'radius.container' }
     case 'outline-rounded':
     case 'outline-sharp':
       return {
-        fill: c('surface.page'), strokeWidth: 'stroke.control', radius: variant === 'outline-sharp' ? 'radius.none' : 'radius.container',
+        fill: c('surface.layer-1'), strokeWidth: 'stroke.control', radius: variant === 'outline-sharp' ? 'radius.none' : 'radius.container',
         stroke: c(state === 'Disabled' ? 'border.subtle' : open ? 'border.strong' : 'border.default'),
       }
     case 'filled-rounded':

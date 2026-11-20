@@ -125,8 +125,8 @@
       "color.content.disabled",
       "color.content.primary",
       "color.content.secondary",
-      "color.surface.muted",
-      "color.surface.page"
+      "color.surface.layer-1",
+      "color.surface.muted"
     ],
     "icon": [
       "icon.medium"
@@ -174,13 +174,13 @@
       "css": "--color-content-secondary",
       "figma": "Content/secondary"
     },
+    "color.surface.layer-1": {
+      "css": "--color-surface-layer-1",
+      "figma": "Surface/layer-1"
+    },
     "color.surface.muted": {
       "css": "--color-surface-muted",
       "figma": "Surface/muted"
-    },
-    "color.surface.page": {
-      "css": "--color-surface-page",
-      "figma": "Surface/page"
     },
     "icon.medium": {
       "css": "--size-icon-md",
@@ -377,7 +377,7 @@
         },
         "ghost-rounded|Open": {
           "root": {
-            "fill": "color.surface.muted",
+            "fill": "color.surface.layer-1",
             "radius": "radius.container"
           }
         },
@@ -398,7 +398,7 @@
         },
         "outline-rounded|Closed": {
           "root": {
-            "fill": "color.surface.page",
+            "fill": "color.surface.layer-1",
             "strokeWidth": "stroke.control",
             "radius": "radius.container",
             "stroke": "color.border.default"
@@ -406,7 +406,7 @@
         },
         "outline-rounded|Open": {
           "root": {
-            "fill": "color.surface.page",
+            "fill": "color.surface.layer-1",
             "strokeWidth": "stroke.control",
             "radius": "radius.container",
             "stroke": "color.border.strong"
@@ -414,7 +414,7 @@
         },
         "outline-rounded|Disabled": {
           "root": {
-            "fill": "color.surface.page",
+            "fill": "color.surface.layer-1",
             "strokeWidth": "stroke.control",
             "radius": "radius.container",
             "stroke": "color.border.subtle"
@@ -431,7 +431,7 @@
         },
         "outline-sharp|Closed": {
           "root": {
-            "fill": "color.surface.page",
+            "fill": "color.surface.layer-1",
             "strokeWidth": "stroke.control",
             "radius": "radius.none",
             "stroke": "color.border.default"
@@ -439,7 +439,7 @@
         },
         "outline-sharp|Open": {
           "root": {
-            "fill": "color.surface.page",
+            "fill": "color.surface.layer-1",
             "strokeWidth": "stroke.control",
             "radius": "radius.none",
             "stroke": "color.border.strong"
@@ -447,7 +447,7 @@
         },
         "outline-sharp|Disabled": {
           "root": {
-            "fill": "color.surface.page",
+            "fill": "color.surface.layer-1",
             "strokeWidth": "stroke.control",
             "radius": "radius.none",
             "stroke": "color.border.subtle"
