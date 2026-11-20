@@ -50,7 +50,7 @@ Other states: `bindings` in the JSON (3 parts; merge every matching part in orde
 | status | text | `color.status.critical.content` | `--color-status-critical-content` | `Status/critical/content` |
 | status | width | `spacing.4` | `--spacing-4` | `Spacing/4` |
 | status | height | `spacing.4` | `--spacing-4` | `Spacing/4` |
-| spinner | text | `color.content.secondary` | `--color-content-secondary` | `Content/secondary` |
+| spinner | text | `color.content.subtle` | `--color-content-subtle` | `Content/subtle` |
 | spinner | width | `spacing.4` | `--spacing-4` | `Spacing/4` |
 | spinner | height | `spacing.4` | `--spacing-4` | `Spacing/4` |
 | corner | paddingX | `spacing.1_5` | `--spacing-1_5` | `Spacing/1_5` |

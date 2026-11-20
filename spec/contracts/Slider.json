@@ -160,6 +160,7 @@
       "color.action.disabled.default",
       "color.action.primary.default",
       "color.border.strong",
+      "color.content.disabled",
       "color.content.inverse",
       "color.content.primary",
       "color.content.secondary",
@@ -202,6 +203,10 @@
     "color.border.strong": {
       "css": "--color-border-strong",
       "figma": "Border/strong"
+    },
+    "color.content.disabled": {
+      "css": "--color-content-disabled",
+      "figma": "Content/disabled"
     },
     "color.content.inverse": {
       "css": "--color-content-inverse",
@@ -390,6 +395,9 @@
         "default|Disabled": {
           "range": {
             "fill": "color.action.disabled.default"
+          },
+          "markLabel": {
+            "text": "color.content.disabled"
           }
         },
         "secondary|Default": {
@@ -405,6 +413,9 @@
         "secondary|Disabled": {
           "range": {
             "fill": "color.action.disabled.default"
+          },
+          "markLabel": {
+            "text": "color.content.disabled"
           }
         }
       }

@@ -146,7 +146,6 @@
       "color.border.ring.default",
       "color.content.disabled",
       "color.content.primary",
-      "color.content.secondary",
       "color.content.subtle",
       "color.status.critical.border",
       "color.status.critical.border-strong",
@@ -211,10 +210,6 @@
     "color.content.primary": {
       "css": "--color-content-primary",
       "figma": "Content/primary"
-    },
-    "color.content.secondary": {
-      "css": "--color-content-secondary",
-      "figma": "Content/secondary"
     },
     "color.content.subtle": {
       "css": "--color-content-subtle",
@@ -326,7 +321,7 @@
             "text": "color.status.critical.content"
           },
           "spinner": {
-            "text": "color.content.secondary"
+            "text": "color.content.subtle"
           },
           "corner": {
             "paddingX": "spacing.1_5",

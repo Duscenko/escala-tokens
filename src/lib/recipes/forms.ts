@@ -143,7 +143,8 @@ export const TEXTAREA: ComponentRecipe = {
     part({}, () => ({
       root: { radius: 'radius.action', strokeWidth: 'stroke.control' },
       status: { text: c('status.critical.content') },
-      spinner: { text: c('content.secondary') },
+      // Field chrome: the Loading spinner is Content/subtle, like the field's other glyphs (Figma 394:71).
+      spinner: { text: c('content.subtle') },
       // The resize glyph: 8×8, 6px in from the bottom-right corner at every Size.
       corner: { paddingX: 'spacing.1_5', paddingY: 'spacing.1_5' },
       grip: { width: 'spacing.2', height: 'spacing.2' },
@@ -1191,6 +1192,8 @@ export const SLIDER: ComponentRecipe = {
     })),
     part({ Variant: SLIDER_VARIANTS, State: SLIDER_STATES }, (variant, state) => ({
       range: { fill: c(state === 'Disabled' ? 'action.disabled.default' : variant === 'secondary' ? 'content.primary' : 'action.primary.default') },
+      // Disabled marks: the labels go Content/disabled, the ticks keep Border/strong (Figma 443:69).
+      ...(state === 'Disabled' ? { markLabel: { text: c('content.disabled') } } : {}),
     })),
   ],
 }
