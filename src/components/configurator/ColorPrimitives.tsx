@@ -17,7 +17,7 @@
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from 'react'
 import { createPortal } from 'react-dom'
 import { motion, AnimatePresence, useReducedMotion } from 'framer-motion'
-import { useDesignStore, makeDesignDefaults, type ThemeSources } from '../../store/useDesignStore'
+import { useDesignStore, makeDesignDefaults, captureSnapshot, type DesignSnapshot, type ThemeSources } from '../../store/useDesignStore'
 import type { ColorScale } from '../../types/tokens'
 import {
   NAMING_SCHEMES, BASE_TONE, generateColorScale, generateLightNeutralScale, generateAlphaScale, pinnedOrSolvedAlpha,
@@ -56,6 +56,12 @@ import {
 } from '../../lib/themeSources'
 import ThemePanel from './ThemePanel'
 import VariableCollectionRail, { FolderIcon } from './VariableCollectionRail'
+import { CuratedColorStrip } from './CuratedColorStrip'
+import { curatedPalette } from '../../lib/curatedColors'
+import { useThemeColorWrites } from '../../lib/themeColorWrites'
+import { recordEdit } from '../../lib/editHistory'
+import { showToast } from '../ui/Toast'
+import { useI18n } from '../../lib/i18n'
 import { GradientNavList, GradientRailMark } from './StepGradients'
 import { buildFamilyExport, buildAlphaFamilyExport, ALPHA_EXPORT_FORMATS, FAMILY_FORMAT_OPTIONS, type WizardFormat, type WizardFile } from '../../lib/exportWizard'
 import { appearanceOrder, type ThemeAppearance } from '../../lib/themeModes'
@@ -813,6 +819,37 @@ export default function ColorPrimitives({
   }
 
   const changeNeutral = (hex: string) => applyGrayColor(hex, previewTheme)
+
+  // Suggested colours: a whole palette (accent, neutral, the four states) on
+  // the theme on screen, undone in one step — the same write the Board's Random
+  // menu makes with its Curated deck (`useThemeColorWrites`).
+  const { t } = useI18n()
+  const { applyPalette } = useThemeColorWrites()
+  const brandKey = themeSources[previewTheme]?.brand
+  const brandFamily = brandKey && brandKey !== 'accent' ? customColors.find((c) => c.key === brandKey) : undefined
+  const accentOnScreen = brandFamily
+    ? (darkPreview ? brandFamily.darkBase || brandFamily.base : brandFamily.base)
+    : (darkPreview ? primaryDarkColor || primaryColor : primaryColor)
+  const suggestedColours = (
+    <section aria-label={t('Suggested colours')} className="rounded-xl border border-line bg-surface/50 p-3">
+      <CuratedColorStrip
+        appearance={darkPreview ? 'dark' : 'light'}
+        currentAccent={accentOnScreen}
+        label={t('Suggested colours')}
+        onPick={(color) => {
+          const before = captureSnapshot(useDesignStore.getState() as unknown as DesignSnapshot)
+          recordEdit(before, t('Colour applied'))
+          applyPalette(previewTheme, curatedPalette(color))
+          // Variables has no Undo of its own (the Board's history is cleared
+          // when the Board mounts again), so the way back rides on the toast.
+          showToast(t('Colour applied'), { label: t('Undo'), onClick: () => useDesignStore.setState(before) })
+        }}
+      />
+      <p className="mt-2 text-caption text-fg-faint">
+        {t('Hand-picked accents. One click sets the accent, the neutral and the four states, in Light and Dark.')}
+      </p>
+    </section>
+  )
 
   // ── Families table state ──
   const [activeFamily, setActiveFamily] = useState('accent')
@@ -1691,7 +1728,7 @@ export default function ColorPrimitives({
     <div className="h-full flex flex-col">
       {/* ── Body: folders flush under Groups; tabs · ramp · table on the right ── */}
       <div className="flex flex-1 min-h-0 items-stretch">
-      <VariableCollectionRail navRef={navRef} collapsed={railCollapsed} ariaLabel="Color collections and groups">
+      <VariableCollectionRail navRef={navRef} collapsed={railCollapsed} ariaLabel="Color collections and groups" footer={suggestedColours}>
         {railCollapsed ? (
           <div className="relative flex items-center justify-center pb-3 mb-1 border-b border-line">
             <FamilySwatch
