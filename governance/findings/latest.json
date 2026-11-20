@@ -2958,8 +2958,10 @@
       "side": "both",
       "entity": "CloseButton",
       "evidence": "root.fill: Figma Surface/inverse-muted, contract Surface/inverse — 30 variant(s), e.g. node 336:6",
-      "status": "Open",
-      "resolution": null,
+      "status": "Fixed",
+      "resolution": {
+        "ref": "figma-bindings 31d18de"
+      },
       "firstSeen": "2026-11-20",
       "lastSeen": "2026-11-20",
       "regression": false,
@@ -2978,8 +2980,10 @@
       "side": "both",
       "entity": "CloseButton",
       "evidence": "root.stroke: Figma Border/strong, contract Border/control — 15 variant(s), e.g. node 336:77",
-      "status": "Open",
-      "resolution": null,
+      "status": "Fixed",
+      "resolution": {
+        "ref": "figma-bindings 31d18de"
+      },
       "firstSeen": "2026-11-20",
       "lastSeen": "2026-11-20",
       "regression": false,
@@ -2998,8 +3002,10 @@
       "side": "both",
       "entity": "CloseButton",
       "evidence": "root.fill: Figma Action/ghost/hover, contract Surface/page — 15 variant(s), e.g. node 336:258; root.fill: Figma Action/ghost/pressed, contract Surface/page — 15 variant(s), e.g. node 336:262",
-      "status": "Open",
-      "resolution": null,
+      "status": "Fixed",
+      "resolution": {
+        "ref": "figma-bindings 31d18de"
+      },
       "firstSeen": "2026-11-20",
       "lastSeen": "2026-11-20",
       "regression": false,
@@ -3018,8 +3024,10 @@
       "side": "both",
       "entity": "FABButton",
       "evidence": "root.fill: Figma Action/disabled/default, contract Surface/page — 20 variant(s), e.g. node 345:32",
-      "status": "Open",
-      "resolution": null,
+      "status": "Fixed",
+      "resolution": {
+        "ref": "figma-bindings 31d18de"
+      },
       "firstSeen": "2026-11-20",
       "lastSeen": "2026-11-20",
       "regression": false,
@@ -3038,8 +3046,10 @@
       "side": "both",
       "entity": "FABButton",
       "evidence": "root.fill: Figma Surface/selected, contract Surface/accent — 4 variant(s), e.g. node 345:82; root.fill: Figma Surface/selected-pressed, contract Surface/accent — 4 variant(s), e.g. node 345:89",
-      "status": "Open",
-      "resolution": null,
+      "status": "Fixed",
+      "resolution": {
+        "ref": "figma-bindings 31d18de"
+      },
       "firstSeen": "2026-11-20",
       "lastSeen": "2026-11-20",
       "regression": false,
@@ -3058,8 +3068,10 @@
       "side": "both",
       "entity": "FABButton",
       "evidence": "root.fill: Figma Action/ghost/hover, contract Surface/layer-2 — 4 variant(s), e.g. node 345:370; root.fill: Figma Action/ghost/pressed, contract Surface/layer-2 — 4 variant(s), e.g. node 345:377",
-      "status": "Open",
-      "resolution": null,
+      "status": "Fixed",
+      "resolution": {
+        "ref": "figma-bindings 31d18de"
+      },
       "firstSeen": "2026-11-20",
       "lastSeen": "2026-11-20",
       "regression": false,
@@ -3078,8 +3090,10 @@
       "side": "both",
       "entity": "FABButton",
       "evidence": "root.fill: Figma Surface/inverse-muted, contract Surface/inverse — 8 variant(s), e.g. node 345:587",
-      "status": "Open",
-      "resolution": null,
+      "status": "Fixed",
+      "resolution": {
+        "ref": "figma-bindings 31d18de"
+      },
       "firstSeen": "2026-11-20",
       "lastSeen": "2026-11-20",
       "regression": false,
@@ -3098,8 +3112,10 @@
       "side": "both",
       "entity": "ButtonGroupItem",
       "evidence": "root.fill: Figma Action/disabled/default, contract Surface/page — 60 variant(s), e.g. node 350:691",
-      "status": "Open",
-      "resolution": null,
+      "status": "Fixed",
+      "resolution": {
+        "ref": "figma-bindings 31d18de"
+      },
       "firstSeen": "2026-11-20",
       "lastSeen": "2026-11-20",
       "regression": false,
@@ -3118,8 +3134,10 @@
       "side": "both",
       "entity": "ButtonGroupItem",
       "evidence": "root.fill: Figma Surface/inverse-muted, contract Surface/inverse — 60 variant(s), e.g. node 350:1918",
-      "status": "Open",
-      "resolution": null,
+      "status": "Fixed",
+      "resolution": {
+        "ref": "figma-bindings 31d18de"
+      },
       "firstSeen": "2026-11-20",
       "lastSeen": "2026-11-20",
       "regression": false,
@@ -3158,8 +3176,10 @@
       "side": "both",
       "entity": "Textarea",
       "evidence": "spinner.text: Figma Content/subtle, contract Content/secondary — 6 variant(s), e.g. node 394:71",
-      "status": "Open",
-      "resolution": null,
+      "status": "Fixed",
+      "resolution": {
+        "ref": "figma-bindings 31d18de"
+      },
       "firstSeen": "2026-11-20",
       "lastSeen": "2026-11-20",
       "regression": false,
@@ -3198,8 +3218,10 @@
       "side": "both",
       "entity": "CalendarPresets",
       "evidence": "label.text: Figma Content/primary, contract Content/secondary — 4 variant(s), e.g. node 423:964",
-      "status": "Open",
-      "resolution": null,
+      "status": "Fixed",
+      "resolution": {
+        "ref": "figma-bindings 31d18de"
+      },
       "firstSeen": "2026-11-20",
       "lastSeen": "2026-11-20",
       "regression": false,
@@ -3218,8 +3240,10 @@
       "side": "both",
       "entity": "ComboboxPopover",
       "evidence": "root.text: Figma Content/secondary, contract Content/primary — 3 variant(s), e.g. node 415:399",
-      "status": "Open",
-      "resolution": null,
+      "status": "Fixed",
+      "resolution": {
+        "ref": "figma-bindings 31d18de"
+      },
       "firstSeen": "2026-11-20",
       "lastSeen": "2026-11-20",
       "regression": false,
@@ -3238,8 +3262,10 @@
       "side": "both",
       "entity": "Checkbox",
       "evidence": "root.stroke: Figma Border/focus, contract Border/control — 3 variant(s), e.g. node 1014:14; root.stroke: Figma Border/strong, contract Border/control — 3 variant(s), e.g. node 1014:16; root.stroke: Figma Status/critical/border-strong, contract Border/control — 3 variant(s), e.g. node 1014:18; root.stroke: Figma Status/success/border-strong, contract Border/control — 3 variant(s), e.g. node 1014:20; root.stroke: Figma Status/info/border-strong, contract Border/control — 3 variant(s), e.g. node 1014:22",
-      "status": "Open",
-      "resolution": null,
+      "status": "Fixed",
+      "resolution": {
+        "ref": "figma-bindings 31d18de"
+      },
       "firstSeen": "2026-11-20",
       "lastSeen": "2026-11-20",
       "regression": false,
@@ -3258,8 +3284,10 @@
       "side": "both",
       "entity": "Checkbox",
       "evidence": "root.stroke: Figma Border/focus, contract Action/primary/default — 6 variant(s), e.g. node 1014:74",
-      "status": "Open",
-      "resolution": null,
+      "status": "Fixed",
+      "resolution": {
+        "ref": "figma-bindings 31d18de"
+      },
       "firstSeen": "2026-11-20",
       "lastSeen": "2026-11-20",
       "regression": false,
@@ -3278,8 +3306,10 @@
       "side": "both",
       "entity": "Checkbox",
       "evidence": "root.stroke: Figma Border/strong, contract Content/primary — 6 variant(s), e.g. node 1014:78",
-      "status": "Open",
-      "resolution": null,
+      "status": "Fixed",
+      "resolution": {
+        "ref": "figma-bindings 31d18de"
+      },
       "firstSeen": "2026-11-20",
       "lastSeen": "2026-11-20",
       "regression": false,
@@ -3298,8 +3328,10 @@
       "side": "both",
       "entity": "Checkbox",
       "evidence": "root.stroke: Figma Status/critical/border-strong, contract Status/critical/surface-solid — 6 variant(s), e.g. node 1014:82",
-      "status": "Open",
-      "resolution": null,
+      "status": "Fixed",
+      "resolution": {
+        "ref": "figma-bindings 31d18de"
+      },
       "firstSeen": "2026-11-20",
       "lastSeen": "2026-11-20",
       "regression": false,
@@ -3318,8 +3350,10 @@
       "side": "both",
       "entity": "Checkbox",
       "evidence": "root.stroke: Figma Status/success/border-strong, contract Status/success/surface-solid — 6 variant(s), e.g. node 1014:86",
-      "status": "Open",
-      "resolution": null,
+      "status": "Fixed",
+      "resolution": {
+        "ref": "figma-bindings 31d18de"
+      },
       "firstSeen": "2026-11-20",
       "lastSeen": "2026-11-20",
       "regression": false,
@@ -3338,8 +3372,10 @@
       "side": "both",
       "entity": "Checkbox",
       "evidence": "root.stroke: Figma Status/info/border-strong, contract Status/info/surface-solid — 6 variant(s), e.g. node 1014:90",
-      "status": "Open",
-      "resolution": null,
+      "status": "Fixed",
+      "resolution": {
+        "ref": "figma-bindings 31d18de"
+      },
       "firstSeen": "2026-11-20",
       "lastSeen": "2026-11-20",
       "regression": false,
@@ -3358,8 +3394,10 @@
       "side": "both",
       "entity": "Checkbox",
       "evidence": "root.stroke: Figma Border/inverse, contract Content/inverse — 6 variant(s), e.g. node 1014:94",
-      "status": "Open",
-      "resolution": null,
+      "status": "Fixed",
+      "resolution": {
+        "ref": "figma-bindings 31d18de"
+      },
       "firstSeen": "2026-11-20",
       "lastSeen": "2026-11-20",
       "regression": false,
@@ -3458,8 +3496,10 @@
       "side": "both",
       "entity": "Slider",
       "evidence": "markLabel.text: Figma Content/disabled, contract Content/secondary — 12 variant(s), e.g. node 443:69",
-      "status": "Open",
-      "resolution": null,
+      "status": "Fixed",
+      "resolution": {
+        "ref": "figma-bindings 31d18de"
+      },
       "firstSeen": "2026-11-20",
       "lastSeen": "2026-11-20",
       "regression": false,
@@ -3598,8 +3638,10 @@
       "side": "both",
       "entity": "AvatarGroup",
       "evidence": "action.fill: Figma Surface/page, contract Surface/inverse — 14 variant(s), e.g. node 378:2115",
-      "status": "Open",
-      "resolution": null,
+      "status": "Fixed",
+      "resolution": {
+        "ref": "figma-bindings 31d18de"
+      },
       "firstSeen": "2026-11-20",
       "lastSeen": "2026-11-20",
       "regression": false,
@@ -3618,8 +3660,10 @@
       "side": "both",
       "entity": "AccordionItem",
       "evidence": "root.fill: Figma Surface/layer-1, contract Surface/muted — 1 variant(s), e.g. node 450:78",
-      "status": "Open",
-      "resolution": null,
+      "status": "Fixed",
+      "resolution": {
+        "ref": "figma-bindings 31d18de"
+      },
       "firstSeen": "2026-11-20",
       "lastSeen": "2026-11-20",
       "regression": false,
@@ -3638,8 +3682,10 @@
       "side": "both",
       "entity": "AccordionItem",
       "evidence": "root.fill: Figma Surface/layer-1, contract Surface/page — 6 variant(s), e.g. node 450:98",
-      "status": "Open",
-      "resolution": null,
+      "status": "Fixed",
+      "resolution": {
+        "ref": "figma-bindings 31d18de"
+      },
       "firstSeen": "2026-11-20",
       "lastSeen": "2026-11-20",
       "regression": false,
@@ -3658,8 +3704,10 @@
       "side": "both",
       "entity": "AccordionItem",
       "evidence": "icon.text: Figma Content/disabled, contract Content/secondary — 1 variant(s), e.g. node 2121:2713",
-      "status": "Open",
-      "resolution": null,
+      "status": "Fixed",
+      "resolution": {
+        "ref": "figma-bindings 31d18de"
+      },
       "firstSeen": "2026-11-20",
       "lastSeen": "2026-11-20",
       "regression": false,
@@ -3678,8 +3726,10 @@
       "side": "both",
       "entity": "AccordionItem",
       "evidence": "label.text: Figma Content/disabled, contract Content/primary — 1 variant(s), e.g. node 2121:2713",
-      "status": "Open",
-      "resolution": null,
+      "status": "Fixed",
+      "resolution": {
+        "ref": "figma-bindings 31d18de"
+      },
       "firstSeen": "2026-11-20",
       "lastSeen": "2026-11-20",
       "regression": false,
@@ -3698,8 +3748,10 @@
       "side": "both",
       "entity": "AccordionItem",
       "evidence": "chevron.text: Figma Content/disabled, contract Content/secondary — 1 variant(s), e.g. node 2121:2713",
-      "status": "Open",
-      "resolution": null,
+      "status": "Fixed",
+      "resolution": {
+        "ref": "figma-bindings 31d18de"
+      },
       "firstSeen": "2026-11-20",
       "lastSeen": "2026-11-20",
       "regression": false,
@@ -3778,8 +3830,10 @@
       "side": "both",
       "entity": "Popover",
       "evidence": "arrow.text: Figma Surface/layer-2, contract Border/default — 12 variant(s), e.g. node 973:38",
-      "status": "Open",
-      "resolution": null,
+      "status": "Fixed",
+      "resolution": {
+        "ref": "figma-bindings 31d18de"
+      },
       "firstSeen": "2026-11-20",
       "lastSeen": "2026-11-20",
       "regression": false,
@@ -3798,8 +3852,10 @@
       "side": "both",
       "entity": "Alert",
       "evidence": "icon.text: Figma Content/inverse, contract Content/inverse-secondary — 24 variant(s), e.g. node 397:232",
-      "status": "Open",
-      "resolution": null,
+      "status": "Fixed",
+      "resolution": {
+        "ref": "figma-bindings 31d18de"
+      },
       "firstSeen": "2026-11-20",
       "lastSeen": "2026-11-20",
       "regression": false,
@@ -3818,8 +3874,10 @@
       "side": "both",
       "entity": "PaginationLink",
       "evidence": "root.stroke: Figma Border/focus, contract none — 4 variant(s), e.g. node 988:28",
-      "status": "Open",
-      "resolution": null,
+      "status": "Fixed",
+      "resolution": {
+        "ref": "figma-bindings 31d18de"
+      },
       "firstSeen": "2026-11-20",
       "lastSeen": "2026-11-20",
       "regression": false,
@@ -3838,8 +3896,10 @@
       "side": "both",
       "entity": "PaginationLink",
       "evidence": "root.stroke: Figma Border/focus, contract Border/control — 4 variant(s), e.g. node 988:192",
-      "status": "Open",
-      "resolution": null,
+      "status": "Fixed",
+      "resolution": {
+        "ref": "figma-bindings 31d18de"
+      },
       "firstSeen": "2026-11-20",
       "lastSeen": "2026-11-20",
       "regression": false,

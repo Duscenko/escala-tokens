@@ -301,7 +301,7 @@
     "figmaSet": "Textarea",
     "figmaNode": "394:152",
     "story": "forms-textarea--playground",
-    "tokens": 32,
+    "tokens": 31,
     "motion": null,
     "stage": null
   },
@@ -754,7 +754,7 @@
     "figmaSet": "Slider",
     "figmaNode": "447:19",
     "story": "forms-slider--playground",
-    "tokens": 23,
+    "tokens": 24,
     "motion": null,
     "stage": null
   },
@@ -1710,7 +1710,7 @@
     "figmaSet": "Alert",
     "figmaNode": "397:1932",
     "story": "feedback-alert--playground",
-    "tokens": 48,
+    "tokens": 47,
     "motion": null,
     "stage": null
   },

@@ -65,6 +65,13 @@ Schema `escala-component-contract/2`, additive over v1 (no key renamed or remove
 - [x] Inventory script returns the set node id → `figma.setNodeId` + a direct link per contract.
 - [x] Daily review compares Figma's per-state bindings with `bindings` (governance §4.5.2).
 
+### Phase 6 — Close the Figma ↔ contract binding differences in code (done 2026-11-20)
+- [x] Confirm each `figma:bindings` finding in Figma (read-only): real, or the checker's.
+- [x] Checker artefacts fixed in the checker (paint stacks, `focus` edge as the stroke, layer-name
+      aliases, vector fill/stroke, variant values the contract lacks).
+- [x] Real ones fixed in the recipe → `npm run gen:contracts` → re-run → findings closed.
+- [ ] Owner decisions (see **Next**): left untouched.
+
 ## Loop rules
 - Work on `feat/agent-ready-contracts` (worktree `.claude/worktrees/agent-ready-contracts`); other
   sessions use the main checkout. Never push; the owner reviews.
@@ -143,17 +150,32 @@ Schema `escala-component-contract/2`, additive over v1 (no key renamed or remove
   15 components without a Figma set or without colour bindings. `figmaBindingsCheck.test.ts` runs the Figma
   script on a fake file.
 
+- 2026-11-20 · Phase 6: of the 45 `figma:bindings` PAR-001, 30 closed (run `governance/runs/2026-11-20-figma-bindings-3.json`,
+  13 components, 0 differences). 26 were the checker's, confirmed on the library: stacked state fills (CloseButton,
+  FABButton, ButtonGroupItem — code already draws `overlay`/`overlay2`), the `focus` edge that repaints the border
+  (Checkbox ×7 — so the Checkbox "stroke vs ring" question is not a difference —, PaginationLink ×2, CloseButton),
+  layer names (CalendarPresets `rail-label`, ComboboxPopover `empty-state`, AvatarGroup `action-surface`: `PART_LAYER`),
+  the Popover arrow (fill + edge), AccordionItem `Variant=card` (not built in code; now "not checked"). Real ones fixed
+  in the recipe: Textarea Loading spinner Content/subtle, Slider Disabled mark labels Content/disabled (+ the Slider root
+  now carries its state, so its Disabled range shows at all), AccordionItem ghost-rounded Open / outline-* Surface/layer-1,
+  Alert inverse icon Content/inverse. Checked in Storybook (computed colours). Commits 904e988 · 74ddb74 · dec4d83 · b26dca0.
+  `npm test`: 4 known failures (exportAudit goldens ×3 — stale before this, now also carry these recipe changes —,
+  pluginGithubPush size). `npx tsc -b` clean.
+
 ## Next
-Everything automatable is done (Phases 1–5). What waits for the owner (César):
-1. **Figma ↔ contract bindings — 45 PAR-001** in `governance/findings/latest.json` (`source: figma:bindings`),
-   each with both values and a node link. Figma owns anatomy, so the default fix is the code (recipe → regenerate
-   contracts); some need a decision first: Checkbox Focused stroke (Figma paints the focus border, code keeps the
-   rest stroke and draws a ring), FeaturedIcon gradient (no gradient role exists), Input/DatePicker text in
-   `Value=placeholder` (the contract has no Value-specific text role), Switch `io`, ModalFooter/Sheet borders.
-2. **Daily review**: add the bindings step to the scheduled task (its prompt is account-side; the command is in
-   CLAUDE.md and the script header). The run costs two `use_figma` calls (~74 KB of code).
-3. **MOT-002 `none`**: the gate counts `none` as a decision, but `RecipeMotion` cannot say `none` yet —
-   add it when the owner names the first static-state component (27 components in the baseline).
-4. **PAR-001 baseline** (story controls): FABGroup Open default, Modal Layout, ModalFooter Surface.
-5. **Figma page name** `ReactionGroup (PRO) (1)` looks accidental; the manifest follows it until it is renamed.
-6. **Merge `feat/agent-ready-contracts`** (owner review; never pushed by an agent).
+Everything automatable is done (Phases 1–6). What waits for the owner (César):
+1. **15 binding differences that need a decision** (`source: figma:bindings`, each with both values and a node link):
+   FeaturedIcon `Appearance=gradient` ×6 (Figma paints a gradient; no gradient colour role exists), Input and
+   DatePickerTrigger text in `Value=placeholder` (Content/subtle; the contract has no Value-specific text role),
+   Switch `io` ×4 (Figma: Content/on-action when on, nothing when off; code takes the track role), ModalFooter stroke
+   (Figma none, code Border/subtle), Sheet content fill + stroke (Figma none, code Surface/layer-2 + Border/default).
+2. **AccordionItem `Variant=card`** exists in Figma only (icon box + badge): build it in code (registry debt `rebuild`).
+3. **Daily review**: add the bindings step to the scheduled task (account-side prompt; command in CLAUDE.md). The full
+   run (2 `use_figma` calls) now compares whole paint stacks, so it may surface stacks the targeted Phase 6 run did not see.
+4. **MOT-002 `none`**: the gate counts `none` as a decision, but `RecipeMotion` cannot say `none` yet (27 components).
+5. **PAR-001 baseline** (story controls): FABGroup Open default, Modal Layout, ModalFooter Surface.
+6. **Figma page name** `ReactionGroup (PRO) (1)` looks accidental; the manifest follows it until it is renamed.
+7. **Export goldens** (`exportAudit` ×3) are stale since before Phase 1; refresh them on review.
+8. **Skill text**: `escala-architecture` says icons on `surface.inverse` use `content.inverse-secondary`; Figma's Alert binds
+   `Content/inverse` (code now follows Figma). The account-side skill should say which.
+9. **Merge `feat/agent-ready-contracts`** (owner review; never pushed by an agent).
