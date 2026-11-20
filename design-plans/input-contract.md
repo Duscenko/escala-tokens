@@ -1,35 +1,35 @@
-# Contrato · Input (de Figma a código)
+# Contract · Input (Figma to code)
 
-Fecha: 2026-11-12 · Fuente: Figma `Escala Design System (Real)`, set `Input` (`4:12380`,
-222 variantes, página «❖ Input»), leído con la Plugin API (solo lectura). **Figma manda.**
+Date: 2026-11-12 · Source: Figma `Escala Design System (Real)`, set `Input` (`4:12380`,
+222 variants, page "❖ Input"), read with the Plugin API (read-only). **Figma rules.**
 
-Descripción del set: «Input — the box itself. Type Default: Size (sm · default · lg) × Value
+Set description: "Input — the box itself. Type Default: Size (sm · default · lg) × Value
 (Placeholder · Filled) × State, with optional Icon leading (search) / Icon trailing (eye). Other
 Types (Phone, Currency, Currency select, Password, URL, Upload, Tag, Shortcut, Credit card) at the
 default size, every State plus one Filled. Focused is the active field, with a caret. Label and
-hint are Field.»
+hint are Field."
 
 ## API
 
-| Figma (orden del panel) | Tipo | Defecto | React |
+| Figma (panel order) | Type | Default | React |
 |---|---|---|---|
 | `Size` default · sm · lg | VARIANT | `default` | `size` |
 | `State` Default · Hover · Focused · **Invalid** · Disabled | VARIANT | `Default` | CSS (`:hover`, `:has(:focus-visible)`) + `forceState`; `aria-invalid`; `disabled` |
-| `Type` default · phone · currency · currency-select · password · url · upload · tag · copy-link · credit-card · search | VARIANT | `default` | `type` (otro valor = tipo HTML sobre el layout default) |
-| `Value` placeholder · filled | VARIANT | `placeholder` | ninguno: el campo pinta su `::placeholder` distinto de un valor escrito |
-| `Value` (TEXT, desde 2026-11-19; enlazada a la capa `value` de las 57 variantes `Value=filled`) | TEXT | «4242 4242 4242 4242» | `value` / `defaultValue`. El eje `Value=filled` solo dice que hay un valor; no es una prop. Sin cambio visual. Nota: el valor por defecto es el número de tarjeta en TODAS las variantes filled (también `Type=default`), tal cual el archivo |
-| `IconLeadingVisible` + `IconLeadingIcon` (MagnifyingGlass) | BOOLEAN + SWAP | true | `leading` (cada Type trae el suyo; `null` lo oculta) |
-| `Placeholder` | TEXT | «Jane Doe» | `placeholder` |
+| `Type` default · phone · currency · currency-select · password · url · upload · tag · copy-link · credit-card · search | VARIANT | `default` | `type` (any other value = HTML type on the default layout) |
+| `Value` placeholder · filled | VARIANT | `placeholder` | none: the field paints its `::placeholder` differently from a typed value |
+| `Value` (TEXT, since 2026-11-19; bound to the `value` layer of the 57 `Value=filled` variants) | TEXT | "4242 4242 4242 4242" | `value` / `defaultValue`. The `Value=filled` axis only says there is a value; it is not a prop. No visual change. Note: the default value is the card number in ALL filled variants (also `Type=default`), exactly as in the file |
+| `IconLeadingVisible` + `IconLeadingIcon` (MagnifyingGlass) | BOOLEAN + SWAP | true | `leading` (each Type brings its own; `null` hides it) |
+| `Placeholder` | TEXT | "Jane Doe" | `placeholder` |
 | `IconTrailingVisible` + `IconTrailingIcon` (Eye) | BOOLEAN + SWAP | true | `trailing` |
-| `ShortcutVisible` + `Shortcut` (SLOT: Kbd ⌘ · K) | BOOLEAN + SLOT | true | `shortcut` (⌘ K por defecto en `search`; `null` lo oculta) |
+| `ShortcutVisible` + `Shortcut` (SLOT: Kbd ⌘ · K) | BOOLEAN + SLOT | true | `shortcut` (⌘ K by default in `search`; `null` hides it) |
 
-## Anatomía (raíz = la caja; el `<input>` es `text`)
+## Anatomy (root = the box; the `<input>` is `text`)
 
-Raíz: horizontal, centrada, gap `Spacing/gap-control` (8), padding X `Spacing/inset-control`
-(12), radio `Radius/action`, trazo `Stroke/control` INSIDE, alto `Size/control-sm|md|lg`
-(32 · 40 · 48), tipo `Type/placeholder`. Partes, en el orden del archivo:
+Root: horizontal, centred, gap `Spacing/gap-control` (8), padding X `Spacing/inset-control`
+(12), radius `Radius/action`, stroke `Stroke/control` INSIDE, height `Size/control-sm|md|lg`
+(32 · 40 · 48), type `Type/placeholder`. Parts, in the file's order:
 
-| Type | Partes | Medido (default, 260 de ancho) |
+| Type | Parts | Measured (default, 260 wide) |
 |---|---|---|
 | default | [icon-leading] text [icon-trailing] | 12 · 40 · 228 |
 | phone | addon `+01` · chevron · text | 12 · 41 · 65 |
@@ -43,45 +43,45 @@ Raíz: horizontal, centrada, gap `Spacing/gap-control` (8), padding X `Spacing/i
 | credit-card | lock · text | 12 · 40 |
 | search | search · text · Shortcut (Kbd ⌘ · Kbd K, gap `gap-tight`) | 12 · 40 · 204 / 228 |
 
-- Iconos `Size/icon-md` (20) en default y lg, `Size/icon-sm` (16) en sm. El caret de un addon
-  select (`CaretDown`) es `Size/icon-sm` siempre.
-- `divider`: rectángulo 1 × alto interior (38), `Border/subtle`, también en Disabled.
-- **Los Types con divisor (currency-select, url, upload, copy-link) tienen
-  `strokesIncludedInLayout`**: su contenido empieza en 13, no en 12. Se copia
+- Icons `Size/icon-md` (20) in default and lg, `Size/icon-sm` (16) in sm. The caret of a select
+  addon (`CaretDown`) is always `Size/icon-sm`.
+- `divider`: rectangle 1 × inner height (38), `Border/subtle`, also in Disabled.
+- **The Types with a divider (currency-select, url, upload, copy-link) have
+  `strokesIncludedInLayout`**: their content starts at 13, not 12. It is copied
   (`spacing.inset-control+stroke.control`).
-- Kbd (set `Kbd`, 1091:6): `Size=sm` en default/lg (alto y ancho mínimo `Size/icon-md`), `Size=xs`
-  en sm (`Size/icon-sm`); padding X `Spacing/gap-tight`, radio `Radius/control`, fill
-  `Surface/muted`, trazo `Border/subtle` `Stroke/divider` INSIDE, texto `Type/caption`
-  `Content/secondary`. Search Disabled oculta el atajo (medido).
+- Kbd (set `Kbd`, 1091:6): `Size=sm` in default/lg (minimum height and width `Size/icon-md`), `Size=xs`
+  in sm (`Size/icon-sm`); padding X `Spacing/gap-tight`, radius `Radius/control`, fill
+  `Surface/muted`, stroke `Border/subtle` `Stroke/divider` INSIDE, text `Type/caption`
+  `Content/secondary`. Search Disabled hides the shortcut (measured).
 
-## Color por State
+## Colour by State
 
-| State | Fill | Stroke | Halo (2px, monta el borde) | Tintas: valor · addon / placeholder · icono |
+| State | Fill | Stroke | Halo (2px, overlaps the border) | Inks: value · addon / placeholder · icon |
 |---|---|---|---|---|
-| Default | `Surface/input` | `Border/control` | — | `Content/primary` / `Content/subtle` · icono `Content/subtle` |
-| Hover | `Surface/input` | `Border/control-hover` | — | igual |
-| Focused | `Surface/input` | `Border/focus` | `Border/ring/default` | igual (+ caret) |
-| Invalid | `Surface/input` | `Status/critical/border-strong` | `Status/critical/border` | igual |
-| Disabled | `Action/disabled/default` | **`Border/control`** | — | `Content/disabled` / `Content/disabled` (icono incluido) |
+| Default | `Surface/input` | `Border/control` | — | `Content/primary` / `Content/subtle` · icon `Content/subtle` |
+| Hover | `Surface/input` | `Border/control-hover` | — | same |
+| Focused | `Surface/input` | `Border/focus` | `Border/ring/default` | same (+ caret) |
+| Invalid | `Surface/input` | `Status/critical/border-strong` | `Status/critical/border` | same |
+| Disabled | `Action/disabled/default` | **`Border/control`** | — | `Content/disabled` / `Content/disabled` (icon included) |
 
-Disabled conserva el stroke neutro (antes `fieldBox()` lo repintaba: bug corregido, afecta también
-a Textarea/InputGroup/Select/InputTag).
+Disabled keeps the neutral stroke (`fieldBox()` used to repaint it: bug fixed, it also affects
+Textarea/InputGroup/Select/InputTag).
 
-## Comportamiento (el archivo es estático; el código lo hace real)
-- phone / currency-select: el addon es un `<select>` nativo (opciones `addonOptions`).
-- password: el ojo es un botón que muestra / oculta (eye ↔ eye-slash), con nombre.
-- upload: `Browse` (con la carpeta) abre el selector de archivos; el campo muestra el nombre.
-- copy-link: `Copy` (con el icono) copia el valor al portapapeles.
-- Cada Type pone su `inputmode` y `autocomplete` (tel, decimal, url, cc-number…).
+## Behaviour (the file is static; code makes it real)
+- phone / currency-select: the addon is a native `<select>` (options `addonOptions`).
+- password: the eye is a button that shows / hides (eye ↔ eye-slash), with a name.
+- upload: `Browse` (with the folder) opens the file picker; the field shows the name.
+- copy-link: `Copy` (with the icon) copies the value to the clipboard.
+- Each Type sets its `inputmode` and `autocomplete` (tel, decimal, url, cc-number…).
 
-## Lo que el archivo hace y parece raro (se copia igual)
-- `State` dice `Invalid` donde otros sets del repo dicen `Error`.
-- 4 Types (los del divisor) ponen el contenido 1px más adentro que el resto.
+## What the file does that looks odd (copied as is)
+- `State` says `Invalid` where other sets in the repo say `Error`.
+- 4 Types (the divider ones) put the content 1px further in than the rest.
 
-## Anida
-`Kbd` (pintado por la parte `kbd` de Input con los valores del set Kbd; el componente Kbd aún no se
-ha reconstruido desde el archivo). Partes nuevas (`addon`, `divider`, `kbd`) son web + Storybook:
-el plugin está congelado (`WEB_ONLY_SLOTS` en `componentRecipesPluginParity.test.ts`).
+## Nests
+`Kbd` (painted by Input's `kbd` part with the Kbd set's values; the Kbd component has not yet been
+rebuilt from the file). New parts (`addon`, `divider`, `kbd`) are web + Storybook:
+the plugin is frozen (`WEB_ONLY_SLOTS` in `componentRecipesPluginParity.test.ts`).
 
-## Tamaños por tipo e iconos (2026-11-18, DEC-2026-11-18-004)
-`Size` sm · default · lg existe para los 11 `Type`. Alto `size.compact` 32 · `size.control` 40 · `size.touch` 48; icono `icon.small` · `icon.medium` · `icon.medium`; texto nivel text-md en sm y default, text-lg en lg. El caret de phone y currency-select sigue en `icon.small`. Todo icono dentro del campo usa `Content/subtle` (Disabled: `Content/disabled`) y no se oscurece con hover ni focus; el valor escrito y los addons siguen en `Content/primary`.
+## Sizes by type and icons (2026-11-18, DEC-2026-11-18-004)
+`Size` sm · default · lg exists for all 11 `Type`s. Height `size.compact` 32 · `size.control` 40 · `size.touch` 48; icon `icon.small` · `icon.medium` · `icon.medium`; text level text-md in sm and default, text-lg in lg. The caret of phone and currency-select stays at `icon.small`. Every icon inside the field uses `Content/subtle` (Disabled: `Content/disabled`) and does not darken on hover or focus; the typed value and the addons stay at `Content/primary`.

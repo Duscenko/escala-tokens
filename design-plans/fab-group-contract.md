@@ -1,104 +1,104 @@
-# Contrato · FABGroup (de Figma a código)
+# Contract · FABGroup (Figma to code)
 
-Fecha: 2026-11-12 · Fuente: Figma `Escala Design System (Real)`, set `FABGroup` (`346:448`,
-8 variantes, página «❖ FABButton & FABGroup»), leído con la Plugin API (solo lectura).
-**Figma manda; nada se corrige.**
+Date: 2026-11-12 · Source: Figma `Escala Design System (Real)`, set `FABGroup` (`346:448`,
+8 variants, page "❖ FABButton & FABGroup"), read with the Plugin API (read-only).
+**Figma rules; nothing is corrected.**
 
-Descripción del set: «Speed-dial: one trigger FABButton that opens up to five action items. Open
+Set description: "Speed-dial: one trigger FABButton that opens up to five action items. Open
 toggles the menu; Placement sets the direction items fan out (vertical, center, left, right). Give
-the trigger and every icon-only item an accessible name.» ("Placement" es el nombre en prosa de la
-propiedad `Layout` del panel.)
+the trigger and every icon-only item an accessible name." ("Placement" is the prose name of the
+panel's `Layout` property.)
 
 ## API
 
-| Figma (orden del panel) | Tipo | Defecto | Opciones | React |
+| Figma (panel order) | Type | Default | Options | React |
 |---|---|---|---|---|
 | `Layout` | VARIANT | `stack` | stack · fan-center · fan-left · fan-right | `layout` |
-| `Open` | VARIANT | `false` | false · true | estado interno (`open`/`defaultOpen`/`onOpenChange`) |
+| `Open` | VARIANT | `false` | false · true | internal state (`open`/`defaultOpen`/`onOpenChange`) |
 
-8 variantes = 4 `Layout` × 2 `Open`. El set no expone ejes para el trigger ni los items — son
-instancias fijas de `FABButton` (ver abajo). No hay un eje `State` propio del grupo: cada item es
-su propio `FABButton` y hereda sus estados Hover/Pressed/Focused/Disabled de la receta ya construida
+8 variants = 4 `Layout` × 2 `Open`. The set exposes no axes for the trigger or the items — they are
+fixed `FABButton` instances (see below). There is no group-level `State` axis: each item is
+its own `FABButton` and inherits its Hover/Pressed/Focused/Disabled states from the already-built recipe
 (`design-plans/fab-button-contract.md`).
 
-### El trigger (instancia fija en las 8 variantes)
-`FABButton / Appearance=solid, Shape=pill, Size=lg, Variant=default` — igual en toda variante.
-Lo único que cambia con `Open` es el icono (`IconLeadingIcon`, instance swap): `Plus` cuando cerrado,
-`X` cuando abierto. `LabelVisible` es `false` siempre (icono solo) — el texto `Label` («Create») existe
-en el componente pero nunca se muestra; en React es el nombre accesible por defecto.
+### The trigger (fixed instance in all 8 variants)
+`FABButton / Appearance=solid, Shape=pill, Size=lg, Variant=default` — the same in every variant.
+The only thing that changes with `Open` is the icon (`IconLeadingIcon`, instance swap): `Plus` when closed,
+`X` when open. `LabelVisible` is always `false` (icon only) — the `Label` text ("Create") exists
+in the component but is never shown; in React it is the default accessible name.
 
-### Cada item (instancia fija)
-`FABButton / Appearance=soft, Shape=pill, Size=default, Variant=default` — igual en todos los layouts
-y posiciones. `LabelVisible` difiere por **Layout**, medido:
+### Each item (fixed instance)
+`FABButton / Appearance=soft, Shape=pill, Size=default, Variant=default` — the same in all layouts
+and positions. `LabelVisible` differs by **Layout**, measured:
 
-| Layout | `LabelVisible` de los items | Nº de items en el archivo |
+| Layout | Items' `LabelVisible` | Number of items in the file |
 |---|---|---|
 | `stack` | `true` (Edit · Photo · Share) | 3 |
-| `fan-center` | `false` (icono solo) | 5 |
-| `fan-left` | `false` (icono solo) | 3 |
-| `fan-right` | `false` (icono solo) | 3 |
+| `fan-center` | `false` (icon only) | 5 |
+| `fan-left` | `false` (icon only) | 3 |
+| `fan-right` | `false` (icon only) | 3 |
 
-El texto de cada item (`Label`) es su acción real cuando es visible («Edit», «Photo», «Share» en
-`stack`); en los tres `fan-*` el `Label` queda en «Create» (heredado, no se ve) — el nombre accesible
-real en código es el `label` que el consumidor pasa por item (`aria-label`).
+Each item's text (`Label`) is its real action when visible ("Edit", "Photo", "Share" in
+`stack`); in the three `fan-*` layouts the `Label` stays "Create" (inherited, not visible) — the real
+accessible name in code is the `label` the consumer passes per item (`aria-label`).
 
-## Geometría
+## Geometry
 
-**`stack`** (Edit · Photo · Share, medido en `Layout=stack, Open=true`, 152×244): el trigger se queda
-en su sitio (abajo), los items se apilan arriba de él, alineados al borde DERECHO del trigger (ancho
-del trigger: x 92 → 148; cada item: x+width = 148 también). Separación vertical constante entre bordes:
-12px en los tres huecos (item1→trigger, item2→item1, item3→item2) — coincide exactamente con
-`Spacing/inset-control` (12), así que se usa ese rol en vez de un literal. Orden: el item más cercano
-al trigger es el primero de la lista (`items[0]` = Edit).
+**`stack`** (Edit · Photo · Share, measured in `Layout=stack, Open=true`, 152×244): the trigger stays
+in place (at the bottom), the items stack above it, aligned to the trigger's RIGHT edge (trigger
+width: x 92 → 148; each item: x+width = 148 as well). Constant vertical spacing between edges:
+12px in all three gaps (item1→trigger, item2→item1, item3→item2) — it matches exactly
+`Spacing/inset-control` (12), so that role is used instead of a literal. Order: the item closest
+to the trigger is the first in the list (`items[0]` = Edit).
 
-**`fan-center` / `fan-left` / `fan-right`** (icono solo, 48×48): cada item se sitúa sobre un **arco de
-radio 100px medido desde el centro del trigger** (medido en los tres: fan-center, fan-left y fan-right
-dan exactamente 100px centro-a-centro en cada item, con error de redondeo de ±0.4px por el ángulo de
-45°). **100px no corresponde a ningún token de Dimension Primitives ni a una suma obvia de roles — es
-una decisión de composición geométrica del archivo, se copia como literal** (`--fab-group-radius: 100px`
-en el componente, nunca un ref). El ángulo de cada item (medido en grados, 0°=derecha, −90°=arriba,
-180°=izquierda, convención de pantalla con Y+ hacia abajo):
+**`fan-center` / `fan-left` / `fan-right`** (icon only, 48×48): each item sits on an **arc of
+radius 100px measured from the trigger's centre** (measured in all three: fan-center, fan-left and fan-right
+give exactly 100px centre-to-centre for each item, with a rounding error of ±0.4px because of the 45°
+angle). **100px does not correspond to any Dimension Primitives token or to an obvious sum of roles — it is
+a geometric composition decision of the file, copied as a literal** (`--fab-group-radius: 100px`
+in the component, never a ref). Each item's angle (measured in degrees, 0°=right, −90°=up,
+180°=left, screen convention with Y+ pointing down):
 
-| Layout | nº medido | ángulos medidos | fórmula generalizada (n items, i=0..n−1) |
+| Layout | measured count | measured angles | generalised formula (n items, i=0..n−1) |
 |---|---|---|---|
 | `fan-center` | 5 | 180, −135, −90, −45, 0 | `i·(180/(n−1)) − 180` |
 | `fan-left` | 3 | −90, −135, −180(=180) | `−90 − i·(90/(n−1))` |
 | `fan-right` | 3 | −90, −45, 0 | `−90 + i·(90/(n−1))` |
 
-`items[0]` es siempre el más cercano al eje vertical (arriba) en los tres `fan-*`: en `fan-center` es
-el extremo IZQUIERDO (ángulo 180°), no el de arriba — medido así en el archivo (item-1 está a la
-izquierda, item-3 arriba, item-5 a la derecha). Con `n=1` no hay arco que medir en el archivo; el único
-item se coloca arriba (`−90°`) en los tres layouts, la posición común a los tres arcos.
+`items[0]` is always the closest to the vertical axis (top) in the three `fan-*` layouts: in `fan-center` it is
+the LEFT end (angle 180°), not the top one — measured that way in the file (item-1 is on the
+left, item-3 on top, item-5 on the right). With `n=1` there is no arc to measure in the file; the single
+item is placed on top (`−90°`) in all three layouts, the position common to the three arcs.
 
-El centro de cada item = centro del trigger + `radius·(cos θ, sin θ)`, con θ en la convención de
-arriba. El trigger no se mueve de layout a layout — solo cambia su posición DENTRO del marco del grupo
-(Figma centra el marco distinto por layout; en código el trigger es el ancla y el marco se ajusta solo).
+Each item's centre = the trigger's centre + `radius·(cos θ, sin θ)`, with θ in the convention
+above. The trigger does not move from layout to layout — only its position INSIDE the group's frame changes
+(Figma centres the frame differently per layout; in code the trigger is the anchor and the frame adjusts itself).
 
-## Color y efectos
+## Colour and effects
 
-Ninguno es propio del grupo — cada item y el trigger son instancias `FABButton` ya construidas
-(receta `FAB_BUTTON`, `design-plans/fab-button-contract.md`): fill, tinta, foco, lift y highlight ya
-están resueltos allí. `FABGroup` no pinta nada, solo posiciona. Abrir/cerrar no cambia el color del
-trigger (sigue `Action/primary/default` en los dos estados) — solo el icono.
+None belongs to the group — each item and the trigger are already-built `FABButton` instances
+(`FAB_BUTTON` recipe, `design-plans/fab-button-contract.md`): fill, ink, focus, lift and highlight are already
+resolved there. `FABGroup` paints nothing, it only positions. Opening/closing does not change the
+trigger's colour (it stays `Action/primary/default` in both states) — only the icon.
 
-## Movimiento (no está en el archivo; decisión del lado de código)
+## Motion (not in the file; a code-side decision)
 
-El archivo solo tiene dos variantes estáticas (`Open` false/true), sin frames intermedios. La
-apertura usa el rol de movimiento `use-stagger-in` / `use-stagger-out` (`lib/motion.ts`: «uno de
-los hijos de una revelación escalonada») con un pequeño `transition-delay` por índice — no es un
-valor del archivo, se documenta como tal.
+The file only has two static variants (`Open` false/true), with no intermediate frames. Opening
+uses the motion role `use-stagger-in` / `use-stagger-out` (`lib/motion.ts`: "one of
+the children of a staggered reveal") with a small per-index `transition-delay` — it is not a
+value from the file, and is documented as such.
 
-## Lo que el archivo hace y parece raro (se copia igual)
-- El trigger expone un `Label` de texto («Create») y `LabelVisible=false` en las 8 variantes: el
-  texto nunca se ve, pero existe como nombre semántico del componente. En código es el valor por
-  defecto del `aria-label` del trigger.
-- El radio de 100px no deriva de ningún rol de Dimension Primitives/Semantics visible (ni
-  `trigger.radius + item.size + item.radius` da un nombre con sentido salvo coincidencia numérica
-  con `Size/control-lg`=48). Se documenta, no se "arregla".
-- `fan-center` reparte 5 items en 180° empezando por la IZQUIERDA; `fan-left`/`fan-right` reparten
-  3 en 90° empezando por ARRIBA. Son dos convenciones de arranque distintas para el mismo radio —
-  se copian ambas.
+## What the file does that looks odd (copied as is)
+- The trigger exposes a text `Label` ("Create") and `LabelVisible=false` in all 8 variants: the
+  text is never seen, but exists as the component's semantic name. In code it is the default
+  value of the trigger's `aria-label`.
+- The 100px radius does not derive from any visible Dimension Primitives/Semantics role (nor
+  does `trigger.radius + item.size + item.radius` give a meaningful name except by numeric coincidence
+  with `Size/control-lg`=48). It is documented, not "fixed".
+- `fan-center` distributes 5 items over 180° starting from the LEFT; `fan-left`/`fan-right` distribute
+  3 over 90° starting from the TOP. These are two different starting conventions for the same radius —
+  both are copied.
 
-## Anida
-`FABButton` (`design-plans/fab-button-contract.md`) — se construye antes y es el único componente
-que este set usa como instancia, tanto para el trigger como para cada item.
+## Nests
+`FABButton` (`design-plans/fab-button-contract.md`) — built first and the only component
+this set uses as an instance, both for the trigger and for each item.

@@ -1,29 +1,29 @@
-# Contrato · FeaturedIcon (de Figma a código)
+# Contract · FeaturedIcon (Figma to code)
 
-Fecha: 2026-11-12 · Fuente: set `FeaturedIcon` (`1119:10857`, 144 variantes), leído en solo lectura. **Figma manda.**
-Descripción: «Decorative icon in a tinted or solid shape… Hidden from assistive tech (aria-hidden)… ModalHeader nests it (Size default · lg, Shape rounded).»
+Date: 2026-11-12 · Source: set `FeaturedIcon` (`1119:10857`, 144 variants), read-only. **Figma rules.**
+Description: "Decorative icon in a tinted or solid shape… Hidden from assistive tech (aria-hidden)… ModalHeader nests it (Size default · lg, Shape rounded)."
 
 ## API
-| Figma (orden del panel) | Defecto | React |
+| Figma (panel order) | Default | React |
 |---|---|---|
-| `Icon` INSTANCE_SWAP | `icon/Lightning` (Outline) | `icon` (por defecto el rayo regular de Phosphor) |
+| `Icon` INSTANCE_SWAP | `icon/Lightning` (Outline) | `icon` (defaults to Phosphor's regular lightning bolt) |
 | `Size` default · sm · lg · xl | `default` | `size` |
 | `Variant` default · secondary · critical · success · warning · info | `default` | `variant` |
 | `Appearance` soft · solid · gradient | `soft` | `appearance` |
 | `Shape` circle · rounded | `circle` | `shape` |
 
-## Geometría
-Cuadrado 32 (sm) · 40 (default) · 48 (lg) · 56 (xl) = `Size/control-sm … xl`, glifo centrado 20 (`Size/icon-md`, solo sm) · 24 (`icon-lg`, el resto). circle = `Radius/full`, rounded = `Radius/action`.
+## Geometry
+Square 32 (sm) · 40 (default) · 48 (lg) · 56 (xl) = `Size/control-sm … xl`, centered glyph 20 (`Size/icon-md`, sm only) · 24 (`icon-lg`, the rest). circle = `Radius/full`, rounded = `Radius/action`.
 
-## Color (idéntico en todos los tamaños y formas)
-Igual que Avatar: default soft `Surface/accent` + `Content/accent`; secondary soft `Surface/muted` + `Content/secondary`; critical/success/warning/info soft `Status/<s>/surface` + `content`, solid `Status/<s>/surface-solid` + `on-solid`.
+## Color (identical at all sizes and shapes)
+Same as Avatar: default soft `Surface/accent` + `Content/accent`; secondary soft `Surface/muted` + `Content/secondary`; critical/success/warning/info soft `Status/<s>/surface` + `content`, solid `Status/<s>/surface-solid` + `on-solid`.
 
 ## Gradient (2026-11-18, DEC-2026-11-18-003)
-`Appearance=gradient` lleva, en todos los tonos, tamaños y formas: `0 4px 6px -1px Elevation/shadow-key`, `0 2px 4px -2px Elevation/shadow-ambient` e `inset 0 2px 0 Elevation/highlight` (puesto a mano, no usa el estilo `Highlight/solid` de 1 px). Paradas: default `Action/primary/*`, secondary `Action/secondary/*`, estados `Status/<s>/surface-solid*`.
+`Appearance=gradient` carries, in all tones, sizes and shapes: `0 4px 6px -1px Elevation/shadow-key`, `0 2px 4px -2px Elevation/shadow-ambient` and `inset 0 2px 0 Elevation/highlight` (set by hand, it does not use the 1 px `Highlight/solid` style). Stops: default `Action/primary/*`, secondary `Action/secondary/*`, statuses `Status/<s>/surface-solid*`.
 
-## Dentro de overlays
-En `ModalHeader` el icono es siempre `Shape=rounded` (`Radius/action`).
+## Inside overlays
+In `ModalHeader` the icon is always `Shape=rounded` (`Radius/action`).
 
-## Lo raro del archivo
-- **default·solid y secondary·solid (16 variantes) están rellenos con una IMAGEN raster** (una esfera iridiscente pegada: 600×600 y 704×1408) y su icono no tiene capas pintadas. Es un descuido del archivo; no se puede copiar una foto. En código: default·solid = `Action/primary/default` + `Content/on-action`, secondary·solid = `Surface/inverse` + `Content/inverse` (los mismos que el Avatar solid del archivo). Avisar al dueño.
-- xl no agranda el glifo (24, igual que lg).
+## Odd in the file
+- **default·solid and secondary·solid (16 variants) are filled with a raster IMAGE** (a pasted iridescent sphere: 600×600 and 704×1408) and their icon has no painted layers. This is an oversight in the file; a photo cannot be copied. In code: default·solid = `Action/primary/default` + `Content/on-action`, secondary·solid = `Surface/inverse` + `Content/inverse` (the same as the file's Avatar solid). Notify the owner.
+- xl does not enlarge the glyph (24, same as lg).

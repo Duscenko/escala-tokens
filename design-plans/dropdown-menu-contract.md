@@ -1,45 +1,45 @@
-# Contrato · DropdownMenu, DropdownMenuLabel, DropdownMenuItem, DropdownMenuFooter (de Figma a código)
+# Contract · DropdownMenu, DropdownMenuLabel, DropdownMenuItem, DropdownMenuFooter (Figma to code)
 
-Fecha: 2026-11-13 · Fuente: Figma `Escala Design System (Real)`, página «❖ DropdownMenu»: `DropdownMenu` (947:299, 3), `DropdownMenuFooter`
-(949:3290, 6), `DropdownMenuItem` (947:161, 21), `DropdownMenuLabel` (947:169, 3). Solo lectura. Prototipos (954:2275, 960:3289) sin leer.
-Ledger: DropdownMenu rebuild; las otras tres, parts. Código hoy: `escala-ui/dropdown-menu.tsx` (shadcn) + su receta.
+Date: 2026-11-13 · Source: Figma `Escala Design System (Real)`, page "❖ DropdownMenu": `DropdownMenu` (947:299, 3), `DropdownMenuFooter`
+(949:3290, 6), `DropdownMenuItem` (947:161, 21), `DropdownMenuLabel` (947:169, 3). Read-only. Prototypes (954:2275, 960:3289) not read.
+Ledger: DropdownMenu rebuild; the other three, parts. Code today: `escala-ui/dropdown-menu.tsx` (shadcn) + its recipe.
 
-## API (orden del panel, variantes primero)
-| Set | Propiedades |
+## API (panel order, variants first)
+| Set | Properties |
 |---|---|
-| DropdownMenu | `Size` sm · default · lg (def default) · `HeaderVisible` false · `Header` SLOT (un Input de búsqueda: Input size sm/default/lg, type default, placeholder "Search", icono lupa) · `Content` SLOT (labels, items, separadores) · `FooterVisible` false (+ footer) |
-| DropdownMenuLabel | `Size` sm · default · lg · `Label` TEXT "Action" (mayúsculas por Type/caption: el texto se escribe tal cual) |
-| DropdownMenuItem | `Size` sm · default · lg · `State` Default · Hover · Focused · Selected · Disabled · `Variant` default · critical (era `destructive` hasta 2026-11-18) · `Label` "Option" · `DescriptionVisible` false / `Description` "Secondary text" · `IconLeadingVisible` false / `IconLeadingIcon` (swap) · `TrailingVisible` false / `Trailing` "⌘K" · `IndicatorVisible` true (el check de Selected) · `MediaVisible` false / `Media` SLOT (Avatar image 2xs / xs) · `ControlVisible` false / `Control` SLOT (Switch xs / sm) · `IconTrailingVisible` false / `IconTrailingIcon` (CaretRight) |
-| DropdownMenuFooter | `Layout` inline · stacked · `Size` default · sm · lg · `LeadingVisible` true / `Leading` SLOT ("12 of 40 selected", caption, Content/secondary) · `ActionsVisible` true / `Actions` SLOT (Clear secondary solid + Apply default solid; Button xs / sm / sm en sm / default / lg) |
+| DropdownMenu | `Size` sm · default · lg (def default) · `HeaderVisible` false · `Header` SLOT (a search Input: Input size sm/default/lg, type default, placeholder "Search", magnifier icon) · `Content` SLOT (labels, items, separators) · `FooterVisible` false (+ footer) |
+| DropdownMenuLabel | `Size` sm · default · lg · `Label` TEXT "Action" (uppercase via Type/caption: the text is written as is) |
+| DropdownMenuItem | `Size` sm · default · lg · `State` Default · Hover · Focused · Selected · Disabled · `Variant` default · critical (was `destructive` until 2026-11-18) · `Label` "Option" · `DescriptionVisible` false / `Description` "Secondary text" · `IconLeadingVisible` false / `IconLeadingIcon` (swap) · `TrailingVisible` false / `Trailing` "⌘K" · `IndicatorVisible` true (the Selected check) · `MediaVisible` false / `Media` SLOT (Avatar image 2xs / xs) · `ControlVisible` false / `Control` SLOT (Switch xs / sm) · `IconTrailingVisible` false / `IconTrailingIcon` (CaretRight) |
+| DropdownMenuFooter | `Layout` inline · stacked · `Size` default · sm · lg · `LeadingVisible` true / `Leading` SLOT ("12 of 40 selected", caption, Content/secondary) · `ActionsVisible` true / `Actions` SLOT (Clear secondary solid + Apply default solid; Button xs / sm / sm in sm / default / lg) |
 
-## Geometría
-**DropdownMenu** (VERTICAL, ancho FIJO 256, alto HUG, clip): `Radius/overlay` 16, fill `Surface/layer-2`, trazo `Border/default` 1 INSIDE, Shadow/md
-con ring y spreads (el frame clipa: `0 0 0 1 ring`, `0 4 6 −1 key`, `0 2 4 −2 ambient`; mismo `lift: popover-md`). Hijos: `Header` (oculto; padding
-`gap-tight` 4; un Input FILL, alto 32 / 40 / 48 según size), `Content` (padding `gap-tight` 4, gap 0, FILL), `footer` (oculto, instancia DropdownMenuFooter).
-Alto con el ejemplo: 139 (sm) · 171 (default) · 203 (lg) = Content 137 / 169 / 201 + 2 de borde: label 24 + 3 items + separador 9 + item.
-**Label**: 256×24 (FIXED/HUG), padding Y `gap-tight` 4, X `gap-control` 8 (sm, default) / `inset-control` 12 (lg); texto `Type/caption` `Content/secondary`, 16 alto.
-**Separator** dentro del Content: frame con padding Y `gap-tight` 4, un `Separator` horizontal tone subtle (1px) → 9 de alto.
-**Item** (HORIZONTAL MIN/CENTER, ancho FIXED 256 / FILL en el menú, alto HUG, radio `Radius/control` 8): padding Y `gap-tight` 4; X `gap-control` 8 (sm, default) /
-`inset-control` 12 (lg); gap: sm `gap-tight` 4, default y lg `gap-control` 8. Altos: sm 24 · default 32 · lg 40. Hijos en orden: `icon-leading` (Icon sm 16 /
-md 20 en lg, oculto), `Media` (SLOT, oculto: Avatar image 16 `2xs` en sm/default, 24 `xs` en lg), `text` (VERTICAL FILL: `label` — sm `Type/caption`, default `Type/body-sm`,
-lg `Type/body-md`, `Content/primary` — y `description` `Type/caption` `Content/secondary`, oculto), `trailing` (texto `Type/caption` `Content/secondary`, oculto),
-`Control` (SLOT oculto, Switch xs / sm), `icon-trailing` (CaretRight, `Size/icon-sm`/`md`, `Content/secondary`, oculto), `icon-indicator` (solo Selected: Check, `Content/accent`, 16 /
-20, al final).
-**Foco desde 2026-11-19 (DEC-2026-11-19-001, el dueño): como el Button.** Focused = el relleno resaltado + UN anillo de 2 px (`Stroke/focus`) separado 1 px de la fila
-(`gapRing`), en el color de la intención: `Border/ring/default` · `Status/critical/ring`. Nada dentro de la fila. El archivo de Figma aún dibuja el foco antiguo (descrito
-abajo) y se pondrá al día; hasta entonces el código manda en este punto.
-Estados (default): **Default** sin relleno; **Focused** (foco antiguo del archivo) fill `Surface/muted`, trazo `Border/focus` 2 INSIDE + un `focus-ring` ABSOLUTE (stroke `Border/ring/default` 2 OUTSIDE,
-mismo radio) → 2px de halo exterior; con el trazo dentro, el icono leading queda en x 10 (8 + 2). **Selected** fill `Surface/selected`, check visible a la derecha
-(el texto se reduce 24: `text` 216). **Disabled** label, description y trailing `Content/disabled`. **critical**: label `Status/critical/content`; Focused: fill
-`Status/critical/surface`, trazo `Status/critical/border-strong`, halo `Status/critical/border`; Disabled igual que el default.
-**Footer**: igual que PopoverFooter (256, padding 8, gap 8, trazo superior `Border/subtle` DENTRO del padding: 40 / 48 / 56 inline; 96 / 112 / 128 stacked, botones
-FILL en stacked: Clear primero, Apply después).
+## Geometry
+**DropdownMenu** (VERTICAL, FIXED width 256, HUG height, clip): `Radius/overlay` 16, fill `Surface/layer-2`, stroke `Border/default` 1 INSIDE, Shadow/md
+with ring and spreads (the frame clips: `0 0 0 1 ring`, `0 4 6 −1 key`, `0 2 4 −2 ambient`; same `lift: popover-md`). Children: `Header` (hidden; padding
+`gap-tight` 4; one FILL Input, height 32 / 40 / 48 by size), `Content` (padding `gap-tight` 4, gap 0, FILL), `footer` (hidden, DropdownMenuFooter instance).
+Height with the example: 139 (sm) · 171 (default) · 203 (lg) = Content 137 / 169 / 201 + 2 for the border: label 24 + 3 items + separator 9 + item.
+**Label**: 256×24 (FIXED/HUG), padding Y `gap-tight` 4, X `gap-control` 8 (sm, default) / `inset-control` 12 (lg); text `Type/caption` `Content/secondary`, 16 high.
+**Separator** inside the Content: frame with padding Y `gap-tight` 4, one horizontal `Separator` tone subtle (1px) → 9 high.
+**Item** (HORIZONTAL MIN/CENTER, FIXED width 256 / FILL in the menu, HUG height, radius `Radius/control` 8): padding Y `gap-tight` 4; X `gap-control` 8 (sm, default) /
+`inset-control` 12 (lg); gap: sm `gap-tight` 4, default and lg `gap-control` 8. Heights: sm 24 · default 32 · lg 40. Children in order: `icon-leading` (Icon sm 16 /
+md 20 in lg, hidden), `Media` (SLOT, hidden: Avatar image 16 `2xs` in sm/default, 24 `xs` in lg), `text` (VERTICAL FILL: `label` — sm `Type/caption`, default `Type/body-sm`,
+lg `Type/body-md`, `Content/primary` — and `description` `Type/caption` `Content/secondary`, hidden), `trailing` (text `Type/caption` `Content/secondary`, hidden),
+`Control` (hidden SLOT, Switch xs / sm), `icon-trailing` (CaretRight, `Size/icon-sm`/`md`, `Content/secondary`, hidden), `icon-indicator` (Selected only: Check, `Content/accent`, 16 /
+20, at the end).
+**Focus since 2026-11-19 (DEC-2026-11-19-001, the owner): like the Button.** Focused = the highlighted fill + ONE 2 px ring (`Stroke/focus`) separated 1 px from the row
+(`gapRing`), in the intent's colour: `Border/ring/default` · `Status/critical/ring`. Nothing inside the row. The Figma file still draws the old focus (described
+below) and will be brought up to date; until then code rules on this point.
+States (default): **Default** no fill; **Focused** (the file's old focus) fill `Surface/muted`, stroke `Border/focus` 2 INSIDE + an ABSOLUTE `focus-ring` (stroke `Border/ring/default` 2 OUTSIDE,
+same radius) → 2px of outer halo; with the stroke inside, the leading icon sits at x 10 (8 + 2). **Selected** fill `Surface/selected`, check visible on the right
+(the text shrinks 24: `text` 216). **Disabled** label, description and trailing `Content/disabled`. **critical**: label `Status/critical/content`; Focused: fill
+`Status/critical/surface`, stroke `Status/critical/border-strong`, halo `Status/critical/border`; Disabled same as default.
+**Footer**: same as PopoverFooter (256, padding 8, gap 8, top stroke `Border/subtle` INSIDE the padding: 40 / 48 / 56 inline; 96 / 112 / 128 stacked, buttons
+FILL in stacked: Clear first, Apply after).
 
-## Raro (se copia igual)
-- El item default `Size=default` lleva `IndicatorVisible` true pero el check solo existe en Selected.
-- En lg el Switch del Control es `Size=sm`, en sm/default `Size=xs` (selector-sm 16 de alto en ambos).
-- El Focused critical del archivo cambia la familia entera (surface/border-strong/border críticos); el código usa `Status/critical/surface` + `Status/critical/ring` (DEC-2026-11-19-001).
-- El `Header` es un Input real (Input size = size del menú).
+## Odd (copied as is)
+- The default item `Size=default` carries `IndicatorVisible` true but the check only exists in Selected.
+- In lg the Control's Switch is `Size=sm`, in sm/default `Size=xs` (selector-sm 16 high in both).
+- The file's critical Focused changes the whole family (critical surface/border-strong/border); code uses `Status/critical/surface` + `Status/critical/ring` (DEC-2026-11-19-001).
+- The `Header` is a real Input (Input size = the menu's size).
 
-## Anida
-Input (search), Avatar (2xs / xs, image), Switch (xs / sm), Separator (horizontal subtle), Button (xs / sm / default), iconos CaretRight y Check.
+## Nests
+Input (search), Avatar (2xs / xs, image), Switch (xs / sm), Separator (horizontal subtle), Button (xs / sm / default), CaretRight and Check icons.

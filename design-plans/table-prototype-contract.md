@@ -2,10 +2,10 @@
 
 Read-only, depth-walked in passes < 48 KB. The section is ONE doc board (`DocBoardPrototype`, 1824 × 1603) with intro text and two `DocPrototypeExample` frames. Each example holds a `Table` instance at desktop width 1440 × 290 (a 1438 × 288 content) with a window chrome around it (three dots).
 
-Intro (copied): «This board shows the Table at desktop width (1440) with real people data: Avatar with photos from the Media library, Badge for department and status, ProgressLine for progress. Light shows resting, hover, selected and disabled rows; Dark adds grid dividers, a pinned column, sorting, resizing and the scrolled header. Hover rows in the prototype.»
-Header description of the board: «Displays structured records in rows and columns with sortable headers and selectable rows. Two appearances, two divider styles, four sizes and no root states; give the table an aria-label and keep Pagination outside it.»
+Intro (copied): "This board shows the Table at desktop width (1440) with real people data: Avatar with photos from the Media library, Badge for department and status, ProgressLine for progress. Light shows resting, hover, selected and disabled rows; Dark adds grid dividers, a pinned column, sorting, resizing and the scrolled header. Hover rows in the prototype."
+Header description of the board: "Displays structured records in rows and columns with sortable headers and selectable rows. Two appearances, two divider styles, four sizes and no root states; give the table an aria-label and keep Pagination outside it."
 
-## Example Light — «RESTING · HOVER · SELECTED · DISABLED»
+## Example Light — "RESTING · HOVER · SELECTED · DISABLED"
 `Table` Size default · Appearance filled · Dividers rows. Header `TableHeader` Size default · Dividers rows · **Scrolled false**.
 Columns (widths, sum 1440 − 2): 56 · 320 · 200 · 240 · 160 · 200 · 264.
 
@@ -26,7 +26,7 @@ Rows (TableRow Size default, Dividers rows, no pinned, no resizer):
 4. **Hover** — Ethan Walsh · ethan@escala.design · Marketing · Growth Lead · Active · Nov 5, 2024 · 100
 5. **Disabled** (every cell + checkbox State Disabled) — Noah Dubois · noah@escala.design · Design · Product Designer · Inactive (secondary) · Jun 18, 2024 · 0
 
-## Example Dark — «GRID · PINNED · SORTED · RESIZING» (the dark chrome is the page's Dark mode; same data)
+## Example Dark — "GRID · PINNED · SORTED · RESIZING" (the dark chrome is the page's Dark mode; same data)
 `Table` default · filled · **Dividers grid**. `TableHeader` Dividers grid · **Scrolled true**.
 Differences from Light, nothing else changes:
 - **Name** head: `Pinned start`, Sort none (shows the `pin-edge`, 1px); its column cells (rows 1–5) are **Pinned start** (the disabled row's cell too, State Disabled).
@@ -36,7 +36,7 @@ Differences from Light, nothing else changes:
 - Selected row's Department badge shows no pill fill in the screenshot (hover/selected composite); same Badge props as Light.
 
 ## What the code has / needs
-Everything the prototype draws already exists as a part (TableHead sort/pinned/resizer, TableCell leading slot + pinned, TableRow states, TableHeader scrolled). Missing, and built tal cual:
+Everything the prototype draws already exists as a part (TableHead sort/pinned/resizer, TableCell leading slot + pinned, TableRow states, TableHeader scrolled). Missing, and built as is:
 - A composed **TablePrototype** (docs/story composition, not an escala-ui part): real behaviour for the select-all indeterminate Checkbox, row selection, click-to-sort on Name / Join date, a Resizing handle state, Pinned Name column.
 - Photos: the file uses stock photos (`904:6116…`). Code has no photos → the Avatar draws the system's **gradient fill** (see Avatar group fix, same commit family), one hue per person.
 - Specimen/overview: Table overview gets the two prototype rows.

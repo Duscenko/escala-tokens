@@ -1,4 +1,4 @@
-# Toast (1117:114, «❖ Toast (✓)», 24 variants) — contract, read 2026-11-13
+# Toast (1117:114, "❖ Toast (✓)", 24 variants) — contract, read 2026-11-13
 Replaces the shadcn Sonner skin (ledger: rename of `Sonner`). The `sonner` library stays the queue and live region (`Toaster`, `toast`, plus `showToast` that renders the component inside it).
 
 Props (panel order): Title T `Title` · DescriptionVisible true · Description T `Description` · IconVisible true · ActionsVisible false · CloseVisible true · ProgressVisible true · Appearance solid·soft·filled(default)·outline · Variant default(default)·secondary·success·info·warning·critical.

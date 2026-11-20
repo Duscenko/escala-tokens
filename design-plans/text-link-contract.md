@@ -1,107 +1,107 @@
-# Contrato · TextLink (de Figma a código)
+# Contract · TextLink (Figma to code)
 
-Fecha: 2026-11-12 · Fuente: Figma `Escala Design System (Real)`, set `TextLink` (`358:6494`,
-144 variantes), leído con la Plugin API (solo lectura). Lo copian la receta, el componente y
-Storybook. **Figma manda; nada se corrige.**
+Date: 2026-11-12 · Source: Figma `Escala Design System (Real)`, set `TextLink` (`358:6494`,
+144 variants), read with the Plugin API (read-only). The recipe, the component and
+Storybook copy it. **Figma rules; nothing is corrected.**
 
-Descripción del set: «Inline text link for navigation and in-flow actions. Hover and Pressed
+Set description: "Inline text link for navigation and in-flow actions. Hover and Pressed
 always show the underline; UnderlineVisible controls it in the other states. Visited is a
 link-only state. Variants critical, success and info use Status roles. Always give the link a
-descriptive label; icon-only use needs an accessible name (aria-label).»
+descriptive label; icon-only use needs an accessible name (aria-label)."
 
 ## API
 
-| Figma | Tipo | Defecto | Opciones (orden del archivo) | React |
+| Figma | Type | Default | Options (file order) | React |
 |---|---|---|---|---|
 | `Size` | VARIANT | `default` | xs · sm · default · lg | `size` |
 | `State` | VARIANT | `Default` | Default · Hover · Pressed · Visited · Focused · Disabled | CSS (`:hover`, `:active`, `:focus-visible`) + `forceState`; `disabled` |
 | `Variant` | VARIANT | `default` | inverse · success · info · default · secondary · critical | `variant` |
-| `Label` | TEXT | «Inline Text Link» | — | `children` |
-| `IconLeadingVisible` | BOOLEAN | `true` | — | `leading?: ReactNode` (presente = visible) |
+| `Label` | TEXT | "Inline Text Link" | — | `children` |
+| `IconLeadingVisible` | BOOLEAN | `true` | — | `leading?: ReactNode` (present = visible) |
 | `IconTrailingVisible` | BOOLEAN | `true` | — | `trailing?: ReactNode` |
-| `IconLeadingIcon` | INSTANCE_SWAP | `icon/plus` | — | el nodo de `leading` |
-| `IconTrailingIcon` | INSTANCE_SWAP | `icon/arrow-right` | — | el nodo de `trailing` |
+| `IconLeadingIcon` | INSTANCE_SWAP | `icon/plus` | — | the `leading` node |
+| `IconTrailingIcon` | INSTANCE_SWAP | `icon/arrow-right` | — | the `trailing` node |
 | `UnderlineVisible` | BOOLEAN | `true` | — | `underline?: boolean` |
 
-144 = 4 · 6 · 6. El orden de las propiedades que no son variante es el de la API (no pude ver
-el panel del playground; si difiere, se ajusta el orden de los controles de la historia).
+144 = 4 · 6 · 6. The order of the non-variant properties is the API's (I could not see
+the playground panel; if it differs, the order of the story's controls is adjusted).
 
-`Visited`: el archivo lo pinta **igual que Default** en las seis variantes (no hay rol «visited»).
-En código `forceState="Visited"` existe, pero `:visited` real no pinta nada: darle regla propia
-haría que un enlace visitado ignorase el hover.
+`Visited`: the file paints it **the same as Default** in all six variants (there is no "visited" role).
+In code `forceState="Visited"` exists, but a real `:visited` paints nothing: giving it its own rule
+would make a visited link ignore hover.
 
-## Geometría por tamaño
+## Geometry by size
 
-Raíz: horizontal, items al inicio, centrados en vertical, ancho = contenido, padding X
-`Spacing/gap-tight` (4) en los dos lados, padding Y 0, radio `Radius/control` (8) → `radius.control`.
+Root: horizontal, items at the start, vertically centred, width = content, padding X
+`Spacing/gap-tight` (4) on both sides, padding Y 0, radius `Radius/control` (8) → `radius.control`.
 
-| Size | Gap | Icono (marco y glifo) | Estilo del texto | Alto del texto |
+| Size | Gap | Icon (frame and glyph) | Text style | Text height |
 |---|---|---|---|---|
 | xs | `Spacing/gap-tight` (4) | `Size/icon-sm` (16) → `icon.small` | `Type/body-sm` 12 | 18 |
 | sm | `Spacing/gap-tight` (4) | `Size/icon-sm` (16) | `Type/body-md` 14 | 21 |
 | default | `Spacing/gap-control` (8) | `Size/icon-md` (20) → `icon.medium` | `Type/body-lg` 16 | 25 |
 | lg | `Spacing/gap-control` (8) | `Size/icon-md` (20) | `Type/body-xl` 18 | 26 |
 
-Medidas del archivo (default · Default): 177 × 25. `label-wrap` es una columna con el texto y el
-subrayado; el subrayado es un rectángulo absoluto de `Stroke/divider` (1) de alto, ancho del texto,
-pegado al borde inferior del texto (y = alto − 1), relleno del color del texto.
+Measurements from the file (default · Default): 177 × 25. `label-wrap` is a column with the text and the
+underline; the underline is an absolute rectangle of `Stroke/divider` (1) height, the text's width,
+flush with the text's bottom edge (y = height − 1), filled with the text's colour.
 
-## Color por Variant y State
+## Colour by Variant and State
 
-Igual en los cuatro tamaños (medido). Texto, subrayado e iconos comparten un solo color.
+The same in all four sizes (measured). Text, underline and icons share a single colour.
 
 | Variant | Default · Visited · Focused | Hover · Pressed | Disabled |
 |---|---|---|---|
 | default | `Content/link/default` | `Content/link/hover` | `Content/disabled` |
 | secondary | `Content/secondary` | `Content/primary` | `Content/disabled` |
 | inverse | `Content/inverse` | `Content/inverse` | `Content/disabled` |
-| critical | `Status/critical/content` | igual | `Content/disabled` |
-| success | `Status/success/content` | igual | `Content/disabled` |
-| info | `Status/info/content` | igual | `Content/disabled` |
+| critical | `Status/critical/content` | same | `Content/disabled` |
+| success | `Status/success/content` | same | `Content/disabled` |
+| info | `Status/info/content` | same | `Content/disabled` |
 
-Sin relleno en ningún estado.
+No fill in any state.
 
-## Subrayado
+## Underline
 
-Visible en Default, Visited, Focused y Disabled según `UnderlineVisible` (defecto `true`); **en
-Hover y Pressed siempre visible**, la propiedad no se aplica ahí.
+Visible in Default, Visited, Focused and Disabled according to `UnderlineVisible` (default `true`); **in
+Hover and Pressed always visible**, the property does not apply there.
 
-**Opacidad del nodo `underline`: 0.4 en Default, Visited, Focused y Disabled; 1 en Hover y Pressed**
-(medido en la API y en los píxeles del render: la fila del subrayado en Default es la tinta al 40 %
-sobre la página, `(194,180,230)` frente a `#6945c1`). Es la única opacidad del archivo; en receta es
-la propiedad `opacity` (valor plano, fuera de las referencias a tokens).
+**Opacity of the `underline` node: 0.4 in Default, Visited, Focused and Disabled; 1 in Hover and Pressed**
+(measured in the API and in the render's pixels: the underline row in Default is the ink at 40 %
+over the page, `(194,180,230)` versus `#6945c1`). It is the only opacity in the file; in the recipe it is
+the `opacity` property (a flat value, outside the token references).
 
-## Foco
+## Focus
 
-Solo en `Focused`: trazo de `Stroke/focus` (2) **por dentro** + un marco `focus-ring` del tamaño de la
-raíz con trazo de 2 **por fuera**.
+Only in `Focused`: a `Stroke/focus` (2) stroke **inside** + a `focus-ring` frame the size of the
+root with a 2 stroke **outside**.
 
-| Variant | Borde (2, dentro) | Halo (2, fuera) |
+| Variant | Border (2, inside) | Halo (2, outside) |
 |---|---|---|
 | default | `Border/focus` | `Border/ring/default` |
 | secondary | `Border/strong` | `Border/subtle` |
 | inverse | `Border/inverse` | `Surface/inverse-muted` |
 | critical · success · info | `Status/<x>/border-strong` | `Status/<x>/border` |
 
-## Efectos
+## Effects
 
-Ninguno.
+None.
 
-## Lo que el archivo hace y parece raro (se copia igual)
+## What the file does that looks odd (copied as is)
 
-- **El estado Focused es 4 px más grande en cada eje** (181 × 29 frente a 177 × 25): el trazo de 2 px
-  cuenta dentro del layout (`strokesIncludedInLayout`) y empuja el contenido 2 px. En código el
-  padding de Focused suma el trazo (`gap-tight + stroke.focus` en X, `stroke.focus` en Y), así que el
-  enlace crece igual al recibir el foco. Es un salto de layout; lo dice el archivo.
-- **`Type/body-xl` no es un rol**: el estilo del archivo está ligado a los primitivos de la escala
-  (`size/text-xl` 18, `line-height/text-xl` 26, `letter-spacing/text-xl` −0.2, `weight/regular`), no
-  a `role/body-xl/*` como los otros tres. En código la receta lo referencia como el paso `text-xl`
-  de la escala, sin inventar un rol.
-- Hover y Pressed pintan igual (ni siquiera cambian en critical / success / info / inverse).
-- La primera lectura del set omitió la opacidad de nodo (una versión recortada del script); la detectó la
-  comparación de píxeles. `figma-read-set.js` completo ya la lista.
+- **The Focused state is 4 px larger on each axis** (181 × 29 versus 177 × 25): the 2 px stroke
+  counts inside the layout (`strokesIncludedInLayout`) and pushes the content 2 px. In code the
+  Focused padding adds the stroke (`gap-tight + stroke.focus` on X, `stroke.focus` on Y), so the
+  link grows the same way when it receives focus. It is a layout shift; the file says so.
+- **`Type/body-xl` is not a role**: the file's style is bound to the scale's primitives
+  (`size/text-xl` 18, `line-height/text-xl` 26, `letter-spacing/text-xl` −0.2, `weight/regular`), not
+  to `role/body-xl/*` like the other three. In code the recipe references it as the scale's `text-xl`
+  step, without inventing a role.
+- Hover and Pressed paint the same (they do not even change in critical / success / info / inverse).
+- The first read of the set missed the node opacity (a trimmed version of the script); the pixel
+  comparison caught it. The full `figma-read-set.js` now lists it.
 
-## Anida
+## Nests
 
-Los iconos son instancias de `icon/<nombre> / Weight=Regular` (conjunto de iconos del archivo, ya en
-código). No anida otros componentes.
+The icons are instances of `icon/<name> / Weight=Regular` (the file's icon set, already in
+code). It does not nest other components.

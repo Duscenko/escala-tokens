@@ -1,20 +1,20 @@
-# Contrato · ScrollArea y ScrollBar (de Figma a código)
+# Contract · ScrollArea and ScrollBar (from Figma to code)
 
-Fecha: 2026-11-13 · Fuente: Figma `Escala Design System (Real)`, página «❖ ScrollArea (✓) WIP»: `ScrollArea` (977:572, 18 variantes), `ScrollBar` (976:27, 12). Solo lectura. Ledger: ScrollArea `rebuild`, ScrollBar `part`.
+Date: 2026-11-13 · Source: Figma `Escala Design System (Real)`, page "❖ ScrollArea (✓) WIP": `ScrollArea` (977:572, 18 variants), `ScrollBar` (976:27, 12). Read-only. Ledger: ScrollArea `rebuild`, ScrollBar `part`.
 
-## API (variantes primero, luego el resto del panel)
-- ScrollArea: `Size` default · sm · lg (def default) · `Orientation` vertical · horizontal · both (def vertical) · `Appearance` filled · ghost (def filled) · `FadeVisible` false · `Content` (slot).
+## API (variants first, then the rest of the panel)
+- ScrollArea: `Size` default · sm · lg (default default) · `Orientation` vertical · horizontal · both (default vertical) · `Appearance` filled · ghost (default filled) · `FadeVisible` false · `Content` (slot).
 - ScrollBar: `Size` · `Orientation` vertical · horizontal · `Appearance` filled · ghost.
-Descripción: viewport desplazable con ScrollBars superpuestas y un fundido opcional al final; Size y Appearance cascan a las barras; el viewport entra en el orden de tabulación y se desplaza con flechas, PageUp / PageDown, Home / End (nombre accesible si lleva contenido principal).
+Description: scrollable viewport with overlaid ScrollBars and an optional fade at the end; Size and Appearance cascade to the bars; the viewport enters the tab order and scrolls with arrows, PageUp / PageDown, Home / End (accessible name if it carries main content).
 
-## Geometría
-- ScrollArea: caja que recorta (`Radius/container`), relleno `Surface/layer-1`, trazo `Border/default` 1 INSIDE (cuenta en el layout: el contenido mide 190 de 192). Muestras: vertical 192×288, horizontal 384×248, both 288×288 (las da el consumidor).
-  `Content` (slot): VERTICAL, gap `Spacing/gap-control` (8), padding `Spacing/inset-control` (12) por los cuatro lados; el vertical rellena el ancho, horizontal y both son más anchos que la caja (776 · 438) y desplazan.
-- ScrollBar (absoluta, a 4px del borde): vertical x = ancho − grosor − 4, y 4, alto = caja − 8 (280); horizontal x 4, y = alto − grosor − 4, ancho = caja − 8 (376). Con `both` cada barra deja 16 (4 + 8 + 4) para la otra (268). Grosor 8 · 6 · 12 (default · sm · lg), radio `Radius/full`.
-  Pista filled `Surface/muted`; ghost sin pista. Thumb `Surface/muted-hover`, `Radius/full`, ocupa todo el cruce (64 de 160 en la muestra).
-- Fundido: `fade-bottom` (alto 32, abajo, todo el ancho) y `fade-end` (ancho 32, a la derecha, todo el alto): degradado de transparente a `Surface/layer-1`, visibles con `FadeVisible` (en el archivo ocultos por defecto).
+## Geometry
+- ScrollArea: clipping box (`Radius/container`), `Surface/layer-1` fill, `Border/default` 1 INSIDE stroke (counts in the layout: the content measures 190 of 192). Samples: vertical 192×288, horizontal 384×248, both 288×288 (given by the consumer).
+  `Content` (slot): VERTICAL, gap `Spacing/gap-control` (8), padding `Spacing/inset-control` (12) on all four sides; vertical fills the width, horizontal and both are wider than the box (776 · 438) and scroll.
+- ScrollBar (absolute, 4px from the edge): vertical x = width − thickness − 4, y 4, height = box − 8 (280); horizontal x 4, y = height − thickness − 4, width = box − 8 (376). With `both` each bar leaves 16 (4 + 8 + 4) for the other (268). Thickness 8 · 6 · 12 (default · sm · lg), radius `Radius/full`.
+  Filled track `Surface/muted`; ghost has no track. Thumb `Surface/muted-hover`, `Radius/full`, fills the whole cross axis (64 of 160 in the sample).
+- Fade: `fade-bottom` (height 32, at the bottom, full width) and `fade-end` (width 32, on the right, full height): gradient from transparent to `Surface/layer-1`, visible with `FadeVisible` (hidden by default in the file).
 
-## Raro (se copia igual)
-- El contenido de muestra lleva instancias de Separator (tone subtle) entre las líneas de la lista de tags.
-- El trazo del contenedor es `Border/default` (el código anterior dibujaba `Border/subtle` con padding de 6).
-- Las barras son siempre visibles (pista incluida) en lugar de aparecer al pasar el cursor.
+## Odd bits (copied anyway)
+- The sample content carries Separator instances (tone subtle) between the lines of the tag list.
+- The container stroke is `Border/default` (the earlier code drew `Border/subtle` with 6 padding).
+- The bars are always visible (track included) instead of appearing on hover.

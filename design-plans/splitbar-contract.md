@@ -1,41 +1,41 @@
-# Contrato · SplitBar, SplitBarSegment y SplitBarLegendItem (de Figma a código)
+# Contract · SplitBar, SplitBarSegment and SplitBarLegendItem (from Figma to code)
 
-Fecha: 2026-11-19 · Fuente: Figma `Escala Design System (Real)`, página `❖ SplitBar (PRO)` (`2397:81`): set `SplitBar` (`2401:248`), set `SplitBarSegment` (`2401:102`) y set `SplitBarLegendItem` (`2401:211`), leídos con `figma-read-set.js` (solo lectura). Este documento es lo que copian la receta, el componente y Storybook. **Figma manda; nada se corrige.** Donde el handoff (`HANDOFF-dataviz-2026-11-19.md` §3.4) y Figma difieren, gana Figma y queda anotado abajo.
+Date: 2026-11-19 · Source: Figma `Escala Design System (Real)`, page `❖ SplitBar (PRO)` (`2397:81`): set `SplitBar` (`2401:248`), set `SplitBarSegment` (`2401:102`) and set `SplitBarLegendItem` (`2401:211`), read with `figma-read-set.js` (read-only). This document is what the recipe, the component and Storybook copy. **Figma rules; nothing is corrected.** Where the handoff (`HANDOFF-dataviz-2026-11-19.md` §3.4) and Figma differ, Figma wins and it is noted below.
 
-Código: `src/components/escala-ui/split-bar.tsx` · recetas `src/lib/recipes/splitBar.ts` (SplitBar, SplitBarSegment, SplitBarLegendItem) · movimiento `src/lib/recipes/motion.ts` · historias `apps/storybook/stories/SplitBar*.stories.tsx` · catálogo `componentCatalogue.ts` (categoría Indicators).
+Code: `src/components/escala-ui/split-bar.tsx` · recipes `src/lib/recipes/splitBar.ts` (SplitBar, SplitBarSegment, SplitBarLegendItem) · motion `src/lib/recipes/motion.ts` · stories `apps/storybook/stories/SplitBar*.stories.tsx` · catalogue `componentCatalogue.ts` (Indicators category).
 
-## Qué es
+## What it is
 
-Una sola barra que es el 100 % de algo, partida en cuotas (`SplitBarSegment`), con una leyenda (`SplitBarLegendItem`) que además apaga y enciende cada serie. Sirve para partes de un todo, hasta ocho: tráfico por fuente, gasto por equipo, almacenamiento por tipo. Una cuota que no es parte de un todo es un `ProgressLine`; una tendencia es un `Sparkline`.
+A single bar that is 100 % of something, split into shares (`SplitBarSegment`), with a legend (`SplitBarLegendItem`) that also turns each series off and on. It serves parts of a whole, up to eight: traffic by source, spend by team, storage by type. A share that is not part of a whole is a `ProgressLine`; a trend is a `Sparkline`.
 
-**Color: Chart vs Status.** Los colores son `Chart/series-1…8` (`--color-chart-series-<n>-solid|soft|content`): categorías **sin significado** (una fuente no es mejor que otra), en el orden fijo violeta · teal · ámbar · azul · rosa · lima · magenta · naranja. Cuando el color *significa* bueno o malo (aprobado · fallido, dentro · fuera de presupuesto) se usa `Status/*`, nunca un `Chart/*`. Nunca una opacidad sobre un rol Chart. Los componentes leen solo los roles, jamás las rampas `--color-chart-<hue>-<n>`.
+**Color: Chart vs Status.** The colors are `Chart/series-1…8` (`--color-chart-series-<n>-solid|soft|content`): categories **with no meaning** (one source is not better than another), in the fixed order violet · teal · amber · blue · pink · lime · magenta · orange. When the color *means* good or bad (passed · failed, within · over budget) `Status/*` is used, never a `Chart/*`. Never an opacity over a Chart role. Components read only the roles, never the `--color-chart-<hue>-<n>` ramps.
 
 ## API
 
-### SplitBar (`2401:248`, componente único, 960 × 88)
+### SplitBar (`2401:248`, single component, 960 × 88)
 
-| Figma | Tipo | Defecto | React |
+| Figma | Type | Default | React |
 |---|---|---|---|
-| `Bar` | SLOT | seis `SplitBarSegment` | `segments: { id, label, value, series }[]` (`value` = cualquier número ≥ 0; la barra muestra cada uno como su cuota de lo que se ve; `series` 1–8) |
-| `Legend` | SLOT | seis `SplitBarLegendItem` | generada de `segments` (un ítem por serie) |
+| `Bar` | SLOT | six `SplitBarSegment` | `segments: { id, label, value, series }[]` (`value` = any number ≥ 0; the bar shows each one as its share of what is visible; `series` 1–8) |
+| `Legend` | SLOT | six `SplitBarLegendItem` | generated from `segments` (one item per series) |
 | `LegendVisible` | BOOLEAN | `true` | `showLegend` |
-| — | — | — | `aria-label` o `aria-labelledby` (uno obligatorio): el título del gráfico |
-| — | — | — | `valueUnit`, `hiddenIds` · `defaultHiddenIds` · `onHiddenIdsChange`, `onSegmentClick`, `leaderBelow` (5), `showLegendValues`, `forceActiveId` (solo docs) |
+| — | — | — | `aria-label` or `aria-labelledby` (one required): the chart title |
+| — | — | — | `valueUnit`, `hiddenIds` · `defaultHiddenIds` · `onHiddenIdsChange`, `onSegmentClick`, `leaderBelow` (5), `showLegendValues`, `forceActiveId` (docs only) |
 
-### SplitBarSegment (`2401:102`, 16 variantes, 240 × 48)
+### SplitBarSegment (`2401:102`, 16 variants, 240 × 48)
 
-| Figma (orden del panel) | Tipo | Defecto | React |
+| Figma (panel order) | Type | Default | React |
 |---|---|---|---|
-| `Series` 1 · 2 · 3 · 4 · 5 · 6 · 7 · 8 | VARIANT | `1` | `series` (`"1"`–`"8"` o `1`–`8`). Eje nuevo: **no** es `Variant` (ARC-AXIS-01) |
+| `Series` 1 · 2 · 3 · 4 · 5 · 6 · 7 · 8 | VARIANT | `1` | `series` (`"1"`–`"8"` or `1`–`8`). New axis: it is **not** `Variant` (ARC-AXIS-01) |
 | `State` Default · Focused | VARIANT | `Default` | CSS `:focus-visible` + `forceState` |
 | `Label` | TEXT | `"Organic search"` | `label` |
 | `Value` | TEXT | `"41.6%"` | `value` |
-| `LabelVisible` | BOOLEAN | `true` | `labelVisible` (la barra lo decide por ancho: `fit`) |
-| `ValueVisible` | BOOLEAN | `true` | `valueVisible` (idem) |
+| `LabelVisible` | BOOLEAN | `true` | `labelVisible` (the bar decides it by width: `fit`) |
+| `ValueVisible` | BOOLEAN | `true` | `valueVisible` (same) |
 
-### SplitBarLegendItem (`2401:211`, 32 variantes, 156 × 24)
+### SplitBarLegendItem (`2401:211`, 32 variants, 156 × 24)
 
-| Figma (orden del panel) | Tipo | Defecto | React |
+| Figma (panel order) | Type | Default | React |
 |---|---|---|---|
 | `Series` 1–8 | VARIANT | `1` | `series` |
 | `Checked` true · false | VARIANT | `true` | `checked` + `onCheckedChange` (`aria-pressed`) |
@@ -44,29 +44,29 @@ Una sola barra que es el 100 % de algo, partida en cuotas (`SplitBarSegment`), c
 | `Value` | TEXT | `"41.6%"` | `value` |
 | `ValueVisible` | BOOLEAN | `true` | `valueVisible` |
 
-## Geometría
+## Geometry
 
-**SplitBar** (VERTICAL, `FIXED`/`HUG`, no recorta): hueco `Spacing/gap-group` (16) entre `Bar` y `Legend`. `Bar`: HORIZONTAL, hueco 0, `FILL`/`HUG`, **recorta** (`clipsContent`), radio `Radius/action` (12). `Legend`: HORIZONTAL con wrap, hueco `Spacing/gap-group` (16), recorta, `FILL`/`HUG`.
+**SplitBar** (VERTICAL, `FIXED`/`HUG`, does not clip): gap `Spacing/gap-group` (16) between `Bar` and `Legend`. `Bar`: HORIZONTAL, gap 0, `FILL`/`HUG`, **clips** (`clipsContent`), radius `Radius/action` (12). `Legend`: HORIZONTAL with wrap, gap `Spacing/gap-group` (16), clips, `FILL`/`HUG`.
 
-**SplitBarSegment**: HORIZONTAL MIN/CENTER, alto `Size/control-lg` (48), ancho = su cuota del 100 % (240 por defecto), relleno horizontal `Spacing/inset-control` (12, vertical 0), hueco `Spacing/gap-control` (8), no recorta. Texto: `label` `Type/body-sm`, `value` `Type/label`, ambos HUG.
-Borde: un solo trazo en el lado **derecho**, `INSIDE`, de ancho `Stroke/focus` (2) y color `Chart/series-<n>/solid`.
+**SplitBarSegment**: HORIZONTAL MIN/CENTER, height `Size/control-lg` (48), width = its share of the 100 % (240 by default), horizontal padding `Spacing/inset-control` (12, vertical 0), gap `Spacing/gap-control` (8), does not clip. Text: `label` `Type/body-sm`, `value` `Type/label`, both HUG.
+Border: a single stroke on the **right** side, `INSIDE`, of width `Stroke/focus` (2) and color `Chart/series-<n>/solid`.
 
-**SplitBarLegendItem**: HORIZONTAL MIN/CENTER, alto `Size/control-xs` (24), ancho HUG (156 por defecto), relleno horizontal `Spacing/gap-tight` (4), hueco `Spacing/gap-control` (8), radio `Radius/control` (4). `swatch`: rectángulo 12 × 12 (las dos dimensiones atadas a la primitiva de Dimension `12`, **DIM-01**), radio `Radius/control`. `label` `Type/body-sm`, `value` `Type/label`.
+**SplitBarLegendItem**: HORIZONTAL MIN/CENTER, height `Size/control-xs` (24), width HUG (156 by default), horizontal padding `Spacing/gap-tight` (4), gap `Spacing/gap-control` (8), radius `Radius/control` (4). `swatch`: 12 × 12 rectangle (both dimensions bound to the Dimension primitive `12`, **DIM-01**), radius `Radius/control`. `label` `Type/body-sm`, `value` `Type/label`.
 
-## Color por combinación y estado
+## Color per combination and state
 
 ### SplitBarSegment
 
-| Series | fill | stroke (borde derecho) | ink (`label`, `value`) |
+| Series | fill | stroke (right border) | ink (`label`, `value`) |
 |---|---|---|---|
 | 1…8 | `Chart/series-<n>/soft` | `Chart/series-<n>/solid` | `Chart/series-<n>/content` |
 
-Los 16 colores salen de los roles de los 30 `Chart/*` (`Chart/series-1…8/{solid,soft,content}`), Light y Dark. El estado **no cambia ningún color**: no hay Hover (comportamiento, abajo).
+The 16 colors come from the roles of the 30 `Chart/*` (`Chart/series-1…8/{solid,soft,content}`), Light and Dark. The state **changes no color**: there is no Hover (behaviour, below).
 
-| State | Anillo |
+| State | Ring |
 |---|---|
-| Default | ninguno |
-| Focused | `focus-ring`: rectángulo 240 × 48 en (0, 0), **`INSIDE`**, `Stroke/focus` (2) en los cuatro lados, `Border/ring/neutral`, sin radio (la barra recorta). Código: `ring` = outline 2 px con offset −2 px |
+| Default | none |
+| Focused | `focus-ring`: 240 × 48 rectangle at (0, 0), **`INSIDE`**, `Stroke/focus` (2) on all four sides, `Border/ring/neutral`, no radius (the bar clips). Code: `ring` = 2 px outline with −2 px offset |
 
 ### SplitBarLegendItem
 
@@ -75,50 +75,50 @@ Los 16 colores salen de los roles de los 30 `Chart/*` (`Chart/series-1…8/{soli
 | true | `Chart/series-<n>/solid` | `Content/secondary` | `Content/primary` |
 | false | `Surface/muted` | `Content/disabled` | `Content/disabled` |
 
-| State | Anillo |
+| State | Ring |
 |---|---|
-| Default | ninguno |
-| Focused | `focus-ring`: rectángulo 158 × 26 en (−1, −1), radio **5** (= `Radius/control` + 1), `Stroke/focus` (2), `Border/ring/neutral`, **`OUTSIDE`**. Es el anillo del Button: 2 px a 1 px del borde (`gapRing`) |
+| Default | none |
+| Focused | `focus-ring`: 158 × 26 rectangle at (−1, −1), radius **5** (= `Radius/control` + 1), `Stroke/focus` (2), `Border/ring/neutral`, **`OUTSIDE`**. It is the Button's ring: 2 px at 1 px from the border (`gapRing`) |
 
-Sin relleno, sin borde, sin efectos en ninguna variante del legend.
+No fill, no border, no effects on any legend variant.
 
-## Efectos
-Ninguno en los tres sets.
+## Effects
+None in the three sets.
 
-## Instancias dentro de la barra (lo que Figma dibuja y el código decide por ancho)
+## Instances inside the bar (what Figma draws and code decides by width)
 
-El `SplitBar` de la página muestra seis segmentos de 960 px (399 · 238 · 183 · 95 · 30 · 26 de ancho):
-- los de 399, 238 y 183 llevan `Label` y `Value`;
-- el de 95 (9,9 %) lleva **solo el valor** (`LabelVisible=false`);
-- los de 30 (3,1 %) y 26 (1,5 %) no llevan texto (`LabelVisible=false`, `ValueVisible=false`) y **su relleno horizontal es 0** (en el original quedan a 26 px mínimo).
-Código: la barra mide el texto natural y decide `fit` por segmento: `full` (etiqueta + valor) si cabe, `value` si solo cabe el valor, `none` si no cabe nada; en `none` el relleno cae a 0 (`data-fit="none"`). El ancho es siempre la cuota real: `width` en porcentaje (el relleno y el borde no la deforman).
+The page's `SplitBar` shows six segments across 960 px (399 · 238 · 183 · 95 · 30 · 26 wide):
+- the 399, 238 and 183 ones carry `Label` and `Value`;
+- the 95 one (9.9 %) carries **only the value** (`LabelVisible=false`);
+- the 30 (3.1 %) and 26 (1.5 %) ones carry no text (`LabelVisible=false`, `ValueVisible=false`) and **their horizontal padding is 0** (in the original they stay at 26 px minimum).
+Code: the bar measures the natural text and decides `fit` per segment: `full` (label + value) if it fits, `value` if only the value fits, `none` if nothing fits; at `none` the padding drops to 0 (`data-fit="none"`). The width is always the real share: `width` as a percentage (padding and border do not distort it).
 
-## Comportamiento (lo decide el código, el handoff §3.4)
+## Behaviour (decided by code, the handoff §3.4)
 
-- **Raíz** `role="group"` nombrado por el título del gráfico. Cada segmento es un `<button>` con `aria-label` "Organic search, 41.6%, 41,300 sessions" (etiqueta, cuota, valor + `valueUnit`); el texto visible va `aria-hidden`. Cada legend es un `<button aria-pressed>`.
-- **Sin color Hover.** Pasar el puntero o enfocar un segmento lo **ensancha** (`width` hasta la cuota que necesita su texto, máximo 60 % de la barra) y los demás ceden; transición `use-hover`. `forceActiveId` lo fija para docs.
-- **Etiquetas**: dentro si caben; solo el valor si es estrecho; **bajo 5 %** (`leaderBelow`) el texto sale de la barra y va en una llamada bajo ella con línea guía (`Chart/series-<n>/solid`, `Stroke/divider`, fila de `Size/control-xs`). Figma lo llama "consumer layout": es solo código y se anota como adición.
-- **Apagar una serie** (legend): las demás se reparten al 100 % — los que crecen con `use-travel-in`, los que encogen con `use-travel-out`. La última serie visible no se puede apagar. Los porcentajes que se leen son los de lo que se ve (el de una serie apagada se queda con su cuota del total completo, en `Content/disabled`). Un segmento apagado queda `aria-hidden`, fuera del orden de tabulación y sin borde.
-- **Movimiento reducido**: lo decide la fundación, no el componente: los roles de movimiento caen al `fade` del sistema (`--motion-duration-fade`, 160 ms en Standard), sin recorrido. El handoff pedía "instantáneo"; la regla de la fundación manda y queda anotado.
-- **Teclado**: Tab recorre segmentos y luego legend; Enter o Espacio pulsan (un segmento llama a `onSegmentClick`, un legend apaga o enciende su serie). Sin flechas: no es un tablist.
+- **Root** `role="group"` named by the chart title. Each segment is a `<button>` with `aria-label` "Organic search, 41.6%, 41,300 sessions" (label, share, value + `valueUnit`); the visible text is `aria-hidden`. Each legend is a `<button aria-pressed>`.
+- **No Hover color.** Hovering or focusing a segment **widens** it (`width` up to the share its text needs, at most 60 % of the bar) and the others give way; `use-hover` transition. `forceActiveId` pins it for docs.
+- **Labels**: inside if they fit; only the value if narrow; **below 5 %** (`leaderBelow`) the text leaves the bar and goes in a callout under it with a leader line (`Chart/series-<n>/solid`, `Stroke/divider`, `Size/control-xs` row). Figma calls it "consumer layout": it is code only and is noted as an addition.
+- **Turning a series off** (legend): the others share out the 100 % — those that grow with `use-travel-in`, those that shrink with `use-travel-out`. The last visible series cannot be turned off. The percentages shown are those of what is visible (a turned-off series keeps its share of the full total, in `Content/disabled`). A turned-off segment becomes `aria-hidden`, out of the tab order and without a border.
+- **Reduced motion**: decided by the foundation, not the component: the motion roles fall back to the system `fade` (`--motion-duration-fade`, 160 ms in Standard), with no travel. The handoff asked for "instant"; the foundation's rule rules and it is noted.
+- **Keyboard**: Tab walks the segments and then the legend; Enter or Space press (a segment calls `onSegmentClick`, a legend turns its series off or on). No arrows: it is not a tablist.
 
-## Lo que el archivo hace y parece raro (se copia igual)
+## What the file does that looks odd (copied anyway)
 
-- **`Stroke/focus` como ancho del borde del segmento.** Figma ata el trazo derecho del segmento (2 px) a `Stroke/focus`, que es el ancho del anillo de foco. Se copia igual y queda como candidato **DIM-03** (no se inventa un rol `Stroke/data`).
-- **Los dos anillos de foco son distintos**: el del segmento va **dentro** (INSIDE, sin hueco) y el del legend va **fuera** con hueco de 1 px (OUTSIDE, radio 5). Se copian los dos.
-- **Swatch 12 × 12 atado a la primitiva `12`**, no a un rol (DIM-01, Aceptado).
-- Los segmentos estrechos del `SplitBar` de la página tienen **relleno 0** y ancho 26–30; en código el relleno cae a 0 y el ancho es proporcional (más fino).
-- El legend del `SplitBar` de la página muestra los valores del conjunto completo; en código los valores son los de lo que se ve (ver Comportamiento).
-- No hay variantes Hover ni Pressed en ningún set, ni color de hover.
-- El set `SplitBar` es un componente único (sin ejes); `Bar` y `Legend` son slots.
-- `ValueVisible` y `LabelVisible` de los segmentos son booleanos de Figma; el código los decide por ancho dentro de la barra (`fit`) y los expone en el segmento suelto.
-- Los tres sets aún no están en `spec/figma-components.json` (el inventario generado es anterior a la página): las familias van con `page: "SplitBar (PRO)"` en `storybook-families.json` y no hay entrada en `figma-components.status.json` que quitar.
+- **`Stroke/focus` as the segment's border width.** Figma binds the segment's right stroke (2 px) to `Stroke/focus`, which is the focus ring's width. It is copied as is and stays as candidate **DIM-03** (no `Stroke/data` role is invented).
+- **The two focus rings are different**: the segment's goes **inside** (INSIDE, no gap) and the legend's goes **outside** with a 1 px gap (OUTSIDE, radius 5). Both are copied.
+- **12 × 12 swatch bound to the `12` primitive**, not to a role (DIM-01, Accepted).
+- The narrow segments of the page's `SplitBar` have **padding 0** and width 26–30; in code the padding drops to 0 and the width is proportional (thinner).
+- The page's `SplitBar` legend shows the values of the full set; in code the values are those of what is visible (see Behaviour).
+- There are no Hover or Pressed variants in any set, nor a hover color.
+- The `SplitBar` set is a single component (no axes); `Bar` and `Legend` are slots.
+- The segments' `ValueVisible` and `LabelVisible` are Figma booleans; code decides them by width inside the bar (`fit`) and exposes them on the standalone segment.
+- The three sets are not yet in `spec/figma-components.json` (the generated inventory predates the page): the families go with `page: "SplitBar (PRO)"` in `storybook-families.json` and there is no entry in `figma-components.status.json` to remove.
 
-## Anida
-Ninguno de otros componentes del archivo: `SplitBar` anida `SplitBarSegment` y `SplitBarLegendItem` (se construyen antes). Sus textos usan los estilos `Type/body-sm` y `Type/label`.
+## Nests
+None from other components of the file: `SplitBar` nests `SplitBarSegment` and `SplitBarLegendItem` (built first). Their texts use the `Type/body-sm` and `Type/label` styles.
 
-## Accesibilidad (documentación)
-- Nombre del gráfico: `aria-label` o `aria-labelledby` obligatorio (uno de los dos) en la raíz `role="group"`.
-- Segmentos y legend son botones nativos: foco con Tab, Enter/Espacio. Anillos de foco visibles (2 px) en ambos.
-- El color no es el único separador: cada segmento tiene un borde `Chart/series-<n>/solid` y el legend repite etiqueta y valor en texto.
-- Contraste, medido (WCAG 2.x, hex resueltos de Figma): `Chart/series-n/solid` sobre `Surface/page` ≥ 3 : 1 en las 8 series, Light y Dark (borde, swatch). Texto `Chart/series-n/content` sobre su propio `soft` (lo que dibuja el segmento): **Dark 6,3–8,0 : 1 (todas pasan 4,5)**; **Light 4,31 · 4,40 · 4,46 · 4,30 en las series 2 · 3 · 4 · 6 (bajo 4,5)**, 4,71 · 4,79 · 4,82 · 4,56 en 1 · 5 · 7 · 8. Es lo que el archivo hace (los roles Chart se validaron contra la página, no contra `/soft`): se copia y se anota como hallazgo candidato **COL-CHART-01**. El legend en estado apagado usa `Content/disabled` sobre la página: 3,58 : 1 en Light y 4,29 : 1 en Dark (**COL-CHART-02**; el botón no está `disabled`, así que axe lo exige). Las historias excluyen del panel a11y solo esos elementos, con el motivo.
+## Accessibility (documentation)
+- Chart name: `aria-label` or `aria-labelledby` required (one of the two) on the `role="group"` root.
+- Segments and legend are native buttons: focus with Tab, Enter/Space. Visible focus rings (2 px) on both.
+- Color is not the only separator: each segment has a `Chart/series-<n>/solid` border and the legend repeats label and value as text.
+- Contrast, measured (WCAG 2.x, hex resolved from Figma): `Chart/series-n/solid` on `Surface/page` ≥ 3 : 1 in all 8 series, Light and Dark (border, swatch). Text `Chart/series-n/content` on its own `soft` (what the segment draws): **Dark 6.3–8.0 : 1 (all pass 4.5)**; **Light 4.31 · 4.40 · 4.46 · 4.30 in series 2 · 3 · 4 · 6 (below 4.5)**, 4.71 · 4.79 · 4.82 · 4.56 in 1 · 5 · 7 · 8. That is what the file does (the Chart roles were validated against the page, not against `/soft`): it is copied and noted as candidate finding **COL-CHART-01**. The legend in the turned-off state uses `Content/disabled` on the page: 3.58 : 1 in Light and 4.29 : 1 in Dark (**COL-CHART-02**; the button is not `disabled`, so axe requires it). The stories exclude from the a11y panel only those elements, with the reason.

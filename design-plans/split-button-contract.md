@@ -1,108 +1,108 @@
-# Contrato · SplitButton (de Figma a código)
+# Contract · SplitButton (Figma to code)
 
-Fecha: 2026-11-19 · Fuente: Figma `Escala Design System (Real)`, set `SplitButton` (`2391:2107`, página
-«❖ SplitButton (PRO)»), leído con `figma-read-set.js` + lecturas de las instancias anidadas (solo lectura).
-Este documento es lo que copian la receta, el componente y Storybook. **Figma manda; nada se corrige.**
-Secciones de la página: Components `2426:940` (set + DocMatrix `2426:1314`), Prototype `2391:2109`
+Date: 2026-11-19 · Source: Figma `Escala Design System (Real)`, set `SplitButton` (`2391:2107`, page
+"❖ SplitButton (PRO)"), read with `figma-read-set.js` + reads of the nested instances (read-only).
+This document is what the recipe, the component and Storybook copy. **Figma rules; nothing is corrected.**
+Page sections: Components `2426:940` (set + DocMatrix `2426:1314`), Prototype `2391:2109`
 (Light / Dark, 1 · closed, 2 · open), Usage Guideline `2426:1371`.
 
-## Qué es
+## What it is
 
-Una acción principal unida a un menú de alternativas relacionadas. **No pinta nada propio**: es una
-composición de dos componentes ya construidos.
+A primary action joined to a menu of related alternatives. **It paints nothing of its own**: it is a
+composition of two components that are already built.
 
-- `group` = **ButtonGroup** (`Shape=rounded`, `Orientation=horizontal`, `Variant` y `Size` del set) con
-  dos segmentos: `item-1` = **ButtonGroupItem** con etiqueta e icono inicial (acción) y `item-2` =
-  ButtonGroupItem `IconOnly=true` con el caret (el disparador). El ButtonGroup pone el divisor 1px entre ambos.
-- `menu` (solo `Open=true`) = **DropdownMenu** (`Size` según el set, ver tabla) con tres **DropdownMenuItem**.
+- `group` = **ButtonGroup** (`Shape=rounded`, `Orientation=horizontal`, the set's `Variant` and `Size`) with
+  two segments: `item-1` = **ButtonGroupItem** with a label and leading icon (action) and `item-2` =
+  ButtonGroupItem `IconOnly=true` with the caret (the trigger). The ButtonGroup puts the 1px divider between them.
+- `menu` (`Open=true` only) = **DropdownMenu** (`Size` per the set, see table) with three **DropdownMenuItem**s.
 
-El set tiene 16 variantes (2 × 4 × 2). Root: auto-layout VERTICAL, hug; el `menu` es hijo ABSOLUTO.
+The set has 16 variants (2 × 4 × 2). Root: VERTICAL auto-layout, hug; the `menu` is an ABSOLUTE child.
 
 ## API
 
-| Figma (orden del panel) | Tipo | Defecto | React |
+| Figma (panel order) | Type | Default | React |
 |---|---|---|---|
 | `Variant` `default` · `secondary` | VARIANT | `default` | `variant` |
 | `Size` `default` · `xs` · `sm` · `lg` | VARIANT | `default` | `size` |
-| `Open` `false` · `true` | VARIANT | `false` | `open` (controlado) · `defaultOpen` · `onOpenChange` |
+| `Open` `false` · `true` | VARIANT | `false` | `open` (controlled) · `defaultOpen` · `onOpenChange` |
 
-El set **no tiene** propiedades TEXT, BOOLEAN ni INSTANCE_SWAP: la etiqueta («Publish»), el icono inicial
-(`PaperPlaneTilt`) y el contenido del menú se editan «a través de los ButtonGroupItem expuestos» (descripción
-del set). En código eso son props de contenido que **no existen en el panel de Figma**, añadidas al final:
+The set **has no** TEXT, BOOLEAN or INSTANCE_SWAP properties: the label ("Publish"), the leading icon
+(`PaperPlaneTilt`) and the menu content are edited "through the exposed ButtonGroupItems" (set
+description). In code those are content props that **do not exist in Figma's panel**, added at the end:
 
-| Contenido (instancia anidada) | Por defecto en el archivo | React |
+| Content (nested instance) | Default in the file | React |
 |---|---|---|
 | `item-1` → `Label` | `Publish` | `children` |
 | `item-1` → `IconLeadingIcon` | `PaperPlaneTilt` | `leading` |
-| `item-2` → icono | `CaretDown` (cerrado) · `CaretUp` (`Open=true`) | el componente lo cambia con `open`; `caret` / `caretOpen` para sustituirlos |
+| `item-2` → icon | `CaretDown` (closed) · `CaretUp` (`Open=true`) | the component swaps it with `open`; `caret` / `caretOpen` to replace them |
 | `menu` → Content | `Publish and notify` (PaperPlaneTilt) · `Save as draft` (FileText) · `Delete draft` (Trash, `Variant=critical`) | `menu` (DropdownMenuItem[]) |
-| nombre accesible del caret | «<label> more actions» | `moreLabel` (por defecto `${children} more actions`) |
+| accessible name of the caret | "<label> more actions" | `moreLabel` (defaults to `${children} more actions`) |
 
-No hay estados propios: Hover · Pressed · Focused · Disabled vienen de los ButtonGroupItem anidados
-(`forceState` de cada segmento no se expone en el set). `Open=true` fija el caret en **Active**.
+There are no states of its own: Hover · Pressed · Focused · Disabled come from the nested ButtonGroupItems
+(each segment's `forceState` is not exposed on the set). `Open=true` fixes the caret at **Active**.
 
-## Geometría por tamaño
+## Geometry by size
 
-Medida del set (`Variant=default`; `secondary` igual salvo la excepción de abajo).
+Measured from the set (`Variant=default`; `secondary` the same except for the exception below).
 
-| Size | Alto del grupo | Ancho grupo (item-1 + 1 + item-2) | Icono (item) | Menú: `Size` · filas · ancho | Menú: x · y (vs. variante) |
+| Size | Group height | Group width (item-1 + 1 + item-2) | Icon (item) | Menu: `Size` · rows · width | Menu: x · y (vs. variant) |
 |---|---|---|---|---|---|
-| `xs` | 24 (`Size/control-xs`) | 112 (87 + 1 + 24) | `Size/icon-sm` | `sm` · 24 · 256×98 | `−(256 − ancho)` · 32 |
+| `xs` | 24 (`Size/control-xs`) | 112 (87 + 1 + 24) | `Size/icon-sm` | `sm` · 24 · 256×98 | `−(256 − width)` · 32 |
 | `sm` | 32 (`Size/control-sm`) | 120 (87 + 1 + 32) | `Size/icon-sm` | `sm` · 24 · 256×98 | −136 · 40 |
 | `default` | 40 (`Size/control-md`) | 136 (95 + 1 + 40) | `Size/icon-md` | `default` · 32 · 256×122 | −120 · 48 |
 | `lg` | 48 (`Size/control-lg`) | 148 (99 + 1 + 48) | `Size/icon-lg` | `lg` · 40 · 256×146 | −108 · 56 |
 
-- Grupo: radio `Radius/action` (12), sin trazo, sin relleno propio, efectos `Shadow/xs`
-  (`DROP_SHADOW 0 0 0 1 Elevation/shadow-ring` + `0 1 2 0 Elevation/shadow-ambient`) — es el ButtonGroup tal cual.
-- Menú: **alineado al borde final** (x = ancho del grupo − 256) y **8px bajo** el grupo (y = alto + 8 =
-  `Spacing/gap-control`). `xs` abre el DropdownMenu `Size=sm` (no existe `xs` en el menú). Fondo `Surface/layer-2`,
-  trazo 1px `Stroke/divider` INSIDE `Border/default`, radio `Radius/overlay` (24), `Shadow/md`
-  (`0 0 0 1 shadow-ring` + `0 4 6 −1 shadow-key` + `0 2 4 −2 shadow-ambient`) — es el DropdownMenu tal cual.
-- Anchos de `item-1` por Inter: 95 · 87 · 87 · 99; Chrome mide fracciones distintas (±1.8px), como en ButtonGroup.
+- Group: radius `Radius/action` (12), no stroke, no fill of its own, effects `Shadow/xs`
+  (`DROP_SHADOW 0 0 0 1 Elevation/shadow-ring` + `0 1 2 0 Elevation/shadow-ambient`) — it is the ButtonGroup as is.
+- Menu: **aligned to the end edge** (x = group width − 256) and **8px below** the group (y = height + 8 =
+  `Spacing/gap-control`). `xs` opens the DropdownMenu `Size=sm` (there is no `xs` on the menu). Fill `Surface/layer-2`,
+  1px stroke `Stroke/divider` INSIDE `Border/default`, radius `Radius/overlay` (24), `Shadow/md`
+  (`0 0 0 1 shadow-ring` + `0 4 6 −1 shadow-key` + `0 2 4 −2 shadow-ambient`) — it is the DropdownMenu as is.
+- `item-1` widths by Inter: 95 · 87 · 87 · 99; Chrome measures different fractions (±1.8px), as in ButtonGroup.
 
-## Color por combinación y estado
+## Color by combination and state
 
-Nada propio: lo pintan los ButtonGroupItem. Lectura del set:
+Nothing of its own: the ButtonGroupItems paint it. Reading of the set:
 
-| Variant | Segmento principal (Default) | Caret cerrado | Caret `Open=true` (Active) | Tinta |
+| Variant | Primary segment (Default) | Closed caret | Caret `Open=true` (Active) | Ink |
 |---|---|---|---|---|
-| `default` | fill `Action/primary/default` | fill `Action/primary/default` | fill `Action/primary/pressed` · icono `CaretUp` | `Content/on-action` (etiqueta e iconos) |
-| `secondary` | fill `Action/secondary/default` | fill `Action/secondary/default` | fill `Action/secondary/pressed` · icono `CaretUp` | `Content/on-secondary` |
+| `default` | fill `Action/primary/default` | fill `Action/primary/default` | fill `Action/primary/pressed` · icon `CaretUp` | `Content/on-action` (label and icons) |
+| `secondary` | fill `Action/secondary/default` | fill `Action/secondary/default` | fill `Action/secondary/pressed` · icon `CaretUp` | `Content/on-secondary` |
 
-Divisor, hover, pressed, focus: los del ButtonGroup / ButtonGroupItem (`design-plans/button-group-contract.md`).
-Menú y filas: los del DropdownMenu (`design-plans/dropdown-menu-contract.md`); `Delete draft` es `Variant=critical`.
+Divider, hover, pressed, focus: those of ButtonGroup / ButtonGroupItem (`design-plans/button-group-contract.md`).
+Menu and rows: those of DropdownMenu (`design-plans/dropdown-menu-contract.md`); `Delete draft` is `Variant=critical`.
 
-## Efectos
-Ninguno propio. `Shadow/xs` sobre el grupo y `Shadow/md` sobre el menú, ambos heredados (ver arriba).
+## Effects
+None of its own. `Shadow/xs` on the group and `Shadow/md` on the menu, both inherited (see above).
 
-## Movimiento (la página lo documenta en el Prototype)
-- Cerrado → abierto: el caret pasa a Active y el DropdownMenu abre desde un ancla fija en el borde final
-  con **`popover-enter`**; las filas entran con **`use-stagger-in`**. «El medio-botón principal no escala.»
-- Cierre: `popover-exit`. Todo por nombre de rol (`recipes/motion.ts`, `lib/motion.ts`); el caret cambia de
-  icono (CaretDown ↔ CaretUp) sin giro propio; el relleno del segmento transiciona con `use-hover`.
+## Motion (the page documents it in the Prototype)
+- Closed → open: the caret goes to Active and the DropdownMenu opens from a fixed anchor on the end edge
+  with **`popover-enter`**; the rows enter with **`use-stagger-in`**. "The primary half-button does not scale."
+- Close: `popover-exit`. All by role name (`recipes/motion.ts`, `lib/motion.ts`); the caret swaps
+  icon (CaretDown ↔ CaretUp) with no rotation of its own; the segment's fill transitions with `use-hover`.
 
-## Accesibilidad (descripción del set)
-Dos botones nativos. El caret se llama «<etiqueta> more actions» con `aria-haspopup="menu"` y
-`aria-expanded`; flechas mueven por los elementos y dan la vuelta; Escape cierra y devuelve el foco al caret.
-El par nunca colapsa: dale su propia fila en pantallas estrechas. Radix DropdownMenu aporta el comportamiento
-(roles, flechas, typeahead, Escape, retorno de foco). El segmento principal no es un botón de alternancia:
-no lleva `aria-pressed`.
+## Accessibility (set description)
+Two native buttons. The caret is named "<label> more actions" with `aria-haspopup="menu"` and
+`aria-expanded`; arrows move through the items and wrap around; Escape closes and returns focus to the caret.
+The pair never collapses: give it its own row on narrow screens. Radix DropdownMenu provides the behavior
+(roles, arrows, typeahead, Escape, focus return). The primary segment is not a toggle button:
+it carries no `aria-pressed`.
 
-## Lo que el archivo hace y parece raro (se copia igual, salvo lo indicado)
-- **`Variant=default, Size=xs` (ambos Open) mide 113 de ancho**: lleva un `divider-3` visible y fantasma a la
-  derecha del caret (x 112, 1×24, sin tercer segmento); `secondary · xs` mide 112. Es un resto de la
-  instancia (los otros 14 variantes no lo tienen); **no se copia** (un divisor sin segmento detrás no es
-  diseño) — el grupo xs mide 112 en las dos variantes. Informado al dueño.
-- El menú `xs` usa `DropdownMenu Size=sm` (alto de filas 24, igual que `sm`).
-- El caret cambia de icono con `Open` (CaretDown → CaretUp) y el segmento queda en Active (relleno `pressed`).
-- La etiqueta, el icono y las filas del menú son ejemplo del archivo («Publish»…): no son propiedades del set.
+## What the file does that looks odd (copied as is, except where noted)
+- **`Variant=default, Size=xs` (both Open) measures 113 wide**: it carries a visible, ghost `divider-3` to the
+  right of the caret (x 112, 1×24, with no third segment); `secondary · xs` measures 112. It is a leftover of the
+  instance (the other 14 variants do not have it); **it is not copied** (a divider with no segment behind it is not
+  design) — the xs group measures 112 in both variants. Reported to the owner.
+- The `xs` menu uses `DropdownMenu Size=sm` (row height 24, same as `sm`).
+- The caret swaps icon with `Open` (CaretDown → CaretUp) and the segment stays at Active (`pressed` fill).
+- The label, the icon and the menu rows are examples from the file ("Publish"…): they are not set properties.
 
-## Anida
-**ButtonGroup** (`Size`, `Variant`, `Shape=rounded`, `Orientation=horizontal`, Item1/Item2 visibles) con
-**ButtonGroupItem** + **ButtonGroupDivider**, y **DropdownMenu** con **DropdownMenuItem** (`default` ×2,
-`critical` ×1). Todos ya construidos en `escala-ui`.
+## Nests
+**ButtonGroup** (`Size`, `Variant`, `Shape=rounded`, `Orientation=horizontal`, Item1/Item2 visible) with
+**ButtonGroupItem** + **ButtonGroupDivider**, and **DropdownMenu** with **DropdownMenuItem** (`default` ×2,
+`critical` ×1). All already built in `escala-ui`.
 
-## Dependencias de código
-`src/components/escala-ui/split-button.tsx` (usa `button-group`, `dropdown-menu`) · receta `SplitButton`
-(`src/lib/recipes/splitButton.ts`: sólo el hueco menú–grupo y el ancho del menú) · historia
-`apps/storybook/stories/SplitButton.stories.tsx` · familia `Buttons/SplitButton` (`spec/storybook-families.json`).
+## Code dependencies
+`src/components/escala-ui/split-button.tsx` (uses `button-group`, `dropdown-menu`) · recipe `SplitButton`
+(`src/lib/recipes/splitButton.ts`: only the menu–group gap and the menu width) · story
+`apps/storybook/stories/SplitButton.stories.tsx` · family `Buttons/SplitButton` (`spec/storybook-families.json`).

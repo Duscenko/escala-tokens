@@ -1,5 +1,5 @@
 # ProgressLine (410:687, 40) and ProgressCircle (411:523, 80) — contract, read 2026-11-13
-Page «❖ ProgressLine & ProgressCircle (✓)». ProgressLine renames the older Progress (shadcn: label + value header, no variants); ProgressCircle is new.
+Page "❖ ProgressLine & ProgressCircle (✓)". ProgressLine renames the older Progress (shadcn: label + value header, no variants); ProgressCircle is new.
 
 ## ProgressLine
 Props: Size xs·sm·default·lg (default `default`) · Appearance solid(default)·gradient · Value 0(default)·25·50·75·100.

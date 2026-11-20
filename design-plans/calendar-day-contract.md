@@ -1,58 +1,58 @@
-# Contrato · CalendarDay (de Figma a código)
+# Contract · CalendarDay (Figma to code)
 
-Fecha: 2026-11-12 · Fuente: Figma `Escala Design System (Real)`, página `❖ Calendar (✓)`, set `CalendarDay`
-(`421:309`, 44 variantes), leído con `figma-read-set.js` (adaptado) + un barrido de celdas (solo lectura). **Figma manda; nada se corrige.**
+Date: 2026-11-12 · Source: Figma `Escala Design System (Real)`, page `❖ Calendar (✓)`, set `CalendarDay`
+(`421:309`, 44 variants), read with `figma-read-set.js` (adapted) + a sweep of cells (read-only). **Figma rules; nothing is corrected.**
 
-Descripción del set: «Calendar day cell. Size default 40 / sm 32 × State Default, Hover, Today, Selected, RangeMiddle,
+Set description: "Calendar day cell. Size default 40 / sm 32 × State Default, Hover, Today, Selected, RangeMiddle,
 RangeStart, RangeEnd, Outside, Disabled, Unavailable, Focused × Variant default | secondary. Day shape (rounded | pill |
-square) is an instance override. Indicator toggles the dash under the date.»
+square) is an instance override. Indicator toggles the dash under the date."
 
-> Estado: HECHO (2026-11-12). Medido en Storybook, Escala Light y Dark: las 44 combinaciones (caja, relleno, tinta, trazo,
-> halo, banda y su posición) coinciden con los roles de la tabla; la raya (indicator) en x14 y34 12×2 como el archivo.
+> Status: DONE (2026-11-12). Measured in Storybook, Escala Light and Dark: all 44 combinations (box, fill, ink, stroke,
+> halo, band and its position) match the roles in the table; the dash (indicator) at x14 y34 12×2 as in the file.
 
 ## API
 
-| Figma (orden del panel) | Tipo | Defecto | React |
+| Figma (panel order) | Type | Default | React |
 |---|---|---|---|
 | `Size` default · sm | VARIANT | `default` | `size` (`data-size`) |
-| `State` Default · Hover · Today · Selected · RangeMiddle · RangeStart · RangeEnd · Outside · Disabled · Unavailable · Focused | VARIANT | `Default` | CSS (`:hover`, `:focus-visible`) + `state` (estados de datos) + `forceState` (docs) |
+| `State` Default · Hover · Today · Selected · RangeMiddle · RangeStart · RangeEnd · Outside · Disabled · Unavailable · Focused | VARIANT | `Default` | CSS (`:hover`, `:focus-visible`) + `state` (data states) + `forceState` (docs) |
 | `Variant` default · secondary | VARIANT | `default` | `variant` |
 | `Day` | TEXT | `"15"` | `children` |
 | `IndicatorVisible` | BOOLEAN | `false` | `indicator` |
-| (override de instancia) forma | — | rounded | `shape` rounded · pill · square (`data-shape`) |
+| (instance override) shape | — | rounded | `shape` rounded · pill · square (`data-shape`) |
 
-## Geometría
-Raíz: frame HORIZONTAL centrado, sin relleno ni trazo, `clipsContent: false`. Hijos de atrás a delante: `range-band` (absoluto, solo
-en RangeMiddle/Start/End), `cell` (frame llena la raíz, `Radius/action`), `Day` (texto), `indicator-dash` (absoluto), `focus-ring`.
+## Geometry
+Root: HORIZONTAL frame, centred, no fill or stroke, `clipsContent: false`. Children from back to front: `range-band` (absolute, only
+in RangeMiddle/Start/End), `cell` (frame fills the root, `Radius/action`), `Day` (text), `indicator-dash` (absolute), `focus-ring`.
 
-| Size | Caja | Texto | Raya |
+| Size | Box | Text | Dash |
 |---|---|---|---|
-| default | `Size/control` 40×40 | `Type/body-md` (16×21) | 12×2 en x14 y34 (= 4px del borde inferior) |
-| sm | `Size/compact` 32×32 | `Type/body-sm` (13×18) | 12×2 en x10 y26 |
+| default | `Size/control` 40×40 | `Type/body-md` (16×21) | 12×2 at x14 y34 (= 4px from the bottom edge) |
+| sm | `Size/compact` 32×32 | `Type/body-sm` (13×18) | 12×2 at x10 y26 |
 
-Banda (alto = caja): RangeMiddle toda la caja; RangeStart la mitad derecha (x = caja/2); RangeEnd la izquierda (x 0). Sin radio.
-Raya: ancho `spacing.3` (12), alto `spacing.0_5` (2), sin radio.
+Band (height = box): RangeMiddle the whole box; RangeStart the right half (x = box/2); RangeEnd the left (x 0). No radius.
+Dash: width `spacing.3` (12), height `spacing.0_5` (2), no radius.
 
-## Color por estado × variante
-| Estado | default · relleno / tinta / trazo | secondary |
+## Colour by state × variant
+| State | default · fill / ink / stroke | secondary |
 |---|---|---|
-| Default · Outside | sin relleno · `Content/primary` · `Content/secondary` | igual |
-| Hover | `Action/ghost/hover` · `Content/primary` | igual (también `Action/ghost/hover`) |
-| Today | trazo `Border/accent` 1 INSIDE · `Content/primary` | `Border/strong` 1 |
+| Default · Outside | no fill · `Content/primary` · `Content/secondary` | same |
+| Hover | `Action/ghost/hover` · `Content/primary` | same (also `Action/ghost/hover`) |
+| Today | stroke `Border/accent` 1 INSIDE · `Content/primary` | `Border/strong` 1 |
 | Selected · RangeStart · RangeEnd | `Action/primary/default` · `Content/on-action` | `Surface/inverse` · `Content/inverse` |
-| RangeMiddle | tinta `Content/accent`, banda `Surface/selected` | tinta `Content/primary`, banda `Surface/muted` |
-| Disabled · Unavailable | tinta `Content/disabled` (idénticos) | igual |
-| Focused | trazo `Border/focus` 2 INSIDE + halo `Border/ring/default` 2 OUTSIDE · `Content/primary` | `Border/strong` 2 + halo `Border/subtle` |
-Raya: `Border/accent` (default) · `Border/strong` (secondary). RangeStart/End llevan además banda (`Surface/selected` · `Surface/muted`).
+| RangeMiddle | ink `Content/accent`, band `Surface/selected` | ink `Content/primary`, band `Surface/muted` |
+| Disabled · Unavailable | ink `Content/disabled` (identical) | same |
+| Focused | stroke `Border/focus` 2 INSIDE + halo `Border/ring/default` 2 OUTSIDE · `Content/primary` | `Border/strong` 2 + halo `Border/subtle` |
+Dash: `Border/accent` (default) · `Border/strong` (secondary). RangeStart/End also carry a band (`Surface/selected` · `Surface/muted`).
 
-## Lo que el archivo hace y parece raro (se copia igual)
-- Disabled y Unavailable son idénticos (ambos `Content/disabled`, sin tachado ni fondo): el código los dibuja igual y ambos desactivan el botón.
-- Hover y Today/Selected no se combinan: un estado de datos fijado detiene las reglas del puntero (un día elegido no tiene hover).
-- La variante secondary usa `Action/ghost/hover` en Hover pero `Border/strong` en Today/Focused y `Surface/inverse` para el día elegido.
-- sm lleva `Radius/action` (12) igual que default: en un cuadrado de 32 ya es casi un círculo; se copia.
-- En `Size=default, State=Default, Variant=secondary` el texto `Day` y la raya no están enlazados a sus propiedades (`componentPropertyReferences` vacío): esa variante ignoraría `Day` / `IndicatorVisible` en una instancia. El código siempre los respeta.
-- `Day shape` (rounded | pill | square) no es una propiedad: es un override de instancia, y aquí es la prop `shape` (`radius.action` · `radius.pill` · `radius.none`).
-- El texto mide 18×21 en el navegador contra 16×21 en Figma (la fuente de Storybook no es la del archivo); el alto coincide.
+## What the file does that looks odd (copied as is)
+- Disabled and Unavailable are identical (both `Content/disabled`, no strikethrough or background): the code draws them the same and both disable the button.
+- Hover and Today/Selected do not combine: a pinned data state stops the pointer rules (a selected day has no hover).
+- The secondary variant uses `Action/ghost/hover` on Hover but `Border/strong` on Today/Focused and `Surface/inverse` for the selected day.
+- sm carries `Radius/action` (12) just like default: on a 32 square that is almost a circle; copied.
+- In `Size=default, State=Default, Variant=secondary` the `Day` text and the dash are not bound to their properties (empty `componentPropertyReferences`): that variant would ignore `Day` / `IndicatorVisible` on an instance. The code always honours them.
+- `Day shape` (rounded | pill | square) is not a property: it is an instance override, and here it is the `shape` prop (`radius.action` · `radius.pill` · `radius.none`).
+- The text measures 18×21 in the browser against 16×21 in Figma (Storybook's font is not the file's); the height matches.
 
-## Anida
-Nada (es una hoja). Lo usan `CalendarMonth` (`422:1713`) y, a través de él, `Calendar` (`424:4667`): el Calendar de la sesión 8 debe componerlo (hoy `calendar.tsx` conserva `CalendarDayButton` de react-day-picker).
+## Nests
+Nothing (it is a leaf). It is used by `CalendarMonth` (`422:1713`) and, through it, `Calendar` (`424:4667`): the session 8 Calendar must compose it (today `calendar.tsx` keeps `CalendarDayButton` from react-day-picker).

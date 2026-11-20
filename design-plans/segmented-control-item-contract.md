@@ -1,43 +1,43 @@
-# Contrato · SegmentedControlItem (de Figma a código)
+# Contract · SegmentedControlItem (Figma to code)
 
-Fecha: 2026-11-12 · Fuente: set `SegmentedControlItem` (`1102:5087`, 30 variantes), página `❖ SegmentedControl (✓)`, leído en
-solo lectura. **Figma manda.** Parte de SegmentedControl en el ledger.
+Date: 2026-11-12 · Source: set `SegmentedControlItem` (`1102:5087`, 30 variants), page `❖ SegmentedControl (✓)`, read
+read-only. **Figma rules.** Part of SegmentedControl in the ledger.
 
 ## API
 
-| Figma (orden del panel) | Tipo | Defecto | React |
+| Figma (panel order) | Type | Default | React |
 |---|---|---|---|
-| `Size` default · sm · lg | VARIANT | `default` | `size` (del grupo si está dentro) |
-| `Checked` false · true | VARIANT | `false` | `checked` (del grupo: `value`) |
-| `State` Default · Hover · Pressed · Focused · Disabled | VARIANT | `Default` | `forceState` (docs); en vivo `:hover`, `:active`, `:focus-visible`, `disabled` |
-| `Label` | TEXT | «Label» | `label` |
-| `LabelVisible` | BOOLEAN | true | `labelVisible` (false → pide `aria-label`) |
+| `Size` default · sm · lg | VARIANT | `default` | `size` (from the group if inside one) |
+| `Checked` false · true | VARIANT | `false` | `checked` (from the group: `value`) |
+| `State` Default · Hover · Pressed · Focused · Disabled | VARIANT | `Default` | `forceState` (docs); live `:hover`, `:active`, `:focus-visible`, `disabled` |
+| `Label` | TEXT | "Label" | `label` |
+| `LabelVisible` | BOOLEAN | true | `labelVisible` (false → requires `aria-label`) |
 | `IconLeadingVisible` | BOOLEAN | false | `iconLeadingVisible` |
 | `IconLeadingIcon` | INSTANCE_SWAP | `icon/House` | `iconLeading` |
 
-## Geometría
-| Size | Alto | Gap | Icono |
+## Geometry
+| Size | Height | Gap | Icon |
 |---|---|---|---|
 | default | `Size/control-sm` 32 | `Spacing/gap-control` 8 | `Size/icon-sm` 16 |
 | sm | `Size/control-xs` 24 | `Spacing/gap-tight` 4 | 16 |
 | lg | `Size/control-md` 40 | 8 | `Size/icon-md` 20 |
 
-Padding X `Spacing/inset-control` 12, Y 0, texto `Type/button`. Radio: sin marcar `Radius/action` (12), marcado `Radius/control` (8).
-Focused: trazo 2 INSIDE que NO entra en el layout (hijos en la misma posición) + `focus-ring` 2 OUTSIDE.
+Padding X `Spacing/inset-control` 12, Y 0, text `Type/button`. Radius: unchecked `Radius/action` (12), checked `Radius/control` (8).
+Focused: 2 INSIDE stroke that does NOT enter the layout (children in the same position) + 2 OUTSIDE `focus-ring`.
 
-## Color
-| | relleno | tinta | efecto |
+## Colour
+| | fill | ink | effect |
 |---|---|---|---|
-| sin marcar Default | — | `Content/secondary` | — |
-| sin marcar Hover | `Action/ghost/hover` | `Content/primary` | — |
-| sin marcar Pressed | `Action/ghost/pressed` | `Content/primary` | — |
-| sin marcar Focused | — | `Content/secondary` | `Border/focus` 2 + `Border/ring/default` 2 |
-| sin marcar Disabled | — | `Content/disabled` | — |
-| marcado Default / Hover / Pressed | `Surface/input` | `Content/primary` | `Shadow/xs` |
-| marcado Focused | `Surface/input` | `Content/primary` | foco + `Shadow/xs` |
-| marcado Disabled | `Surface/input` | `Content/disabled` | ninguno |
+| unchecked Default | — | `Content/secondary` | — |
+| unchecked Hover | `Action/ghost/hover` | `Content/primary` | — |
+| unchecked Pressed | `Action/ghost/pressed` | `Content/primary` | — |
+| unchecked Focused | — | `Content/secondary` | `Border/focus` 2 + `Border/ring/default` 2 |
+| unchecked Disabled | — | `Content/disabled` | — |
+| checked Default / Hover / Pressed | `Surface/input` | `Content/primary` | `Shadow/xs` |
+| checked Focused | `Surface/input` | `Content/primary` | focus + `Shadow/xs` |
+| checked Disabled | `Surface/input` | `Content/disabled` | none |
 
-## Lo raro del archivo
-- `Shadow/xs` lleva un anillo con spread 1 en un frame que no recorta: no se pinta; solo cuenta la sombra ambiente `0 1 2`.
-- El texto «Label» mide 31,5 px en el navegador y 32 en Figma (redondeo del texto): cada item 1 px más estrecho.
-- Marcado + Hover / Pressed no cambian (el archivo no dibuja nada distinto).
+## Oddities in the file
+- `Shadow/xs` carries a ring with spread 1 on a frame that does not clip: it is not painted; only the ambient shadow `0 1 2` counts.
+- The "Label" text measures 31.5 px in the browser and 32 in Figma (text rounding): each item 1 px narrower.
+- Checked + Hover / Pressed do not change (the file draws nothing different).

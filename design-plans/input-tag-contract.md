@@ -1,42 +1,42 @@
-# Contrato · InputTag · InputTagChip · InputTagOption (de Figma a código)
+# Contract · InputTag · InputTagChip · InputTagOption (Figma to code)
 
-Fecha: 2026-11-12 · Fuente: Figma `Escala Design System (Real)`, página `❖ InputTag (✓)`: sets
-`InputTag` (`390:744`, 72 variantes), `InputTagChip` (`388:235`, 40) e `InputTagOption` (`390:793`, 8),
-leídos con `figma-read-set.js` (solo lectura). **Figma manda; nada se corrige.**
+Date: 2026-11-12 · Source: Figma `Escala Design System (Real)`, page `❖ InputTag (✓)`: sets
+`InputTag` (`390:744`, 72 variants), `InputTagChip` (`388:235`, 40) and `InputTagOption` (`390:793`, 8),
+read with `figma-read-set.js` (read-only). **Figma rules; nothing is corrected.**
 
-> Estado: HECHO (2026-11-12). Receta, componentes, catálogo, Storybook y medida cerrados. Medido en Storybook (Light): cajas 360×40 · outside filled 68 · chips 18/20/24/28/32 con anchos del archivo (+2 en Focused y critical) · placeholder 334 → 310 con Spinner · opción 240×32. Axe limpio salvo `InputTagOption.meta` (`Content/subtle` sobre `Surface/input`: 3:1 Light, 3.16:1 Dark; copiado del archivo).
+> Status: DONE (2026-11-12). Recipe, components, catalogue, Storybook and measurement closed. Measured in Storybook (Light): boxes 360×40 · outside filled 68 · chips 18/20/24/28/32 with the file's widths (+2 in Focused and critical) · placeholder 334 → 310 with Spinner · option 240×32. Axe clean except `InputTagOption.meta` (`Content/subtle` on `Surface/input`: 3:1 Light, 3.16:1 Dark; copied from the file).
 
 ## InputTagChip (`388:235`)
 
-Descripción del set: «Removable tag chip used inside InputTag; Variant critical marks tags past the maximum.
-When RemoveVisible is on, the remove control needs an accessible name such as Remove plus the label.»
+Set description: "Removable tag chip used inside InputTag; Variant critical marks tags past the maximum.
+When RemoveVisible is on, the remove control needs an accessible name such as Remove plus the label."
 
 ### API
 
-| Figma (orden del panel) | Tipo | Defecto | React |
+| Figma (panel order) | Type | Default | React |
 |---|---|---|---|
 | `Size` xs · sm · default · lg · xl | VARIANT | `default` | `size` |
 | `State` Default · Hover · Focused · Disabled | VARIANT | `Default` | CSS (`:hover`, `:focus-visible`) + `forceState`; `disabled` |
 | `Variant` default · critical | VARIANT | `default` | `variant` |
-| `Label` | TEXT | «Design» | `children` |
-| `RemoveVisible` | BOOLEAN | true | `onRemove` presente / `removable` |
+| `Label` | TEXT | "Design" | `children` |
+| `RemoveVisible` | BOOLEAN | true | `onRemove` present / `removable` |
 
-### Geometría por tamaño (raíz horizontal, centrada)
+### Geometry by size (horizontal root, centred)
 
-| Size | Alto | Padding X | Gap | Icono ✕ | Texto |
+| Size | Height | Padding X | Gap | ✕ icon | Text |
 |---|---|---|---|---|---|
-| xs | 18 (sin variable) | 6 (sin variable) | `Spacing/gap-tight` 4 | 10 | `Type/caption` |
-| sm | 20 (sin variable) | `Spacing/gap-control` 8 | `Spacing/gap-tight` 4 | 12 | `Type/label` |
-| default | `Size/control-xs` 24 | `Spacing/gap-control` 8 | 6 (sin variable) | 14 | `Type/label` |
-| lg | 28 (sin variable) | 10 (sin variable) | 6 (sin variable) | `Size/icon-sm` 16 | `Type/body-md` |
-| xl | `Size/control-sm` 32 | `Spacing/inset-control` 12 | `Spacing/gap-control` 8 | 18 (sin variable) | `Type/body-lg` |
+| xs | 18 (no variable) | 6 (no variable) | `Spacing/gap-tight` 4 | 10 | `Type/caption` |
+| sm | 20 (no variable) | `Spacing/gap-control` 8 | `Spacing/gap-tight` 4 | 12 | `Type/label` |
+| default | `Size/control-xs` 24 | `Spacing/gap-control` 8 | 6 (no variable) | 14 | `Type/label` |
+| lg | 28 (no variable) | 10 (no variable) | 6 (no variable) | `Size/icon-sm` 16 | `Type/body-md` |
+| xl | `Size/control-sm` 32 | `Spacing/inset-control` 12 | `Spacing/gap-control` 8 | 18 (no variable) | `Type/body-lg` |
 
-Radio `Radius/control` en todos. El ✕ es una instancia de `icon/close` (Weight=Regular).
-Trazo (solo Focused y critical): `Stroke/control` 1 INSIDE.
+Radius `Radius/control` on all. The ✕ is an instance of `icon/close` (Weight=Regular).
+Stroke (Focused and critical only): `Stroke/control` 1 INSIDE.
 
-### Color
+### Colour
 
-| Variant · State | Fill | Stroke | Tinta (texto y ✕) | Halo |
+| Variant · State | Fill | Stroke | Ink (text and ✕) | Halo |
 |---|---|---|---|---|
 | default · Default | `Surface/muted` | — | `Content/primary` | — |
 | default · Hover | `Surface/muted-hover` | — | `Content/primary` | — |
@@ -46,100 +46,100 @@ Trazo (solo Focused y critical): `Stroke/control` 1 INSIDE.
 | critical · Focused | `Status/critical/surface` | `Status/critical/border-strong` | `Status/critical/content` | `Status/critical/border` 2 OUTSIDE |
 | * · Disabled | `Action/disabled/default` | — | `Content/disabled` | — |
 
-### Lo que el archivo hace y parece raro (se copia igual)
-- Alto, padding y gap de xs, sm y lg (y varios valores de default y xl) son números sin variable.
-- Focused crece 2px en ancho (76 → 78): el trazo INSIDE cuenta en el layout (`strokesIncludedInLayout`).
-- critical lleva trazo siempre; el chip por defecto solo lo lleva en Focused.
-- El nombre accesible del ✕ lo pone el código («Remove» + etiqueta).
+### What the file does that looks odd (copied as is)
+- Height, padding and gap of xs, sm and lg (and several values of default and xl) are numbers with no variable.
+- Focused grows 2px in width (76 → 78): the INSIDE stroke counts in the layout (`strokesIncludedInLayout`).
+- critical always carries a stroke; the default chip only carries it in Focused.
+- The ✕'s accessible name is supplied by the code ("Remove" + label).
 
 ## InputTagOption (`390:793`)
 
-Descripción: «Suggestion row in the InputTag dropdown, either an existing option or a create-new action. Render as
-a listbox option with aria-selected and arrow-key navigation.»
+Description: "Suggestion row in the InputTag dropdown, either an existing option or a create-new action. Render as
+a listbox option with aria-selected and arrow-key navigation."
 
-| Figma (orden del panel) | Tipo | Defecto | React |
+| Figma (panel order) | Type | Default | React |
 |---|---|---|---|
 | `Type` option · create | VARIANT | `option` | `type` |
 | `State` Default · Hover · Focused · Disabled | VARIANT | `Default` | CSS + `forceState`; `data-disabled` |
-| `Label` | TEXT | «Design» (create: «Create “Design”») | `children` |
-| `Meta` | TEXT | «12» | `meta` |
-| `BadgeVisible` | BOOLEAN | true | `badge` (el punto) |
-| `MetaVisible` | BOOLEAN | true | `meta` presente |
+| `Label` | TEXT | "Design" (create: "Create “Design”") | `children` |
+| `Meta` | TEXT | "12" | `meta` |
+| `BadgeVisible` | BOOLEAN | true | `badge` (the dot) |
+| `MetaVisible` | BOOLEAN | true | `meta` present |
 
-Un solo tamaño: 240×32 (ancho sin variable), fila horizontal MIN/centro, gap `Spacing/gap-control` 8, padding X
-`Spacing/gap-control` 8, alto `Size/control-sm` 32, radio `Radius/control`, texto `Type/body-md`.
-Hijos option: `badge` (círculo 8×8, `Status/success/content`), `label`, `meta` (`Type/caption`, `Content/subtle`).
-Hijos create: `icon` (instancia `icon/plus`, 14×14, `Content/primary`), `label`.
+A single size: 240×32 (width with no variable), horizontal row MIN/centre, gap `Spacing/gap-control` 8, padding X
+`Spacing/gap-control` 8, height `Size/control-sm` 32, radius `Radius/control`, text `Type/body-md`.
+Option children: `badge` (8×8 circle, `Status/success/content`), `label`, `meta` (`Type/caption`, `Content/subtle`).
+Create children: `icon` (instance of `icon/plus`, 14×14, `Content/primary`), `label`.
 
-| State | Fill | Stroke | Tinta |
+| State | Fill | Stroke | Ink |
 |---|---|---|---|
 | Default | `Surface/input` | `Border/control` 1 INSIDE | label `Content/primary` |
 | Hover | `Surface/muted-hover` | — | `Content/primary` |
 | Focused | `Surface/muted-hover` | `Border/focus` 1 INSIDE + `focus-ring` `Border/ring/default` 2 OUTSIDE | `Content/primary` |
-| Disabled | `Action/disabled/default` | `Border/control` 1 INSIDE | label, meta, badge e icono `Content/disabled` |
+| Disabled | `Action/disabled/default` | `Border/control` 1 INSIDE | label, meta, badge and icon `Content/disabled` |
 
-Raro: la fila lleva fill y borde de CAMPO (`Surface/input` + `Border/control`) en reposo, no de fila de menú; Hover
-quita el trazo.
+Odd: at rest the row carries FIELD fill and border (`Surface/input` + `Border/control`), not menu-row ones; Hover
+removes the stroke.
 
 ## InputTag (`390:744`)
 
-Descripción: «Multi-value text field that turns entries into removable tag chips, inline or stacked outside the
+Description: "Multi-value text field that turns entries into removable tag chips, inline or stacked outside the
 field. Keep a visible label, announce added and removed tags to screen readers and expose the error text through
-aria-describedby.»
+aria-describedby."
 
-| Figma (orden del panel) | Tipo | Defecto | React |
+| Figma (panel order) | Type | Default | React |
 |---|---|---|---|
 | `Layout` inline · outside | VARIANT | `inline` | `layout` |
 | `Size` sm · default · lg | VARIANT | `default` | `size` |
 | `State` Default · Hover · Focused · Invalid · Disabled · Loading | VARIANT | `Default` | CSS (`:hover`, `:focus-within`) + `forceState`; `aria-invalid`; `disabled`; `loading` |
-| `Value` placeholder · filled | VARIANT | `placeholder` | ninguno: `value` con o sin tags |
-| `Placeholder` | TEXT | «Add tag…» | `placeholder` |
+| `Value` placeholder · filled | VARIANT | `placeholder` | none: `value` with or without tags |
+| `Placeholder` | TEXT | "Add tag…" | `placeholder` |
 
-El ancho (360) no tiene variable: lo pone quien lo usa.
+The width (360) has no variable: whoever uses it sets it.
 
-### Layout inline (la raíz es la caja)
+### Inline layout (the root is the box)
 
-Horizontal WRAP, MIN/centro, gap y gap de fila `Spacing/gap-tight` 4, padding Y `Spacing/gap-tight` 4 y X
-`Spacing/gap-control` 8, radio `Radius/action`, trazo `Stroke/control` 1 INSIDE **dentro del layout**
-(`strokesIncludedInLayout`). El alto es un MÍNIMO sin variable: 32 · 40 · 48 (sm · default · lg).
-La tipografía del texto es `Type/placeholder`.
+Horizontal WRAP, MIN/centre, gap and row gap `Spacing/gap-tight` 4, padding Y `Spacing/gap-tight` 4 and X
+`Spacing/gap-control` 8, radius `Radius/action`, stroke `Stroke/control` 1 INSIDE **inside the layout**
+(`strokesIncludedInLayout`). The height is a MINIMUM with no variable: 32 · 40 · 48 (sm · default · lg).
+The text typography is `Type/placeholder`.
 
-| Size | min-alto | Chip que anida |
+| Size | min height | Chip it nests |
 |---|---|---|
 | sm | 32 | `InputTagChip` Size=xs (18) |
 | default | 40 | `InputTagChip` Size=sm (20) |
 | lg | 48 | `InputTagChip` Size=default (24) |
 
-### Layout outside (la caja y los chips por separado)
+### Outside layout (the box and the chips separately)
 
-Raíz vertical, gap `Spacing/gap-control` 8, sin fill ni trazo. Hijo `field`: horizontal, centrado, alto
-`Size/control-sm|md|lg` (32 · 40 · 48) FIJO, padding X `Spacing/inset-control` 12, gap `Spacing/gap-control`,
-radio `Radius/action`, mismo fill, trazo y halo que la caja inline; el placeholder crece (grow 1). Debajo
-`tags`: horizontal WRAP, gap `Spacing/gap-tight` 4, ancho completo; **solo existe con Value=filled**
-(alto = el del chip: 18 · 20 · 24, mismos chips que inline).
+Vertical root, gap `Spacing/gap-control` 8, no fill or stroke. `field` child: horizontal, centred, FIXED height
+`Size/control-sm|md|lg` (32 · 40 · 48), padding X `Spacing/inset-control` 12, gap `Spacing/gap-control`,
+radius `Radius/action`, same fill, stroke and halo as the inline box; the placeholder grows (grow 1). Below it
+`tags`: horizontal WRAP, gap `Spacing/gap-tight` 4, full width; **only exists with Value=filled**
+(height = the chip's: 18 · 20 · 24, same chips as inline).
 
-### Color por State (idéntico en inline y en el `field` de outside)
+### Colour by State (identical inline and in outside's `field`)
 
-| State | Fill | Stroke | Halo (2px OUTSIDE, `focus-ring`) | Texto |
+| State | Fill | Stroke | Halo (2px OUTSIDE, `focus-ring`) | Text |
 |---|---|---|---|---|
 | Default | `Surface/input` | `Border/control` | — | placeholder `Content/subtle` |
 | Hover | `Surface/input` | `Border/control-hover` | — | `Content/subtle` |
 | Focused | `Surface/input` | `Border/focus` | `Border/ring/default` | `Content/subtle` + caret 1×14 `Content/primary` |
 | Invalid | `Surface/input` | `Status/critical/border-strong` | `Status/critical/border` | `Content/subtle` |
-| Disabled | `Action/disabled/default` | `Border/control` | — | `Content/disabled`; los chips son State=Disabled |
-| Loading | `Surface/input` | `Border/control` | — | sin placeholder: instancia `Spinner` 16×16 (con tags, los chips son State=Disabled) |
+| Disabled | `Action/disabled/default` | `Border/control` | — | `Content/disabled`; the chips are State=Disabled |
+| Loading | `Surface/input` | `Border/control` | — | no placeholder: `Spinner` instance 16×16 (with tags, the chips are State=Disabled) |
 
-En outside el spinner va dentro del `field`, a la derecha del placeholder (que se estrecha 334 → 310).
+In outside the spinner goes inside the `field`, to the right of the placeholder (which narrows 334 → 310).
 
-### Lo que el archivo hace y parece raro (se copia igual)
-- Con Value=filled el placeholder SIGUE dibujado detrás de los chips («Add tag…» al final): en código el `<input>`
-  conserva su `placeholder` aunque haya tags (el viejo componente lo quitaba).
-- El halo es un hijo `focus-ring` con trazo 2 OUTSIDE (no una sombra): es el mismo halo de campo que el Input.
-- Invalid también dibuja halo (`Status/critical/border`), como el Input.
-- Loading pinta los chips como Disabled y reemplaza el placeholder por el Spinner.
-- El alto inline es un mínimo (crece al envolver); en outside el alto del campo es fijo.
-- El chip default usa gap 6 y padding 10 en lg: números sin variable (ver el chip).
+### What the file does that looks odd (copied as is)
+- With Value=filled the placeholder is STILL drawn behind the chips ("Add tag…" at the end): in code the `<input>`
+  keeps its `placeholder` even when there are tags (the old component removed it).
+- The halo is a `focus-ring` child with a 2 OUTSIDE stroke (not a shadow): it is the same field halo as the Input.
+- Invalid also draws a halo (`Status/critical/border`), like the Input.
+- Loading paints the chips as Disabled and replaces the placeholder with the Spinner.
+- The inline height is a minimum (it grows when wrapping); in outside the field's height is fixed.
+- The default chip uses gap 6 and padding 10 in lg: numbers with no variable (see the chip).
 
-## Anida
-`InputTagChip` (los tags), `Spinner` (Loading), y el chip nombra `icon/close`. `InputTagOption` es la fila del
-desplegable que acompaña al campo (se construye como pieza propia, no dentro del campo).
+## Nests
+`InputTagChip` (the tags), `Spinner` (Loading), and the chip names `icon/close`. `InputTagOption` is the dropdown
+row that accompanies the field (built as its own piece, not inside the field).

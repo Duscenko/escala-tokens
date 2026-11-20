@@ -1,69 +1,69 @@
-# Contrato · ButtonGroup (de Figma a código)
+# Contract · ButtonGroup (Figma to code)
 
-Fecha: 2026-11-12 · Fuente: Figma `Escala Design System (Real)`, página `❖ ButtonGroup (✓)`, tres sets
-leídos con `use_figma` (solo lectura):
+Date: 2026-11-12 · Source: Figma `Escala Design System (Real)`, page `❖ ButtonGroup (✓)`, three sets
+read with `use_figma` (read-only):
 
-| Set | Nodo | Variantes | Ejes |
+| Set | Node | Variants | Axes |
 |---|---|---|---|
-| `ButtonGroup` | `351:8921` | 100 (120 menos `pill × vertical`) | Size · Variant · Shape · Orientation + Item1…5Visible |
+| `ButtonGroup` | `351:8921` | 100 (120 minus `pill × vertical`) | Size · Variant · Shape · Orientation + Item1…5Visible |
 | `ButtonGroupItem` | `350:5337` | 400 | Size · State · Variant · IconOnly · Active + Label, iconos, LoadingVisible |
 | `ButtonGroupDivider` | `351:410` | 8 | Variant · Orientation |
 
-Los tres se construyen en `components/escala-ui/button-group.tsx`, cada uno con su receta
-(`BUTTON_GROUP`, `BUTTON_GROUP_ITEM`, `BUTTON_GROUP_DIVIDER` en `recipes/actions.ts`) y su entrada de
-catálogo. **Figma manda; nada se corrige.** Los items NO son instancias de `Button`: el archivo los
-dibuja como un set propio (sin radio, sin borde, otra paleta por variante), así que el código también.
+All three are built in `components/escala-ui/button-group.tsx`, each with its recipe
+(`BUTTON_GROUP`, `BUTTON_GROUP_ITEM`, `BUTTON_GROUP_DIVIDER` in `recipes/actions.ts`) and its catalogue
+entry. **Figma rules; nothing is corrected.** The items are NOT `Button` instances: the file
+draws them as a set of their own (no radius, no border, a different palette per variant), so code does too.
 
 ## API
 
 ### ButtonGroup
 
-| Figma (orden del panel) | Tipo | Defecto | React |
+| Figma (panel order) | Type | Default | React |
 |---|---|---|---|
-| `Size` xs · sm · lg · xl · default | VARIANT | `default` | `size` (pasa a los items por contexto) |
-| `Variant` outline · default · inverse · secondary | VARIANT | `default` | `variant` (items + divisores) |
+| `Size` xs · sm · lg · xl · default | VARIANT | `default` | `size` (passed to the items through context) |
+| `Variant` outline · default · inverse · secondary | VARIANT | `default` | `variant` (items + dividers) |
 | `Shape` rounded · pill · square | VARIANT | `rounded` | `shape` |
 | `Orientation` horizontal · vertical | VARIANT | `horizontal` | `orientation` |
-| `Item1Visible` … `Item5Visible` | BOOLEAN | true · true · true · false · false | los hijos: un `ButtonGroupItem` por item visible; el divisor entre dos items lo pone el grupo |
+| `Item1Visible` … `Item5Visible` | BOOLEAN | true · true · true · false · false | the children: one `ButtonGroupItem` per visible item; the divider between two items is added by the group |
 
-`pill × vertical` no existe en el archivo (lo dice la descripción del set): el componente lo
-degrada a `rounded` y avisa en desarrollo.
+`pill × vertical` does not exist in the file (the set's description says so): the component
+downgrades it to `rounded` and warns in development.
 
 ### ButtonGroupItem
 
-| Figma | Tipo | Defecto | React |
+| Figma | Type | Default | React |
 |---|---|---|---|
-| `Size` xs · sm · default · lg · xl | VARIANT | `default` | contexto del grupo, o `size` |
+| `Size` xs · sm · default · lg · xl | VARIANT | `default` | group context, or `size` |
 | `State` Default · Hover · Pressed · Focused · Disabled | VARIANT | `Default` | CSS + `forceState`; `disabled` |
-| `Variant` outline · default · inverse · secondary | VARIANT | `default` | contexto del grupo, o `variant` |
-| `IconOnly` false · true | VARIANT | `false` | `iconOnly` (necesita `aria-label`) |
+| `Variant` outline · default · inverse · secondary | VARIANT | `default` | group context, or `variant` |
+| `IconOnly` false · true | VARIANT | `false` | `iconOnly` (needs `aria-label`) |
 | `Active` false · true | VARIANT | `false` | `active` → `aria-pressed` |
 | `Label` | TEXT | "Label" | `children` |
 | `IconLeadingVisible` + `IconLeadingIcon` | BOOLEAN + SWAP | false · `Plus` | `leading` |
 | `IconTrailingVisible` + `IconTrailingIcon` | BOOLEAN + SWAP | false · `CaretDown` | `trailing` |
-| `LoadingVisible` | BOOLEAN | false | `loading` (spinner DESPUÉS de la etiqueta, como en el archivo; `aria-busy`) |
+| `LoadingVisible` | BOOLEAN | false | `loading` (spinner AFTER the label, as in the file; `aria-busy`) |
 
 ### ButtonGroupDivider
 
-`Variant` (defecto `default`) · `Orientation` (defecto `horizontal`). Grosor `Stroke/divider` (1px);
-el eje cruzado se estira (FILL). `Orientation=horizontal` = la línea vertical entre items en fila.
+`Variant` (default `default`) · `Orientation` (default `horizontal`). Thickness `Stroke/divider` (1px);
+the cross axis stretches (FILL). `Orientation=horizontal` = the vertical line between items in a row.
 
-## Geometría
+## Geometry
 
-### Grupo
-Auto-layout sin gap ni padding (`Spacing/none`), HUG, `clipsContent` true. Radio por Shape:
-rounded `Radius/action` (12) · pill `Radius/full` · square `Radius/none`. Sin relleno ni trazo propios.
-Efecto: estilo `Shadow/xs` (`DROP_SHADOW 0 0 0 1 Elevation/shadow-ring` + `0 1 2 0 Elevation/shadow-ambient`;
-el frame recorta, así que el spread SÍ se pinta).
-- Horizontal: items HUG ancho / FIXED alto, divisores FIXED 1 × FILL.
-- Vertical: items FILL ancho, divisores FILL × 1.
-- Shape `pill`: el grupo sobrescribe el padding horizontal de cada item a `Spacing/inset-surface` (20).
-- Variant `outline`: un rectángulo `border` absoluto (STRETCH) encima de todo: trazo `Border/control`
-  1px INSIDE, radio = el del grupo.
+### Group
+Auto-layout with no gap or padding (`Spacing/none`), HUG, `clipsContent` true. Radius by Shape:
+rounded `Radius/action` (12) · pill `Radius/full` · square `Radius/none`. No fill or stroke of its own.
+Effect: `Shadow/xs` style (`DROP_SHADOW 0 0 0 1 Elevation/shadow-ring` + `0 1 2 0 Elevation/shadow-ambient`;
+the frame clips, so the spread IS painted).
+- Horizontal: items HUG width / FIXED height, dividers FIXED 1 × FILL.
+- Vertical: items FILL width, dividers FILL × 1.
+- Shape `pill`: the group overrides each item's horizontal padding to `Spacing/inset-surface` (20).
+- Variant `outline`: an absolute `border` rectangle (STRETCH) on top of everything: `Border/control` stroke
+  1px INSIDE, radius = the group's.
 
-### Item por tamaño
+### Item by size
 
-| Size | Alto | Padding X | Gap | Icono | Spinner | Texto |
+| Size | Height | Padding X | Gap | Icon | Spinner | Text |
 |---|---|---|---|---|---|---|
 | xs | `Size/control-xs` 24 | `Spacing/inset-control` 12 | `Spacing/gap-tight` 4 | `Size/icon-sm` 16 | 16 | `Type/button` |
 | sm | `Size/control-sm` 32 | 12 | `gap-tight` 4 | 16 | 16 | `Type/button` |
@@ -71,34 +71,34 @@ el frame recorta, así que el spread SÍ se pinta).
 | lg | `Size/control-lg` 48 | 12 | `gap-control` 8 | `Size/icon-lg` 24 | 20 | `Type/button` |
 | xl | `Size/control-xl` 56 | 12 | `gap-control` 8 | 24 | 20 | `Type/button` |
 
-IconOnly: ancho = alto (`Size/control-*`), padding 0, solo el icono líder. Sin radio (lo recorta el grupo),
-sin trazo.
+IconOnly: width = height (`Size/control-*`), padding 0, only the leading icon. No radius (the group clips it),
+no stroke.
 
-## Color por Variant × estado (item)
+## Colour by Variant × state (item)
 
-| Variant | Default | Hover | Pressed | Active (Default · Hover · Pressed) | Disabled | Tinta |
+| Variant | Default | Hover | Pressed | Active (Default · Hover · Pressed) | Disabled | Ink |
 |---|---|---|---|---|---|---|
-| default | `Action/primary/default` | `…/hover` | `…/pressed` | `…/pressed` (los tres) | `Surface/page` + `Action/disabled/default` | `Content/on-action` |
-| secondary | `Action/secondary/default` | `…/hover` | `…/pressed` | `…/pressed` | idem | `Content/on-secondary` |
-| inverse | `Surface/inverse` | + `Surface/inverse-muted` ×1 | + ×2 | + ×2 | idem | `Content/inverse` |
-| outline | — | `Action/ghost/hover` | `Action/ghost/pressed` | `Surface/selected` · `Surface/selected-pressed` · `Surface/selected-pressed` | — | `Content/primary`; activo `Content/accent` |
+| default | `Action/primary/default` | `…/hover` | `…/pressed` | `…/pressed` (all three) | `Surface/page` + `Action/disabled/default` | `Content/on-action` |
+| secondary | `Action/secondary/default` | `…/hover` | `…/pressed` | `…/pressed` | same | `Content/on-secondary` |
+| inverse | `Surface/inverse` | + `Surface/inverse-muted` ×1 | + ×2 | + ×2 | same | `Content/inverse` |
+| outline | — | `Action/ghost/hover` | `Action/ghost/pressed` | `Surface/selected` · `Surface/selected-pressed` · `Surface/selected-pressed` | — | `Content/primary`; active `Content/accent` |
 
-Disabled: tinta `Content/disabled` en todas, también activo. Focused: el relleno de Default (o de Active),
-más un rectángulo `focus-ring` absoluto, trazo 2px INSIDE, radio 0: default · outline
-`Border/ring/default`, secondary `Border/subtle`, inverse `Surface/inverse-muted`. Sin halo exterior.
+Disabled: ink `Content/disabled` on all, also active. Focused: the Default fill (or the Active one),
+plus an absolute `focus-ring` rectangle, 2px INSIDE stroke, radius 0: default · outline
+`Border/ring/default`, secondary `Border/subtle`, inverse `Surface/inverse-muted`. No outer halo.
 
-## Divisor
+## Divider
 
 default `Action/primary/pressed` · secondary `Border/subtle` · inverse `Border/inverse` · outline `Border/control`.
 
-## Lo que el archivo hace y parece raro (se copia igual)
-- La visibilidad del divisor N va atada a `ItemNVisible`: si se oculta el item 1, el archivo deja un divisor
-  delante del item 2. En código el divisor va solo ENTRE items, así que ese caso no se reproduce.
-- Los divisores ocultos 4 y 5 de `secondary` llevan `Border/accent` (los visibles `Border/subtle`):
-  una sobrescritura vieja en capas ocultas. Se copia la de los visibles.
-- `Size` del grupo en orden `xs · sm · lg · xl · default`; el del item `xs · sm · default · lg · xl`.
-- El ancho de un item con etiqueta no depende del Size (mismo padding 12 en todos).
-- `Shape=pill` + `vertical` no existe.
+## What the file does that looks odd (copied as is)
+- The visibility of divider N is tied to `ItemNVisible`: if item 1 is hidden, the file leaves a divider
+  in front of item 2. In code the divider goes only BETWEEN items, so that case is not reproduced.
+- The hidden dividers 4 and 5 of `secondary` carry `Border/accent` (the visible ones `Border/subtle`):
+  an old override on hidden layers. The visible ones' value is copied.
+- The group's `Size` in the order `xs · sm · lg · xl · default`; the item's `xs · sm · default · lg · xl`.
+- The width of an item with a label does not depend on Size (same padding 12 in all).
+- `Shape=pill` + `vertical` does not exist.
 
-## Anida
-`ButtonGroupItem` y `ButtonGroupDivider` (este archivo). Iconos: `Plus`, `CaretDown` (Phosphor).
+## Nests
+`ButtonGroupItem` and `ButtonGroupDivider` (this file). Icons: `Plus`, `CaretDown` (Phosphor).

@@ -1,106 +1,106 @@
-# Contrato · FABButton (de Figma a código)
+# Contract · FABButton (Figma to code)
 
-Fecha: 2026-11-12 · Fuente: Figma `Escala Design System (Real)`, set `FABButton` (`345:868`,
-100 variantes, página «❖ FABButton & FABGroup»), leído con la Plugin API (solo lectura) y
-comprobado con los píxeles del render. Lo copian la receta, el componente y Storybook.
-**Figma manda; nada se corrige.**
+Date: 2026-11-12 · Source: Figma `Escala Design System (Real)`, set `FABButton` (`345:868`,
+100 variants, page "❖ FABButton & FABGroup"), read with the Plugin API (read-only) and
+checked against the render's pixels. The recipe, the component and Storybook copy it.
+**Figma rules; nothing is corrected.**
 
-Descripción del set: «Floating action button: leading icon plus optional label. Variant default =
+Set description: "Floating action button: leading icon plus optional label. Variant default =
 Action/primary, secondary = Action/secondary (soft = Surface/layer-2), inverse = Surface/inverse chip
 (default appearance only). Size default is Size/control-lg (48), lg is Size/control-xl (56, the FAB
 size). Width hugs content and never goes below the size role, so icon-only (LabelVisible off) stays
-square; give an icon-only FAB an accessible name (aria-label).»
+square; give an icon-only FAB an accessible name (aria-label)."
 
 ## API
 
-| Figma | Tipo | Defecto | Opciones (orden del archivo) | React |
+| Figma | Type | Default | Options (file order) | React |
 |---|---|---|---|---|
 | `Appearance` | VARIANT | `solid` | solid · soft | `appearance` |
 | `Shape` | VARIANT | `rounded` | rounded · pill | `shape` |
 | `Size` | VARIANT | `default` | default · lg | `size` |
 | `State` | VARIANT | `Default` | Default · Hover · Pressed · Focused · Disabled | CSS (`:hover`, `:active`, `:focus-visible`) + `forceState`; `disabled` |
 | `Variant` | VARIANT | `default` | inverse · default · secondary | `variant` |
-| `Label` | TEXT | «Create» | — | `children` |
-| `LabelVisible` | BOOLEAN | `true` | — | hay `children` = visible; sin `children` = solo icono |
-| `IconLeadingIcon` | INSTANCE_SWAP | `Plus` | — | `icon?: ReactNode` (defecto: Phosphor `plus`) |
+| `Label` | TEXT | "Create" | — | `children` |
+| `LabelVisible` | BOOLEAN | `true` | — | with `children` = visible; without `children` = icon only |
+| `IconLeadingIcon` | INSTANCE_SWAP | `Plus` | — | `icon?: ReactNode` (default: Phosphor `plus`) |
 
-100 variantes: `inverse` solo existe en `solid` (2 · 2 · 2 · 5 · 3 − 20). En código `inverse · soft` se
-acepta y se pinta como `inverse · solid`. Panel: ejes de variante primero, luego Label, LabelVisible,
-IconLeadingIcon (orden de la API; no vi el panel del playground).
+100 variants: `inverse` only exists in `solid` (2 · 2 · 2 · 5 · 3 − 20). In code `inverse · soft` is
+accepted and painted as `inverse · solid`. Panel: variant axes first, then Label, LabelVisible,
+IconLeadingIcon (API order; I did not see the playground panel).
 
-## Geometría
+## Geometry
 
-Raíz: horizontal, centrada, **ancho = contenido, alto fijo**, gap `Spacing/gap-control` (8), padding X
-`Spacing/inset-control` (12), padding Y 0, ancho mínimo = alto, radio `Radius/action` (rounded, 12) o
+Root: horizontal, centred, **width = content, fixed height**, gap `Spacing/gap-control` (8), padding X
+`Spacing/inset-control` (12), padding Y 0, minimum width = height, radius `Radius/action` (rounded, 12) or
 `Radius/full` (pill).
 
-| Size | Alto y ancho mínimo | Icono |
+| Size | Height and minimum width | Icon |
 |---|---|---|
 | default | `Size/control-lg` (48) → `size.touch` | `Size/icon-md` (20) → `icon.medium` |
 | lg | `Size/control-xl` (56) → `size.fab` | `Size/icon-lg` (24) → `icon.large` |
 
-`label-wrap` (columna del texto): `padding-right` `Spacing/gap-control` (8), solo si `LabelVisible`.
-Texto `Type/button` (Inter semibold, 18 de alto). Medidas del archivo (default, «Create»): 100 × 48
-(12 + 20 + 8 + 40 + 8 + 12); lg 104 × 56. Sin etiqueta: 44 → el mínimo la deja en 48 × 48 (cuadrada).
-Sin trazo en ningún estado.
+`label-wrap` (text column): `padding-right` `Spacing/gap-control` (8), only if `LabelVisible`.
+Text `Type/button` (Inter semibold, 18 high). Measurements from the file (default, "Create"): 100 × 48
+(12 + 20 + 8 + 40 + 8 + 12); lg 104 × 56. Without a label: 44 → the minimum makes it 48 × 48 (square).
+No stroke in any state.
 
-## Color por Variant, Appearance y State
+## Colour by Variant, Appearance and State
 
-Igual en los cuatro Shape × Size (medido). `fill A + B` = dos rellenos apilados, B encima (alfa propio de
-la variable, no un segundo multiplicador). El texto y el icono comparten tinta.
+The same across all four Shape × Size (measured). `fill A + B` = two stacked fills, B on top (the
+variable's own alpha, not a second multiplier). Text and icon share ink.
 
-| Variant · Appearance | Default · Focused | Hover | Pressed | Tinta | Halo del foco |
+| Variant · Appearance | Default · Focused | Hover | Pressed | Ink | Focus halo |
 |---|---|---|---|---|---|
 | default · solid | `Action/primary/default` | `…/hover` | `…/pressed` | `Content/on-action` | `Border/ring/default` |
 | default · soft | `Surface/accent` | + `Surface/selected` | + `Surface/selected-pressed` | `Content/accent` | `Border/ring/default` |
 | secondary · solid | `Action/secondary/default` | `…/hover` | `…/pressed` | `Content/on-secondary` | `Border/subtle` |
 | secondary · soft | `Surface/layer-2` | + `Action/ghost/hover` | + `Action/ghost/pressed` | `Content/primary` | `Border/subtle` |
 | inverse · solid | `Surface/inverse` | + `Surface/inverse-muted` | + `Surface/inverse-muted` ×2 | `Content/inverse` | `Surface/inverse-muted` |
-| cualquiera · Disabled | `Surface/page` + `Action/disabled/default` | | | `Content/disabled` | — |
+| any · Disabled | `Surface/page` + `Action/disabled/default` | | | `Content/disabled` | — |
 
-## Foco
+## Focus
 
-Solo un marco `focus-ring` del tamaño de la raíz, radio del control, trazo `Stroke/focus` (2) **por
-fuera** (`OUTSIDE`) en el color del halo de la tabla. **Sin borde propio dentro** (a diferencia de
-Button y de TextLink). Los efectos de elevación siguen en Focused.
+Only a `focus-ring` frame the size of the root, the control's radius, `Stroke/focus` (2) stroke **outside**
+(`OUTSIDE`) in the halo colour from the table. **No border of its own inside** (unlike
+Button and TextLink). The elevation effects remain in Focused.
 
-## Efectos (todos los estados salvo Disabled, que no tiene ninguno)
+## Effects (all states except Disabled, which has none)
 
-Cinco en el archivo; comprobados en los píxeles del render (`default · solid`, rounded):
+Five in the file; checked against the render's pixels (`default · solid`, rounded):
 
-| Efecto | Default · Focused | Hover | Pressed | ¿Pinta? |
+| Effect | Default · Focused | Hover | Pressed | Painted? |
 |---|---|---|---|---|
-| `DROP_SHADOW` `Elevation/shadow-key` | 0 12 blur 16 (spread −4) | 0 20 blur 24 (spread −4) | 0 4 blur 6 (spread −1) | sí, sin el spread |
-| `DROP_SHADOW` `Elevation/shadow-ambient` | 0 4 blur 6 (spread −2) | 0 8 blur 8 (spread −4) | 0 2 blur 4 (spread −2) | sí, sin el spread |
-| `DROP_SHADOW` `Elevation/shadow-ring` | 0 0 blur 0 spread 1 | igual | igual | **no** (el marco no recorta; fila 0 sobre el nodo = página) |
-| `DROP_SHADOW` color del relleno | 0 0 blur 0 spread 1 | igual | igual | **no** (idem) |
-| `INNER_SHADOW` `Elevation/highlight` | 0 2 blur 0 | igual | igual | sí: banda de 2 px en el borde superior |
+| `DROP_SHADOW` `Elevation/shadow-key` | 0 12 blur 16 (spread −4) | 0 20 blur 24 (spread −4) | 0 4 blur 6 (spread −1) | yes, without the spread |
+| `DROP_SHADOW` `Elevation/shadow-ambient` | 0 4 blur 6 (spread −2) | 0 8 blur 8 (spread −4) | 0 2 blur 4 (spread −2) | yes, without the spread |
+| `DROP_SHADOW` `Elevation/shadow-ring` | 0 0 blur 0 spread 1 | same | same | **no** (the frame does not clip; row 0 over the node = page) |
+| `DROP_SHADOW` fill colour | 0 0 blur 0 spread 1 | same | same | **no** (idem) |
+| `INNER_SHADOW` `Elevation/highlight` | 0 2 blur 0 | same | same | yes: 2 px band on the top edge |
 
-**Ningún spread se pinta, tampoco el negativo.** El marco no recorta su contenido, así que Figma ignora
-el spread de un `DROP_SHADOW` (los límites del render sí lo cuentan: 124 × 73 en Default, 140 × 89 en
-Hover, 110 × 58 en Pressed, lo que engaña). Medido en los píxeles: a 1 px del borde izquierdo el render
-vale 237 (`rgba(0,0,0,.065)`), que es el modelo gaussiano sin spread (245 con él); bajo el botón, 220 frente
-a 219 modelado sin spread. En código la elevación son solo `offset y · blur` de la tabla, sin spread.
+**No spread is painted, not even the negative one.** The frame does not clip its content, so Figma ignores
+the spread of a `DROP_SHADOW` (the render bounds do count it: 124 × 73 in Default, 140 × 89 in
+Hover, 110 × 58 in Pressed, which is misleading). Measured in the pixels: 1 px from the left edge the render
+reads 237 (`rgba(0,0,0,.065)`), which is the Gaussian model without spread (245 with it); below the button, 220 versus
+219 modelled without spread. In code the elevation is only the table's `offset y · blur`, with no spread.
 
-## Residuos conocidos
+## Known residues
 
-- **El halo del foco, sobre la sombra.** En el render del archivo el halo (2 px, α 0.31) se ve sobre la
-  página desnuda: a los lados y debajo vale `(190,177,254)` aunque haya sombra bajo él. En CSS el halo es
-  un `box-shadow` por encima de la sombra de elevación, así que esa banda sale más oscura (unas 12 a 24
-  unidades en la banda inferior). Un fondo opaco detrás del halo lo igualaría, pero rompería el botón sobre
-  cualquier fondo que no sea la página. No se copia.
-- Los píxeles comparados (Default, Hover, Pressed): sombra debajo y a la izquierda dentro de 6 de 255.
+- **The focus halo, over the shadow.** In the file's render the halo (2 px, α 0.31) is seen over the
+  bare page: at the sides and below it reads `(190,177,254)` even where there is a shadow under it. In CSS the halo is
+  a `box-shadow` above the elevation shadow, so that band comes out darker (about 12 to 24
+  units in the lower band). An opaque background behind the halo would match it, but it would break the button on
+  any background that is not the page. Not copied.
+- The compared pixels (Default, Hover, Pressed): shadow below and to the left within 6 of 255.
 
-## Lo que el archivo hace y parece raro (se copia igual)
+## What the file does that looks odd (copied anyway)
 
-- El relleno de Disabled son dos capas: `Surface/page` y `Action/disabled/default` encima.
-- `Hover` y `Pressed` de `soft` e `inverse` apilan una capa translúcida; en `default · solid` y
-  `secondary · solid` hay rol propio de hover / pressed.
-- La etiqueta lleva 8 px de padding a la derecha además de los 12 de la raíz: con etiqueta, el
-  contenido queda 8 px más lejos del borde derecho que del izquierdo.
-- Los estados Hover y Pressed cambian solo la elevación y el relleno: el icono y el texto no se mueven.
+- The Disabled fill is two layers: `Surface/page` with `Action/disabled/default` on top.
+- `Hover` and `Pressed` of `soft` and `inverse` stack a translucent layer; in `default · solid` and
+  `secondary · solid` there is a hover / pressed role of its own.
+- The label carries 8 px of right padding in addition to the root's 12: with a label, the
+  content ends up 8 px further from the right edge than from the left.
+- The Hover and Pressed states change only the elevation and the fill: the icon and text do not move.
 
-## Anida
+## Nests
 
-El icono es una instancia de `Plus / Format=Outline, Weight=Regular` (conjunto de iconos del archivo,
-ya en código). No anida otros componentes. `FABGroup` vive en la misma página y es otro componente.
+The icon is an instance of `Plus / Format=Outline, Weight=Regular` (the file's icon set,
+already in code). It nests no other components. `FABGroup` lives on the same page and is another component.

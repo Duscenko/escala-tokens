@@ -1,28 +1,28 @@
-# Contrato · SliderThumb (de Figma a código)
+# Contract · SliderThumb (Figma to code)
 
-Fecha: 2026-11-12 · Fuente: Figma `Escala Design System (Real)`, página `❖ Slider (✓)`, set `SliderThumb` (`441:75`, 30 variantes),
-leído en solo lectura. **Figma manda.** Parte de Slider en el ledger.
+Date: 2026-11-12 · Source: Figma `Escala Design System (Real)`, page `❖ Slider (✓)`, set `SliderThumb` (`441:75`, 30 variants),
+read read-only. **Figma rules.** Part of Slider in the ledger.
 
-Descripción: «Slider thumb. Size xs | sm | default × State Default, Hover, Focused, Dragging, Disabled × Variant default | secondary.
-Thumb type (short | long) and shape (rounded | pill) are instance overrides.»
+Description: "Slider thumb. Size xs | sm | default × State Default, Hover, Focused, Dragging, Disabled × Variant default | secondary.
+Thumb type (short | long) and shape (rounded | pill) are instance overrides."
 
 ## API
-| Figma (orden del panel) | Tipo | Defecto | React |
+| Figma (panel order) | Type | Default | React |
 |---|---|---|---|
 | `Size` xs · sm · default | VARIANT | `default` | `size` |
-| `State` Default · Hover · Focused · Dragging · Disabled | VARIANT | `Default` | `forceState` (docs); en vivo `:hover`, `:focus-visible`, arrastre, `disabled` |
+| `State` Default · Hover · Focused · Dragging · Disabled | VARIANT | `Default` | `forceState` (docs); live `:hover`, `:focus-visible`, drag, `disabled` |
 | `Variant` default · secondary | VARIANT | `default` | `variant` |
 
-## Geometría
-Cuadrado 14 · 16 · 20, radio `Radius/control` (8), relleno `Content/on-action`, trazo 2 INSIDE (`stroke.md`).
+## Geometry
+Square 14 · 16 · 20, radius `Radius/control` (8), fill `Content/on-action`, 2 INSIDE stroke (`stroke.md`).
 
-## Color
-| Variant | Default | Hover | Focused (trazo 2 + halo 2 OUTSIDE) | Dragging | Disabled |
+## Colour
+| Variant | Default | Hover | Focused (2 stroke + 2 OUTSIDE halo) | Dragging | Disabled |
 |---|---|---|---|---|---|
-| default | trazo `Action/primary/default` + `Shadow/xs` | `Action/primary/hover` + `Shadow/xs` | `Border/focus` · `Border/ring/default`, sin sombra | `Action/primary/default`, sin efecto | relleno `Surface/muted`, trazo `Action/disabled/default` |
+| default | stroke `Action/primary/default` + `Shadow/xs` | `Action/primary/hover` + `Shadow/xs` | `Border/focus` · `Border/ring/default`, no shadow | `Action/primary/default`, no effect | fill `Surface/muted`, stroke `Action/disabled/default` |
 | secondary | `Content/primary` | `Content/secondary` | `Border/strong` · `Border/subtle` | `Content/primary` | idem |
 
-## Lo raro del archivo
-- Dragging dibuja un anillo de 4 px con spread sobre un frame que no recorta: no se pinta. El arrastre no se distingue del reposo salvo por la sombra ambiente, que desaparece.
-- El tipo (short / long) y la forma (pill) son overrides de instancia dentro del Slider; no hay props en el set (no se copian).
-- El radio 8 sobre 20 px da un cuadrado redondeado; en 14 y 16 es un círculo.
+## Oddities in the file
+- Dragging draws a 4 px ring with spread on a frame that does not clip: it is not painted. Dragging is indistinguishable from rest except for the ambient shadow, which disappears.
+- The type (short / long) and the shape (pill) are instance overrides inside the Slider; there are no props in the set (not copied).
+- Radius 8 on 20 px gives a rounded square; at 14 and 16 it is a circle.

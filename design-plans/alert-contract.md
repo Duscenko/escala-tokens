@@ -1,6 +1,6 @@
-# Alert (397:1932, «❖ Alert (✓)», 96 variants) — contract, read 2026-11-13
+# Alert (397:1932, "❖ Alert (✓)", 96 variants) — contract, read 2026-11-13
 
-Nodes of the queue, identified by reading: Alert 397:1932 (96) · Toast 1117:114 (24, page «❖ Toast») · ProgressLine 410:687 (40) · ProgressCircle 411:523 (80; both on «❖ ProgressLine & ProgressCircle»).
+Nodes of the queue, identified by reading: Alert 397:1932 (96) · Toast 1117:114 (24, page "❖ Toast") · ProgressLine 410:687 (40) · ProgressCircle 411:523 (80; both on "❖ ProgressLine & ProgressCircle").
 
 ## Props (panel order)
 Description T `Description` · IconVisible true · Icon SWAP (Sparkle) · ActionsVisible false · CloseVisible true · Variant success·info·warning·default·critical·secondary (default `default`) · Appearance outline(default)·solid·soft·inverse · Layout horizontal(default)·vertical · Size sm·default(default).

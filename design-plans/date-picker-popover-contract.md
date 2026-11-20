@@ -1,56 +1,56 @@
-# Contrato · DatePickerPopover (de Figma a código)
+# Contract · DatePickerPopover (Figma to code)
 
-Fecha: 2026-11-12 · Fuente: Figma `Escala Design System (Real)`, página `❖ DatePicker (✓)`, set `DatePickerPopover`
-(`425:2276`, 4 variantes), leído con `figma-read-set.js` + `get_metadata`/pixels (solo lectura). **Figma manda; nada se corrige.**
+Date: 2026-11-12 · Source: Figma `Escala Design System (Real)`, page `❖ DatePicker (✓)`, set `DatePickerPopover`
+(`425:2276`, 4 variants), read with `figma-read-set.js` + `get_metadata`/pixels (read-only). **Figma rules; nothing is corrected.**
 
-Descripción del set: «Popover content for the Date Picker: a Calendar panel with Radius/overlay, opened below
-DatePickerTrigger with an 8 px offset. Size default / sm × Mode single / range (range adds the presets rail).»
+Set description: "Popover content for the Date Picker: a Calendar panel with Radius/overlay, opened below
+DatePickerTrigger with an 8 px offset. Size default / sm × Mode single / range (range adds the presets rail)."
 
-> Estado: HECHO (2026-11-12). Medido en Storybook (Light y Dark): cáscara con radio 16, sombra `0 12 16 key + 0 4 6 ambient` (Light .1/.05, Dark .4/.2), sin fondo; abierta desde el trigger queda a 8px y alineada a su inicio; `data-size`/`data-mode` en la raíz. Los anchos/altos del panel (322×394, 250×310, 482×394, 390×310) se midieron con el Calendar nuevo: coinciden.
+> Status: DONE (2026-11-12). Measured in Storybook (Light and Dark): shell with radius 16, shadow `0 12 16 key + 0 4 6 ambient` (Light .1/.05, Dark .4/.2), no fill; opened from the trigger it sits 8px away and aligned to its start; `data-size`/`data-mode` on the root. The panel widths/heights (322×394, 250×310, 482×394, 390×310) were measured with the new Calendar: they match.
 
-## Qué es (y qué NO es)
-El set es una **cáscara delgada**: un frame vertical sin relleno, sin trazo y sin padding, con `Radius/overlay` y el
-efecto `Shadow/lg`, que contiene UNA instancia de `Calendar` (`424:4667`). Todo lo visible del panel (relleno
-`Surface/layer-1`, borde `Border/default` 1 dentro del layout, radio overlay, cabecera, mes, días, pie Clear/Apply, rail de
-presets) es del **Calendar** y de sus partes: CalendarHeader `422:355`, CalendarMonth `422:1713`, CalendarDay `421:309`,
-CalendarPresets `423:988` (y `423:963`), Calendar `424:4667` = elementos 3–8 de la cola, cada uno su propia sesión.
-Por eso DatePickerPopover NO reconstruye ninguno: el componente acepta el calendario como `children`.
-> **HECHO (2026-11-12, sesión del Calendar):** el popover aloja el Calendar del archivo (pie siempre, presets en range)
-> y copia el override de su instancia: el cuerpo pasa a `Spacing/inset-surface` (20) en Size default. Medido: 322×394 ·
-> 482×394 · 250×310 · 390×310, igual que el archivo (ver `calendar-contract.md`).
+## What it is (and what it is NOT)
+The set is a **thin shell**: a vertical frame with no fill, no stroke and no padding, with `Radius/overlay` and the
+`Shadow/lg` effect, containing ONE instance of `Calendar` (`424:4667`). Everything visible in the panel (`Surface/layer-1`
+fill, `Border/default` 1 inside the layout, overlay radius, header, month, days, Clear/Apply footer, presets rail) belongs to the
+**Calendar** and its parts: CalendarHeader `422:355`, CalendarMonth `422:1713`, CalendarDay `421:309`,
+CalendarPresets `423:988` (and `423:963`), Calendar `424:4667` = elements 3–8 of the queue, each its own session.
+That is why DatePickerPopover does NOT rebuild any of them: the component accepts the calendar as `children`.
+> **DONE (2026-11-12, Calendar session):** the popover hosts the file's Calendar (footer always, presets in range)
+> and copies its instance's override: the body moves to `Spacing/inset-surface` (20) at Size default. Measured: 322×394 ·
+> 482×394 · 250×310 · 390×310, same as the file (see `calendar-contract.md`).
 
 ## API
 
-| Figma (orden del panel) | Tipo | Defecto | React |
+| Figma (panel order) | Type | Default | React |
 |---|---|---|---|
 | `Size` default · sm | VARIANT | `default` | `size` (`data-size`) |
 | `Mode` single · range | VARIANT | `single` | `mode` (`data-mode`) |
 
-Los nombres del tablero de uso son «1:1 con código» (`Size → size`, `Mode → mode`). Sin textos ni swaps.
-Ambas props solo se reflejan como `data-*` y eligen qué Calendar va dentro (Size = 322 · 250 de ancho, Mode range añade
-el rail de presets: 482 · 390). `inline` dibuja el panel en su sitio (docs); sin él se monta en un Portal Radix.
+The usage board's names are "1:1 with code" (`Size → size`, `Mode → mode`). No texts or swaps.
+Both props are only reflected as `data-*` and choose which Calendar goes inside (Size = 322 · 250 wide, Mode range adds
+the presets rail: 482 · 390). `inline` draws the panel in place (docs); without it, it mounts in a Radix Portal.
 
-## Geometría y color (las 4 variantes idénticas)
+## Geometry and color (the 4 variants are identical)
 | | |
 |---|---|
-| Raíz | frame vertical MIN/MIN, gap 0, sin padding, sin relleno, sin trazo, `clipsContent: false` |
-| Radio | `Radius/overlay` (16) |
-| Efectos | estilo `Shadow/lg`: DROP_SHADOW `0 0 0 1 Elevation/shadow-ring` · `0 12 16 -4 Elevation/shadow-key` · `0 4 6 -2 Elevation/shadow-ambient` |
-| Posición | se abre bajo el trigger con 8px de separación (`sideOffset 8`); cierra al elegir o con Escape |
-| Hijo | `calendar` = Calendar (relleno `Surface/layer-1`, `Border/default` 1 INSIDE e incluido en el layout, radio overlay) |
+| Root | vertical frame MIN/MIN, gap 0, no padding, no fill, no stroke, `clipsContent: false` |
+| Radius | `Radius/overlay` (16) |
+| Effects | style `Shadow/lg`: DROP_SHADOW `0 0 0 1 Elevation/shadow-ring` · `0 12 16 -4 Elevation/shadow-key` · `0 4 6 -2 Elevation/shadow-ambient` |
+| Position | opens below the trigger with an 8px gap (`sideOffset 8`); closes on select or with Escape |
+| Child | `calendar` = Calendar (`Surface/layer-1` fill, `Border/default` 1 INSIDE and included in the layout, overlay radius) |
 
-### Sombra: se copia lo que Figma PINTA, no lo que declara
-Los tres efectos llevan spread (1 · −4 · −2) sobre un frame que no recorta contenido: Figma no lo pinta. Pixels del render
-de `425:200` (346×419, nodo en x 12–334): borde lateral 237 con degradado suave de 12px hasta 254, **sin anillo duro** de 1px,
-sin sombra encima y ~24px abajo. Es exactamente el `lift: rest` del FABButton (`0 12 16 key` + `0 4 6 ambient`, sin spread),
-que se reutiliza.
+### Shadow: copy what Figma PAINTS, not what it declares
+The three effects carry a spread (1 · −4 · −2) on a frame that does not clip content: Figma does not paint it. Pixels from the render
+of `425:200` (346×419, node at x 12–334): side edge 237 with a soft 12px gradient up to 254, **no hard 1px ring**,
+no shadow on top and ~24px below. It is exactly the FABButton's `lift: rest` (`0 12 16 key` + `0 4 6 ambient`, no spread),
+which is reused.
 
-## Lo que el archivo hace y parece raro (se copia igual)
-- La cáscara declara un anillo `Elevation/shadow-ring` y spreads negativos que Figma no renderiza: no se copian (pixels).
-- El estilo `Shadow/lg` lleva 3 capas, pero el sistema web ya tiene su propia rampa `shadow.lg`: el popover no la usa, usa
-  `shadow-key` + `shadow-ambient` tal cual el archivo.
-- Radius/overlay en la cáscara y otra vez en el Calendar (ambos 16): el calendario cubre toda la cáscara.
-- El tablero de uso habla de «Spacing/inset-surface, Spacing/gap-tight»: son tokens del Calendar, no de esta cáscara.
+## What the file does that looks odd (copied as is)
+- The shell declares an `Elevation/shadow-ring` ring and negative spreads that Figma does not render: they are not copied (pixels).
+- The `Shadow/lg` style has 3 layers, but the web system already has its own `shadow.lg` ramp: the popover does not use it, it uses
+  `shadow-key` + `shadow-ambient` exactly as the file does.
+- Radius/overlay on the shell and again on the Calendar (both 16): the calendar covers the whole shell.
+- The usage board mentions "Spacing/inset-surface, Spacing/gap-tight": those are the Calendar's tokens, not this shell's.
 
-## Anida
-`Calendar` (+ `CalendarPresets` en Mode=range, con `PresetsVisible` true). Sus partes son los elementos 3–8 de la cola.
+## Nests
+`Calendar` (+ `CalendarPresets` in Mode=range, with `PresetsVisible` true). Its parts are elements 3–8 of the queue.

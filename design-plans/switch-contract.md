@@ -1,52 +1,52 @@
-# Contrato · Switch (de Figma a código)
+# Contract · Switch (Figma to code)
 
-Fecha: 2026-11-12 · Fuente: Figma `Escala Design System (Real)`, página `❖ Switch & SwitchGroup (✓)`, set `Switch`
-(`405:358`, 48 variantes), leído en solo lectura. **Figma manda; nada se corrige.** Reconstruye el Switch de shadcn
+Date: 2026-11-12 · Source: Figma `Escala Design System (Real)`, page `❖ Switch & SwitchGroup (✓)`, set `Switch`
+(`405:358`, 48 variants), read read-only. **Figma rules; nothing is corrected.** Rebuilds the shadcn Switch
 (Checked True/False, Size default · sm).
 
-Descripción: «Binary on/off control for a setting that applies immediately. Always pair it with a visible label or give it
-an accessible name (role="switch" with aria-checked in code).»
+Description: "Binary on/off control for a setting that applies immediately. Always pair it with a visible label or give it
+an accessible name (role="switch" with aria-checked in code)."
 
 ## API
 
-| Figma (orden del panel) | Tipo | Defecto | React |
+| Figma (panel order) | Type | Default | React |
 |---|---|---|---|
 | `Size` xs · sm · default | VARIANT | `default` | `size` |
-| `State` Default · Hover · Focused · Disabled | VARIANT | `Default` | `forceState` (docs); en vivo `:hover`, `:focus-visible`, `disabled` |
+| `State` Default · Hover · Focused · Disabled | VARIANT | `Default` | `forceState` (docs); live `:hover`, `:focus-visible`, `disabled` |
 | `Checked` true · false | VARIANT | `false` | `checked` / `defaultChecked` (Radix) |
 | `Thumb` short · long | VARIANT | `short` | `thumb` |
 | `IoVisible` | BOOLEAN | false | `ioVisible` |
 | `ThumbIconVisible` | BOOLEAN | false | `thumbIconVisible` |
 
-## Geometría
+## Geometry
 
-| Size · Thumb | Pista | Thumb | Marca I/O (apagado · encendido) |
+| Size · Thumb | Track | Thumb | I/O mark (off · on) |
 |---|---|---|---|
-| xs · short | 28×16 (`Size/selector-sm`) | 12×12 | anillo 6 en (17,5) · barra 2×8 en (7,4) |
+| xs · short | 28×16 (`Size/selector-sm`) | 12×12 | ring 6 at (17,5) · bar 2×8 at (7,4) |
 | xs · long | 36×16 | 16×12 | (23,5) · (9,4) |
 | sm · short | 28×16 | 12×12 | (22,6) · (9,5) |
 | sm · long | 36×16 | 16×12 | (28,6) · (11,5) |
-| default · short | 36×20 (`Size/selector-md`) | 16×16 | anillo 8 (27,7) · barra 2×10 (11,6) |
+| default · short | 36×20 (`Size/selector-md`) | 16×16 | ring 8 at (27,7) · bar 2×10 at (11,6) |
 | default · long | 44×20 | 20×16 | (35,7) · (15,6) |
 
-Padding 2 (`spacing.0_5`), radio `Radius/full`, el thumb viaja su propio ancho (long y short). Sin sombra. Anillo con
-trazo 1,5 INSIDE; icono del thumb 8 · 8 · 10 (`icon/check` encendido, `icon/close` apagado).
-Focused: trazo 2 INSIDE contado en el layout (el thumb entra 2 por cada lado, recorrido −4) + halo 2 fuera.
+Padding 2 (`spacing.0_5`), radius `Radius/full`, the thumb travels its own width (long and short). No shadow. Ring with
+1.5 INSIDE stroke; thumb icon 8 · 8 · 10 (`icon/check` on, `icon/close` off).
+Focused: 2 INSIDE stroke counted in the layout (the thumb moves in 2 on each side, travel −4) + 2 outside halo.
 
-## Color (idéntico en todos los Size y Thumb — comprobado en las 48 variantes)
+## Colour (identical in all Sizes and Thumbs — checked across the 48 variants)
 
-| | Pista | Thumb | Marca I/O | Foco |
+| | Track | Thumb | I/O mark | Focus |
 |---|---|---|---|---|
-| apagado Default / Focused | `Surface/muted` | `Surface/input` | `Content/subtle` | `Border/focus` 2 + `Border/ring/default` 2 |
-| apagado Hover | `Surface/muted-hover` | `Surface/input` | `Content/subtle` | — |
-| apagado Disabled | `Surface/muted` | `Surface/input` | `Content/disabled` | — |
-| encendido Default / Focused | `Action/primary/default` | `Content/on-action` | `Content/on-action` | idem |
-| encendido Hover | `Action/primary/hover` | `Content/on-action` | `Content/on-action` | — |
-| encendido Disabled | `Action/disabled/default` | `Surface/input` | `Surface/input` | — |
+| off Default / Focused | `Surface/muted` | `Surface/input` | `Content/subtle` | `Border/focus` 2 + `Border/ring/default` 2 |
+| off Hover | `Surface/muted-hover` | `Surface/input` | `Content/subtle` | — |
+| off Disabled | `Surface/muted` | `Surface/input` | `Content/disabled` | — |
+| on Default / Focused | `Action/primary/default` | `Content/on-action` | `Content/on-action` | idem |
+| on Hover | `Action/primary/hover` | `Content/on-action` | `Content/on-action` | — |
+| on Disabled | `Action/disabled/default` | `Surface/input` | `Surface/input` | — |
 
-## Lo raro del archivo
-- Las marcas I/O de sm y default están a una posición absoluta que NO está centrada en su mitad (xs sí): se copian tal cual.
-- `thumb-icon` está oculto en las 48 variantes y sus instancias ocultas no dejan leer el relleno (solo «fills» sobrescrito;
-  el maestro es `Content/primary`): se asume `Content/subtle` apagado, `Action/primary/default` encendido, `Content/disabled`
-  desactivado. **Pendiente de confirmar** con el dueño si algún día se muestra.
-- Sin variantes Hover/Focused distintas para el glifo.
+## Oddities in the file
+- The I/O marks of sm and default are at an absolute position that is NOT centred in their half (xs is): copied as is.
+- `thumb-icon` is hidden in all 48 variants and its hidden instances do not let the fill be read (only an overridden "fills";
+  the master is `Content/primary`): `Content/subtle` is assumed when off, `Action/primary/default` when on, `Content/disabled`
+  when disabled. **Pending confirmation** with the owner if it is ever shown.
+- No distinct Hover/Focused variants for the glyph.

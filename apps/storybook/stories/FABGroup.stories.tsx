@@ -16,7 +16,7 @@ interface FABGroupStoryArgs {
 const ICON_PX_DEFAULT = ICON_PX.default
 
 /** The exact demo items measured in the file, per Layout (fab-group-contract.md §
- *  Geometría): `fan-center` fans out all five; every other Layout uses the first three. */
+ *  Geometry): `fan-center` fans out all five; every other Layout uses the first three. */
 function itemsFor(layout: FABGroupLayout): FABGroupItem[] {
   const all: FABGroupItem[] = [
     { icon: <PreviewIcon concept="edit" size={ICON_PX_DEFAULT} />, label: 'Edit' },

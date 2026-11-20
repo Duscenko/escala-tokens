@@ -1,30 +1,30 @@
-# Contrato · CalendarFooter (de Figma a código)
+# Contract · CalendarFooter (Figma to code)
 
-Fecha: 2026-11-12 · Fuente: Figma `Escala Design System (Real)`, página `❖ Calendar (✓) (D)`, set `CalendarFooter`
-(`423:963`, 2 variantes), leído en solo lectura. **Figma manda; nada se corrige.**
+Date: 2026-11-12 · Source: Figma `Escala Design System (Real)`, page `❖ Calendar (✓) (D)`, set `CalendarFooter`
+(`423:963`, 2 variants), read-only. **Figma rules; nothing is corrected.**
 
-Descripción del set: «Bottom bar of the Calendar body: Today link (left) and Clear / Apply actions (right). Height 72 at default, 56 at sm; top divider. Built from the Button set (link, outline, default).»
+Set description: "Bottom bar of the Calendar body: Today link (left) and Clear / Apply actions (right). Height 72 at default, 56 at sm; top divider. Built from the Button set (link, outline, default)."
 
 ## API
 
-| Figma (orden del panel) | Tipo | Defecto | React |
+| Figma (panel order) | Type | Default | React |
 |---|---|---|---|
-| `Size` default · sm | VARIANT | `default` | `size` (`data-size`, y el `size` de los tres Button) |
+| `Size` default · sm | VARIANT | `default` | `size` (`data-size`, and the `size` of the three Buttons) |
 
-Sin más propiedades en el set. Extras de código: `todayLabel` / `clearLabel` / `applyLabel` (por defecto «Today», «Clear», «Apply», los textos de las instancias) y `onToday` / `onClear` / `onApply`.
+No other properties on the set. Code extras: `todayLabel` / `clearLabel` / `applyLabel` (default "Today", "Clear", "Apply", the instances' texts) and `onToday` / `onClear` / `onApply`.
 
-## Geometría
+## Geometry
 
-| Size | Raíz | Padding lateral | Botones |
+| Size | Root | Side padding | Buttons |
 |---|---|---|---|
-| default | 312×72 fijo (= 7 × `Size/control` + 2 × 16; alto = 40 + 2 × 16) | 16 (variable primitiva «16» → `spacing.4`) | Button `Size=default` (40) |
-| sm | 248×56 fijo (= 7 × `Size/compact` + 2 × 12; alto = 32 + 2 × 12) | 12 (primitiva «12» → `spacing.3`) | Button `Size=sm` (32) |
+| default | 312×72 fixed (= 7 × `Size/control` + 2 × 16; height = 40 + 2 × 16) | 16 (primitive variable "16" → `spacing.4`) | Button `Size=default` (40) |
+| sm | 248×56 fixed (= 7 × `Size/compact` + 2 × 12; height = 32 + 2 × 12) | 12 (primitive "12" → `spacing.3`) | Button `Size=sm` (32) |
 
-- Raíz HORIZONTAL SPACE_BETWEEN, centrada en vertical, sin relleno; borde SOLO arriba: `Stroke/divider` 1 px en `Border/default`, INSIDE.
-- Inicio: Button `Variant=default, Appearance=link`, label «Today», sin iconos.
-- Fin: frame `actions`, gap 8 (primitiva «8» → `spacing.2`): Button `Variant=secondary, Appearance=outline` «Clear» + Button `Variant=default, Appearance=solid` «Apply», sin iconos.
+- Root HORIZONTAL SPACE_BETWEEN, vertically centered, no fill; border ONLY on top: `Stroke/divider` 1 px in `Border/default`, INSIDE.
+- Start: Button `Variant=default, Appearance=link`, label "Today", no icons.
+- End: `actions` frame, gap 8 (primitive "8" → `spacing.2`): Button `Variant=secondary, Appearance=outline` "Clear" + Button `Variant=default, Appearance=solid` "Apply", no icons.
 
-## Lo raro del archivo
-- Ancho y alto fijos sin variable: en código, sumas de refs (celdas + padding; botón + padding), así siguen al día y al botón.
-- Padding y gap atados a primitivas sueltas («16», «12», «8») en lugar de roles: se usan los pasos de spacing equivalentes.
-- El color y la forma de los botones son los del Button del sistema; esta receta solo arma la barra.
+## Odd in the file
+- Fixed width and height with no variable: in code, sums of refs (cells + padding; button + padding), so they stay current with the cells and the button.
+- Padding and gap tied to loose primitives ("16", "12", "8") instead of roles: the equivalent spacing steps are used.
+- The color and shape of the buttons are those of the system's Button; this recipe only assembles the bar.

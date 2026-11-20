@@ -1,73 +1,73 @@
-# Contrato · TabBar y TabBarItem (de Figma a código)
+# Contract · TabBar and TabBarItem (Figma to code)
 
-Fecha: 2026-11-19 · Fuente: Figma `Escala Design System (Real)`, página «❖ TabBar» (2354:42): `TabBarItem` (2354:84, 5 variantes) y `TabBar` (2354:124, componente
-suelto). Leído con `use_figma` (solo lectura) el 2026-11-19; cada rol de abajo es el que el archivo enlaza. Contexto: «IssueBoardPage · Proposal v2 · view navigation» (2343:4187).
-Construidos en la librería antes que en Storybook (desviación de proceso aprobada por el dueño; hallazgo `STG-001` abierto hasta aprobar la historia).
+Date: 2026-11-19 · Source: Figma `Escala Design System (Real)`, page "❖ TabBar" (2354:42): `TabBarItem` (2354:84, 5 variants) and `TabBar` (2354:124, loose
+component). Read with `use_figma` (read-only) on 2026-11-19; every role below is the one the file binds. Context: "IssueBoardPage · Proposal v2 · view navigation" (2343:4187).
+Built in the library before Storybook (process deviation approved by the owner; finding `STG-001` open until the story is approved).
 
-## Qué es
-Navegación inferior de una app móvil: de 3 a 5 destinos de primer nivel, siempre visibles. **No es un tablist**: cada item es un enlace que cambia de página, con la semántica de
-NavItem (`State=Current` ↔ `aria-current="page"`). Las vistas dentro de una página siguen siendo TabMenu.
+## What it is
+Bottom navigation of a mobile app: 3 to 5 top-level destinations, always visible. **It is not a tablist**: each item is a link that changes page, with the semantics of
+NavItem (`State=Current` ↔ `aria-current="page"`). Views within a page remain TabMenu.
 
-## 0 · Anatomía (capa Figma → slot de código)
-| Figma | Código | Nota |
+## 0 · Anatomy (Figma layer → code slot)
+| Figma | Code | Note |
 |---|---|---|
-| raíz (VERTICAL, centro) | `root` | el enlace (`<a>`; `asChild` para el del router) |
-| `indicator` (píldora, HORIZONTAL, hug) | `indicator` | lleva el relleno del estado y el anillo de foco |
-| `icon` (instancia Phosphor, swap) | `icon` | |
-| `Media` (SLOT) | `media` | p. ej. `<Avatar size="xs" />` (24), en la caja del icono |
-| `badge` (Badge expuesto, absoluto) | `badge` | Badge `Type=number · Variant=critical · Appearance=solid · Size=xs · Shape=pill` |
-| `focus-ring` (rectángulo absoluto) | `gapRing` del `indicator` | 2 px, 1 px fuera del indicador (50×34 sobre 48×32), radio `Radius/full` |
+| root (VERTICAL, center) | `root` | the link (`<a>`; `asChild` for the router's) |
+| `indicator` (pill, HORIZONTAL, hug) | `indicator` | carries the state's fill and the focus ring |
+| `icon` (Phosphor instance, swap) | `icon` | |
+| `Media` (SLOT) | `media` | e.g. `<Avatar size="xs" />` (24), in the icon's box |
+| `badge` (exposed Badge, absolute) | `badge` | Badge `Type=number · Variant=critical · Appearance=solid · Size=xs · Shape=pill` |
+| `focus-ring` (absolute rectangle) | `indicator`'s `gapRing` | 2 px, 1 px outside the indicator (50×34 over 48×32), radius `Radius/full` |
 | `label` (TEXT) | `label` | |
 
-## 1 · Propiedades → props
+## 1 · Properties → props
 | Figma | React |
 |---|---|
-| `State` Default · Hover · Focused · Current · Disabled (def Default; **un solo eje, sin Size**) | `current` · `disabled` · `:hover` · `:focus-visible`; `forceState` fija uno en docs |
-| `Label` TEXT «Home» | `children` |
-| `LabelVisible` BOOLEAN true | `hideLabel` (inverso); oculta, exige `aria-label` |
-| `Icon` INSTANCE_SWAP (House) · `IconVisible` true | `icon` (ReactNode Phosphor), se pinta si no hay `media` |
+| `State` Default · Hover · Focused · Current · Disabled (def Default; **a single axis, no Size**) | `current` · `disabled` · `:hover` · `:focus-visible`; `forceState` fixes one in docs |
+| `Label` TEXT "Home" | `children` |
+| `LabelVisible` BOOLEAN true | `hideLabel` (inverse); hidden, requires `aria-label` |
+| `Icon` INSTANCE_SWAP (House) · `IconVisible` true | `icon` (Phosphor ReactNode), painted if there is no `media` |
 | `Media` SLOT · `MediaVisible` false | `media` (ReactNode) |
-| `BadgeVisible` false | `badge` (number · string; sin pintar si es `undefined`) |
+| `BadgeVisible` false | `badge` (number · string; not painted if `undefined`) |
 | — | `href` / `asChild` |
 
-TabBar: sin ejes; `Content` (SLOT) → `children` (3 a 5 TabBarItem, cada uno FILL, exactamente uno Current); `aria-label` del landmark.
+TabBar: no axes; `Content` (SLOT) → `children` (3 to 5 TabBarItems, each FILL, exactly one Current); `aria-label` of the landmark.
 
-## 2 · Geometría y roles (leídos del archivo)
-TabBarItem raíz: VERTICAL, centro/centro, gap `Spacing/gap-tight` (4), padding Y `Spacing/gap-tight`, X `Spacing/none`, alto mínimo `Size/target-min`, texto `Type/caption`.
-Ancho 80 FIXED en el set; FILL dentro del TabBar.
-`indicator`: HORIZONTAL centro, padding X `Spacing/inset-control` (12), Y `Spacing/gap-tight`, gap `Spacing/none`, radio `Radius/full` (`radius.pill` en código); 48×32.
-`icon`: `Size/icon-lg` (24) → `icon.large`. `Media`: la misma caja.
-`badge`: absoluto en el indicador, x 24 · y 0 (16×16), restricción horizontal MAX → borde derecho a 8 del indicador = arriba a la derecha del icono. En código:
-`top: 0` y `left: 50%` del indicador (la línea central del icono, que es x 24 en 48); sin px libres.
+## 2 · Geometry and roles (read from the file)
+TabBarItem root: VERTICAL, center/center, gap `Spacing/gap-tight` (4), padding Y `Spacing/gap-tight`, X `Spacing/none`, min height `Size/target-min`, text `Type/caption`.
+Width 80 FIXED in the set; FILL inside the TabBar.
+`indicator`: HORIZONTAL center, padding X `Spacing/inset-control` (12), Y `Spacing/gap-tight`, gap `Spacing/none`, radius `Radius/full` (`radius.pill` in code); 48×32.
+`icon`: `Size/icon-lg` (24) → `icon.large`. `Media`: the same box.
+`badge`: absolute on the indicator, x 24 · y 0 (16×16), horizontal constraint MAX → right edge 8 from the indicator = top right of the icon. In code:
+`top: 0` and `left: 50%` of the indicator (the icon's center line, which is x 24 in 48); no loose px.
 
-| State | Relleno del `indicator` | Tinta de icono y label | Foco |
+| State | `indicator` fill | Icon and label ink | Focus |
 |---|---|---|---|
-| Default | ninguno | `Content/secondary` | — |
+| Default | none | `Content/secondary` | — |
 | Hover | `Surface/muted` | `Content/primary` | — |
-| Focused | ninguno | `Content/secondary` | `focus-ring` `Border/ring/default`, `Stroke/focus`, OUTSIDE, 1 px fuera |
+| Focused | none | `Content/secondary` | `focus-ring` `Border/ring/default`, `Stroke/focus`, OUTSIDE, 1 px outside |
 | Current | `Surface/selected` | `Content/accent` | — |
-| Disabled | ninguno | `Content/disabled` | — |
+| Disabled | none | `Content/disabled` | — |
 
-Sin opacidad en ningún estado; sin hex ni px.
+No opacity in any state; no hex or px.
 
-TabBar: HORIZONTAL, gap `Spacing/none`, padding `Spacing/gap-tight` en los cuatro lados, relleno `Surface/page`, trazo `Border/subtle` solo arriba, peso `Stroke/divider`, INSIDE
-(el archivo lo incluye en el layout: 390×69 = 4 + 60 + 4 + 1). Ancho FIXED 390 en el ejemplo; en código llena el ancho.
+TabBar: HORIZONTAL, gap `Spacing/none`, padding `Spacing/gap-tight` on all four sides, fill `Surface/page`, stroke `Border/subtle` on top only, weight `Stroke/divider`, INSIDE
+(the file includes it in the layout: 390×69 = 4 + 60 + 4 + 1). Width FIXED 390 in the example; in code it fills the width.
 
-## 7 · Comportamiento (código)
-- `<nav aria-label="…">` con una lista (`<ul>`/`<li>`) de enlaces. Orden de Tab natural; sin tabindex itinerante ni flechas (no es un tablist).
-- Current = `aria-current="page"`. Disabled = `aria-disabled="true"`, `tabIndex=-1`, sin `href` activo.
-- Etiqueta oculta: el texto sigue en el nombre accesible (`aria-label` obligatorio).
-- El Badge es decorativo dentro del nombre: el número entra en el nombre accesible del enlace (p. ej. «Inbox, 3»), que el llamador da con `aria-label` cuando lo necesite.
+## 7 · Behavior (code)
+- `<nav aria-label="…">` with a list (`<ul>`/`<li>`) of links. Natural Tab order; no roving tabindex or arrows (it is not a tablist).
+- Current = `aria-current="page"`. Disabled = `aria-disabled="true"`, `tabIndex=-1`, no active `href`.
+- Hidden label: the text stays in the accessible name (`aria-label` required).
+- The Badge is decorative within the name: the number goes into the link's accessible name (e.g. "Inbox, 3"), which the caller gives with `aria-label` when needed.
 
-## 8 · Movimiento (código, por rol)
-TabBarItem: `{ transitions: { indicator: FILL, icon: FILL, label: FILL } }` (`use-hover` para color y fondo, igual que NavItem). Pasar a Current usa la misma transición.
-Sin animación de montaje. TabBar: `motion: none`. El prototipo de Figma ya copia: Default→Hover `use-hover` (100 ms), clic→Current `use-toggle` (360 ms).
+## 8 · Motion (code, by role)
+TabBarItem: `{ transitions: { indicator: FILL, icon: FILL, label: FILL } }` (`use-hover` for color and background, same as NavItem). Moving to Current uses the same transition.
+No mount animation. TabBar: `motion: none`. The Figma prototype already copies it: Default→Hover `use-hover` (100 ms), click→Current `use-toggle` (360 ms).
 
-## 9 · Uso
-- **whenToUse:** destinos de primer nivel de una app móvil, de 3 a 5, siempre visibles abajo.
-- **whenNotToUse:** vistas o filtros dentro de una página → TabMenu; navegación de escritorio → Sidebar / NavItem.
+## 9 · Usage
+- **whenToUse:** top-level destinations of a mobile app, 3 to 5, always visible at the bottom.
+- **whenNotToUse:** views or filters within a page → TabMenu; desktop navigation → Sidebar / NavItem.
 - **related:** NavItem, TabMenu, Badge, Avatar.
 
-## Raro (se copia igual)
-- La altura del Badge xs está enlazada a un primitivo de Dimension (`16`), no a un rol: hallazgo existente del Badge que el TabBarItem hereda.
-- El trazo superior del TabBar cuenta en el layout (69 de alto), así que en CSS es un `border-top` normal.
+## Odd (copied as is)
+- The xs Badge's height is bound to a Dimension primitive (`16`), not to a role: an existing Badge finding that TabBarItem inherits.
+- The TabBar's top stroke counts in the layout (69 high), so in CSS it is a normal `border-top`.

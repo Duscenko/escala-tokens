@@ -1,28 +1,28 @@
-# Contrato · Pagination, PaginationLink y PaginationEllipsis (de Figma a código)
+# Contract · Pagination, PaginationLink and PaginationEllipsis (Figma to code)
 
-Fecha: 2026-11-13 · Fuente: Figma `Escala Design System (Real)`, página «❖ Pagination (✓) WIP»: `Pagination` (989:714, 8 variantes), `PaginationLink` (988:330, 40),
-`PaginationEllipsis` (988:343, 4). Solo lectura. Ledger: Pagination `rebuild`, las otras `part`.
+Date: 2026-11-13 · Source: Figma `Escala Design System (Real)`, page "❖ Pagination (✓) WIP": `Pagination` (989:714, 8 variants), `PaginationLink` (988:330, 40),
+`PaginationEllipsis` (988:343, 4). Read-only. Ledger: Pagination `rebuild`, the others `part`.
 
-## API (variantes primero, luego el resto del panel)
-- Pagination: `Size` default · xs · sm · lg (def default) · `Variant` compact · compact-grouped (def compact-grouped) · `Content` (slot: PaginationLink y PaginationEllipsis) · `JumpButtonsVisible` false (First y Last).
-- PaginationLink: `Size` · `State` Default · Hover · Pressed · Focused · Disabled · `Active` false · true · `Label` «1».
+## API (variants first, then the rest of the panel)
+- Pagination: `Size` default · xs · sm · lg (default default) · `Variant` compact · compact-grouped (default compact-grouped) · `Content` (slot: PaginationLink and PaginationEllipsis) · `JumpButtonsVisible` false (First and Last).
+- PaginationLink: `Size` · `State` Default · Hover · Pressed · Focused · Disabled · `Active` false · true · `Label` "1".
 - PaginationEllipsis: `Size`.
-Descripción: First/Previous, enlaces numerados y elipsis en el Content, Next/Last; `nav aria-label="pagination"`; deshabilitar First/Prev en la página 1 y Next/Last en la última.
+Description: First/Previous, numbered links and ellipsis in the Content, Next/Last; `nav aria-label="pagination"`; disable First/Prev on page 1 and Next/Last on the last.
 
-## Geometría
-- compact-grouped: la raíz es un grupo de botones OUTLINE (radio `Radius/action`, trazo `Border/control` 1 INSIDE fuera del layout, efectos `Elevation/shadow-ring` spread 1 y `shadow-ambient` 0 1 2 = Shadow/xs): hijos first (oculto) · prev · Content · next · last (oculto),
-  todos ButtonGroupItem (outline, IconOnly para first / prev / next / last; los enlaces son ButtonGroupItem con la etiqueta, Active = relleno `Surface/selected`) y `ButtonGroupDivider` (1px `Border/control`) entre cada par,
-  también dentro del Content (incluido el elipsis). Gap 0. Alto = alto del item (`Size/control-md|xs|sm|lg` = 40 · 24 · 32 · 48). 258×40 con prev + Content (1, 2 activo, 3, …, 10) + next; xs 210×24, sm 234×32, lg 282×48.
-- compact: HORIZONTAL gap `Spacing/gap-tight` (4) sin fondo: first (oculto) y prev / next / last son IconButton (secondary · ghost · mismo Size), Content gap 4 con PaginationLink y PaginationEllipsis. 304×40 (xs 192, sm 248, lg 360).
-- PaginationLink: HORIZONTAL centro, alto = `Size/control-*`, ancho mínimo = su alto (40×40 con una cifra), padding X `Spacing/gap-tight` (4) en todos los tamaños, gap `gap-control` (8) (xs: gap-tight), radio `Radius/action`, `Type/button`.
-  Active: trazo `Border/control` 1 INSIDE (sin crecer). Tinta `Content/primary` siempre (Disabled `Content/disabled`).
-- PaginationEllipsis: caja cuadrada `Size/control-md|xs|sm|lg` (40 · 24 · 32 · 48), icono DotsThree 20 · 16 · 16 · 24 (`icon-md|sm|sm|lg`), tinta `Content/secondary`, sin relleno ni trazo, no interactivo.
+## Geometry
+- compact-grouped: the root is a group of OUTLINE buttons (radius `Radius/action`, stroke `Border/control` 1 INSIDE outside the layout, effects `Elevation/shadow-ring` spread 1 and `shadow-ambient` 0 1 2 = Shadow/xs): children first (hidden) · prev · Content · next · last (hidden),
+  all ButtonGroupItem (outline, IconOnly for first / prev / next / last; the links are ButtonGroupItem with the label, Active = `Surface/selected` fill) and a `ButtonGroupDivider` (1px `Border/control`) between each pair,
+  also inside the Content (including the ellipsis). Gap 0. Height = the item's height (`Size/control-md|xs|sm|lg` = 40 · 24 · 32 · 48). 258×40 with prev + Content (1, 2 active, 3, …, 10) + next; xs 210×24, sm 234×32, lg 282×48.
+- compact: HORIZONTAL gap `Spacing/gap-tight` (4) with no background: first (hidden) and prev / next / last are IconButton (secondary · ghost · same Size), Content gap 4 with PaginationLink and PaginationEllipsis. 304×40 (xs 192, sm 248, lg 360).
+- PaginationLink: HORIZONTAL centre, height = `Size/control-*`, min width = its height (40×40 with one digit), padding X `Spacing/gap-tight` (4) in all sizes, gap `gap-control` (8) (xs: gap-tight), radius `Radius/action`, `Type/button`.
+  Active: stroke `Border/control` 1 INSIDE (without growing). Ink always `Content/primary` (Disabled `Content/disabled`).
+- PaginationEllipsis: square box `Size/control-md|xs|sm|lg` (40 · 24 · 32 · 48), DotsThree icon 20 · 16 · 16 · 24 (`icon-md|sm|sm|lg`), ink `Content/secondary`, no fill or stroke, not interactive.
 
-## Color del PaginationLink (Size no cambia nada)
-Default sin relleno; Hover `Action/ghost/hover`; Pressed `Action/ghost/pressed`; Focused trazo `Border/focus` 2 INSIDE + `focus-ring` 2 OUTSIDE `Border/ring/default` (Active también pierde su trazo control en Focused); Disabled sin relleno.
-Active mantiene su trazo `Border/control` en Hover, Pressed y Disabled.
+## PaginationLink colour (Size changes nothing)
+Default no fill; Hover `Action/ghost/hover`; Pressed `Action/ghost/pressed`; Focused stroke `Border/focus` 2 INSIDE + `focus-ring` 2 OUTSIDE `Border/ring/default` (Active also loses its control stroke in Focused); Disabled no fill.
+Active keeps its `Border/control` stroke in Hover, Pressed and Disabled.
 
-## Raro (se copia igual)
-- Las dos variantes de Pagination no comparten componentes: la agrupada reutiliza ButtonGroupItem / ButtonGroupDivider, la compacta IconButton y PaginationLink; por eso el enlace activo es un relleno en una y un trazo en la otra.
-- El elipsis de la variante agrupada lleva divisores a ambos lados como cualquier item.
-- La tinta del enlace activo no cambia a accent (solo el relleno / trazo lo marca; la descripción pide no usar solo color).
+## Odd (copied as is)
+- The two Pagination variants do not share components: the grouped one reuses ButtonGroupItem / ButtonGroupDivider, the compact one IconButton and PaginationLink; that is why the active link is a fill in one and a stroke in the other.
+- The grouped variant's ellipsis carries dividers on both sides like any item.
+- The active link's ink does not change to accent (only the fill / stroke marks it; the description asks not to rely on colour alone).

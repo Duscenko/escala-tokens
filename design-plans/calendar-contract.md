@@ -1,14 +1,14 @@
-# Contrato · Calendar (de Figma a código)
+# Contract · Calendar (Figma to code)
 
-Fecha: 2026-11-12 · Fuente: Figma `Escala Design System (Real)`, página `❖ Calendar (✓) (D)`, set `Calendar`
-(`424:4667`, 18 variantes), leído en solo lectura. **Figma manda; nada se corrige.** Sustituye al Calendar shadcn /
-react-day-picker (`calendar.tsx` ya no lo importa; la dependencia sigue en `package.json`, sin uso).
+Date: 2026-11-12 · Source: Figma `Escala Design System (Real)`, page `❖ Calendar (✓) (D)`, set `Calendar`
+(`424:4667`, 18 variants), read read-only. **Figma rules; nothing is corrected.** Replaces the shadcn /
+react-day-picker Calendar (`calendar.tsx` no longer imports it; the dependency remains in `package.json`, unused).
 
-Descripción del set: «Date selection panel: CalendarHeader, CalendarMonth, optional CalendarPresets (PresetsVisible) and CalendarFooter (FooterVisible). Size default (314 px) / sm (250 px), Mode single / multiple / range, Header single / multiple / plain. Date Picker wraps it with an input trigger.»
+Set description: "Date selection panel: CalendarHeader, CalendarMonth, optional CalendarPresets (PresetsVisible) and CalendarFooter (FooterVisible). Size default (314 px) / sm (250 px), Mode single / multiple / range, Header single / multiple / plain. Date Picker wraps it with an input trigger."
 
 ## API
 
-| Figma (orden del panel) | Tipo | Defecto | React |
+| Figma (panel order) | Type | Default | React |
 |---|---|---|---|
 | `Size` default · sm | VARIANT | `default` | `size` (`data-size`) |
 | `Mode` single · multiple · range | VARIANT | `single` | `mode` (`data-mode`) |
@@ -16,44 +16,44 @@ Descripción del set: «Date selection panel: CalendarHeader, CalendarMonth, opt
 | `FooterVisible` | BOOLEAN | false | `footer` |
 | `PresetsVisible` | BOOLEAN | false | `presets` |
 
-Extras de código: `value` / `defaultValue` / `onValueChange` (Date · Date[] · { from, to } según el modo), `month` /
-`defaultMonth` / `onMonthChange`, `today`, `disabledDays`, `unavailableDays`, `onApply`, `variant` (se pasa a las celdas y
-al riel), `children` (debajo del mes, dentro del cuerpo: el evento del día en el tablero). Sin mes ni valor muestra la
-muestra del archivo (noviembre 2026, hoy el 7, 24–25 Disabled, 27 Unavailable, la selección de CalendarMonth).
+Code extras: `value` / `defaultValue` / `onValueChange` (Date · Date[] · { from, to } depending on the mode), `month` /
+`defaultMonth` / `onMonthChange`, `today`, `disabledDays`, `unavailableDays`, `onApply`, `variant` (passed to the cells and
+to the rail), `children` (below the month, inside the body: the day's event on the board). Without a month or value it shows the
+file's sample (November 2026, today the 7th, 24–25 Disabled, 27 Unavailable, the CalendarMonth selection).
 
-## Geometría
+## Geometry
 
 | | default | sm |
 |---|---|---|
-| Raíz (sin presets ni pie) | 314×314 | 250×254 |
-| Cuerpo | 312×312, padding 16 (primitiva «16» → `spacing.4`), gap 8 (`spacing.2`) | 248×252, padding 12 (`spacing.3`), gap 8 |
-| Cabecera / mes | 280×32 en 17,17 · 280×240 en 17,57 | 224×28 en 13,13 · 224×192 en 13,49 |
-| Presets (visibles) | 160 de ancho, alto de la columna | 140, alto de la columna |
-| Pie (visible) | CalendarFooter 312×72 bajo el cuerpo | 248×56 |
+| Root (no presets or footer) | 314×314 | 250×254 |
+| Body | 312×312, padding 16 (primitive "16" → `spacing.4`), gap 8 (`spacing.2`) | 248×252, padding 12 (`spacing.3`), gap 8 |
+| Header / month | 280×32 at 17,17 · 280×240 at 17,57 | 224×28 at 13,13 · 224×192 at 13,49 |
+| Presets (visible) | 160 wide, column height | 140, column height |
+| Footer (visible) | CalendarFooter 312×72 below the body | 248×56 |
 
-- Raíz HORIZONTAL: [presets] [columna = cuerpo + pie]. Relleno `Surface/layer-1`, `Border/default` 1 px (`Stroke/divider`)
-  en los cuatro lados, INSIDE; `Radius/container` (16); recorta su contenido.
-- Partes: CalendarHeader `422:355`, CalendarMonth `422:1713` (Variant default), CalendarPresets `423:988` (Variant default),
-  CalendarFooter `423:963`, todas al `Size` del Calendar.
+- HORIZONTAL root: [presets] [column = body + footer]. Fill `Surface/layer-1`, `Border/default` 1 px (`Stroke/divider`)
+  on all four sides, INSIDE; `Radius/container` (16); clips its content.
+- Parts: CalendarHeader `422:355`, CalendarMonth `422:1713` (Variant default), CalendarPresets `423:988` (Variant default),
+  CalendarFooter `423:963`, all at the Calendar's `Size`.
 
-## Comportamiento (código, el archivo no lo dibuja)
-- single: un clic elige el día · multiple: cada clic añade o quita · range: el primer clic abre, el segundo cierra (en
-  cualquier orden); un rango de un solo día se pinta Selected.
-- Flechas de la cabecera: mes anterior / siguiente. Un clic en un día de otro mes cambia a ese mes.
-- Presets: rangos contados desde `today` (Today, Yesterday, Last 7 days, Last 30 days, This month); se resalta el que
-  coincide con el rango elegido.
-- Pie: Today va al mes de hoy (y lo elige fuera de range), Clear vacía, Apply llama `onApply(value)`.
-- Teclado: un solo día toma Tab (la selección, si no hoy, si no el primero del mes); ←→↑↓ mueven entre días habilitados.
-  Cada día se nombra con su fecha completa y lleva `aria-pressed` si está elegido.
+## Behaviour (code; the file does not draw it)
+- single: one click picks the day · multiple: each click adds or removes · range: the first click opens, the second closes (in
+  either order); a single-day range is painted Selected.
+- Header arrows: previous / next month. Clicking a day from another month switches to that month.
+- Presets: ranges counted from `today` (Today, Yesterday, Last 7 days, Last 30 days, This month); the one that
+  matches the chosen range is highlighted.
+- Footer: Today goes to today's month (and picks it outside range), Clear empties, Apply calls `onApply(value)`.
+- Keyboard: a single day takes Tab (the selection, otherwise today, otherwise the first of the month); ←→↑↓ move between enabled days.
+  Each day is named with its full date and carries `aria-pressed` if selected.
 
-## Lo raro del archivo
-- El cuerpo del set va atado a primitivas sueltas («16», «12», «8»), no a roles.
-- En el DatePickerPopover (`425:2276`), la instancia del Calendar sobrescribe el padding del cuerpo con
-  `Spacing/inset-surface` (20) en Size default: el cuerpo pasa a 320 y el panel a 322×394 · 482×394, pero el pie sigue
-  midiendo 312 (queda 8 px corto por la derecha). En sm no hay override (12). Se copia tal cual (`date-picker.tsx`).
-- Presets: en el set es un rectángulo fijo 160×384; en el popover se estira a la columna (392 · 308). En código se estira
-  siempre a la altura de la columna (coincide con todas las instancias del archivo que lo muestran).
+## Oddities in the file
+- The set's body is bound to loose primitives ("16", "12", "8"), not to roles.
+- In the DatePickerPopover (`425:2276`), the Calendar instance overrides the body padding with
+  `Spacing/inset-surface` (20) at Size default: the body becomes 320 and the panel 322×394 · 482×394, but the footer still
+  measures 312 (8 px short on the right). At sm there is no override (12). Copied as is (`date-picker.tsx`).
+- Presets: in the set it is a fixed 160×384 rectangle; in the popover it stretches to the column (392 · 308). In code it always
+  stretches to the column height (matches every instance in the file that shows it).
 
-## Medido (Storybook, Escala Light y Dark)
-Las 6 combinaciones Size × Mode del set y las 4 del popover cuadran al píxel con Figma (tamaños de raíz, cuerpo, cabecera,
-mes, presets, pie). Relleno `#f5f4f6` / `#18161a` y borde `#000000@0.15` / `#ffffff@0.15`, iguales a los del archivo.
+## Measured (Storybook, Escala Light and Dark)
+The 6 Size × Mode combinations of the set and the 4 of the popover match Figma to the pixel (root, body, header,
+month, presets, footer sizes). Fill `#f5f4f6` / `#18161a` and border `#000000@0.15` / `#ffffff@0.15`, the same as the file's.

@@ -1,57 +1,57 @@
-# Contrato · DatePickerTrigger (de Figma a código)
+# Contract · DatePickerTrigger (from Figma to code)
 
-Fecha: 2026-11-12 · Fuente: Figma `Escala Design System (Real)`, página `❖ DatePicker (✓)`, set `DatePickerTrigger`
-(`425:199`, 36 variantes), leído con `figma-read-set.js` (solo lectura). **Figma manda; nada se corrige.**
-El otro set de la página, `DatePickerPopover` (`425:2276`, 4 variantes), es el siguiente elemento de la cola
-y vivirá en el mismo archivo (`escala-ui/date-picker.tsx`).
+Date: 2026-11-12 · Source: Figma `Escala Design System (Real)`, page `❖ DatePicker (✓)`, set `DatePickerTrigger`
+(`425:199`, 36 variants), read with `figma-read-set.js` (read-only). **Figma rules; nothing is corrected.**
+The page's other set, `DatePickerPopover` (`425:2276`, 4 variants), is the next item in the queue
+and will live in the same file (`escala-ui/date-picker.tsx`).
 
-> Estado: HECHO (2026-11-12). Receta, componente, catálogo, Storybook y medida cerrados. Medido en Storybook (Light y Dark, las 36 variantes): 280×32 · 40 · 48; icono x13 (x14 Focused) de 16 · 20 · 16; texto x37 · 41 (x38 · 42 Focused) y ancho 230 · 226 (228 · 224); radio 12; trazo 1 / 2 Focused; halo 2px fuera solo en Focused; foco real con Tab da el mismo borde y halo. Axe: solo `Content/subtle` sobre `Surface/input` en Dark, 3.16:1 (copiado del archivo; igual que InputTagOption).
+> Status: DONE (2026-11-12). Recipe, component, catalogue, Storybook and measurement closed. Measured in Storybook (Light and Dark, all 36 variants): 280×32 · 40 · 48; icon x13 (x14 Focused) of 16 · 20 · 16; text x37 · 41 (x38 · 42 Focused) and width 230 · 226 (228 · 224); radius 12; stroke 1 / 2 Focused; 2px outer halo only in Focused; a real focus with Tab gives the same border and halo. Axe: only `Content/subtle` on `Surface/input` in Dark, 3.16:1 (copied from the file; same as InputTagOption).
 
-Descripción del set: «Input-styled button that opens DatePickerPopover: leading calendar icon plus placeholder or
-formatted date.»
+Set description: "Input-styled button that opens DatePickerPopover: leading calendar icon plus placeholder or
+formatted date."
 
 ## API
 
-| Figma (orden del panel) | Tipo | Defecto | React |
+| Figma (panel order) | Type | Default | React |
 |---|---|---|---|
 | `Size` lg · sm · default | VARIANT | `default` | `size` |
 | `State` Default · Hover · Focused · Invalid · Disabled · Loading | VARIANT | `Default` | CSS (`:hover`, `:focus-visible`) + `forceState`; `aria-invalid` · `disabled` · `loading` |
-| `Value` placeholder · filled | VARIANT | `placeholder` | sin prop: con `valueText` se ve el valor, sin él el placeholder |
-| `PlaceholderText` | TEXT | «Select date» | `placeholderText` |
-| `ValueText` | TEXT | «Nov 12, 2026» | `valueText` (un `Date` se formatea «Nov 12, 2026») |
+| `Value` placeholder · filled | VARIANT | `placeholder` | no prop: with `valueText` the value shows, without it the placeholder |
+| `PlaceholderText` | TEXT | "Select date" | `placeholderText` |
+| `ValueText` | TEXT | "Nov 12, 2026" | `valueText` (a `Date` is formatted "Nov 12, 2026") |
 
-El tablero de uso del archivo nombra las props «1:1 con código» (`placeholderText`, `valueText`): se copian.
+The file's usage board names the props "1:1 with code" (`placeholderText`, `valueText`): they are copied.
 
-## Geometría por tamaño (raíz horizontal MIN / centro, 280 de ancho en el archivo)
+## Geometry per size (horizontal root MIN / centre, 280 wide in the file)
 
-| Size | Alto | Padding X | Gap | Icono | Texto |
+| Size | Height | Padding X | Gap | Icon | Text |
 |---|---|---|---|---|---|
 | sm | `Size/control-sm` 32 | `Spacing/inset-control` 12 | `Spacing/gap-control` 8 | 16 | `Type/body-sm` 12/18 |
 | default | `Size/control-md` 40 | 12 | 8 | 20 | `Type/body-md` 14/21 |
 | lg | `Size/control-lg` 48 | 12 | 8 | 16 | `Type/body-md` 14/21 |
 
-Radio `Radius/action` (12). Trazo `Stroke/control` 1 INSIDE y **dentro del layout** (`strokesIncludedInLayout`):
-el contenido empieza en x 13. Icono y spinner sin variable de tamaño (instancias 16 · 20 · 16).
+Radius `Radius/action` (12). Stroke `Stroke/control` 1 INSIDE and **inside the layout** (`strokesIncludedInLayout`):
+the content starts at x 13. Icon and spinner have no size variable (instances 16 · 20 · 16).
 
-## Color por estado (idéntico en los tres tamaños y en ambos Value)
+## Color per state (identical at all three sizes and both Values)
 
-| State | Fill | Stroke | Texto | Icono | Halo |
+| State | Fill | Stroke | Text | Icon | Halo |
 |---|---|---|---|---|---|
-| Default | `Surface/input` | `Border/control` 1 | placeholder `Content/subtle` · valor `Content/primary` | `Content/subtle` | — |
-| Hover | `Surface/input` | `Border/control-hover` 1 | igual | igual | — |
-| Focused | `Surface/input` | `Border/focus` **2** (dentro del layout: contenido en x 14, texto 2px más estrecho) | igual | igual | `focus-ring` rect. `Border/ring/default` 2 OUTSIDE |
-| Invalid | `Surface/input` | `Status/critical/border-strong` 1 | igual | igual | **ninguno** |
+| Default | `Surface/input` | `Border/control` 1 | placeholder `Content/subtle` · value `Content/primary` | `Content/subtle` | — |
+| Hover | `Surface/input` | `Border/control-hover` 1 | same | same | — |
+| Focused | `Surface/input` | `Border/focus` **2** (inside the layout: content at x 14, text 2px narrower) | same | same | `focus-ring` rect. `Border/ring/default` 2 OUTSIDE |
+| Invalid | `Surface/input` | `Status/critical/border-strong` 1 | same | same | **none** |
 | Disabled | `Surface/muted` | `Border/control` 1 | `Content/disabled` | `Content/disabled` | — |
-| Loading | `Surface/input` | `Border/control` 1 | igual que Default | Spinner `Content/subtle` en lugar del icono | — |
+| Loading | `Surface/input` | `Border/control` 1 | same as Default | Spinner `Content/subtle` instead of the icon | — |
 
-Sin efectos (drop / inner shadow) en ninguna variante.
+No effects (drop / inner shadow) on any variant.
 
-## Lo que el archivo hace y parece raro (se copia igual)
-- La descripción y el tablero de uso hablan de «xs 32 / sm 36 / default 40»; los números reales son sm 32 · default 40 · lg 48.
-- El icono mide 16 en lg (igual que en sm) y 20 en default.
-- Invalid no lleva halo (los inputs sí) y Disabled rellena con `Surface/muted`, no con el lavado `action.disabled`.
-- Focused engorda el trazo a 2 dentro del layout: el contenido se desplaza 1px y el texto pierde 2px de ancho.
-- El Spinner es una instancia 16 · 20 · 16 con su glifo de 16 anclado arriba a la izquierda.
+## What the file does that looks odd (copied anyway)
+- The description and the usage board talk about "xs 32 / sm 36 / default 40"; the real numbers are sm 32 · default 40 · lg 48.
+- The icon measures 16 at lg (same as at sm) and 20 at default.
+- Invalid carries no halo (inputs do) and Disabled fills with `Surface/muted`, not with the `action.disabled` wash.
+- Focused thickens the stroke to 2 inside the layout: the content shifts 1px and the text loses 2px of width.
+- The Spinner is a 16 · 20 · 16 instance with its 16 glyph anchored top-left.
 
-## Anida
-`icon/calendar` (Phosphor `calendar-blank` regular) y `Spinner`.
+## Nests
+`icon/calendar` (Phosphor `calendar-blank` regular) and `Spinner`.

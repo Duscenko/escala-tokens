@@ -1,58 +1,58 @@
-# Contrato · Field (de Figma a código)
+# Contract · Field (from Figma to code)
 
-Fecha: 2026-11-12 · Fuente: Figma `Escala Design System (Real)`, página `❖ Field (✓)`, set `Field`
-(`1003:102`, 9 variantes), leído con `use_figma` (solo lectura). **Figma manda; nada se corrige.**
+Date: 2026-11-12 · Source: Figma `Escala Design System (Real)`, page `❖ Field (✓)`, set `Field`
+(`1003:102`, 9 variants), read with `use_figma` (read-only). **Figma rules; nothing is corrected.**
 
-> La foto `spec/figma-components.json` (exportada antes) tiene Field con 6 variantes y
-> `State Default|Invalid`; el archivo vivo tiene 9, con `Disabled`. Se construye el archivo vivo,
-> así que Field sigue en `pending` hasta que se refresque la foto (que arrastra decenas de cambios
-> más del archivo: tarea aparte).
+> The `spec/figma-components.json` snapshot (exported earlier) has Field with 6 variants and
+> `State Default|Invalid`; the live file has 9, with `Disabled`. The live file is what gets built,
+> so Field stays in `pending` until the snapshot is refreshed (which drags along dozens of other
+> changes from the file: a separate task).
 
 ## API
 
-| Figma (orden del panel) | Tipo | Defecto | React |
+| Figma (panel order) | Type | Default | React |
 |---|---|---|---|
-| `Size` default · sm · lg | VARIANT | `default` | `size` → el `size` del control (Input default · sm · lg) y del enlace |
-| `State` Default · Invalid · Disabled | VARIANT | `Default` | `state` → `aria-invalid` / `disabled` en el control |
-| `Label` | TEXT | "Email address" | `label` (un `<label htmlFor>`) |
-| `RequiredVisible` | BOOLEAN | false | `required` (el `*`) |
-| `TrailingVisible` | BOOLEAN | false | `trailing` (un TextLink, "Forgot password?") |
+| `Size` default · sm · lg | VARIANT | `default` | `size` → the control's `size` (Input default · sm · lg) and the link's |
+| `State` Default · Invalid · Disabled | VARIANT | `Default` | `state` → `aria-invalid` / `disabled` on the control |
+| `Label` | TEXT | "Email address" | `label` (a `<label htmlFor>`) |
+| `RequiredVisible` | BOOLEAN | false | `required` (the `*`) |
+| `TrailingVisible` | BOOLEAN | false | `trailing` (a TextLink, "Forgot password?") |
 | `DescriptionVisible` + `Description` | BOOLEAN + TEXT | false · "We will never share your email." | `description` |
-| `Error` | TEXT | "Enter a valid email address." | `error`, visible solo con `state="Invalid"` |
-| `control` (instancia expuesta) | — | `Input` | `children`: un control (Input, Textarea, Combobox, NumberInput, InputTag, DatePickerTrigger, InputOTP) |
+| `Error` | TEXT | "Enter a valid email address." | `error`, visible only with `state="Invalid"` |
+| `control` (exposed instance) | — | `Input` | `children`: a control (Input, Textarea, Combobox, NumberInput, InputTag, DatePickerTrigger, InputOTP) |
 
-Field cablea el control: `id` (si falta), `aria-describedby` (descripción y error), `aria-invalid`
-con Invalid, `disabled` con Disabled y `size` si el control no lo trae.
+Field wires up the control: `id` (if missing), `aria-describedby` (description and error), `aria-invalid`
+with Invalid, `disabled` with Disabled and `size` if the control does not carry it.
 
-## Geometría
+## Geometry
 
-| Capa | Layout | Valor |
+| Layer | Layout | Value |
 |---|---|---|
-| root | VERTICAL, ancho FIXED 320 en el archivo (en código: el del contenedor), alto HUG | gap `Spacing/gap-control` 8, sin padding |
-| label-row | HORIZONTAL, centrado, FILL | gap `Spacing/gap-tight` 4: label · `*` · spacer (FILL) · trailing |
-| control | FILL × `Size/control-sm|md|lg` (32 · 40 · 48) | Input de ese Size y State |
+| root | VERTICAL, FIXED width 320 in the file (in code: the container's), HUG height | gap `Spacing/gap-control` 8, no padding |
+| label-row | HORIZONTAL, centred, FILL | gap `Spacing/gap-tight` 4: label · `*` · spacer (FILL) · trailing |
+| control | FILL × `Size/control-sm|md|lg` (32 · 40 · 48) | Input of that Size and State |
 | description / error | FILL | — |
 
-Alturas totales del archivo (sin descripción): sm 58 · default 66 · lg 74; Invalid +24 (8 + 16).
+Total heights in the file (without description): sm 58 · default 66 · lg 74; Invalid +24 (8 + 16).
 
-## Tipo y color
+## Type and color
 
-| Capa | Estilo | Default / Invalid | Disabled |
+| Layer | Style | Default / Invalid | Disabled |
 |---|---|---|---|
 | label | `Type/label` | `Content/primary` | `Content/disabled` |
 | `*` | `Type/label` | `Content/secondary` | `Content/disabled` |
-| trailing | TextLink `Size=xs` (sm y default) · `Size=sm` (lg), Variant default | State Default | State Disabled |
+| trailing | TextLink `Size=xs` (sm and default) · `Size=sm` (lg), Variant default | State Default | State Disabled |
 | description | `Type/helper` | `Content/secondary` | `Content/disabled` |
-| error | `Type/helper` | `Status/critical/content` | (oculto) |
+| error | `Type/helper` | `Status/critical/content` | (hidden) |
 
-## Lo que el archivo hace y parece raro (se copia igual)
-- En las variantes `Disabled` el label, el `*`, el trailing y la descripción NO están atados a las
-  propiedades (`Label`, `RequiredVisible`…): cambiar el texto en Figma no los mueve. En código
-  sí se aplican: es lo que dice la descripción del set.
-- `error` no tiene propiedad de visibilidad: se ve en Invalid y nada más. Con `DescriptionVisible`
-  en Invalid se verían descripción y error a la vez (el archivo lo permite).
-- El `*` está en `y` 2 · 0 · 4 según Size dentro de una fila de 18 centrada: ruido de capa; la fila
-  lo centra en código.
+## What the file does that looks odd (copied anyway)
+- In the `Disabled` variants the label, the `*`, the trailing and the description are NOT bound to the
+  properties (`Label`, `RequiredVisible`…): changing the text in Figma does not move them. In code
+  they do apply: that is what the set's description says.
+- `error` has no visibility property: it shows in Invalid and nowhere else. With `DescriptionVisible`
+  in Invalid, description and error would show at once (the file allows it).
+- The `*` sits at `y` 2 · 0 · 4 depending on Size inside a centred 18 row: layer noise; the row
+  centres it in code.
 
-## Anida
-`Input` (hecho), `TextLink` (hecho).
+## Nests
+`Input` (done), `TextLink` (done).

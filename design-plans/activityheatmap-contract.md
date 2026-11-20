@@ -1,119 +1,119 @@
-# Contrato · ActivityHeatmap y ActivityHeatmapCell (de Figma a código)
+# Contract · ActivityHeatmap and ActivityHeatmapCell (Figma to code)
 
-Fecha: 2026-11-19 · Fuente: Figma `Escala Design System (Real)`, página «❖ ActivityHeatmap (PRO)» (2397:80): `ActivityHeatmapCell` (2400:57, set de 12 variantes) y
-`ActivityHeatmap` (2400:58, componente suelto, 876×156). Leído con `use_figma` (solo lectura) el 2026-11-19; cada rol de abajo es el que el archivo enlaza.
-El handoff (`HANDOFF-dataviz-2026-11-19.md` §3.3) pide lo mismo salvo lo señalado en «Donde el handoff y Figma difieren». **Figma manda; nada se corrige.**
+Date: 2026-11-19 · Source: Figma `Escala Design System (Real)`, page "❖ ActivityHeatmap (PRO)" (2397:80): `ActivityHeatmapCell` (2400:57, a set of 12 variants) and
+`ActivityHeatmap` (2400:58, a loose component, 876×156). Read with `use_figma` (read-only) on 2026-11-19; every role below is the one the file binds.
+The handoff (`HANDOFF-dataviz-2026-11-19.md` §3.3) asks for the same except where noted in "Where the handoff and Figma differ". **Figma rules; nothing is corrected.**
 
-## Qué es
-Un año de actividad: un cuadrado por día, una columna por semana (53 semanas × 7 días, las semanas empiezan en domingo). El relleno del cuadrado es la escala secuencial del
-gráfico (`Chart/sequential/0…5`): 0 = sin actividad, 5 = lo máximo. **El nivel nunca depende solo del color**: cada celda es un `gridcell` con un `aria-label` que dice
-el día y la cuenta («Tuesday, March 18: 8 contributions»). El cambio de año es un SegmentedControl **fuera** del componente; el día enfocado se anuncia y lo muestra el
-consumidor en una leyenda bajo la rejilla (`onFocusDay`).
+## What it is
+A year of activity: one square per day, one column per week (53 weeks × 7 days, weeks start on Sunday). The square's fill is the chart's sequential scale
+(`Chart/sequential/0…5`): 0 = no activity, 5 = the maximum. **The level never depends on colour alone**: each cell is a `gridcell` with an `aria-label` that states
+the day and the count ("Tuesday, March 18: 8 contributions"). Switching the year is a SegmentedControl **outside** the component; the focused day is announced and the
+consumer shows it in a legend under the grid (`onFocusDay`).
 
-## 0 · Anatomía (capa Figma → slot de código)
-| Figma | Código (`data-part="ActivityHeatmap.<slot>"`) | Nota |
+## 0 · Anatomy (Figma layer → code slot)
+| Figma | Code (`data-part="ActivityHeatmap.<slot>"`) | Note |
 |---|---|---|
-| `ActivityHeatmap` (VERTICAL, hug) | `root` (`data-escala="ActivityHeatmap"`) | gap `Spacing/gap-control` entre las tres filas |
-| `month-labels` (876×16, sin layout, 12 textos `month` a mano) | `monthLabels` + `monthSlot` + `month` | oculto con `MonthLabelsVisible=false` |
+| `ActivityHeatmap` (VERTICAL, hug) | `root` (`data-escala="ActivityHeatmap"`) | gap `Spacing/gap-control` between the three rows |
+| `month-labels` (876×16, no layout, 12 hand-placed `month` texts) | `monthLabels` + `monthSlot` + `month` | hidden with `MonthLabelsVisible=false` |
 | `body` (HORIZONTAL, gap `Spacing/gap-tight`) | `body` | |
-| `day-labels` (VERTICAL, 28 de ancho, 7 `day` de 12 de alto) + `label` en Mon · Wed · Fri | `dayLabels` + `day` + `dayLabel` | oculto con `DayLabelsVisible=false` |
-| `grid` (53 `week`, HORIZONTAL, gap tight) → `week` (VERTICAL, 7 `cell`, gap tight) | `grid` → `row` → `ActivityHeatmapCell` | ver «Diferencias de estructura» |
-| `legend-row` (HORIZONTAL, contenido al final) → `legend` (HORIZONTAL centro, gap tight): `legend-less`, 6 `swatch`, `legend-more` | `legendRow` → `legend` → `legendLabel` + 6 `ActivityHeatmapCell` | oculto con `LegendVisible=false` |
+| `day-labels` (VERTICAL, 28 wide, 7 `day` 12 tall) + `label` on Mon · Wed · Fri | `dayLabels` + `day` + `dayLabel` | hidden with `DayLabelsVisible=false` |
+| `grid` (53 `week`, HORIZONTAL, gap tight) → `week` (VERTICAL, 7 `cell`, gap tight) | `grid` → `row` → `ActivityHeatmapCell` | see "Structural differences" |
+| `legend-row` (HORIZONTAL, content at the end) → `legend` (HORIZONTAL centre, gap tight): `legend-less`, 6 `swatch`, `legend-more` | `legendRow` → `legend` → `legendLabel` + 6 `ActivityHeatmapCell` | hidden with `LegendVisible=false` |
 | `ActivityHeatmapCell` (12×12) | `root` (`data-escala="ActivityHeatmapCell"`, `data-value`) | |
-| `focus-ring` (rectángulo 14×14, radio 5) | `gapRing` del `root` | `Stroke/focus`, `Border/ring/default`, OUTSIDE, a 1 px de la celda |
+| `focus-ring` (rectangle 14×14, radius 5) | `gapRing` of the `root` | `Stroke/focus`, `Border/ring/default`, OUTSIDE, 1 px from the cell |
 
-## 1 · Propiedades → props
-**ActivityHeatmap** (sin ejes; tres booleanos, en el orden del panel):
+## 1 · Properties → props
+**ActivityHeatmap** (no axes; three booleans, in panel order):
 
-| Figma | Tipo | Defecto | React |
+| Figma | Type | Default | React |
 |---|---|---|---|
 | `LegendVisible` | BOOLEAN | `true` | `showLegend` |
 | `MonthLabelsVisible` | BOOLEAN | `true` | `showMonthLabels` |
 | `DayLabelsVisible` | BOOLEAN | `true` | `showDayLabels` |
-| — (datos del código) | | | `data: {date, count}[]` · `thresholds` · `endDate?` · `onFocusDay` · `getCellLabel` · `forceFocusedDate` (docs) · `lessLabel` / `moreLabel` · `aria-label` |
+| — (code data) | | | `data: {date, count}[]` · `thresholds` · `endDate?` · `onFocusDay` · `getCellLabel` · `forceFocusedDate` (docs) · `lessLabel` / `moreLabel` · `aria-label` |
 
-**ActivityHeatmapCell** (dos ejes):
+**ActivityHeatmapCell** (two axes):
 
-| Figma | Tipo | Defecto | React |
+| Figma | Type | Default | React |
 |---|---|---|---|
-| `Value` 0 · 1 · 2 · 3 · 4 · 5 | VARIANT | `0` | `value` (el handoff lo llama `level`; el eje de Figma es `Value`) |
-| `State` Default · Focused | VARIANT | `Default` | `:focus-visible` en vivo + `forceState` en docs |
+| `Value` 0 · 1 · 2 · 3 · 4 · 5 | VARIANT | `0` | `value` (the handoff calls it `level`; the Figma axis is `Value`) |
+| `State` Default · Focused | VARIANT | `Default` | live `:focus-visible` + `forceState` in docs |
 
-## 2 · Geometría y roles (leídos del archivo)
-| Capa | Valor | Rol | En código |
+## 2 · Geometry and roles (read from the file)
+| Layer | Value | Role | In code |
 |---|---|---|---|
-| Celda | 12 × 12 | **primitivo** de Dimension `12` (sin rol) | `spacing.3` (el paso de 12) — hallazgo `DIM-01`, aceptado |
-| Celda, radio | 4 | `Radius/control` | `radius.control` con el tope de la caja negra (`min(radius.control, radius.sm)`), para que ningún Selectors la vuelva un punto |
-| Gap celda↔celda, semana↔semana, día↔grid, `body`, `legend`, `month-labels` | 4 | `Spacing/gap-tight` | `spacing.gap-tight` |
-| Gap de la raíz | 8 | `Spacing/gap-control` | `spacing.gap-control` |
-| `day` (alto de fila) | 12 | primitivo `12` | `spacing.3` |
-| `day-labels` (ancho) | 28 | valor crudo (HUG, hay un 28 en el archivo) | `spacing.6+spacing.1` (24 + 4) |
-| Texto de `month`, `label`, `legend-less`, `legend-more` | 16 de alto | `Type/caption`, tinta `Content/secondary` | `type.caption`, `color.content.secondary` |
+| Cell | 12 × 12 | Dimension **primitive** `12` (no role) | `spacing.3` (the 12 step) — finding `DIM-01`, accepted |
+| Cell, radius | 4 | `Radius/control` | `radius.control` capped by the black box (`min(radius.control, radius.sm)`), so no Selectors setting turns it into a dot |
+| Gap cell↔cell, week↔week, day↔grid, `body`, `legend`, `month-labels` | 4 | `Spacing/gap-tight` | `spacing.gap-tight` |
+| Root gap | 8 | `Spacing/gap-control` | `spacing.gap-control` |
+| `day` (row height) | 12 | primitive `12` | `spacing.3` |
+| `day-labels` (width) | 28 | raw value (HUG, there is a 28 in the file) | `spacing.6+spacing.1` (24 + 4) |
+| Text of `month`, `label`, `legend-less`, `legend-more` | 16 tall | `Type/caption`, ink `Content/secondary` | `type.caption`, `color.content.secondary` |
 
-Medidas del archivo con todo visible: 876 × 156 = 16 (meses) + 8 + 108 (7 × 12 + 6 × 4) + 8 + 16 (leyenda); ancho 28 + 4 + 53 × 12 + 52 × 4 = 876. Sin etiquetas
-de día ni de mes ni leyenda (la variante «Compact» del prototipo) queda 844 × 108.
+Measurements from the file with everything visible: 876 × 156 = 16 (months) + 8 + 108 (7 × 12 + 6 × 4) + 8 + 16 (legend); width 28 + 4 + 53 × 12 + 52 × 4 = 876. Without day labels,
+month labels or legend (the prototype's "Compact" variant) it is 844 × 108.
 
-| Valor | Relleno de la celda |
+| Value | Cell fill |
 |---|---|
-| 0 | `Chart/sequential/0` (sin actividad) |
+| 0 | `Chart/sequential/0` (no activity) |
 | 1 · 2 · 3 · 4 · 5 | `Chart/sequential/1 … 5` |
 
-Sin trazo, sin sombra, sin opacidad. Foco: la celda sigue igual y suma **un** anillo (`focus-ring`): rectángulo 14 × 14 (1 px mayor por lado), radio 5 (crudo: hallazgo `DIM-02`), trazo `Border/ring/default`
-de `Stroke/focus` (2), alineación OUTSIDE → sin borde propio, a 1 px del cuadrado (el `gapRing` del Button: `outline` 2 px con `outline-offset` 1 px, que sigue el radio + 1).
+No stroke, no shadow, no opacity. Focus: the cell stays the same and adds **one** ring (`focus-ring`): a 14 × 14 rectangle (1 px larger per side), radius 5 (raw: finding `DIM-02`), `Border/ring/default` stroke
+of `Stroke/focus` (2), OUTSIDE alignment → no border of its own, 1 px from the square (the Button's `gapRing`: `outline` 2 px with `outline-offset` 1 px, which follows the radius + 1).
 
-## 3 · Datos y rejilla (código)
-- `data: {date, count}[]` — fechas ISO `YYYY-MM-DD` (UTC, el mismo día en todas las zonas); un día ausente cuenta 0; fechas repetidas se suman; un `count` negativo vale 0.
-- La rejilla son las 53 semanas que **terminan en la semana de `endDate`** (por defecto, la fecha más reciente de `data`; sin datos, hoy en UTC). La última columna
-  llega hasta `endDate` y no pinta más (el ejemplo del archivo: 52 semanas completas + 3 días, domingo a martes).
-- `thresholds` = la cuenta desde la que empieza cada nivel 1…5, ascendente (por defecto `[1, 3, 6, 10, 15]`): nivel 0 si `count = 0` o menor que el primer escalón.
-- Etiquetas de mes: una en la columna que contiene el día 1 de cada mes; la primera columna se etiqueta con su propio mes solo si la siguiente etiqueta está a 3 o más columnas.
-- Muestra determinista: `apps/storybook/stories/activityHeatmapSample.ts` (sin `Math.random`, sin `Date.now()`): «Figma sample» reproduce celda a celda el cuadro del archivo
-  (Value → la cuenta que empieza ese nivel), y `Sparse` / `Dense` son series con semilla.
+## 3 · Data and grid (code)
+- `data: {date, count}[]` — ISO dates `YYYY-MM-DD` (UTC, the same day in every time zone); a missing day counts as 0; repeated dates are summed; a negative `count` is 0.
+- The grid is the 53 weeks that **end in the week of `endDate`** (by default, the most recent date in `data`; with no data, today in UTC). The last column
+  runs up to `endDate` and paints nothing beyond it (the file's example: 52 full weeks + 3 days, Sunday to Tuesday).
+- `thresholds` = the count from which each level 1…5 starts, ascending (default `[1, 3, 6, 10, 15]`): level 0 if `count = 0` or lower than the first step.
+- Month labels: one on the column that contains the 1st of each month; the first column is labelled with its own month only if the next label is 3 or more columns away.
+- Deterministic sample: `apps/storybook/stories/activityHeatmapSample.ts` (no `Math.random`, no `Date.now()`): "Figma sample" reproduces the file's picture cell by cell
+  (Value → the count that starts that level), and `Sparse` / `Dense` are seeded series.
 
-## 4 · Accesibilidad y teclado (código)
-- `role="grid"` con `aria-label` (por defecto «Activity by day»), `aria-rowcount=7`, `aria-colcount=53`; 7 `role="row"` (**los días de la semana**) con `gridcell`s; cada celda con
-  `aria-label` = «Tuesday, March 18: 8 contributions» (`1 contribution` en singular; `getCellLabel` para traducir) y `aria-colindex`.
-- Un solo punto de Tab (tabindex itinerante): la celda enfocada por última vez (la de `endDate` al principio); las demás `tabindex=-1`.
+## 4 · Accessibility and keyboard (code)
+- `role="grid"` with `aria-label` (default "Activity by day"), `aria-rowcount=7`, `aria-colcount=53`; 7 `role="row"` (**the weekdays**) with `gridcell`s; each cell with
+  `aria-label` = "Tuesday, March 18: 8 contributions" (`1 contribution` in the singular; `getCellLabel` to translate) and `aria-colindex`.
+- A single Tab stop (roving tabindex): the last-focused cell (the `endDate` one at first); the rest are `tabindex=-1`.
 
-| Tecla | Acción |
+| Key | Action |
 |---|---|
-| Tab | entra en la rejilla en su punto de Tab y sale de ella |
-| ← → | el mismo día de la semana anterior / siguiente (por semana); se detiene en los extremos; en la última columna se queda en un día que exista |
-| ↑ ↓ | el día anterior / siguiente de la semana; se detiene en domingo y sábado |
-| Home · End | el primer (domingo) / último (sábado) día de la semana enfocada |
-| Ctrl + Home · Ctrl + End | el primer / último día de la rejilla |
+| Tab | enters the grid at its Tab stop and leaves it |
+| ← → | the same weekday in the previous / next week (by week); stops at the ends; in the last column it stays on a day that exists |
+| ↑ ↓ | the previous / next day of the week; stops at Sunday and Saturday |
+| Home · End | the first (Sunday) / last (Saturday) day of the focused week |
+| Ctrl + Home · Ctrl + End | the first / last day of the grid |
 
-- `onFocusDay(day | null)` se dispara al enfocar una celda (teclado, Tab o clic) y con `null` al salir de la rejilla.
-- La leyenda, los meses y los días son decorativos (`aria-hidden`): el nombre de cada celda ya lleva la cuenta.
-- Foco visible: el anillo sale con `:focus-visible` (teclado), no con el clic.
+- `onFocusDay(day | null)` fires when a cell receives focus (keyboard, Tab or click) and with `null` when focus leaves the grid.
+- The legend, months and days are decorative (`aria-hidden`): each cell's name already carries the count.
+- Visible focus: the ring appears with `:focus-visible` (keyboard), not on click.
 
-## 5 · Movimiento (código, por rol)
-`ActivityHeatmapCell: { transitions: { root: { 'outline-color': 'use-focus' } } }`. **Sin animación al montar** ni al cambiar los datos; el cambio de año lo anima el consumidor
-(`use-page-transition` sobre la región). El anillo es un `outline`: su estilo no se anima, así que aparece de golpe (igual que el de Button); el rol queda declarado.
+## 5 · Motion (code, by role)
+`ActivityHeatmapCell: { transitions: { root: { 'outline-color': 'use-focus' } } }`. **No animation on mount** or when the data changes; the year change is animated by the consumer
+(`use-page-transition` on the region). The ring is an `outline`: its style does not animate, so it appears at once (same as Button's); the role stays declared.
 
-## 6 · Uso
-- **whenToUse:** una cifra por día durante un año (contribuciones, hábitos, sesiones). Va dentro de una tarjeta (`DashboardActivityCard`); el año se cambia con un SegmentedControl fuera.
-- **whenNotToUse:** una serie continua → Sparkline; reparto de un total → SplitBar; un valor y su umbral → Gauge. Menos de unas semanas de datos → una tabla.
+## 6 · Usage
+- **whenToUse:** one figure per day over a year (contributions, habits, sessions). It goes inside a card (`DashboardActivityCard`); the year is switched with a SegmentedControl outside.
+- **whenNotToUse:** a continuous series → Sparkline; the split of a total → SplitBar; a value and its threshold → Gauge. Fewer than a few weeks of data → a table.
 - **related:** ActivityHeatmapCell, SegmentedControl, Sparkline.
 
-## Diferencias de estructura (a propósito, el aspecto es idéntico)
-- Figma pone las **semanas como columnas** (`week` VERTICAL dentro de `grid` HORIZONTAL). Para ARIA una `row` es una línea de la rejilla tal como se ve, y las flechas deben seguir
-  lo que ve el ojo (→ va a la derecha), así que el código pone **una fila por día de la semana** con 53 celdas, con el mismo gap y el mismo tamaño: se ve igual, y ← → (semana) / ↑ ↓ (día) son
-  las flechas estándar de un `grid`. El slot `week` de Figma es el slot `row` del código.
-- Los 12 `month` del archivo están colocados a mano (x = 32 + 16 × columna). El código los coloca en el ritmo de columnas de la rejilla: un hueco por semana, del ancho de una celda.
+## Structural differences (on purpose, the look is identical)
+- Figma puts the **weeks as columns** (`week` VERTICAL inside `grid` HORIZONTAL). For ARIA a `row` is a line of the grid as it appears, and the arrows must follow
+  what the eye sees (→ goes right), so the code puts **one row per weekday** with 53 cells, with the same gap and the same size: it looks the same, and ← → (week) / ↑ ↓ (day) are
+  the standard `grid` arrows. Figma's `week` slot is the code's `row` slot.
+- The file's 12 `month` texts are placed by hand (x = 32 + 16 × column). The code places them on the grid's column rhythm: one slot per week, one cell wide.
 
-## Donde el handoff y Figma difieren
+## Where the handoff and Figma differ
 - `level` (handoff) → `Value` (Figma) → prop `value`.
-- «focus ring `Border/ring/default` · `Stroke/focus`, 1 px outside»: Figma lo dibuja como rectángulo 1 px mayor con trazo de 2 px **OUTSIDE**, o sea 1 px de aire y 2 px de aro; es lo que se copia.
-- El handoff lista `showLegend`, `showMonthLabels`, `showDayLabels`; Figma las llama `LegendVisible`, `MonthLabelsVisible`, `DayLabelsVisible`. Se mantienen los nombres de código del handoff
-  como props y los de Figma como controles de Storybook (como `LabelVisible` ↔ `hideLabel` en TabBarItem).
+- "focus ring `Border/ring/default` · `Stroke/focus`, 1 px outside": Figma draws it as a rectangle 1 px larger with a 2 px **OUTSIDE** stroke, i.e. 1 px of air and a 2 px ring; that is what is copied.
+- The handoff lists `showLegend`, `showMonthLabels`, `showDayLabels`; Figma calls them `LegendVisible`, `MonthLabelsVisible`, `DayLabelsVisible`. The handoff's code names are kept
+  as props and Figma's as Storybook controls (like `LabelVisible` ↔ `hideLabel` in TabBarItem).
 
-## Raro (se copia igual)
-- Celda 12 × 12 y fila `day` de 12: enlazadas al **primitivo** `12` de Dimension Primitives, no a un rol de `Size/*` ni de `Spacing/*` (hallazgo `DIM-01`, aceptado; en código, `spacing.3`).
-- `day-labels` mide 28 (HUG) aunque sus textos miden 23 · 24 · 14: valor crudo, sin variable.
-- En el componente, `week`, `grid` y `body` **recortan el contenido** (`clipsContent`): el anillo de la celda Focused, que sobresale 3 px, queda casi del todo recortado en el render del
-  componente (se ve tenue en la celda de la semana 11, martes 18 de marzo). En el set de la celda el anillo se ve entero. El código no recorta: el anillo se ve entero.
-- Un anillo `Focused` queda dentro del componente tal como está publicado (semana 11, día 3: «Tuesday, March 18»). La muestra de Storybook lo deja apagado por defecto (`Focused day` lo fija).
-- Etiqueta de noviembre: en el archivo está en la columna 44 (x = 736); con las fechas reales (domingo 29 dic 2024 → martes 30 dic 2025) el 1 de noviembre cae en la columna 43. Los otros 11
-  meses coinciden columna a columna. El código usa la fecha real.
-- El prototipo «Compact» (etiquetas y leyenda ocultas, «for small cards») reduce el ejemplo a 0,8 y deja solo la rejilla (844 × 108 → 675 × 86); en código es `showDayLabels`, `showMonthLabels` y `showLegend` en `false`.
+## Odd (copied as is)
+- Cell 12 × 12 and `day` row of 12: bound to the Dimension Primitives **primitive** `12`, not to a `Size/*` or `Spacing/*` role (finding `DIM-01`, accepted; in code, `spacing.3`).
+- `day-labels` measures 28 (HUG) although its texts measure 23 · 24 · 14: raw value, no variable.
+- In the component, `week`, `grid` and `body` **clip their content** (`clipsContent`): the Focused cell's ring, which sticks out 3 px, ends up almost entirely clipped in the
+  component's render (it looks faint on the week 11 cell, Tuesday March 18). In the cell's set the ring is fully visible. The code does not clip: the ring is fully visible.
+- A `Focused` ring remains inside the component as published (week 11, day 3: "Tuesday, March 18"). The Storybook sample leaves it off by default (`Focused day` sets it).
+- November label: in the file it sits on column 44 (x = 736); with the real dates (Sunday Dec 29 2024 → Tuesday Dec 30 2025) November 1 falls on column 43. The other 11
+  months match column by column. The code uses the real date.
+- The "Compact" prototype (labels and legend hidden, "for small cards") scales the example to 0.8 and leaves only the grid (844 × 108 → 675 × 86); in code it is `showDayLabels`, `showMonthLabels` and `showLegend` set to `false`.

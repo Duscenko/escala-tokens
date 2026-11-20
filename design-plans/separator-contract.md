@@ -1,17 +1,17 @@
-# Contrato · Separator (de Figma a código)
+# Contract · Separator (Figma to code)
 
-Fecha: 2026-11-13 · Fuente: Figma `Escala Design System (Real)`, página «❖ Separator (✓) WIP»: `Separator` (402:9063, 48 variantes, un solo set). Solo lectura. Ledger: `rebuild`.
+Date: 2026-11-13 · Source: Figma `Escala Design System (Real)`, page "❖ Separator (✓) WIP": `Separator` (402:9063, 48 variants, a single set). Read-only. Ledger: `rebuild`.
 
-## API (variantes primero, luego el resto del panel)
-`Align` none · start · center · end (def none) · `Orientation` horizontal · vertical (def horizontal) · `Tone` default · subtle · strong (def default) · `Variant` dashed · default (def default) · `Label` «OR».
-Descripción: línea fina que divide contenido, horizontal o vertical, continua o discontinua, con etiqueta opcional; decorativa por defecto (`role="separator"` + `aria-orientation` solo si expresa estructura).
+## API (variants first, then the rest of the panel)
+`Align` none · start · center · end (default none) · `Orientation` horizontal · vertical (default horizontal) · `Tone` default · subtle · strong (default default) · `Variant` dashed · default (default default) · `Label` "OR".
+Description: a thin line that divides content, horizontal or vertical, solid or dashed, with an optional label; decorative by default (`role="separator"` + `aria-orientation` only if it expresses structure).
 
-## Geometría
-Raíz auto-layout (HORIZONTAL; vertical: VERTICAL) con `itemSpacing` `Spacing/gap-group` (16), centrado en el eje cruzado. Horizontal: ancho 320 en la muestra (rellena el contenedor); vertical: alto 112 en la muestra (rellena).
-Align none: una sola línea; alto `Stroke/divider` (1) horizontal / ancho 1 vertical. Align start: [etiqueta, línea]; center: [línea, etiqueta, línea]; end: [línea, etiqueta]; la etiqueta (`Type/label`, `Content/secondary`, 17×18 con «OR») solo se ve con Align ≠ none
-y las líneas ocupan el resto (`grow 1`: 287 · 136 + 136 · 287 de 320; vertical 78 · 31 + 31). La raíz mide 18 de alto (etiqueta) o 17 de ancho en vertical.
-La línea es un trazo de 1px centrado. Variant dashed: patrón de trazo [4, 4]. Tone: default `Border/default`, subtle `Border/subtle`, strong `Border/strong` (la etiqueta no cambia con el Tone).
+## Geometry
+Auto-layout root (HORIZONTAL; vertical: VERTICAL) with `itemSpacing` `Spacing/gap-group` (16), centred on the cross axis. Horizontal: width 320 in the sample (fills the container); vertical: height 112 in the sample (fills).
+Align none: a single line; height `Stroke/divider` (1) horizontal / width 1 vertical. Align start: [label, line]; center: [line, label, line]; end: [line, label]; the label (`Type/label`, `Content/secondary`, 17×18 with "OR") is only visible with Align ≠ none
+and the lines take up the rest (`grow 1`: 287 · 136 + 136 · 287 of 320; vertical 78 · 31 + 31). The root measures 18 tall (label) or 17 wide when vertical.
+The line is a centred 1px stroke. Variant dashed: dash pattern [4, 4]. Tone: default `Border/default`, subtle `Border/subtle`, strong `Border/strong` (the label does not change with Tone).
 
-## Raro (se copia igual)
-- El Tone por defecto es `Border/default`, un escalón por encima del `Border/subtle` que dibujaba el código anterior: los separadores sin prop se ven un paso más marcados.
-- Las líneas discontinuas son 4 de trazo y 4 de hueco, no el `dashed` del navegador (se pintan con un gradiente repetido).
+## Odd (copied as is)
+- The default Tone is `Border/default`, one step above the `Border/subtle` the previous code drew: separators with no prop look one step stronger.
+- Dashed lines are 4 of stroke and 4 of gap, not the browser's `dashed` (they are painted with a repeating gradient).

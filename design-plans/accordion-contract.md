@@ -1,28 +1,28 @@
-# Contrato · Accordion + AccordionItem (de Figma a código) — LECTURA (2026-11-12)
+# Contract · Accordion + AccordionItem (Figma to code) — READ (2026-11-12)
 
-Fuente: `AccordionItem` (`451:188`, 18 variantes: Variant × State) y `Accordion` (`451:375`, 6 variantes: Variant). **Figma manda.**
+Source: `AccordionItem` (`451:188`, 18 variants: Variant × State) and `Accordion` (`451:375`, 6 variants: Variant). **Figma rules.**
 
 ## AccordionItem — API
-`IconVisible` BOOLEAN true · `Icon` swap (House) · `Label` TEXT `Accordion title` · `Content` TEXT `Accordion content goes here. Add supporting detail for this section.` · `Variant` ghost-default · ghost-underline · ghost-rounded · outline-rounded · outline-sharp · filled-rounded (def. ghost-default) · `State` Closed · Open · Disabled (def. Closed).
-Descripción: «trigger (optional icon, label, chevron that flips when open) and collapsible content.»
+`IconVisible` BOOLEAN true · `Icon` swap (House) · `Label` TEXT `Accordion title` · `Content` TEXT `Accordion content goes here. Add supporting detail for this section.` · `Variant` ghost-default · ghost-underline · ghost-rounded · outline-rounded · outline-sharp · filled-rounded (default ghost-default) · `State` Closed · Open · Disabled (default Closed).
+Description: "trigger (optional icon, label, chevron that flips when open) and collapsible content."
 
-## Estructura (480 de ancho, auto-layout vertical, FILL horizontal)
-`root` (V, gap 0, sin padding) → `trigger` (H MIN/CENTER, gap `Spacing/gap-group` 16, padding Y `inset-surface` 20, X 0 ó 20 según variante; alto 60) con `icon` (20, `Size/icon-md`, ink `Content/secondary`) · `label` (`Type/label`, `Content/primary`, llena) · `chevron` (frame 20, caret `CaretDown` 20 `Content/secondary`; gira abierto) → `content` (V, gap `gap-tight` 4, padding bottom 20, X 0/20; oculto en Closed y Disabled) con `content text` (`Type/body-md`, `Content/secondary`).
-Medidas: ghost-default Closed 480×60 / Open 480×101 (contenido 41 = 21 de texto + 20 padding) ; ghost-rounded Open 480×122 (contenido 62 = 42 de texto a 440 de ancho + 20) .
-## Variantes (todo lo demás igual)
-| Variant | Radio | Relleno | Trazo | Padding X trigger / content |
+## Structure (480 wide, vertical auto-layout, FILL horizontal)
+`root` (V, gap 0, no padding) → `trigger` (H MIN/CENTER, gap `Spacing/gap-group` 16, padding Y `inset-surface` 20, X 0 or 20 depending on the variant; height 60) with `icon` (20, `Size/icon-md`, ink `Content/secondary`) · `label` (`Type/label`, `Content/primary`, fills) · `chevron` (20 frame, `CaretDown` caret 20 `Content/secondary`; rotates when open) → `content` (V, gap `gap-tight` 4, padding bottom 20, X 0/20; hidden in Closed and Disabled) with `content text` (`Type/body-md`, `Content/secondary`).
+Measurements: ghost-default Closed 480×60 / Open 480×101 (content 41 = 21 of text + 20 padding) ; ghost-rounded Open 480×122 (content 62 = 42 of text at 440 wide + 20) .
+## Variants (everything else the same)
+| Variant | Radius | Fill | Stroke | Padding X trigger / content |
 |---|---|---|---|---|
 | ghost-default | 0 | — | — | 0 / 0 |
-| ghost-underline | 0 | — | solo inferior 1px `Border/default` INSIDE (alto +1: 61 / 102) | 0 / 0 |
+| ghost-underline | 0 | — | bottom only 1px `Border/default` INSIDE (height +1: 61 / 102) | 0 / 0 |
 | ghost-rounded | `Radius/container` (16) | Closed: —; Open: `Surface/layer-1` (Figma 450:78, 2026-11-20) | — | 20 / 20 |
-| outline-rounded | container | `Surface/layer-1` (Figma 450:98, 2026-11-20) | 1px INSIDE: Closed `Border/default`, Open `Border/strong`, Disabled `Border/subtle` (alto +2: 62 / 124; trigger 478 ancho) | 20 / 20 |
-| outline-sharp | `Radius/none` | `Surface/layer-1` | igual que outline-rounded | 20 / 20 |
-| filled-rounded | container | `Surface/muted` (siempre) | — | 20 / 20 |
-Disabled: icon, label y caret `Content/disabled` (el contenido sigue siendo `Content/secondary` pero oculto). Sin estados hover/foco/pressed en el archivo.
+| outline-rounded | container | `Surface/layer-1` (Figma 450:98, 2026-11-20) | 1px INSIDE: Closed `Border/default`, Open `Border/strong`, Disabled `Border/subtle` (height +2: 62 / 124; trigger 478 wide) | 20 / 20 |
+| outline-sharp | `Radius/none` | `Surface/layer-1` | same as outline-rounded | 20 / 20 |
+| filled-rounded | container | `Surface/muted` (always) | — | 20 / 20 |
+Disabled: icon, label and caret `Content/disabled` (the content is still `Content/secondary` but hidden). No hover/focus/pressed states in the file.
 
-## Accordion — API y estructura
-Solo `Variant` (6 valores). Pila de 3 `AccordionItem` con el mismo Variant; el primero Open, los otros Closed; items abiertos/cerrados independientes (type multiple). Gap: `Spacing/none` (0) en ghost-default y ghost-underline; `Spacing/gap-control` (8) en ghost-rounded, outline-rounded, outline-sharp, filled-rounded. Ancho 480 (FILL). Textos de muestra: «What is Escala?» / «Escala is a design system with tokens, components and docs that stay in sync between Figma and code.»; «How do design tokens sync?» / «Variables map to CSS custom properties through a token pipeline.»; «Can I customize the theme?» / «Yes. Swap variable modes for color, shape and density.» Iconos de muestra: `107:1965` en los items del Accordion.
-Hover/foco: ninguno en el archivo.
+## Accordion — API and structure
+Only `Variant` (6 values). Stack of 3 `AccordionItem` with the same Variant; the first Open, the others Closed; items open/closed independently (type multiple). Gap: `Spacing/none` (0) in ghost-default and ghost-underline; `Spacing/gap-control` (8) in ghost-rounded, outline-rounded, outline-sharp, filled-rounded. Width 480 (FILL). Sample texts: "What is Escala?" / "Escala is a design system with tokens, components and docs that stay in sync between Figma and code."; "How do design tokens sync?" / "Variables map to CSS custom properties through a token pipeline."; "Can I customize the theme?" / "Yes. Swap variable modes for color, shape and density." Sample icons: `107:1965` in the Accordion's items.
+Hover/focus: none in the file.
 
-## Estado
-Construido: recetas ACCORDION (gap) + ACCORDION_ITEM (root · trigger · icon · label · chevron · content), `accordion.tsx` (Radix multiple; el Accordion lleva el valor y el Variant en un contexto, el item calcula Open / Disabled), catálogo, store v136, specimens, story. El `ui/accordion` de About (shadcn) no se toca.
+## Status
+Built: ACCORDION (gap) + ACCORDION_ITEM (root · trigger · icon · label · chevron · content) recipes, `accordion.tsx` (Radix multiple; the Accordion carries the value and the Variant in a context, the item computes Open / Disabled), catalogue, store v136, specimens, story. About's `ui/accordion` (shadcn) is left untouched.
