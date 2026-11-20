@@ -161,6 +161,10 @@ Schema `escala-component-contract/2`, additive over v1 (no key renamed or remove
   Alert inverse icon Content/inverse. Checked in Storybook (computed colours). Commits 904e988 · 74ddb74 · dec4d83 · b26dca0.
   `npm test`: 4 known failures (exportAudit goldens ×3 — stale before this, now also carry these recipe changes —,
   pluginGithubPush size). `npx tsc -b` clean.
+- 2026-11-20 · Skill text follows Figma (owner, 2026-11-20): `content.inverse-secondary` = body copy and the resting
+  dismiss icon on `surface.inverse`; status icons there use `content.inverse` (Figma's Alert). Changed in
+  `semanticArchitectures.ts`, skill regenerated (`gen:escala-skill`). `api/_pluginStudio.mjs` keeps the old prose until
+  the next `bundle:plugin` from the plugin repo (frozen).
 
 ## Next
 Everything automatable is done (Phases 1–6). What waits for the owner (César):
@@ -176,6 +180,4 @@ Everything automatable is done (Phases 1–6). What waits for the owner (César)
 5. **PAR-001 baseline** (story controls): FABGroup Open default, Modal Layout, ModalFooter Surface.
 6. **Figma page name** `ReactionGroup (PRO) (1)` looks accidental; the manifest follows it until it is renamed.
 7. **Export goldens** (`exportAudit` ×3) are stale since before Phase 1; refresh them on review.
-8. **Skill text**: `escala-architecture` says icons on `surface.inverse` use `content.inverse-secondary`; Figma's Alert binds
-   `Content/inverse` (code now follows Figma). The account-side skill should say which.
-9. **Merge `feat/agent-ready-contracts`** (owner review; never pushed by an agent).
+8. **Merge `feat/agent-ready-contracts`** (owner review; never pushed by an agent).
