@@ -1040,8 +1040,9 @@ function switchPaint(checked: string, state: string): SlotMap {
     // Thumb (DEC-2026-11-16-003): on = ink of the solid track; off = `content.secondary` (the old
     // `surface.input` thumb read 1.28:1 on the muted track); disabled, on or off = `content.disabled`.
     thumb: { fill: c(disabled ? 'content.disabled' : on ? 'content.on-action' : 'content.secondary') },
-    // The I / O marks and the glyph on the thumb take the TRACK's role, so they read as a cut-out of the thumb.
-    io: { text: c(track) },
+    // The glyph on the thumb takes the TRACK's role, so it reads as a cut-out of the thumb. The I / O marks sit on the track:
+    // Figma paints the on bar Content/on-action (the track's ink) and the off ring, and the disabled bar, in the track's role.
+    io: { text: c(on && !disabled ? 'content.on-action' : track) },
     thumbIcon: { text: c(track) },
   }
 }
