@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback, useMemo, type ComponentType, type CSSProperties, type ReactNode, type KeyboardEvent as ReactKeyboardEvent } from 'react'
+import { Fragment, useState, useEffect, useRef, useCallback, useMemo, type ComponentType, type CSSProperties, type ReactNode, type KeyboardEvent as ReactKeyboardEvent } from 'react'
 import { createPortal } from 'react-dom'
 import { motion, AnimatePresence, useReducedMotion } from 'framer-motion'
 import { useDesignStore, activeLibraryId } from '../store/useDesignStore'
@@ -19,7 +19,7 @@ import { loadGoogleFont, useLoadActiveFonts } from '../lib/fonts'
 import { useEnsureColorScales, useRegenerateScalesOnScaleSettings } from '../lib/colorActions'
 import { RAIL_WIDTH, RAIL_COLLAPSED_WIDTH } from '../components/configurator/SectionRail'
 import { FOUNDATION_ICON_RAIL_WIDTH, WorkspaceNavRail, type WorkspaceNavKey } from '../components/configurator/FoundationIconRail'
-import FoundationSwitchStrip from '../components/configurator/FoundationSwitchStrip'
+import WorkspaceNavColumn, { NavGroup, NavRow, NavSlotProvider, useNavColumnFolded } from '../components/configurator/WorkspaceNavColumn'
 import FoundationWorkbench from '../components/configurator/FoundationWorkbench'
 import type { VariableCollectionItem, VariableCollectionKey } from '../components/configurator/VariableCollectionRail'
 import ThemeCodeFormat, { resolveCodeTheme } from '../components/configurator/ThemeCodeFormat'
@@ -32,7 +32,7 @@ import { SETUP_STEPS, finishThemeSetup, forgetUnsavedBrand, markBrandUnsaved, us
 import { savedBrandKeysFrom, useAutosaveLibrary, useSavedBrandKeys, useUnsavedBrands } from '../lib/libraryStatus'
 import ThemePanel from '../components/configurator/ThemePanel'
 import { DEFAULT_DOC_KEY, type DashPage } from '../components/configurator/dashboard/dashboardData'
-import WorkspaceInspector, { INSPECTOR_ID, INSPECTOR_WIDTH, InspectorPortal, InspectorSidePortal, InspectorSlotProvider } from '../components/configurator/WorkspaceInspector'
+import WorkspaceInspector, { INSPECTOR_ID, INSPECTOR_WIDTH, InspectorPortal, InspectorSlotProvider } from '../components/configurator/WorkspaceInspector'
 import ShipPanel, { type ShipKind } from '../components/configurator/ShipPanel'
 import LeaveDraftDialog from '../components/configurator/LeaveDraftDialog'
 import { StartDesignModal, ThemeAppearanceControl } from '../components/configurator/ThemeSheet'
@@ -43,6 +43,7 @@ import { figmaSyncThemeKeys, MY_THEME_HARD_CAP, resolveListedTheme } from '../li
 import { RANDOM_THEME_LABEL, startRandomTheme } from '../lib/randomTheme'
 import { decodeRemix, remixPreset, takeIncomingRemix } from '../lib/remixLink'
 import { trackEvent } from '../lib/analytics'
+import { VARIABLES_NAV_GROUPS, VARIABLES_NAV_LABEL, type VariablesNavFoundation } from '../lib/variablesNav'
 import { RemixBanner } from '../components/configurator/RemixBanner'
 import { MENU_SURFACE, SHELL_CHROME } from '../components/configurator/themeWorkspaceLayout'
 import { guestStarterPreview, stylePreviewBrandRamp, type StylePreview } from '../lib/stylePreviewOverlay'
@@ -285,6 +286,7 @@ const FOUNDATIONS: FoundationSection[] = [
 // also the exact category list HomeActions' "New" menu offers, so the two
 // can never drift apart.
 const VARIABLE_FOUNDATIONS = FOUNDATIONS.filter((f) => !['icons', 'shadow'].includes(f.key))
+
 
 // Component categories get icons too, so the Components/Documentation rail
 // reads exactly like the Variables one (same row shape, icon + label).
@@ -908,6 +910,19 @@ export default function Configurator() {
   const [componentsSlot, setComponentsSlot] = useState<HTMLElement | null>(null)
   const [inspectorHeaderSlot, setInspectorHeaderSlot] = useState<HTMLElement | null>(null)
   const [inspectorSideSlot, setInspectorSideSlot] = useState<HTMLElement | null>(null)
+  // The left nav column (Variables, Components): where the places of a mode
+  // are listed by name. Folded or open is remembered per mode, per browser.
+  const [navSlot, setNavSlot] = useState<HTMLElement | null>(null)
+  const [variablesNavFolded, setVariablesNavFoldedRaw] = useNavColumnFolded('variables')
+  const [componentsNavFolded, setComponentsNavFoldedRaw] = useNavColumnFolded('components')
+  const setVariablesNavFolded = (folded: boolean) => {
+    setVariablesNavFoldedRaw(folded)
+    trackEvent({ name: 'nav_column', props: { mode: 'variables', state: folded ? 'folded' : 'open' } })
+  }
+  const setComponentsNavFolded = (folded: boolean) => {
+    setComponentsNavFoldedRaw(folded)
+    trackEvent({ name: 'nav_column', props: { mode: 'components', state: folded ? 'folded' : 'open' } })
+  }
   const [themeHubSurface, setThemeHubSurface] = useState<ThemeHubSurface>(() => {
     const surface = incomingPlace?.surface ?? 'artefacts'
     if (surface === 'documentation' || surface === 'components') return 'artefacts'
@@ -2652,6 +2667,27 @@ export default function Configurator() {
   // Without a system yet, Components still shows the rail (it is where you are
   // in the product); Variables / System / Code are dimmed — nothing to open.
   const railBlockedReason = componentsWithoutSystem ? noSystemReason : themeTablesBlocked()
+  // One row of Variables' left column — named when open, an icon in the
+  // folded strip (the name moves to its tooltip).
+  const renderVariablesNavRow = (key: VariablesNavFoundation, compact: boolean) => {
+    const foundation = FOUNDATIONS.find((f) => f.key === key)
+    if (!foundation) return null
+    const locked = Boolean(railGuide && previewWidgetKey(key) !== railGuide.current)
+    return (
+      <NavRow
+        key={key}
+        compact={compact}
+        label={t(VARIABLES_NAV_LABEL[key] ?? foundation.label)}
+        icon={<foundation.Icon />}
+        current={activeFoundation === key}
+        disabled={locked}
+        onSelect={() => {
+          trackEvent({ name: 'variables_nav', props: { foundation: key } }, { throttle: true })
+          selectWorkspaceFoundation(key)
+        }}
+      />
+    )
+  }
   const navRail = navRailVisible ? (
     <WorkspaceNavRail
       ariaLabel={t('Workspace')}
@@ -2783,6 +2819,9 @@ export default function Configurator() {
         <div
           className={`flex-1 min-w-0 flex ${themesCanvas ? 'flex-col' : ''} overflow-hidden ${themesCanvas || componentsCanvas ? 'bg-nav' : !foundationCanvas ? 'bg-app border-l border-line' : ''}`}
         >
+          {/* Folded, the column is an icon strip: Collections + Groups go back
+              to the inspector (their old place) so nothing becomes unreachable. */}
+          <NavSlotProvider slot={foundationCanvas && !variablesNavFolded ? navSlot : null}>
           <InspectorSlotProvider slot={themesCanvas ? inspectorSlot : componentsCanvas ? componentsSlot : null} headerSlot={themesCanvas && !homePage ? inspectorHeaderSlot : null} sideSlot={themesCanvas && !homePage ? inspectorSideSlot : null}>
           <div className={themesCanvas ? 'flex-1 min-h-0 flex overflow-hidden' : 'contents'}>
           {/* Home has no rail: the foundations belong to a theme being edited, and the
@@ -2796,22 +2835,79 @@ export default function Configurator() {
           )}
           <div className="contents" style={canvasAccentStyle}>
           {themesCanvas && navRail}
-          {/* Variables: which TABLE is open. Eleven foundations did not fit the
-              inspector's top band, so they run down its left edge, one icon per
-              row, beside the Collections and Groups they switch. */}
+          {/* Variables: which TABLE is open, by name, in the left column —
+              Foundations, then the Dimension family. The table's own
+              Collections + Groups portal in under it (VariableCollectionRail →
+              NavPortal); the inspector on the right only edits. */}
           {foundationCanvas && (
-            <InspectorSidePortal>
-              <FoundationSwitchStrip
-                variant="rail"
-                ariaLabel="Variable foundations"
-                items={[...VARIABLE_FOUNDATIONS, ...FOUNDATIONS.filter((foundation) => ['shadow', 'icons'].includes(foundation.key))].map((foundation) => ({
-                  key: foundation.key,
-                  label: t(foundation.short),
-                }))}
-                current={activeFoundation}
-                onSelect={selectWorkspaceFoundation}
-              />
-            </InspectorSidePortal>
+            <WorkspaceNavColumn
+              label={t('Variables')}
+              title={t('Variables')}
+              folded={variablesNavFolded}
+              onFoldedChange={setVariablesNavFolded}
+              onSlot={setNavSlot}
+              foldedChildren={VARIABLES_NAV_GROUPS.map((group, gi) => (
+                <Fragment key={group.label}>
+                  {gi > 0 && <div className="my-1 h-px w-6 flex-shrink-0 bg-line" aria-hidden />}
+                  {group.keys.map((key) => renderVariablesNavRow(key, true))}
+                </Fragment>
+              ))}
+            >
+              {VARIABLES_NAV_GROUPS.map((group) => (
+                <NavGroup key={group.label} label={t(group.label)}>
+                  {group.keys.map((key) => renderVariablesNavRow(key, false))}
+                </NavGroup>
+              ))}
+              <div className="mx-4 mt-3 h-px flex-shrink-0 bg-line" aria-hidden />
+            </WorkspaceNavColumn>
+          )}
+          {/* Components · Blocks · Screens: the directory is the left column
+              (the families, then a family's parts open from its page); the
+              page's panels dock in the inspector on the right. */}
+          {componentsCanvas && componentsNavFolded && (
+            <WorkspaceNavColumn
+              label={t(tab === 'blocks' ? 'Blocks' : tab === 'screens' ? 'Screens' : 'Components')}
+              title={t(tab === 'blocks' ? 'Blocks' : tab === 'screens' ? 'Screens' : 'Components')}
+              folded
+              onFoldedChange={setComponentsNavFolded}
+            />
+          )}
+          {componentsCanvas && !componentsNavFolded && tab === 'blocks' && (
+            <BlocksRail
+              icons={BLOCK_GROUP_ICONS}
+              active={activeBlock}
+              onSelect={selectBlock}
+              onOpenIndex={() => setActiveBlock(null)}
+              search={blockSearch}
+              onSearch={setBlockSearch}
+              side="left"
+              onFold={() => setComponentsNavFolded(true)}
+            />
+          )}
+          {componentsCanvas && !componentsNavFolded && tab === 'screens' && (
+            <BlocksRail
+              catalogue="screens"
+              icons={BLOCK_GROUP_ICONS}
+              active={activeScreen}
+              onSelect={selectBlock}
+              onOpenIndex={() => setActiveScreen(null)}
+              search={screenSearch}
+              onSearch={setScreenSearch}
+              side="left"
+              onFold={() => setComponentsNavFolded(true)}
+            />
+          )}
+          {componentsCanvas && !componentsNavFolded && tab === 'components' && (
+            <ComponentsRail
+              icons={CATEGORY_ICONS}
+              active={activeComponent}
+              onSelect={selectComponent}
+              onOpenIndex={openComponentsIndex}
+              search={componentSearch}
+              onSearch={setComponentSearch}
+              side="left"
+              onFold={() => setComponentsNavFolded(true)}
+            />
           )}
           {/* Center editor */}
           {/* On the Generator the centre is a CARD: your system, painted in the
@@ -2828,7 +2924,7 @@ export default function Configurator() {
                 : `flex-1 min-w-0 flex flex-col my-3 overflow-hidden rounded-2xl ${navRailVisible ? '' : 'ml-3'} border ${chromeAppearance === 'dark' ? 'border-white/[0.08]' : 'border-line'} bg-app ${(homeRailOnly ? chromeAppearance : (boardShownAppearance ?? previewAppearance)) === 'dark' ? 'dark' : 'light'}`
               : componentsCanvas
                 // Components reads like the Generator: [rail] [page CARD] [directory].
-                ? `flex-1 min-w-0 flex flex-col my-3 overflow-hidden rounded-2xl ${navRailVisible ? '' : 'ml-3'} border ${chromeAppearance === 'dark' ? 'border-white/[0.08]' : 'border-line'} bg-app`
+                ? `flex-1 min-w-0 flex flex-col my-3 mr-3 overflow-hidden rounded-2xl ${navRailVisible ? '' : 'ml-3'} border ${chromeAppearance === 'dark' ? 'border-white/[0.08]' : 'border-line'} bg-app`
                 : 'flex-1 min-w-0 flex flex-col'}
           >
             {/* No CenterHeader on the Themes canvas — the icons ARE the section
@@ -3114,39 +3210,17 @@ export default function Configurator() {
             </div>
           </main>
           </div>
-          {componentsCanvas && tab === 'blocks' && (
-            <BlocksRail
-              icons={BLOCK_GROUP_ICONS}
-              active={activeBlock}
-              onSelect={selectBlock}
-              onOpenIndex={() => setActiveBlock(null)}
-              search={blockSearch}
-              onSearch={setBlockSearch}
-              onInspectorSlot={setComponentsSlot}
-            />
-          )}
-          {componentsCanvas && tab === 'screens' && (
-            <BlocksRail
-              catalogue="screens"
-              icons={BLOCK_GROUP_ICONS}
-              active={activeScreen}
-              onSelect={selectBlock}
-              onOpenIndex={() => setActiveScreen(null)}
-              search={screenSearch}
-              onSearch={setScreenSearch}
-              onInspectorSlot={setComponentsSlot}
-            />
-          )}
-          {componentsCanvas && tab === 'components' && (
-            <ComponentsRail
-              icons={CATEGORY_ICONS}
-              active={activeComponent}
-              onSelect={selectComponent}
-              onOpenIndex={openComponentsIndex}
-              search={componentSearch}
-              onSearch={setComponentSearch}
-              onInspectorSlot={setComponentsSlot}
-            />
+          {/* Where a component or block page's panels dock (Component settings,
+              Edit theme, a pinned token list): the inspector on the right.
+              Empty on an index page, so it takes no room there. */}
+          {componentsCanvas && (
+            <aside
+              aria-label={t('Inspector')}
+              className="relative my-3 mr-3 hidden min-h-0 flex-shrink-0 flex-col overflow-hidden rounded-2xl border border-line bg-side-panel has-[[data-inspector-dock]>*]:flex"
+              style={{ width: INSPECTOR_WIDTH }}
+            >
+              <div ref={setComponentsSlot} data-inspector-dock="" className="contents" />
+            </aside>
           )}
           <AnimatePresence initial={false}>
           {ship && themesCanvas && !homePage && (
@@ -3179,6 +3253,7 @@ export default function Configurator() {
           )}
           </div>
           </InspectorSlotProvider>
+          </NavSlotProvider>
 
           {/* Right live preview (hidden in components tab — full width for docs)
 
