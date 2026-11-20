@@ -28,8 +28,8 @@ export const FIGMA_KIT_PATH = '/figma-kit'
  *  component's Figma button, Storybook's "Open in Figma") is built from it.
  *  Refreshed per release: duplicate the master, turn copying off, swap the key
  *  here. Never the master's key. */
-export const FIGMA_PREVIEW_FILE_KEY = 'X736U9ffkni3gg6rmvEEnJ'
-const FIGMA_PREVIEW_FILE_NAME = 'Escala-Design-System--Preview-'
+export const FIGMA_PREVIEW_FILE_KEY = 'H9Z5O6RSCpOnTJbE8PkTo1'
+const FIGMA_PREVIEW_FILE_NAME = 'Escala-Design-System--Pro-'
 /** The Cover (node 4-17005 — a duplicate keeps node ids, so a refreshed
  *  preview keeps this one, and every component page id in
  *  `spec/figma-components.json` too: all 56 checked 2026-11-17). */

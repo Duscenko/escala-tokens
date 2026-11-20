@@ -17,7 +17,7 @@ Three products in one repo family:
 |---|---|---|
 | **Escala Tokens** (web configurator) | this repo · https://www.escalatokens.com | Designers set a token system and ship `tokens.json`, CSS, W3C, an agent package, or a Figma sync |
 | **Escala Figma plugin** | sibling repo `../escala-figma-plugin` (`src/code.ts` + `src/ui.html`) | Imports variables and styles, builds Getting started · Token Architecture · Documentation and the core kit (`FIGMA_SAMPLE_KEYS`) |
-| **Escala Design System** | Figma library `7j5zukN5HpihGVJMmyjA20` (our source; every PUBLIC link — About, /figma-kit, each component's Figma button, Storybook — goes to the Preview library `X736U9ffkni3gg6rmvEEnJ`, one constant in `lib/figmaKit.ts`; component pages via `lib/figmaPreviewPages.ts`) + `src/components/escala-ui` + Storybook `apps/storybook` (online: https://escala-storybook.vercel.app) | The component library itself |
+| **Escala Design System** | Figma library `7j5zukN5HpihGVJMmyjA20` (our source; every PUBLIC link — About, /figma-kit, each component's Figma button, Storybook — goes to the Preview library `H9Z5O6RSCpOnTJbE8PkTo1`, one constant in `lib/figmaKit.ts`; component pages via `lib/figmaPreviewPages.ts`) + `src/components/escala-ui` + Storybook `apps/storybook` (online: https://escala-storybook.vercel.app) | The component library itself |
 
 Stack: React + Vite + TypeScript (strict) + Tailwind v4 + Zustand + Framer Motion + Radix. GitHub
 `Duscenko/escala-tokens`. The configurator is **desktop/laptop only**; the one phone surface is

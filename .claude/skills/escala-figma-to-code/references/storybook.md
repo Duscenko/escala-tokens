@@ -128,7 +128,7 @@ Also: `npm run gen:registry-sources` when `escala-ui` changes; read the golden d
 ## 7. Figma ↔ Storybook links
 
 - Every PUBLIC link (About, /figma-kit, each component's Figma button, Storybook) goes to the **Preview
-  library `X736U9ffkni3gg6rmvEEnJ`** — one constant in `src/lib/figmaKit.ts`, no `m=dev`. Per-component
+  library `H9Z5O6RSCpOnTJbE8PkTo1`** — one constant in `src/lib/figmaKit.ts`, no `m=dev`. Per-component
   pages via `src/lib/figmaPreviewPages.ts` (from `spec/figma-components.json`; page ids are the same in
   Real and Preview; `codeOnly` parts fall back to the cover).
 - `spec/contracts/` keeps pointing to the Real file (`7j5zukN5HpihGVJMmyjA20`): it is for agents.

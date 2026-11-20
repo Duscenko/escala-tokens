@@ -25,7 +25,7 @@ intent file (`spec/intent/<Key>.intent.json`) says what it is **for**. Branch `c
 - `check-docs-links.mjs`: skips `docs/history/` and test goldens (records quote old paths), reads the short forms the
   docs use (`lib/x.ts` = `src/lib/x.ts`), and ignores Figma group names (`Spacing/`). 408 → 164 broken.
 - The kit's tool name `list-all-documentation` does not exist; the MCP calls it `docs-list`.
-- The Preview key is filled in (`X736U9ffkni3gg6rmvEEnJ`, `src/lib/figmaKit.ts`).
+- The Preview key is filled in (`H9Z5O6RSCpOnTJbE8PkTo1`, `src/lib/figmaKit.ts`).
 
 ## Gates today
 | Check | Mode | Today |
