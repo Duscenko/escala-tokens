@@ -5,7 +5,10 @@ import { PANEL_SURFACE } from './themeWorkspaceLayout'
 import { InspectorPortal } from './WorkspaceInspector'
 
 // ─── The Generator's LEFT column: where you are inside a mode ───────────────
-// Layout: [mode rail] [nav column — the places of this mode] [canvas] [inspector].
+// Layout: [mode rail] [card: nav pane | canvas] [inspector]. The column is the
+// LEFT PANE of the canvas card (proposal C): rounded on the left only, its
+// right border is the card's divider, and the canvas drops its left edge
+// (Configurator, `navInCard`). Two islands, not three.
 // The rail picks the MODE (Home · Board · Variables · Code · Components); this
 // column lists the PLACES inside it, by name (Color, Radius… / a component
 // family and its parts). The inspector on the right only edits.
@@ -19,6 +22,9 @@ import { InspectorPortal } from './WorkspaceInspector'
 // old placement.
 
 export const NAV_COLUMN_WIDTH = 248
+/** The canvas card's header band (CenterHeader, the catalogue row): the pane's
+ *  header matches it so one rule runs across the whole card. */
+export const NAV_COLUMN_HEADER_H = 52
 /** The folded column: one button wide, so the canvas gets the width back. */
 const NAV_COLUMN_FOLDED_WIDTH = 44
 
@@ -137,11 +143,11 @@ export default function WorkspaceNavColumn({
   return (
     <aside
       aria-label={label}
-      className={`relative my-3 mr-3 flex min-h-0 flex-shrink-0 flex-col overflow-hidden rounded-2xl ${PANEL_SURFACE}`}
+      className={`relative my-3 flex min-h-0 flex-shrink-0 flex-col overflow-hidden rounded-l-2xl ${PANEL_SURFACE}`}
       style={{ width: folded ? NAV_COLUMN_FOLDED_WIDTH : NAV_COLUMN_WIDTH, '--tab-bar': 'var(--side-panel)', '--color-tab-bar': 'var(--side-panel)' } as CSSProperties}
       data-nav-column={folded ? 'folded' : 'open'}
     >
-      <div className={`flex h-11 flex-shrink-0 items-center gap-2 border-b border-line ${folded ? 'justify-center' : 'pl-4 pr-1.5'}`}>
+      <div className={`flex flex-shrink-0 items-center gap-2 border-b border-line ${folded ? 'justify-center' : 'pl-4 pr-2.5'}`} style={{ height: NAV_COLUMN_HEADER_H }}>
         {!folded && <h2 className="min-w-0 flex-1 truncate text-ui font-semibold text-fg">{title}</h2>}
         <NavFoldButton folded={folded} onClick={() => onFoldedChange(!folded)} />
       </div>

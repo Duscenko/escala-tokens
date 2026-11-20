@@ -7,7 +7,7 @@ import { LOCALES, useI18n } from '../../lib/i18n'
 import { FIGMA_PLUGIN_COMMUNITY } from '../../lib/utils'
 import AccountControl from './AccountControl'
 import { OPEN_BETA } from '../../lib/entitlement'
-import { FOUNDATION_ICON_RAIL_WIDTH, RAIL_TILE_SIZE } from './FoundationIconRail'
+import { WORKSPACE_RAIL_WIDTH, RAIL_TILE_SIZE } from './FoundationIconRail'
 import { CHROME_CONTROL_ACTIVE, CHROME_CONTROL_FOCUS, CHROME_CONTROL_HOVER, CHROME_CONTROL_SHELL, CHROME_MENU_Z, MENU_CHECK, MENU_SURFACE, SELECT_OPTION_OFF, SHELL_CHROME } from './themeWorkspaceLayout'
 
 type ChromeMenuAlign = 'left' | 'right' | 'center'
@@ -706,7 +706,7 @@ export default function TopNav({
         }`}
         style={{
           ...(brandWidth ? { width: brandWidth } : null),
-          ...(railAligned && !railCollapsed ? { paddingLeft: (FOUNDATION_ICON_RAIL_WIDTH - RAIL_TILE_SIZE) / 2 } : null),
+          ...(railAligned && !railCollapsed ? { paddingLeft: (WORKSPACE_RAIL_WIDTH - RAIL_TILE_SIZE) / 2 } : null),
         }}
       >
         <div className="flex w-max items-center gap-3">

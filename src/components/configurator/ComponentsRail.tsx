@@ -4,7 +4,7 @@ import type { ComponentDef } from '../../lib/componentCatalogue'
 import { PLATFORM_FOLDERS, PLATFORM_FAMILIES, FOLDER_CATEGORY, familiesIn, familyLabel, familyOf } from '../../lib/platformCatalogue'
 import { useI18n } from '../../lib/i18n'
 import FoundationSwitchStrip from './FoundationSwitchStrip'
-import { NavFoldButton } from './WorkspaceNavColumn'
+import { NAV_COLUMN_HEADER_H, NavFoldButton } from './WorkspaceNavColumn'
 import { WorkspaceSaveBar } from './ThemeSaveBar'
 import { INSPECTOR_WIDTH } from './WorkspaceInspector'
 import { INSPECTOR_TABS_H } from './themeWorkspaceLayout'
@@ -111,12 +111,12 @@ export default function ComponentsRail({
   return (
     <aside
       aria-label={t('Components')}
-      className={`relative my-3 mr-3 ${side === 'left' ? '' : 'ml-3'} flex min-h-0 flex-shrink-0 flex-col overflow-hidden rounded-2xl border border-line bg-side-panel`}
+      className={`relative my-3 ${side === 'left' ? 'rounded-l-2xl' : 'ml-3 mr-3 rounded-2xl'} flex min-h-0 flex-shrink-0 flex-col overflow-hidden border border-line bg-side-panel`}
       style={{ width: INSPECTOR_WIDTH } as CSSProperties}
     >
       <div
         className="flex flex-shrink-0 items-center border-b border-line"
-        style={{ height: INSPECTOR_TABS_H, paddingInline: `calc((${INSPECTOR_TABS_H}px - 2.5rem) / 2)` }}
+        style={{ height: side === 'left' ? NAV_COLUMN_HEADER_H : INSPECTOR_TABS_H, paddingInline: `calc((${side === 'left' ? NAV_COLUMN_HEADER_H : INSPECTOR_TABS_H}px - 2.5rem) / 2)` }}
       >
         <FoundationSwitchStrip
           ariaLabel={t('Component categories')}

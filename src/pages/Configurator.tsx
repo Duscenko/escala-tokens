@@ -18,7 +18,7 @@ import { type GitHubPushState } from '../lib/github'
 import { loadGoogleFont, useLoadActiveFonts } from '../lib/fonts'
 import { useEnsureColorScales, useRegenerateScalesOnScaleSettings } from '../lib/colorActions'
 import { RAIL_WIDTH, RAIL_COLLAPSED_WIDTH } from '../components/configurator/SectionRail'
-import { FOUNDATION_ICON_RAIL_WIDTH, WorkspaceNavRail, type WorkspaceNavKey } from '../components/configurator/FoundationIconRail'
+import { WORKSPACE_RAIL_WIDTH, WorkspaceNavRail, type WorkspaceNavKey } from '../components/configurator/FoundationIconRail'
 import WorkspaceNavColumn, { NavGroup, NavRow, NavSlotProvider, useNavColumnFolded } from '../components/configurator/WorkspaceNavColumn'
 import FoundationWorkbench from '../components/configurator/FoundationWorkbench'
 import type { VariableCollectionItem, VariableCollectionKey } from '../components/configurator/VariableCollectionRail'
@@ -2766,7 +2766,7 @@ export default function Configurator() {
             onMore={openSectionExport}
           />
         ) : undefined}
-        brandWidth={homePage ? 260 : themesCanvas ? null : outerRailVisible ? (railCollapsed ? RAIL_COLLAPSED_WIDTH : RAIL_WIDTH) + (navRailVisible ? FOUNDATION_ICON_RAIL_WIDTH : 0) : null}
+        brandWidth={homePage ? 260 : themesCanvas ? null : outerRailVisible ? (railCollapsed ? RAIL_COLLAPSED_WIDTH : RAIL_WIDTH) + (navRailVisible ? WORKSPACE_RAIL_WIDTH : 0) : null}
         // No divider in the header when the section tags are folded into ☰:
         // the brand block is just a title there, not the head of a column.
         brandEdge={!homePage && !componentsWithoutSystem}
@@ -2921,10 +2921,12 @@ export default function Configurator() {
             className={themesCanvas
               ? homePage
                 ? `flex-1 min-w-0 flex flex-col my-3 mr-3 overflow-hidden rounded-2xl border border-line bg-app dark:border-white/[0.08] dark:bg-[#161617] ${chromeAppearance === 'dark' ? 'dark' : 'light'}`
-                : `flex-1 min-w-0 flex flex-col my-3 overflow-hidden rounded-2xl ${navRailVisible ? '' : 'ml-3'} border ${chromeAppearance === 'dark' ? 'border-white/[0.08]' : 'border-line'} bg-app ${(homeRailOnly ? chromeAppearance : (boardShownAppearance ?? previewAppearance)) === 'dark' ? 'dark' : 'light'}`
+                : `flex-1 min-w-0 flex flex-col my-3 overflow-hidden ${foundationCanvas ? 'rounded-r-2xl border-l-0' : `rounded-2xl ${navRailVisible ? '' : 'ml-3'}`} border ${chromeAppearance === 'dark' ? 'border-white/[0.08]' : 'border-line'} bg-app ${(homeRailOnly ? chromeAppearance : (boardShownAppearance ?? previewAppearance)) === 'dark' ? 'dark' : 'light'}`
               : componentsCanvas
-                // Components reads like the Generator: [rail] [page CARD] [directory].
-                ? `flex-1 min-w-0 flex flex-col my-3 mr-3 overflow-hidden rounded-2xl ${navRailVisible ? '' : 'ml-3'} border ${chromeAppearance === 'dark' ? 'border-white/[0.08]' : 'border-line'} bg-app`
+                // Components reads like the Generator: [rail] [directory | page CARD] [inspector].
+                // The directory is the card's left pane (proposal C): the page
+                // drops its left edge so the two read as one card.
+                ? `flex-1 min-w-0 flex flex-col my-3 mr-3 overflow-hidden rounded-r-2xl border-l-0 border ${chromeAppearance === 'dark' ? 'border-white/[0.08]' : 'border-line'} bg-app`
                 : 'flex-1 min-w-0 flex flex-col'}
           >
             {/* No CenterHeader on the Themes canvas — the icons ARE the section

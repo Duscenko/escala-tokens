@@ -35,6 +35,11 @@ const VARIABLE_ICON_MASK_SIZE: Record<string, string> = {
 }
 
 export const FOUNDATION_ICON_RAIL_WIDTH = 80
+/** The Generator's mode rail (Home · Board · Variables · Code · Components):
+ *  icons only, the name in the tooltip. It sits on the page chrome, not in an
+ *  island; the places inside a mode live in the canvas card's left pane
+ *  (DEC-2026-11-20-001, proposal C). 40px tiles + 8px air each side. */
+export const WORKSPACE_RAIL_WIDTH = 56
 /** The glyph square every rail tile draws — and the brand tile above the rail,
  *  so the logo and the icons share one centre line and one footprint. */
 export const RAIL_TILE_SIZE = 40
@@ -111,14 +116,14 @@ export function RailTile({
       aria-controls={aria['aria-controls']}
       className={`group flex-shrink-0 flex flex-col items-center justify-center rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50 disabled:cursor-default ${step === 'locked' ? 'opacity-35' : dimmed ? 'opacity-40' : ''} ${
         block
-          ? `w-[72px] gap-1 pb-2 pt-2.5 transition-colors ${on ? 'text-fg' : 'text-fg-faint hover:bg-black/[0.06] dark:hover:bg-white/[0.07] hover:text-fg'}`
+          ? `${compact ? 'h-10 w-10' : 'w-[72px] gap-1 pb-2 pt-2.5'} transition-colors ${on ? `text-fg ${compact ? 'bg-black/[0.07] dark:bg-white/[0.09]' : ''}` : 'text-fg-faint hover:bg-black/[0.06] dark:hover:bg-white/[0.07] hover:text-fg'}`
           : compact ? '' : 'w-[72px] gap-0.5 py-1'
       } ${className}`}
     >
       {block ? (
         <>
           {children}
-          <span aria-hidden className="block max-w-full truncate px-0.5 text-mini font-medium leading-tight">{label}</span>
+          {!compact && <span aria-hidden className="block max-w-full truncate px-0.5 text-mini font-medium leading-tight">{label}</span>}
         </>
       ) : (<>
       {/* Only the glyph's square carries the selection — the label stays plain
@@ -244,8 +249,8 @@ export function WorkspaceNavRail({ items, active, onSelect, ariaLabel, dimmed, d
     <nav
       aria-label={ariaLabel}
       data-shell-chrome=""
-      className="flex h-full flex-shrink-0 flex-col items-center gap-0.5 overflow-y-auto pt-2 pb-3 scrollbar-thin bg-nav"
-      style={{ width: FOUNDATION_ICON_RAIL_WIDTH }}
+      className="flex h-full flex-shrink-0 flex-col items-center gap-1 overflow-y-auto pt-3 pb-3 scrollbar-thin bg-nav"
+      style={{ width: WORKSPACE_RAIL_WIDTH }}
     >
       {items.map(({ key, label }) => {
         const on = active === key
@@ -261,6 +266,7 @@ export function WorkspaceNavRail({ items, active, onSelect, ariaLabel, dimmed, d
             title={off ? dimmedReason : label}
             grow={false}
             block
+            compact
           >
             <NavIcon id={key} filled={on} />
           </RailTile>

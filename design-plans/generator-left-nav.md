@@ -14,7 +14,12 @@ The navigation of two modes lived inside the right inspector:
 Reference studied: shadcndesign's DS Manager (places on the left, by name; the inspector only edits).
 
 ## What changed
-Layout: `[mode rail] [nav column] [canvas] [inspector]`. The mode rail (Home · Board · Variables · Code · Components) is untouched.
+Layout (proposal C, chosen 2026-11-20 over A "fused rail" and B "nested rail"): `[mode rail] [card: nav pane | canvas] [inspector]`.
+Two islands, not three. The mode rail (Home · Board · Variables · Code · Components) went from 80px labelled tiles to a
+56px icon strip on the page chrome (`WORKSPACE_RAIL_WIDTH`, name in the tooltip); the brand mark in the top bar follows it.
+The nav column is the card's left pane: rounded on the left only, its border is the divider, the canvas drops its left
+edge, and the pane's header is 52px like the canvas header so one rule crosses the card. The pane keeps the platform's
+chrome colours; only the canvas side paints the previewed theme (hard rule 11).
 
 - `WorkspaceNavColumn` (new): the left column, 248px, foldable to a 44px strip. Folded/open is per mode and per browser
   (localStorage, `escala.navColumn.folded.<mode>`), never in the store. Below 1360px it starts folded until opened once.
