@@ -906,8 +906,10 @@
       "side": "code",
       "entity": "FABGroup",
       "evidence": "Open axis (false · true) and no motion decision in the contract (recipes/motion.ts has no entry)",
-      "status": "Open",
-      "resolution": null,
+      "status": "Fixed",
+      "resolution": {
+        "ref": "3422122"
+      },
       "firstSeen": "2026-11-20",
       "lastSeen": "2026-11-20",
       "regression": false,
@@ -925,8 +927,10 @@
       "side": "code",
       "entity": "FABGroup",
       "evidence": "Storybook control Open differs from the contract axis (false · true); details: npx vitest run contractGates",
-      "status": "Open",
-      "resolution": null,
+      "status": "Fixed",
+      "resolution": {
+        "ref": "3422122"
+      },
       "firstSeen": "2026-11-20",
       "lastSeen": "2026-11-20",
       "regression": false,
@@ -944,8 +948,10 @@
       "side": "code",
       "entity": "SplitButton",
       "evidence": "Open axis (false · true) and no motion decision in the contract (recipes/motion.ts has no entry)",
-      "status": "Open",
-      "resolution": null,
+      "status": "Fixed",
+      "resolution": {
+        "ref": "3422122"
+      },
       "firstSeen": "2026-11-20",
       "lastSeen": "2026-11-20",
       "regression": false,
@@ -2875,8 +2881,10 @@
       "side": "code",
       "entity": "Sidebar",
       "evidence": "Collapsed axis (false · true) and no motion decision in the contract (recipes/motion.ts has no entry)",
-      "status": "Open",
-      "resolution": null,
+      "status": "Fixed",
+      "resolution": {
+        "ref": "3422122"
+      },
       "firstSeen": "2026-11-20",
       "lastSeen": "2026-11-20",
       "regression": false,
@@ -2936,8 +2944,10 @@
       "side": "code",
       "entity": "SidebarGroup",
       "evidence": "Collapsed axis (false · true) and no motion decision in the contract (recipes/motion.ts has no entry)",
-      "status": "Open",
-      "resolution": null,
+      "status": "Fixed",
+      "resolution": {
+        "ref": "3422122"
+      },
       "firstSeen": "2026-11-20",
       "lastSeen": "2026-11-20",
       "regression": false,
@@ -2997,8 +3007,10 @@
       "side": "code",
       "entity": "SidebarBrand",
       "evidence": "Collapsed axis (false · true) and no motion decision in the contract (recipes/motion.ts has no entry)",
-      "status": "Open",
-      "resolution": null,
+      "status": "Fixed",
+      "resolution": {
+        "ref": "3422122"
+      },
       "firstSeen": "2026-11-20",
       "lastSeen": "2026-11-20",
       "regression": false,
