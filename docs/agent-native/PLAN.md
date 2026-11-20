@@ -1,5 +1,7 @@
 # Agent-native platform — plan
 
+> **Status 2026-11-20:** the hosted MCP (`api/mcp.ts`) was deleted on 2026-10-20 and must not come back (CLAUDE.md). Read every MCP section below as history. Agents today use the offline agent package and `spec/contracts/` (AGENTS.md → *Build UI with Escala components*).
+
 Goal: the design system a user generates in Escala should be consumable by an AI agent without guessing token names, folder structure, or hex/px. The five layers (Context, Knowledge, Access, Generation, Validation) apply first as a **product export** (B). The Escala repo itself gets a thin agent layer (A) only where it unblocks B.
 
 This document is the map. Frozen contracts live in [`CONTRACTS.md`](./CONTRACTS.md). The JSON shape lives in [`tokens.schema.json`](./tokens.schema.json).

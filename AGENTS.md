@@ -12,7 +12,7 @@ A desktop token configurator. Designers pick tokens; the app emits `tokens.json`
 |---|---|
 | What not to break | `docs/agent-native/CONTRACTS.md` |
 | Payload shape | `docs/agent-native/tokens.schema.json` |
-| One component or block: API, Figma set, slots, the token each state binds, CSS + Figma names, motion, keyboard, import, story | `spec/contracts/<Key>.json` (index + how to use: `spec/contracts/index.json`, `spec/contracts/README.md`) |
+| One component or block: API, Figma set, slots, the token each state binds, CSS + Figma names, motion, keyboard, import, story | `spec/contracts/<Key>.json` · readable `<Key>.md` (index + how to use: `spec/contracts/index.json`, `spec/contracts/README.md`); route below |
 | Five-layer roadmap | `docs/agent-native/PLAN.md` |
 | Current rules, repo map, sources of truth | `CLAUDE.md` (short, current state) |
 | Why a rule exists (history, 86 dated notes) | `docs/history/CLAUDE-archive-2026-11-16.md` (search by keyword, never load whole) |
@@ -27,6 +27,23 @@ A desktop token configurator. Designers pick tokens; the app emits `tokens.json`
 | Evals | `evals/agent-output/` · `npm run eval` |
 
 `CLAUDE.md` is short and current; read it first. Load the archive only for the area you are changing.
+
+## Build UI with Escala components (from a Figma frame or a brief)
+
+Do not guess a component, a prop or a token. Follow the contracts:
+
+1. **Find it.** Figma: the instance's main component set name = `figmaSet` in `spec/contracts/index.json`
+   (Code Connect is not available on the library's Figma plan; this index is the bridge). Brief: search
+   `label`, `category` and `description` in the same index. `kind: "block"` entries are compositions.
+2. **Read its contract**: `spec/contracts/<Key>.json` (machine) or `spec/contracts/<Key>.md` (the same,
+   readable). Figma variant values map 1:1 to `api.axes`; the props are in `api.props`.
+3. **Import it** from `code.import` (`name`, `module`). Never redraw a component that has a contract.
+4. **Paint nothing by hand.** `bindings` says which token each slot paints per state; `names` turns a token
+   ref into its CSS variable and Figma name. A value no role covers is a missing role: report it.
+5. **Behave like it.** `behaviour.primitives` (the library's keys and focus) + `behaviour.authored` (what
+   the component adds, or that it is not interactive); `motion` = the motion roles it plays.
+6. **Check yourself**: `npm run eval` (the role and state checker over `evals/agent-output/`) and the
+   story at `code.story.url`.
 
 ## Hard rules
 
@@ -52,7 +69,7 @@ src/lib/agentBundle/            TokenJSON → Skill + agent-bundle zip (no store
 src/lib/skillExport.ts          store wrappers (buildSkillExport, buildAgentProductExport)
 src/lib/agentAccess/            resolve, catalogue, contrast (no hosted MCP)
 src/lib/color/                  ramps, APCA, gamut, CVD
-src/lib/componentCatalogue.ts   58 components (props, a11y) — 9 by default; all 58 via the plugin's Full catalogue option
+src/lib/componentCatalogue.ts   the component catalogue (props, a11y) → spec/contracts/ via npm run gen:contracts
 api/tokens.ts                   publish / fetch Blob
 ```
 

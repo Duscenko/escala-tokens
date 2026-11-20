@@ -55,7 +55,7 @@ Schema `escala-component-contract/2`, additive over v1 (no key renamed or remove
 - [x] Missing human contracts: generate the 70 from the JSON (a readable view), never hand-copy.
 
 ### Phase 4 — The agent's door
-- [ ] `AGENTS.md` / `llms.txt` / `escala-figma-to-code` skill: "Figma set name → `index.json` →
+- [x] `AGENTS.md` / `llms.txt` / `escala-figma-to-code` skill: "Figma set name → `index.json` →
       contract → import + bindings"; remove the stale MCP lines (`AGENTS.md` predates its removal).
 - [ ] Agent package export (`src/lib/agentBundle/`) ships the contracts too.
 - [ ] Eval: `evals/agent-output/` gains cases that use a wrong role for a state; the checker reads
@@ -97,10 +97,24 @@ Schema `escala-component-contract/2`, additive over v1 (no key renamed or remove
   `spec/contracts/<Key>.md` generated for all 134 (`docs.readable`): axes, props, tokens at the defaults
   with CSS + Figma names, motion, behaviour, files. DOC-001 now 10 (the codeOnly parts only).
 
+- 2026-11-20 · Phase 4 (1/3): `AGENTS.md` gains *Build UI with Escala components* (Figma set →
+  `index.json` → `<Key>.json`/`.md` → `code.import` + `bindings` + `behaviour` → `npm run eval`), the
+  stale "58 components" line goes; `llms.txt` points at the index; `escala-figma-to-code` Step 2 reads an
+  existing contract first; `docs/agent-native/PLAN.md` and `GET-STARTED-PLAN.md` carry a status line that
+  the hosted MCP is gone (their MCP sections are history).
+
 ## Next
-Phase 4, first item: `AGENTS.md` / `llms.txt` / `.claude/skills/escala-figma-to-code` — the route
-"Figma set name → `spec/contracts/index.json` → `<Key>.json` (or `.md`) → `code.import` + `bindings`",
-and remove the stale hosted-MCP lines. Then the agent package (`src/lib/agentBundle/`) ships the
-contracts, then the eval case in `evals/agent-output/`.
+Phase 4, item 2 — the agent package ships the contracts. Constraint found: `src/lib/agentBundle/` is
+pure and runs in the browser (`skillExport.ts`); the CLI does not use it. The committed JSON is 1.8 MB
+(+0.65 MB `.md`), too heavy to import into the app bundle, and `buildContract` needs repo files
+(Figma snapshot, story and component sources). Suggested route: split `buildContract` into a pure core
+(catalogue def + recipe → api, anatomy, tokens, names, bindings, motion, behaviour from the two pure
+tables) used by both the generator and the package, and have `productDesignSkills.ts` write
+`contracts/<Key>.json` (+ `contracts/index.json`) for the package's `designSkillComponents()` keys,
+schema `escala-component-contract/2` with the repo-only fields (`figma` page/node, `code.story`,
+`code.files`) null. A test then holds the package core equal to `spec/contracts/<Key>.json` on those
+fields. Then item 3: an `evals/agent-output/` case that paints a state with the wrong role
+(e.g. a Button Hover with `action.primary.default`) and a checker that reads `bindings` and fails it
+(`agentEvals.test.ts`, `npm run eval`).
 Open question for the owner (not blocking): MOT-002 says `none` counts as a decision, but
 `RecipeMotion` cannot say `none` yet — add it when the owner decides the first static-state component.

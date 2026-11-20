@@ -1,5 +1,7 @@
 # Plan: Get started — explain destinations, not file formats
 
+> **Status 2026-11-20:** the hosted MCP (`api/mcp.ts`) was deleted on 2026-10-20 and must not come back (CLAUDE.md). Read every MCP section below as history. Agents today use the offline agent package and `spec/contracts/` (AGENTS.md → *Build UI with Escala components*).
+
 The configurator already does the hard part (foundations → one `TokenJSON`). Export then offers five *formats*. Markdown, Skill, and Agent bundle are the same job wearing three names, and none of them is an **install**. Create UI’s docs ([createui.co/docs](https://createui.co/docs), plus [skill](https://createui.co/docs/skill), [mcp](https://createui.co/docs/mcp), [cli](https://createui.co/docs/cli)) work because they answer: *what you get, then how it lands in your repo / agent*. Steal that shape. Do not steal their product: they ship a component CLI; we ship **this system’s tokens**.
 
 ## What’s wrong today
