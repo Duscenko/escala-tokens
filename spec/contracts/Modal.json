@@ -59,10 +59,18 @@
           "default",
           "lg"
         ]
+      },
+      {
+        "name": "Layout",
+        "values": [
+          "tray",
+          "simple"
+        ]
       }
     ],
     "defaults": {
-      "Size": "default"
+      "Size": "default",
+      "Layout": "simple"
     },
     "props": [
       {
@@ -74,6 +82,11 @@
         "name": "size",
         "type": "'default' | 'lg'",
         "description": "Figma Size: 480 or 640 wide. It cascades to the header and the footer."
+      },
+      {
+        "name": "layout",
+        "type": "'tray' | 'simple'",
+        "description": "Figma Layout: `tray` is a layer-1 shell around a layer-2 panel (header + content) with the footer on the tray; `simple` (the default for now) is the bare card."
       },
       {
         "name": "header / footer",
@@ -97,6 +110,8 @@
       "root",
       "overlay",
       "main",
+      "panel",
+      "header",
       "content",
       "close"
     ]
@@ -104,20 +119,26 @@
   "tokens": {
     "color": [
       "color.border.default",
+      "color.border.subtle",
       "color.content.secondary",
       "color.elevation.shadow-ambient",
       "color.elevation.shadow-key",
       "color.elevation.shadow-ring",
+      "color.surface.layer-1",
       "color.surface.layer-2",
       "color.surface.overlay"
     ],
     "radius": [
+      "radius.container",
       "radius.overlay"
     ],
     "spacing": [
+      "spacing.0",
       "spacing.24",
       "spacing.32",
+      "spacing.4",
       "spacing.gap-group",
+      "spacing.gap-section",
       "spacing.inset-surface"
     ],
     "stroke": [

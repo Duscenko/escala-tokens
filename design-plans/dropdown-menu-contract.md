@@ -9,7 +9,7 @@ Ledger: DropdownMenu rebuild; las otras tres, parts. Código hoy: `escala-ui/dro
 |---|---|
 | DropdownMenu | `Size` sm · default · lg (def default) · `HeaderVisible` false · `Header` SLOT (un Input de búsqueda: Input size sm/default/lg, type default, placeholder "Search", icono lupa) · `Content` SLOT (labels, items, separadores) · `FooterVisible` false (+ footer) |
 | DropdownMenuLabel | `Size` sm · default · lg · `Label` TEXT "Action" (mayúsculas por Type/caption: el texto se escribe tal cual) |
-| DropdownMenuItem | `Size` sm · default · lg · `State` Default · Focused · Selected · Disabled · `Variant` default · destructive · `Label` "Option" · `DescriptionVisible` false / `Description` "Secondary text" · `IconLeadingVisible` false / `IconLeadingIcon` (swap) · `TrailingVisible` false / `Trailing` "⌘K" · `IndicatorVisible` true (el check de Selected) · `MediaVisible` false / `Media` SLOT (Avatar image 2xs / xs) · `ControlVisible` false / `Control` SLOT (Switch xs / sm) · `IconTrailingVisible` false / `IconTrailingIcon` (CaretRight) |
+| DropdownMenuItem | `Size` sm · default · lg · `State` Default · Hover · Focused · Selected · Disabled · `Variant` default · critical (era `destructive` hasta 2026-11-18) · `Label` "Option" · `DescriptionVisible` false / `Description` "Secondary text" · `IconLeadingVisible` false / `IconLeadingIcon` (swap) · `TrailingVisible` false / `Trailing` "⌘K" · `IndicatorVisible` true (el check de Selected) · `MediaVisible` false / `Media` SLOT (Avatar image 2xs / xs) · `ControlVisible` false / `Control` SLOT (Switch xs / sm) · `IconTrailingVisible` false / `IconTrailingIcon` (CaretRight) |
 | DropdownMenuFooter | `Layout` inline · stacked · `Size` default · sm · lg · `LeadingVisible` true / `Leading` SLOT ("12 of 40 selected", caption, Content/secondary) · `ActionsVisible` true / `Actions` SLOT (Clear secondary solid + Apply default solid; Button xs / sm / sm en sm / default / lg) |
 
 ## Geometría
@@ -25,9 +25,12 @@ md 20 en lg, oculto), `Media` (SLOT, oculto: Avatar image 16 `2xs` en sm/default
 lg `Type/body-md`, `Content/primary` — y `description` `Type/caption` `Content/secondary`, oculto), `trailing` (texto `Type/caption` `Content/secondary`, oculto),
 `Control` (SLOT oculto, Switch xs / sm), `icon-trailing` (CaretRight, `Size/icon-sm`/`md`, `Content/secondary`, oculto), `icon-indicator` (solo Selected: Check, `Content/accent`, 16 /
 20, al final).
-Estados (default): **Default** sin relleno; **Focused** fill `Surface/muted`, trazo `Border/focus` 2 INSIDE + un `focus-ring` ABSOLUTE (stroke `Border/ring/default` 2 OUTSIDE,
+**Foco desde 2026-11-19 (DEC-2026-11-19-001, el dueño): como el Button.** Focused = el relleno resaltado + UN anillo de 2 px (`Stroke/focus`) separado 1 px de la fila
+(`gapRing`), en el color de la intención: `Border/ring/default` · `Status/critical/ring`. Nada dentro de la fila. El archivo de Figma aún dibuja el foco antiguo (descrito
+abajo) y se pondrá al día; hasta entonces el código manda en este punto.
+Estados (default): **Default** sin relleno; **Focused** (foco antiguo del archivo) fill `Surface/muted`, trazo `Border/focus` 2 INSIDE + un `focus-ring` ABSOLUTE (stroke `Border/ring/default` 2 OUTSIDE,
 mismo radio) → 2px de halo exterior; con el trazo dentro, el icono leading queda en x 10 (8 + 2). **Selected** fill `Surface/selected`, check visible a la derecha
-(el texto se reduce 24: `text` 216). **Disabled** label, description y trailing `Content/disabled`. **destructive**: label `Status/critical/content`; Focused: fill
+(el texto se reduce 24: `text` 216). **Disabled** label, description y trailing `Content/disabled`. **critical**: label `Status/critical/content`; Focused: fill
 `Status/critical/surface`, trazo `Status/critical/border-strong`, halo `Status/critical/border`; Disabled igual que el default.
 **Footer**: igual que PopoverFooter (256, padding 8, gap 8, trazo superior `Border/subtle` DENTRO del padding: 40 / 48 / 56 inline; 96 / 112 / 128 stacked, botones
 FILL en stacked: Clear primero, Apply después).
@@ -35,7 +38,7 @@ FILL en stacked: Clear primero, Apply después).
 ## Raro (se copia igual)
 - El item default `Size=default` lleva `IndicatorVisible` true pero el check solo existe en Selected.
 - En lg el Switch del Control es `Size=sm`, en sm/default `Size=xs` (selector-sm 16 de alto en ambos).
-- El Focused destructive cambia la familia entera (surface/border-strong/border críticos).
+- El Focused critical del archivo cambia la familia entera (surface/border-strong/border críticos); el código usa `Status/critical/surface` + `Status/critical/ring` (DEC-2026-11-19-001).
 - El `Header` es un Input real (Input size = size del menú).
 
 ## Anida

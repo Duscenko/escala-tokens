@@ -6,7 +6,9 @@ import { captureCodeSnapshot } from '../codeScope'
 import { buildCSS } from '../exporters'
 import { generateTokenJSON } from '../tokenGenerator'
 import { defaultFigmaSyncModes } from '../figmaSyncModes'
-import { withBrandCss } from '../brandCss'
+import { withBrandCss, withPublishBrandCss } from '../brandCss'
+import { unpackBrandCss } from '../brandCssPack'
+import { leadBrandJson } from '../repoExport'
 import { buildRepoFiles } from '../repoExport'
 import { COMPONENTS } from '../componentCatalogue'
 import type { TokenJSON } from '../agentBundle/types'
@@ -85,5 +87,47 @@ describe('plugin GitHub save', () => {
     const payload = published(keys)
     expect(payload.brandCss).toHaveLength(10)
     expect(JSON.stringify(payload).length).toBeLessThan(2 * 1024 * 1024)
+  })
+
+  it('when plain CSS would not fit, the publish sends it gzipped and the plugin unpacks it byte for byte', async () => {
+    const keys = ['core-minimal', 'retro-vintage', 'terminal-mono', 'abyss-neon', 'cupcake-pastel',
+      'cupertino-glass', 'material-elevation', 'nature-organic', 'neo-brutalism', 'editorial-serif'].map((id) => adopt(id))
+    const s = store()
+    const json = generateTokenJSON(undefined, { modes: defaultFigmaSyncModes(keys, s.themeKinds) })
+    const plainSize = JSON.stringify(withBrandCss(json, s)).length
+    // A limit just under the plain payload forces the packed path.
+    const packed = await withPublishBrandCss(json, s, plainSize - 1) as unknown as TokenJSON
+    expect(packed.brandCss).toBeUndefined()
+    expect(packed.brandCssGzip).toHaveLength(10)
+    const size = JSON.stringify(packed).length
+    expect(size).toBeLessThan(plainSize - 500_000)
+    // What the plugin's fetchJson does on intake.
+    const unpacked = await unpackBrandCss(packed)
+    expect(unpacked.brandCssGzip).toBeUndefined()
+    expect(unpacked.brandCss?.map((b) => b.key)).toEqual(packed.brandCssGzip!.map((b) => b.key))
+    for (const b of unpacked.brandCss!) {
+      expect(b.css).toBe(buildCSS(captureCodeSnapshot(store(), b.key) as never))
+    }
+    const { files } = buildRepoFiles(unpacked, { source: 'figma-plugin' })
+    expect(files.filter((f) => f.path.startsWith('brands/'))).toHaveLength(10)
+    // A repo's tokens.json never carries either form.
+    const lead = leadBrandJson(packed) as unknown as Record<string, unknown>
+    expect(lead.brandCss).toBeUndefined()
+    expect(lead.brandCssGzip).toBeUndefined()
+  })
+
+  it('the publish keeps plain CSS whenever it fits, so older plugins still read it', async () => {
+    const key = adopt('core-minimal')
+    const s = store()
+    const json = generateTokenJSON(undefined, { modes: defaultFigmaSyncModes([key], s.themeKinds) })
+    const out = await withPublishBrandCss(json, s) as unknown as TokenJSON
+    expect(out.brandCss?.map((b) => b.key)).toEqual([key])
+    expect(out.brandCssGzip).toBeUndefined()
+  })
+
+  it('a payload whose packed CSS does not decode keeps no brandCss at all', async () => {
+    const out = await unpackBrandCss({ colors: {}, brandCssGzip: [{ key: 'a', name: 'A', gzip: 'bm90IGd6aXA=' }] }) as Record<string, unknown>
+    expect(out.brandCss).toBeUndefined()
+    expect(out.brandCssGzip).toBeUndefined()
   })
 })

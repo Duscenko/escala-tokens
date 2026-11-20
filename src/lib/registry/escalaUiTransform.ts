@@ -36,7 +36,17 @@ export interface TransformHelpers {
   iconsLibSource?: string
   /** The app's `iconOf` (anatomy snap), evaluated at generation time. */
   iconOf: (px: number) => number
+  /** DOM-free app modules a component may import (`../../lib/<name>` → source). Inlined whole, exports kept, so the shipped
+   *  file stays self-contained; a re-export of one of them (`export … from '../../lib/<name>'`) then drops. */
+  pureLibs?: Record<string, string>
 }
+
+/** A pure lib's source, inlined: its imports and line comments dropped, its exports kept. */
+function inlinePureLib(source: string): string {
+  return source.replace(/^import .*\n/gm, '').replace(/^\/\/.*\n/gm, '').trim()
+}
+
+const EXPORT_FROM_RE = /^export\s+(?:type\s+)?\{[^}]*\}\s+from\s+'([^']+)'\s*;?\s*$/gm
 
 /** `lib/icons.ts` without its imports and comments, `export` dropped: the table and `glyph()` a file draws with. */
 function inlineIconsLib(source: string): string {
@@ -72,8 +82,19 @@ export function transformEscalaUi(file: string, input: string, helpers: Transfor
   const internal = new Set<string>()
   const inlined: string[] = []
 
-  let source = input.replace(IMPORT_RE, (line, clause: string, spec: string) => {
+  const pureLib = (spec: string) => (spec.startsWith('../../lib/') ? helpers.pureLibs?.[spec.slice('../../lib/'.length)] : undefined)
+  const pureInlined = new Set<string>()
+  let source = input.replace(EXPORT_FROM_RE, (line, spec: string) => {
+    if (pureLib(spec) === undefined) return line
+    if (!pureInlined.has(spec)) { pureInlined.add(spec); inlined.push(inlinePureLib(pureLib(spec)!)) }
+    return ''
+  })
+  source = source.replace(IMPORT_RE, (line, clause: string, spec: string) => {
     if (spec === '../../lib/utils') return line.replace(spec, '@/lib/utils')
+    if (pureLib(spec) !== undefined) {
+      if (!pureInlined.has(spec)) { pureInlined.add(spec); inlined.push(inlinePureLib(pureLib(spec)!)) }
+      return ''
+    }
     if (spec.startsWith('./')) {
       const dep = spec.slice(2)
       internal.add(dep)

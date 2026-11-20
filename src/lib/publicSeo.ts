@@ -203,11 +203,13 @@ export function workspaceDocumentHead(section: string): WorkspaceHead {
       robots: 'index, follow',
     }
   }
-  // Blocks live in the workspace only (no public page yet): titled, not indexed.
-  if (section === 'blocks' || section.startsWith('blocks/')) {
+  // Blocks and Screens live in the workspace only (no public page yet): titled, not indexed.
+  const catalogueRoot = section.split('/')[0]
+  if (catalogueRoot === 'blocks' || catalogueRoot === 'screens') {
     const name = section.split('/').slice(1).join(' / ')
+    const label = catalogueRoot === 'screens' ? 'Screens' : 'Blocks'
     return {
-      title: name ? `${name} — Blocks` : 'Blocks',
+      title: name ? `${name} — ${label}` : label,
       description: HOME_DESCRIPTION,
       path: '/',
       translateTitle: !name,

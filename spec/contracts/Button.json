@@ -201,6 +201,7 @@
       "color.content.primary",
       "color.content.secondary",
       "color.elevation.highlight",
+      "color.elevation.shadow-ambient",
       "color.status.critical.border-strong",
       "color.status.critical.content",
       "color.status.critical.on-solid",

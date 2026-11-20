@@ -82,8 +82,12 @@ export const BUDGETS = {
   // 140k → 145k (2026-11-14): the Sidebar became five Figma components (Sidebar, SidebarMenuButton with 30
   // variants, SidebarGroup, SidebarGroupLabel, SidebarBrand), each with its own design-skill file.
   // 145k → 150k (2026-11-16): SocialLoginButton is the Figma set (Brand × Appearance × State: 90 painted combinations).
-  contextAllTokens: 150_000,
-  contextFoundationTokens: 12_000,
+  // 150k → 155k (2026-11-19): the ReactionGroup family (row, trigger with 25 variants, picker), each with its design-skill file, and the
+  // `code` type role with the mono family.
+  // 155k → 165k and 12k → 18k per foundation (2026-11-19): the Chart layer — 30 roles and 168 primitives (the seven hue
+  // ramps in both appearances) — is real content in the colour section, not bloat.
+  contextAllTokens: 165_000,
+  contextFoundationTokens: 18_000,
 }
 
 const THEMES = ['light', 'dark'] as const

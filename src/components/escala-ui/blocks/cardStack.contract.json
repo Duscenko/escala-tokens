@@ -1,0 +1,54 @@
+{
+  "$comment": "Contract of the CardStack blocks (escala-governance step 2): CardStack and its part CardStackCard on the Figma page ❖ CardStack (PRO). An arrangement of escala-ui components in role tokens. Accepted exceptions: the travel photos are stand-ins (stock content, not tokens); the Skip stamp (critical solid) is not in the file, which draws only the Shortlist stamp.",
+  "figma": {
+    "file": "7j5zukN5HpihGVJMmyjA20",
+    "page": "CardStack (PRO)",
+    "pageId": "2397:84"
+  },
+  "blocks": [
+    {
+      "name": "CardStack",
+      "figmaSet": "2403:312",
+      "axes": { "State": "Default|Dragging|Empty" },
+      "variants": 3,
+      "anatomy": [
+        "Column on Spacing/gap-section: stage 320 × 518.5 over the actions row",
+        "stage: the top CardStackCard + two deck layers (Surface/layer-2, Border/default, Radius/container, Shadow/sm) offset 8 and 16",
+        "Empty: dashed panel (Border/default, Radius/container) with 'That’s every card', '<n> decided · <m> shortlisted' and Button secondary outline 'Start over'",
+        "actions: Button secondary outline 'Skip' (close) · IconButton ghost undo · Button default solid 'Shortlist' (heart); Skip and Shortlist disabled when Empty"
+      ],
+      "nests": ["CardStackCard", "Button", "IconButton"],
+      "parts": ["CardStackCard"],
+      "slots": [],
+      "props": ["items", "forceState", "onDecision"],
+      "behaviour": ["The stage is focusable (aria-roledescription=\"card stack\"); ← skips, → shortlists, Backspace or Cmd/Ctrl+Z undoes", "Drag the top card: past 96 px it decides, under it springs back", "Only the top three cards are drawn"],
+      "a11y": ["Every gesture has a button", "A polite live region announces each decision and undo", "The top card is labelled with its name and position"],
+      "motion": [
+        { "moment": "drag", "mechanism": "the card follows the pointer, never timed", "role": "none", "reduced": "unchanged" },
+        { "moment": "throw-off", "mechanism": "the card travels off and fades", "role": "use-travel-out", "reduced": "fades in place" },
+        { "moment": "deck rises / undo", "mechanism": "layers and the returning card travel in", "role": "use-travel-in", "reduced": "fades in place" },
+        { "moment": "empty state", "mechanism": "the panel arrives", "role": "use-disclosure-in", "reduced": "from the tokens" }
+      ]
+    },
+    {
+      "name": "CardStackCard",
+      "figmaSet": "2403:104",
+      "axes": { "State": "Default|Dragging" },
+      "variants": 2,
+      "anatomy": [
+        "Card 320: Surface/layer-2, Border/default, Radius/container, padding Spacing/inset-surface, gap Spacing/gap-group, Shadow/sm (Dragging: Shadow/md)",
+        "photo: Image 4:3 in Radius/action",
+        "meta: Badge secondary soft (airport code)",
+        "heading: city (Type/heading-sm) + country (Type/body-sm, Content/secondary)",
+        "description (Type/body-md, Content/secondary)",
+        "facts: three rows, icon Size/icon-sm Content/subtle + Type/body-sm",
+        "Dragging: stamp Badge success solid, rotated -8°"
+      ],
+      "nests": ["Image", "Badge"],
+      "slots": [],
+      "props": ["item", "state", "stamp", "stampVisible"],
+      "a11y": ["The card is labelled with its name and position"],
+      "motion": [{ "moment": "lift", "mechanism": "the card rotates and moves with the pointer", "role": "none", "reduced": "unchanged" }]
+    }
+  ]
+}

@@ -51,11 +51,11 @@ export const SKELETON_SNIPPETS: Record<string, Snippet> = {
   StepperIcon: (v) =>
     `import { StepperIcon } from "@/components/ui/stepper"\n\n<StepperIcon${v.Status && v.Status !== 'active' ? ` status="${v.Status}"` : ''}${v.State === 'Disabled' ? ' disabled' : ''}${v.Size && v.Size !== 'default' ? ` size="${v.Size}"` : ''} label="1" />`,
   DropdownMenu: (v) =>
-    `import {\n  DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuLabel, DropdownMenuItem, DropdownMenuSeparator,\n} from "@/components/ui/dropdown-menu"\n\n<DropdownMenu>\n  <DropdownMenuTrigger asChild><Button variant="secondary">Options</Button></DropdownMenuTrigger>\n  <DropdownMenuContent${v.Size && v.Size !== 'default' ? ` size="${v.Size}"` : ''}>\n    <DropdownMenuLabel>My account</DropdownMenuLabel>\n    <DropdownMenuItem trailing="⇧⌘P">Profile</DropdownMenuItem>\n    <DropdownMenuItem trailing="⌘S">Settings</DropdownMenuItem>\n    <DropdownMenuSeparator />\n    <DropdownMenuItem variant="destructive">Log out</DropdownMenuItem>\n  </DropdownMenuContent>\n</DropdownMenu>`,
+    `import {\n  DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuLabel, DropdownMenuItem, DropdownMenuSeparator,\n} from "@/components/ui/dropdown-menu"\n\n<DropdownMenu>\n  <DropdownMenuTrigger asChild><Button variant="secondary">Options</Button></DropdownMenuTrigger>\n  <DropdownMenuContent${v.Size && v.Size !== 'default' ? ` size="${v.Size}"` : ''}>\n    <DropdownMenuLabel>My account</DropdownMenuLabel>\n    <DropdownMenuItem trailing="⇧⌘P">Profile</DropdownMenuItem>\n    <DropdownMenuItem trailing="⌘S">Settings</DropdownMenuItem>\n    <DropdownMenuSeparator />\n    <DropdownMenuItem variant="critical">Log out</DropdownMenuItem>\n  </DropdownMenuContent>\n</DropdownMenu>`,
   DropdownMenuLabel: (v) =>
     `import { DropdownMenuLabel } from "@/components/ui/dropdown-menu"\n\n<DropdownMenuLabel${v.Size && v.Size !== 'default' ? ` size="${v.Size}"` : ''}>Action</DropdownMenuLabel>`,
   DropdownMenuItem: (v) =>
-    `import { DropdownMenuItem } from "@/components/ui/dropdown-menu"\n\n<DropdownMenuItem${v.Variant === 'destructive' ? ' variant="destructive"' : ''}${v.Size && v.Size !== 'default' ? ` size="${v.Size}"` : ''}${v.State === 'Selected' ? ' checked' : ''}${v.State === 'Disabled' ? ' disabled' : ''} iconLeading={<House />} trailing="⌘K">Option</DropdownMenuItem>`,
+    `import { DropdownMenuItem } from "@/components/ui/dropdown-menu"\n\n<DropdownMenuItem${v.Variant === 'critical' ? ' variant="critical"' : ''}${v.Size && v.Size !== 'default' ? ` size="${v.Size}"` : ''}${v.State === 'Selected' ? ' checked' : ''}${v.State === 'Disabled' ? ' disabled' : ''} iconLeading={<House />} trailing="⌘K">Option</DropdownMenuItem>`,
   DropdownMenuFooter: (v) =>
     `import { DropdownMenuFooter } from "@/components/ui/dropdown-menu"\n\n<DropdownMenuFooter${v.Size && v.Size !== 'default' ? ` size="${v.Size}"` : ''}${v.Layout === 'stacked' ? ' layout="stacked"' : ''} leading="12 of 40 selected">\n  <Button variant="secondary">Clear</Button>\n  <Button>Apply</Button>\n</DropdownMenuFooter>`,
   Sidebar: (v) =>
@@ -157,6 +157,14 @@ export const SKELETON_SNIPPETS: Record<string, Snippet> = {
     `import { ProgressCircle } from "@/components/ui/progress-line"
 
 <ProgressCircle${v.Size && v.Size !== 'default' ? ` size="${v.Size}"` : ''}${v.Cap === 'butt' ? ' cap="butt"' : ''}${v.Appearance === 'gradient' ? ' appearance="gradient"' : ''} aria-label="Uploading" value={${v.Value ?? 50}} />`,
+  Gauge: (v) =>
+    `import { Gauge } from "@/components/ui/gauge"
+
+<Gauge${v.Variant && v.Variant !== 'default' ? ` variant="${v.Variant}"` : ''}${v.Size && v.Size !== 'default' ? ` size="${v.Size}"` : ''} aria-label="Workspace health" value={${v.Value ?? 72}} unit="%" label="Healthy" />`,
+  Sparkline: (v) =>
+    `import { Sparkline } from "@/components/ui/sparkline"
+
+<Sparkline${v.Variant && v.Variant !== 'default' ? ` variant="${v.Variant}"` : ''}${v.Size && v.Size !== 'default' ? ` size="${v.Size}"` : ''} aria-label="Daily active users, up 7.2 % this week" data={[18, 37, 40, 36, 51, 50, 45, 37, 64]} />`,
   FeaturedIcon: (v) =>
     `import { FeaturedIcon } from "@/components/ui/featured-icon"\n\n<FeaturedIcon${v.Size && v.Size !== 'default' ? ` size="${v.Size}"` : ''}${v.Variant && v.Variant !== 'default' ? ` variant="${v.Variant}"` : ''}${v.Appearance === 'solid' ? ' appearance="solid"' : ''}${v.Shape === 'rounded' ? ' shape="rounded"' : ''} />`,
   RatingGroup: (v) =>
@@ -278,6 +286,12 @@ export const SKELETON_SNIPPETS: Record<string, Snippet> = {
   },
   ButtonGroupItem: (v) =>
     `import { ButtonGroup, ButtonGroupItem } from "@/components/ui/button-group"\n\n<ButtonGroup${v.Variant && v.Variant !== 'default' ? ` variant="${v.Variant}"` : ''}${v.Size && v.Size !== 'default' ? ` size="${v.Size}"` : ''} aria-label="View">\n  <ButtonGroupItem${v.Active === 'true' ? ' active' : ''}${v.State === 'Disabled' ? ' disabled' : ''}>Label</ButtonGroupItem>\n</ButtonGroup>`,
+  ReactionGroup: () =>
+    `import { ReactionGroup } from "@/components/ui/reaction-group"\n\n<ReactionGroup\n  defaultValue={[\n    { id: "celebrate", count: 13, reacted: true },\n    { id: "like", count: 10, reacted: true },\n    { id: "insightful", count: 3 },\n  ]}\n  onValueChange={(next, change) => save(change)}\n/>`,
+  ReactionGroupTrigger: (v) =>
+    `// ReactionGroup draws its own trigger after the last pill.\nimport { ReactionGroupTrigger } from "@/components/ui/reaction-group"\n\n<ReactionGroupTrigger${v.Size && v.Size !== 'default' ? ` size="${v.Size}"` : ''}${v.State === 'Disabled' ? ' disabled' : ''} />`,
+  ReactionGroupPopover: () =>
+    `// ReactionGroup opens its own picker from the trigger.\nimport { ReactionGroupPopover } from "@/components/ui/reaction-group"\n\n<ReactionGroupPopover onSelect={(id) => react(id)} />`,
   ButtonGroupDivider: () =>
     `// ButtonGroup draws a ButtonGroupDivider between its items by itself.\nimport { ButtonGroup, ButtonGroupItem } from "@/components/ui/button-group"\n\n<ButtonGroup aria-label="Range">\n  <ButtonGroupItem>Day</ButtonGroupItem>\n  <ButtonGroupItem>Week</ButtonGroupItem>\n</ButtonGroup>`,
   SocialLoginButton: (v) =>
@@ -305,6 +319,12 @@ export const SKELETON_SNIPPETS: Record<string, Snippet> = {
     const variant = v.Variant && v.Variant !== 'default' ? ` variant="${v.Variant}"` : ''
     const flags = v.State === 'Disabled' ? ' disabled' : ''
     return `import { FABButton } from "@/components/ui/fab-button"\n\n<FABButton${appearance}${shape}${size}${variant}${flags}>\n  Create\n</FABButton>`
+  },
+  SplitButton: (v) => {
+    const variant = v.Variant && v.Variant !== 'default' ? ` variant="${v.Variant}"` : ''
+    const size = v.Size && v.Size !== 'default' ? ` size="${v.Size}"` : ''
+    const open = v.Open === 'true' ? ' defaultOpen' : ''
+    return `import { SplitButton } from "@/components/ui/split-button"\nimport { DropdownMenuItem } from "@/components/ui/dropdown-menu"\n\n<SplitButton${variant}${size}${open}\n  menu={<>\n    <DropdownMenuItem>Publish and notify</DropdownMenuItem>\n    <DropdownMenuItem>Save as draft</DropdownMenuItem>\n    <DropdownMenuItem variant="critical">Delete draft</DropdownMenuItem>\n  </>}\n>\n  Publish\n</SplitButton>`
   },
   FABGroup: (v) => {
     const layout = v.Layout && v.Layout !== 'stack' ? ` layout="${v.Layout}"` : ''

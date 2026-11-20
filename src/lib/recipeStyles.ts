@@ -38,7 +38,12 @@ function stateSuffixes(recipe: ComponentRecipe, state: string): string[] {
     case 'Hover': return recipe.hover === 'highlight' ? [forced] : [`:hover${free}`, forced]
     case 'Pressed': return [`:active${free}`, forced]
     // The root itself (a button) or a wrapper around the focusable control.
-    case 'Focused': return [`:focus-visible${free}`, `:has(:focus-visible)${free}`, forced]
+    // A menu row: Radix moves focus to the row under the pointer and the browser still calls it `:focus-visible`,
+    // so a row reached with the pointer keeps the fill alone. The ring is for the keyboard (`data-modality`, DropdownMenuContent).
+    case 'Focused': {
+      const live = recipe.hover === 'highlight' ? `${free}:not([data-modality="pointer"] *)` : free
+      return [`:focus-visible${live}`, `:has(:focus-visible)${live}`, forced]
+    }
     case 'Disabled': return ['[aria-disabled="true"]', forced]
     case 'Error': return ['[aria-invalid="true"]', forced]
     default: return [forced]
@@ -54,9 +59,9 @@ function dim(ref: string): string {
 
 /** The focus halo is `stroke.focus` wide (2px), as in the Figma file. */
 const HALO = 'var(--stroke-focus, 2px)'
-/** The top highlight of a solid control: Figma's inner shadow 0 · 2 · 0 · 0
- *  (the same 2px the focus edge is drawn at). */
-const highlightShadow = (color: string) => `inset 0 var(--stroke-focus, 2px) 0 0 ${color}`
+/** The top highlight of a solid control: Figma's shared style `Highlight/solid`, an inner shadow 0 · 1 · 0 · 0.
+ *  A set that hand-sets it instead (FABButton, FeaturedIcon gradient: 0 · 2 · 0) gives `highlightWidth`. */
+const highlightShadow = (color: string, width = '1') => `inset 0 ${width}px 0 0 ${color}`
 /** The named elevations a recipe can lift on, as the Figma FAB draws them: a key
  *  shadow and an ambient one. The file hand-sets the numbers per state (offset and
  *  blur 12·16 / 20·24 / 4·6 and 4·6 / 8·8 / 2·4) and gives each a negative spread
@@ -100,7 +105,7 @@ const outerStrokeShadow = (props: SlotProps, v: (ref: string) => string) =>
 function surfaceShadows(props: SlotProps, v: (ref: string) => string): string[] {
   const lift = props.lift && LIFT[props.lift] ? LIFT[props.lift](v('color.elevation.shadow-key'), v('color.elevation.shadow-ambient'), v('color.elevation.shadow-ring')) : []
   const outer = props.outerStroke && props.outerStroke !== 'none' ? [outerStrokeShadow(props, v)] : []
-  return [...lift, ...outer, ...(props.highlight && props.highlight !== 'none' ? [highlightShadow(v(props.highlight))] : [])]
+  return [...lift, ...outer, ...(props.highlight && props.highlight !== 'none' ? [highlightShadow(v(props.highlight), props.highlightWidth && props.highlightWidth !== 'none' ? props.highlightWidth : undefined)] : [])]
 }
 /** A slot whose box-shadow is written by `focus`, `halo`, `lift` or `highlight`
  *  (each composes `surfaceShadows`), so `outerStroke` must not write its own. */
@@ -144,7 +149,8 @@ function declarations(props: SlotProps): string[] {
         if (ref === 'none' || composesShadow(props)) break // composed into that box-shadow
         out.push(`box-shadow: ${outerStrokeShadow(props, v)}`)
         break
-      case 'textShadow': out.push(ref === 'none' ? 'text-shadow: none' : 'text-shadow: 0 1px 0 rgb(0 0 0 / 0.15)'); break
+      // Figma's shared style `Shadow/text-2xs`: a drop 0 · 1 · 0.5 · 0 on `Elevation/shadow-ambient`.
+      case 'textShadow': out.push(ref === 'none' ? 'text-shadow: none' : `text-shadow: 0 1px 0.5px ${v('color.elevation.shadow-ambient')}`); break
       case 'fontLiteral': out.push(`font-size: ${ref}px`, 'line-height: 100%', 'font-weight: 500', 'letter-spacing: 0'); break
       // A halo fully outside the control (no edge): Figma's `focus-ring` frame,
       // `stroke.focus` wide, stroked OUTSIDE. The transparent outline is what
@@ -240,6 +246,8 @@ function declarations(props: SlotProps): string[] {
       }
       // The corners that face the page on an edge panel (a Sheet): two corners, one radius.
       case 'radiusTop': { const r = v(ref); out.push(`border-top-left-radius: ${r}`, `border-top-right-radius: ${r}`); break }
+      // The corners that face the footer of a tray Modal's panel.
+      case 'radiusBottom': { const r = v(ref); out.push(`border-bottom-left-radius: ${r}`, `border-bottom-right-radius: ${r}`); break }
       case 'radiusLeft': { const r = v(ref); out.push(`border-top-left-radius: ${r}`, `border-bottom-left-radius: ${r}`); break }
       case 'radiusRight': { const r = v(ref); out.push(`border-top-right-radius: ${r}`, `border-bottom-right-radius: ${r}`); break }
       // Figma draws a stroke INSIDE the frame; a CSS border sits outside the
@@ -437,12 +445,24 @@ export function recipeMotionCss(recipe: ComponentRecipe): string {
   for (const [slotKey, props] of Object.entries(m.transitions ?? {})) {
     const [slot, suffix] = splitSlotKey(slotKey)
     const sel = slotSelector(recipe, root, slot) + suffix
-    const list = Object.entries(props).map(([prop, role]) => `${prop} var(--motion-${role}, ${TRANSITION_FALLBACK})`)
+    // `transform` also covers the individual transform properties: Tailwind v4's `translate-x-*`, `rotate-*` and `scale-*`
+    // write `translate` / `rotate` / `scale`, not `transform`, so a Switch thumb or an Accordion chevron jumped with no motion.
+    const expand = (prop: string) => (prop === 'transform' ? ['transform', 'translate', 'rotate', 'scale'] : [prop])
+    const list = Object.entries(props).flatMap(([prop, role]) => expand(prop).map((p) => `${p} var(--motion-${role}, ${TRANSITION_FALLBACK})`))
     rules.push(`${sel} {\n  transition: ${list.join(', ')};\n}`)
   }
   if (m.origin) rules.push(`${slotSelector(recipe, root, m.enter?.slot ?? recipe.slots[0])} {\n  transform-origin: ${m.origin};\n}`)
   if (m.enter) rules.push(...choreographyRules(recipe, root, m.enter, OPEN, m.host?.enter))
   if (m.exit) rules.push(...choreographyRules(recipe, root, m.exit, CLOSED, m.host?.exit))
+  if (m.press) {
+    const live = ':not([data-force-state]):not([aria-disabled="true"]):not(:disabled)'
+    const slot = m.press.slot ?? recipe.slots[0]
+    // Going down plays `use-press` (the exit curve: a press); coming back plays the slot's own scale role (`use-hover`).
+    const down = Object.entries({ ...(m.transitions?.[slot] ?? {}), scale: 'use-press' })
+      .flatMap(([prop, role]) => (prop === 'transform' ? ['transform', 'translate', 'rotate', 'scale'] : [prop]).map((p) => `${p} var(--motion-${role}, ${TRANSITION_FALLBACK})`))
+    rules.push(`${slotSelector(recipe, `${root}:active${live}`, slot)} {\n  scale: var(--motion-transform-shrink, 1);\n  transition: ${down.join(', ')};\n}`)
+  }
+  if (m.stagger) rules.push(`${slotSelector(recipe, root, m.stagger.slot)}${m.stagger.when} {\n  transition-delay: calc(var(--escala-index, 0) * var(--motion-stagger, 0ms));\n}`)
   rules.push(...timerRules(recipe, root, m.timer), ...queueRules(m.queue))
   // A disclosure's enter and exit both declare its height: once is enough.
   return [...new Set(rules)].join('\n')
@@ -488,6 +508,9 @@ export const RECIPE_CSS: string = [
   motionKeyframesCss(playedKeyframes()).join('\n'),
 ].join('\n\n')
 
+/** An item's place in its row, set inline by the component that staggers it (`motion.stagger`): never a token. */
+const INDEX_VAR = '--escala-index'
+
 /** What Sonner publishes on each toast of its queue: never a token. */
 const QUEUE_VARS = new Set(['--lift', '--lift-amount', '--offset', '--scale', '--toasts-before'])
 
@@ -499,6 +522,6 @@ const QUEUE_VARS = new Set(['--lift', '--lift-amount', '--offset', '--scale', '-
 export function recipeCssVars(css: string = RECIPE_CSS): string[] {
   const own = new Set(css.match(/--[a-z0-9_-]+(?=:)/g) ?? [])
   return [...new Set(css.match(/var\((--[a-z0-9_-]+)/g)?.map((m) => m.slice(4)) ?? [])]
-    .filter((v) => !own.has(v) && !v.startsWith('--radix-') && !QUEUE_VARS.has(v) && v !== STROKE_WIDTH_VAR)
+    .filter((v) => !own.has(v) && !v.startsWith('--radix-') && !QUEUE_VARS.has(v) && v !== STROKE_WIDTH_VAR && v !== INDEX_VAR)
     .sort()
 }

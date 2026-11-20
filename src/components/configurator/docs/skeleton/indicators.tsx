@@ -7,6 +7,8 @@ import { Chip as SkChip, type ChipAppearance, type ChipShape, type ChipSize, typ
 import { useAutoplayStep } from '../../../preview/artefacts/boardAutoplay'
 import { ProgressCircle as SkProgressCircle, ProgressLine as SkProgressLine, type ProgressAppearance, type ProgressCap, type ProgressSize } from '../../../escala-ui/progress-line'
 import { Spinner as SkSpinner } from '../../../escala-ui/spinner'
+import { Gauge as SkGauge, type GaugeSize, type GaugeVariant } from '../../../escala-ui/gauge'
+import { Sparkline as SkSparkline, type SparklineSize, type SparklineVariant } from '../../../escala-ui/sparkline'
 import { RatingGroup as SkRatingGroup, RatingGroupItem as SkRatingGroupItem, type RatingGroupItemState, type RatingGroupSize, type RatingGroupType } from '../../../escala-ui/rating-group'
 import {
   Avatar as SkAvatar, AvatarStatus as SkAvatarStatus, AvatarGroup as SkAvatarGroup,
@@ -79,6 +81,25 @@ export function SkeletonProgressLineSpecimen({ t, v, w }: SpecimenProps) {
   return (
     <RecipeScope t={t}>
       <SkProgressLine aria-label="Uploading" size={(v.Size ?? 'default') as ProgressSize} appearance={(v.Appearance ?? 'solid') as ProgressAppearance} value={value} style={{ width: w ?? 240, maxWidth: '100%' }} />
+    </RecipeScope>
+  )
+}
+
+/** The Figma Gauge: the 72 % sample the file writes in every variant (Value is the arc; the text follows it, as in code). */
+export function SkeletonGaugeSpecimen({ t, v }: SpecimenProps) {
+  return (
+    <RecipeScope t={t}>
+      <SkGauge aria-label="Workspace health" variant={(v.Variant ?? 'default') as GaugeVariant} size={(v.Size ?? 'default') as GaugeSize} value={Number(v.Value ?? 72)} unit="%" label="Healthy" />
+    </RecipeScope>
+  )
+}
+
+/** The Figma Sparkline's sample curve (nine points; heights 0 · 19 · 22 · 18 · 33 · 32 · 27 · 19 · 46). */
+const SPARKLINE_SAMPLE = [18, 37, 40, 36, 51, 50, 45, 37, 64]
+export function SkeletonSparklineSpecimen({ t, v }: SpecimenProps) {
+  return (
+    <RecipeScope t={t}>
+      <SkSparkline aria-label="Daily active users, up 7.2 % this week" variant={(v.Variant ?? 'default') as SparklineVariant} size={(v.Size ?? 'default') as SparklineSize} data={SPARKLINE_SAMPLE} />
     </RecipeScope>
   )
 }

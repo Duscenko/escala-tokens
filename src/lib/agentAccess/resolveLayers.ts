@@ -11,6 +11,7 @@ import type {
 } from '../agentBundle/types.js'
 import type { ResolvedToken } from './resolveToken.js'
 import { roleCssVar, roleFigmaName, roleIdFromName } from '../roleNames.js'
+import { FONT_FAMILY_MONO } from '../typographyStandard.js'
 
 const COLOR_GROUPS = ['action', 'content', 'surface', 'status', 'border'] as const
 const VIEWPORTS = ['desktop', 'tablet', 'mobile'] as const
@@ -465,6 +466,7 @@ function typeValue(typo: TokenJSON['typography'], alias: TypeAlias, facet: Facet
   if (facet === 'family') {
     if (alias.family === 'display') return typo.headingFontFamily ?? typo.fontFamily ?? null
     if (alias.family === 'body') return typo.fontFamily ?? null
+    if (alias.family === 'mono') return typo.monoFontFamily ?? FONT_FAMILY_MONO
     return null
   }
   const size = alias.size
@@ -474,7 +476,7 @@ function typeValue(typo: TokenJSON['typography'], alias: TypeAlias, facet: Facet
 function typeAliasName(alias: TypeAlias, facet: Facet): string | undefined {
   if (facet === 'size' && alias.size) return `font-size.${alias.size}`
   if (facet === 'weight' && alias.weight) return `font-weight.${alias.weight}`
-  if (facet === 'family' && alias.family) return `font-family.${alias.family === 'display' ? 'heading' : 'body'}`
+  if (facet === 'family' && alias.family) return `font-family.${alias.family === 'display' ? 'heading' : alias.family === 'mono' ? 'mono' : 'body'}`
   if (facet === 'leading' && alias.size) return `line-height.${alias.size}`
   return undefined
 }

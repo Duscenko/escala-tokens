@@ -224,8 +224,12 @@ function buildCases(stories) {
 
   const index = JSON.parse(readFileSync(join(ROOT, 'spec/contracts/index.json'), 'utf8'))
   const known = new Set(stories.map((s) => s.id))
+  // A screen's pieces (SettingsRow, IssueCard…) have no Elements page on the web: they are drawn on their screen's
+  // page in the Screens tab, the way Storybook merges them into `Screens/<screen>` (spec/storybook-families.json).
+  const { families } = JSON.parse(readFileSync(join(ROOT, 'spec/storybook-families.json'), 'utf8'))
+  const screenPieces = new Set(families.filter((f) => f.folder === 'Screens').flatMap((f) => [f.root, ...f.parts]).filter(Boolean))
   for (const { key, story } of index) {
-    if (!story || !known.has(story)) continue
+    if (!story || !known.has(story) || screenPieces.has(key)) continue
     for (const theme of THEMES) {
       add(`Components/${key}/${theme}`, async (p) => {
         const selector = `[data-escala="${key}"]`

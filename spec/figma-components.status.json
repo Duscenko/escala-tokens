@@ -193,14 +193,39 @@
     "AccordionItem": {
       "status": "rebuild"
     },
-    "Modal": {
-      "status": "rebuild"
-    },
     "ModalFooter": {
       "status": "rebuild"
     },
-    "DropdownMenuItem": {
-      "status": "rebuild"
+    "MorphNav": {
+      "status": "block",
+      "page": "UserMenu & MorphNav"
+    },
+    "UserMenu": {
+      "status": "block",
+      "page": "UserMenu & MorphNav"
+    },
+    "ActionButton": {
+      "status": "new"
+    },
+    "AuthPasskeySetup": {
+      "status": "block",
+      "page": "AuthPasskeySetup (PRO)"
+    },
+    "AuthPasskeySetupIndicator": {
+      "status": "block",
+      "page": "AuthPasskeySetup (PRO)"
+    },
+    "AuthTwoFactorSetup": {
+      "status": "block",
+      "page": "AuthTwoFactorSetup (PRO)"
+    },
+    "AuthTwoFactorSetupGroup": {
+      "status": "block",
+      "page": "AuthTwoFactorSetup (PRO)"
+    },
+    "AuthTwoFactorSetupItem": {
+      "status": "block",
+      "page": "AuthTwoFactorSetup (PRO)"
     }
   },
   "codeOnly": [

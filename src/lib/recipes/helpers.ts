@@ -10,11 +10,11 @@ export type TokenRef = string
  *  centred on a glyph smaller than 24px — the glyph itself does not grow. */
 export const RECIPE_PROPS = [
   'fill', 'stroke', 'text', 'ring', 'focus',
-  'height', 'minHeight', 'minWidth', 'width', 'travel', 'paint', 'strokeTop', 'strokeTopWidth', 'strokeBottomWidth', 'strokeRightWidth', 'strokeLeftWidth', 'radius', 'radiusTop', 'radiusLeft', 'radiusRight', 'maxWidth', 'paddingTop', 'paddingX', 'paddingY', 'paddingBottom', 'paddingRight', 'gap', 'rowGap', 'strokeWidth', 'font', 'shadow', 'hit',
+  'height', 'minHeight', 'minWidth', 'width', 'travel', 'paint', 'strokeTop', 'strokeTopWidth', 'strokeBottomWidth', 'strokeRightWidth', 'strokeLeftWidth', 'radius', 'radiusTop', 'radiusBottom', 'radiusLeft', 'radiusRight', 'maxWidth', 'paddingTop', 'paddingX', 'paddingY', 'paddingBottom', 'paddingRight', 'gap', 'rowGap', 'strokeWidth', 'font', 'shadow', 'hit',
   // A label the file binds to a scale step while it keeps its role's family and weight (SocialLoginButton:
   // `size/text-md` with `role/button/weight`). Size, line height and tracking of the step, over `font`.
   'fontStep',
-  // The top highlight of a solid control (Figma: an inner shadow 0 · 2 · 0
+  // The top highlight of a solid control (Figma `Highlight/solid`: an inner shadow 0 · 1 · 0
   // painted `Elevation/highlight`). Its value is a colour role.
   'highlight',
   // Fills stacked OVER `fill` (Figma draws a CloseButton's hover / pressed as
@@ -48,17 +48,20 @@ export const RECIPE_PROPS = [
   // A hand-set hairline the file leaves unbound (Avatar's 0.5px edge on the 2xs / xs sizes): px as a
   // plain number string. Not a token reference.
   'hairline',
+  // The top highlight's offset when the file hand-sets it instead of using `Highlight/solid` (0 · 1 · 0): FABButton
+  // and FeaturedIcon `gradient` keep an unbound inner shadow 0 · 2 · 0. px as a plain number string. Not a token reference.
+  'highlightWidth',
   // A stroke drawn OUTSIDE the frame (Figma AvatarStatus: Surface/page, `strokeAlign` OUTSIDE): a colour
   // role plus its width (a stroke ref). CSS draws it as a 0-blur spread so the box does not grow.
   'outerStroke', 'outerStrokeWidth',
-  // The label's shadow on a solid fill (`Shadow/text-2xs` in the Figma file: 0 1px 0, black 15 %). A named
+  // The label's shadow on a solid fill (`Shadow/text-2xs` in the Figma file: 0 1px 0.5px, `Elevation/shadow-ambient`). A named
   // step (`text-2xs`), not a token reference. Only the Button label carries it.
   'textShadow',
   // A negative overlap between a row's items (AvatarGroup): a spacing role (`spacing.overlap-md`). CSS has no
   // negative gap, so it is a custom property (`--escala-overlap`) the component lays out as a margin.
   'overlap',
 ] as const
-export const NON_TOKEN_PROPS: readonly string[] = ['opacity', 'lift', 'fontLiteral', 'hairline', 'textShadow']
+export const NON_TOKEN_PROPS: readonly string[] = ['opacity', 'lift', 'fontLiteral', 'hairline', 'highlightWidth', 'textShadow']
 export type RecipeProp = (typeof RECIPE_PROPS)[number]
 export type SlotProps = Partial<Record<RecipeProp, TokenRef>>
 export type SlotMap = Record<string, SlotProps>
@@ -100,6 +103,12 @@ export interface RecipeMotion {
   timer?: RecipeChoreo & { attr: string; pausedBy: string[] }
   /** The queue's own item: how neighbours move, in place of the library's timing. */
   queue?: { item: string; reflow: string; release: string }
+  /** A live press (`:active`, never a pinned Pressed state in docs) sinks the slot to the `shrink` transform role
+   *  (0.98 in Standard, 1 under reduced motion) on `use-press`; it springs back on release. */
+  press?: { slot?: string }
+  /** Items that arrive one after another: while `when` holds, each `slot` waits its place in the row (`--escala-index`,
+   *  set by the component) times the system's stagger (`--motion-stagger`, 0 under reduced motion). */
+  stagger?: { slot: string; when: string }
 }
 
 export interface ComponentRecipe {

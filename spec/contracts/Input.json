@@ -81,6 +81,10 @@
       {
         "name": "ShortcutVisible",
         "type": "BOOLEAN"
+      },
+      {
+        "name": "Value",
+        "type": "TEXT"
       }
     ],
     "catalogueSets": [
@@ -153,6 +157,11 @@
         "name": "placeholder",
         "type": "string",
         "description": "Figma Placeholder."
+      },
+      {
+        "name": "value / defaultValue",
+        "type": "string",
+        "description": "Figma Value (TEXT): the text a filled field shows. The variant Value=filled only says a value is present; it is not a prop."
       },
       {
         "name": "leading",

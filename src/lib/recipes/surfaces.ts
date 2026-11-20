@@ -1,4 +1,4 @@
-import { c, NONE, part, type ComponentRecipe, type SlotProps} from './helpers.js'
+import { c, NONE, part, type ComponentRecipe, type SlotMap, type SlotProps } from './helpers.js'
 
 // ── Card ───────────────────────────────────────────────────────────────────
 
@@ -37,14 +37,20 @@ export const CARD: ComponentRecipe = {
 // header and the content; the footer sits under it; the close is a ghost pill CloseButton 20 from the corner.
 
 export const MODAL_SIZES = ['default', 'lg'] as const
+/** Figma Modal Layout: `tray` = a Surface/layer-1 shell around a layer-2 panel (header + Content) with the footer on the tray; `simple` is the
+ *  bare card. Only `tray` is drawn to the file so far; `simple` keeps the card the Modal was built as (Modal is `rebuild` in the debt ledger). */
+export const MODAL_LAYOUTS = ['tray', 'simple'] as const
+/** What the ModalFooter sits on: the plain card (the Modal built before the file's Layout axis), the tray (no hairline; its own
+ *  vertical inset) or the simple card (no hairline, no inset: the Modal's own padding holds it). */
+export const MODAL_SURFACES = ['plain', 'tray', 'simple'] as const
 export const MODAL_HEADER_ALIGNS = ['horizontal', 'vertical-left', 'vertical-center'] as const
-export const MODAL_FOOTER_LAYOUTS = ['inline', 'stacked'] as const
+export const MODAL_FOOTER_LAYOUTS = ['inline', 'stacked', 'equal'] as const
 
 export const MODAL: ComponentRecipe = {
   key: 'Modal',
-  slots: ['root', 'overlay', 'main', 'content', 'close'],
+  slots: ['root', 'overlay', 'main', 'panel', 'header', 'content', 'close'],
   detachedSlots: ['overlay'],
-  defaults: { Size: 'default' },
+  defaults: { Size: 'default', Layout: 'simple' },
   parts: [
     part({}, () => ({
       overlay: { fill: c('surface.overlay') },
@@ -58,6 +64,19 @@ export const MODAL: ComponentRecipe = {
     part({ Size: MODAL_SIZES }, (size) => ({
       // 480 = 3 × 128 + 96; 640 = 5 × 128 (the file's widths have no variable).
       root: { width: size === 'lg' ? 'spacing.32+spacing.32+spacing.32+spacing.32+spacing.32' : 'spacing.32+spacing.32+spacing.32+spacing.24' },
+    })),
+    part({ Layout: MODAL_LAYOUTS }, (layout): SlotMap => (layout === 'tray' ? {
+      root: { fill: c('surface.layer-1') },
+      // The panel (header + Content) is Surface/layer-2 with a hairline under it, round at the bottom (Radius/container); its top
+      // corners are the shell's own, clipped. The Content slot carries its own inset and the hairline that closes the header.
+      panel: { fill: c('surface.layer-2'), stroke: c('border.subtle'), strokeBottomWidth: 'stroke.divider', radiusBottom: 'radius.container' },
+      header: { paddingX: 'spacing.inset-surface', paddingY: 'spacing.inset-surface' },
+      content: { stroke: c('border.subtle'), strokeTopWidth: 'stroke.divider', paddingX: 'spacing.inset-surface', paddingY: 'spacing.inset-surface' },
+    } : {
+      // `simple` (400 wide): the card pads itself (inset-surface), `main` = header + Content with no padding of its own, 24 apart.
+      // Figma pads from INSIDE the 1px stroke (inner width 350, not 352), and the recipe gives the border back: ask for the inset plus the stroke.
+      root: { width: 'spacing.32+spacing.32+spacing.32+spacing.4', paddingX: 'spacing.inset-surface+stroke.divider', paddingY: 'spacing.inset-surface+stroke.divider', gap: 'spacing.gap-section' },
+      main: { paddingX: 'spacing.0', paddingY: 'spacing.0', gap: 'spacing.gap-section' },
     })),
   ],
 }
@@ -82,6 +101,8 @@ export const MODAL_HEADER: ComponentRecipe = {
       clearance: size === 'lg'
         ? { width: 'size.md', height: 'size.md' }
         : { width: 'size.sm', height: 'size.sm' },
+      // The Trailing slot is as tall as the close clearance (32 · 40), so a small trailing item (a Badge) centres on the title's row.
+      trailing: { minHeight: size === 'lg' ? 'size.md' : 'size.sm' },
     })),
   ],
 }
@@ -89,7 +110,7 @@ export const MODAL_HEADER: ComponentRecipe = {
 export const MODAL_FOOTER: ComponentRecipe = {
   key: 'ModalFooter',
   slots: ['root', 'leading', 'actions'],
-  defaults: { Size: 'default', Layout: 'inline' },
+  defaults: { Size: 'default', Layout: 'inline', Surface: 'plain' },
   parts: [
     part({}, () => ({
       // A hairline along the TOP only (Border/subtle, inside); the padding is the surface inset on every side.
@@ -100,6 +121,12 @@ export const MODAL_FOOTER: ComponentRecipe = {
       leading: { gap: 'spacing.gap-tight', text: c('content.secondary'), font: 'type.caption' },
       actions: { gap: 'spacing.gap-control' },
     })),
+    // On the tray (Surface/layer-1) the footer has no hairline; inline sits 12 above and below its buttons, stacked the full inset.
+    part({ Surface: MODAL_SURFACES, Layout: MODAL_FOOTER_LAYOUTS }, (surface, layout): SlotMap => (surface === 'tray'
+      ? { root: { strokeTopWidth: 'stroke.none', paddingY: layout === 'stacked' ? 'spacing.inset-surface' : 'spacing.inset-control' } }
+      : surface === 'simple'
+        ? { root: { strokeTopWidth: 'stroke.none', paddingX: 'spacing.0', paddingY: 'spacing.0' } }
+        : {})),
   ],
 }
 

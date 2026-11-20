@@ -79,7 +79,7 @@ function buttonPaint(variant: string, appearance: string, state: string, shadowL
   if (appearance === 'solid') {
     const k = SOLID[variant]
     // Every solid state but Disabled carries the top highlight and, on a Button,
-    // the label's 0 1px 0 shadow (`Shadow/text-2xs`). No outside stroke any more
+    // the label's 0 1px 0.5px shadow (`Shadow/text-2xs`). No outside stroke any more
     // (owner's call 2026-11-17, after Create UI): the fill is the control, and
     // the hard edge round a vivid fill read as noise — a pale halo in Dark.
     return {
@@ -405,7 +405,9 @@ function fabPaint(variant: string, appearance: string, state: string): SlotMap {
   if (k.over[step][0]) root.overlay = k.over[step][0]
   if (k.over[step][1]) root.overlay2 = k.over[step][1]
   root.lift = step === 2 ? 'pressed' : step === 1 ? 'hover' : 'rest'
+  // The FAB's inner shadow is hand-set in the file (0 · 2 · 0), not the shared `Highlight/solid` (0 · 1 · 0).
   root.highlight = c('elevation.highlight')
+  root.highlightWidth = '2'
   if (state === 'Focused') root.halo = k.halo
   return { root }
 }
@@ -655,3 +657,80 @@ export const SOCIAL_LOGIN_BUTTON: ComponentRecipe = {
 
 export const TOGGLE_GROUP_VARIANTS = ['default', 'outline'] as const
 export const TOGGLE_GROUP_SIZES = ['default', 'sm', 'lg'] as const
+
+// ── ReactionGroup · ReactionGroupTrigger · ReactionGroupPopover ────────────
+// The Figma page `ReactionGroup` (design-plans/reaction-group-contract.md; 2381:169, 2381:124, 2381:130). The reaction
+// pills are the existing Chip (outline · pill): only the trigger, the picker and the row are sets of their own.
+
+/** The options in the order the Figma file lists them. */
+export const REACTION_GROUP_TRIGGER_SIZES = ['default', 'xs', 'sm', 'lg', 'xl'] as const
+export const REACTION_GROUP_TRIGGER_STATES = ['Default', 'Hover', 'Focused', 'Open', 'Disabled'] as const
+/** The outline pill Chip's box and glyph at each size: Size/control-xs … xl, icon sm · sm · md · md · lg. */
+const REACTION_TRIGGER_GEOMETRY: Record<string, { box: string; icon: string }> = {
+  xs: { box: 'size.xs', icon: 'icon.small' },
+  sm: { box: 'size.sm', icon: 'icon.small' },
+  default: { box: 'size.md', icon: 'icon.medium' },
+  lg: { box: 'size.lg', icon: 'icon.medium' },
+  xl: { box: 'size.xl', icon: 'icon.large' },
+}
+
+function reactionTriggerPaint(state: string): SlotProps {
+  const rest: SlotProps = { fill: NONE, stroke: c('border.control'), strokeWidth: 'stroke.control', text: c('content.secondary'), gapRing: NONE }
+  switch (state) {
+    case 'Hover': return { ...rest, fill: c('surface.muted'), stroke: c('border.control-hover'), text: c('content.primary') }
+    // The Button rule: the Default look plus ONE ring, 1px off the edge.
+    case 'Focused': return { ...rest, gapRing: c('border.ring.default') }
+    // The picker is open: the look of a selected pill.
+    case 'Open': return { ...rest, fill: c('surface.selected'), stroke: c('border.accent'), text: c('content.accent') }
+    case 'Disabled': return { ...rest, stroke: c('border.subtle'), text: c('content.disabled') }
+    default: return rest
+  }
+}
+
+export const REACTION_GROUP_TRIGGER: ComponentRecipe = {
+  key: 'ReactionGroupTrigger',
+  slots: ['root', 'icon'],
+  defaults: { Size: 'default', State: 'Default' },
+  parts: [
+    part({ Size: REACTION_GROUP_TRIGGER_SIZES }, (size) => {
+      const g = REACTION_TRIGGER_GEOMETRY[size]
+      return {
+        root: { height: g.box, width: g.box, paddingX: 'spacing.0', radius: 'radius.pill' },
+        icon: { width: g.icon, height: g.icon },
+      }
+    }),
+    part({ State: REACTION_GROUP_TRIGGER_STATES }, (state) => ({ root: reactionTriggerPaint(state) })),
+  ],
+}
+
+/** The picker: an overlay surface holding a toolbar of ghost IconButtons (sm). Concentric: Radius/overlay minus the
+ *  inset is the IconButton's Radius/action. */
+export const REACTION_GROUP_POPOVER: ComponentRecipe = {
+  key: 'ReactionGroupPopover',
+  slots: ['root', 'content'],
+  defaults: {},
+  parts: [
+    part({}, () => ({
+      root: {
+        fill: c('surface.layer-2'), stroke: c('border.default'), strokeWidth: 'stroke.divider', radius: 'radius.overlay',
+        // The file's stroke lays out: the picker is its content plus the inset AND the edge on every side (238 × 58).
+        paddingX: 'spacing.inset-control+stroke.divider', paddingY: 'spacing.inset-control+stroke.divider', lift: 'popover-md',
+      },
+      content: { gap: 'spacing.gap-tight' },
+    })),
+  ],
+}
+
+/** The row: pills and the trigger wrap on `gap-control` (both axes); the summary sits one `gap-control` under it. */
+export const REACTION_GROUP: ComponentRecipe = {
+  key: 'ReactionGroup',
+  slots: ['root', 'content', 'item', 'digit', 'summary'],
+  defaults: {},
+  parts: [
+    part({}, () => ({
+      root: { gap: 'spacing.gap-control' },
+      content: { gap: 'spacing.gap-control' },
+      summary: { font: 'type.body-sm', text: c('content.secondary') },
+    })),
+  ],
+}

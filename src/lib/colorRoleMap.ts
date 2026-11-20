@@ -32,8 +32,8 @@ export const COLOUR_FAMILIES: Record<ColorRoleId, string[]> = {
   info: ['info', 'info-a'],
 }
 
-/** The fixed alpha ladders — no hue, carried by Neutral. */
-export const FIXED_FAMILIES = ['black-a', 'white-a']
+/** The fixed ladders — no hue slot, carried by Neutral: the alpha ladders and the Chart hue ramps (series 2–8). */
+export const FIXED_FAMILIES = ['black-a', 'white-a', 'chart-teal', 'chart-amber', 'chart-blue', 'chart-rose', 'chart-lime', 'chart-magenta', 'chart-orange']
 
 /** Where a role sits on its colour: its own ramp, or a fixed ladder. */
 export type MapBand = 'ramp' | 'fixed'

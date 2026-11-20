@@ -115,8 +115,8 @@ function Button({
       className={cn(
         'group/button inline-flex shrink-0 items-center justify-center whitespace-nowrap outline-none select-none',
         'aria-disabled:cursor-not-allowed [&_svg]:pointer-events-none [&_svg]:shrink-0',
-        // Figma underlines only the critical link on hover / press.
-        axes.appearance === 'link' && axes.variant === 'critical' && 'underline-offset-4 hover:underline active:underline',
+        // Figma underlines every link Variant on Hover and Pressed, so the cue never relies on colour alone.
+        axes.appearance === 'link' && 'underline-offset-4 hover:underline active:underline',
         className,
       )}
       {...props}

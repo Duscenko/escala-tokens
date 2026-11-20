@@ -18,6 +18,7 @@ import { resolveToken } from '../agentAccess/resolveToken.js'
 import { cssVarOf } from '../componentRecipes.js'
 import { roleIdFromName } from '../roleNames.js'
 import { fontStack } from '../fontStack.js'
+import { FONT_FAMILY_MONO } from '../typographyStandard.js'
 import { socialCssVars } from '../socialBrands.js'
 
 export type Appearance = 'light' | 'dark'
@@ -114,7 +115,9 @@ function typeFacet(json: Json, role: string, facet: string, mode: string): strin
   if (!t || !alias?.size) return undefined
   switch (facet) {
     case 'font-family': {
-      const family = alias.family === 'display' ? t.headingFontFamily ?? t.fontFamily : t.fontFamily
+      const family = alias.family === 'display' ? t.headingFontFamily ?? t.fontFamily
+        : alias.family === 'mono' ? t.monoFontFamily ?? FONT_FAMILY_MONO
+        : t.fontFamily
       return family ? fontStack(family) : undefined
     }
     case 'font-size': return t.sizes?.[alias.size]

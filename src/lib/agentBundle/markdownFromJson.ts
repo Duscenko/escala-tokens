@@ -14,6 +14,7 @@ import {
   table,
 } from './names'
 import type { TokenJSON } from './types'
+import { FONT_FAMILY_MONO } from '../typographyStandard'
 
 /** Same text the Skill zip ships as `references/tokens.md`. */
 export function buildTokensMd(json: TokenJSON): string {
@@ -178,6 +179,7 @@ export function buildFoundationsMd(json: TokenJSON, opts: { appearance?: 'light'
     '',
     `- \`font-family-body\` = \`${t.fontFamily}\` · CSS \`var(--font-family-body)\``,
     `- \`font-family-display\` = \`${t.headingFontFamily ?? t.fontFamily}\` · CSS \`var(--font-family-heading)\``,
+    `- \`font-family-mono\` = \`${t.monoFontFamily ?? FONT_FAMILY_MONO}\` · CSS \`var(--font-family-mono)\` (the \`code\` role only)`,
     '',
     '### Sizes (primitives — bind a text role, not these)',
     '',

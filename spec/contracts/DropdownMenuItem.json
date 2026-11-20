@@ -10,7 +10,7 @@
     "hit",
     "motion"
   ],
-  "description": "A command row: optional leading icon, media, description, shortcut, control, caret and a selection check; destructive for irreversible commands.",
+  "description": "A command row: optional leading icon, media, description, shortcut, control, caret and a selection check; critical for irreversible commands.",
   "owners": {
     "anatomy": "figma",
     "foundations": "figma",
@@ -127,7 +127,7 @@
         "name": "Variant",
         "values": [
           "default",
-          "destructive"
+          "critical"
         ]
       }
     ],
@@ -154,7 +154,7 @@
       },
       {
         "name": "variant",
-        "type": "'default' | 'destructive'",
+        "type": "'default' | 'critical'",
         "description": "Figma Variant."
       }
     ]
@@ -175,15 +175,13 @@
   },
   "tokens": {
     "color": [
-      "color.border.focus",
       "color.border.ring.default",
       "color.content.accent",
       "color.content.disabled",
       "color.content.primary",
       "color.content.secondary",
-      "color.status.critical.border",
-      "color.status.critical.border-strong",
       "color.status.critical.content",
+      "color.status.critical.ring",
       "color.status.critical.surface",
       "color.surface.muted",
       "color.surface.selected"
@@ -211,7 +209,7 @@
       "type.caption"
     ]
   },
-  "usage": "One command per row. Put irreversible commands last as a destructive variant.",
+  "usage": "One command per row. Put irreversible commands last as the critical variant.",
   "accessibility": "role menuitem (menuitemcheckbox when selectable); reachable by arrow keys; skipped when disabled.",
   "code": {
     "files": [

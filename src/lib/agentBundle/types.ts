@@ -78,6 +78,8 @@ export interface TokenJSON {
   typography: {
     fontFamily: string
     headingFontFamily?: string
+    /** The code family (`font-family-mono`); older files omit it. */
+    monoFontFamily?: string
     sizes: Record<string, string>
     lineHeights?: Record<string, string>
     /** Derived tracking per size step (`letterSpacingFor`). */
@@ -178,6 +180,8 @@ export interface TokenJSON {
   studioThemes?: Record<string, { name?: string } & Record<string, unknown>>
   /** Each brand's own variables.css (lib/brandCss), for the plugin's GitHub save. Never written into a repo's tokens.json. */
   brandCss?: { key: string; name: string; css: string }[]
+  /** `brandCss` gzipped + base64 (lib/brandCssPack), sent instead when plain would not fit the publish limit. The plugin unpacks it on intake. */
+  brandCssGzip?: { key: string; name: string; gzip: string }[]
 }
 
 export interface AgentBundleOptions {

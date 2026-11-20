@@ -1,7 +1,7 @@
 import { motionThemeTokens, motionTokens, normalizeMotionSettings } from './motion'
 import { useDesignStore, DEFAULT_GRAY_DARK_SCALE, type DesignSnapshot } from '../store/useDesignStore'
 import { darkShadowsOf } from './shadowTokens'
-import { letterSpacingsFor } from './typographyStandard'
+import { FONT_FAMILY_MONO, letterSpacingsFor } from './typographyStandard'
 import { iconSizeTokens } from './iconSizing'
 import { getIconAiSource, PHOSPHOR_LIBRARY } from './iconLibraries'
 import { toneLabel, pinnedOrSolvedAlpha, darkShadowMap, BLACK_ALPHA_SCALE, WHITE_ALPHA_SCALE, type ColorNaming } from './colorUtils'
@@ -17,6 +17,7 @@ import { platformPayload } from './platformAxis'
 import { fontSourceUrl } from './customFonts'
 import { mergeLayoutRoles, mergeGridFrame, resolveGridStyles, RADIUS_RESPONSIVE, SPACING_RESPONSIVE, spacingRolesAtViewport, extractBreakpoints, roleViewportsOf, resolvedRadiusRoleViewports, LAYOUT_ROLES, type GridFrameModes, type GridStyleKey } from './layoutTokens'
 import { elevationTokens } from './elevationTokens'
+import { CHART_RAMPS } from './chartRamps.generated'
 import { socialBrandTokens } from './socialBrands'
 import { gradientToCss, gradientSlug } from './gradients'
 import { semanticModesFor, type ThemeAppearance } from './themeModes'
@@ -479,6 +480,7 @@ export function generateTokenJSON(
     return [theme, {
       typography: {
         ...resolved.typography,
+        monoFontFamily: FONT_FAMILY_MONO,
         letterSpacings: letterSpacingsFor(resolved.typography.sizes),
         roles: mergeTypeRoles(resolved.typography.roles),
       },
@@ -553,6 +555,13 @@ export function generateTokenJSON(
     addFamily('warning-dark', store.warningDarkScale)
     addFamily('success-dark', store.successDarkScale)
     addFamily('info-dark', store.infoDarkScale)
+  }
+
+  // The Chart hue ramps (series 2–8 of `color.chart.*`): fixed data from the Figma file, always shipped, so the
+  // `{chart-teal.9}` aliases of the Chart roles resolve. Series 1 and the sequential ramp reuse the accent.
+  for (const [hue, ramp] of Object.entries(CHART_RAMPS)) {
+    Object.assign(primitive, flattenScale(`chart-${hue}`, ramp.light, colorNaming))
+    if (hasDarkTheme) Object.assign(primitive, flattenScale(`chart-${hue}-dark`, ramp.dark, colorNaming))
   }
 
   // Custom color families adopt the same prefixed structure (teal-1 … teal-12),
@@ -734,6 +743,8 @@ export function generateTokenJSON(
     typography: {
       fontFamily: typography.fontFamily,
       headingFontFamily: typography.headingFontFamily ?? typography.fontFamily,
+      // The code family: fixed, read only by the `code` role (additive key).
+      monoFontFamily: FONT_FAMILY_MONO,
       sizes: typography.sizes,
       lineHeights: typography.lineHeights,
       // Derived from each size (letterSpacingFor). The plugin binds

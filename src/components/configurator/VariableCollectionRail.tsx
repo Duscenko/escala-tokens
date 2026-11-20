@@ -208,6 +208,7 @@ export default function VariableCollectionRail({
   ariaLabel = 'Variable collections and groups',
   navRef,
   groupsLabel = 'Groups',
+  footer,
 }: {
   children: ReactNode
   collapsed?: boolean
@@ -216,6 +217,9 @@ export default function VariableCollectionRail({
   /** Heading over `children`. `null` when the children are not groups and
    *  bring their own headings (Icons' settings). */
   groupsLabel?: string | null
+  /** Under the groups, apart from the navigation: a tool for the whole
+   *  collection (Color's suggested colours). Hidden while collapsed. */
+  footer?: ReactNode
 }) {
   const context = useContext(CollectionContext)
   // In the inspector the column owns width and collapse.
@@ -285,6 +289,7 @@ export default function VariableCollectionRail({
           {children}
         </section>
       )}
+      {footer && !collapsed && <div className="mt-4">{footer}</div>}
       </div>
     </nav>
     {/* Variables is an editing tab too: the Board's footer, live — the doors

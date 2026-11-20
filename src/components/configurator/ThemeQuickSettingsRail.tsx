@@ -20,13 +20,13 @@ import { createContext, useCallback, useContext, useEffect, useId, useRef, useSt
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
 import { INSPECTOR_FOLD_SETTLE_MS, inspectorFoldMotion } from '../../lib/inspectorMotion'
 import { createPortal } from 'react-dom'
-import { captureSnapshot, DEFAULT_THEME_SOURCES, RESERVED_COLOR_KEYS, type DesignSnapshot, useDesignStore } from '../../store/useDesignStore'
+import { captureSnapshot, type DesignSnapshot, useDesignStore } from '../../store/useDesignStore'
 import {
-  useApplyAccentColor, useApplyGrayColor, useApplyStateColor, applyNeutralDarkColor,
+  useApplyAccentColor, useApplyGrayColor, applyNeutralDarkColor,
   resolveThemePages, stateColorAnchor, type StateRole,
   followingDarkAnchors, retwinFollowingDarkAnchors,
 } from '../../lib/colorActions'
-import { backgroundFromBase, colorAtHue, darkShadowMap, generateColorScale, generateLightNeutralScale, generateDarkColorScale, generateFamilyDarkScale, neutralFromBrand, NEUTRAL_TINTS, readHuePosition, type NeutralTint } from '../../lib/colorUtils'
+import { colorAtHue, darkShadowMap, neutralFromBrand, NEUTRAL_TINTS, readHuePosition, type NeutralTint } from '../../lib/colorUtils'
 import { fontStack, FONT_PRESETS, loadGoogleFont } from '../../lib/fonts'
 import { useTheme } from '../../lib/theme'
 import { TYPE_SCALE_MODES, buildTypeScale, inferTypeScaleMode } from '../../lib/typographyStandard'
@@ -65,7 +65,6 @@ import {
   type RadiusRoleViewports,
   type GridViewport,
 } from '../../lib/layoutTokens'
-import { slugify } from '../../lib/utils'
 import {
   GLOBAL_FAMILY, SLOT_DISPLAY_LABEL, scaleForFamily,
   type BrandExtraRank,
@@ -82,7 +81,7 @@ import {
 import { StyleOverview } from './StyleOverview'
 import { PICK_TWO_COLOR_PAIR, pairPalette, type PickTwoColorPairDetail, type TwoColorPalette } from '../../lib/twoColorPairs'
 import { PICK_CURATED_COLOR, curatedPalette, type PickCuratedColorDetail } from '../../lib/curatedColors'
-import { CuratedColorStrip } from './CuratedColorStrip'
+import { useThemeColorWrites } from '../../lib/themeColorWrites'
 import { nextShuffle, randomLabelAfterTweak, styleLabelAfterShuffle } from '../../lib/randomTheme'
 import { isScaffoldTheme, myThemeKeys, resolveListedTheme } from '../../lib/themeLibrary'
 import { presetHarmony, themeStylePreset } from '../../lib/themePresets'
@@ -2051,7 +2050,7 @@ export default function ThemeQuickSettingsRail({
   const store = useDesignStore()
   const applyAccent = useApplyAccentColor()
   const applyNeutral = useApplyGrayColor()
-  const applyState = useApplyStateColor()
+  const { writeAccent, writeState, applyPalette } = useThemeColorWrites()
   const [accentPreview, setAccentPreview] = useState<string | null>(null)
   // Font's role table is the heaviest thing in the rail: closed until asked,
   // like Colour's Fine-tune, so a row opens to its quick controls only.
@@ -2395,114 +2394,6 @@ export default function ThemeQuickSettingsRail({
     scrub.current = null
   }
 
-  // Accent only — the Base row is a tint dial now, not a colour edit.
-  //
-  // ALWAYS forks off the system's own `accent` primitive, and off any family a
-  // second theme reads. Only a theme that PRIVATELY owns its brand family
-  // retints in place. The old rule ("fork only when shared") let a theme whose
-  // brand still pointed at the global `accent` rewrite `primaryColor` — and
-  // through it the page, the neutral and every status ramp — from a control
-  // that claims to edit one theme. That is also why the Accent swatch and the
-  // Neutral-tint row could end up describing two different colours.
-  /** `darkValue` sets the dark theme's anchor on its own; omitted, dark
-   *  follows `value` as it always has. */
-  const writeAccent = (themeKey: string, value: string, darkValue?: string) => {
-    const s = useDesignStore.getState()
-    // Re-read the family from the store: after an auto-adopt this is the
-    // NEWLY minted theme's brand family, not the host's.
-    const family = s.themeSources[themeKey]?.brand ?? DEFAULT_THEME_SOURCES.brand
-    const affected = s.themeOrder.filter((theme) => (s.themeSources[theme]?.brand ?? DEFAULT_THEME_SOURCES.brand) === family)
-    const isGlobal = family === DEFAULT_THEME_SOURCES.brand
-    if (!isGlobal && affected.length <= 1) {
-      // A private theme may safely retint its own linked Neutral in place.
-      // Passing `false` here was the direct cause of Accent moving while the
-      // neutral/page remained the old purple.
-      applyAccent(value, s.linkNeutralToAccent, themeKey, darkValue)
-      return
-    }
-
-    const labelRoot = s.themeLabels[themeKey] || themeKey.replace(/-/g, ' ')
-    const baseKey = slugify(`${labelRoot}-brand`) || `${themeKey}-brand`
-    let familyKey = baseKey
-    let suffix = 2
-    while (s.customColors.some((color) => color.key === familyKey)) familyKey = `${baseKey}-${suffix++}`
-    const linkedNeutral = s.linkNeutralToAccent
-      ? neutralFromBrand(value, s.neutralTint)
-      : null
-    const themePages = linkedNeutral
-      ? {
-          light: backgroundFromBase(linkedNeutral, 'light', s.neutralTint),
-          dark: backgroundFromBase(linkedNeutral, 'dark', s.neutralTint),
-        }
-      : resolveThemePages(s, themeKey)
-
-    s.addCustomColor({
-      key: familyKey,
-      label: `${labelRoot} Accent`,
-      base: value,
-      darkBase: darkValue ?? value,
-      scale: generateColorScale(value, s.colorAlgorithm, s.contrastShift, themePages.light),
-      darkScale: generateFamilyDarkScale(darkValue ?? value, s.colorAlgorithm, s.contrastShift, themePages.dark),
-    })
-
-    let gray = s.themeSources[themeKey]?.gray ?? DEFAULT_THEME_SOURCES.gray
-    if (linkedNeutral) {
-      const neutralRoot = slugify(`${labelRoot}-neutral`) || `${themeKey}-neutral`
-      let neutralKey = neutralRoot
-      let neutralSuffix = 2
-      while (s.customColors.some((color) => color.key === neutralKey)) neutralKey = `${neutralRoot}-${neutralSuffix++}`
-      s.addCustomColor({
-        key: neutralKey,
-        label: `${labelRoot} Neutral`,
-        base: linkedNeutral,
-        scale: generateLightNeutralScale(linkedNeutral, s.colorAlgorithm, s.contrastShift, themePages.light, s.neutralTint),
-        darkScale: generateDarkColorScale(linkedNeutral, s.colorAlgorithm, s.contrastShift, themePages.dark, s.neutralTint),
-      })
-      gray = neutralKey
-    }
-    s.updateTheme(themeKey, s.themeKinds[themeKey] ?? 'light', {
-      ...DEFAULT_THEME_SOURCES,
-      ...s.themeSources[themeKey],
-      brand: familyKey,
-      gray,
-    })
-  }
-
-  /** `fromLink` = the accent re-deriving a linked state, which must not unlink it. */
-  const writeState = (themeKey: string, role: StateRole, hex: string, appearance: ThemeAppearance, fromLink = false) => {
-    const s = useDesignStore.getState()
-    const family = s.themeSources[themeKey]?.[role] ?? GLOBAL_FAMILY[role]
-    const affected = s.themeOrder.filter((theme) => (s.themeSources[theme]?.[role] ?? GLOBAL_FAMILY[role]) === family)
-    const isGlobal = family === GLOBAL_FAMILY[role]
-    if (!isGlobal && affected.length <= 1) {
-      applyState(role, hex, fromLink, themeKey, appearance)
-      return
-    }
-    const labelRoot = s.themeLabels[themeKey] || themeKey.replace(/-/g, ' ')
-    const baseKey = slugify(`${labelRoot}-${role}`) || `${themeKey}-${role}`
-    let familyKey = baseKey
-    let suffix = 2
-    while (s.customColors.some((color) => color.key === familyKey) || RESERVED_COLOR_KEYS.includes(familyKey)) {
-      familyKey = `${baseKey}-${suffix++}`
-    }
-    const pages = resolveThemePages(s, themeKey)
-    s.addCustomColor({
-      key: familyKey,
-      label: `${labelRoot} ${SLOT_DISPLAY_LABEL[role]}`,
-      base: hex,
-      darkBase: hex,
-      scale: generateColorScale(hex, s.colorAlgorithm, s.contrastShift, pages.light),
-      darkScale: generateFamilyDarkScale(hex, s.colorAlgorithm, s.contrastShift, pages.dark),
-    })
-    s.updateTheme(themeKey, s.themeKinds[themeKey] ?? 'light', {
-      ...DEFAULT_THEME_SOURCES,
-      ...s.themeSources[themeKey],
-      [role]: familyKey,
-    })
-  }
-
-
-
   // Accent drags preview before they commit their full ramp regeneration. The
   // linked neutral has to read that SAME live accent; reading `neutral` here
   // left the tint track one gesture behind the Accent row until pointer-up.
@@ -2799,16 +2690,7 @@ export default function ThemeQuickSettingsRail({
   applyPaletteRef.current = (palette, label, appearance) => {
     commit(label, (themeKey) => {
       if (appearance) onRandomBoardAppearance?.(appearance)
-      setNeutralTint(palette.neutralTint)
-      applyNeutral(palette.neutral, themeKey)
-      // After the neutral: the accent ramps anchor to the pages it produced.
-      writeAccent(themeKey, palette.accentLight, palette.accent)
-      const pages = resolveThemePages(useDesignStore.getState(), themeKey)
-      for (const role of STATE_IDS) {
-        const hex = palette.states[role]
-        writeState(themeKey, role, hex, 'light')
-        writeState(themeKey, role, darkTwinOf(hex, pages.dark), 'dark')
-      }
+      applyPalette(themeKey, palette)
     })
   }
   const ownsBoardRandom = Boolean(randomHandle)
@@ -3014,17 +2896,8 @@ export default function ThemeQuickSettingsRail({
                 <BrandShipsChoice value={shippedThemes(store.brandThemes, previewTheme)} onChange={pickShips} />
               </div>
             )}
-            {/* Suggested colours first: a first visitor sees there ARE good
-                starting points before six hex fields (`curatedColors`). */}
-            <div className={RAIL_BLOCK}>
-              <CuratedColorStrip
-                appearance={rampAppearance}
-                currentAccent={accentSummaryHex}
-                label={t('Suggested colours')}
-                hint={<InfoHint>{t('Hand-picked accents. One click sets the accent, the neutral and the four states, in Light and Dark.')}</InfoHint>}
-                onPick={(color) => applyPaletteRef.current(curatedPalette(color), t('Colour applied'))}
-              />
-            </div>
+            {/* Suggested colours live in Variables · Color (the advanced
+                edition), and in the Board's Random menu as the Curated deck. */}
             <div className={RAIL_BLOCK}>
               <ColorRolesPanel
                 appearance={rampAppearance}

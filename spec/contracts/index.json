@@ -12,7 +12,7 @@
     "file": "spec/contracts/Button.json",
     "figmaSet": "Button",
     "story": "buttons-button--playground",
-    "tokens": 43
+    "tokens": 44
   },
   {
     "key": "IconButton",
@@ -91,6 +91,21 @@
     "tokens": 1
   },
   {
+    "key": "SplitButton",
+    "label": "Split Button",
+    "category": "Button & Actions",
+    "box": "gray",
+    "locks": [
+      "size",
+      "hit",
+      "motion"
+    ],
+    "file": "spec/contracts/SplitButton.json",
+    "figmaSet": "SplitButton",
+    "story": "buttons-splitbutton--playground",
+    "tokens": 1
+  },
+  {
     "key": "ButtonGroup",
     "label": "Button Group",
     "category": "Button & Actions",
@@ -134,6 +149,51 @@
     "figmaSet": "ButtonGroupDivider",
     "story": "buttons-buttongroup--button-group-divider-playground",
     "tokens": 5
+  },
+  {
+    "key": "ReactionGroup",
+    "label": "Reaction Group",
+    "category": "Button & Actions",
+    "box": "gray",
+    "locks": [
+      "size",
+      "hit",
+      "motion"
+    ],
+    "file": "spec/contracts/ReactionGroup.json",
+    "figmaSet": "ReactionGroup",
+    "story": "buttons-reactiongroup--playground",
+    "tokens": 3
+  },
+  {
+    "key": "ReactionGroupTrigger",
+    "label": "Reaction Group Trigger",
+    "category": "Button & Actions",
+    "box": "gray",
+    "locks": [
+      "size",
+      "hit",
+      "motion"
+    ],
+    "file": "spec/contracts/ReactionGroupTrigger.json",
+    "figmaSet": "ReactionGroupTrigger",
+    "story": "buttons-reactiongroup--reaction-group-trigger-playground",
+    "tokens": 22
+  },
+  {
+    "key": "ReactionGroupPopover",
+    "label": "Reaction Group Popover",
+    "category": "Button & Actions",
+    "box": "gray",
+    "locks": [
+      "size",
+      "hit",
+      "motion"
+    ],
+    "file": "spec/contracts/ReactionGroupPopover.json",
+    "figmaSet": "ReactionGroupPopover",
+    "story": "buttons-reactiongroup--reaction-group-popover-playground",
+    "tokens": 9
   },
   {
     "key": "SocialLoginButton",
@@ -917,7 +977,7 @@
     "file": "spec/contracts/Modal.json",
     "figmaSet": "Modal",
     "story": "content-surfaces-modal--playground",
-    "tokens": 14
+    "tokens": 20
   },
   {
     "key": "ModalHeader",
@@ -947,7 +1007,7 @@
     "file": "spec/contracts/ModalFooter.json",
     "figmaSet": "ModalFooter",
     "story": "content-surfaces-modal--modal-footer-playground",
-    "tokens": 7
+    "tokens": 10
   },
   {
     "key": "Sheet",
@@ -1328,6 +1388,98 @@
     "tokens": 19
   },
   {
+    "key": "SettingsRow",
+    "label": "Settings Row",
+    "category": "Layout",
+    "box": "gray",
+    "locks": [
+      "size",
+      "hit",
+      "motion"
+    ],
+    "file": "spec/contracts/SettingsRow.json",
+    "figmaSet": "SettingsRow",
+    "story": "screens-settingspage--settings-row-playground",
+    "tokens": 10
+  },
+  {
+    "key": "SettingsSection",
+    "label": "Settings Section",
+    "category": "Layout",
+    "box": "gray",
+    "locks": [
+      "size",
+      "hit",
+      "motion"
+    ],
+    "file": "spec/contracts/SettingsSection.json",
+    "figmaSet": "SettingsSection",
+    "story": "screens-settingspage--settings-section-playground",
+    "tokens": 6
+  },
+  {
+    "key": "IssueCard",
+    "label": "Issue Card",
+    "category": "Data Display",
+    "box": "gray",
+    "locks": [
+      "size",
+      "hit",
+      "motion"
+    ],
+    "file": "spec/contracts/IssueCard.json",
+    "figmaSet": "IssueCard",
+    "story": "screens-issueboardpage--issue-card-playground",
+    "tokens": 18
+  },
+  {
+    "key": "Gauge",
+    "label": "Gauge",
+    "category": "Data Display",
+    "box": "black",
+    "locks": [
+      "shape",
+      "size",
+      "hit",
+      "motion"
+    ],
+    "file": "spec/contracts/Gauge.json",
+    "figmaSet": null,
+    "story": "indicators-gauge--playground",
+    "tokens": 23
+  },
+  {
+    "key": "Sparkline",
+    "label": "Sparkline",
+    "category": "Data Display",
+    "box": "black",
+    "locks": [
+      "shape",
+      "size",
+      "hit",
+      "motion"
+    ],
+    "file": "spec/contracts/Sparkline.json",
+    "figmaSet": null,
+    "story": "indicators-sparkline--playground",
+    "tokens": 17
+  },
+  {
+    "key": "BoardColumn",
+    "label": "Board Column",
+    "category": "Layout",
+    "box": "gray",
+    "locks": [
+      "size",
+      "hit",
+      "motion"
+    ],
+    "file": "spec/contracts/BoardColumn.json",
+    "figmaSet": "BoardColumn",
+    "story": "screens-issueboardpage--board-column-playground",
+    "tokens": 8
+  },
+  {
     "key": "NavItem",
     "label": "Nav Item",
     "category": "Navigation",
@@ -1341,6 +1493,113 @@
     "figmaSet": "NavItem",
     "story": "navigation-navitem--playground",
     "tokens": 19
+  },
+  {
+    "key": "TabBar",
+    "label": "Tab Bar",
+    "category": "Navigation",
+    "box": "gray",
+    "locks": [
+      "size",
+      "hit",
+      "motion"
+    ],
+    "file": "spec/contracts/TabBar.json",
+    "figmaSet": "TabBar",
+    "story": "navigation-tabbar--playground",
+    "tokens": 5
+  },
+  {
+    "key": "TabBarItem",
+    "label": "Tab Bar Item",
+    "category": "Navigation",
+    "box": "gray",
+    "locks": [
+      "size",
+      "hit",
+      "motion"
+    ],
+    "file": "spec/contracts/TabBarItem.json",
+    "figmaSet": "TabBarItem",
+    "story": "navigation-tabbar--tab-bar-item-playground",
+    "tokens": 14
+  },
+  {
+    "key": "ActivityHeatmap",
+    "label": "Activity Heatmap",
+    "category": "Data Display",
+    "box": "gray",
+    "locks": [
+      "size",
+      "hit",
+      "motion"
+    ],
+    "file": "spec/contracts/ActivityHeatmap.json",
+    "figmaSet": null,
+    "story": "indicators-activityheatmap--playground",
+    "tokens": 7
+  },
+  {
+    "key": "ActivityHeatmapCell",
+    "label": "Activity Heatmap Cell",
+    "category": "Data Display",
+    "box": "black",
+    "locks": [
+      "shape",
+      "radius",
+      "size",
+      "hit",
+      "motion"
+    ],
+    "file": "spec/contracts/ActivityHeatmapCell.json",
+    "figmaSet": null,
+    "story": "indicators-activityheatmap--activity-heatmap-cell-playground",
+    "tokens": 10
+  },
+  {
+    "key": "SplitBar",
+    "label": "Split Bar",
+    "category": "Indicators",
+    "box": "gray",
+    "locks": [
+      "size",
+      "hit",
+      "motion"
+    ],
+    "file": "spec/contracts/SplitBar.json",
+    "figmaSet": null,
+    "story": "indicators-splitbar--playground",
+    "tokens": 17
+  },
+  {
+    "key": "SplitBarSegment",
+    "label": "Split Bar Segment",
+    "category": "Indicators",
+    "box": "gray",
+    "locks": [
+      "size",
+      "hit",
+      "motion"
+    ],
+    "file": "spec/contracts/SplitBarSegment.json",
+    "figmaSet": null,
+    "story": "indicators-splitbar--split-bar-segment-playground",
+    "tokens": 32
+  },
+  {
+    "key": "SplitBarLegendItem",
+    "label": "Split Bar Legend Item",
+    "category": "Indicators",
+    "box": "gray",
+    "locks": [
+      "size",
+      "hit",
+      "motion"
+    ],
+    "file": "spec/contracts/SplitBarLegendItem.json",
+    "figmaSet": null,
+    "story": "indicators-splitbar--split-bar-legend-item-playground",
+    "tokens": 20
   },
   {
     "key": "Brand",
@@ -1578,7 +1837,7 @@
     "file": "spec/contracts/DropdownMenu.json",
     "figmaSet": "DropdownMenu",
     "story": "navigation-dropdownmenu--playground",
-    "tokens": 11
+    "tokens": 12
   },
   {
     "key": "DropdownMenuLabel",
@@ -1608,7 +1867,7 @@
     "file": "spec/contracts/DropdownMenuItem.json",
     "figmaSet": "DropdownMenuItem",
     "story": "navigation-dropdownmenu--dropdown-menu-item-playground",
-    "tokens": 24
+    "tokens": 22
   },
   {
     "key": "DropdownMenuFooter",

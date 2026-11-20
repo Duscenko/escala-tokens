@@ -6,7 +6,8 @@
     "Indicators",
     "Content & Surfaces",
     "Feedback",
-    "Navigation"
+    "Navigation",
+    "Screens"
   ],
   "families": [
     {
@@ -62,6 +63,30 @@
         "ButtonGroupDivider",
         "ButtonGroupItem"
       ]
+    },
+    {
+      "id": "ReactionGroup",
+      "page": "ReactionGroup (PRO)",
+      "folder": "Buttons",
+      "root": "ReactionGroup",
+      "parts": [
+        "ReactionGroupPopover",
+        "ReactionGroupTrigger"
+      ]
+    },
+    {
+      "id": "ActionButton",
+      "page": "ActionButton",
+      "folder": "Buttons",
+      "root": "ActionButton",
+      "parts": []
+    },
+    {
+      "id": "SplitButton",
+      "page": "SplitButton",
+      "folder": "Buttons",
+      "root": "SplitButton",
+      "parts": []
     },
     {
       "id": "Field",
@@ -346,6 +371,39 @@
       "parts": []
     },
     {
+      "id": "Gauge",
+      "page": "Gauge (PRO)",
+      "folder": "Indicators",
+      "root": "Gauge",
+      "parts": []
+    },
+    {
+      "id": "Sparkline",
+      "page": "Sparkline (PRO)",
+      "folder": "Indicators",
+      "root": "Sparkline",
+      "parts": []
+    },
+    {
+      "id": "ActivityHeatmap",
+      "page": "ActivityHeatmap (PRO)",
+      "folder": "Indicators",
+      "root": "ActivityHeatmap",
+      "parts": [
+        "ActivityHeatmapCell"
+      ]
+    },
+    {
+      "id": "SplitBar",
+      "page": "SplitBar (PRO)",
+      "folder": "Indicators",
+      "root": "SplitBar",
+      "parts": [
+        "SplitBarSegment",
+        "SplitBarLegendItem"
+      ]
+    },
+    {
       "id": "Modal",
       "page": "Modal (✓) (D)",
       "folder": "Content & Surfaces",
@@ -412,6 +470,15 @@
       "folder": "Navigation",
       "root": "NavItem",
       "parts": []
+    },
+    {
+      "id": "TabBar",
+      "page": "TabBar",
+      "folder": "Navigation",
+      "root": "TabBar",
+      "parts": [
+        "TabBarItem"
+      ]
     },
     {
       "id": "Brand",
@@ -482,11 +549,32 @@
       "folder": "Content & Surfaces",
       "root": "Sheet",
       "parts": []
+    },
+    {
+      "id": "SettingsPage",
+      "page": "SettingsPage",
+      "folder": "Screens",
+      "root": null,
+      "parts": [
+        "SettingsSection",
+        "SettingsRow"
+      ]
+    },
+    {
+      "id": "IssueBoardPage",
+      "page": "IssueBoardPage",
+      "folder": "Screens",
+      "root": null,
+      "parts": [
+        "BoardColumn",
+        "IssueCard"
+      ]
     }
   ],
   "noStory": {
     "Radio": "pending rebuild (spec/figma-components.status.json)",
     "RadioCard": "pending rebuild (spec/figma-components.status.json)",
-    "RadioItem": "pending rebuild (spec/figma-components.status.json)"
+    "RadioItem": "pending rebuild (spec/figma-components.status.json)",
+    "ActionButton": "new in the Figma file (2026-11-19), not built yet (spec/figma-components.status.json)"
   }
 }

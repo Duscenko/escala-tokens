@@ -69,13 +69,23 @@
         "name": "Layout",
         "values": [
           "inline",
-          "stacked"
+          "stacked",
+          "equal"
+        ]
+      },
+      {
+        "name": "Surface",
+        "values": [
+          "plain",
+          "tray",
+          "simple"
         ]
       }
     ],
     "defaults": {
       "Size": "default",
-      "Layout": "inline"
+      "Layout": "inline",
+      "Surface": "plain"
     },
     "props": [
       {
@@ -108,12 +118,15 @@
       "color.content.secondary"
     ],
     "spacing": [
+      "spacing.0",
       "spacing.gap-control",
       "spacing.gap-tight",
+      "spacing.inset-control",
       "spacing.inset-surface"
     ],
     "stroke": [
-      "stroke.divider"
+      "stroke.divider",
+      "stroke.none"
     ],
     "type": [
       "type.caption"

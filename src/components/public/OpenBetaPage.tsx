@@ -2,7 +2,10 @@
 //
 // Decided 2026-10-20: Escala is new and nobody knows it yet, so nothing is
 // sold. Every visitor and every account gets the whole product, web and Figma
-// plugin. The one limit is about cost, not value: `BETA_MAX_BRANDS` brands
+// plugin. The Escala Design System (the complete Figma library, `/figma-kit`)
+// is a product of its own and was never part of that: the plugin builds the
+// core kit (plugin 0.35.0, 2026-11-20). The one limit is about cost, not
+// value: `BETA_MAX_BRANDS` brands
 // per design system (Hobby meters Blob writes and function runs). The number
 // comes from the same constant the create gate reads, so the page cannot
 // promise what the product refuses. `PricingPage` stays in the tree for when
@@ -14,6 +17,7 @@ import { applyDocumentHead } from '../../lib/documentHead'
 import { useI18n } from '../../lib/i18n'
 import { BETA_MAX_BRANDS, PRICING_PATH } from '../../lib/entitlement'
 import { CONTACT_PATH } from '../../lib/legal'
+import { FIGMA_KIT_PATH } from '../../lib/figmaKit'
 
 const BETA_TITLE = 'Open beta — Escala Tokens'
 const BETA_DESCRIPTION =
@@ -67,7 +71,7 @@ export function OpenBetaPage() {
   const included = [
     t('The generator: every foundation and every System Style'),
     t('Every export: tokens.json, CSS, W3C, Tailwind, Markdown'),
-    t('The Figma plugin: live sync, the complete UI Kit and generated documentation'),
+    t('The Figma plugin: variables, styles, live sync, the core kit and the Getting started, Token Architecture and Documentation pages'),
     t('Design skills for agents, GitHub push and the CLI'),
     t('Up to {count} brands per design system, each with Light and Dark', { count: brands }),
   ]
@@ -116,6 +120,10 @@ export function OpenBetaPage() {
             <div className="border-t border-line">
               <Faq q={t('Do I need an account?')}>{t('No. You can build and export without one. An account keeps your design systems saved on Escala, in every browser, and connects the Figma plugin.')}</Faq>
               <Faq q={t('Why {count} brands?', { count: brands })}>{t('The beta runs on a small infrastructure. {count} brands per design system, each with Light and Dark, covers most products and keeps the service fast for everyone.', { count: brands })}</Faq>
+              <Faq q={t('Is the complete Figma library included?')}>
+                {t('The plugin builds the core kit: Button, Icon Button, Input, Checkbox, Radio, Switch, Badge and Avatar, bound to your variables. The complete library, 70+ components with blocks and pages on the same variable names, is the Escala Design System, sold on its own.')}{' '}
+                <a href={FIGMA_KIT_PATH} className="text-accent-ui underline-offset-2 hover:underline">{t('See the Escala Design System')}</a>
+              </Faq>
               <Faq q={t('What happens after the beta?')}>{t('Pricing comes after the beta, announced ahead of time. Everything you export during the beta is yours to keep.')}</Faq>
               <Faq q={t('How can I help?')}>
                 {t('Use it and tell us what is missing.')}{' '}

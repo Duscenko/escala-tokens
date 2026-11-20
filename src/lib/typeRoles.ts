@@ -29,13 +29,14 @@
 // Weights never change across cuts; no reference system does that.
 
 import {
+  FONT_FAMILY_MONO,
   FONT_WEIGHT_BASES,
   TYPE_SCALE_KEYS,
   letterSpacingFor,
   type TypeScaleKey,
 } from './typographyStandard'
 
-export type TypeFamilyRole = 'display' | 'body'
+export type TypeFamilyRole = 'display' | 'body' | 'mono'
 export type TypeWeightKey = (typeof FONT_WEIGHT_BASES)[number]['key']
 
 export interface TypeAlias {
@@ -175,6 +176,17 @@ export const TYPE_ROLES: TypeRole[] = [
     mobile: a('body', 'text-sm', 'regular'),
   },
   {
+    key: 'code',
+    label: 'Code',
+    description: 'Codes a person copies or types: backup codes, secret keys.',
+    group: 'body',
+    // The Figma file's `Type/code`: ONE size (14 / 21 on the file's scale) in the mono family, the
+    // same on every cut. Kbd keeps its own smaller sizes (owner decision 2026-11-19).
+    desktop: a('mono', 'text-md', 'regular'),
+    tablet: a('mono', 'text-md', 'regular'),
+    mobile: a('mono', 'text-md', 'regular'),
+  },
+  {
     key: 'label',
     label: 'Label',
     description: 'Form labels and field names.',
@@ -254,15 +266,18 @@ function isAlias(v: unknown): v is TypeAlias {
   if (!v || typeof v !== 'object') return false
   const a = v as TypeAlias
   return (
-    (a.family === 'display' || a.family === 'body') &&
+    (a.family === 'display' || a.family === 'body' || a.family === 'mono') &&
     SIZE_KEYS.has(a.size) &&
     WEIGHT_KEYS.has(a.weight)
   )
 }
 
-/** Headings follow the body stack. Only `display` may alias the heading font.
+/** Headings follow the body stack. Only `display` may alias the heading font,
+ *  and only `code` the mono one (no other role may take it).
  *  Size and weight stay as stored; family is the locked facet. */
 function withLockedFamily(role: TypeRole, alias: TypeAlias): TypeAlias {
+  if (role.key === 'code') return alias.family === 'mono' ? alias : { ...alias, family: 'mono' }
+  if (alias.family === 'mono') return { ...alias, family: 'body' }
   if (role.group !== 'heading') return alias
   return alias.family === 'body' ? alias : { ...alias, family: 'body' }
 }
@@ -465,6 +480,8 @@ export function promoteReadingTypeIdentity(
 export interface TypePrimitives {
   fontFamily: string
   headingFontFamily?: string
+  /** The code family. Omitted → `FONT_FAMILY_MONO`, the one every system ships. */
+  monoFontFamily?: string
   sizes: Record<string, string>
   lineHeights?: Record<string, string>
   weights: Record<string, number>
@@ -487,7 +504,9 @@ export function resolveTypeStyle(
   const family =
     alias.family === 'display'
       ? primitives.headingFontFamily ?? primitives.fontFamily
-      : primitives.fontFamily
+      : alias.family === 'mono'
+        ? primitives.monoFontFamily ?? FONT_FAMILY_MONO
+        : primitives.fontFamily
   return {
     family,
     size: primitives.sizes[alias.size] ?? '',
@@ -542,8 +561,13 @@ export function typeRoleVar(key: string, facet: TypeFacet, viewport: TypeViewpor
   return viewport === 'desktop' ? base : `${base}-${viewport}`
 }
 
+/** The CSS name of a family slot: `display` ships as `--font-family-heading`. */
+export function familyVarStem(family: TypeFamilyRole): 'heading' | 'body' | 'mono' {
+  return family === 'display' ? 'heading' : family === 'mono' ? 'mono' : 'body'
+}
+
 export function primitiveVar(alias: TypeAlias, facet: TypeFacet): string {
-  if (facet === 'family') return `var(--font-family-${alias.family === 'display' ? 'heading' : 'body'})`
+  if (facet === 'family') return `var(--font-family-${familyVarStem(alias.family)})`
   if (facet === 'size') return `var(--font-size-${alias.size})`
   if (facet === 'weight') return `var(--font-weight-${alias.weight})`
   if (facet === 'tracking') return `var(--letter-spacing-${alias.size})`

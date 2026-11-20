@@ -1,0 +1,127 @@
+{
+  "$comment": "Contract of the UserMenu and MorphNav blocks (DEC-2026-11-18-012). Figma owns the anatomy, Storybook the behaviour and motion.",
+  "figma": {
+    "file": "7j5zukN5HpihGVJMmyjA20",
+    "pages": [
+      "UserMenu & MorphNav 2223:840"
+    ]
+  },
+  "blocks": [
+    {
+      "name": "UserMenu",
+      "figmaSet": "2259:589",
+      "axes": {},
+      "variants": 1,
+      "nests": [
+        "DropdownMenu",
+        "DropdownMenuItem",
+        "DropdownMenuLabel",
+        "AccountMenuTrigger",
+        "Avatar",
+        "Badge",
+        "SegmentedControl"
+      ],
+      "slots": [],
+      "props": [
+        "name",
+        "email",
+        "plan",
+        "theme",
+        "onThemeChange",
+        "onSignOut",
+        "inline"
+      ],
+      "a11y": [
+        "Opens from AccountMenuTrigger, which reports aria-expanded",
+        "The theme segments are named Light, Dark and System",
+        "Sign out is Variant=default: critical is only for actions that delete"
+      ],
+      "motion": [
+        {
+          "moment": "open and close",
+          "mechanism": "the DropdownMenu's own choreography",
+          "role": "popover-enter / popover-exit",
+          "reduced": "fade only, from the tokens"
+        }
+      ]
+    },
+    {
+      "name": "MorphNav",
+      "figmaSet": "2259:594",
+      "axes": {
+        "Content": [
+          "bar",
+          "product",
+          "search"
+        ],
+        "Compact": [
+          "false",
+          "true"
+        ]
+      },
+      "variants": 4,
+      "nests": [
+        "Brand",
+        "NavItem",
+        "IconButton",
+        "Button",
+        "Input",
+        "DropdownMenuItem",
+        "DropdownMenuLabel",
+        "Image"
+      ],
+      "slots": [],
+      "props": [
+        "content",
+        "defaultContent",
+        "onContentChange",
+        "compact"
+      ],
+      "a11y": [
+        "A nav landmark named Main",
+        "Product opens on pointer enter and from the keyboard; its trigger reports aria-expanded",
+        "Search opens on click and Cmd K and takes focus",
+        "Escape returns to the bar and restores focus to the control that opened it",
+        "Hover intent: the panel waits 60 ms to open and 140 ms to close. Crossing the other bar items (Solutions, Resources, Pricing) never closes it: it closes when the pointer leaves the container, on Escape or on a second click. Those items have no panel in Figma"
+      ],
+      "motion": [
+        {
+          "moment": "open product or search",
+          "mechanism": "transitions on the container's width and height; the bar stays mounted",
+          "role": "use-travel-in",
+          "reduced": "no size travel, the fades stay"
+        },
+        {
+          "moment": "panel content appears",
+          "mechanism": "opacity and rise, row by row after the container starts to grow",
+          "role": "use-stagger-in + --motion-stagger",
+          "reduced": "fade only, the rise is neutral in the tokens"
+        },
+        {
+          "moment": "panel content leaves",
+          "mechanism": "opacity, all rows together, before the container closes",
+          "role": "use-stagger-out",
+          "reduced": "fade only"
+        },
+        {
+          "moment": "return to the bar",
+          "mechanism": "transitions on the container's width and height",
+          "role": "use-travel-out",
+          "reduced": "no size travel, the fades stay"
+        },
+        {
+          "moment": "Product caret",
+          "mechanism": "rotation",
+          "role": "use-disclosure-in",
+          "reduced": "unchanged"
+        },
+        {
+          "moment": "Compact",
+          "mechanism": "none (a product state)",
+          "role": "none",
+          "reduced": "n/a"
+        }
+      ]
+    }
+  ]
+}

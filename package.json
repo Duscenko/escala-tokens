@@ -36,6 +36,7 @@
     "check:web-storybook": "node scripts/check-web-storybook-parity.mjs",
     "typecheck:storybook": "tsc -p apps/storybook/tsconfig.json --noEmit",
     "gen:figma-palette": "tsx scripts/gen-figma-palette.ts",
+    "gen:chart-ramps": "tsx scripts/gen-chart-ramps.ts",
     "gen:contracts": "tsx scripts/gen-component-contracts.ts"
   },
   "dependencies": {
@@ -52,6 +53,7 @@
     "framer-motion": "^12.40.0",
     "input-otp": "^1.4.2",
     "motion": "^13.1.1",
+    "qrcode-generator": "2.0.4",
     "radix-ui": "^1.6.7",
     "react": "^19.2.6",
     "react-day-picker": "^10.0.2",

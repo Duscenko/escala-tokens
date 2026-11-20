@@ -4,8 +4,8 @@
     "key": "7j5zukN5HpihGVJMmyjA20",
     "name": "Escala Design System (Real)"
   },
-  "exportedAt": "2026-11-18",
-  "checksum": "2881bc15",
+  "exportedAt": "2026-11-19",
+  "checksum": "fc838b97",
   "pages": [
     {
       "page": "Button (✓)  (D)",
@@ -162,6 +162,63 @@
       ]
     },
     {
+      "page": "ReactionGroup (PRO)",
+      "stable": false,
+      "id": "2381:42",
+      "sets": [
+        {
+          "name": "ReactionGroup",
+          "variants": 1,
+          "props": "Content:SLOT,Summary:TEXT,SummaryVisible:BOOLEAN"
+        },
+        {
+          "name": "ReactionGroupPopover",
+          "variants": 1,
+          "props": "Content:SLOT"
+        },
+        {
+          "name": "ReactionGroupTrigger",
+          "variants": 25,
+          "axes": {
+            "Size": "default|xs|sm|lg|xl",
+            "State": "Default|Hover|Focused|Open|Disabled"
+          }
+        }
+      ]
+    },
+    {
+      "page": "ActionButton",
+      "stable": false,
+      "id": "2389:42",
+      "sets": [
+        {
+          "name": "ActionButton",
+          "variants": 24,
+          "axes": {
+            "Size": "default|xs|sm|lg",
+            "Status": "idle|pending|completed",
+            "Variant": "default|secondary"
+          }
+        }
+      ]
+    },
+    {
+      "page": "SplitButton",
+      "stable": false,
+      "id": "2391:78",
+      "sets": [
+        {
+          "name": "SplitButton",
+          "variants": 16,
+          "axes": {
+            "Open": "false|true",
+            "Size": "default|xs|sm|lg",
+            "Variant": "default|secondary"
+          }
+        }
+      ]
+    },
+    {
       "page": "Field (✓) (D) ",
       "stable": false,
       "id": "1003:2",
@@ -191,7 +248,7 @@
             "Type": "default|phone|currency|currency-select|password|url|upload|tag|copy-link|credit-card|search",
             "Value": "placeholder|filled"
           },
-          "props": "IconLeadingIcon:INSTANCE_SWAP,IconLeadingVisible:BOOLEAN,IconTrailingIcon:INSTANCE_SWAP,IconTrailingVisible:BOOLEAN,Placeholder:TEXT,Shortcut:SLOT,ShortcutVisible:BOOLEAN"
+          "props": "IconLeadingIcon:INSTANCE_SWAP,IconLeadingVisible:BOOLEAN,IconTrailingIcon:INSTANCE_SWAP,IconTrailingVisible:BOOLEAN,Placeholder:TEXT,Shortcut:SLOT,ShortcutVisible:BOOLEAN,Value:TEXT"
         }
       ]
     },
@@ -1418,6 +1475,26 @@
       ]
     },
     {
+      "page": "TabBar",
+      "stable": false,
+      "id": "2354:42",
+      "sets": [
+        {
+          "name": "TabBar",
+          "variants": 1,
+          "props": "Content:SLOT"
+        },
+        {
+          "name": "TabBarItem",
+          "variants": 5,
+          "axes": {
+            "State": "Default|Hover|Focused|Current|Disabled"
+          },
+          "props": "BadgeVisible:BOOLEAN,Icon:INSTANCE_SWAP,IconVisible:BOOLEAN,Label:TEXT,LabelVisible:BOOLEAN,Media:SLOT,MediaVisible:BOOLEAN"
+        }
+      ]
+    },
+    {
       "page": "Separator (✓) WIP",
       "stable": false,
       "id": "89:24",
@@ -1753,10 +1830,115 @@
       ]
     },
     {
-      "page": "AuthSignInPhone",
+      "page": "AuthSignInPhone (PR0)",
       "stable": false,
       "id": "1662:8",
       "sets": []
+    },
+    {
+      "page": "AuthPasskeySetup (PRO)",
+      "stable": false,
+      "id": "2370:42",
+      "sets": [
+        {
+          "name": "AuthPasskeySetup",
+          "variants": 5,
+          "axes": {
+            "Status": "active|error|completed",
+            "Type": "intro|confirm|saved"
+          }
+        },
+        {
+          "name": "AuthPasskeySetupIndicator",
+          "variants": 3,
+          "axes": {
+            "Status": "active|error|completed"
+          }
+        }
+      ]
+    },
+    {
+      "page": "AuthTwoFactorSetup (PRO)",
+      "stable": false,
+      "id": "2374:42",
+      "sets": [
+        {
+          "name": "AuthTwoFactorSetup",
+          "variants": 6,
+          "axes": {
+            "Status": "active|error|completed",
+            "Type": "scan|verify|backup"
+          }
+        },
+        {
+          "name": "AuthTwoFactorSetupGroup",
+          "variants": 1
+        },
+        {
+          "name": "AuthTwoFactorSetupItem",
+          "variants": 1,
+          "props": "Code:TEXT,Countdown:TEXT"
+        }
+      ]
+    },
+    {
+      "page": "UserMenu & MorphNav",
+      "stable": false,
+      "id": "2223:840",
+      "sets": [
+        {
+          "name": "MorphNav",
+          "variants": 4,
+          "axes": {
+            "Compact": "false|true",
+            "Content": "bar|product|search"
+          }
+        },
+        {
+          "name": "UserMenu",
+          "variants": 1
+        }
+      ]
+    },
+    {
+      "page": "SettingsPage",
+      "stable": false,
+      "id": "2223:838",
+      "sets": [
+        {
+          "name": "SettingsRow",
+          "variants": 2,
+          "axes": {
+            "Layout": "inline|stacked"
+          },
+          "props": "Control:SLOT,Description:TEXT,DescriptionVisible:BOOLEAN,Title:TEXT"
+        },
+        {
+          "name": "SettingsSection",
+          "variants": 1,
+          "props": "Content:SLOT,Description:TEXT,DescriptionVisible:BOOLEAN,Title:TEXT"
+        }
+      ]
+    },
+    {
+      "page": "IssueBoardPage",
+      "stable": false,
+      "id": "2223:839",
+      "sets": [
+        {
+          "name": "BoardColumn",
+          "variants": 1,
+          "props": "Content:SLOT,Count:TEXT,NewIssueVisible:BOOLEAN,StatusIcon:INSTANCE_SWAP,Title:TEXT"
+        },
+        {
+          "name": "IssueCard",
+          "variants": 3,
+          "axes": {
+            "State": "Default|Hover|Dragging"
+          },
+          "props": "AssigneeVisible:BOOLEAN,Comments:TEXT,CommentsVisible:BOOLEAN,Due:TEXT,DueVisible:BOOLEAN,IssueKey:TEXT,PriorityIcon:INSTANCE_SWAP,PullRequest:TEXT,PullRequestVisible:BOOLEAN,TagSecondaryVisible:BOOLEAN,Title:TEXT"
+        }
+      ]
     }
   ]
 }

@@ -174,6 +174,11 @@ export const FONT_FAMILY_ROWS: FamilyRow[] = [
   { key: 'font-family-body',    role: 'body',    label: 'font-family-body' },
 ]
 
+/** The code family (Figma `font-family-mono`, a hidden primitive like
+ *  `font-family-body`). One fixed family for every system, not a picker: only
+ *  the `code` role reads it. CSS `--font-family-mono`. */
+export const FONT_FAMILY_MONO = 'Geist Mono'
+
 // ── Side-nav categories (counts mirror the Figma "Groups" panel) ────────────
 export type TypoCategory = 'all' | 'family' | 'weight' | 'size' | 'lineHeight' | 'letterSpacing'
 const TYPO_GROUP_COUNT =

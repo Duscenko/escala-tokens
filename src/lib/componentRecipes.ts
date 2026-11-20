@@ -33,7 +33,7 @@
  *   none                         → nothing painted
  */
 
-import { BUTTON, ICON_BUTTON, CLOSE_BUTTON, TEXT_LINK, FAB_BUTTON, FAB_GROUP, BUTTON_GROUP, BUTTON_GROUP_ITEM, BUTTON_GROUP_DIVIDER, SOCIAL_LOGIN_BUTTON } from './recipes/actions.js'
+import { BUTTON, ICON_BUTTON, CLOSE_BUTTON, TEXT_LINK, FAB_BUTTON, FAB_GROUP, BUTTON_GROUP, BUTTON_GROUP_ITEM, BUTTON_GROUP_DIVIDER, SOCIAL_LOGIN_BUTTON, REACTION_GROUP, REACTION_GROUP_TRIGGER, REACTION_GROUP_POPOVER } from './recipes/actions.js'
 import {
   INPUT, TEXTAREA, DATE_PICKER_TRIGGER, DATE_PICKER_POPOVER, CALENDAR_DAY, CALENDAR_HEADER, CALENDAR_MONTH, CALENDAR_PRESETS, CALENDAR_FOOTER, NUMBER_INPUT, INPUT_TAG, INPUT_TAG_CHIP, INPUT_TAG_OPTION, COMBOBOX, COMBOBOX_POPOVER, COMBOBOX_ITEM, COMBOBOX_GROUP_LABEL, INPUT_OTP, INPUT_OTP_SLOT,
   CHECKBOX, CHECKBOX_ITEM, CHECKBOX_GROUP, RADIO_GROUP, SWITCH, SWITCH_GROUP, SLIDER, SLIDER_THUMB, FIELD, LABEL, PASSWORD_STRENGTH, PASSWORD_STRENGTH_METER, PASSWORD_STRENGTH_RULE, FILE_UPLOAD, FILE_UPLOAD_DROPZONE, FILE_UPLOAD_ITEM, CALENDAR,
@@ -41,8 +41,11 @@ import {
 import { CARD, MODAL, MODAL_HEADER, MODAL_FOOTER, SEPARATOR, ACCORDION, ACCORDION_ITEM, IMAGE, POPOVER, POPOVER_FOOTER, TOOLTIP_CONTENT, TOOLTIP_INFO_TRIGGER, SCROLL_AREA, SCROLL_BAR, SHEET,
 } from './recipes/surfaces.js'
 import {
-  TAB_MENU, TAB_MENU_ITEM, TAB_MENU_LINE_ITEM, NAV_ITEM, BRAND, ACCOUNT_MENU_TRIGGER, SEGMENTED_CONTROL, SEGMENTED_CONTROL_ITEM, BREADCRUMB, BREADCRUMB_ITEM, BREADCRUMB_ELLIPSIS, BREADCRUMB_SEPARATOR, PAGINATION, PAGINATION_LINK, PAGINATION_ELLIPSIS, STEPPER, STEPPER_ITEM, STEPPER_INDICATOR, STEPPER_ICON, DROPDOWN_MENU, DROPDOWN_MENU_LABEL, DROPDOWN_MENU_ITEM, DROPDOWN_MENU_FOOTER, SIDEBAR, SIDEBAR_BRAND, SIDEBAR_GROUP, SIDEBAR_GROUP_LABEL, SIDEBAR_MENU_BUTTON,
+  TAB_MENU, TAB_MENU_ITEM, TAB_MENU_LINE_ITEM, NAV_ITEM, TAB_BAR, TAB_BAR_ITEM, BRAND, ACCOUNT_MENU_TRIGGER, SEGMENTED_CONTROL, SEGMENTED_CONTROL_ITEM, BREADCRUMB, BREADCRUMB_ITEM, BREADCRUMB_ELLIPSIS, BREADCRUMB_SEPARATOR, PAGINATION, PAGINATION_LINK, PAGINATION_ELLIPSIS, STEPPER, STEPPER_ITEM, STEPPER_INDICATOR, STEPPER_ICON, DROPDOWN_MENU, DROPDOWN_MENU_LABEL, DROPDOWN_MENU_ITEM, DROPDOWN_MENU_FOOTER, SIDEBAR, SIDEBAR_BRAND, SIDEBAR_GROUP, SIDEBAR_GROUP_LABEL, SIDEBAR_MENU_BUTTON,
 } from './recipes/navigation.js'
+import { SETTINGS_ROW, SETTINGS_SECTION, ISSUE_CARD, BOARD_COLUMN } from './recipes/pages.js'
+import { ACTIVITY_HEATMAP, ACTIVITY_HEATMAP_CELL } from './recipes/activityHeatmap.js'
+import { SPLIT_BAR, SPLIT_BAR_SEGMENT, SPLIT_BAR_LEGEND_ITEM } from './recipes/splitBar.js'
 import { ALERT, TOAST } from './recipes/feedback.js'
 import { BADGE, CHIP, PROGRESS_LINE, PROGRESS_CIRCLE, SPINNER, RATING_GROUP, RATING_GROUP_ITEM, AVATAR, AVATAR_STATUS, AVATAR_GROUP, FEATURED_ICON, KBD } from './recipes/indicators.js'
 export {
@@ -51,12 +54,17 @@ export {
 } from './recipes/helpers.js'
 import { TABLE, TABLE_CELL, TABLE_HEAD, TABLE_MEDIA_CELL, TABLE_TREND_CELL, TABLE_RESIZER, TABLE_ROW, TABLE_HEADER, TABLE_FOOTER, TABLE_CAPTION, TABLE_DROP_INDICATOR, TABLE_EMPTY, TABLE_LOADING, TABLE_LOAD_MORE } from './recipes/table.js'
 import { RECIPE_MOTION } from './recipes/motion.js'
+import { SPLIT_BUTTON } from './recipes/splitButton.js'
+import { GAUGE, SPARKLINE } from './recipes/dataDisplay.js'
 import { roleCssVar } from './roleNames.js'
 import { NONE, NON_TOKEN_PROPS, type ComponentRecipe, type AxisValues, type SlotMap, type TokenRef, type RecipeProp } from './recipes/helpers.js'
 
 export const COMPONENT_RECIPES: Record<string, ComponentRecipe> = {
   Button: BUTTON,
   IconButton: ICON_BUTTON,
+  ReactionGroup: REACTION_GROUP,
+  ReactionGroupTrigger: REACTION_GROUP_TRIGGER,
+  ReactionGroupPopover: REACTION_GROUP_POPOVER,
   CloseButton: CLOSE_BUTTON,
   TextLink: TEXT_LINK,
   FABButton: FAB_BUTTON,
@@ -64,6 +72,7 @@ export const COMPONENT_RECIPES: Record<string, ComponentRecipe> = {
   ButtonGroup: BUTTON_GROUP,
   ButtonGroupItem: BUTTON_GROUP_ITEM,
   ButtonGroupDivider: BUTTON_GROUP_DIVIDER,
+  SplitButton: SPLIT_BUTTON,
   SocialLoginButton: SOCIAL_LOGIN_BUTTON,
   Input: INPUT,
   Textarea: TEXTAREA,
@@ -104,6 +113,8 @@ export const COMPONENT_RECIPES: Record<string, ComponentRecipe> = {
   Chip: CHIP,
   ProgressLine: PROGRESS_LINE,
   ProgressCircle: PROGRESS_CIRCLE,
+  Gauge: GAUGE,
+  Sparkline: SPARKLINE,
   Spinner: SPINNER,
   FeaturedIcon: FEATURED_ICON,
   RatingGroup: RATING_GROUP,
@@ -144,6 +155,17 @@ export const COMPONENT_RECIPES: Record<string, ComponentRecipe> = {
   TabMenuItem: TAB_MENU_ITEM,
   TabMenuLineItem: TAB_MENU_LINE_ITEM,
   NavItem: NAV_ITEM,
+  TabBar: TAB_BAR,
+  TabBarItem: TAB_BAR_ITEM,
+  ActivityHeatmap: ACTIVITY_HEATMAP,
+  ActivityHeatmapCell: ACTIVITY_HEATMAP_CELL,
+  SettingsRow: SETTINGS_ROW,
+  SettingsSection: SETTINGS_SECTION,
+  IssueCard: ISSUE_CARD,
+  SplitBar: SPLIT_BAR,
+  SplitBarSegment: SPLIT_BAR_SEGMENT,
+  SplitBarLegendItem: SPLIT_BAR_LEGEND_ITEM,
+  BoardColumn: BOARD_COLUMN,
   Brand: BRAND,
   AccountMenuTrigger: ACCOUNT_MENU_TRIGGER,
   SegmentedControl: SEGMENTED_CONTROL,
@@ -223,6 +245,8 @@ export function recipeTokenRefs(recipe: ComponentRecipe): string[] {
           if (!ref || ref === NONE) continue
           // A named elevation paints with the two Elevation colours (recipeStyles `LIFT`).
           if (prop === 'lift') { refs.add('color.elevation.shadow-key'); refs.add('color.elevation.shadow-ambient'); if (ref === 'modal' || String(ref).startsWith('popover-')) refs.add('color.elevation.shadow-ring'); continue }
+          // The label's `Shadow/text-2xs` paints with `Elevation/shadow-ambient` (recipeStyles `textShadow`).
+          if (prop === 'textShadow') { refs.add('color.elevation.shadow-ambient'); continue }
           if (NON_TOKEN_PROPS.includes(prop)) continue
           for (const term of refFn(ref)?.terms ?? ref.split('+')) refs.add(term)
         }

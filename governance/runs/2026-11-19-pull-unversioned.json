@@ -1,0 +1,22 @@
+{
+  "kind": "foundations-pull",
+  "date": "2026-11-19",
+  "figmaFile": "7j5zukN5HpihGVJMmyjA20",
+  "figmaVersion": null,
+  "figmaVersionNote": "The Plugin API exposes no version id for reading and the Variables REST API is Enterprise-only; values were read live through use_figma on 2026-11-19.",
+  "collectionsRead": ["Typography"],
+  "skipped": ["Motion"],
+  "changed": [],
+  "added": [
+    { "variable": "font-family-mono", "modes": "Desktop · Tablet · Mobile", "value": "Geist Mono", "hiddenFromPublishing": true },
+    { "variable": "role/code/size", "modes": "Desktop · Tablet · Mobile", "alias": "size/text-md", "css": "--text-code-font-size" },
+    { "variable": "role/code/line-height", "modes": "Desktop · Tablet · Mobile", "alias": "line-height/text-md", "css": "--text-code-line-height" },
+    { "variable": "role/code/letter-spacing", "modes": "Desktop · Tablet · Mobile", "alias": "letter-spacing/text-md", "css": "--text-code-letter-spacing" },
+    { "variable": "role/code/weight", "modes": "Desktop · Tablet · Mobile", "alias": "weight/regular", "css": "--text-code-font-weight" },
+    { "variable": "role/code/family", "modes": "Desktop · Tablet · Mobile", "alias": "font-family-mono", "css": "--text-code-font-family" },
+    { "textStyle": "Type/code", "font": "Geist Mono Regular", "size": 14, "lineHeight": 21, "letterSpacing": 0 }
+  ],
+  "removed": [],
+  "alsoRead": "Component inventory refreshed the same day (spec/figma-components.json, checksum fc838b97, 65 pages, 177 sets): Input gained the TEXT property Value; new pages ReactionGroup, AuthPasskeySetup, AuthTwoFactorSetup, ActionButton, SplitButton.",
+  "decision": "DEC-2026-11-19-002"
+}

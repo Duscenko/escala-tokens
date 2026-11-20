@@ -12,6 +12,7 @@ import { figmaRefsFor, isFigmaProp, semanticRoleIds } from './agentBundle/figmaR
 import { componentReactFile } from './agentBundle/productDesignSkills'
 import type { TokenJSON } from './agentBundle/types'
 import { mdCell } from './utils'
+import { FONT_FAMILY_MONO } from './typographyStandard'
 import { buildSectionExport, cssExcerpt } from './sectionExport'
 import { COLOR_FIELD_INFO, type PreviewColorField } from './previewColorFields'
 import { COMPONENT_RECIPES, cssVarOf, refFn, refFnCss, refFnPx, resolveRecipe, type ComponentRecipe, type RecipePart } from './componentRecipes'
@@ -374,6 +375,7 @@ function tokenTables(def: ComponentDef, t: AgentFoundationTokens, json?: TokenJS
       '',
       `- Body family: \`${ty.fontFamily}\` → \`--font-family-body\``,
       `- Heading family: \`${ty.headingFontFamily ?? ty.fontFamily}\` → \`--font-family-heading\``,
+      `- Code family: \`${FONT_FAMILY_MONO}\` → \`--font-family-mono\` (the \`code\` role only)`,
       '',
       '| Weight | CSS | Value |',
       '|---|---|---|',

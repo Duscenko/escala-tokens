@@ -32,3 +32,31 @@
   rationale: "Built Figma-first on 2026-11-18, skipping Workshop and Storybook. They stay in the library while they pass Storybook and owner approval."
   owner: Cesar Durango
   reviewBy: 2026-12-02
+
+- id: EXC-2026-11-19-001
+  rule: STG-001
+  scope: TabBar, TabBarItem (Figma library, page ❖ TabBar 2354:42)
+  rationale: "Owner decision 2026-11-19: built Figma-first because iterating in Figma is still easier for the owner than in Storybook. Code followed the same day (design-plans/tab-bar-contract.md, stories navigation-tabbar--*). Kept until the stories are approved."
+  owner: Cesar Durango
+  reviewBy: 2026-12-03
+
+- id: EXC-2026-11-19-002
+  rule: STG-001
+  scope: ReactionGroup, ReactionGroupTrigger, ReactionGroupPopover, AuthPasskeySetup, AuthPasskeySetupIndicator, AuthTwoFactorSetup, AuthTwoFactorSetupItem, AuthTwoFactorSetupGroup (Figma library)
+  rationale: "Owner exception (handoff 2026-11-19, §7): these pieces were built directly in the library, skipping the Workshop step. Code follows the handoff; they stay at stage storybook until the owner approves the stories."
+  owner: Cesar Durango
+  reviewBy: 2026-12-03
+
+- id: EXC-2026-11-19-003
+  rule: TOK-001
+  scope: _AuthTwoFactorSetupQR (AuthTwoFactorSetup): tile fill white, modules black, in Light and Dark
+  rationale: "Handoff 2026-11-19, §5 and §7: a scanner needs fixed contrast, so the QR is the one artwork that binds no colour role. In code it is the only colour of blocks/authSetup.tsx that is not a role (guarded by authSetupBlocks.test.ts); the same secret is always shown as copyable text next to it."
+  owner: Cesar Durango
+  reviewBy: 2027-02-19
+
+- id: EXC-2026-11-19-004
+  rule: CMP-002
+  scope: AuthPasskeySetup, AuthTwoFactorSetup ModalHeader (Align vertical-left, no icon, no description)
+  rationale: "Handoff 2026-11-19, §4 and §7: the same left-aligned header as AuthSignInPasskey (EXC-2026-11-18-001, DEC-2026-11-18-005). The rule for every other modal stays a centred header."
+  owner: Cesar Durango
+  reviewBy: 2027-02-19

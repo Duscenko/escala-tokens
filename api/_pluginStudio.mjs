@@ -285,14 +285,14 @@ function motionChoreographies(settings) {
     },
     "popover-enter": {
       pattern: "coordinated",
-      components: ["Popover", "DatePickerPopover", "TooltipContent", "DropdownMenu"],
+      components: ["Popover", "DatePickerPopover", "TooltipContent", "DropdownMenu", "ReactionGroupPopover"],
       intent: { usage: ["popovers", "tooltips", "menus"], direction: "A floating layer grows out of its trigger: a short pop on the disclosure role." },
       tracks: [{ keyframes: s.pop < 1 ? "pop" : "fade-in", motion: r("use-disclosure-in"), delay: 0 }],
       reducedMotion: { collapseTo: "coordinated", pattern: "coordinated", tracks: [{ keyframes: "fade-in", motion: FADE_IN, delay: 0 }] }
     },
     "popover-exit": {
       pattern: "coordinated",
-      components: ["Popover", "DatePickerPopover", "TooltipContent", "DropdownMenu"],
+      components: ["Popover", "DatePickerPopover", "TooltipContent", "DropdownMenu", "ReactionGroupPopover"],
       intent: { usage: ["popovers", "tooltips", "menus"], direction: "Gets out of the way, faster than it came." },
       tracks: [{ keyframes: s.shrink < 1 ? "shrink" : "fade-out", motion: r("use-disclosure-out"), delay: 0 }],
       reducedMotion: { collapseTo: "coordinated", pattern: "coordinated", tracks: [{ keyframes: "fade-out", motion: FADE_OUT, delay: 0 }] }
@@ -2846,7 +2846,7 @@ function buildTypeScale(factor) {
   }
   return { sizes, lineHeights };
 }
-var TYPE_SCALE_KEYS, FONT_SIZE_STANDARD, LINE_HEIGHT_STANDARD, LETTER_SPACING_RATIO, TYPE_SCALE_MODES, DEFAULT_TYPE_SCALE_FACTOR, FONT_WEIGHT_BASES, FONT_WEIGHT_STANDARD, FONT_WEIGHT_ROWS, FONT_FAMILY_ROWS, TYPO_GROUP_COUNT, TYPO_CATEGORIES;
+var TYPE_SCALE_KEYS, FONT_SIZE_STANDARD, LINE_HEIGHT_STANDARD, LETTER_SPACING_RATIO, TYPE_SCALE_MODES, DEFAULT_TYPE_SCALE_FACTOR, FONT_WEIGHT_BASES, FONT_WEIGHT_STANDARD, FONT_WEIGHT_ROWS, FONT_FAMILY_ROWS, FONT_FAMILY_MONO, TYPO_GROUP_COUNT, TYPO_CATEGORIES;
 var init_typographyStandard = __esm({
   "src/lib/typographyStandard.ts"() {
     TYPE_SCALE_KEYS = [
@@ -2929,6 +2929,7 @@ var init_typographyStandard = __esm({
       { key: "font-family-heading", role: "display", label: "font-family-heading" },
       { key: "font-family-body", role: "body", label: "font-family-body" }
     ];
+    FONT_FAMILY_MONO = "Geist Mono";
     TYPO_GROUP_COUNT = FONT_FAMILY_ROWS.length + FONT_WEIGHT_ROWS.length + TYPE_SCALE_KEYS.length * 3;
     TYPO_CATEGORIES = [
       { key: "all", label: "All", count: TYPO_GROUP_COUNT },
@@ -2947,9 +2948,11 @@ var init_typographyStandard = __esm({
 function isAlias(v) {
   if (!v || typeof v !== "object") return false;
   const a2 = v;
-  return (a2.family === "display" || a2.family === "body") && SIZE_KEYS.has(a2.size) && WEIGHT_KEYS.has(a2.weight);
+  return (a2.family === "display" || a2.family === "body" || a2.family === "mono") && SIZE_KEYS.has(a2.size) && WEIGHT_KEYS.has(a2.weight);
 }
 function withLockedFamily(role, alias) {
+  if (role.key === "code") return alias.family === "mono" ? alias : { ...alias, family: "mono" };
+  if (alias.family === "mono") return { ...alias, family: "body" };
   if (role.group !== "heading") return alias;
   return alias.family === "body" ? alias : { ...alias, family: "body" };
 }
@@ -3037,8 +3040,11 @@ function typeRoleVar(key2, facet, viewport = "desktop") {
   const base = `--text-${key2}-${suffix}`;
   return viewport === "desktop" ? base : `${base}-${viewport}`;
 }
+function familyVarStem(family) {
+  return family === "display" ? "heading" : family === "mono" ? "mono" : "body";
+}
 function primitiveVar(alias, facet) {
-  if (facet === "family") return `var(--font-family-${alias.family === "display" ? "heading" : "body"})`;
+  if (facet === "family") return `var(--font-family-${familyVarStem(alias.family)})`;
   if (facet === "size") return `var(--font-size-${alias.size})`;
   if (facet === "weight") return `var(--font-weight-${alias.weight})`;
   if (facet === "tracking") return `var(--letter-spacing-${alias.size})`;
@@ -3156,6 +3162,17 @@ var init_typeRoles = __esm({
         desktop: a("body", "text-sm", "regular"),
         tablet: a("body", "text-sm", "regular"),
         mobile: a("body", "text-sm", "regular")
+      },
+      {
+        key: "code",
+        label: "Code",
+        description: "Codes a person copies or types: backup codes, secret keys.",
+        group: "body",
+        // The Figma file's `Type/code`: ONE size (14 / 21 on the file's scale) in the mono family, the
+        // same on every cut. Kbd keeps its own smaller sizes (owner decision 2026-11-19).
+        desktop: a("mono", "text-md", "regular"),
+        tablet: a("mono", "text-md", "regular"),
+        mobile: a("mono", "text-md", "regular")
       },
       {
         key: "label",
@@ -4292,6 +4309,36 @@ var init_componentCatalogue = __esm({
         accessibility: 'role="group" with an aria-label. The trigger is a native <button> with aria-expanded; every item needs an accessible name (its label prop) since fan items are icon-only.'
       },
       {
+        key: "SplitButton",
+        label: "Split Button",
+        category: "Button & Actions",
+        box: "gray",
+        locks: ["size", "hit", "motion"],
+        description: "A main action joined to a menu of related alternatives. A ButtonGroup of two segments (the action with its label and leading icon, and an icon-only caret) over a DropdownMenu that opens below, aligned to the end edge. It paints nothing of its own: the segments are ButtonGroupItems (Action/primary or Action/secondary, Radius/action, Shadow/xs) and the menu is the DropdownMenu of the same size (xs opens sm), 8px below the group (Spacing/gap-control) and 256 wide. Open pins the caret Active and swaps CaretDown for CaretUp. Motion: the menu grows out of the caret on popover-enter (use-disclosure-in), its rows arrive one after another on use-stagger-in, and it leaves on popover-exit; the main half never scales, and reduced motion keeps only the fade.",
+        usage: "Use in toolbars and page headers when one action is primary and a few related ones sit behind it (Publish \xB7 Publish and notify \xB7 Save as draft). One per toolbar; risky actions go in the menu as critical rows. Use Button when there is a single action, and a DropdownMenu on an IconButton when none is primary. The pair never collapses: give it its own row on narrow screens.",
+        // The Figma file's axes, value for value, in the file's panel order (design-plans/split-button-contract.md).
+        axes: [
+          { name: "Variant", values: ["default", "secondary"] },
+          { name: "Size", values: ["default", "xs", "sm", "lg"] },
+          { name: "Open", values: ["false", "true"] }
+        ],
+        figmaSets: ["SplitButton"],
+        props: [
+          { name: "variant", type: '"default" | "secondary"', description: "Brand or neutral fill, inherited from ButtonGroup (Action/primary \xB7 Action/secondary and their paired ink)." },
+          { name: "size", type: '"default" | "xs" | "sm" | "lg"', description: "Size/control-md 40 \xB7 xs 24 \xB7 sm 32 \xB7 lg 48; the menu is the DropdownMenu of the same size (xs opens sm)." },
+          { name: "open", type: "boolean", description: "Figma Open: the menu is open and the caret is Active (controlled)." },
+          { name: "defaultOpen", type: "boolean", description: "Uncontrolled initial state." },
+          { name: "onOpenChange", type: "(open: boolean) => void", description: "Called when the caret, Escape or a pick opens or closes the menu." },
+          { name: "children", type: "ReactNode", description: "The main segment's label (the nested item's Label)." },
+          { name: "leading", type: "ReactNode", description: "The main segment's leading icon (IconLeadingIcon)." },
+          { name: "menu", type: "DropdownMenuItem[]", description: "The menu rows (Content slot); a critical row is Variant=critical. Defaults to the file's three." },
+          { name: "moreLabel", type: "string", description: `The caret's accessible name. Defaults to "<label> more actions".` },
+          { name: "onAction", type: "(event) => void", description: "Runs the main action." },
+          { name: "disabled", type: "boolean", description: "Disables both segments." }
+        ],
+        accessibility: `Two native <button>s. The caret is labelled "<label> more actions" with aria-haspopup="menu" and aria-expanded; the menu is a Radix DropdownMenu (arrows move and loop, typeahead, Escape closes and returns focus to the caret). The main segment is a plain action: no aria-pressed. In Dark the default Variant's label is light on the violet fill and is judged by perceived contrast (APCA), as on Button: a WCAG checker reads about 4.0:1 there by design.`
+      },
+      {
         key: "ButtonGroup",
         label: "Button Group",
         category: "Button & Actions",
@@ -4365,6 +4412,72 @@ var init_componentCatalogue = __esm({
         accessibility: "Decorative: aria-hidden."
       },
       {
+        key: "ReactionGroup",
+        label: "Reaction Group",
+        category: "Button & Actions",
+        box: "gray",
+        locks: ["size", "hit", "motion"],
+        description: "A lightweight acknowledgement under a post or comment: a wrapping row of reaction pills (the outline pill Chip, Selected when you reacted, its label the count), a trigger that opens the picker, and an optional summary line.",
+        usage: "Use under a post, comment or message to collect quick reactions. A pill whose count reaches zero leaves the row. For a single like or favourite use a toggle IconButton; for a score use RatingGroup.",
+        // The Figma set has no variant axis: Content (slot), Summary and SummaryVisible are properties.
+        axes: [],
+        figmaSets: ["ReactionGroup"],
+        props: [
+          { name: "options", type: "{ id, label, icon }[]", description: "The reactions on offer, in the picker's order (default: Like, Love, Celebrate, Insightful, Question, Applause)." },
+          { name: "value / defaultValue", type: "{ id, count, reacted }[]", description: "The reactions on the post, in the row's order (Figma Content: one Chip each)." },
+          { name: "onValueChange", type: "(next, change: { id, reacted, count }) => void", description: "Fires when a pill is toggled or an option is picked, with the next list and what changed." },
+          { name: "label", type: "string", description: 'Accessible name of the group (default "Reactions").' },
+          { name: "summary", type: "ReactNode", description: 'Figma Summary. Omitted, it is written from the value ("27 reactions \xB7 You reacted with Celebrate and Like").' },
+          { name: "summaryVisible", type: "boolean", description: "Figma SummaryVisible." },
+          { name: "size", type: '"xs" | "sm" | "default" | "lg" | "xl"', description: "The pills' and the trigger's size (Chip Size)." },
+          { name: "open / defaultOpen / onOpenChange", type: "boolean / (open) => void", description: "The picker's open state." },
+          { name: "disabled", type: "boolean", description: "Disables the pills and the trigger." }
+        ],
+        accessibility: 'role="group" named "Reactions". Each pill is a toggle button (aria-pressed) named "{reaction}, {count} reactions, you reacted". Removing the last count moves focus to the neighbour pill or the trigger. Every change is announced in a role="status" region.'
+      },
+      {
+        key: "ReactionGroupTrigger",
+        label: "Reaction Group Trigger",
+        category: "Button & Actions",
+        box: "gray",
+        locks: ["size", "hit", "motion"],
+        description: "The add-reaction button of a ReactionGroup: an icon-only pill that opens ReactionGroupPopover. It mirrors the outline pill Chip (same sizes, edge and ink) so it sits in the row with the reaction pills.",
+        usage: "Only inside a ReactionGroup, after the last pill. It stays in its family until a second consumer needs an icon-only pill button.",
+        // The Figma file's axes, value for value. State is pseudo-classes in code; Open is aria-expanded.
+        axes: [
+          { name: "Size", values: ["default", "xs", "sm", "lg", "xl"] },
+          { name: "State", values: ["Default", "Hover", "Focused", "Open", "Disabled"] }
+        ],
+        figmaSets: ["ReactionGroupTrigger"],
+        props: [
+          { name: "size", type: '"default" | "xs" | "sm" | "lg" | "xl"', description: "Figma Size: 40 \xB7 24 \xB7 32 \xB7 48 \xB7 56 across (Size/control-md \xB7 xs \xB7 sm \xB7 lg \xB7 xl); the glyph is icon md \xB7 sm \xB7 sm \xB7 md \xB7 lg." },
+          { name: "aria-expanded", type: "boolean", description: "Figma State Open: set by the popover it opens." },
+          { name: "disabled / forceState", type: "boolean / State", description: "Figma State Disabled; forceState pins any state for docs." },
+          { name: "icon", type: "ReactNode", description: "The glyph (default: the file's Smiley)." },
+          { name: "aria-label", type: "string", description: 'Accessible name (default "Add reaction").' }
+        ],
+        accessibility: 'A native <button> named "Add reaction" with aria-haspopup and aria-expanded. Focus draws one 2px ring 1px outside the pill.'
+      },
+      {
+        key: "ReactionGroupPopover",
+        label: "Reaction Group Popover",
+        category: "Button & Actions",
+        box: "gray",
+        locks: ["size", "hit", "motion"],
+        description: "The reaction picker of a ReactionGroup: a toolbar of ghost IconButtons on an overlay surface. Concentric: the overlay radius minus its inset is the IconButton radius.",
+        usage: "Only as the popover of a ReactionGroupTrigger. It opens above the trigger and closes when an option is picked.",
+        axes: [],
+        figmaSets: ["ReactionGroupPopover"],
+        props: [
+          { name: "options", type: "{ id, label, icon }[]", description: "Figma Content: one ghost IconButton (secondary, sm) per reaction." },
+          { name: "onSelect", type: "(id: string) => void", description: "Fires with the option a person picks." },
+          { name: "label", type: "string", description: 'Accessible name of the toolbar (default "Add reaction").' },
+          { name: "side / sideOffset", type: "Radix", description: "Opens on top, one gap-control (8px) from the trigger." },
+          { name: "highlighted / inline", type: "string / boolean", description: "Docs: pin one option's Hover; draw the picker in place." }
+        ],
+        accessibility: 'role="toolbar" with a roving tabindex: arrow keys move and wrap, Home and End jump, Escape closes and returns focus to the trigger. Every option has an aria-label.'
+      },
+      {
         key: "SocialLoginButton",
         label: "Social Login Button",
         category: "Button & Actions",
@@ -4415,6 +4528,7 @@ var init_componentCatalogue = __esm({
           { name: "size", type: "'sm' | 'default' | 'lg'", description: "Height on the Size roles: compact 32 \xB7 control 40 \xB7 touch 48." },
           { name: "type", type: "'default' | 'phone' | 'currency' | 'currency-select' | 'password' | 'url' | 'upload' | 'tag' | 'copy-link' | 'credit-card' | 'search'", description: "Figma Type: the parts the field composes. Another value is an HTML input type on the default layout." },
           { name: "placeholder", type: "string", description: "Figma Placeholder." },
+          { name: "value / defaultValue", type: "string", description: "Figma Value (TEXT): the text a filled field shows. The variant Value=filled only says a value is present; it is not a prop." },
           { name: "leading", type: "ReactNode | null", description: "Leading icon (IconLeadingVisible + IconLeadingIcon). Types bring their own (search, lock, folder); null hides it." },
           { name: "trailing", type: "ReactNode | null", description: "Trailing icon (IconTrailingVisible + IconTrailingIcon). Password brings its show / hide toggle." },
           { name: "shortcut", type: "string[] | null", description: "The search shortcut keys (ShortcutVisible + Shortcut). \u2318 K by default on search." },
@@ -5613,12 +5727,14 @@ var init_componentCatalogue = __esm({
         description: "Dialog card that interrupts the flow for a decision or a short task: a header, a content slot and a footer over a scrim.",
         usage: "Use for a decision or a short task that needs full attention (a confirmation, a small form). Not for notifications: use a Toast or an Alert.",
         axes: [
-          { name: "Size", values: ["default", "lg"] }
+          { name: "Size", values: ["default", "lg"] },
+          { name: "Layout", values: ["tray", "simple"] }
         ],
         figmaSets: ["Modal"],
         props: [
           { name: "open / onOpenChange", type: "boolean / (open) => void", description: "Controlled visibility (Escape and the scrim close it)." },
           { name: "size", type: "'default' | 'lg'", description: "Figma Size: 480 or 640 wide. It cascades to the header and the footer." },
+          { name: "layout", type: "'tray' | 'simple'", description: "Figma Layout: `tray` is a layer-1 shell around a layer-2 panel (header + content) with the footer on the tray; `simple` (the default for now) is the bare card." },
           { name: "header / footer", type: "ReactNode", description: "A ModalHeader above the content and a ModalFooter under it (Figma FooterVisible)." },
           { name: "children", type: "ReactNode", description: "The Content slot." },
           { name: "showCloseButton", type: "boolean", description: "Figma CloseVisible: the ghost pill close in the corner (default true)." }
@@ -5657,7 +5773,9 @@ var init_componentCatalogue = __esm({
         usage: "Inline puts the actions at the end, primary last; stacked gives full-width buttons for narrow viewports.",
         axes: [
           { name: "Size", values: ["default", "lg"] },
-          { name: "Layout", values: ["inline", "stacked"] }
+          { name: "Layout", values: ["inline", "stacked", "equal"] },
+          // Code-only until the ModalFooter is rebuilt: what it sits on (the plain card, a tray Modal's tray, or the simple card).
+          { name: "Surface", values: ["plain", "tray", "simple"] }
         ],
         figmaSets: ["ModalFooter"],
         props: [
@@ -6193,6 +6311,117 @@ var init_componentCatalogue = __esm({
         accessibility: "A button with aria-pressed; disabled uses the native attribute."
       },
       {
+        key: "SettingsRow",
+        label: "Settings Row",
+        category: "Layout",
+        box: "gray",
+        locks: ["size", "hit", "motion"],
+        description: "One setting: its title, an optional description and a single control.",
+        usage: "Inside a SettingsSection. Inline puts the control on the right; stacked puts it under the text. It saves on change, with no submit.",
+        axes: [{ name: "Layout", values: ["inline", "stacked"] }],
+        figmaSets: ["SettingsRow"],
+        props: [
+          { name: "layout", type: "string", description: "Figma Layout." },
+          { name: "title / description / descriptionVisible", type: "ReactNode / boolean", description: "Figma Title, Description and DescriptionVisible." },
+          { name: "control", type: "ReactElement", description: "Figma Control slot: one control." }
+        ],
+        accessibility: "The title names the control through aria-labelledby and the description describes it through aria-describedby."
+      },
+      {
+        key: "SettingsSection",
+        label: "Settings Section",
+        category: "Layout",
+        box: "gray",
+        locks: ["size", "hit", "motion"],
+        description: "A titled group of SettingsRow.",
+        usage: "The page stacks sections; the section carries no outer spacing.",
+        axes: [],
+        figmaSets: ["SettingsSection"],
+        props: [
+          { name: "title / description / descriptionVisible", type: "ReactNode / boolean", description: "Figma Title, Description and DescriptionVisible." },
+          { name: "children", type: "ReactNode", description: "Figma Content slot: SettingsRow only." }
+        ],
+        accessibility: "The title is an h2, so the page stays navigable by headings."
+      },
+      {
+        key: "IssueCard",
+        label: "Issue Card",
+        category: "Data Display",
+        box: "gray",
+        locks: ["size", "hit", "motion"],
+        description: "One issue on a board: key, linked pull request, assignee, title, priority, tags, comments and due date.",
+        usage: "Inside a BoardColumn. The whole card is one link to the issue.",
+        axes: [{ name: "State", values: ["Default", "Hover", "Dragging"] }],
+        figmaSets: ["IssueCard"],
+        props: [
+          { name: "issueKey / title / href", type: "string", description: "Figma IssueKey and Title; the link target." },
+          { name: "pullRequest / comments / due", type: "string", description: "Figma PullRequest, Comments and Due; omit one to hide it." },
+          { name: "tag / tagSecondary / assignee / priorityIcon", type: "ReactNode", description: "Figma tags, AssigneeVisible and PriorityIcon." },
+          { name: "forceState", type: "string", description: "Pins a state for docs and previews; Dragging while it is dragged." }
+        ],
+        accessibility: "A single link named by the issue title. While dragged, only its edge and shadow ease; the position follows the pointer with no transition."
+      },
+      {
+        key: "Gauge",
+        label: "Gauge",
+        category: "Data Display",
+        box: "black",
+        locks: ["shape", "size", "hit", "motion"],
+        description: "One measurement against a fixed range on an open 270\xB0 arc with round ends: a muted track, a fill, and the value, its unit and a label in the middle. The fill reads the neutral chart series, or a severity when the colour means good or bad.",
+        usage: "Use for a single reading with a known range (workspace health, quota, score). Variant default for a neutral reading; success \xB7 warning \xB7 critical only when the colour carries the meaning, never to decorate. Use ProgressCircle for task completion and Sparkline for a trend.",
+        axes: [
+          { name: "Variant", values: ["default", "success", "warning", "critical"] },
+          { name: "Size", values: ["default", "sm", "lg"] },
+          { name: "Value", values: ["0", "25", "50", "75", "100"] }
+        ],
+        figmaSets: ["Gauge"],
+        props: [
+          { name: "variant / size", type: "Figma axes", description: "Variant default \xB7 success \xB7 warning \xB7 critical; Size sm 128 \xB7 default 160 \xB7 lg 192 across (arc 8 \xB7 12 \xB7 16 thick)." },
+          { name: "value / min / max", type: "number", description: "The measurement and its range (0\u2013100 by default). The file's Value axis (0 \xB7 25 \xB7 50 \xB7 75 \xB7 100) is a sample: code takes any value." },
+          { name: "valueText", type: "string", description: "Figma ValueText: the big number as written. Defaults to the value." },
+          { name: "unit / label", type: "string", description: "Figma Unit and Label (UnitVisible / LabelVisible): omit one to hide it." }
+        ],
+        accessibility: 'role="meter" with aria-valuenow, aria-valuemin, aria-valuemax and an aria-valuetext that reads the label ("72 %, Healthy"). Give it an accessible name (aria-label or aria-labelledby). Not focusable. A new value sweeps the fill on use-travel-in; reduced motion is instant.'
+      },
+      {
+        key: "Sparkline",
+        label: "Sparkline",
+        category: "Data Display",
+        box: "black",
+        locks: ["shape", "size", "hit", "motion"],
+        description: "A compact trend next to a value, with no axes or gridlines: a monotone line over a soft area, with a dot on the last point. Default binds the neutral chart series; success and critical use the Status roles because they carry meaning; secondary is a quiet grey.",
+        usage: "Use beside a number to show where it came from (a metric card, a table cell). Variant success when up is good and critical when down is bad; default when the direction has no judgement. For a full chart with axes use a charting layer, not this.",
+        axes: [
+          { name: "Variant", values: ["default", "secondary", "success", "critical"] },
+          { name: "Size", values: ["default", "sm", "lg"] }
+        ],
+        figmaSets: ["Sparkline"],
+        props: [
+          { name: "variant / size", type: "Figma axes", description: "Variant default \xB7 secondary \xB7 success \xB7 critical; Size default 256 \xD7 64 \xB7 sm 96 \xD7 32 \xB7 lg 480 \xD7 128." },
+          { name: "data", type: "number[]", description: "The series, oldest first; scaled to the box. The file draws one sample curve." },
+          { name: "area / dot", type: "boolean", description: "Figma AreaVisible and DotVisible (both on by default)." },
+          { name: "fluid", type: "boolean", description: "Code only: the width follows the container; the height stays the Size's." }
+        ],
+        accessibility: 'role="img" with a required aria-label that states the trend ("Daily active users, up 7.2 % this week"); the drawing itself is hidden from assistive tech. The line draws once on mount (use-reveal) and new data cross-fades (use-color); reduced motion is instant.'
+      },
+      {
+        key: "BoardColumn",
+        label: "Board Column",
+        category: "Layout",
+        box: "gray",
+        locks: ["size", "hit", "motion"],
+        description: "One status lane: status icon, title, count, add action and a list of IssueCard.",
+        usage: "Side by side on a board. The lane is a tray, so its cards read as raised.",
+        axes: [],
+        figmaSets: ["BoardColumn"],
+        props: [
+          { name: "title / count / statusIcon", type: "ReactNode", description: "Figma Title, Count and StatusIcon." },
+          { name: "newIssueVisible / onNewIssue", type: "boolean / function", description: "Figma NewIssueVisible and the add actions." },
+          { name: "children", type: "ReactNode", description: "Figma Content slot: IssueCard." }
+        ],
+        accessibility: "A list labelled by the title and the count."
+      },
+      {
         key: "NavItem",
         label: "Nav Item",
         category: "Navigation",
@@ -6211,6 +6440,145 @@ var init_componentCatalogue = __esm({
           { name: "asChild", type: "boolean", description: "Use your router link or a button as the element." }
         ],
         accessibility: 'A link; the current one is aria-current="page". As a menu trigger add aria-expanded.'
+      },
+      {
+        key: "TabBar",
+        label: "Tab Bar",
+        category: "Navigation",
+        box: "gray",
+        locks: ["size", "hit", "motion"],
+        description: "Bottom navigation of a mobile app: three to five TabBarItem destinations on Surface/page with a Border/subtle hairline on top. Not a tablist: each item changes the page.",
+        usage: "Top-level destinations of a mobile app, 3 to 5, always visible at the bottom; exactly one is current. Views or filters inside one page use TabMenu; desktop navigation uses Sidebar or NavItem. Related: NavItem, TabMenu, Badge, Avatar.",
+        axes: [],
+        figmaSets: ["TabBar"],
+        props: [
+          { name: "aria-label", type: "string", description: 'The name of the nav landmark ("Main").' },
+          { name: "children", type: "ReactNode", description: "Figma Content slot: 3 to 5 TabBarItem, each filling an equal share." }
+        ],
+        accessibility: "A nav landmark wrapping a list of links, in natural Tab order: no roving tabindex and no arrow keys (it is not a tablist)."
+      },
+      {
+        key: "TabBarItem",
+        label: "Tab Bar Item",
+        category: "Navigation",
+        box: "gray",
+        locks: ["size", "hit", "motion"],
+        description: "One destination of a TabBar: an icon (or an Avatar) in a pill over a short label, with an optional unread count. Current fills the pill Surface/selected.",
+        usage: "Inside a TabBar. One axis, State; no Size on purpose (one platform size).",
+        axes: [{ name: "State", values: ["Default", "Hover", "Focused", "Current", "Disabled"] }],
+        figmaSets: ["TabBarItem"],
+        props: [
+          { name: "children / label / hideLabel", type: "ReactNode / boolean", description: "Figma Label and LabelVisible (inverted); a hidden label needs aria-label." },
+          { name: "icon / media", type: "ReactNode", description: "Figma Icon (IconVisible) and the Media slot (MediaVisible), e.g. an Avatar xs." },
+          { name: "badge", type: "number | string", description: "Figma BadgeVisible: the count Badge (number \xB7 critical \xB7 solid \xB7 xs \xB7 pill)." },
+          { name: "current / disabled / forceState", type: "boolean / string", description: 'Figma State; Current is aria-current="page".' },
+          { name: "href / asChild", type: "string / boolean", description: "A link; asChild for your router link." }
+        ],
+        accessibility: 'A link; the current one is aria-current="page", a disabled one aria-disabled and out of the Tab order.'
+      },
+      {
+        key: "ActivityHeatmap",
+        label: "Activity Heatmap",
+        category: "Data Display",
+        box: "gray",
+        locks: ["size", "hit", "motion"],
+        description: "A year of activity: one square per day, one column per week (53 \xD7 7, weeks from Sunday), filled on the Chart/sequential ladder, with month and day labels and a Less\u2013More legend.",
+        usage: "Contribution and habit calendars: one number per day over a year. Year switching is a SegmentedControl outside the component; the focused day is shown in a caption below by the consumer (onFocusDay). For one value over time use Sparkline; for a share of a whole, SplitBar. Related: ActivityHeatmapCell, SegmentedControl.",
+        axes: [],
+        figmaSets: ["ActivityHeatmap"],
+        props: [
+          { name: "data", type: "{ date: string; count: number }[]", description: "One entry per day with activity; dates are ISO YYYY-MM-DD, a missing day counts 0." },
+          { name: "thresholds", type: "[number, number, number, number, number]", description: "The count at which levels 1 to 5 begin. Default [1, 3, 6, 10, 15]." },
+          { name: "endDate", type: "string", description: "The last day shown; default the latest date in data. The grid is the 53 weeks that end on its week." },
+          { name: "showLegend / showMonthLabels / showDayLabels", type: "boolean", description: "Figma LegendVisible, MonthLabelsVisible and DayLabelsVisible (all true)." },
+          { name: "onFocusDay", type: "(day | null) => void", description: "The focused day changed; null when focus leaves the grid." },
+          { name: "getCellLabel", type: "(day) => string", description: 'The accessible name of a day; default "Tuesday, March 18: 8 contributions".' }
+        ],
+        accessibility: 'role="grid" with 7 rows (weekdays) of gridcells and one roving tab stop. Left/Right move by week, Up/Down by day, Home/End to the first/last day of the week, Ctrl+Home/End to the first/last day of the grid. Every cell is named by its day and count, so the level never relies on colour alone. The legend and the labels are decorative (aria-hidden).'
+      },
+      {
+        key: "ActivityHeatmapCell",
+        label: "Activity Heatmap Cell",
+        category: "Data Display",
+        box: "black",
+        locks: ["shape", "radius", "size", "hit", "motion"],
+        description: "One day of an ActivityHeatmap: a 12 px square filled Chart/sequential/<Value>; Focused adds a 2 px ring one pixel off its edge.",
+        usage: "Inside an ActivityHeatmap (and its legend). Value is the level 0 to 5: 0 no activity, 5 the most. It carries no text: its accessible name states the day and the count.",
+        axes: [
+          { name: "Value", values: ["0", "1", "2", "3", "4", "5"] },
+          { name: "State", values: ["Default", "Focused"] }
+        ],
+        figmaSets: ["ActivityHeatmapCell"],
+        props: [
+          { name: "value", type: "0 | 1 | 2 | 3 | 4 | 5", description: "Figma Value; Chart/sequential/<value>." },
+          { name: "forceState", type: '"Default" | "Focused"', description: "Pins a state without a keyboard (docs). The live ring is :focus-visible." }
+        ],
+        accessibility: 'role="gridcell" inside the heatmap, named by aria-label ("Tuesday, March 18: 8 contributions"). As a legend swatch it is role="presentation".'
+      },
+      {
+        key: "SplitBar",
+        label: "Split Bar",
+        category: "Indicators",
+        box: "gray",
+        locks: ["size", "hit", "motion"],
+        description: "A single bar that is 100 % of something, cut into shares (SplitBarSegment) over a legend (SplitBarLegendItem) that turns each series on and off. The bar clips its segments to Radius/action; the legend wraps on Spacing/gap-group.",
+        usage: "Parts of one whole, up to eight: traffic by source, spend by team, storage by type. Colours are Chart/series-1\u20268 (categories with no meaning); when a share means good or bad, use Status/* instead. A share that is not part of a whole is a ProgressLine; a trend is a Sparkline. Related: SplitBarSegment, SplitBarLegendItem, ProgressLine.",
+        axes: [],
+        figmaSets: ["SplitBar"],
+        props: [
+          { name: "segments", type: "{ id: string; label: string; value: number; series: 1\u20138 }[]", description: "The shares. `value` is any non-negative number; the bar shows each as its share of what is shown." },
+          { name: "aria-label / aria-labelledby", type: "string", description: `The chart's title: the bar is a role="group" named by it (one of the two is required).` },
+          { name: "showLegend", type: "boolean", description: "Figma LegendVisible. Default true." },
+          { name: "valueUnit", type: "string", description: 'Unit of `value` for the screen reader: "Organic search, 41.6%, 41,300 sessions".' },
+          { name: "hiddenIds / defaultHiddenIds / onHiddenIdsChange", type: "string[]", description: "The series that are turned off (controlled or not). The last series shown cannot be turned off." },
+          { name: "leaderBelow", type: "number", description: "A share under this percent (default 5) keeps its text out of the bar: a callout with a leader line sits under it." },
+          { name: "onSegmentClick", type: "(id: string) => void", description: "A segment was pressed." }
+        ],
+        accessibility: 'role="group" named by the chart title. Each segment is a button named "label, share, value unit"; each legend item an aria-pressed toggle. Tab visits segments then legend items; Enter or Space presses. Colour is never the only divider: every segment has a Chart/series-n/solid edge.'
+      },
+      {
+        key: "SplitBarSegment",
+        label: "Split Bar Segment",
+        category: "Indicators",
+        box: "gray",
+        locks: ["size", "hit", "motion"],
+        description: "One share of a SplitBar: Chart/series-n/soft fill, a Stroke/focus-wide Chart/series-n/solid edge on its right, label and value in Chart/series-n/content, Size/control-lg tall. No Hover colour: hovering or focusing widens it.",
+        usage: "Inside a SplitBar, never alone. Its width is its share of 100 %, set by the bar. Label shows when it fits, the value alone when it is narrower, nothing under that.",
+        axes: [
+          { name: "Series", values: ["1", "2", "3", "4", "5", "6", "7", "8"] },
+          { name: "State", values: ["Default", "Focused"] }
+        ],
+        figmaSets: ["SplitBarSegment"],
+        props: [
+          { name: "series", type: "1\u20138", description: "Figma Series: the Chart/series-n colours." },
+          { name: "label / value", type: "string", description: "Figma Label and Value (TEXT)." },
+          { name: "labelVisible / valueVisible", type: "boolean", description: "Figma LabelVisible and ValueVisible." },
+          { name: "forceState", type: '"Default" | "Focused"', description: "Pins a state in docs; in an app Focused comes from the keyboard." },
+          { name: "aria-label", type: "string", description: '"Organic search, 41.6%, 41,300 sessions": the text inside is decorative.' }
+        ],
+        accessibility: "A button. The visible text is aria-hidden: give it an aria-label with label, share and value. Focused draws a Stroke/focus ring inside the segment in Border/ring/neutral."
+      },
+      {
+        key: "SplitBarLegendItem",
+        label: "Split Bar Legend Item",
+        category: "Indicators",
+        box: "gray",
+        locks: ["size", "hit", "motion"],
+        description: "The legend entry of a SplitBar and the toggle of its series: a 12 px Chart/series-n/solid swatch, a label and a value, Size/control-xs tall. Off, the swatch is Surface/muted and the text Content/disabled.",
+        usage: "Inside the SplitBar legend. Turning a series off reflows the others to 100 %.",
+        axes: [
+          { name: "Series", values: ["1", "2", "3", "4", "5", "6", "7", "8"] },
+          { name: "Checked", values: ["true", "false"] },
+          { name: "State", values: ["Default", "Focused"] }
+        ],
+        figmaSets: ["SplitBarLegendItem"],
+        props: [
+          { name: "series", type: "1\u20138", description: "Figma Series: the swatch colour." },
+          { name: "checked / onCheckedChange", type: "boolean", description: "Figma Checked: the series is shown. Sets aria-pressed." },
+          { name: "label / value / valueVisible", type: "string / boolean", description: "Figma Label, Value and ValueVisible." },
+          { name: "forceState", type: '"Default" | "Focused"', description: "Pins a state in docs." }
+        ],
+        accessibility: "A button with aria-pressed (true = the series is shown). Focused draws the Button ring: 2px, 1px off the edge, in Border/ring/neutral."
       },
       {
         key: "Brand",
@@ -6553,19 +6921,19 @@ var init_componentCatalogue = __esm({
         category: "Navigation",
         box: "gray",
         locks: ["size", "hit", "motion"],
-        description: "A command row: optional leading icon, media, description, shortcut, control, caret and a selection check; destructive for irreversible commands.",
-        usage: "One command per row. Put irreversible commands last as a destructive variant.",
+        description: "A command row: optional leading icon, media, description, shortcut, control, caret and a selection check; critical for irreversible commands.",
+        usage: "One command per row. Put irreversible commands last as the critical variant.",
         axes: [
           { name: "Size", values: ["default", "sm", "lg"] },
           { name: "State", values: ["Default", "Hover", "Focused", "Selected", "Disabled"] },
-          { name: "Variant", values: ["default", "destructive"] }
+          { name: "Variant", values: ["default", "critical"] }
         ],
         figmaSets: ["DropdownMenuItem"],
         props: [
           { name: "children", type: "ReactNode", description: "Figma Label." },
           { name: "description / trailing / iconLeading / iconTrailing / media / control", type: "ReactNode", description: "The optional parts of the row, as the file lists them." },
           { name: "checked", type: "boolean", description: "Selected: shows the check (a menuitemcheckbox)." },
-          { name: "variant", type: "'default' | 'destructive'", description: "Figma Variant." }
+          { name: "variant", type: "'default' | 'critical'", description: "Figma Variant." }
         ],
         accessibility: "role menuitem (menuitemcheckbox when selectable); reachable by arrow keys; skipped when disabled."
       },
@@ -6715,7 +7083,7 @@ function roleFollowsPlatform(key2) {
 function isAlias2(v) {
   if (!v || typeof v !== "object") return false;
   const a2 = v;
-  return (a2.family === "display" || a2.family === "body") && typeof a2.size === "string" && typeof a2.weight === "string";
+  return (a2.family === "display" || a2.family === "body" || a2.family === "mono") && typeof a2.size === "string" && typeof a2.weight === "string";
 }
 function isSizeStepOrPin(v) {
   return typeof v === "string" && (SIZE_STEPS.includes(v) || roleDimensionPx(v) !== null);
@@ -8310,6 +8678,225 @@ var init_chartPalette = __esm({
   }
 });
 
+// src/lib/chartRamps.generated.ts
+var CHART_RAMPS;
+var init_chartRamps_generated = __esm({
+  "src/lib/chartRamps.generated.ts"() {
+    CHART_RAMPS = {
+      "teal": {
+        "light": {
+          "1": "#fefdff",
+          "2": "#e2faf6",
+          "3": "#c4f4ec",
+          "4": "#9deee3",
+          "5": "#62e9d9",
+          "6": "#00d9c9",
+          "7": "#00c5b6",
+          "8": "#00b1a3",
+          "9": "#00a598",
+          "10": "#009488",
+          "11": "#00736a",
+          "12": "#00423c"
+        },
+        "dark": {
+          "1": "#100e13",
+          "2": "#001c19",
+          "3": "#002622",
+          "4": "#00312c",
+          "5": "#003d38",
+          "6": "#005049",
+          "7": "#00635b",
+          "8": "#007b71",
+          "9": "#00a99b",
+          "10": "#00baac",
+          "11": "#4cd7c8",
+          "12": "#cff4ef"
+        }
+      },
+      "amber": {
+        "light": {
+          "1": "#fefdff",
+          "2": "#fef2e1",
+          "3": "#fce4c4",
+          "4": "#fcd5a0",
+          "5": "#fdc471",
+          "6": "#fbaa00",
+          "7": "#e49a00",
+          "8": "#d59000",
+          "9": "#c78600",
+          "10": "#b37800",
+          "11": "#865900",
+          "12": "#4d3200"
+        },
+        "dark": {
+          "1": "#100e13",
+          "2": "#221400",
+          "3": "#2d1b00",
+          "4": "#3a2400",
+          "5": "#482e00",
+          "6": "#5d3d00",
+          "7": "#744c00",
+          "8": "#8e5f00",
+          "9": "#c38400",
+          "10": "#d79200",
+          "11": "#ebb25f",
+          "12": "#fbe8ce"
+        }
+      },
+      "blue": {
+        "light": {
+          "1": "#fefdff",
+          "2": "#edf5ff",
+          "3": "#daeaff",
+          "4": "#c6dfff",
+          "5": "#afd2ff",
+          "6": "#8fc0ff",
+          "7": "#6daeff",
+          "8": "#529fff",
+          "9": "#3893ff",
+          "10": "#0081f9",
+          "11": "#0061be",
+          "12": "#123865"
+        },
+        "dark": {
+          "1": "#100e13",
+          "2": "#06172e",
+          "3": "#031f41",
+          "4": "#002855",
+          "5": "#003369",
+          "6": "#004386",
+          "7": "#0053a5",
+          "8": "#0067c9",
+          "9": "#3492ff",
+          "10": "#5aa3ff",
+          "11": "#91c1ff",
+          "12": "#dfedff"
+        }
+      },
+      "rose": {
+        "light": {
+          "1": "#fefdff",
+          "2": "#fff0f0",
+          "3": "#ffdfe1",
+          "4": "#ffced0",
+          "5": "#ffbabe",
+          "6": "#ff9da4",
+          "7": "#ff8793",
+          "8": "#ff7183",
+          "9": "#ff5772",
+          "10": "#ff1359",
+          "11": "#b9003c",
+          "12": "#5e2029"
+        },
+        "dark": {
+          "1": "#100e13",
+          "2": "#2a0b0f",
+          "3": "#3b0c14",
+          "4": "#4f0818",
+          "5": "#67001d",
+          "6": "#830028",
+          "7": "#a10033",
+          "8": "#c50041",
+          "9": "#ff3963",
+          "10": "#ff677c",
+          "11": "#ff9ea6",
+          "12": "#ffe3e5"
+        }
+      },
+      "lime": {
+        "light": {
+          "1": "#fefdff",
+          "2": "#eff7e5",
+          "3": "#dfefcc",
+          "4": "#cde7ae",
+          "5": "#b8de88",
+          "6": "#9cd146",
+          "7": "#87c000",
+          "8": "#79ad00",
+          "9": "#70a100",
+          "10": "#649000",
+          "11": "#4d7000",
+          "12": "#2a4000"
+        },
+        "dark": {
+          "1": "#100e13",
+          "2": "#101b01",
+          "3": "#162500",
+          "4": "#1e2f00",
+          "5": "#273c00",
+          "6": "#344e00",
+          "7": "#426100",
+          "8": "#527700",
+          "9": "#73a500",
+          "10": "#80b600",
+          "11": "#a7cd77",
+          "12": "#e3f1d5"
+        }
+      },
+      "magenta": {
+        "light": {
+          "1": "#fefdff",
+          "2": "#ffeef9",
+          "3": "#ffddf2",
+          "4": "#ffcaec",
+          "5": "#ffb4e5",
+          "6": "#ff96de",
+          "7": "#ff7fd9",
+          "8": "#ff64d4",
+          "9": "#ff3fd0",
+          "10": "#f200c3",
+          "11": "#ab0089",
+          "12": "#552247"
+        },
+        "dark": {
+          "1": "#100e13",
+          "2": "#260c1e",
+          "3": "#350e2a",
+          "4": "#470d38",
+          "5": "#5c0749",
+          "6": "#78005f",
+          "7": "#940076",
+          "8": "#b50091",
+          "9": "#f700c7",
+          "10": "#ff4bd1",
+          "11": "#f19fd6",
+          "12": "#ffe1f4"
+        }
+      },
+      "orange": {
+        "light": {
+          "1": "#fefdff",
+          "2": "#fff0e9",
+          "3": "#ffe1d3",
+          "4": "#ffd1ba",
+          "5": "#ffbe9e",
+          "6": "#ffa372",
+          "7": "#ff8946",
+          "8": "#ff7407",
+          "9": "#ef6c00",
+          "10": "#d86100",
+          "11": "#9e4500",
+          "12": "#5c2603"
+        },
+        "dark": {
+          "1": "#100e13",
+          "2": "#290e02",
+          "3": "#371300",
+          "4": "#461a00",
+          "5": "#572200",
+          "6": "#6f2e00",
+          "7": "#893b00",
+          "8": "#a84a00",
+          "9": "#e66700",
+          "10": "#fd7200",
+          "11": "#fda578",
+          "12": "#ffe5d8"
+        }
+      }
+    };
+  }
+});
+
 // src/lib/semanticArchitectures.ts
 function rampOf(look, fam) {
   const out = {};
@@ -8552,6 +9139,8 @@ function scaleLookup(scales, palette, kind = "light", pageBackground, darkBackgr
     warning: palette?.warning ?? darkTwin("warning") ?? scales.warning,
     success: palette?.success ?? darkTwin("success") ?? scales.success,
     info: palette?.info ?? darkTwin("info") ?? scales.info,
+    // The Chart hue ramps (series 2–8): fixed data from the Figma file, kind-aware like `accent`.
+    ...Object.fromEntries(Object.entries(CHART_RAMPS).map(([hue, r]) => [`chart-${hue}`, r[kind]])),
     // The theme's extra brand palettes — only defined when it carries them.
     secondary: palette?.secondary,
     tertiary: palette?.tertiary,
@@ -8641,12 +9230,13 @@ function projectArchitecture(kind, input, errorSeed, overrides = {}, themeOrder 
       return null;
   }
 }
-var APCA_BODY_TEXT, WCAG_UI, APCA_UI, WCAG_CONTROL, APCA_CONTROL, INK_REFS, REF_RE, TEXT_END_TONE, APCA_LINK_RAISED, DISABLED_CAP, WCAG_DISABLED, APCA_DISABLED, OPAQUE6, SOLID_JOB, CATEGORICAL_ROLES, STATUS_SEVERITY_ORDER, STATUS_SLOT_ORDER, CATEGORICAL_ROLE_COMMENTS, CATEGORICAL_ROLE_RENAME;
+var APCA_BODY_TEXT, WCAG_UI, APCA_UI, WCAG_CONTROL, APCA_CONTROL, INK_REFS, REF_RE, TEXT_END_TONE, APCA_LINK_RAISED, DISABLED_CAP, WCAG_DISABLED, APCA_DISABLED, OPAQUE6, SOLID_JOB, CATEGORICAL_ROLES, STATUS_SEVERITY_ORDER, STATUS_SLOT_ORDER, CATEGORICAL_ROLE_COMMENTS, CHART_SLOT_COMMENT, CHART_HUE_NAME, CATEGORICAL_ROLE_RENAME;
 var init_semanticArchitectures = __esm({
   "src/lib/semanticArchitectures.ts"() {
     init_colorUtils();
     init_apca();
     init_chartPalette();
+    init_chartRamps_generated();
     init_chartPalette();
     APCA_BODY_TEXT = INTENT_THRESHOLDS["body-text"].apcaLc ?? 75;
     WCAG_UI = INTENT_THRESHOLDS["ui-component"].wcag ?? 3;
@@ -9168,7 +9758,42 @@ var init_semanticArchitectures = __esm({
       { group: "elevation", key: "shadow-ambient", light: "{black-a.1}", dark: "{black-a.4}" },
       { group: "elevation", key: "shadow-ring", light: "{white-a.1}", dark: "{white-a.1}" },
       // DEC-2026-11-16-006: the file's Light highlight is White Alpha/05 (#ffffff4d); Dark stays at /03.
-      { group: "elevation", key: "highlight", light: "{white-a.5}", dark: "{white-a.3}" }
+      { group: "elevation", key: "highlight", light: "{white-a.5}", dark: "{white-a.3}" },
+      // Chart — the data-viz layer (Figma `Chart/*`, DEC-2026-11-19 ARC-CHART-01). Series order is fixed: series 1 is the
+      // brand accent, 2–8 are fixed hue ramps (`chartRamps.generated.ts`, from the file's `Charts/EscalaDS/<Hue>`). `solid`
+      // (step 9) draws lines, bars, dots, swatches and segment edges; `soft` (4) area fills and segment backgrounds; `content`
+      // (11) labels on `soft` or on the page. Categories with no meaning only; a colour that means good or bad stays in `status`.
+      { group: "chart", key: "series-1.solid", light: "{accent.9}", dark: "{accent.9}" },
+      { group: "chart", key: "series-1.soft", light: "{accent.4}", dark: "{accent.4}" },
+      { group: "chart", key: "series-1.content", light: "{accent.11}", dark: "{accent.11}" },
+      { group: "chart", key: "series-2.solid", light: "{chart-teal.9}", dark: "{chart-teal.9}" },
+      { group: "chart", key: "series-2.soft", light: "{chart-teal.4}", dark: "{chart-teal.4}" },
+      { group: "chart", key: "series-2.content", light: "{chart-teal.11}", dark: "{chart-teal.11}" },
+      { group: "chart", key: "series-3.solid", light: "{chart-amber.9}", dark: "{chart-amber.9}" },
+      { group: "chart", key: "series-3.soft", light: "{chart-amber.4}", dark: "{chart-amber.4}" },
+      { group: "chart", key: "series-3.content", light: "{chart-amber.11}", dark: "{chart-amber.11}" },
+      { group: "chart", key: "series-4.solid", light: "{chart-blue.9}", dark: "{chart-blue.9}" },
+      { group: "chart", key: "series-4.soft", light: "{chart-blue.4}", dark: "{chart-blue.4}" },
+      { group: "chart", key: "series-4.content", light: "{chart-blue.11}", dark: "{chart-blue.11}" },
+      { group: "chart", key: "series-5.solid", light: "{chart-rose.9}", dark: "{chart-rose.9}" },
+      { group: "chart", key: "series-5.soft", light: "{chart-rose.4}", dark: "{chart-rose.4}" },
+      { group: "chart", key: "series-5.content", light: "{chart-rose.11}", dark: "{chart-rose.11}" },
+      { group: "chart", key: "series-6.solid", light: "{chart-lime.9}", dark: "{chart-lime.9}" },
+      { group: "chart", key: "series-6.soft", light: "{chart-lime.4}", dark: "{chart-lime.4}" },
+      { group: "chart", key: "series-6.content", light: "{chart-lime.11}", dark: "{chart-lime.11}" },
+      { group: "chart", key: "series-7.solid", light: "{chart-magenta.9}", dark: "{chart-magenta.9}" },
+      { group: "chart", key: "series-7.soft", light: "{chart-magenta.4}", dark: "{chart-magenta.4}" },
+      { group: "chart", key: "series-7.content", light: "{chart-magenta.11}", dark: "{chart-magenta.11}" },
+      { group: "chart", key: "series-8.solid", light: "{chart-orange.9}", dark: "{chart-orange.9}" },
+      { group: "chart", key: "series-8.soft", light: "{chart-orange.4}", dark: "{chart-orange.4}" },
+      { group: "chart", key: "series-8.content", light: "{chart-orange.11}", dark: "{chart-orange.11}" },
+      // Sequential — heatmaps and density: 0 = no data … 5 = most intense, in both themes.
+      { group: "chart", key: "sequential.0", light: "{neutral.3}", dark: "{neutral-dark.3}" },
+      { group: "chart", key: "sequential.1", light: "{accent.3}", dark: "{accent.3}" },
+      { group: "chart", key: "sequential.2", light: "{accent.5}", dark: "{accent.5}" },
+      { group: "chart", key: "sequential.3", light: "{accent.7}", dark: "{accent.7}" },
+      { group: "chart", key: "sequential.4", light: "{accent.9}", dark: "{accent.9}" },
+      { group: "chart", key: "sequential.5", light: "{accent.11}", dark: "{accent.11}" }
       // `border.critical` / `border.warning` / `border.success` moved to
       // `status.<sev>.border-strong` (audit F3 — a severity-family stroke belongs in
       // the `status` group, beside `status.<sev>.border`), and `info` joined them so
@@ -9188,9 +9813,9 @@ var init_semanticArchitectures = __esm({
       CATEGORICAL_ROLES.splice(0, CATEGORICAL_ROLES.length, ...rest.slice(0, first), ...status, ...rest.slice(first));
     }
     CATEGORICAL_ROLE_COMMENTS = {
-      "elevation.highlight": "[ROLE: Solid Control Highlight] The inner 2px top highlight of a solid filled control (primary and destructive buttons, every state but disabled): box-shadow: inset 0 2px 0 var(--color-elevation-highlight). {white-a.5} in Light, {white-a.3} in Dark (DEC-2026-11-16-006, the Figma file is the rule). EFFECT colour only.",
+      "elevation.highlight": "[ROLE: Solid Control Highlight] The inner 1px top highlight of a solid filled control (Figma style Highlight/solid; Button, IconButton, SocialLoginButton, every state but disabled): box-shadow: inset 0 1px 0 var(--color-elevation-highlight). FABButton and the gradient FeaturedIcon hand-set it at 2px. {white-a.5} in Light, {white-a.3} in Dark (DEC-2026-11-16-006, the Figma file is the rule). EFFECT colour only.",
       "elevation.shadow-ring": "[ROLE: Shadow Ring] The 0 0 0 1px highlight edge every shadow and depth recipe starts with. EFFECT colour only. {white-a.1} in both themes: invisible on a light surface, the rim that buys elevation on a dark page.",
-      "elevation.shadow-ambient": "[ROLE: Shadow Ambient] The tight, secondary layer of the shadow and depth recipes. EFFECT colour only. {black-a.1} (5%) in Light, {black-a.4} (20%) in Dark.",
+      "elevation.shadow-ambient": "[ROLE: Shadow Ambient] The tight, secondary layer of the shadow and depth recipes, and the solid Button label shadow (Shadow/text-2xs, 0 1px 0.5px). EFFECT colour only. {black-a.1} (5%) in Light, {black-a.4} (20%) in Dark.",
       "elevation.shadow-key": "[ROLE: Shadow Key] The main, larger-offset layer of every Shadow/* and Depth/* recipe. EFFECT colour only, never a fill or stroke. {black-a.2} (10%) in Light, {black-a.6} (40%) in Dark, so one shadow style follows the theme.",
       "border.inverse": "[ROLE: Inverse Border] Any stroke ON surface.inverse \u2014 an outline badge, a divider in a tooltip, a group edge. {white-a.5} in Light, {black-a.5} in Dark. Decoration: no 1.4.11 floor, never the only boundary of a control.",
       "content.inverse-secondary": "[ROLE: Inverse Secondary Text] Body copy, icons and the dismiss icon on surface.inverse \u2014 content.secondary points the wrong way there. {white-a.9} in Light, {black-a.9} in Dark. STRICT 4.5:1 against surface.inverse.",
@@ -9275,6 +9900,20 @@ var init_semanticArchitectures = __esm({
       "border.rim-highlight": "[ROLE: Elevation Rim] 1px light rim along the top of an elevated surface in dark mode. Below a near-black page only ~5% of the luminance range is left to spend downward, so elevation has to be bought with light, not shadow \u2014 this is the token for the rim darkShadow() already paints.",
       "border.accent": "[ROLE: Accent Border] Border painted in the brand accent \u2014 a selected card, a toggled button, any element that needs its stroke to read as the primary accent. For keyboard focus use border.focus."
     };
+    CHART_SLOT_COMMENT = {
+      solid: "step 9 \u2014 lines, bars, dots, legend swatches and segment edges. 3:1 on the page in both themes (WCAG 1.4.11). Never add opacity on top of it.",
+      soft: "step 4 \u2014 area fills and segment backgrounds. A fill, never a line or text.",
+      content: "step 11 \u2014 labels on `soft` or on the page. 4.5:1."
+    };
+    CHART_HUE_NAME = ["", "accent (the brand violet)", "Teal", "Amber", "Blue", "Rose", "Lime", "Magenta", "Orange"];
+    for (let n = 1; n <= 8; n++) {
+      for (const slot of ["solid", "soft", "content"]) {
+        CATEGORICAL_ROLE_COMMENTS[`chart.series-${n}.${slot}`] = `[ROLE: Chart Series ${n} ${slot[0].toUpperCase()}${slot.slice(1)}] Series ${n} of a categorical chart (${CHART_HUE_NAME[n]}): ${CHART_SLOT_COMMENT[slot]} Series order is fixed. Use Chart/* for categories with no meaning; Status/* when the colour means good or bad.`;
+      }
+    }
+    for (let n = 0; n <= 5; n++) {
+      CATEGORICAL_ROLE_COMMENTS[`chart.sequential.${n}`] = `[ROLE: Chart Sequential ${n}] Heatmap and density ramp, level ${n}: ${n === 0 ? "no data" : n === 5 ? "most intense" : "increasing intensity"}, in both themes. A fill only.`;
+    }
     CATEGORICAL_ROLE_RENAME = {
       "content.link-default": "content.link.default",
       "content.link-hover": "content.link.hover",
@@ -9426,7 +10065,7 @@ function figmaSemanticName(id) {
   const label = GROUP_LABEL[group] ?? (group ? group.charAt(0).toUpperCase() + group.slice(1) : id);
   return rest.length ? `${label}/${rest.join("/")}` : label;
 }
-var GROUP_LABEL;
+var GROUP_LABEL, FAMILY_FROM_GROUP;
 var init_names = __esm({
   "src/lib/agentBundle/names.ts"() {
     init_utils();
@@ -9436,7 +10075,26 @@ var init_names = __esm({
       surface: "Surface",
       status: "Status",
       border: "Border",
-      elevation: "Elevation"
+      elevation: "Elevation",
+      chart: "Chart"
+    };
+    FAMILY_FROM_GROUP = {
+      Accent: "accent",
+      "Accent Dark": "accent-dark",
+      Neutral: "neutral",
+      "Neutral Dark": "neutral-dark",
+      "States/Error": "error",
+      "States/Error Dark": "error-dark",
+      "States/Success": "success",
+      "States/Success Dark": "success-dark",
+      "States/Warning": "warning",
+      "States/Warning Dark": "warning-dark",
+      "States/Info": "info",
+      "States/Info Dark": "info-dark",
+      ...Object.fromEntries(["Teal", "Amber", "Blue", "Rose", "Lime", "Magenta", "Orange"].flatMap((h) => [
+        [`Charts/${h}`, `chart-${h.toLowerCase()}`],
+        [`Charts/${h} Dark`, `chart-${h.toLowerCase()}-dark`]
+      ]))
     };
   }
 });
@@ -9639,6 +10297,7 @@ function fabPaint(variant, appearance, state2) {
   if (k.over[step][1]) root.overlay2 = k.over[step][1];
   root.lift = step === 2 ? "pressed" : step === 1 ? "hover" : "rest";
   root.highlight = c("elevation.highlight");
+  root.highlightWidth = "2";
   if (state2 === "Focused") root.halo = k.halo;
   return { root };
 }
@@ -9692,7 +10351,24 @@ function socialPaint(appearance, brand, state2) {
   };
   return { root, label: { text: `social.${id}.content.on-action` } };
 }
-var BUTTON_VARIANTS, BUTTON_APPEARANCES, BUTTON_SIZES, BUTTON_STATES, SOLID, FOCUS_RING, focusRing, QUIET, LINK, strokeOf, BUTTON_HEIGHT, BUTTON_GAP, BUTTON, ICON_BUTTON_GLYPH, ICON_BUTTON, CLOSE_BUTTON_APPEARANCES, CLOSE_BUTTON_SHAPES, CLOSE_BUTTON_SIZES, CLOSE_BUTTON_VARIANTS, CLOSE_STATES, same3, NO_OVER, MUTED, CLOSE, CLOSE_SIZE, CLOSE_RADIUS, CLOSE_BUTTON, TEXT_LINK_VARIANTS, TEXT_LINK_SIZES, TEXT_LINK_STATES, LINK_INK, LINK_FOCUS, LINK_FONT, LINK_ICON, LINK_GAP, TEXT_LINK, FAB_APPEARANCES, FAB_SHAPES, FAB_SIZES, FAB_VARIANTS, FAB_STATES, FAB_MUTED, FAB, FAB_SIZE, FAB_BUTTON, FAB_GROUP_LAYOUTS, FAB_GROUP, BUTTON_GROUP_VARIANTS, BUTTON_GROUP_SHAPES, BUTTON_GROUP_ORIENTATIONS, BUTTON_GROUP_ITEM_SIZES, BUTTON_GROUP_ITEM_STATES, GROUP_RADIUS, BUTTON_GROUP, ITEM_SOLID, MUTED_INV, ITEM_GEOMETRY, BUTTON_GROUP_ITEM, DIVIDER_FILL, BUTTON_GROUP_DIVIDER, SOCIAL_BRAND_NAMES, SOCIAL_APPEARANCES, SOCIAL_SIZES, SOCIAL_STATES, SOCIAL_GEOMETRY, SOCIAL_LOGIN_BUTTON;
+function reactionTriggerPaint(state2) {
+  const rest = { fill: NONE, stroke: c("border.control"), strokeWidth: "stroke.control", text: c("content.secondary"), gapRing: NONE };
+  switch (state2) {
+    case "Hover":
+      return { ...rest, fill: c("surface.muted"), stroke: c("border.control-hover"), text: c("content.primary") };
+    // The Button rule: the Default look plus ONE ring, 1px off the edge.
+    case "Focused":
+      return { ...rest, gapRing: c("border.ring.default") };
+    // The picker is open: the look of a selected pill.
+    case "Open":
+      return { ...rest, fill: c("surface.selected"), stroke: c("border.accent"), text: c("content.accent") };
+    case "Disabled":
+      return { ...rest, stroke: c("border.subtle"), text: c("content.disabled") };
+    default:
+      return rest;
+  }
+}
+var BUTTON_VARIANTS, BUTTON_APPEARANCES, BUTTON_SIZES, BUTTON_STATES, SOLID, FOCUS_RING, focusRing, QUIET, LINK, strokeOf, BUTTON_HEIGHT, BUTTON_GAP, BUTTON, ICON_BUTTON_GLYPH, ICON_BUTTON, CLOSE_BUTTON_APPEARANCES, CLOSE_BUTTON_SHAPES, CLOSE_BUTTON_SIZES, CLOSE_BUTTON_VARIANTS, CLOSE_STATES, same3, NO_OVER, MUTED, CLOSE, CLOSE_SIZE, CLOSE_RADIUS, CLOSE_BUTTON, TEXT_LINK_VARIANTS, TEXT_LINK_SIZES, TEXT_LINK_STATES, LINK_INK, LINK_FOCUS, LINK_FONT, LINK_ICON, LINK_GAP, TEXT_LINK, FAB_APPEARANCES, FAB_SHAPES, FAB_SIZES, FAB_VARIANTS, FAB_STATES, FAB_MUTED, FAB, FAB_SIZE, FAB_BUTTON, FAB_GROUP_LAYOUTS, FAB_GROUP, BUTTON_GROUP_VARIANTS, BUTTON_GROUP_SHAPES, BUTTON_GROUP_ORIENTATIONS, BUTTON_GROUP_ITEM_SIZES, BUTTON_GROUP_ITEM_STATES, GROUP_RADIUS, BUTTON_GROUP, ITEM_SOLID, MUTED_INV, ITEM_GEOMETRY, BUTTON_GROUP_ITEM, DIVIDER_FILL, BUTTON_GROUP_DIVIDER, SOCIAL_BRAND_NAMES, SOCIAL_APPEARANCES, SOCIAL_SIZES, SOCIAL_STATES, SOCIAL_GEOMETRY, SOCIAL_LOGIN_BUTTON, REACTION_GROUP_TRIGGER_SIZES, REACTION_GROUP_TRIGGER_STATES, REACTION_TRIGGER_GEOMETRY, REACTION_GROUP_TRIGGER, REACTION_GROUP_POPOVER, REACTION_GROUP;
 var init_actions = __esm({
   "src/lib/recipes/actions.ts"() {
     init_helpers();
@@ -10036,6 +10712,62 @@ var init_actions = __esm({
         part({ Appearance: SOCIAL_APPEARANCES, Brand: SOCIAL_BRAND_NAMES, State: SOCIAL_STATES }, socialPaint)
       ]
     };
+    REACTION_GROUP_TRIGGER_SIZES = ["default", "xs", "sm", "lg", "xl"];
+    REACTION_GROUP_TRIGGER_STATES = ["Default", "Hover", "Focused", "Open", "Disabled"];
+    REACTION_TRIGGER_GEOMETRY = {
+      xs: { box: "size.xs", icon: "icon.small" },
+      sm: { box: "size.sm", icon: "icon.small" },
+      default: { box: "size.md", icon: "icon.medium" },
+      lg: { box: "size.lg", icon: "icon.medium" },
+      xl: { box: "size.xl", icon: "icon.large" }
+    };
+    REACTION_GROUP_TRIGGER = {
+      key: "ReactionGroupTrigger",
+      slots: ["root", "icon"],
+      defaults: { Size: "default", State: "Default" },
+      parts: [
+        part({ Size: REACTION_GROUP_TRIGGER_SIZES }, (size) => {
+          const g = REACTION_TRIGGER_GEOMETRY[size];
+          return {
+            root: { height: g.box, width: g.box, paddingX: "spacing.0", radius: "radius.pill" },
+            icon: { width: g.icon, height: g.icon }
+          };
+        }),
+        part({ State: REACTION_GROUP_TRIGGER_STATES }, (state2) => ({ root: reactionTriggerPaint(state2) }))
+      ]
+    };
+    REACTION_GROUP_POPOVER = {
+      key: "ReactionGroupPopover",
+      slots: ["root", "content"],
+      defaults: {},
+      parts: [
+        part({}, () => ({
+          root: {
+            fill: c("surface.layer-2"),
+            stroke: c("border.default"),
+            strokeWidth: "stroke.divider",
+            radius: "radius.overlay",
+            // The file's stroke lays out: the picker is its content plus the inset AND the edge on every side (238 × 58).
+            paddingX: "spacing.inset-control+stroke.divider",
+            paddingY: "spacing.inset-control+stroke.divider",
+            lift: "popover-md"
+          },
+          content: { gap: "spacing.gap-tight" }
+        }))
+      ]
+    };
+    REACTION_GROUP = {
+      key: "ReactionGroup",
+      slots: ["root", "content", "item", "digit", "summary"],
+      defaults: {},
+      parts: [
+        part({}, () => ({
+          root: { gap: "spacing.gap-control" },
+          content: { gap: "spacing.gap-control" },
+          summary: { font: "type.body-sm", text: c("content.secondary") }
+        }))
+      ]
+    };
   }
 });
 
@@ -10057,17 +10789,18 @@ var init_groupLabel = __esm({
 
 // src/lib/recipes/listItem.ts
 function highlight(variant) {
-  return variant === "destructive" ? { fill: c("status.critical.surface"), focus: c("status.critical.border-strong"), ring: c("status.critical.border") } : { fill: c("surface.muted"), focus: c("border.focus"), ring: c("border.ring.default") };
+  return variant === "critical" ? { fill: c("status.critical.surface"), focus: c("status.critical.border-strong"), ring: c("status.critical.border") } : { fill: c("surface.muted"), focus: c("border.focus"), ring: c("border.ring.default") };
 }
 function listItemHighlightFill(variant = "default") {
   return { fill: highlight(variant).fill };
 }
-function listItemRootPaint(state2, variant = "default", metrics) {
+function listItemRootPaint(state2, variant = "default", metrics, focusRing2 = "edge") {
   const h = highlight(variant);
   switch (state2) {
     case "Hover":
       return { fill: h.fill };
     case "Focused":
+      if (focusRing2 === "gap") return { fill: h.fill, gapRing: c(GAP_RING[variant] ?? GAP_RING.default) };
       return metrics?.edge ? { fill: h.fill, stroke: h.focus, halo: h.ring } : { fill: h.fill, focus: h.focus, ring: h.ring };
     case "Selected":
       return { fill: c("surface.selected") };
@@ -10076,7 +10809,7 @@ function listItemRootPaint(state2, variant = "default", metrics) {
   }
 }
 function listItemInk(variant, disabled) {
-  const label = disabled ? c("content.disabled") : variant === "destructive" ? c("status.critical.content") : c("content.primary");
+  const label = disabled ? c("content.disabled") : variant === "critical" ? c("status.critical.content") : c("content.primary");
   return { label, quiet: disabled ? c("content.disabled") : c("content.secondary") };
 }
 function listItemRecipe(size, state2, variant = "default", opts = {}) {
@@ -10091,7 +10824,7 @@ function listItemRecipe(size, state2, variant = "default", opts = {}) {
     gap: metrics.gap,
     paddingX: edge ? `${metrics.paddingX}+${metrics.edge}` : metrics.paddingX,
     paddingY: edge ? `${metrics.paddingY}+${metrics.edge}` : metrics.paddingY,
-    ...listItemRootPaint(state2, variant, metrics)
+    ...listItemRootPaint(state2, variant, metrics, opts.focusRing)
   };
   if (metrics.edge) root.strokeWidth = edge ? metrics.edge : "stroke.none";
   return {
@@ -10106,7 +10839,7 @@ function listItemRecipe(size, state2, variant = "default", opts = {}) {
     ...state2 === "Default" ? { "root[data-highlighted]": listItemHighlightFill(variant) } : {}
   };
 }
-var LIST_ITEM_METRICS;
+var LIST_ITEM_METRICS, GAP_RING;
 var init_listItem = __esm({
   "src/lib/recipes/listItem.ts"() {
     init_helpers();
@@ -10115,6 +10848,7 @@ var init_listItem = __esm({
       default: { minHeight: "size.sm", paddingX: "spacing.gap-control", paddingY: "spacing.gap-tight", gap: "spacing.gap-control", icon: "icon.small", label: "type.body-sm" },
       lg: { minHeight: "size.md", paddingX: "spacing.inset-control", paddingY: "spacing.gap-tight", gap: "spacing.gap-control", icon: "icon.medium", label: "type.body-md" }
     };
+    GAP_RING = { default: "border.ring.default", critical: "status.critical.ring" };
   }
 });
 
@@ -11329,7 +12063,7 @@ function tooltipTriggerInk(variant, state2) {
       return hot ? "action.primary.hover" : "action.primary.default";
   }
 }
-var CARD, MODAL_SIZES, MODAL, MODAL_HEADER, MODAL_FOOTER, SEPARATOR_ORIENTATIONS, SEPARATOR_TONES, SEPARATOR, ACCORDION_VARIANTS, ACCORDION_ITEM_STATES, ACCORDION, ACCORDION_ITEM, IMAGE_RATIOS, IMAGE_SHAPES, IMAGE, POPOVER_SIZES, POPOVER, POPOVER_FOOTER, TOOLTIP_SIZES, TOOLTIP_VARIANTS, TOOLTIP_TRIGGER_STATES, TOOLTIP_TONE, TOOLTIP_CONTENT, TOOLTIP_INFO_TRIGGER, SCROLL_AREA_SIZES, SCROLL_BAR_ORIENTATIONS, SCROLL_APPEARANCES, SCROLL_AREA, SCROLL_BAR_THICKNESS, SCROLL_BAR, SHEET_SIDES, SHEET;
+var CARD, MODAL_SIZES, MODAL_LAYOUTS, MODAL_SURFACES, MODAL_FOOTER_LAYOUTS, MODAL, MODAL_HEADER, MODAL_FOOTER, SEPARATOR_ORIENTATIONS, SEPARATOR_TONES, SEPARATOR, ACCORDION_VARIANTS, ACCORDION_ITEM_STATES, ACCORDION, ACCORDION_ITEM, IMAGE_RATIOS, IMAGE_SHAPES, IMAGE, POPOVER_SIZES, POPOVER, POPOVER_FOOTER, TOOLTIP_SIZES, TOOLTIP_VARIANTS, TOOLTIP_TRIGGER_STATES, TOOLTIP_TONE, TOOLTIP_CONTENT, TOOLTIP_INFO_TRIGGER, SCROLL_AREA_SIZES, SCROLL_BAR_ORIENTATIONS, SCROLL_APPEARANCES, SCROLL_AREA, SCROLL_BAR_THICKNESS, SCROLL_BAR, SHEET_SIDES, SHEET;
 var init_surfaces = __esm({
   "src/lib/recipes/surfaces.ts"() {
     init_helpers();
@@ -11359,11 +12093,14 @@ var init_surfaces = __esm({
       ]
     };
     MODAL_SIZES = ["default", "lg"];
+    MODAL_LAYOUTS = ["tray", "simple"];
+    MODAL_SURFACES = ["plain", "tray", "simple"];
+    MODAL_FOOTER_LAYOUTS = ["inline", "stacked", "equal"];
     MODAL = {
       key: "Modal",
-      slots: ["root", "overlay", "main", "content", "close"],
+      slots: ["root", "overlay", "main", "panel", "header", "content", "close"],
       detachedSlots: ["overlay"],
-      defaults: { Size: "default" },
+      defaults: { Size: "default", Layout: "simple" },
       parts: [
         part({}, () => ({
           overlay: { fill: c("surface.overlay") },
@@ -11380,7 +12117,20 @@ var init_surfaces = __esm({
         part({ Size: MODAL_SIZES }, (size) => ({
           // 480 = 3 × 128 + 96; 640 = 5 × 128 (the file's widths have no variable).
           root: { width: size === "lg" ? "spacing.32+spacing.32+spacing.32+spacing.32+spacing.32" : "spacing.32+spacing.32+spacing.32+spacing.24" }
-        }))
+        })),
+        part({ Layout: MODAL_LAYOUTS }, (layout) => layout === "tray" ? {
+          root: { fill: c("surface.layer-1") },
+          // The panel (header + Content) is Surface/layer-2 with a hairline under it, round at the bottom (Radius/container); its top
+          // corners are the shell's own, clipped. The Content slot carries its own inset and the hairline that closes the header.
+          panel: { fill: c("surface.layer-2"), stroke: c("border.subtle"), strokeBottomWidth: "stroke.divider", radiusBottom: "radius.container" },
+          header: { paddingX: "spacing.inset-surface", paddingY: "spacing.inset-surface" },
+          content: { stroke: c("border.subtle"), strokeTopWidth: "stroke.divider", paddingX: "spacing.inset-surface", paddingY: "spacing.inset-surface" }
+        } : {
+          // `simple` (400 wide): the card pads itself (inset-surface), `main` = header + Content with no padding of its own, 24 apart.
+          // Figma pads from INSIDE the 1px stroke (inner width 350, not 352), and the recipe gives the border back: ask for the inset plus the stroke.
+          root: { width: "spacing.32+spacing.32+spacing.32+spacing.4", paddingX: "spacing.inset-surface+stroke.divider", paddingY: "spacing.inset-surface+stroke.divider", gap: "spacing.gap-section" },
+          main: { paddingX: "spacing.0", paddingY: "spacing.0", gap: "spacing.gap-section" }
+        })
       ]
     };
     MODAL_HEADER = {
@@ -11400,14 +12150,16 @@ var init_surfaces = __esm({
           // The file's ModalHeader set draws the description at Type/body-md in BOTH sizes (header 53 / 58 tall; it was body-sm at
           // default when the Modal was first built, 2026-11-13).
           description: { font: "type.body-md" },
-          clearance: size === "lg" ? { width: "size.md", height: "size.md" } : { width: "size.sm", height: "size.sm" }
+          clearance: size === "lg" ? { width: "size.md", height: "size.md" } : { width: "size.sm", height: "size.sm" },
+          // The Trailing slot is as tall as the close clearance (32 · 40), so a small trailing item (a Badge) centres on the title's row.
+          trailing: { minHeight: size === "lg" ? "size.md" : "size.sm" }
         }))
       ]
     };
     MODAL_FOOTER = {
       key: "ModalFooter",
       slots: ["root", "leading", "actions"],
-      defaults: { Size: "default", Layout: "inline" },
+      defaults: { Size: "default", Layout: "inline", Surface: "plain" },
       parts: [
         part({}, () => ({
           // A hairline along the TOP only (Border/subtle, inside); the padding is the surface inset on every side.
@@ -11420,7 +12172,9 @@ var init_surfaces = __esm({
           },
           leading: { gap: "spacing.gap-tight", text: c("content.secondary"), font: "type.caption" },
           actions: { gap: "spacing.gap-control" }
-        }))
+        })),
+        // On the tray (Surface/layer-1) the footer has no hairline; inline sits 12 above and below its buttons, stacked the full inset.
+        part({ Surface: MODAL_SURFACES, Layout: MODAL_FOOTER_LAYOUTS }, (surface, layout) => surface === "tray" ? { root: { strokeTopWidth: "stroke.none", paddingY: layout === "stacked" ? "spacing.inset-surface" : "spacing.inset-control" } } : surface === "simple" ? { root: { strokeTopWidth: "stroke.none", paddingX: "spacing.0", paddingY: "spacing.0" } } : {})
       ]
     };
     SEPARATOR_ORIENTATIONS = ["horizontal", "vertical"];
@@ -11681,7 +12435,7 @@ function breadcrumbPaint(variant, appearance, state2) {
   }
   return root;
 }
-var TAB_MENU_SIZES, TAB_MENU_VARIANTS, TAB_MENU_ITEM_STATES, TAB_MENU_INDICATORS, TAB_MENU, tabMenuSizeSlots, TAB_MENU_ITEM, TAB_MENU_LINE_ITEM, NAV_ITEM_SIZES, NAV_ITEM_STATES, NAV_ITEM, BRAND_SIZES, BRAND, ACCOUNT_MENU_TRIGGER_SIZES, ACCOUNT_MENU_TRIGGER_STATES, ACCOUNT_MENU_TRIGGER, SEGMENTED_CONTROL_SIZES, SEGMENTED_CONTROL, SEGMENTED_CONTROL_ITEM_STATES, SEGMENT_ITEM, SEGMENTED_CONTROL_ITEM, BREADCRUMB_SIZES, BREADCRUMB_APPEARANCES, BREADCRUMB_SEPARATORS, BREADCRUMB_VARIANTS, BREADCRUMB_ITEM_STATES, BREADCRUMB_ELLIPSIS_STATES, BREADCRUMB, BREADCRUMB_ITEM, BREADCRUMB_ELLIPSIS, BREADCRUMB_SEPARATOR, PAGINATION_SIZES, PAGINATION_VARIANTS, PAGINATION_LINK_STATES, PAGINATION_LINK_ACTIVE, paginationBox, paginationIcon, PAGINATION, PAGINATION_LINK, PAGINATION_ELLIPSIS, STEPPER_SIZES, STEPPER_ORIENTATIONS, STEPPER_STATUSES, STEPPER_STATES, stepperBox, STEPPER, STEPPER_ITEM, STEPPER_INDICATOR, STEPPER_ICON, DROPDOWN_SIZES, DROPDOWN_ITEM_STATES, DROPDOWN_ITEM_VARIANTS, DROPDOWN_MENU, DROPDOWN_MENU_LABEL, DROPDOWN_MENU_ITEM, DROPDOWN_MENU_FOOTER, SIDEBAR_COLLAPSED, SIDEBAR_SIZES, SIDEBAR_MENU_BUTTON_STATES, SIDEBAR, SIDEBAR_BRAND, SIDEBAR_GROUP, SIDEBAR_GROUP_LABEL, SIDEBAR_MENU_BUTTON;
+var TAB_MENU_SIZES, TAB_MENU_VARIANTS, TAB_MENU_ITEM_STATES, TAB_MENU_INDICATORS, TAB_MENU, tabMenuSizeSlots, TAB_MENU_ITEM, TAB_MENU_LINE_ITEM, NAV_ITEM_SIZES, NAV_ITEM_STATES, NAV_ITEM, TAB_BAR_ITEM_STATES, TAB_BAR_ITEM_INK, TAB_BAR_ITEM_FILL, TAB_BAR_ITEM, TAB_BAR, BRAND_SIZES, BRAND, ACCOUNT_MENU_TRIGGER_SIZES, ACCOUNT_MENU_TRIGGER_STATES, ACCOUNT_MENU_TRIGGER, SEGMENTED_CONTROL_SIZES, SEGMENTED_CONTROL, SEGMENTED_CONTROL_ITEM_STATES, SEGMENT_ITEM, SEGMENTED_CONTROL_ITEM, BREADCRUMB_SIZES, BREADCRUMB_APPEARANCES, BREADCRUMB_SEPARATORS, BREADCRUMB_VARIANTS, BREADCRUMB_ITEM_STATES, BREADCRUMB_ELLIPSIS_STATES, BREADCRUMB, BREADCRUMB_ITEM, BREADCRUMB_ELLIPSIS, BREADCRUMB_SEPARATOR, PAGINATION_SIZES, PAGINATION_VARIANTS, PAGINATION_LINK_STATES, PAGINATION_LINK_ACTIVE, paginationBox, paginationIcon, PAGINATION, PAGINATION_LINK, PAGINATION_ELLIPSIS, STEPPER_SIZES, STEPPER_ORIENTATIONS, STEPPER_STATUSES, STEPPER_STATES, stepperBox, STEPPER, STEPPER_ITEM, STEPPER_INDICATOR, STEPPER_ICON, DROPDOWN_SIZES, DROPDOWN_ITEM_STATES, DROPDOWN_ITEM_VARIANTS, DROPDOWN_MENU, DROPDOWN_MENU_LABEL, DROPDOWN_MENU_ITEM, DROPDOWN_MENU_FOOTER, SIDEBAR_COLLAPSED, SIDEBAR_SIZES, SIDEBAR_MENU_BUTTON_STATES, SIDEBAR, SIDEBAR_BRAND, SIDEBAR_GROUP, SIDEBAR_GROUP_LABEL, SIDEBAR_MENU_BUTTON;
 var init_navigation = __esm({
   "src/lib/recipes/navigation.ts"() {
     init_groupLabel();
@@ -11746,8 +12500,54 @@ var init_navigation = __esm({
       slots: ["root", "iconLeading", "label", "badge", "iconTrailing"],
       defaults: { Size: "default", State: "Default" },
       parts: [
-        part({ Size: NAV_ITEM_SIZES }, tabMenuSizeSlots),
-        part({ State: NAV_ITEM_STATES }, (state2) => ({ root: tabMenuItemPaint(state2 === "Current" ? "Selected" : state2, false) }))
+        // The trailing chevron sits one step below the leading icon (DEC-2026-11-18-010).
+        part({ Size: NAV_ITEM_SIZES }, (size) => {
+          const chevron = size === "lg" ? "icon.medium" : "icon.small";
+          return { ...tabMenuSizeSlots(size), iconTrailing: { width: chevron, height: chevron } };
+        }),
+        part({ State: NAV_ITEM_STATES }, (state2) => ({
+          root: tabMenuItemPaint(state2 === "Current" ? "Selected" : state2, false),
+          iconTrailing: { text: c(state2 === "Disabled" ? "content.disabled" : "content.secondary") }
+        }))
+      ]
+    };
+    TAB_BAR_ITEM_STATES = ["Default", "Hover", "Focused", "Current", "Disabled"];
+    TAB_BAR_ITEM_INK = { Hover: "content.primary", Current: "content.accent", Disabled: "content.disabled" };
+    TAB_BAR_ITEM_FILL = { Hover: "surface.muted", Current: "surface.selected" };
+    TAB_BAR_ITEM = {
+      key: "TabBarItem",
+      slots: ["root", "indicator", "icon", "media", "badge", "label"],
+      defaults: { State: "Default" },
+      parts: [
+        part({}, () => ({
+          root: { gap: "spacing.gap-tight", paddingY: "spacing.gap-tight", paddingX: "spacing.none", minHeight: "size.target-min", font: "type.caption" },
+          indicator: { radius: "radius.pill", paddingX: "spacing.inset-control", paddingY: "spacing.gap-tight", gap: "spacing.none" },
+          icon: { width: "icon.large", height: "icon.large" },
+          // The Media slot (an Avatar xs) sits in the icon's box.
+          media: { width: "icon.large", height: "icon.large" }
+        })),
+        part({ State: TAB_BAR_ITEM_STATES }, (state2) => {
+          const ink = c(TAB_BAR_ITEM_INK[state2] ?? "content.secondary");
+          return {
+            // Focused: Figma's `focus-ring`, 1px outside the pill, `Stroke/focus`, `Border/ring/default` (the Button `gapRing`).
+            indicator: { fill: TAB_BAR_ITEM_FILL[state2] ? c(TAB_BAR_ITEM_FILL[state2]) : NONE, gapRing: state2 === "Focused" ? c("border.ring.default") : NONE },
+            icon: { text: ink },
+            media: { text: ink },
+            label: { text: ink }
+          };
+        })
+      ]
+    };
+    TAB_BAR = {
+      key: "TabBar",
+      slots: ["root", "content"],
+      defaults: {},
+      parts: [
+        part({}, () => ({
+          // A `Border/subtle` hairline on the top edge only; the file counts it in the layout (390 × 69).
+          root: { fill: c("surface.page"), stroke: c("border.subtle"), strokeTopWidth: "stroke.divider", paddingX: "spacing.gap-tight", paddingY: "spacing.gap-tight", gap: "spacing.none" },
+          content: { gap: "spacing.none" }
+        }))
       ]
     };
     BRAND_SIZES = ["default", "sm"];
@@ -12012,7 +12812,7 @@ var init_navigation = __esm({
     };
     DROPDOWN_SIZES = ["default", "sm", "lg"];
     DROPDOWN_ITEM_STATES = ["Default", "Hover", "Focused", "Selected", "Disabled"];
-    DROPDOWN_ITEM_VARIANTS = ["default", "destructive"];
+    DROPDOWN_ITEM_VARIANTS = ["default", "critical"];
     DROPDOWN_MENU = {
       key: "DropdownMenu",
       slots: ["root", "header", "content", "separator"],
@@ -12030,7 +12830,9 @@ var init_navigation = __esm({
           // Concentric with the overlay: 24 − inset-control 12 = Radius/action 12 for the rows (DEC-2026-11-16-001).
           // The header sits on the content, so its bottom padding is none.
           header: { paddingX: "spacing.inset-control", paddingY: "spacing.inset-control", paddingBottom: "spacing.none" },
-          content: { paddingX: "spacing.inset-control", paddingY: "spacing.inset-control" },
+          // The content bleeds `stroke.focus` on every side (HALO_BLEED: that much padding taken back by an equal negative margin) so a row's
+          // focus halo is not clipped; its padding therefore carries the bleed on top of the file's 12 (row 13, width 230, menu 256×122).
+          content: { paddingX: "spacing.inset-control+stroke.focus", paddingY: "spacing.inset-control+stroke.focus" },
           // A separator row: 4px above and below a 1px subtle rule.
           separator: { fill: c("border.subtle"), height: "stroke.divider" }
         }))
@@ -12050,9 +12852,10 @@ var init_navigation = __esm({
       slots: ["root", "iconLeading", "media", "text", "label", "description", "trailing", "control", "iconTrailing", "indicator"],
       defaults: { Size: "default", State: "Default", Variant: "default" },
       parts: [
-        // Geometry per Size (the Dropdown file's); the paint is the shared `listItemRecipe`.
+        // Geometry per Size (the Dropdown file's); the paint is the shared `listItemRecipe`. Focused: the Button's gap ring,
+        // 1px off the row (DEC-2026-11-19-001); the Content's 4px inset holds it.
         part({ Size: DROPDOWN_SIZES, Variant: DROPDOWN_ITEM_VARIANTS, State: DROPDOWN_ITEM_STATES }, (size, variant, state2) => ({
-          ...listItemRecipe(size, state2, variant, { iconSlot: "iconLeading" }),
+          ...listItemRecipe(size, state2, variant, { iconSlot: "iconLeading", focusRing: "gap" }),
           iconTrailing: { text: c("content.secondary"), width: LIST_ITEM_METRICS[size].icon, height: LIST_ITEM_METRICS[size].icon }
         }))
       ]
@@ -12143,6 +12946,208 @@ var init_navigation = __esm({
         // Collapsed: a square of the row's height, no side padding (the icon centres).
         part({ Size: SIDEBAR_SIZES, Collapsed: SIDEBAR_COLLAPSED }, (size, collapsed) => ({
           root: collapsed === "true" ? { width: LIST_ITEM_METRICS[size].minHeight, paddingX: "spacing.none" } : {}
+        }))
+      ]
+    };
+  }
+});
+
+// src/lib/recipes/pages.ts
+var SETTINGS_ROW_LAYOUTS, SETTINGS_ROW, SETTINGS_SECTION, ISSUE_CARD_STATES, ISSUE_CARD, BOARD_COLUMN;
+var init_pages = __esm({
+  "src/lib/recipes/pages.ts"() {
+    init_helpers();
+    SETTINGS_ROW_LAYOUTS = ["inline", "stacked"];
+    SETTINGS_ROW = {
+      key: "SettingsRow",
+      slots: ["root", "text", "title", "description", "control"],
+      defaults: { Layout: "inline" },
+      parts: [
+        part({}, () => ({
+          root: { paddingY: "spacing.gap-group", stroke: c("border.subtle"), strokeBottomWidth: "stroke.divider" },
+          text: { gap: "spacing.gap-tight" },
+          title: { text: c("content.primary"), font: "type.label" },
+          description: { text: c("content.secondary"), font: "type.body-sm" }
+        })),
+        part({ Layout: SETTINGS_ROW_LAYOUTS }, (layout) => ({ root: { gap: layout === "inline" ? "spacing.gap-section" : "spacing.gap-control" } }))
+      ]
+    };
+    SETTINGS_SECTION = {
+      key: "SettingsSection",
+      slots: ["root", "header", "title", "description", "content"],
+      defaults: {},
+      parts: [
+        part({}, () => ({
+          root: { gap: "spacing.gap-control" },
+          header: { gap: "spacing.gap-tight" },
+          title: { text: c("content.primary"), font: "type.heading-2xs" },
+          description: { text: c("content.secondary"), font: "type.body-md" }
+        }))
+      ]
+    };
+    ISSUE_CARD_STATES = ["Default", "Hover", "Dragging"];
+    ISSUE_CARD = {
+      key: "IssueCard",
+      slots: ["root", "header", "key", "issueKey", "pullRequest", "title", "meta", "icon", "comments", "due"],
+      defaults: { State: "Default" },
+      parts: [
+        part({}, () => ({
+          // Figma lays the card's 1px stroke out (`strokesIncludedInLayout`): content starts at 13, so 104 = 1 + 12 + 78 + 12 + 1.
+          root: { fill: c("surface.layer-2"), radius: "radius.action", paddingX: "spacing.inset-control+stroke.divider", paddingY: "spacing.inset-control+stroke.divider", gap: "spacing.gap-control", strokeWidth: "stroke.divider" },
+          "root:focus-visible": { ...FOCUS },
+          key: { gap: "spacing.gap-control" },
+          issueKey: { text: c("content.secondary"), font: "type.caption" },
+          pullRequest: { gap: "spacing.gap-tight", text: c("content.secondary"), font: "type.caption" },
+          title: { text: c("content.primary"), font: "type.label" },
+          meta: { gap: "spacing.gap-control", rowGap: "spacing.gap-tight" },
+          icon: { width: "icon.small", height: "icon.small", text: c("content.secondary") },
+          comments: { gap: "spacing.gap-tight", text: c("content.secondary"), font: "type.caption" },
+          due: { gap: "spacing.gap-tight", text: c("content.secondary"), font: "type.caption" }
+        })),
+        part({ State: ISSUE_CARD_STATES }, (state2) => ({
+          root: state2 === "Dragging" ? { stroke: c("border.accent"), shadow: "shadow.lg" } : { stroke: c(state2 === "Hover" ? "border.strong" : "border.default"), shadow: "shadow.xs" }
+        }))
+      ]
+    };
+    BOARD_COLUMN = {
+      key: "BoardColumn",
+      slots: ["root", "header", "statusIcon", "title", "count", "addIcon", "content"],
+      defaults: {},
+      parts: [
+        part({}, () => ({
+          root: { fill: c("surface.layer-1"), radius: "radius.container", paddingX: "spacing.gap-control", paddingY: "spacing.gap-control", gap: "spacing.gap-control" },
+          header: { gap: "spacing.gap-control" },
+          statusIcon: { width: "icon.small", height: "icon.small", text: c("content.secondary") },
+          title: { text: c("content.primary"), font: "type.label" },
+          count: { text: c("content.secondary"), font: "type.caption" },
+          addIcon: { width: "icon.small", height: "icon.small" },
+          content: { gap: "spacing.gap-control" }
+        }))
+      ]
+    };
+  }
+});
+
+// src/lib/recipes/activityHeatmap.ts
+var ACTIVITY_HEATMAP_CELL_VALUES, ACTIVITY_HEATMAP_CELL_STATES, ACTIVITY_HEATMAP_CELL, ACTIVITY_HEATMAP;
+var init_activityHeatmap = __esm({
+  "src/lib/recipes/activityHeatmap.ts"() {
+    init_helpers();
+    ACTIVITY_HEATMAP_CELL_VALUES = ["0", "1", "2", "3", "4", "5"];
+    ACTIVITY_HEATMAP_CELL_STATES = ["Default", "Focused"];
+    ACTIVITY_HEATMAP_CELL = {
+      key: "ActivityHeatmapCell",
+      slots: ["root"],
+      defaults: { Value: "0", State: "Default" },
+      parts: [
+        // Figma: 12 × 12, both bound to the Dimension primitive `12` (no role). `spacing.3` is that step on the scale (DIM-01).
+        // The radius is `Radius/control`, capped so no Selectors pick turns the square into a dot (SELECTOR_SQUARE_RADIUS).
+        part({}, () => ({ root: { width: "spacing.3", height: "spacing.3", radius: SELECTOR_SQUARE_RADIUS.compact } })),
+        part({ Value: ACTIVITY_HEATMAP_CELL_VALUES }, (value) => ({ root: { fill: c(`chart.sequential.${value}`) } })),
+        // Focused: Figma's `focus-ring`, a rectangle 1px larger than the cell on every side (14 × 14, radius 5), stroked `Border/ring/default`,
+        // `Stroke/focus` wide, OUTSIDE — the Button `gapRing` (outline + 1px offset). The fill stays the cell's.
+        part({ State: ACTIVITY_HEATMAP_CELL_STATES }, (state2) => ({
+          root: { gapRing: state2 === "Focused" ? c("border.ring.default") : NONE }
+        }))
+      ]
+    };
+    ACTIVITY_HEATMAP = {
+      key: "ActivityHeatmap",
+      slots: ["root", "monthLabels", "monthSlot", "month", "body", "dayLabels", "day", "dayLabel", "grid", "row", "legendRow", "legend", "legendLabel"],
+      defaults: {},
+      parts: [
+        part({}, () => ({
+          // Figma root: VERTICAL, gap `Spacing/gap-control` (8) between the month labels, the body and the legend row.
+          root: { gap: "spacing.gap-control" },
+          // The month row is one slot per week column, each as wide as a cell, so a label starts on its week. Figma sets the
+          // labels by hand at x = 32 + 16 × week; here the row is the grid's own column rhythm (gap `Spacing/gap-tight`).
+          monthLabels: { gap: "spacing.gap-tight" },
+          monthSlot: { width: "spacing.3", font: "type.caption" },
+          month: { text: c("content.secondary"), font: "type.caption" },
+          // body: HORIZONTAL, gap `Spacing/gap-tight` between the day labels and the grid.
+          body: { gap: "spacing.gap-tight" },
+          // day-labels: VERTICAL, gap `Spacing/gap-tight`, 28 wide (a raw width in the file: 24 + 4 on the scale).
+          dayLabels: { gap: "spacing.gap-tight", width: "spacing.6+spacing.1" },
+          // One row per weekday, 12 high (the Dimension primitive `12`): the label is centred on it, as `Type/caption` is 16 high.
+          day: { height: "spacing.3" },
+          dayLabel: { text: c("content.secondary"), font: "type.caption" },
+          // grid: the weeks side by side, the days stacked, both with `Spacing/gap-tight`.
+          grid: { gap: "spacing.gap-tight" },
+          row: { gap: "spacing.gap-tight" },
+          // legend-row: HORIZONTAL, content pushed to the end; legend: HORIZONTAL centre, gap `Spacing/gap-tight`.
+          legend: { gap: "spacing.gap-tight" },
+          legendLabel: { text: c("content.secondary"), font: "type.caption" }
+        }))
+      ]
+    };
+  }
+});
+
+// src/lib/recipes/splitBar.ts
+var SPLIT_BAR_SERIES, SPLIT_BAR_SEGMENT_STATES, SPLIT_BAR_LEGEND_ITEM_STATES, SPLIT_BAR_LEGEND_CHECKED, chart, SPLIT_BAR_SEGMENT, SPLIT_BAR_LEGEND_ITEM, SPLIT_BAR;
+var init_splitBar = __esm({
+  "src/lib/recipes/splitBar.ts"() {
+    init_helpers();
+    SPLIT_BAR_SERIES = ["1", "2", "3", "4", "5", "6", "7", "8"];
+    SPLIT_BAR_SEGMENT_STATES = ["Default", "Focused"];
+    SPLIT_BAR_LEGEND_ITEM_STATES = ["Default", "Focused"];
+    SPLIT_BAR_LEGEND_CHECKED = ["true", "false"];
+    chart = (n, slot) => c(`chart.series-${n}.${slot}`);
+    SPLIT_BAR_SEGMENT = {
+      key: "SplitBarSegment",
+      slots: ["root", "content", "label", "value"],
+      defaults: { Series: "1", State: "Default" },
+      parts: [
+        part({ Series: SPLIT_BAR_SERIES }, (n) => ({
+          root: { fill: chart(n, "soft"), stroke: chart(n, "solid"), strokeRightWidth: "stroke.focus", text: chart(n, "content") },
+          label: { text: chart(n, "content") },
+          value: { text: chart(n, "content") }
+        })),
+        part({}, () => ({
+          root: { height: "size.lg", paddingX: "spacing.inset-control", gap: "spacing.gap-control" },
+          'root[data-fit="none"]': { paddingX: "spacing.0" },
+          "root[data-collapsed]": { strokeRightWidth: "spacing.0" },
+          content: { gap: "spacing.gap-control" },
+          label: { font: "type.body-sm" },
+          value: { font: "type.label" }
+        })),
+        part({ State: SPLIT_BAR_SEGMENT_STATES }, (state2) => ({ root: { ring: state2 === "Focused" ? c("border.ring.neutral") : NONE } }))
+      ]
+    };
+    SPLIT_BAR_LEGEND_ITEM = {
+      key: "SplitBarLegendItem",
+      slots: ["root", "swatch", "label", "value"],
+      defaults: { Series: "1", Checked: "true", State: "Default" },
+      parts: [
+        part({ Series: SPLIT_BAR_SERIES, Checked: SPLIT_BAR_LEGEND_CHECKED }, (n, checked) => ({
+          swatch: { fill: checked === "true" ? chart(n, "solid") : c("surface.muted") },
+          label: { text: checked === "true" ? c("content.secondary") : c("content.disabled") },
+          value: { text: checked === "true" ? c("content.primary") : c("content.disabled") }
+        })),
+        part({}, () => ({
+          root: { height: "size.xs", paddingX: "spacing.gap-tight", gap: "spacing.gap-control", radius: "radius.control" },
+          swatch: { width: "spacing.3", height: "spacing.3", radius: "radius.control" },
+          label: { font: "type.body-sm" },
+          value: { font: "type.label" }
+        })),
+        part({ State: SPLIT_BAR_LEGEND_ITEM_STATES }, (state2) => ({ root: { gapRing: state2 === "Focused" ? c("border.ring.neutral") : NONE } }))
+      ]
+    };
+    SPLIT_BAR = {
+      key: "SplitBar",
+      slots: ["root", "bar", "leaders", "leaderRow", "leaderLine", "leaderText", "leaderLabel", "leaderValue", "legend"],
+      defaults: {},
+      parts: [
+        part({}, () => ({
+          root: { gap: "spacing.gap-group" },
+          bar: { radius: "radius.action" },
+          leaderRow: { height: "size.xs" },
+          leaderLine: { width: "stroke.divider" },
+          leaderText: { gap: "spacing.gap-tight", paddingX: "spacing.gap-tight" },
+          leaderLabel: { font: "type.body-sm", text: c("content.secondary") },
+          leaderValue: { font: "type.label", text: c("content.primary") },
+          legend: { gap: "spacing.gap-group", rowGap: "spacing.gap-group" },
+          ...Object.fromEntries(SPLIT_BAR_SERIES.map((n) => [`leaderLine[data-series="${n}"]`, { fill: chart(n, "solid") }]))
         }))
       ]
     };
@@ -12647,7 +13652,7 @@ var init_indicators = __esm({
         part({ Variant: FEATURED_ICON_VARIANTS, Appearance: FEATURED_ICON_APPEARANCES }, (variant, appearance) => {
           if (appearance === "gradient") {
             const g = FEATURED_ICON_GRADIENT[variant];
-            return { root: { fill: c(g.stops[0]), fillMid: c(g.stops[1]), fillEnd: c(g.stops[2]), text: c(g.ink), highlight: c("elevation.highlight"), lift: "feature" } };
+            return { root: { fill: c(g.stops[0]), fillMid: c(g.stops[1]), fillEnd: c(g.stops[2]), text: c(g.ink), highlight: c("elevation.highlight"), highlightWidth: "2", lift: "feature" } };
           }
           const [fill, ink] = AVATAR_TONE[variant][appearance];
           return { root: { fill: c(fill), text: c(ink) } };
@@ -12950,14 +13955,60 @@ var init_motion2 = __esm({
       exit: { name: "accordion-collapse", slot: "content", heightVar }
     });
     RECIPE_MOTION = {
-      Button: { transitions: { root: states("background-color", "color", "border-color", "box-shadow") } },
+      // A press sinks the button to the `shrink` scale on `use-press` (recipeStyles, `press`) and comes back on `use-hover`, with the colours.
+      Button: { transitions: { root: { ...states("background-color", "color", "border-color", "box-shadow"), scale: "use-hover" } }, press: {} },
+      IconButton: { transitions: { root: { ...states("background-color", "color", "border-color", "box-shadow"), scale: "use-hover" } }, press: {} },
       Badge: { transitions: { root: states("background-color", "color", "border-color") } },
-      Chip: { transitions: { root: states("background-color", "border-color", "color") } },
+      // A pressed chip sinks like a button (`use-press`): the file draws no Pressed state, so the press is motion only (owner decision 2026-11-19).
+      Chip: { transitions: { root: { ...states("background-color", "border-color", "color"), scale: "use-hover" } }, press: {} },
+      // The row. First render: the pills arrive one after another (`use-stagger-in`, each `--motion-stagger` behind the last). After
+      // that a pill that arrives or a neighbour that makes room travels on `use-travel-in`, a pill that leaves on `use-travel-out`,
+      // and a count rolls its changed digits on `use-toggle`. Reduced motion comes from the roles themselves.
+      ReactionGroup: {
+        transitions: {
+          item: { opacity: "use-travel-in", transform: "use-travel-in" },
+          'item[data-motion="enter"]': { opacity: "use-stagger-in", transform: "use-stagger-in" },
+          'item[data-motion="exit"]': { opacity: "use-travel-out", transform: "use-travel-out" },
+          digit: { opacity: "use-toggle", transform: "use-toggle" }
+        },
+        stagger: { slot: "item", when: '[data-motion="enter"]' }
+      },
+      ReactionGroupTrigger: { transitions: { root: states("background-color", "color", "border-color") } },
+      ReactionGroupPopover: popover("--radix-popover-content-transform-origin"),
       PaginationLink: { transitions: { root: FILL } },
       TabMenuItem: { transitions: { root: FILL } },
       TabMenuLineItem: { transitions: { root: FILL } },
       NavItem: { transitions: { root: FILL } },
+      // The pill fills and the icon and label re-ink on `use-hover`, the same roles as NavItem; becoming Current uses the same
+      // transition. No mount animation. TabBar itself: motion none (it does not change state).
+      TabBarItem: { transitions: { indicator: FILL, icon: FILL, label: FILL } },
+      // A day square: no motion on load, none on a data change (the consumer cross-fades a year switch). Only the ring follows `use-focus`.
+      ActivityHeatmapCell: { transitions: { root: { "outline-color": "use-focus" } } },
+      // The card's edge and lift ease; the position that follows the pointer never does (MOT-005).
+      IssueCard: { transitions: { root: { "border-color": "use-hover", "box-shadow": "use-hover" } } },
       AccountMenuTrigger: { transitions: { root: FILL } },
+      // SplitBar: a segment widens on hover or focus on `use-hover` (its width is its share of the bar, so it is `width` that moves). Turning
+      // a series off reflows the bar: the segments that grow travel on `use-travel-in`, the ones that shrink on `use-travel-out`.
+      // The focus ring and the colours do not animate here: the file draws no Hover colour.
+      SplitBarSegment: {
+        transitions: {
+          root: { width: "use-hover" },
+          'root[data-motion="in"]': { width: "use-travel-in" },
+          'root[data-motion="out"]': { width: "use-travel-out" }
+        }
+      },
+      // The callouts under the bar follow their segment: the same roles, the same direction.
+      SplitBar: {
+        transitions: {
+          leaderLine: { left: "use-hover" },
+          'leaderLine[data-motion="in"]': { left: "use-travel-in" },
+          'leaderLine[data-motion="out"]': { left: "use-travel-out" },
+          leaderText: { left: "use-hover", right: "use-hover" },
+          'leaderText[data-motion="in"]': { left: "use-travel-in", right: "use-travel-in" },
+          'leaderText[data-motion="out"]': { left: "use-travel-out", right: "use-travel-out" }
+        }
+      },
+      SplitBarLegendItem: { transitions: { swatch: states("background-color"), label: states("color"), value: states("color") } },
       SegmentedControlItem: { transitions: { root: FILL } },
       SidebarMenuButton: { transitions: { root: FILL } },
       TableRow: { transitions: { root: states("background-color") } },
@@ -12985,10 +14036,23 @@ var init_motion2 = __esm({
       ComboboxItem: { transitions: { root: states("background-color", "border-color", "box-shadow") } },
       Checkbox: { transitions: { root: states("background-color", "border-color", "box-shadow") } },
       RadioGroup: { transitions: { item: states("background-color", "border-color", "box-shadow") } },
-      Switch: { transitions: { root: states("background-color", "box-shadow"), thumb: { transform: "use-toggle" } } },
+      // The track's colour and the thumb's travel share `use-toggle`, so the fill arrives with the thumb (it flipped in 100 ms while the thumb took 360).
+      Switch: { transitions: { root: { "background-color": "use-toggle", "box-shadow": "use-focus" }, thumb: { transform: "use-toggle" } } },
       RatingGroupItem: { transitions: { root: FILL } },
       SliderThumb: { transitions: { root: states("border-color", "box-shadow") } },
       ProgressLine: { transitions: { indicator: { width: "use-progress" } } },
+      // A new value sweeps the fill along the arc on `use-travel-in` (the arc's dash is the value). Reduced motion comes from the role.
+      Gauge: { transitions: { arc: { "stroke-dasharray": "use-travel-in" } } },
+      // The line draws once on mount (`use-reveal`: its dash offset, with the area and the dot fading in); new data cross-fades the old
+      // layer into the new one on `use-color`.
+      Sparkline: {
+        transitions: {
+          layer: { opacity: "use-color" },
+          line: { "stroke-dashoffset": "use-reveal", opacity: "use-reveal" },
+          area: { opacity: "use-reveal" },
+          dot: { opacity: "use-reveal" }
+        }
+      },
       // Sonner keeps the queue, the stack and the live region; the toast itself moves on the system's roles (DEC-2026-11-18-001).
       Toast: {
         enter: { name: "toast-enter" },
@@ -13018,6 +14082,106 @@ var init_motion2 = __esm({
   }
 });
 
+// src/lib/recipes/splitButton.ts
+var SPLIT_BUTTON_VARIANTS, SPLIT_BUTTON_SIZES, SPLIT_BUTTON_OPEN, SPLIT_BUTTON;
+var init_splitButton = __esm({
+  "src/lib/recipes/splitButton.ts"() {
+    init_helpers();
+    SPLIT_BUTTON_VARIANTS = ["default", "secondary"];
+    SPLIT_BUTTON_SIZES = ["default", "xs", "sm", "lg"];
+    SPLIT_BUTTON_OPEN = ["false", "true"];
+    SPLIT_BUTTON = {
+      key: "SplitButton",
+      slots: ["root"],
+      defaults: { Variant: "default", Size: "default", Open: "false" },
+      parts: [
+        part({ Variant: SPLIT_BUTTON_VARIANTS, Size: SPLIT_BUTTON_SIZES, Open: SPLIT_BUTTON_OPEN }, () => ({
+          root: { gap: "spacing.gap-control" }
+        }))
+      ]
+    };
+  }
+});
+
+// src/lib/recipes/dataDisplay.ts
+function gaugeTone(variant) {
+  return variant === "default" ? { arc: c("chart.series-1.solid"), label: c("chart.series-1.content") } : { arc: c(`status.${variant}.surface-solid`), label: c(`status.${variant}.content`) };
+}
+function sparklineTone(variant) {
+  switch (variant) {
+    case "secondary":
+      return { line: c("content.secondary"), area: c("surface.muted") };
+    case "success":
+    case "critical":
+      return { line: c(`status.${variant}.surface-solid`), area: c(`status.${variant}.surface`) };
+    default:
+      return { line: c("chart.series-1.solid"), area: c("chart.series-1.soft") };
+  }
+}
+var GAUGE_VARIANTS, GAUGE_SIZES, GAUGE_DIAMETER, GAUGE_TYPE, GAUGE, SPARKLINE_VARIANTS, SPARKLINE_SIZES, SPARKLINE_BOX, SPARKLINE;
+var init_dataDisplay = __esm({
+  "src/lib/recipes/dataDisplay.ts"() {
+    init_helpers();
+    GAUGE_VARIANTS = ["default", "success", "warning", "critical"];
+    GAUGE_SIZES = ["default", "sm", "lg"];
+    GAUGE_DIAMETER = { sm: "spacing.32", default: "spacing.32+spacing.8", lg: "spacing.32+spacing.16" };
+    GAUGE_TYPE = {
+      sm: { value: "type.heading-md", unit: "type.body-sm", label: "type.body-sm" },
+      default: { value: "type.heading-lg", unit: "type.body-md", label: "type.label" },
+      lg: { value: "type.heading-xl", unit: "type.body-md", label: "type.label" }
+    };
+    GAUGE = {
+      key: "Gauge",
+      slots: ["root", "track", "arc", "content", "valueRow", "value", "unit", "label"],
+      defaults: { Variant: "default", Size: "default" },
+      parts: [
+        part({ Size: GAUGE_SIZES }, (size) => ({
+          root: { width: GAUGE_DIAMETER[size], height: GAUGE_DIAMETER[size] },
+          // The arc is open at the bottom, so the content sits under the centre: 6 · 4 · 6 px (the file's y 55.5 · 40.5 · 64.5), read as `--escala-travel`.
+          content: { gap: "spacing.gap-tight", travel: size === "sm" ? "spacing.1" : "spacing.1_5" },
+          valueRow: { gap: "spacing.gap-tight" },
+          value: { font: GAUGE_TYPE[size].value },
+          unit: { font: GAUGE_TYPE[size].unit },
+          label: { font: GAUGE_TYPE[size].label }
+        })),
+        part({ Variant: GAUGE_VARIANTS }, (variant) => ({
+          track: { text: c("surface.muted") },
+          arc: { text: gaugeTone(variant).arc },
+          value: { text: c("content.primary") },
+          unit: { text: c("content.secondary") },
+          label: { text: gaugeTone(variant).label }
+        }))
+      ]
+    };
+    SPARKLINE_VARIANTS = ["default", "secondary", "success", "critical"];
+    SPARKLINE_SIZES = ["default", "sm", "lg"];
+    SPARKLINE_BOX = {
+      sm: { w: "spacing.24", h: "spacing.8", dot: "spacing.1" },
+      default: { w: "spacing.32+spacing.32", h: "spacing.16", dot: "spacing.1_5" },
+      lg: { w: "spacing.32+spacing.32+spacing.32+spacing.24", h: "spacing.32", dot: "spacing.2" }
+    };
+    SPARKLINE = {
+      key: "Sparkline",
+      slots: ["root", "layer", "area", "line", "dot"],
+      defaults: { Variant: "default", Size: "default" },
+      parts: [
+        part({ Size: SPARKLINE_SIZES }, (size) => ({
+          root: { width: SPARKLINE_BOX[size].w, height: SPARKLINE_BOX[size].h },
+          // A dot is a circle: its box is the Figma ellipse (6 · 4 · 8). The line is `Stroke/focus` except on sm, where the file
+          // draws a raw 1.5 (`hairline` is the recipe's hand-set px width: DIM-03).
+          dot: { width: SPARKLINE_BOX[size].dot, height: SPARKLINE_BOX[size].dot, radius: "radius.pill" },
+          line: size === "sm" ? { hairline: "1.5" } : { strokeWidth: "stroke.focus" }
+        })),
+        part({ Variant: SPARKLINE_VARIANTS }, (variant) => ({
+          area: { text: sparklineTone(variant).area },
+          line: { text: sparklineTone(variant).line },
+          dot: { fill: sparklineTone(variant).line }
+        }))
+      ]
+    };
+  }
+});
+
 // src/lib/componentRecipes.ts
 function serializeRecipes() {
   return JSON.parse(JSON.stringify(COMPONENT_RECIPES));
@@ -13029,16 +14193,24 @@ var init_componentRecipes = __esm({
     init_forms();
     init_surfaces();
     init_navigation();
+    init_pages();
+    init_activityHeatmap();
+    init_splitBar();
     init_feedback();
     init_indicators();
     init_helpers();
     init_table();
     init_motion2();
+    init_splitButton();
+    init_dataDisplay();
     init_roleNames();
     init_helpers();
     COMPONENT_RECIPES = {
       Button: BUTTON,
       IconButton: ICON_BUTTON,
+      ReactionGroup: REACTION_GROUP,
+      ReactionGroupTrigger: REACTION_GROUP_TRIGGER,
+      ReactionGroupPopover: REACTION_GROUP_POPOVER,
       CloseButton: CLOSE_BUTTON,
       TextLink: TEXT_LINK,
       FABButton: FAB_BUTTON,
@@ -13046,6 +14218,7 @@ var init_componentRecipes = __esm({
       ButtonGroup: BUTTON_GROUP,
       ButtonGroupItem: BUTTON_GROUP_ITEM,
       ButtonGroupDivider: BUTTON_GROUP_DIVIDER,
+      SplitButton: SPLIT_BUTTON,
       SocialLoginButton: SOCIAL_LOGIN_BUTTON,
       Input: INPUT,
       Textarea: TEXTAREA,
@@ -13086,6 +14259,8 @@ var init_componentRecipes = __esm({
       Chip: CHIP,
       ProgressLine: PROGRESS_LINE,
       ProgressCircle: PROGRESS_CIRCLE,
+      Gauge: GAUGE,
+      Sparkline: SPARKLINE,
       Spinner: SPINNER,
       FeaturedIcon: FEATURED_ICON,
       RatingGroup: RATING_GROUP,
@@ -13126,6 +14301,17 @@ var init_componentRecipes = __esm({
       TabMenuItem: TAB_MENU_ITEM,
       TabMenuLineItem: TAB_MENU_LINE_ITEM,
       NavItem: NAV_ITEM,
+      TabBar: TAB_BAR,
+      TabBarItem: TAB_BAR_ITEM,
+      ActivityHeatmap: ACTIVITY_HEATMAP,
+      ActivityHeatmapCell: ACTIVITY_HEATMAP_CELL,
+      SettingsRow: SETTINGS_ROW,
+      SettingsSection: SETTINGS_SECTION,
+      IssueCard: ISSUE_CARD,
+      SplitBar: SPLIT_BAR,
+      SplitBarSegment: SPLIT_BAR_SEGMENT,
+      SplitBarLegendItem: SPLIT_BAR_LEGEND_ITEM,
+      BoardColumn: BOARD_COLUMN,
       Brand: BRAND,
       AccountMenuTrigger: ACCOUNT_MENU_TRIGGER,
       SegmentedControl: SEGMENTED_CONTROL,
@@ -13347,6 +14533,7 @@ function generateTokenJSON(source, opts) {
     return [theme, {
       typography: {
         ...resolved.typography,
+        monoFontFamily: FONT_FAMILY_MONO,
         letterSpacings: letterSpacingsFor(resolved.typography.sizes),
         roles: mergeTypeRoles(resolved.typography.roles)
       },
@@ -13414,6 +14601,10 @@ function generateTokenJSON(source, opts) {
     addFamily("warning-dark", store.warningDarkScale);
     addFamily("success-dark", store.successDarkScale);
     addFamily("info-dark", store.infoDarkScale);
+  }
+  for (const [hue, ramp] of Object.entries(CHART_RAMPS)) {
+    Object.assign(primitive, flattenScale(`chart-${hue}`, ramp.light, colorNaming));
+    if (hasDarkTheme) Object.assign(primitive, flattenScale(`chart-${hue}-dark`, ramp.dark, colorNaming));
   }
   store.customColors.forEach((c2) => {
     if (!shipsFamily(c2.key)) return;
@@ -13552,6 +14743,8 @@ function generateTokenJSON(source, opts) {
     typography: {
       fontFamily: typography2.fontFamily,
       headingFontFamily: typography2.headingFontFamily ?? typography2.fontFamily,
+      // The code family: fixed, read only by the `code` role (additive key).
+      monoFontFamily: FONT_FAMILY_MONO,
       sizes: typography2.sizes,
       lineHeights: typography2.lineHeights,
       // Derived from each size (letterSpacingFor). The plugin binds
@@ -13742,6 +14935,7 @@ var init_tokenGenerator = __esm({
     init_customFonts();
     init_layoutTokens();
     init_elevationTokens();
+    init_chartRamps_generated();
     init_socialBrands();
     init_gradients();
     init_themeModes();
@@ -14019,6 +15213,7 @@ function loadGoogleFont(family) {
 var init_fonts = __esm({
   "src/lib/fonts.ts"() {
     init_platformAxis();
+    init_typographyStandard();
     init_useDesignStore();
     init_fontStack();
     init_customFonts();
@@ -14064,6 +15259,11 @@ function primitiveRampLines(store, kind) {
     sorted(scale).forEach(([k, v]) => {
       if (v) out.push(`  --color-${name}-${toneLabel(colorNaming, Number(k))}: ${v};`);
     });
+  }
+  for (const [hue, ramp] of Object.entries(CHART_RAMPS)) {
+    out.push(`
+  /* Chart ${hue.charAt(0).toUpperCase() + hue.slice(1)} */`);
+    sorted(ramp[dark ? "dark" : "light"]).forEach(([k, v]) => out.push(`  --color-chart-${hue}-${toneLabel(colorNaming, Number(k))}: ${v};`));
   }
   out.push("\n  /* Alpha twins \u2014 reproduce a solid tone over the page, for translucent fills */");
   for (const [name, scale, page, pinned] of fams) {
@@ -14138,6 +15338,7 @@ function buildCSS(store, opts) {
   lines.push("  /* --font-family-heading is the Display font: display-* roles only. heading-* roles use --font-family-body. */");
   lines.push(`  --font-family-heading: ${stackFor(typography2.headingFontFamily ?? typography2.fontFamily)};`);
   lines.push(`  --font-family-body: ${stackFor(typography2.fontFamily)};`);
+  lines.push(`  --font-family-mono: ${stackFor(FONT_FAMILY_MONO)};`);
   Object.entries(typography2.sizes).forEach(([k, v]) => lines.push(`  --font-size-${k}: ${v};`));
   Object.entries(typography2.lineHeights ?? {}).forEach(([k, v]) => lines.push(`  --line-height-${k}: ${v};`));
   Object.entries(letterSpacingsFor(typography2.sizes)).forEach(([k, v]) => lines.push(`  --letter-spacing-${k}: ${v};`));
@@ -14339,6 +15540,7 @@ var init_exporters = __esm({
     init_semanticArchitectures();
     init_typeRoles();
     init_elevationTokens();
+    init_chartRamps_generated();
     init_socialBrands();
     init_layoutTokens();
     init_gradients();
@@ -14346,6 +15548,24 @@ var init_exporters = __esm({
     init_tokenGenerator();
     init_dimensions();
     PANEL_KEYS = ["background-secondary"];
+  }
+});
+
+// src/lib/brandCssPack.ts
+async function gzip(text) {
+  const stream = new Blob([text]).stream().pipeThrough(new CompressionStream("gzip"));
+  return new Uint8Array(await new Response(stream).arrayBuffer());
+}
+function toBase64(bytes) {
+  let bin = "";
+  for (let i = 0; i < bytes.length; i += 32768) bin += String.fromCharCode(...bytes.subarray(i, i + 32768));
+  return btoa(bin);
+}
+async function packBrandCss(list) {
+  return Promise.all(list.map(async ({ key: key2, name, css }) => ({ key: key2, name, gzip: toBase64(await gzip(css)) })));
+}
+var init_brandCssPack = __esm({
+  "src/lib/brandCssPack.ts"() {
   }
 });
 
@@ -14363,18 +15583,29 @@ function brandCssFor(store, keys) {
   }));
 }
 function withBrandCss(json, store) {
-  const brandCss = brandCssFor(store, payloadBrandKeys(json));
+  return attachPlain(json, brandCssFor(store, payloadBrandKeys(json)));
+}
+function attachPlain(json, brandCss, room = ROOM) {
   if (!brandCss.length) return json;
   const out = { ...json, brandCss };
-  return JSON.stringify(out).length > ROOM ? json : out;
+  return JSON.stringify(out).length > room ? json : out;
 }
-var ROOM;
+async function withPublishBrandCss(json, store, room = ROOM) {
+  const brandCss = brandCssFor(store, payloadBrandKeys(json));
+  const plain = attachPlain(json, brandCss, room);
+  if (plain !== json || !brandCss.length) return plain;
+  const out = { ...json, brandCssGzip: await packBrandCss(brandCss) };
+  return JSON.stringify(out).length > room ? json : out;
+}
+var PUBLISH_LIMIT, ROOM;
 var init_brandCss = __esm({
   "src/lib/brandCss.ts"() {
     init_codeScope();
     init_exporters();
     init_themeSources();
-    ROOM = 18e5;
+    init_brandCssPack();
+    PUBLISH_LIMIT = 2 * 1024 * 1024;
+    ROOM = PUBLISH_LIMIT - 64 * 1024;
   }
 });
 
@@ -14505,7 +15736,7 @@ async function publishTokens(themeOrOpts, section) {
 async function postPublishedTokens(opts) {
   if (opts.theme) setActiveThemeHint(opts.theme);
   const slug = useDesignStore.getState().ensurePublishId();
-  const body = JSON.stringify(withBrandCss(generateTokenJSON(void 0, {
+  const body = JSON.stringify(await withPublishBrandCss(generateTokenJSON(void 0, {
     ...opts.theme ? { theme: opts.theme } : {},
     ...opts.themes?.length ? { themes: opts.themes } : {},
     ...opts.modes?.length ? { modes: opts.modes } : {},
@@ -18582,6 +19813,7 @@ var init_previewTokens = __esm({
     init_fonts();
     init_iconLibraries();
     init_typeRoles();
+    init_typographyStandard();
     init_layoutTokens();
     init_themeModes();
     init_themeFoundations();

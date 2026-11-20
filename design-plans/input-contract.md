@@ -17,6 +17,7 @@ hint are Field.»
 | `State` Default · Hover · Focused · **Invalid** · Disabled | VARIANT | `Default` | CSS (`:hover`, `:has(:focus-visible)`) + `forceState`; `aria-invalid`; `disabled` |
 | `Type` default · phone · currency · currency-select · password · url · upload · tag · copy-link · credit-card · search | VARIANT | `default` | `type` (otro valor = tipo HTML sobre el layout default) |
 | `Value` placeholder · filled | VARIANT | `placeholder` | ninguno: el campo pinta su `::placeholder` distinto de un valor escrito |
+| `Value` (TEXT, desde 2026-11-19; enlazada a la capa `value` de las 57 variantes `Value=filled`) | TEXT | «4242 4242 4242 4242» | `value` / `defaultValue`. El eje `Value=filled` solo dice que hay un valor; no es una prop. Sin cambio visual. Nota: el valor por defecto es el número de tarjeta en TODAS las variantes filled (también `Type=default`), tal cual el archivo |
 | `IconLeadingVisible` + `IconLeadingIcon` (MagnifyingGlass) | BOOLEAN + SWAP | true | `leading` (cada Type trae el suyo; `null` lo oculta) |
 | `Placeholder` | TEXT | «Jane Doe» | `placeholder` |
 | `IconTrailingVisible` + `IconTrailingIcon` (Eye) | BOOLEAN + SWAP | true | `trailing` |

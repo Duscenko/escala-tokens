@@ -7,6 +7,7 @@ import { Button as SkButton, buttonAxes, type ButtonAppearance, type ButtonSize,
 import { IconButton as SkIconButton } from '../../../escala-ui/icon-button'
 import { FABButton as SkFABButton, type FABButtonAppearance, type FABButtonShape, type FABButtonSize, type FABButtonState, type FABButtonVariant } from '../../../escala-ui/fab-button'
 import { FABGroup as SkFABGroup, type FABGroupLayout } from '../../../escala-ui/fab-group'
+import { SplitButton as SkSplitButton, type SplitButtonSize, type SplitButtonVariant } from '../../../escala-ui/split-button'
 import { TextLink as SkTextLink, type TextLinkSize, type TextLinkState, type TextLinkVariant } from '../../../escala-ui/text-link'
 import { CloseButton as SkCloseButton, type CloseButtonAppearance, type CloseButtonShape, type CloseButtonSize, type CloseButtonState, type CloseButtonVariant } from '../../../escala-ui/close-button'
 import {
@@ -14,6 +15,10 @@ import {
   type ButtonGroupOrientation, type ButtonGroupShape, type ButtonGroupSize, type ButtonGroupVariant, type ButtonGroupItemState,
 } from '../../../escala-ui/button-group'
 import { SocialLoginButton as SkSocialLoginButton, type SocialProvider, PROVIDER_NAME } from '../../../escala-ui/social-login-button'
+import {
+  ReactionGroup as SkReactionGroup, ReactionGroupPopover as SkReactionGroupPopover, ReactionGroupTrigger as SkReactionGroupTrigger,
+  type ReactionGroupTriggerSize, type ReactionGroupTriggerState,
+} from '../../../escala-ui/reaction-group'
 import { RecipeScope } from './scope'
 
 /** Button size → the control step its icon is sized from (xs · sm · md · lg). */
@@ -123,6 +128,22 @@ export function SkeletonFABButtonSpecimen({ t, v, icons, children }: SpecimenPro
       >
         {children ?? 'Create'}
       </SkFABButton>
+    </RecipeScope>
+  )
+}
+
+/** The file's own sample: «Publish» over three rows. `Open` draws the menu in place (`inline`), so a board of them never portals. */
+export function SkeletonSplitButtonSpecimen({ t, v }: SpecimenProps) {
+  return (
+    <RecipeScope t={t}>
+      <SkSplitButton
+        variant={(v.Variant ?? 'default') as SplitButtonVariant}
+        size={(v.Size ?? 'default') as SplitButtonSize}
+        open={(v.Open ?? 'false') === 'true'}
+        inline
+      >
+        Publish
+      </SkSplitButton>
     </RecipeScope>
   )
 }
@@ -242,3 +263,39 @@ export function SkeletonInlineLinkSpecimen({ t, children }: { t: SpecimenProps['
 }
 
 
+
+/** The Figma ReactionGroup (2381:169) as the file draws it: Celebrate 13 and Like 10 are yours, Insightful 3, Question 1. */
+export function SkeletonReactionGroupSpecimen({ t, v }: SpecimenProps) {
+  return (
+    <RecipeScope t={t}>
+      <div style={{ width: 480, maxWidth: '100%' }}>
+        <SkReactionGroup
+          summaryVisible={v.SummaryVisible !== 'false'}
+          defaultValue={[
+            { id: 'celebrate', count: 13, reacted: true },
+            { id: 'like', count: 10, reacted: true },
+            { id: 'insightful', count: 3 },
+            { id: 'question', count: 1 },
+          ]}
+        />
+      </div>
+    </RecipeScope>
+  )
+}
+
+export function SkeletonReactionGroupTriggerSpecimen({ t, v }: SpecimenProps) {
+  const state = (v.State ?? 'Default') as ReactionGroupTriggerState
+  return (
+    <RecipeScope t={t}>
+      <SkReactionGroupTrigger size={(v.Size ?? 'default') as ReactionGroupTriggerSize} forceState={state === 'Default' ? undefined : state} />
+    </RecipeScope>
+  )
+}
+
+export function SkeletonReactionGroupPopoverSpecimen({ t }: SpecimenProps) {
+  return (
+    <RecipeScope t={t}>
+      <SkReactionGroupPopover inline />
+    </RecipeScope>
+  )
+}

@@ -52,6 +52,7 @@ import {
   LINE_HEIGHT_STANDARD,
   TYPE_SCALE_KEYS,
   letterSpacingFor,
+  FONT_FAMILY_MONO,
 } from './typographyStandard'
 
 /** No json = the repo skill (defaults); a json = one brand's package. */
@@ -351,7 +352,7 @@ function dimensionRoles(json: Source): string {
 // ── Typography ──────────────────────────────────────────────────────────────
 
 function schemaAliasCell(a: TypeAlias): string {
-  return `${a.size} · ${a.weight}${a.family === 'display' ? ' · heading font' : ''}`
+  return `${a.size} · ${a.weight}${a.family === 'display' ? ' · heading font' : a.family === 'mono' ? ' · mono font' : ''}`
 }
 
 /** `16px / 24px · 600`, read from the brand's own type primitives. */
@@ -361,7 +362,7 @@ function brandAliasCell(json: TokenJSON, a: { family: string; size: string; weig
   const size = t.sizes?.[a.size] ?? a.size
   const lh = t.lineHeights?.[a.size]
   const weight = t.weights?.[a.weight] ?? a.weight
-  return `${size}${lh ? ` / ${lh}` : ''} · ${weight}${a.family === 'display' ? ' · heading font' : ''}`
+  return `${size}${lh ? ` / ${lh}` : ''} · ${weight}${a.family === 'display' ? ' · heading font' : a.family === 'mono' ? ' · mono font' : ''}`
 }
 
 function typeRoles(json: Source): string {
@@ -396,7 +397,7 @@ function typeRoles(json: Source): string {
   out.push(
     '## Primitives',
     '',
-    `**Families:** ${FONT_FAMILY_ROWS.map((f) => `\`--${f.key}\` (${f.role === 'display' ? 'heading / display' : 'body, headings by default'})`).join(' · ')}.`,
+    `**Families:** ${FONT_FAMILY_ROWS.map((f) => `\`--${f.key}\` (${f.role === 'display' ? 'heading / display' : 'body, headings by default'})`).join(' · ')} · \`--font-family-mono\` (${FONT_FAMILY_MONO}: the \`code\` role only, the same for every system).`,
     '',
     `**Weights:** ${FONT_WEIGHT_BASES.map((w) => `\`--font-weight-${w.key}\` ${weights[w.key] ?? w.weight}`).join(' · ')} (each with an \`-italic\` row in Figma).`,
     '',

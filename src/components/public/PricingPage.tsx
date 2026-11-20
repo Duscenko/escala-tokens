@@ -27,7 +27,7 @@ import { checkoutUrl } from '../../lib/polar'
 import { THEME_STYLE_PRESETS } from '../../lib/themePresets'
 const PRICING_TITLE = 'Pricing — Escala Tokens'
 const PRICING_DESCRIPTION =
-  'Escala is free to build and export. Pro adds what runs on our servers: the complete UI Kit in Figma and more than 10 modes per file.'
+  'Escala is free to build and export, and its Figma plugin builds the core kit. Pro adds the Escala Design System in Figma and more than 10 modes per file.'
 
 const FOCUS = 'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50'
 const PLAN_CTA = `flex h-14 w-full items-center justify-between gap-3 rounded-cta px-7 text-ui font-medium transition-[opacity,background-color] ${FOCUS}`
@@ -207,7 +207,7 @@ export function PricingPage() {
         { label: t('Configurator, every foundation, unlimited brands while editing'), free: true, pro: true },
         { label: t('System Styles'), free: t('All 12'), pro: t('All 12') },
         { label: t('Exports: tokens.json, CSS, W3C, Tailwind, Markdown'), free: true, pro: true },
-        { label: t('Generated documentation (Figma doc pages, system README)'), free: null, pro: true },
+        { label: t('Generated documentation (Figma doc pages, system README)'), free: true, pro: true },
       ],
     },
     {
@@ -217,8 +217,8 @@ export function PricingPage() {
         { label: t('Modes in one Figma file'), free: t('Up to {n}', { n: free }), pro: t('More than {n}, up to what your Figma plan holds', { n: free }) },
         { label: t('Platform modes'), free: 'Desktop, Tablet, Mobile', pro: 'Desktop, Tablet, Mobile' },
         { label: t('Manual import of tokens.json'), free: true, pro: true },
-        { label: t('Complete UI Kit in Figma (59 editable components)'), free: t('Components as images'), pro: true },
-        { label: t('Customize every component from Escala Tokens through the Figma plugin (agent context)'), free: null, pro: true },
+        { label: t('Core kit built by the plugin on your variables (Button, Icon Button, Input, Checkbox, Radio, Switch, Badge, Avatar)'), free: true, pro: true },
+        { label: t('Escala Design System: the complete library in Figma (70+ components, blocks and pages)'), free: null, pro: true },
       ],
     },
     {
@@ -243,10 +243,10 @@ export function PricingPage() {
         <main className="mx-auto flex w-full max-w-5xl flex-col gap-20 px-4 py-14 md:px-8">
           <section className="mx-auto flex max-w-3xl flex-col items-center gap-5 text-center">
             <h1 className="text-[clamp(30px,4.6vw,48px)] font-semibold leading-[1.08] tracking-[-0.02em]">
-              {t('Your own token system. Free to build. Pro for the complete Figma UI Kit.')}
+              {t('Your own token system. Free to build. Pro for the Escala Design System in Figma.')}
             </h1>
             <p className="max-w-2xl text-ui leading-relaxed text-fg-muted">
-              {t('Escala generates variables with a clear, architecture-agnostic structure. Configuring and exporting is free. Pro adds the complete UI Kit Library in Figma, and every brand, theme and platform mode.')}
+              {t('Escala generates variables with a clear, architecture-agnostic structure. Configuring, exporting and the plugin’s core kit are free. Pro adds the Escala Design System, the complete library in Figma, and every brand, theme and platform mode.')}
             </p>
           </section>
 
@@ -271,7 +271,7 @@ export function PricingPage() {
                   <Features items={[
                     t('All {count} System Styles, unlimited brands while editing', { count: THEME_STYLE_PRESETS.length }),
                     t('Every export: tokens.json, CSS, W3C, Tailwind, Markdown'),
-                    t('Open-source Figma plugin, manual import'),
+                    t('Open-source Figma plugin: variables, styles, documentation pages and the core kit'),
                     t('The full agent context: every brand, theme and viewport, up to {n} modes in Figma', { n: free }),
                     t('Offline agent skill, GitHub push, CLI'),
                   ]} />
@@ -294,7 +294,7 @@ export function PricingPage() {
                 <div className="relative flex flex-col gap-4">
                   <span className="self-start rounded-full bg-fg/10 px-3 py-1 text-body font-medium text-fg">{t('One-time')}</span>
                   <h3 className="text-[clamp(26px,3vw,36px)] font-semibold leading-[1.1] tracking-[-0.02em]">
-                    {t('The complete UI Kit in Figma, adapted to your system in one pass.')}
+                    {t('The complete library in Figma: the Escala Design System, on the same variable names as your system.')}
                   </h3>
                 </div>
                 <div className="relative flex flex-col gap-3">
@@ -308,8 +308,7 @@ export function PricingPage() {
                   <Features items={[
                     t('Everything in Free'),
                     t('More than {n} modes in one Figma file', { n: free }),
-                    t('The complete UI Kit in Figma: 59 editable components generated by the plugin from your agent context'),
-                    t('Generated documentation for your system'),
+                    t('The Escala Design System: 70+ components, blocks and pages as an editable Figma file'),
                     t('12 months of plugin updates included'),
                   ]} />
                 </div>

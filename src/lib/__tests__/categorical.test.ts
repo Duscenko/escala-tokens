@@ -74,8 +74,10 @@ describe('the categorical catalogue is complete', () => {
     //  Same day the solids lost that edge (-1) and gained `status.critical.ring` (+1) → 84.
     //  +1 (2026-11-17, owner decision): `border.ring.neutral`, the neutral focus ring → 85.
     //  +1 (2026-11-17, DEC-2026-11-17-003): `surface.raised`, the selected segment → 86.
-    expect(roleIds).toHaveLength(86)
-    for (const group of ['content', 'action', 'surface', 'status', 'border', 'elevation']) {
+    //  +30 (2026-11-19, the Figma file, ARC-CHART-01): the Chart group — 8 series × solid · soft · content, and
+    //  `sequential/0–5` for heatmaps → 116.
+    expect(roleIds).toHaveLength(116)
+    for (const group of ['content', 'action', 'surface', 'status', 'border', 'elevation', 'chart']) {
       expect(view.categories.some((c) => c.key === group), group).toBe(true)
     }
   })
