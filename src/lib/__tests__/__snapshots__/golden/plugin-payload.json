@@ -17005,7 +17005,7 @@
                 "fill": "color.content.on-action"
               },
               "io": {
-                "text": "color.action.primary.default"
+                "text": "color.content.on-action"
               },
               "thumbIcon": {
                 "text": "color.action.primary.default"
@@ -17021,7 +17021,7 @@
                 "fill": "color.content.on-action"
               },
               "io": {
-                "text": "color.action.primary.hover"
+                "text": "color.content.on-action"
               },
               "thumbIcon": {
                 "text": "color.action.primary.hover"
@@ -17037,7 +17037,7 @@
                 "fill": "color.content.on-action"
               },
               "io": {
-                "text": "color.action.primary.default"
+                "text": "color.content.on-action"
               },
               "thumbIcon": {
                 "text": "color.action.primary.default"
@@ -24811,6 +24811,12 @@
                 "font": "type.body-md",
                 "text": "color.content.secondary",
                 "paddingBottom": "spacing.inset-surface"
+              },
+              "contentRow": {
+                "gap": "spacing.gap-group"
+              },
+              "iconOffset": {
+                "width": "icon.medium"
               }
             }
           }
@@ -24885,9 +24891,6 @@
                 "paddingX": "spacing.inset-surface",
                 "paddingBottom": "spacing.inset-control",
                 "font": "type.body-sm"
-              },
-              "contentRow": {
-                "gap": "spacing.gap-group"
               },
               "iconOffset": {
                 "width": "size.compact"
@@ -33079,8 +33082,8 @@
                 "paddingX": "spacing.inset-surface",
                 "paddingY": "spacing.inset-surface",
                 "gap": "spacing.gap-control",
-                "stroke": "color.border.subtle",
-                "strokeTopWidth": "stroke.divider"
+                "stroke": "none",
+                "strokeTopWidth": "stroke.none"
               },
               "leading": {
                 "gap": "spacing.gap-tight",
@@ -33099,44 +33102,53 @@
             "Layout"
           ],
           "values": {
-            "plain|inline": {},
-            "plain|stacked": {},
-            "plain|equal": {},
+            "plain|inline": {
+              "root": {
+                "stroke": "color.border.subtle",
+                "strokeTopWidth": "stroke.divider"
+              }
+            },
+            "plain|stacked": {
+              "root": {
+                "stroke": "color.border.subtle",
+                "strokeTopWidth": "stroke.divider"
+              }
+            },
+            "plain|equal": {
+              "root": {
+                "stroke": "color.border.subtle",
+                "strokeTopWidth": "stroke.divider"
+              }
+            },
             "tray|inline": {
               "root": {
-                "strokeTopWidth": "stroke.none",
                 "paddingY": "spacing.inset-control"
               }
             },
             "tray|stacked": {
               "root": {
-                "strokeTopWidth": "stroke.none",
                 "paddingY": "spacing.inset-surface"
               }
             },
             "tray|equal": {
               "root": {
-                "strokeTopWidth": "stroke.none",
                 "paddingY": "spacing.inset-control"
               }
             },
             "simple|inline": {
               "root": {
-                "strokeTopWidth": "stroke.none",
                 "paddingX": "spacing.0",
                 "paddingY": "spacing.0"
               }
             },
             "simple|stacked": {
               "root": {
-                "strokeTopWidth": "stroke.none",
                 "paddingX": "spacing.0",
                 "paddingY": "spacing.0"
               }
             },
             "simple|equal": {
               "root": {
-                "strokeTopWidth": "stroke.none",
                 "paddingX": "spacing.0",
                 "paddingY": "spacing.0"
               }
