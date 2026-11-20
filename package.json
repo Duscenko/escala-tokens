@@ -37,7 +37,8 @@
     "typecheck:storybook": "tsc -p apps/storybook/tsconfig.json --noEmit",
     "gen:figma-palette": "tsx scripts/gen-figma-palette.ts",
     "gen:chart-ramps": "tsx scripts/gen-chart-ramps.ts",
-    "gen:contracts": "tsx scripts/gen-component-contracts.ts"
+    "gen:contracts": "tsx scripts/gen-component-contracts.ts",
+    "contracts:report": "tsx scripts/contracts-report.ts"
   },
   "dependencies": {
     "@radix-ui/react-icons": "^1.3.2",

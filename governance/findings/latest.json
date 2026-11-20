@@ -1,5 +1,5 @@
 {
-  "generated": "2026-11-19",
+  "generated": "2026-11-20",
   "findings": [
     {
       "id": "COL-002:Border/control",
@@ -814,6 +814,2010 @@
       "firstSeen": "2026-11-19",
       "lastSeen": "2026-11-19",
       "regression": false
+    },
+    {
+      "id": "DOC-001:IconButton:contract",
+      "rule": "DOC-001",
+      "severity": "warn",
+      "side": "code",
+      "entity": "IconButton",
+      "evidence": "contract lacks: human contract (design-plans/*-contract.md)",
+      "status": "Open",
+      "resolution": null,
+      "firstSeen": "2026-11-20",
+      "lastSeen": "2026-11-20",
+      "regression": false,
+      "source": "contracts:report",
+      "links": {
+        "contract": "https://github.com/Duscenko/escala-tokens/blob/main/spec/contracts/IconButton.json",
+        "figma": "https://www.figma.com/design/7j5zukN5HpihGVJMmyjA20/?node-id=627-785",
+        "storybook": "https://escala-storybook.vercel.app/?path=/story/buttons-iconbutton--playground"
+      }
+    },
+    {
+      "id": "MOT-002:CloseButton",
+      "rule": "MOT-002",
+      "severity": "error",
+      "side": "code",
+      "entity": "CloseButton",
+      "evidence": "State axis (Default · Hover · Pressed · Focused · Disabled) and no motion decision in the contract (recipes/motion.ts has no entry)",
+      "status": "Open",
+      "resolution": null,
+      "firstSeen": "2026-11-20",
+      "lastSeen": "2026-11-20",
+      "regression": false,
+      "source": "contracts:report",
+      "links": {
+        "contract": "https://github.com/Duscenko/escala-tokens/blob/main/spec/contracts/CloseButton.json",
+        "figma": "https://www.figma.com/design/7j5zukN5HpihGVJMmyjA20/?node-id=335-2",
+        "storybook": "https://escala-storybook.vercel.app/?path=/story/buttons-closebutton--playground"
+      }
+    },
+    {
+      "id": "MOT-002:TextLink",
+      "rule": "MOT-002",
+      "severity": "error",
+      "side": "code",
+      "entity": "TextLink",
+      "evidence": "State axis (Default · Hover · Pressed · Visited · Focused · Disabled) and no motion decision in the contract (recipes/motion.ts has no entry)",
+      "status": "Open",
+      "resolution": null,
+      "firstSeen": "2026-11-20",
+      "lastSeen": "2026-11-20",
+      "regression": false,
+      "source": "contracts:report",
+      "links": {
+        "contract": "https://github.com/Duscenko/escala-tokens/blob/main/spec/contracts/TextLink.json",
+        "figma": "https://www.figma.com/design/7j5zukN5HpihGVJMmyjA20/?node-id=342-14798",
+        "storybook": "https://escala-storybook.vercel.app/?path=/story/buttons-textlink--playground"
+      }
+    },
+    {
+      "id": "MOT-002:FABButton",
+      "rule": "MOT-002",
+      "severity": "error",
+      "side": "code",
+      "entity": "FABButton",
+      "evidence": "State axis (Default · Hover · Pressed · Focused · Disabled) and no motion decision in the contract (recipes/motion.ts has no entry)",
+      "status": "Open",
+      "resolution": null,
+      "firstSeen": "2026-11-20",
+      "lastSeen": "2026-11-20",
+      "regression": false,
+      "source": "contracts:report",
+      "links": {
+        "contract": "https://github.com/Duscenko/escala-tokens/blob/main/spec/contracts/FABButton.json",
+        "figma": "https://www.figma.com/design/7j5zukN5HpihGVJMmyjA20/?node-id=643-411",
+        "storybook": "https://escala-storybook.vercel.app/?path=/story/buttons-fabbutton--playground"
+      }
+    },
+    {
+      "id": "MOT-002:FABGroup",
+      "rule": "MOT-002",
+      "severity": "error",
+      "side": "code",
+      "entity": "FABGroup",
+      "evidence": "Open axis (false · true) and no motion decision in the contract (recipes/motion.ts has no entry)",
+      "status": "Open",
+      "resolution": null,
+      "firstSeen": "2026-11-20",
+      "lastSeen": "2026-11-20",
+      "regression": false,
+      "source": "contracts:report",
+      "links": {
+        "contract": "https://github.com/Duscenko/escala-tokens/blob/main/spec/contracts/FABGroup.json",
+        "figma": "https://www.figma.com/design/7j5zukN5HpihGVJMmyjA20/?node-id=643-411",
+        "storybook": "https://escala-storybook.vercel.app/?path=/story/buttons-fabbutton--fab-group-playground"
+      }
+    },
+    {
+      "id": "PAR-001:FABGroup:story/Open",
+      "rule": "PAR-001",
+      "severity": "error",
+      "side": "code",
+      "entity": "FABGroup",
+      "evidence": "Storybook control Open differs from the contract axis (false · true); details: npx vitest run contractGates",
+      "status": "Open",
+      "resolution": null,
+      "firstSeen": "2026-11-20",
+      "lastSeen": "2026-11-20",
+      "regression": false,
+      "source": "contracts:report",
+      "links": {
+        "contract": "https://github.com/Duscenko/escala-tokens/blob/main/spec/contracts/FABGroup.json",
+        "figma": "https://www.figma.com/design/7j5zukN5HpihGVJMmyjA20/?node-id=643-411",
+        "storybook": "https://escala-storybook.vercel.app/?path=/story/buttons-fabbutton--fab-group-playground"
+      }
+    },
+    {
+      "id": "MOT-002:SplitButton",
+      "rule": "MOT-002",
+      "severity": "error",
+      "side": "code",
+      "entity": "SplitButton",
+      "evidence": "Open axis (false · true) and no motion decision in the contract (recipes/motion.ts has no entry)",
+      "status": "Open",
+      "resolution": null,
+      "firstSeen": "2026-11-20",
+      "lastSeen": "2026-11-20",
+      "regression": false,
+      "source": "contracts:report",
+      "links": {
+        "contract": "https://github.com/Duscenko/escala-tokens/blob/main/spec/contracts/SplitButton.json",
+        "figma": "https://www.figma.com/design/7j5zukN5HpihGVJMmyjA20/?node-id=2391-78",
+        "storybook": "https://escala-storybook.vercel.app/?path=/story/buttons-splitbutton--playground"
+      }
+    },
+    {
+      "id": "DOC-001:ButtonGroupItem:contract",
+      "rule": "DOC-001",
+      "severity": "warn",
+      "side": "code",
+      "entity": "ButtonGroupItem",
+      "evidence": "contract lacks: human contract (design-plans/*-contract.md)",
+      "status": "Open",
+      "resolution": null,
+      "firstSeen": "2026-11-20",
+      "lastSeen": "2026-11-20",
+      "regression": false,
+      "source": "contracts:report",
+      "links": {
+        "contract": "https://github.com/Duscenko/escala-tokens/blob/main/spec/contracts/ButtonGroupItem.json",
+        "figma": "https://www.figma.com/design/7j5zukN5HpihGVJMmyjA20/?node-id=350-2",
+        "storybook": "https://escala-storybook.vercel.app/?path=/story/buttons-buttongroup--button-group-item-playground"
+      }
+    },
+    {
+      "id": "MOT-002:ButtonGroupItem",
+      "rule": "MOT-002",
+      "severity": "error",
+      "side": "code",
+      "entity": "ButtonGroupItem",
+      "evidence": "State axis (Default · Hover · Pressed · Focused · Disabled) and no motion decision in the contract (recipes/motion.ts has no entry)",
+      "status": "Open",
+      "resolution": null,
+      "firstSeen": "2026-11-20",
+      "lastSeen": "2026-11-20",
+      "regression": false,
+      "source": "contracts:report",
+      "links": {
+        "contract": "https://github.com/Duscenko/escala-tokens/blob/main/spec/contracts/ButtonGroupItem.json",
+        "figma": "https://www.figma.com/design/7j5zukN5HpihGVJMmyjA20/?node-id=350-2",
+        "storybook": "https://escala-storybook.vercel.app/?path=/story/buttons-buttongroup--button-group-item-playground"
+      }
+    },
+    {
+      "id": "DOC-001:ButtonGroupDivider:contract",
+      "rule": "DOC-001",
+      "severity": "warn",
+      "side": "code",
+      "entity": "ButtonGroupDivider",
+      "evidence": "contract lacks: human contract (design-plans/*-contract.md)",
+      "status": "Open",
+      "resolution": null,
+      "firstSeen": "2026-11-20",
+      "lastSeen": "2026-11-20",
+      "regression": false,
+      "source": "contracts:report",
+      "links": {
+        "contract": "https://github.com/Duscenko/escala-tokens/blob/main/spec/contracts/ButtonGroupDivider.json",
+        "figma": "https://www.figma.com/design/7j5zukN5HpihGVJMmyjA20/?node-id=350-2",
+        "storybook": "https://escala-storybook.vercel.app/?path=/story/buttons-buttongroup--button-group-divider-playground"
+      }
+    },
+    {
+      "id": "DOC-001:ReactionGroupTrigger:contract",
+      "rule": "DOC-001",
+      "severity": "warn",
+      "side": "code",
+      "entity": "ReactionGroupTrigger",
+      "evidence": "contract lacks: human contract (design-plans/*-contract.md)",
+      "status": "Open",
+      "resolution": null,
+      "firstSeen": "2026-11-20",
+      "lastSeen": "2026-11-20",
+      "regression": false,
+      "source": "contracts:report",
+      "links": {
+        "contract": "https://github.com/Duscenko/escala-tokens/blob/main/spec/contracts/ReactionGroupTrigger.json",
+        "figma": "https://www.figma.com/design/7j5zukN5HpihGVJMmyjA20/?node-id=2381-42",
+        "storybook": "https://escala-storybook.vercel.app/?path=/story/buttons-reactiongroup--reaction-group-trigger-playground"
+      }
+    },
+    {
+      "id": "DOC-001:ReactionGroupPopover:contract",
+      "rule": "DOC-001",
+      "severity": "warn",
+      "side": "code",
+      "entity": "ReactionGroupPopover",
+      "evidence": "contract lacks: human contract (design-plans/*-contract.md)",
+      "status": "Open",
+      "resolution": null,
+      "firstSeen": "2026-11-20",
+      "lastSeen": "2026-11-20",
+      "regression": false,
+      "source": "contracts:report",
+      "links": {
+        "contract": "https://github.com/Duscenko/escala-tokens/blob/main/spec/contracts/ReactionGroupPopover.json",
+        "figma": "https://www.figma.com/design/7j5zukN5HpihGVJMmyjA20/?node-id=2381-42",
+        "storybook": "https://escala-storybook.vercel.app/?path=/story/buttons-reactiongroup--reaction-group-popover-playground"
+      }
+    },
+    {
+      "id": "DOC-001:SocialLoginButton:contract",
+      "rule": "DOC-001",
+      "severity": "warn",
+      "side": "code",
+      "entity": "SocialLoginButton",
+      "evidence": "contract lacks: human contract (design-plans/*-contract.md)",
+      "status": "Open",
+      "resolution": null,
+      "firstSeen": "2026-11-20",
+      "lastSeen": "2026-11-20",
+      "regression": false,
+      "source": "contracts:report",
+      "links": {
+        "contract": "https://github.com/Duscenko/escala-tokens/blob/main/spec/contracts/SocialLoginButton.json",
+        "figma": "https://www.figma.com/design/7j5zukN5HpihGVJMmyjA20/?node-id=364-20",
+        "storybook": "https://escala-storybook.vercel.app/?path=/story/buttons-socialloginbutton--playground"
+      }
+    },
+    {
+      "id": "MOT-002:SocialLoginButton",
+      "rule": "MOT-002",
+      "severity": "error",
+      "side": "code",
+      "entity": "SocialLoginButton",
+      "evidence": "State axis (Default · Hover · Pressed · Focused · Disabled) and no motion decision in the contract (recipes/motion.ts has no entry)",
+      "status": "Open",
+      "resolution": null,
+      "firstSeen": "2026-11-20",
+      "lastSeen": "2026-11-20",
+      "regression": false,
+      "source": "contracts:report",
+      "links": {
+        "contract": "https://github.com/Duscenko/escala-tokens/blob/main/spec/contracts/SocialLoginButton.json",
+        "figma": "https://www.figma.com/design/7j5zukN5HpihGVJMmyjA20/?node-id=364-20",
+        "storybook": "https://escala-storybook.vercel.app/?path=/story/buttons-socialloginbutton--playground"
+      }
+    },
+    {
+      "id": "MOT-002:Textarea",
+      "rule": "MOT-002",
+      "severity": "error",
+      "side": "code",
+      "entity": "Textarea",
+      "evidence": "State axis (Default · Hover · Focused · Invalid · Loading · Disabled) and no motion decision in the contract (recipes/motion.ts has no entry)",
+      "status": "Open",
+      "resolution": null,
+      "firstSeen": "2026-11-20",
+      "lastSeen": "2026-11-20",
+      "regression": false,
+      "source": "contracts:report",
+      "links": {
+        "contract": "https://github.com/Duscenko/escala-tokens/blob/main/spec/contracts/Textarea.json",
+        "figma": "https://www.figma.com/design/7j5zukN5HpihGVJMmyjA20/?node-id=89-9",
+        "storybook": "https://escala-storybook.vercel.app/?path=/story/forms-textarea--playground"
+      }
+    },
+    {
+      "id": "MOT-002:InputOTP",
+      "rule": "MOT-002",
+      "severity": "error",
+      "side": "code",
+      "entity": "InputOTP",
+      "evidence": "State axis (Empty · Typing · Filled · Invalid · Disabled) and no motion decision in the contract (recipes/motion.ts has no entry)",
+      "status": "Open",
+      "resolution": null,
+      "firstSeen": "2026-11-20",
+      "lastSeen": "2026-11-20",
+      "regression": false,
+      "source": "contracts:report",
+      "links": {
+        "contract": "https://github.com/Duscenko/escala-tokens/blob/main/spec/contracts/InputOTP.json",
+        "figma": "https://www.figma.com/design/7j5zukN5HpihGVJMmyjA20/?node-id=89-6",
+        "storybook": "https://escala-storybook.vercel.app/?path=/story/forms-inputotp--playground"
+      }
+    },
+    {
+      "id": "DOC-001:InputOTPSlot:contract",
+      "rule": "DOC-001",
+      "severity": "warn",
+      "side": "code",
+      "entity": "InputOTPSlot",
+      "evidence": "contract lacks: human contract (design-plans/*-contract.md)",
+      "status": "Open",
+      "resolution": null,
+      "firstSeen": "2026-11-20",
+      "lastSeen": "2026-11-20",
+      "regression": false,
+      "source": "contracts:report",
+      "links": {
+        "contract": "https://github.com/Duscenko/escala-tokens/blob/main/spec/contracts/InputOTPSlot.json",
+        "figma": "https://www.figma.com/design/7j5zukN5HpihGVJMmyjA20/?node-id=89-6",
+        "storybook": "https://escala-storybook.vercel.app/?path=/story/forms-inputotp--input-otp-slot-playground"
+      }
+    },
+    {
+      "id": "MOT-002:NumberInput",
+      "rule": "MOT-002",
+      "severity": "error",
+      "side": "code",
+      "entity": "NumberInput",
+      "evidence": "State axis (Default · Hover · Focused · Invalid · Disabled) and no motion decision in the contract (recipes/motion.ts has no entry)",
+      "status": "Open",
+      "resolution": null,
+      "firstSeen": "2026-11-20",
+      "lastSeen": "2026-11-20",
+      "regression": false,
+      "source": "contracts:report",
+      "links": {
+        "contract": "https://github.com/Duscenko/escala-tokens/blob/main/spec/contracts/NumberInput.json",
+        "figma": "https://www.figma.com/design/7j5zukN5HpihGVJMmyjA20/?node-id=1107-2",
+        "storybook": "https://escala-storybook.vercel.app/?path=/story/forms-numberinput--playground"
+      }
+    },
+    {
+      "id": "DOC-001:InputTagChip:contract",
+      "rule": "DOC-001",
+      "severity": "warn",
+      "side": "code",
+      "entity": "InputTagChip",
+      "evidence": "contract lacks: human contract (design-plans/*-contract.md)",
+      "status": "Open",
+      "resolution": null,
+      "firstSeen": "2026-11-20",
+      "lastSeen": "2026-11-20",
+      "regression": false,
+      "source": "contracts:report",
+      "links": {
+        "contract": "https://github.com/Duscenko/escala-tokens/blob/main/spec/contracts/InputTagChip.json",
+        "figma": "https://www.figma.com/design/7j5zukN5HpihGVJMmyjA20/?node-id=89-8",
+        "storybook": "https://escala-storybook.vercel.app/?path=/story/forms-inputtag--input-tag-chip-playground"
+      }
+    },
+    {
+      "id": "DOC-001:InputTagOption:contract",
+      "rule": "DOC-001",
+      "severity": "warn",
+      "side": "code",
+      "entity": "InputTagOption",
+      "evidence": "contract lacks: human contract (design-plans/*-contract.md)",
+      "status": "Open",
+      "resolution": null,
+      "firstSeen": "2026-11-20",
+      "lastSeen": "2026-11-20",
+      "regression": false,
+      "source": "contracts:report",
+      "links": {
+        "contract": "https://github.com/Duscenko/escala-tokens/blob/main/spec/contracts/InputTagOption.json",
+        "figma": "https://www.figma.com/design/7j5zukN5HpihGVJMmyjA20/?node-id=89-8",
+        "storybook": "https://escala-storybook.vercel.app/?path=/story/forms-inputtag--input-tag-option-playground"
+      }
+    },
+    {
+      "id": "DOC-001:ComboboxPopover:contract",
+      "rule": "DOC-001",
+      "severity": "warn",
+      "side": "code",
+      "entity": "ComboboxPopover",
+      "evidence": "contract lacks: human contract (design-plans/*-contract.md)",
+      "status": "Open",
+      "resolution": null,
+      "firstSeen": "2026-11-20",
+      "lastSeen": "2026-11-20",
+      "regression": false,
+      "source": "contracts:report",
+      "links": {
+        "contract": "https://github.com/Duscenko/escala-tokens/blob/main/spec/contracts/ComboboxPopover.json",
+        "figma": "https://www.figma.com/design/7j5zukN5HpihGVJMmyjA20/?node-id=89-3",
+        "storybook": "https://escala-storybook.vercel.app/?path=/story/forms-combobox--combobox-popover-playground"
+      }
+    },
+    {
+      "id": "DOC-001:ComboboxItem:contract",
+      "rule": "DOC-001",
+      "severity": "warn",
+      "side": "code",
+      "entity": "ComboboxItem",
+      "evidence": "contract lacks: human contract (design-plans/*-contract.md)",
+      "status": "Open",
+      "resolution": null,
+      "firstSeen": "2026-11-20",
+      "lastSeen": "2026-11-20",
+      "regression": false,
+      "source": "contracts:report",
+      "links": {
+        "contract": "https://github.com/Duscenko/escala-tokens/blob/main/spec/contracts/ComboboxItem.json",
+        "figma": "https://www.figma.com/design/7j5zukN5HpihGVJMmyjA20/?node-id=89-3",
+        "storybook": "https://escala-storybook.vercel.app/?path=/story/forms-combobox--combobox-item-playground"
+      }
+    },
+    {
+      "id": "DOC-001:ComboboxGroupLabel:contract",
+      "rule": "DOC-001",
+      "severity": "warn",
+      "side": "code",
+      "entity": "ComboboxGroupLabel",
+      "evidence": "contract lacks: human contract (design-plans/*-contract.md)",
+      "status": "Open",
+      "resolution": null,
+      "firstSeen": "2026-11-20",
+      "lastSeen": "2026-11-20",
+      "regression": false,
+      "source": "contracts:report",
+      "links": {
+        "contract": "https://github.com/Duscenko/escala-tokens/blob/main/spec/contracts/ComboboxGroupLabel.json",
+        "figma": "https://www.figma.com/design/7j5zukN5HpihGVJMmyjA20/?node-id=89-3",
+        "storybook": "https://escala-storybook.vercel.app/?path=/story/forms-combobox--combobox-group-label-playground"
+      }
+    },
+    {
+      "id": "MOT-002:CheckboxItem",
+      "rule": "MOT-002",
+      "severity": "error",
+      "side": "code",
+      "entity": "CheckboxItem",
+      "evidence": "State axis (Default · Disabled · Invalid) and no motion decision in the contract (recipes/motion.ts has no entry)",
+      "status": "Open",
+      "resolution": null,
+      "firstSeen": "2026-11-20",
+      "lastSeen": "2026-11-20",
+      "regression": false,
+      "source": "contracts:report",
+      "links": {
+        "contract": "https://github.com/Duscenko/escala-tokens/blob/main/spec/contracts/CheckboxItem.json",
+        "figma": "https://www.figma.com/design/7j5zukN5HpihGVJMmyjA20/?node-id=1012-113047",
+        "storybook": "https://escala-storybook.vercel.app/?path=/story/forms-checkbox--checkbox-item-playground"
+      }
+    },
+    {
+      "id": "MOT-002:CheckboxGroup",
+      "rule": "MOT-002",
+      "severity": "error",
+      "side": "code",
+      "entity": "CheckboxGroup",
+      "evidence": "State axis (Default · Invalid · Disabled) and no motion decision in the contract (recipes/motion.ts has no entry)",
+      "status": "Open",
+      "resolution": null,
+      "firstSeen": "2026-11-20",
+      "lastSeen": "2026-11-20",
+      "regression": false,
+      "source": "contracts:report",
+      "links": {
+        "contract": "https://github.com/Duscenko/escala-tokens/blob/main/spec/contracts/CheckboxGroup.json",
+        "figma": "https://www.figma.com/design/7j5zukN5HpihGVJMmyjA20/?node-id=1012-113047",
+        "storybook": "https://escala-storybook.vercel.app/?path=/story/forms-checkbox--checkbox-group-playground"
+      }
+    },
+    {
+      "id": "DOC-001:RadioGroup:contract",
+      "rule": "DOC-001",
+      "severity": "warn",
+      "side": "code",
+      "entity": "RadioGroup",
+      "evidence": "contract lacks: human contract (design-plans/*-contract.md)",
+      "status": "Open",
+      "resolution": null,
+      "firstSeen": "2026-11-20",
+      "lastSeen": "2026-11-20",
+      "regression": false,
+      "source": "contracts:report",
+      "links": {
+        "contract": "https://github.com/Duscenko/escala-tokens/blob/main/spec/contracts/RadioGroup.json",
+        "figma": "https://www.figma.com/design/7j5zukN5HpihGVJMmyjA20/?node-id=89-15",
+        "storybook": "https://escala-storybook.vercel.app/?path=/story/forms-radiogroup--playground"
+      }
+    },
+    {
+      "id": "MOT-002:SwitchGroup",
+      "rule": "MOT-002",
+      "severity": "error",
+      "side": "code",
+      "entity": "SwitchGroup",
+      "evidence": "State axis (Default · Disabled · Invalid · Loading) and no motion decision in the contract (recipes/motion.ts has no entry)",
+      "status": "Open",
+      "resolution": null,
+      "firstSeen": "2026-11-20",
+      "lastSeen": "2026-11-20",
+      "regression": false,
+      "source": "contracts:report",
+      "links": {
+        "contract": "https://github.com/Duscenko/escala-tokens/blob/main/spec/contracts/SwitchGroup.json",
+        "figma": "https://www.figma.com/design/7j5zukN5HpihGVJMmyjA20/?node-id=89-19",
+        "storybook": "https://escala-storybook.vercel.app/?path=/story/forms-switch--switch-group-playground"
+      }
+    },
+    {
+      "id": "MOT-002:Slider",
+      "rule": "MOT-002",
+      "severity": "error",
+      "side": "code",
+      "entity": "Slider",
+      "evidence": "State axis (Default · Dragging · Disabled) and no motion decision in the contract (recipes/motion.ts has no entry)",
+      "status": "Open",
+      "resolution": null,
+      "firstSeen": "2026-11-20",
+      "lastSeen": "2026-11-20",
+      "regression": false,
+      "source": "contracts:report",
+      "links": {
+        "contract": "https://github.com/Duscenko/escala-tokens/blob/main/spec/contracts/Slider.json",
+        "figma": "https://www.figma.com/design/7j5zukN5HpihGVJMmyjA20/?node-id=89-18",
+        "storybook": "https://escala-storybook.vercel.app/?path=/story/forms-slider--playground"
+      }
+    },
+    {
+      "id": "DOC-001:Label:contract",
+      "rule": "DOC-001",
+      "severity": "warn",
+      "side": "code",
+      "entity": "Label",
+      "evidence": "contract lacks: figma set (codeOnly), human contract (design-plans/*-contract.md)",
+      "status": "Open",
+      "resolution": null,
+      "firstSeen": "2026-11-20",
+      "lastSeen": "2026-11-20",
+      "regression": false,
+      "source": "contracts:report",
+      "links": {
+        "contract": "https://github.com/Duscenko/escala-tokens/blob/main/spec/contracts/Label.json",
+        "storybook": "https://escala-storybook.vercel.app/?path=/story/forms-label--playground"
+      }
+    },
+    {
+      "id": "DOC-001:PasswordStrengthMeter:contract",
+      "rule": "DOC-001",
+      "severity": "warn",
+      "side": "code",
+      "entity": "PasswordStrengthMeter",
+      "evidence": "contract lacks: human contract (design-plans/*-contract.md)",
+      "status": "Open",
+      "resolution": null,
+      "firstSeen": "2026-11-20",
+      "lastSeen": "2026-11-20",
+      "regression": false,
+      "source": "contracts:report",
+      "links": {
+        "contract": "https://github.com/Duscenko/escala-tokens/blob/main/spec/contracts/PasswordStrengthMeter.json",
+        "figma": "https://www.figma.com/design/7j5zukN5HpihGVJMmyjA20/?node-id=89-14",
+        "storybook": "https://escala-storybook.vercel.app/?path=/story/forms-passwordstrength--password-strength-meter-playground"
+      }
+    },
+    {
+      "id": "DOC-001:PasswordStrengthRule:contract",
+      "rule": "DOC-001",
+      "severity": "warn",
+      "side": "code",
+      "entity": "PasswordStrengthRule",
+      "evidence": "contract lacks: human contract (design-plans/*-contract.md)",
+      "status": "Open",
+      "resolution": null,
+      "firstSeen": "2026-11-20",
+      "lastSeen": "2026-11-20",
+      "regression": false,
+      "source": "contracts:report",
+      "links": {
+        "contract": "https://github.com/Duscenko/escala-tokens/blob/main/spec/contracts/PasswordStrengthRule.json",
+        "figma": "https://www.figma.com/design/7j5zukN5HpihGVJMmyjA20/?node-id=89-14",
+        "storybook": "https://escala-storybook.vercel.app/?path=/story/forms-passwordstrength--password-strength-rule-playground"
+      }
+    },
+    {
+      "id": "DOC-001:Badge:contract",
+      "rule": "DOC-001",
+      "severity": "warn",
+      "side": "code",
+      "entity": "Badge",
+      "evidence": "contract lacks: behaviour",
+      "status": "Open",
+      "resolution": null,
+      "firstSeen": "2026-11-20",
+      "lastSeen": "2026-11-20",
+      "regression": false,
+      "source": "contracts:report",
+      "links": {
+        "contract": "https://github.com/Duscenko/escala-tokens/blob/main/spec/contracts/Badge.json",
+        "figma": "https://www.figma.com/design/7j5zukN5HpihGVJMmyjA20/?node-id=90-3",
+        "storybook": "https://escala-storybook.vercel.app/?path=/story/indicators-badge--playground"
+      }
+    },
+    {
+      "id": "DOC-001:ProgressLine:contract",
+      "rule": "DOC-001",
+      "severity": "warn",
+      "side": "code",
+      "entity": "ProgressLine",
+      "evidence": "contract lacks: human contract (design-plans/*-contract.md)",
+      "status": "Open",
+      "resolution": null,
+      "firstSeen": "2026-11-20",
+      "lastSeen": "2026-11-20",
+      "regression": false,
+      "source": "contracts:report",
+      "links": {
+        "contract": "https://github.com/Duscenko/escala-tokens/blob/main/spec/contracts/ProgressLine.json",
+        "figma": "https://www.figma.com/design/7j5zukN5HpihGVJMmyjA20/?node-id=90-6",
+        "storybook": "https://escala-storybook.vercel.app/?path=/story/indicators-progressline--playground"
+      }
+    },
+    {
+      "id": "DOC-001:ProgressCircle:contract",
+      "rule": "DOC-001",
+      "severity": "warn",
+      "side": "code",
+      "entity": "ProgressCircle",
+      "evidence": "contract lacks: human contract (design-plans/*-contract.md)",
+      "status": "Open",
+      "resolution": null,
+      "firstSeen": "2026-11-20",
+      "lastSeen": "2026-11-20",
+      "regression": false,
+      "source": "contracts:report",
+      "links": {
+        "contract": "https://github.com/Duscenko/escala-tokens/blob/main/spec/contracts/ProgressCircle.json",
+        "figma": "https://www.figma.com/design/7j5zukN5HpihGVJMmyjA20/?node-id=90-6",
+        "storybook": "https://escala-storybook.vercel.app/?path=/story/indicators-progresscircle--playground"
+      }
+    },
+    {
+      "id": "DOC-001:Spinner:contract",
+      "rule": "DOC-001",
+      "severity": "warn",
+      "side": "code",
+      "entity": "Spinner",
+      "evidence": "contract lacks: figma set (codeOnly), human contract (design-plans/*-contract.md)",
+      "status": "Open",
+      "resolution": null,
+      "firstSeen": "2026-11-20",
+      "lastSeen": "2026-11-20",
+      "regression": false,
+      "source": "contracts:report",
+      "links": {
+        "contract": "https://github.com/Duscenko/escala-tokens/blob/main/spec/contracts/Spinner.json",
+        "storybook": "https://escala-storybook.vercel.app/?path=/story/feedback-spinner--playground"
+      }
+    },
+    {
+      "id": "DOC-001:FeaturedIcon:contract",
+      "rule": "DOC-001",
+      "severity": "warn",
+      "side": "code",
+      "entity": "FeaturedIcon",
+      "evidence": "contract lacks: behaviour",
+      "status": "Open",
+      "resolution": null,
+      "firstSeen": "2026-11-20",
+      "lastSeen": "2026-11-20",
+      "regression": false,
+      "source": "contracts:report",
+      "links": {
+        "contract": "https://github.com/Duscenko/escala-tokens/blob/main/spec/contracts/FeaturedIcon.json",
+        "figma": "https://www.figma.com/design/7j5zukN5HpihGVJMmyjA20/?node-id=1119-10568",
+        "storybook": "https://escala-storybook.vercel.app/?path=/story/indicators-featuredicon--playground"
+      }
+    },
+    {
+      "id": "DOC-001:Kbd:contract",
+      "rule": "DOC-001",
+      "severity": "warn",
+      "side": "code",
+      "entity": "Kbd",
+      "evidence": "contract lacks: behaviour",
+      "status": "Open",
+      "resolution": null,
+      "firstSeen": "2026-11-20",
+      "lastSeen": "2026-11-20",
+      "regression": false,
+      "source": "contracts:report",
+      "links": {
+        "contract": "https://github.com/Duscenko/escala-tokens/blob/main/spec/contracts/Kbd.json",
+        "figma": "https://www.figma.com/design/7j5zukN5HpihGVJMmyjA20/?node-id=949-965",
+        "storybook": "https://escala-storybook.vercel.app/?path=/story/indicators-kbd--playground"
+      }
+    },
+    {
+      "id": "DOC-001:Card:contract",
+      "rule": "DOC-001",
+      "severity": "warn",
+      "side": "code",
+      "entity": "Card",
+      "evidence": "contract lacks: figma set (codeOnly), human contract (design-plans/*-contract.md), behaviour",
+      "status": "Open",
+      "resolution": null,
+      "firstSeen": "2026-11-20",
+      "lastSeen": "2026-11-20",
+      "regression": false,
+      "source": "contracts:report",
+      "links": {
+        "contract": "https://github.com/Duscenko/escala-tokens/blob/main/spec/contracts/Card.json",
+        "storybook": "https://escala-storybook.vercel.app/?path=/story/content-surfaces-card--playground"
+      }
+    },
+    {
+      "id": "DOC-001:AccordionItem:contract",
+      "rule": "DOC-001",
+      "severity": "warn",
+      "side": "code",
+      "entity": "AccordionItem",
+      "evidence": "contract lacks: human contract (design-plans/*-contract.md)",
+      "status": "Open",
+      "resolution": null,
+      "firstSeen": "2026-11-20",
+      "lastSeen": "2026-11-20",
+      "regression": false,
+      "source": "contracts:report",
+      "links": {
+        "contract": "https://github.com/Duscenko/escala-tokens/blob/main/spec/contracts/AccordionItem.json",
+        "figma": "https://www.figma.com/design/7j5zukN5HpihGVJMmyjA20/?node-id=89-25",
+        "storybook": "https://escala-storybook.vercel.app/?path=/story/content-surfaces-accordion--accordion-item-playground"
+      }
+    },
+    {
+      "id": "DOC-001:Image:contract",
+      "rule": "DOC-001",
+      "severity": "warn",
+      "side": "code",
+      "entity": "Image",
+      "evidence": "contract lacks: behaviour",
+      "status": "Open",
+      "resolution": null,
+      "firstSeen": "2026-11-20",
+      "lastSeen": "2026-11-20",
+      "regression": false,
+      "source": "contracts:report",
+      "links": {
+        "contract": "https://github.com/Duscenko/escala-tokens/blob/main/spec/contracts/Image.json",
+        "figma": "https://www.figma.com/design/7j5zukN5HpihGVJMmyjA20/?node-id=1126-2",
+        "storybook": "https://escala-storybook.vercel.app/?path=/story/content-surfaces-image--playground"
+      }
+    },
+    {
+      "id": "PAR-001:Modal:story/Layout",
+      "rule": "PAR-001",
+      "severity": "error",
+      "side": "code",
+      "entity": "Modal",
+      "evidence": "Storybook control Layout differs from the contract axis (tray · simple); details: npx vitest run contractGates",
+      "status": "Open",
+      "resolution": null,
+      "firstSeen": "2026-11-20",
+      "lastSeen": "2026-11-20",
+      "regression": false,
+      "source": "contracts:report",
+      "links": {
+        "contract": "https://github.com/Duscenko/escala-tokens/blob/main/spec/contracts/Modal.json",
+        "figma": "https://www.figma.com/design/7j5zukN5HpihGVJMmyjA20/?node-id=931-87046",
+        "storybook": "https://escala-storybook.vercel.app/?path=/story/content-surfaces-modal--playground"
+      }
+    },
+    {
+      "id": "DOC-001:ModalHeader:contract",
+      "rule": "DOC-001",
+      "severity": "warn",
+      "side": "code",
+      "entity": "ModalHeader",
+      "evidence": "contract lacks: human contract (design-plans/*-contract.md)",
+      "status": "Open",
+      "resolution": null,
+      "firstSeen": "2026-11-20",
+      "lastSeen": "2026-11-20",
+      "regression": false,
+      "source": "contracts:report",
+      "links": {
+        "contract": "https://github.com/Duscenko/escala-tokens/blob/main/spec/contracts/ModalHeader.json",
+        "figma": "https://www.figma.com/design/7j5zukN5HpihGVJMmyjA20/?node-id=931-87046",
+        "storybook": "https://escala-storybook.vercel.app/?path=/story/content-surfaces-modal--modal-header-playground"
+      }
+    },
+    {
+      "id": "DOC-001:ModalFooter:contract",
+      "rule": "DOC-001",
+      "severity": "warn",
+      "side": "code",
+      "entity": "ModalFooter",
+      "evidence": "contract lacks: human contract (design-plans/*-contract.md)",
+      "status": "Open",
+      "resolution": null,
+      "firstSeen": "2026-11-20",
+      "lastSeen": "2026-11-20",
+      "regression": false,
+      "source": "contracts:report",
+      "links": {
+        "contract": "https://github.com/Duscenko/escala-tokens/blob/main/spec/contracts/ModalFooter.json",
+        "figma": "https://www.figma.com/design/7j5zukN5HpihGVJMmyjA20/?node-id=931-87046",
+        "storybook": "https://escala-storybook.vercel.app/?path=/story/content-surfaces-modal--modal-footer-playground"
+      }
+    },
+    {
+      "id": "PAR-001:ModalFooter:story/Surface",
+      "rule": "PAR-001",
+      "severity": "error",
+      "side": "code",
+      "entity": "ModalFooter",
+      "evidence": "Storybook control Surface differs from the contract axis (plain · tray · simple); details: npx vitest run contractGates",
+      "status": "Open",
+      "resolution": null,
+      "firstSeen": "2026-11-20",
+      "lastSeen": "2026-11-20",
+      "regression": false,
+      "source": "contracts:report",
+      "links": {
+        "contract": "https://github.com/Duscenko/escala-tokens/blob/main/spec/contracts/ModalFooter.json",
+        "figma": "https://www.figma.com/design/7j5zukN5HpihGVJMmyjA20/?node-id=931-87046",
+        "storybook": "https://escala-storybook.vercel.app/?path=/story/content-surfaces-modal--modal-footer-playground"
+      }
+    },
+    {
+      "id": "DOC-001:PopoverFooter:contract",
+      "rule": "DOC-001",
+      "severity": "warn",
+      "side": "code",
+      "entity": "PopoverFooter",
+      "evidence": "contract lacks: human contract (design-plans/*-contract.md)",
+      "status": "Open",
+      "resolution": null,
+      "firstSeen": "2026-11-20",
+      "lastSeen": "2026-11-20",
+      "regression": false,
+      "source": "contracts:report",
+      "links": {
+        "contract": "https://github.com/Duscenko/escala-tokens/blob/main/spec/contracts/PopoverFooter.json",
+        "figma": "https://www.figma.com/design/7j5zukN5HpihGVJMmyjA20/?node-id=931-87047",
+        "storybook": "https://escala-storybook.vercel.app/?path=/story/content-surfaces-popover--popover-footer-playground"
+      }
+    },
+    {
+      "id": "DOC-001:TooltipContent:contract",
+      "rule": "DOC-001",
+      "severity": "warn",
+      "side": "code",
+      "entity": "TooltipContent",
+      "evidence": "contract lacks: human contract (design-plans/*-contract.md)",
+      "status": "Open",
+      "resolution": null,
+      "firstSeen": "2026-11-20",
+      "lastSeen": "2026-11-20",
+      "regression": false,
+      "source": "contracts:report",
+      "links": {
+        "contract": "https://github.com/Duscenko/escala-tokens/blob/main/spec/contracts/TooltipContent.json",
+        "figma": "https://www.figma.com/design/7j5zukN5HpihGVJMmyjA20/?node-id=89-41",
+        "storybook": "https://escala-storybook.vercel.app/?path=/story/content-surfaces-tooltip--tooltip-content-playground"
+      }
+    },
+    {
+      "id": "DOC-001:TooltipInfoTrigger:contract",
+      "rule": "DOC-001",
+      "severity": "warn",
+      "side": "code",
+      "entity": "TooltipInfoTrigger",
+      "evidence": "contract lacks: human contract (design-plans/*-contract.md)",
+      "status": "Open",
+      "resolution": null,
+      "firstSeen": "2026-11-20",
+      "lastSeen": "2026-11-20",
+      "regression": false,
+      "source": "contracts:report",
+      "links": {
+        "contract": "https://github.com/Duscenko/escala-tokens/blob/main/spec/contracts/TooltipInfoTrigger.json",
+        "figma": "https://www.figma.com/design/7j5zukN5HpihGVJMmyjA20/?node-id=89-41",
+        "storybook": "https://escala-storybook.vercel.app/?path=/story/content-surfaces-tooltip--tooltip-info-trigger-playground"
+      }
+    },
+    {
+      "id": "MOT-002:TooltipInfoTrigger",
+      "rule": "MOT-002",
+      "severity": "error",
+      "side": "code",
+      "entity": "TooltipInfoTrigger",
+      "evidence": "State axis (Default · Hover · Open · Focused) and no motion decision in the contract (recipes/motion.ts has no entry)",
+      "status": "Open",
+      "resolution": null,
+      "firstSeen": "2026-11-20",
+      "lastSeen": "2026-11-20",
+      "regression": false,
+      "source": "contracts:report",
+      "links": {
+        "contract": "https://github.com/Duscenko/escala-tokens/blob/main/spec/contracts/TooltipInfoTrigger.json",
+        "figma": "https://www.figma.com/design/7j5zukN5HpihGVJMmyjA20/?node-id=89-41",
+        "storybook": "https://escala-storybook.vercel.app/?path=/story/content-surfaces-tooltip--tooltip-info-trigger-playground"
+      }
+    },
+    {
+      "id": "DOC-001:ScrollBar:contract",
+      "rule": "DOC-001",
+      "severity": "warn",
+      "side": "code",
+      "entity": "ScrollBar",
+      "evidence": "contract lacks: human contract (design-plans/*-contract.md)",
+      "status": "Open",
+      "resolution": null,
+      "firstSeen": "2026-11-20",
+      "lastSeen": "2026-11-20",
+      "regression": false,
+      "source": "contracts:report",
+      "links": {
+        "contract": "https://github.com/Duscenko/escala-tokens/blob/main/spec/contracts/ScrollBar.json",
+        "figma": "https://www.figma.com/design/7j5zukN5HpihGVJMmyjA20/?node-id=931-87048",
+        "storybook": "https://escala-storybook.vercel.app/?path=/story/content-surfaces-scrollarea--scroll-bar-playground"
+      }
+    },
+    {
+      "id": "DOC-001:TableCell:contract",
+      "rule": "DOC-001",
+      "severity": "warn",
+      "side": "code",
+      "entity": "TableCell",
+      "evidence": "contract lacks: human contract (design-plans/*-contract.md)",
+      "status": "Open",
+      "resolution": null,
+      "firstSeen": "2026-11-20",
+      "lastSeen": "2026-11-20",
+      "regression": false,
+      "source": "contracts:report",
+      "links": {
+        "contract": "https://github.com/Duscenko/escala-tokens/blob/main/spec/contracts/TableCell.json",
+        "figma": "https://www.figma.com/design/7j5zukN5HpihGVJMmyjA20/?node-id=1023-120189",
+        "storybook": "https://escala-storybook.vercel.app/?path=/story/content-surfaces-table--table-cell-playground"
+      }
+    },
+    {
+      "id": "MOT-002:TableCell",
+      "rule": "MOT-002",
+      "severity": "error",
+      "side": "code",
+      "entity": "TableCell",
+      "evidence": "State axis (Default · Disabled) and no motion decision in the contract (recipes/motion.ts has no entry)",
+      "status": "Open",
+      "resolution": null,
+      "firstSeen": "2026-11-20",
+      "lastSeen": "2026-11-20",
+      "regression": false,
+      "source": "contracts:report",
+      "links": {
+        "contract": "https://github.com/Duscenko/escala-tokens/blob/main/spec/contracts/TableCell.json",
+        "figma": "https://www.figma.com/design/7j5zukN5HpihGVJMmyjA20/?node-id=1023-120189",
+        "storybook": "https://escala-storybook.vercel.app/?path=/story/content-surfaces-table--table-cell-playground"
+      }
+    },
+    {
+      "id": "DOC-001:TableHead:contract",
+      "rule": "DOC-001",
+      "severity": "warn",
+      "side": "code",
+      "entity": "TableHead",
+      "evidence": "contract lacks: human contract (design-plans/*-contract.md)",
+      "status": "Open",
+      "resolution": null,
+      "firstSeen": "2026-11-20",
+      "lastSeen": "2026-11-20",
+      "regression": false,
+      "source": "contracts:report",
+      "links": {
+        "contract": "https://github.com/Duscenko/escala-tokens/blob/main/spec/contracts/TableHead.json",
+        "figma": "https://www.figma.com/design/7j5zukN5HpihGVJMmyjA20/?node-id=1023-120189",
+        "storybook": "https://escala-storybook.vercel.app/?path=/story/content-surfaces-table--table-head-playground"
+      }
+    },
+    {
+      "id": "DOC-001:TableMediaCell:contract",
+      "rule": "DOC-001",
+      "severity": "warn",
+      "side": "code",
+      "entity": "TableMediaCell",
+      "evidence": "contract lacks: human contract (design-plans/*-contract.md)",
+      "status": "Open",
+      "resolution": null,
+      "firstSeen": "2026-11-20",
+      "lastSeen": "2026-11-20",
+      "regression": false,
+      "source": "contracts:report",
+      "links": {
+        "contract": "https://github.com/Duscenko/escala-tokens/blob/main/spec/contracts/TableMediaCell.json",
+        "figma": "https://www.figma.com/design/7j5zukN5HpihGVJMmyjA20/?node-id=1023-120189",
+        "storybook": "https://escala-storybook.vercel.app/?path=/story/content-surfaces-table--table-media-cell-playground"
+      }
+    },
+    {
+      "id": "MOT-002:TableMediaCell",
+      "rule": "MOT-002",
+      "severity": "error",
+      "side": "code",
+      "entity": "TableMediaCell",
+      "evidence": "State axis (Default · Disabled) and no motion decision in the contract (recipes/motion.ts has no entry)",
+      "status": "Open",
+      "resolution": null,
+      "firstSeen": "2026-11-20",
+      "lastSeen": "2026-11-20",
+      "regression": false,
+      "source": "contracts:report",
+      "links": {
+        "contract": "https://github.com/Duscenko/escala-tokens/blob/main/spec/contracts/TableMediaCell.json",
+        "figma": "https://www.figma.com/design/7j5zukN5HpihGVJMmyjA20/?node-id=1023-120189",
+        "storybook": "https://escala-storybook.vercel.app/?path=/story/content-surfaces-table--table-media-cell-playground"
+      }
+    },
+    {
+      "id": "DOC-001:TableTrendCell:contract",
+      "rule": "DOC-001",
+      "severity": "warn",
+      "side": "code",
+      "entity": "TableTrendCell",
+      "evidence": "contract lacks: human contract (design-plans/*-contract.md)",
+      "status": "Open",
+      "resolution": null,
+      "firstSeen": "2026-11-20",
+      "lastSeen": "2026-11-20",
+      "regression": false,
+      "source": "contracts:report",
+      "links": {
+        "contract": "https://github.com/Duscenko/escala-tokens/blob/main/spec/contracts/TableTrendCell.json",
+        "figma": "https://www.figma.com/design/7j5zukN5HpihGVJMmyjA20/?node-id=1023-120189",
+        "storybook": "https://escala-storybook.vercel.app/?path=/story/content-surfaces-table--table-trend-cell-playground"
+      }
+    },
+    {
+      "id": "MOT-002:TableTrendCell",
+      "rule": "MOT-002",
+      "severity": "error",
+      "side": "code",
+      "entity": "TableTrendCell",
+      "evidence": "State axis (Default · Disabled) and no motion decision in the contract (recipes/motion.ts has no entry)",
+      "status": "Open",
+      "resolution": null,
+      "firstSeen": "2026-11-20",
+      "lastSeen": "2026-11-20",
+      "regression": false,
+      "source": "contracts:report",
+      "links": {
+        "contract": "https://github.com/Duscenko/escala-tokens/blob/main/spec/contracts/TableTrendCell.json",
+        "figma": "https://www.figma.com/design/7j5zukN5HpihGVJMmyjA20/?node-id=1023-120189",
+        "storybook": "https://escala-storybook.vercel.app/?path=/story/content-surfaces-table--table-trend-cell-playground"
+      }
+    },
+    {
+      "id": "DOC-001:TableResizer:contract",
+      "rule": "DOC-001",
+      "severity": "warn",
+      "side": "code",
+      "entity": "TableResizer",
+      "evidence": "contract lacks: human contract (design-plans/*-contract.md)",
+      "status": "Open",
+      "resolution": null,
+      "firstSeen": "2026-11-20",
+      "lastSeen": "2026-11-20",
+      "regression": false,
+      "source": "contracts:report",
+      "links": {
+        "contract": "https://github.com/Duscenko/escala-tokens/blob/main/spec/contracts/TableResizer.json",
+        "figma": "https://www.figma.com/design/7j5zukN5HpihGVJMmyjA20/?node-id=1023-120189",
+        "storybook": "https://escala-storybook.vercel.app/?path=/story/content-surfaces-table--table-resizer-playground"
+      }
+    },
+    {
+      "id": "DOC-001:TableRow:contract",
+      "rule": "DOC-001",
+      "severity": "warn",
+      "side": "code",
+      "entity": "TableRow",
+      "evidence": "contract lacks: human contract (design-plans/*-contract.md)",
+      "status": "Open",
+      "resolution": null,
+      "firstSeen": "2026-11-20",
+      "lastSeen": "2026-11-20",
+      "regression": false,
+      "source": "contracts:report",
+      "links": {
+        "contract": "https://github.com/Duscenko/escala-tokens/blob/main/spec/contracts/TableRow.json",
+        "figma": "https://www.figma.com/design/7j5zukN5HpihGVJMmyjA20/?node-id=1023-120189",
+        "storybook": "https://escala-storybook.vercel.app/?path=/story/content-surfaces-table--table-row-playground"
+      }
+    },
+    {
+      "id": "DOC-001:TableHeader:contract",
+      "rule": "DOC-001",
+      "severity": "warn",
+      "side": "code",
+      "entity": "TableHeader",
+      "evidence": "contract lacks: human contract (design-plans/*-contract.md)",
+      "status": "Open",
+      "resolution": null,
+      "firstSeen": "2026-11-20",
+      "lastSeen": "2026-11-20",
+      "regression": false,
+      "source": "contracts:report",
+      "links": {
+        "contract": "https://github.com/Duscenko/escala-tokens/blob/main/spec/contracts/TableHeader.json",
+        "figma": "https://www.figma.com/design/7j5zukN5HpihGVJMmyjA20/?node-id=1023-120189",
+        "storybook": "https://escala-storybook.vercel.app/?path=/story/content-surfaces-table--table-header-playground"
+      }
+    },
+    {
+      "id": "DOC-001:TableFooter:contract",
+      "rule": "DOC-001",
+      "severity": "warn",
+      "side": "code",
+      "entity": "TableFooter",
+      "evidence": "contract lacks: human contract (design-plans/*-contract.md)",
+      "status": "Open",
+      "resolution": null,
+      "firstSeen": "2026-11-20",
+      "lastSeen": "2026-11-20",
+      "regression": false,
+      "source": "contracts:report",
+      "links": {
+        "contract": "https://github.com/Duscenko/escala-tokens/blob/main/spec/contracts/TableFooter.json",
+        "figma": "https://www.figma.com/design/7j5zukN5HpihGVJMmyjA20/?node-id=1023-120189",
+        "storybook": "https://escala-storybook.vercel.app/?path=/story/content-surfaces-table--table-footer-playground"
+      }
+    },
+    {
+      "id": "DOC-001:TableCaption:contract",
+      "rule": "DOC-001",
+      "severity": "warn",
+      "side": "code",
+      "entity": "TableCaption",
+      "evidence": "contract lacks: human contract (design-plans/*-contract.md)",
+      "status": "Open",
+      "resolution": null,
+      "firstSeen": "2026-11-20",
+      "lastSeen": "2026-11-20",
+      "regression": false,
+      "source": "contracts:report",
+      "links": {
+        "contract": "https://github.com/Duscenko/escala-tokens/blob/main/spec/contracts/TableCaption.json",
+        "figma": "https://www.figma.com/design/7j5zukN5HpihGVJMmyjA20/?node-id=1023-120189",
+        "storybook": "https://escala-storybook.vercel.app/?path=/story/content-surfaces-table--table-caption-playground"
+      }
+    },
+    {
+      "id": "DOC-001:TableDropIndicator:contract",
+      "rule": "DOC-001",
+      "severity": "warn",
+      "side": "code",
+      "entity": "TableDropIndicator",
+      "evidence": "contract lacks: human contract (design-plans/*-contract.md)",
+      "status": "Open",
+      "resolution": null,
+      "firstSeen": "2026-11-20",
+      "lastSeen": "2026-11-20",
+      "regression": false,
+      "source": "contracts:report",
+      "links": {
+        "contract": "https://github.com/Duscenko/escala-tokens/blob/main/spec/contracts/TableDropIndicator.json",
+        "figma": "https://www.figma.com/design/7j5zukN5HpihGVJMmyjA20/?node-id=1023-120189",
+        "storybook": "https://escala-storybook.vercel.app/?path=/story/content-surfaces-table--table-drop-indicator-playground"
+      }
+    },
+    {
+      "id": "DOC-001:TableEmpty:contract",
+      "rule": "DOC-001",
+      "severity": "warn",
+      "side": "code",
+      "entity": "TableEmpty",
+      "evidence": "contract lacks: human contract (design-plans/*-contract.md)",
+      "status": "Open",
+      "resolution": null,
+      "firstSeen": "2026-11-20",
+      "lastSeen": "2026-11-20",
+      "regression": false,
+      "source": "contracts:report",
+      "links": {
+        "contract": "https://github.com/Duscenko/escala-tokens/blob/main/spec/contracts/TableEmpty.json",
+        "figma": "https://www.figma.com/design/7j5zukN5HpihGVJMmyjA20/?node-id=1023-120189",
+        "storybook": "https://escala-storybook.vercel.app/?path=/story/content-surfaces-table--table-empty-playground"
+      }
+    },
+    {
+      "id": "DOC-001:TableLoading:contract",
+      "rule": "DOC-001",
+      "severity": "warn",
+      "side": "code",
+      "entity": "TableLoading",
+      "evidence": "contract lacks: human contract (design-plans/*-contract.md)",
+      "status": "Open",
+      "resolution": null,
+      "firstSeen": "2026-11-20",
+      "lastSeen": "2026-11-20",
+      "regression": false,
+      "source": "contracts:report",
+      "links": {
+        "contract": "https://github.com/Duscenko/escala-tokens/blob/main/spec/contracts/TableLoading.json",
+        "figma": "https://www.figma.com/design/7j5zukN5HpihGVJMmyjA20/?node-id=1023-120189",
+        "storybook": "https://escala-storybook.vercel.app/?path=/story/content-surfaces-table--table-loading-playground"
+      }
+    },
+    {
+      "id": "DOC-001:TableLoadMore:contract",
+      "rule": "DOC-001",
+      "severity": "warn",
+      "side": "code",
+      "entity": "TableLoadMore",
+      "evidence": "contract lacks: human contract (design-plans/*-contract.md)",
+      "status": "Open",
+      "resolution": null,
+      "firstSeen": "2026-11-20",
+      "lastSeen": "2026-11-20",
+      "regression": false,
+      "source": "contracts:report",
+      "links": {
+        "contract": "https://github.com/Duscenko/escala-tokens/blob/main/spec/contracts/TableLoadMore.json",
+        "figma": "https://www.figma.com/design/7j5zukN5HpihGVJMmyjA20/?node-id=1023-120189",
+        "storybook": "https://escala-storybook.vercel.app/?path=/story/content-surfaces-table--table-load-more-playground"
+      }
+    },
+    {
+      "id": "MOT-002:TableLoadMore",
+      "rule": "MOT-002",
+      "severity": "error",
+      "side": "code",
+      "entity": "TableLoadMore",
+      "evidence": "State axis (Default · Loading) and no motion decision in the contract (recipes/motion.ts has no entry)",
+      "status": "Open",
+      "resolution": null,
+      "firstSeen": "2026-11-20",
+      "lastSeen": "2026-11-20",
+      "regression": false,
+      "source": "contracts:report",
+      "links": {
+        "contract": "https://github.com/Duscenko/escala-tokens/blob/main/spec/contracts/TableLoadMore.json",
+        "figma": "https://www.figma.com/design/7j5zukN5HpihGVJMmyjA20/?node-id=1023-120189",
+        "storybook": "https://escala-storybook.vercel.app/?path=/story/content-surfaces-table--table-load-more-playground"
+      }
+    },
+    {
+      "id": "DOC-001:TabMenuItem:contract",
+      "rule": "DOC-001",
+      "severity": "warn",
+      "side": "code",
+      "entity": "TabMenuItem",
+      "evidence": "contract lacks: human contract (design-plans/*-contract.md)",
+      "status": "Open",
+      "resolution": null,
+      "firstSeen": "2026-11-20",
+      "lastSeen": "2026-11-20",
+      "regression": false,
+      "source": "contracts:report",
+      "links": {
+        "contract": "https://github.com/Duscenko/escala-tokens/blob/main/spec/contracts/TabMenuItem.json",
+        "figma": "https://www.figma.com/design/7j5zukN5HpihGVJMmyjA20/?node-id=931-87049",
+        "storybook": "https://escala-storybook.vercel.app/?path=/story/navigation-tabmenu--tab-menu-item-playground"
+      }
+    },
+    {
+      "id": "DOC-001:TabMenuLineItem:contract",
+      "rule": "DOC-001",
+      "severity": "warn",
+      "side": "code",
+      "entity": "TabMenuLineItem",
+      "evidence": "contract lacks: human contract (design-plans/*-contract.md)",
+      "status": "Open",
+      "resolution": null,
+      "firstSeen": "2026-11-20",
+      "lastSeen": "2026-11-20",
+      "regression": false,
+      "source": "contracts:report",
+      "links": {
+        "contract": "https://github.com/Duscenko/escala-tokens/blob/main/spec/contracts/TabMenuLineItem.json",
+        "figma": "https://www.figma.com/design/7j5zukN5HpihGVJMmyjA20/?node-id=931-87049",
+        "storybook": "https://escala-storybook.vercel.app/?path=/story/navigation-tabmenu--tab-menu-line-item-playground"
+      }
+    },
+    {
+      "id": "DOC-001:SettingsRow:contract",
+      "rule": "DOC-001",
+      "severity": "warn",
+      "side": "code",
+      "entity": "SettingsRow",
+      "evidence": "contract lacks: human contract (design-plans/*-contract.md)",
+      "status": "Open",
+      "resolution": null,
+      "firstSeen": "2026-11-20",
+      "lastSeen": "2026-11-20",
+      "regression": false,
+      "source": "contracts:report",
+      "links": {
+        "contract": "https://github.com/Duscenko/escala-tokens/blob/main/spec/contracts/SettingsRow.json",
+        "figma": "https://www.figma.com/design/7j5zukN5HpihGVJMmyjA20/?node-id=2223-838",
+        "storybook": "https://escala-storybook.vercel.app/?path=/story/screens-settingspage--settings-row-playground"
+      }
+    },
+    {
+      "id": "DOC-001:SettingsSection:contract",
+      "rule": "DOC-001",
+      "severity": "warn",
+      "side": "code",
+      "entity": "SettingsSection",
+      "evidence": "contract lacks: human contract (design-plans/*-contract.md)",
+      "status": "Open",
+      "resolution": null,
+      "firstSeen": "2026-11-20",
+      "lastSeen": "2026-11-20",
+      "regression": false,
+      "source": "contracts:report",
+      "links": {
+        "contract": "https://github.com/Duscenko/escala-tokens/blob/main/spec/contracts/SettingsSection.json",
+        "figma": "https://www.figma.com/design/7j5zukN5HpihGVJMmyjA20/?node-id=2223-838",
+        "storybook": "https://escala-storybook.vercel.app/?path=/story/screens-settingspage--settings-section-playground"
+      }
+    },
+    {
+      "id": "DOC-001:IssueCard:contract",
+      "rule": "DOC-001",
+      "severity": "warn",
+      "side": "code",
+      "entity": "IssueCard",
+      "evidence": "contract lacks: human contract (design-plans/*-contract.md)",
+      "status": "Open",
+      "resolution": null,
+      "firstSeen": "2026-11-20",
+      "lastSeen": "2026-11-20",
+      "regression": false,
+      "source": "contracts:report",
+      "links": {
+        "contract": "https://github.com/Duscenko/escala-tokens/blob/main/spec/contracts/IssueCard.json",
+        "figma": "https://www.figma.com/design/7j5zukN5HpihGVJMmyjA20/?node-id=2223-839",
+        "storybook": "https://escala-storybook.vercel.app/?path=/story/screens-issueboardpage--issue-card-playground"
+      }
+    },
+    {
+      "id": "DOC-001:Gauge:contract",
+      "rule": "DOC-001",
+      "severity": "warn",
+      "side": "code",
+      "entity": "Gauge",
+      "evidence": "contract lacks: figma set (codeOnly)",
+      "status": "Open",
+      "resolution": null,
+      "firstSeen": "2026-11-20",
+      "lastSeen": "2026-11-20",
+      "regression": false,
+      "source": "contracts:report",
+      "links": {
+        "contract": "https://github.com/Duscenko/escala-tokens/blob/main/spec/contracts/Gauge.json",
+        "storybook": "https://escala-storybook.vercel.app/?path=/story/indicators-gauge--playground"
+      }
+    },
+    {
+      "id": "DOC-001:Sparkline:contract",
+      "rule": "DOC-001",
+      "severity": "warn",
+      "side": "code",
+      "entity": "Sparkline",
+      "evidence": "contract lacks: figma set (codeOnly)",
+      "status": "Open",
+      "resolution": null,
+      "firstSeen": "2026-11-20",
+      "lastSeen": "2026-11-20",
+      "regression": false,
+      "source": "contracts:report",
+      "links": {
+        "contract": "https://github.com/Duscenko/escala-tokens/blob/main/spec/contracts/Sparkline.json",
+        "storybook": "https://escala-storybook.vercel.app/?path=/story/indicators-sparkline--playground"
+      }
+    },
+    {
+      "id": "DOC-001:BoardColumn:contract",
+      "rule": "DOC-001",
+      "severity": "warn",
+      "side": "code",
+      "entity": "BoardColumn",
+      "evidence": "contract lacks: human contract (design-plans/*-contract.md)",
+      "status": "Open",
+      "resolution": null,
+      "firstSeen": "2026-11-20",
+      "lastSeen": "2026-11-20",
+      "regression": false,
+      "source": "contracts:report",
+      "links": {
+        "contract": "https://github.com/Duscenko/escala-tokens/blob/main/spec/contracts/BoardColumn.json",
+        "figma": "https://www.figma.com/design/7j5zukN5HpihGVJMmyjA20/?node-id=2223-839",
+        "storybook": "https://escala-storybook.vercel.app/?path=/story/screens-issueboardpage--board-column-playground"
+      }
+    },
+    {
+      "id": "DOC-001:NavItem:contract",
+      "rule": "DOC-001",
+      "severity": "warn",
+      "side": "code",
+      "entity": "NavItem",
+      "evidence": "contract lacks: human contract (design-plans/*-contract.md)",
+      "status": "Open",
+      "resolution": null,
+      "firstSeen": "2026-11-20",
+      "lastSeen": "2026-11-20",
+      "regression": false,
+      "source": "contracts:report",
+      "links": {
+        "contract": "https://github.com/Duscenko/escala-tokens/blob/main/spec/contracts/NavItem.json",
+        "figma": "https://www.figma.com/design/7j5zukN5HpihGVJMmyjA20/?node-id=1095-19642",
+        "storybook": "https://escala-storybook.vercel.app/?path=/story/navigation-navitem--playground"
+      }
+    },
+    {
+      "id": "DOC-001:TabBarItem:contract",
+      "rule": "DOC-001",
+      "severity": "warn",
+      "side": "code",
+      "entity": "TabBarItem",
+      "evidence": "contract lacks: human contract (design-plans/*-contract.md)",
+      "status": "Open",
+      "resolution": null,
+      "firstSeen": "2026-11-20",
+      "lastSeen": "2026-11-20",
+      "regression": false,
+      "source": "contracts:report",
+      "links": {
+        "contract": "https://github.com/Duscenko/escala-tokens/blob/main/spec/contracts/TabBarItem.json",
+        "figma": "https://www.figma.com/design/7j5zukN5HpihGVJMmyjA20/?node-id=2354-42",
+        "storybook": "https://escala-storybook.vercel.app/?path=/story/navigation-tabbar--tab-bar-item-playground"
+      }
+    },
+    {
+      "id": "DOC-001:ActivityHeatmap:contract",
+      "rule": "DOC-001",
+      "severity": "warn",
+      "side": "code",
+      "entity": "ActivityHeatmap",
+      "evidence": "contract lacks: figma set (codeOnly), human contract (design-plans/*-contract.md)",
+      "status": "Open",
+      "resolution": null,
+      "firstSeen": "2026-11-20",
+      "lastSeen": "2026-11-20",
+      "regression": false,
+      "source": "contracts:report",
+      "links": {
+        "contract": "https://github.com/Duscenko/escala-tokens/blob/main/spec/contracts/ActivityHeatmap.json",
+        "storybook": "https://escala-storybook.vercel.app/?path=/story/indicators-activityheatmap--playground"
+      }
+    },
+    {
+      "id": "DOC-001:ActivityHeatmapCell:contract",
+      "rule": "DOC-001",
+      "severity": "warn",
+      "side": "code",
+      "entity": "ActivityHeatmapCell",
+      "evidence": "contract lacks: figma set (codeOnly), human contract (design-plans/*-contract.md)",
+      "status": "Open",
+      "resolution": null,
+      "firstSeen": "2026-11-20",
+      "lastSeen": "2026-11-20",
+      "regression": false,
+      "source": "contracts:report",
+      "links": {
+        "contract": "https://github.com/Duscenko/escala-tokens/blob/main/spec/contracts/ActivityHeatmapCell.json",
+        "storybook": "https://escala-storybook.vercel.app/?path=/story/indicators-activityheatmap--activity-heatmap-cell-playground"
+      }
+    },
+    {
+      "id": "DOC-001:SplitBar:contract",
+      "rule": "DOC-001",
+      "severity": "warn",
+      "side": "code",
+      "entity": "SplitBar",
+      "evidence": "contract lacks: figma set (codeOnly), human contract (design-plans/*-contract.md)",
+      "status": "Open",
+      "resolution": null,
+      "firstSeen": "2026-11-20",
+      "lastSeen": "2026-11-20",
+      "regression": false,
+      "source": "contracts:report",
+      "links": {
+        "contract": "https://github.com/Duscenko/escala-tokens/blob/main/spec/contracts/SplitBar.json",
+        "storybook": "https://escala-storybook.vercel.app/?path=/story/indicators-splitbar--playground"
+      }
+    },
+    {
+      "id": "DOC-001:SplitBarSegment:contract",
+      "rule": "DOC-001",
+      "severity": "warn",
+      "side": "code",
+      "entity": "SplitBarSegment",
+      "evidence": "contract lacks: figma set (codeOnly), human contract (design-plans/*-contract.md)",
+      "status": "Open",
+      "resolution": null,
+      "firstSeen": "2026-11-20",
+      "lastSeen": "2026-11-20",
+      "regression": false,
+      "source": "contracts:report",
+      "links": {
+        "contract": "https://github.com/Duscenko/escala-tokens/blob/main/spec/contracts/SplitBarSegment.json",
+        "storybook": "https://escala-storybook.vercel.app/?path=/story/indicators-splitbar--split-bar-segment-playground"
+      }
+    },
+    {
+      "id": "DOC-001:SplitBarLegendItem:contract",
+      "rule": "DOC-001",
+      "severity": "warn",
+      "side": "code",
+      "entity": "SplitBarLegendItem",
+      "evidence": "contract lacks: figma set (codeOnly), human contract (design-plans/*-contract.md)",
+      "status": "Open",
+      "resolution": null,
+      "firstSeen": "2026-11-20",
+      "lastSeen": "2026-11-20",
+      "regression": false,
+      "source": "contracts:report",
+      "links": {
+        "contract": "https://github.com/Duscenko/escala-tokens/blob/main/spec/contracts/SplitBarLegendItem.json",
+        "storybook": "https://escala-storybook.vercel.app/?path=/story/indicators-splitbar--split-bar-legend-item-playground"
+      }
+    },
+    {
+      "id": "DOC-001:Brand:contract",
+      "rule": "DOC-001",
+      "severity": "warn",
+      "side": "code",
+      "entity": "Brand",
+      "evidence": "contract lacks: human contract (design-plans/*-contract.md), behaviour",
+      "status": "Open",
+      "resolution": null,
+      "firstSeen": "2026-11-20",
+      "lastSeen": "2026-11-20",
+      "regression": false,
+      "source": "contracts:report",
+      "links": {
+        "contract": "https://github.com/Duscenko/escala-tokens/blob/main/spec/contracts/Brand.json",
+        "figma": "https://www.figma.com/design/7j5zukN5HpihGVJMmyjA20/?node-id=1098-2",
+        "storybook": "https://escala-storybook.vercel.app/?path=/story/navigation-brand--playground"
+      }
+    },
+    {
+      "id": "DOC-001:AccountMenuTrigger:contract",
+      "rule": "DOC-001",
+      "severity": "warn",
+      "side": "code",
+      "entity": "AccountMenuTrigger",
+      "evidence": "contract lacks: human contract (design-plans/*-contract.md)",
+      "status": "Open",
+      "resolution": null,
+      "firstSeen": "2026-11-20",
+      "lastSeen": "2026-11-20",
+      "regression": false,
+      "source": "contracts:report",
+      "links": {
+        "contract": "https://github.com/Duscenko/escala-tokens/blob/main/spec/contracts/AccountMenuTrigger.json",
+        "figma": "https://www.figma.com/design/7j5zukN5HpihGVJMmyjA20/?node-id=1098-43",
+        "storybook": "https://escala-storybook.vercel.app/?path=/story/navigation-accountmenutrigger--playground"
+      }
+    },
+    {
+      "id": "DOC-001:BreadcrumbItem:contract",
+      "rule": "DOC-001",
+      "severity": "warn",
+      "side": "code",
+      "entity": "BreadcrumbItem",
+      "evidence": "contract lacks: human contract (design-plans/*-contract.md)",
+      "status": "Open",
+      "resolution": null,
+      "firstSeen": "2026-11-20",
+      "lastSeen": "2026-11-20",
+      "regression": false,
+      "source": "contracts:report",
+      "links": {
+        "contract": "https://github.com/Duscenko/escala-tokens/blob/main/spec/contracts/BreadcrumbItem.json",
+        "figma": "https://www.figma.com/design/7j5zukN5HpihGVJMmyjA20/?node-id=89-46",
+        "storybook": "https://escala-storybook.vercel.app/?path=/story/navigation-breadcrumb--breadcrumb-item-playground"
+      }
+    },
+    {
+      "id": "MOT-002:BreadcrumbItem",
+      "rule": "MOT-002",
+      "severity": "error",
+      "side": "code",
+      "entity": "BreadcrumbItem",
+      "evidence": "State axis (Default · Hover · Focused · Current · Disabled) and no motion decision in the contract (recipes/motion.ts has no entry)",
+      "status": "Open",
+      "resolution": null,
+      "firstSeen": "2026-11-20",
+      "lastSeen": "2026-11-20",
+      "regression": false,
+      "source": "contracts:report",
+      "links": {
+        "contract": "https://github.com/Duscenko/escala-tokens/blob/main/spec/contracts/BreadcrumbItem.json",
+        "figma": "https://www.figma.com/design/7j5zukN5HpihGVJMmyjA20/?node-id=89-46",
+        "storybook": "https://escala-storybook.vercel.app/?path=/story/navigation-breadcrumb--breadcrumb-item-playground"
+      }
+    },
+    {
+      "id": "DOC-001:BreadcrumbEllipsis:contract",
+      "rule": "DOC-001",
+      "severity": "warn",
+      "side": "code",
+      "entity": "BreadcrumbEllipsis",
+      "evidence": "contract lacks: human contract (design-plans/*-contract.md)",
+      "status": "Open",
+      "resolution": null,
+      "firstSeen": "2026-11-20",
+      "lastSeen": "2026-11-20",
+      "regression": false,
+      "source": "contracts:report",
+      "links": {
+        "contract": "https://github.com/Duscenko/escala-tokens/blob/main/spec/contracts/BreadcrumbEllipsis.json",
+        "figma": "https://www.figma.com/design/7j5zukN5HpihGVJMmyjA20/?node-id=89-46",
+        "storybook": "https://escala-storybook.vercel.app/?path=/story/navigation-breadcrumb--breadcrumb-ellipsis-playground"
+      }
+    },
+    {
+      "id": "MOT-002:BreadcrumbEllipsis",
+      "rule": "MOT-002",
+      "severity": "error",
+      "side": "code",
+      "entity": "BreadcrumbEllipsis",
+      "evidence": "State axis (Default · Hover · Focused · Disabled) and no motion decision in the contract (recipes/motion.ts has no entry)",
+      "status": "Open",
+      "resolution": null,
+      "firstSeen": "2026-11-20",
+      "lastSeen": "2026-11-20",
+      "regression": false,
+      "source": "contracts:report",
+      "links": {
+        "contract": "https://github.com/Duscenko/escala-tokens/blob/main/spec/contracts/BreadcrumbEllipsis.json",
+        "figma": "https://www.figma.com/design/7j5zukN5HpihGVJMmyjA20/?node-id=89-46",
+        "storybook": "https://escala-storybook.vercel.app/?path=/story/navigation-breadcrumb--breadcrumb-ellipsis-playground"
+      }
+    },
+    {
+      "id": "DOC-001:BreadcrumbSeparator:contract",
+      "rule": "DOC-001",
+      "severity": "warn",
+      "side": "code",
+      "entity": "BreadcrumbSeparator",
+      "evidence": "contract lacks: human contract (design-plans/*-contract.md)",
+      "status": "Open",
+      "resolution": null,
+      "firstSeen": "2026-11-20",
+      "lastSeen": "2026-11-20",
+      "regression": false,
+      "source": "contracts:report",
+      "links": {
+        "contract": "https://github.com/Duscenko/escala-tokens/blob/main/spec/contracts/BreadcrumbSeparator.json",
+        "figma": "https://www.figma.com/design/7j5zukN5HpihGVJMmyjA20/?node-id=89-46",
+        "storybook": "https://escala-storybook.vercel.app/?path=/story/navigation-breadcrumb--breadcrumb-separator-playground"
+      }
+    },
+    {
+      "id": "DOC-001:PaginationLink:contract",
+      "rule": "DOC-001",
+      "severity": "warn",
+      "side": "code",
+      "entity": "PaginationLink",
+      "evidence": "contract lacks: human contract (design-plans/*-contract.md)",
+      "status": "Open",
+      "resolution": null,
+      "firstSeen": "2026-11-20",
+      "lastSeen": "2026-11-20",
+      "regression": false,
+      "source": "contracts:report",
+      "links": {
+        "contract": "https://github.com/Duscenko/escala-tokens/blob/main/spec/contracts/PaginationLink.json",
+        "figma": "https://www.figma.com/design/7j5zukN5HpihGVJMmyjA20/?node-id=931-87052",
+        "storybook": "https://escala-storybook.vercel.app/?path=/story/navigation-pagination--pagination-link-playground"
+      }
+    },
+    {
+      "id": "DOC-001:PaginationEllipsis:contract",
+      "rule": "DOC-001",
+      "severity": "warn",
+      "side": "code",
+      "entity": "PaginationEllipsis",
+      "evidence": "contract lacks: human contract (design-plans/*-contract.md)",
+      "status": "Open",
+      "resolution": null,
+      "firstSeen": "2026-11-20",
+      "lastSeen": "2026-11-20",
+      "regression": false,
+      "source": "contracts:report",
+      "links": {
+        "contract": "https://github.com/Duscenko/escala-tokens/blob/main/spec/contracts/PaginationEllipsis.json",
+        "figma": "https://www.figma.com/design/7j5zukN5HpihGVJMmyjA20/?node-id=931-87052",
+        "storybook": "https://escala-storybook.vercel.app/?path=/story/navigation-pagination--pagination-ellipsis-playground"
+      }
+    },
+    {
+      "id": "DOC-001:StepperItem:contract",
+      "rule": "DOC-001",
+      "severity": "warn",
+      "side": "code",
+      "entity": "StepperItem",
+      "evidence": "contract lacks: human contract (design-plans/*-contract.md)",
+      "status": "Open",
+      "resolution": null,
+      "firstSeen": "2026-11-20",
+      "lastSeen": "2026-11-20",
+      "regression": false,
+      "source": "contracts:report",
+      "links": {
+        "contract": "https://github.com/Duscenko/escala-tokens/blob/main/spec/contracts/StepperItem.json",
+        "figma": "https://www.figma.com/design/7j5zukN5HpihGVJMmyjA20/?node-id=931-87054",
+        "storybook": "https://escala-storybook.vercel.app/?path=/story/navigation-stepper--stepper-item-playground"
+      }
+    },
+    {
+      "id": "MOT-002:StepperItem",
+      "rule": "MOT-002",
+      "severity": "error",
+      "side": "code",
+      "entity": "StepperItem",
+      "evidence": "State axis (Default · Disabled) and no motion decision in the contract (recipes/motion.ts has no entry)",
+      "status": "Open",
+      "resolution": null,
+      "firstSeen": "2026-11-20",
+      "lastSeen": "2026-11-20",
+      "regression": false,
+      "source": "contracts:report",
+      "links": {
+        "contract": "https://github.com/Duscenko/escala-tokens/blob/main/spec/contracts/StepperItem.json",
+        "figma": "https://www.figma.com/design/7j5zukN5HpihGVJMmyjA20/?node-id=931-87054",
+        "storybook": "https://escala-storybook.vercel.app/?path=/story/navigation-stepper--stepper-item-playground"
+      }
+    },
+    {
+      "id": "DOC-001:StepperIndicator:contract",
+      "rule": "DOC-001",
+      "severity": "warn",
+      "side": "code",
+      "entity": "StepperIndicator",
+      "evidence": "contract lacks: human contract (design-plans/*-contract.md)",
+      "status": "Open",
+      "resolution": null,
+      "firstSeen": "2026-11-20",
+      "lastSeen": "2026-11-20",
+      "regression": false,
+      "source": "contracts:report",
+      "links": {
+        "contract": "https://github.com/Duscenko/escala-tokens/blob/main/spec/contracts/StepperIndicator.json",
+        "figma": "https://www.figma.com/design/7j5zukN5HpihGVJMmyjA20/?node-id=931-87054",
+        "storybook": "https://escala-storybook.vercel.app/?path=/story/navigation-stepper--stepper-indicator-playground"
+      }
+    },
+    {
+      "id": "MOT-002:StepperIndicator",
+      "rule": "MOT-002",
+      "severity": "error",
+      "side": "code",
+      "entity": "StepperIndicator",
+      "evidence": "State axis (Default · Disabled) and no motion decision in the contract (recipes/motion.ts has no entry)",
+      "status": "Open",
+      "resolution": null,
+      "firstSeen": "2026-11-20",
+      "lastSeen": "2026-11-20",
+      "regression": false,
+      "source": "contracts:report",
+      "links": {
+        "contract": "https://github.com/Duscenko/escala-tokens/blob/main/spec/contracts/StepperIndicator.json",
+        "figma": "https://www.figma.com/design/7j5zukN5HpihGVJMmyjA20/?node-id=931-87054",
+        "storybook": "https://escala-storybook.vercel.app/?path=/story/navigation-stepper--stepper-indicator-playground"
+      }
+    },
+    {
+      "id": "DOC-001:StepperIcon:contract",
+      "rule": "DOC-001",
+      "severity": "warn",
+      "side": "code",
+      "entity": "StepperIcon",
+      "evidence": "contract lacks: human contract (design-plans/*-contract.md)",
+      "status": "Open",
+      "resolution": null,
+      "firstSeen": "2026-11-20",
+      "lastSeen": "2026-11-20",
+      "regression": false,
+      "source": "contracts:report",
+      "links": {
+        "contract": "https://github.com/Duscenko/escala-tokens/blob/main/spec/contracts/StepperIcon.json",
+        "figma": "https://www.figma.com/design/7j5zukN5HpihGVJMmyjA20/?node-id=931-87054",
+        "storybook": "https://escala-storybook.vercel.app/?path=/story/navigation-stepper--stepper-icon-playground"
+      }
+    },
+    {
+      "id": "MOT-002:StepperIcon",
+      "rule": "MOT-002",
+      "severity": "error",
+      "side": "code",
+      "entity": "StepperIcon",
+      "evidence": "State axis (Default · Disabled) and no motion decision in the contract (recipes/motion.ts has no entry)",
+      "status": "Open",
+      "resolution": null,
+      "firstSeen": "2026-11-20",
+      "lastSeen": "2026-11-20",
+      "regression": false,
+      "source": "contracts:report",
+      "links": {
+        "contract": "https://github.com/Duscenko/escala-tokens/blob/main/spec/contracts/StepperIcon.json",
+        "figma": "https://www.figma.com/design/7j5zukN5HpihGVJMmyjA20/?node-id=931-87054",
+        "storybook": "https://escala-storybook.vercel.app/?path=/story/navigation-stepper--stepper-icon-playground"
+      }
+    },
+    {
+      "id": "DOC-001:DropdownMenuLabel:contract",
+      "rule": "DOC-001",
+      "severity": "warn",
+      "side": "code",
+      "entity": "DropdownMenuLabel",
+      "evidence": "contract lacks: human contract (design-plans/*-contract.md)",
+      "status": "Open",
+      "resolution": null,
+      "firstSeen": "2026-11-20",
+      "lastSeen": "2026-11-20",
+      "regression": false,
+      "source": "contracts:report",
+      "links": {
+        "contract": "https://github.com/Duscenko/escala-tokens/blob/main/spec/contracts/DropdownMenuLabel.json",
+        "figma": "https://www.figma.com/design/7j5zukN5HpihGVJMmyjA20/?node-id=912-77794",
+        "storybook": "https://escala-storybook.vercel.app/?path=/story/navigation-dropdownmenu--dropdown-menu-label-playground"
+      }
+    },
+    {
+      "id": "DOC-001:DropdownMenuItem:contract",
+      "rule": "DOC-001",
+      "severity": "warn",
+      "side": "code",
+      "entity": "DropdownMenuItem",
+      "evidence": "contract lacks: human contract (design-plans/*-contract.md)",
+      "status": "Open",
+      "resolution": null,
+      "firstSeen": "2026-11-20",
+      "lastSeen": "2026-11-20",
+      "regression": false,
+      "source": "contracts:report",
+      "links": {
+        "contract": "https://github.com/Duscenko/escala-tokens/blob/main/spec/contracts/DropdownMenuItem.json",
+        "figma": "https://www.figma.com/design/7j5zukN5HpihGVJMmyjA20/?node-id=912-77794",
+        "storybook": "https://escala-storybook.vercel.app/?path=/story/navigation-dropdownmenu--dropdown-menu-item-playground"
+      }
+    },
+    {
+      "id": "DOC-001:DropdownMenuFooter:contract",
+      "rule": "DOC-001",
+      "severity": "warn",
+      "side": "code",
+      "entity": "DropdownMenuFooter",
+      "evidence": "contract lacks: human contract (design-plans/*-contract.md)",
+      "status": "Open",
+      "resolution": null,
+      "firstSeen": "2026-11-20",
+      "lastSeen": "2026-11-20",
+      "regression": false,
+      "source": "contracts:report",
+      "links": {
+        "contract": "https://github.com/Duscenko/escala-tokens/blob/main/spec/contracts/DropdownMenuFooter.json",
+        "figma": "https://www.figma.com/design/7j5zukN5HpihGVJMmyjA20/?node-id=912-77794",
+        "storybook": "https://escala-storybook.vercel.app/?path=/story/navigation-dropdownmenu--dropdown-menu-footer-playground"
+      }
+    },
+    {
+      "id": "MOT-002:Sidebar",
+      "rule": "MOT-002",
+      "severity": "error",
+      "side": "code",
+      "entity": "Sidebar",
+      "evidence": "Collapsed axis (false · true) and no motion decision in the contract (recipes/motion.ts has no entry)",
+      "status": "Open",
+      "resolution": null,
+      "firstSeen": "2026-11-20",
+      "lastSeen": "2026-11-20",
+      "regression": false,
+      "source": "contracts:report",
+      "links": {
+        "contract": "https://github.com/Duscenko/escala-tokens/blob/main/spec/contracts/Sidebar.json",
+        "figma": "https://www.figma.com/design/7j5zukN5HpihGVJMmyjA20/?node-id=931-87050",
+        "storybook": "https://escala-storybook.vercel.app/?path=/story/navigation-sidebar--playground"
+      }
+    },
+    {
+      "id": "DOC-001:SidebarMenuButton:contract",
+      "rule": "DOC-001",
+      "severity": "warn",
+      "side": "code",
+      "entity": "SidebarMenuButton",
+      "evidence": "contract lacks: human contract (design-plans/*-contract.md)",
+      "status": "Open",
+      "resolution": null,
+      "firstSeen": "2026-11-20",
+      "lastSeen": "2026-11-20",
+      "regression": false,
+      "source": "contracts:report",
+      "links": {
+        "contract": "https://github.com/Duscenko/escala-tokens/blob/main/spec/contracts/SidebarMenuButton.json",
+        "figma": "https://www.figma.com/design/7j5zukN5HpihGVJMmyjA20/?node-id=931-87050",
+        "storybook": "https://escala-storybook.vercel.app/?path=/story/navigation-sidebar--sidebar-menu-button-playground"
+      }
+    },
+    {
+      "id": "DOC-001:SidebarGroup:contract",
+      "rule": "DOC-001",
+      "severity": "warn",
+      "side": "code",
+      "entity": "SidebarGroup",
+      "evidence": "contract lacks: human contract (design-plans/*-contract.md)",
+      "status": "Open",
+      "resolution": null,
+      "firstSeen": "2026-11-20",
+      "lastSeen": "2026-11-20",
+      "regression": false,
+      "source": "contracts:report",
+      "links": {
+        "contract": "https://github.com/Duscenko/escala-tokens/blob/main/spec/contracts/SidebarGroup.json",
+        "figma": "https://www.figma.com/design/7j5zukN5HpihGVJMmyjA20/?node-id=931-87050",
+        "storybook": "https://escala-storybook.vercel.app/?path=/story/navigation-sidebar--sidebar-group-playground"
+      }
+    },
+    {
+      "id": "MOT-002:SidebarGroup",
+      "rule": "MOT-002",
+      "severity": "error",
+      "side": "code",
+      "entity": "SidebarGroup",
+      "evidence": "Collapsed axis (false · true) and no motion decision in the contract (recipes/motion.ts has no entry)",
+      "status": "Open",
+      "resolution": null,
+      "firstSeen": "2026-11-20",
+      "lastSeen": "2026-11-20",
+      "regression": false,
+      "source": "contracts:report",
+      "links": {
+        "contract": "https://github.com/Duscenko/escala-tokens/blob/main/spec/contracts/SidebarGroup.json",
+        "figma": "https://www.figma.com/design/7j5zukN5HpihGVJMmyjA20/?node-id=931-87050",
+        "storybook": "https://escala-storybook.vercel.app/?path=/story/navigation-sidebar--sidebar-group-playground"
+      }
+    },
+    {
+      "id": "DOC-001:SidebarGroupLabel:contract",
+      "rule": "DOC-001",
+      "severity": "warn",
+      "side": "code",
+      "entity": "SidebarGroupLabel",
+      "evidence": "contract lacks: human contract (design-plans/*-contract.md)",
+      "status": "Open",
+      "resolution": null,
+      "firstSeen": "2026-11-20",
+      "lastSeen": "2026-11-20",
+      "regression": false,
+      "source": "contracts:report",
+      "links": {
+        "contract": "https://github.com/Duscenko/escala-tokens/blob/main/spec/contracts/SidebarGroupLabel.json",
+        "figma": "https://www.figma.com/design/7j5zukN5HpihGVJMmyjA20/?node-id=931-87050",
+        "storybook": "https://escala-storybook.vercel.app/?path=/story/navigation-sidebar--sidebar-group-label-playground"
+      }
+    },
+    {
+      "id": "DOC-001:SidebarBrand:contract",
+      "rule": "DOC-001",
+      "severity": "warn",
+      "side": "code",
+      "entity": "SidebarBrand",
+      "evidence": "contract lacks: human contract (design-plans/*-contract.md)",
+      "status": "Open",
+      "resolution": null,
+      "firstSeen": "2026-11-20",
+      "lastSeen": "2026-11-20",
+      "regression": false,
+      "source": "contracts:report",
+      "links": {
+        "contract": "https://github.com/Duscenko/escala-tokens/blob/main/spec/contracts/SidebarBrand.json",
+        "figma": "https://www.figma.com/design/7j5zukN5HpihGVJMmyjA20/?node-id=931-87050",
+        "storybook": "https://escala-storybook.vercel.app/?path=/story/navigation-sidebar--sidebar-brand-playground"
+      }
+    },
+    {
+      "id": "MOT-002:SidebarBrand",
+      "rule": "MOT-002",
+      "severity": "error",
+      "side": "code",
+      "entity": "SidebarBrand",
+      "evidence": "Collapsed axis (false · true) and no motion decision in the contract (recipes/motion.ts has no entry)",
+      "status": "Open",
+      "resolution": null,
+      "firstSeen": "2026-11-20",
+      "lastSeen": "2026-11-20",
+      "regression": false,
+      "source": "contracts:report",
+      "links": {
+        "contract": "https://github.com/Duscenko/escala-tokens/blob/main/spec/contracts/SidebarBrand.json",
+        "figma": "https://www.figma.com/design/7j5zukN5HpihGVJMmyjA20/?node-id=931-87050",
+        "storybook": "https://escala-storybook.vercel.app/?path=/story/navigation-sidebar--sidebar-brand-playground"
+      }
     }
   ]
 }

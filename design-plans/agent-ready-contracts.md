@@ -41,11 +41,11 @@ Schema `escala-component-contract/2`, additive over v1 (no key renamed or remove
 - [x] `spec/contracts/schema.json` (JSON Schema) and `spec/contracts/README.md` (how an agent uses
       them), both generated.
 
-### Phase 2 — Gates (CI)
-- [ ] `PAR-001`: every story's `argTypes` / args equal the contract's `api.axes` (names and values).
-- [ ] `MOT-002`: a component with a State axis or an open/close and `motion: null` fails (with an
+### Phase 2 — Gates (CI) (done 2026-11-20)
+- [x] `PAR-001`: every story's `argTypes` / args equal the contract's `api.axes` (names and values).
+- [x] `MOT-002`: a component with a State axis or an open/close and `motion: null` fails (with an
       exceptions list seeded from today's gaps, so the gate starts green and only blocks new debt).
-- [ ] Contract completeness report (`npm run contracts:report`): per component, which sections are
+- [x] Contract completeness report (`npm run contracts:report`): per component, which sections are
       empty → `governance/findings/latest.json` entries (`DOC-001`).
 
 ### Phase 3 — Behaviour authored where derivation is not enough
@@ -80,5 +80,18 @@ Schema `escala-component-contract/2`, additive over v1 (no key renamed or remove
   failures already on HEAD 7a08f91 (exportAudit goldens ×3, figmaComponentsParity codeOnly,
   pluginGithubPush size) — not from this work.
 
+- 2026-11-20 · Phase 2: `src/lib/contractGates.ts` + `contractGates.test.ts` — PAR-001 (every story
+  playground control = contract axis: name, values, default; booleans and ranges understood) and
+  MOT-002 (State / Open / Expanded / Collapsed axis, an open prop or a disclosure primitive, and
+  `motion: null`). Debt frozen in `spec/contract-gates.baseline.json` (PAR-001: FABGroup Open default,
+  Modal Layout, ModalFooter Surface; MOT-002: 27 components); the gate fails on new debt and on a
+  stale baseline line. `npm run contracts:report` writes `source: contracts:report` findings into
+  `governance/findings/latest.json` (today 76 DOC-001 — 70 without a human contract, 10 codeOnly,
+  6 without behaviour — 27 MOT-002, 3 PAR-001), keeping history, closing what is gone, flagging regressions.
+
 ## Next
-Phase 2, first item: a `PAR-001` check that every story's argTypes equal `api.axes`.
+Phase 3, first item: `src/lib/componentBehaviour.ts` — authored `behaviour` for the components with no
+Radix primitive (start with the 6 DOC-001 `behaviour` gaps from `npm run contracts:report`, then Calendar,
+InputOTP, Combobox, ReactionGroup, Table), merged into the contract by `componentContracts.ts`.
+Open question for the owner (not blocking): MOT-002 says `none` counts as a decision, but
+`RecipeMotion` cannot say `none` yet — add it when the owner decides the first static-state component.
