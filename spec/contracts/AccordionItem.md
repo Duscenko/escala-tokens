@@ -52,6 +52,8 @@ Other states: `bindings` in the JSON (3 parts; merge every matching part in orde
 | content | text | `color.content.secondary` | `--color-content-secondary` | `Content/secondary` |
 | content | paddingBottom | `spacing.inset-surface` | `--spacing-inset-surface` | `Spacing/inset-surface` |
 | content | paddingX | `spacing.none` | `--spacing-none` | `Spacing/none` |
+| contentRow | gap | `spacing.gap-group` | `--spacing-gap-group` | `Spacing/gap-group` |
+| iconOffset | width | `icon.medium` | `--size-icon-md` | `Size/icon-md` |
 | root | fill | `none` | — | — |
 
 ## Motion

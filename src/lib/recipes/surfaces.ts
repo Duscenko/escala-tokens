@@ -222,6 +222,10 @@ export const ACCORDION_ITEM: ComponentRecipe = {
       label: { font: 'type.heading-2xs', text: c('content.primary') },
       chevron: { width: 'icon.medium', height: 'icon.medium', text: c('content.secondary') },
       content: { font: 'type.body-md', text: c('content.secondary'), paddingBottom: 'spacing.inset-surface' },
+      // Figma's `content` row (451:188): an `icon-offset` as wide as the glyph (Size/icon-md; shown with IconVisible), then
+      // the text, Spacing/gap-group apart — so the text lines up with the label.
+      contentRow: { gap: 'spacing.gap-group' },
+      iconOffset: { width: 'icon.medium' },
     })),
     part({ Variant: ACCORDION_VARIANTS }, (variant): SlotMap => {
       const side = variant === 'ghost-default' || variant === 'ghost-underline' ? 'spacing.none' : 'spacing.inset-surface'
@@ -231,7 +235,6 @@ export const ACCORDION_ITEM: ComponentRecipe = {
           iconBox: { width: 'size.compact', height: 'size.compact', radius: 'radius.action' },
           label: { font: 'type.label' },
           content: { paddingX: side, paddingBottom: 'spacing.inset-control', font: 'type.body-sm' },
-          contentRow: { gap: 'spacing.gap-group' },
           iconOffset: { width: 'size.compact' },
         }
       }

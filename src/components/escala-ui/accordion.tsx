@@ -1,7 +1,7 @@
 // Escala component: Accordion + AccordionItem — the Figma sets of the same names (design-plans/accordion-contract.md,
 // 451:375 and 451:188), 1:1. An item is a trigger (optional icon, label, a chevron that flips when open) and
 // collapsible content; the Accordion stacks items that share one Variant and open and close independently
-// (type multiple). `card` (Figma 2121:2677) puts the glyph in an icon box, indents the content past it, and the
+// (type multiple). Content is indented past the glyph (Figma's `icon-offset`). `card` (Figma 2121:2677) puts the glyph in an icon box and the
 // Accordion becomes the framed card whose last item drops its rule. Radix gives the behaviour (keyboard, aria, the content height the motion reads).
 // Appearance: recipes (Accordion, AccordionItem).
 import * as React from 'react'
@@ -111,13 +111,12 @@ function AccordionItem({
         </AccordionPrimitive.Trigger>
       </AccordionPrimitive.Header>
       <AccordionPrimitive.Content data-part="AccordionItem.content" className="overflow-hidden">
-        {card ? (
-          // Figma's `content` row: an icon-sized offset, then the text (Radix's Content stays the measured, animated box).
-          <div data-part="AccordionItem.contentRow" className="flex items-start">
-            <span data-part="AccordionItem.iconOffset" aria-hidden className="shrink-0" />
-            <div className="min-w-0 flex-1">{text}</div>
-          </div>
-        ) : text}
+        {/* Figma's `content` row: an icon-sized offset, then the text (Radix's Content stays the measured, animated box).
+            The offset follows IconVisible, except on `card`, where the file always draws it. */}
+        <div data-part="AccordionItem.contentRow" className="flex items-start">
+          {(card || iconVisible) && <span data-part="AccordionItem.iconOffset" aria-hidden className="shrink-0" />}
+          <div className="min-w-0 flex-1">{text}</div>
+        </div>
       </AccordionPrimitive.Content>
     </AccordionPrimitive.Item>
   )

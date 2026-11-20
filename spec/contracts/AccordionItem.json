@@ -286,6 +286,12 @@
             "font": "type.body-md",
             "text": "color.content.secondary",
             "paddingBottom": "spacing.inset-surface"
+          },
+          "contentRow": {
+            "gap": "spacing.gap-group"
+          },
+          "iconOffset": {
+            "width": "icon.medium"
           }
         }
       }
@@ -360,9 +366,6 @@
             "paddingX": "spacing.inset-surface",
             "paddingBottom": "spacing.inset-control",
             "font": "type.body-sm"
-          },
-          "contentRow": {
-            "gap": "spacing.gap-group"
           },
           "iconOffset": {
             "width": "size.compact"
