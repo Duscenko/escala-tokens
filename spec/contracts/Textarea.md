@@ -66,7 +66,7 @@ Other states: `bindings` in the JSON (3 parts; merge every matching part in orde
 
 ## Motion
 
-No decision yet (MOT-002): it has a State axis (Default · Hover · Focused · Invalid · Loading · Disabled).
+- `root`: border-color → `use-hover`, box-shadow → `use-focus`
 
 ## Behaviour
 

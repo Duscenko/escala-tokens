@@ -8694,7 +8694,19 @@
             }
           }
         }
-      ]
+      ],
+      "motion": {
+        "transitions": {
+          "root": {
+            "background-color": "use-hover",
+            "color": "use-hover",
+            "border-color": "use-hover",
+            "box-shadow": "use-focus",
+            "scale": "use-hover"
+          }
+        },
+        "press": {}
+      }
     },
     "TextLink": {
       "key": "TextLink",
@@ -9057,7 +9069,15 @@
             }
           }
         }
-      ]
+      ],
+      "motion": {
+        "transitions": {
+          "root": {
+            "background-color": "use-hover",
+            "color": "use-hover"
+          }
+        }
+      }
     },
     "FABButton": {
       "key": "FABButton",
@@ -9429,7 +9449,19 @@
             }
           }
         }
-      ]
+      ],
+      "motion": {
+        "transitions": {
+          "root": {
+            "background-color": "use-hover",
+            "color": "use-hover",
+            "border-color": "use-hover",
+            "box-shadow": "use-focus",
+            "scale": "use-hover"
+          }
+        },
+        "press": {}
+      }
     },
     "FABGroup": {
       "key": "FABGroup",
@@ -10056,7 +10088,19 @@
             }
           }
         }
-      ]
+      ],
+      "motion": {
+        "transitions": {
+          "root": {
+            "background-color": "use-hover",
+            "color": "use-hover",
+            "border-color": "use-hover",
+            "box-shadow": "use-focus",
+            "scale": "use-hover"
+          }
+        },
+        "press": {}
+      }
     },
     "ButtonGroupDivider": {
       "key": "ButtonGroupDivider",
@@ -11247,7 +11291,19 @@
             }
           }
         }
-      ]
+      ],
+      "motion": {
+        "transitions": {
+          "root": {
+            "background-color": "use-hover",
+            "color": "use-hover",
+            "border-color": "use-hover",
+            "box-shadow": "use-focus",
+            "scale": "use-hover"
+          }
+        },
+        "press": {}
+      }
     },
     "Input": {
       "key": "Input",
@@ -11757,7 +11813,15 @@
             }
           }
         }
-      ]
+      ],
+      "motion": {
+        "transitions": {
+          "root": {
+            "border-color": "use-hover",
+            "box-shadow": "use-focus"
+          }
+        }
+      }
     },
     "DatePickerTrigger": {
       "key": "DatePickerTrigger",
@@ -12783,7 +12847,15 @@
             }
           }
         }
-      ]
+      ],
+      "motion": {
+        "transitions": {
+          "root": {
+            "border-color": "use-hover",
+            "box-shadow": "use-focus"
+          }
+        }
+      }
     },
     "InputTag": {
       "key": "InputTag",
@@ -15047,7 +15119,8 @@
             }
           }
         }
-      ]
+      ],
+      "motion": {}
     },
     "InputOTPSlot": {
       "key": "InputOTPSlot",
@@ -16477,7 +16550,8 @@
             }
           }
         }
-      ]
+      ],
+      "motion": {}
     },
     "CheckboxGroup": {
       "key": "CheckboxGroup",
@@ -16558,7 +16632,8 @@
             }
           }
         }
-      ]
+      ],
+      "motion": {}
     },
     "RadioGroup": {
       "key": "RadioGroup",
@@ -17167,7 +17242,8 @@
             }
           }
         }
-      ]
+      ],
+      "motion": {}
     },
     "Slider": {
       "key": "Slider",
@@ -17322,7 +17398,8 @@
             }
           }
         }
-      ]
+      ],
+      "motion": {}
     },
     "SliderThumb": {
       "key": "SliderThumb",
@@ -23415,7 +23492,8 @@
             }
           }
         }
-      ]
+      ],
+      "motion": {}
     },
     "TableHead": {
       "key": "TableHead",
@@ -23730,7 +23808,8 @@
             }
           }
         }
-      ]
+      ],
+      "motion": {}
     },
     "TableTrendCell": {
       "key": "TableTrendCell",
@@ -23884,7 +23963,8 @@
             }
           }
         }
-      ]
+      ],
+      "motion": {}
     },
     "TableResizer": {
       "key": "TableResizer",
@@ -24391,7 +24471,8 @@
             }
           }
         }
-      ]
+      ],
+      "motion": {}
     },
     "Kbd": {
       "key": "Kbd",
@@ -25546,7 +25627,15 @@
             }
           }
         }
-      ]
+      ],
+      "motion": {
+        "transitions": {
+          "root": {
+            "background-color": "use-hover",
+            "color": "use-hover"
+          }
+        }
+      }
     },
     "ScrollArea": {
       "key": "ScrollArea",
@@ -29428,7 +29517,15 @@
             }
           }
         }
-      ]
+      ],
+      "motion": {
+        "transitions": {
+          "root": {
+            "background-color": "use-hover",
+            "color": "use-hover"
+          }
+        }
+      }
     },
     "BreadcrumbEllipsis": {
       "key": "BreadcrumbEllipsis",
@@ -29675,7 +29772,15 @@
             }
           }
         }
-      ]
+      ],
+      "motion": {
+        "transitions": {
+          "root": {
+            "background-color": "use-hover",
+            "color": "use-hover"
+          }
+        }
+      }
     },
     "BreadcrumbSeparator": {
       "key": "BreadcrumbSeparator",
@@ -30204,7 +30309,8 @@
             }
           }
         }
-      ]
+      ],
+      "motion": {}
     },
     "StepperIndicator": {
       "key": "StepperIndicator",
@@ -30290,7 +30396,8 @@
             }
           }
         }
-      ]
+      ],
+      "motion": {}
     },
     "StepperIcon": {
       "key": "StepperIcon",
@@ -30424,7 +30531,8 @@
             }
           }
         }
-      ]
+      ],
+      "motion": {}
     },
     "DropdownMenu": {
       "key": "DropdownMenu",

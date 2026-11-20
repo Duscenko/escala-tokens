@@ -36,7 +36,7 @@ Other states: `bindings` in the JSON (1 part; merge every matching part in order
 
 ## Motion
 
-No decision yet (MOT-002): it has a State axis (Default · Loading).
+None, by decision: it does not animate (a child may carry its own motion; see `src/lib/recipes/motion.ts`).
 
 ## Behaviour
 

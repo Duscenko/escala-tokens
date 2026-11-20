@@ -64,8 +64,10 @@ describe('tokenTrace', () => {
 
   it('every motion row of every recipe resolves to a role or a choreography', () => {
     const roles = new Set<string>(MOTION_ROLES)
-    for (const key of Object.keys(RECIPE_MOTION)) {
+    for (const [key, decision] of Object.entries(RECIPE_MOTION)) {
       const rows = motionRows(t, key)
+      // `{}` is an explicit "does not animate" decision (MOT-002): it has no rows. Every other entry has some.
+      if (Object.keys(decision).length === 0) { expect(rows, key).toEqual([]); continue }
       expect(rows.length, key).toBeGreaterThan(0)
       for (const row of rows) {
         expect(row.value, `${key} ${row.key}`).toBeTruthy()

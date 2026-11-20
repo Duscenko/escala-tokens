@@ -53,7 +53,7 @@
     "figmaNode": "337:2762",
     "story": "buttons-closebutton--playground",
     "tokens": 33,
-    "motion": null,
+    "motion": "declared",
     "stage": null
   },
   {
@@ -73,7 +73,7 @@
     "figmaNode": "358:6494",
     "story": "buttons-textlink--playground",
     "tokens": 33,
-    "motion": null,
+    "motion": "declared",
     "stage": null
   },
   {
@@ -92,7 +92,7 @@
     "figmaNode": "345:868",
     "story": "buttons-fabbutton--playground",
     "tokens": 37,
-    "motion": null,
+    "motion": "declared",
     "stage": null
   },
   {
@@ -168,7 +168,7 @@
     "figmaNode": "350:5337",
     "story": "buttons-buttongroup--button-group-item-playground",
     "tokens": 37,
-    "motion": null,
+    "motion": "declared",
     "stage": null
   },
   {
@@ -263,7 +263,7 @@
     "figmaNode": "368:1330",
     "story": "buttons-socialloginbutton--playground",
     "tokens": 66,
-    "motion": null,
+    "motion": "declared",
     "stage": "storybook"
   },
   {
@@ -302,7 +302,7 @@
     "figmaNode": "394:152",
     "story": "forms-textarea--playground",
     "tokens": 31,
-    "motion": null,
+    "motion": "declared",
     "stage": null
   },
   {
@@ -321,7 +321,7 @@
     "figmaNode": "416:994",
     "story": "forms-inputotp--playground",
     "tokens": 5,
-    "motion": null,
+    "motion": "declared",
     "stage": null
   },
   {
@@ -360,7 +360,7 @@
     "figmaNode": "1107:243",
     "story": "forms-numberinput--playground",
     "tokens": 18,
-    "motion": null,
+    "motion": "declared",
     "stage": null
   },
   {
@@ -666,7 +666,7 @@
     "figmaNode": "1015:7515",
     "story": "forms-checkbox--checkbox-item-playground",
     "tokens": 11,
-    "motion": null,
+    "motion": "declared",
     "stage": null
   },
   {
@@ -681,7 +681,7 @@
     "figmaNode": "1015:10216",
     "story": "forms-checkbox--checkbox-group-playground",
     "tokens": 10,
-    "motion": null,
+    "motion": "declared",
     "stage": null
   },
   {
@@ -736,7 +736,7 @@
     "figmaNode": "405:2153",
     "story": "forms-switch--switch-group-playground",
     "tokens": 19,
-    "motion": null,
+    "motion": "declared",
     "stage": null
   },
   {
@@ -755,7 +755,7 @@
     "figmaNode": "447:19",
     "story": "forms-slider--playground",
     "tokens": 24,
-    "motion": null,
+    "motion": "declared",
     "stage": null
   },
   {
@@ -1374,7 +1374,7 @@
     "figmaNode": "415:556",
     "story": "content-surfaces-tooltip--tooltip-info-trigger-playground",
     "tokens": 20,
-    "motion": null,
+    "motion": "declared",
     "stage": null
   },
   {
@@ -1443,7 +1443,7 @@
     "figmaNode": "1024:18323",
     "story": "content-surfaces-table--table-cell-playground",
     "tokens": 20,
-    "motion": null,
+    "motion": "declared",
     "stage": null
   },
   {
@@ -1481,7 +1481,7 @@
     "figmaNode": "1035:8122",
     "story": "content-surfaces-table--table-media-cell-playground",
     "tokens": 16,
-    "motion": null,
+    "motion": "declared",
     "stage": null
   },
   {
@@ -1500,7 +1500,7 @@
     "figmaNode": "1035:8123",
     "story": "content-surfaces-table--table-trend-cell-playground",
     "tokens": 17,
-    "motion": null,
+    "motion": "declared",
     "stage": null
   },
   {
@@ -1673,7 +1673,7 @@
     "figmaNode": "1034:8164",
     "story": "content-surfaces-table--table-load-more-playground",
     "tokens": 1,
-    "motion": null,
+    "motion": "declared",
     "stage": null
   },
   {
@@ -2152,7 +2152,7 @@
     "figmaNode": "402:998",
     "story": "navigation-breadcrumb--breadcrumb-item-playground",
     "tokens": 30,
-    "motion": null,
+    "motion": "declared",
     "stage": null
   },
   {
@@ -2171,7 +2171,7 @@
     "figmaNode": "402:999",
     "story": "navigation-breadcrumb--breadcrumb-ellipsis-playground",
     "tokens": 23,
-    "motion": null,
+    "motion": "declared",
     "stage": null
   },
   {
@@ -2285,7 +2285,7 @@
     "figmaNode": "994:1904",
     "story": "navigation-stepper--stepper-item-playground",
     "tokens": 9,
-    "motion": null,
+    "motion": "declared",
     "stage": null
   },
   {
@@ -2305,7 +2305,7 @@
     "figmaNode": "994:850",
     "story": "navigation-stepper--stepper-indicator-playground",
     "tokens": 6,
-    "motion": null,
+    "motion": "declared",
     "stage": null
   },
   {
@@ -2325,7 +2325,7 @@
     "figmaNode": "994:569",
     "story": "navigation-stepper--stepper-icon-playground",
     "tokens": 20,
-    "motion": null,
+    "motion": "declared",
     "stage": null
   },
   {

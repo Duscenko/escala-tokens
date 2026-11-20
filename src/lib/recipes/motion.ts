@@ -154,4 +154,34 @@ export const RECIPE_MOTION: Record<string, RecipeMotion> = {
   Popover: popover('--radix-popover-content-transform-origin'),
   TooltipContent: popover('--radix-tooltip-content-transform-origin'),
   DropdownMenu: popover('--radix-dropdown-menu-content-transform-origin'),
+
+  // ── MOT-002 closed (owner decision 2026-11-20). An empty `{}` is an explicit decision: the contract carries it
+  // (motion is no longer null) and the stylesheet emits nothing for it.
+  // Press: sink and colours exactly like Button.
+  CloseButton: { transitions: { root: { ...states('background-color', 'color', 'border-color', 'box-shadow'), scale: 'use-hover' } }, press: {} },
+  FABButton: { transitions: { root: { ...states('background-color', 'color', 'border-color', 'box-shadow'), scale: 'use-hover' } }, press: {} },
+  ButtonGroupItem: { transitions: { root: { ...states('background-color', 'color', 'border-color', 'box-shadow'), scale: 'use-hover' } }, press: {} },
+  SocialLoginButton: { transitions: { root: { ...states('background-color', 'color', 'border-color', 'box-shadow'), scale: 'use-hover' } }, press: {} },
+  // Fill: colour only, no press.
+  TextLink: { transitions: { root: FILL } },
+  BreadcrumbItem: { transitions: { root: FILL } },
+  BreadcrumbEllipsis: { transitions: { root: FILL } },
+  TooltipInfoTrigger: { transitions: { root: FILL } },
+  // Field: the edge and the focus halo, like Input.
+  Textarea: { transitions: { root: FIELD } },
+  NumberInput: { transitions: { root: FIELD } },
+  // A child carries the motion; the wrapper itself does not move.
+  InputOTP: {}, // InputOTPSlot animates (FIELD).
+  CheckboxItem: {}, // Checkbox animates.
+  CheckboxGroup: {}, // Checkbox animates.
+  SwitchGroup: {}, // Switch animates.
+  Slider: {}, // SliderThumb animates; the range follows the pointer and must not lag.
+  // Static: Disabled/Loading are not animated.
+  TableCell: {},
+  TableMediaCell: {},
+  TableTrendCell: {},
+  TableLoadMore: {}, // Disabled/Loading are not animated; the Spinner has its own loop.
+  StepperItem: {},
+  StepperIndicator: {},
+  StepperIcon: {},
 }

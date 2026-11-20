@@ -12,32 +12,10 @@
     ]
   },
   "MOT-002": [
-    "BreadcrumbEllipsis",
-    "BreadcrumbItem",
-    "ButtonGroupItem",
-    "CheckboxGroup",
-    "CheckboxItem",
-    "CloseButton",
-    "FABButton",
     "FABGroup",
-    "InputOTP",
-    "NumberInput",
     "Sidebar",
     "SidebarBrand",
     "SidebarGroup",
-    "Slider",
-    "SocialLoginButton",
-    "SplitButton",
-    "StepperIcon",
-    "StepperIndicator",
-    "StepperItem",
-    "SwitchGroup",
-    "TableCell",
-    "TableLoadMore",
-    "TableMediaCell",
-    "TableTrendCell",
-    "TextLink",
-    "Textarea",
-    "TooltipInfoTrigger"
+    "SplitButton"
   ]
 }
