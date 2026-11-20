@@ -1,0 +1,14 @@
+/* The same Button, each state painted with the role its contract binds. */
+[data-escala="Button"] {
+  background: var(--color-action-primary-default);
+  color: var(--color-content-on-action);
+}
+
+[data-escala="Button"]:hover:not([aria-disabled="true"]),
+[data-escala="Button"][data-force-state="Hover"] {
+  background: var(--color-action-primary-hover);
+}
+
+[data-escala="Button"][data-variant="critical"]:hover {
+  background: var(--color-status-critical-surface-solid-hover);
+}

@@ -1,0 +1,10 @@
+/* An agent styling an Escala Button by hand. Every value is a real token, so token-lint passes —
+   but Hover repeats the Default role: the contract binds `color.action.primary.hover`. */
+[data-escala="Button"] {
+  background: var(--color-action-primary-default);
+  color: var(--color-content-on-action);
+}
+
+[data-escala="Button"]:hover:not([aria-disabled="true"]) {
+  background: var(--color-action-primary-default);
+}

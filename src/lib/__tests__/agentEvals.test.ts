@@ -1,5 +1,5 @@
 import { spawnSync } from 'node:child_process'
-import { mkdtempSync, readFileSync, writeFileSync } from 'node:fs'
+import { mkdirSync, mkdtempSync, readFileSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
@@ -42,6 +42,37 @@ describe('agent-bundle evals (generated token-lint vs corpus)', () => {
     expect(result.stdout).toContain('var(--spacing-4)')
     expect(result.stdout).toContain('8px')
     expect(result.stdout).toContain('var(--radius-md)')
+  })
+
+  // Phase 4 item 3 (design-plans/agent-ready-contracts.md): a real token on the wrong state.
+  describe('binding-lint (contracts/<Key>.json bindings vs the CSS an agent wrote)', () => {
+    const root = mkdtempSync(join(tmpdir(), 'escala-pack-'))
+    for (const f of pack.files) {
+      if (!f.path.startsWith('contracts/') && !f.path.startsWith('checkers/')) continue
+      mkdirSync(dirname(join(root, f.path)), { recursive: true })
+      writeFileSync(join(root, f.path), f.text)
+    }
+    const bindingLint = (file: string) =>
+      spawnSync(process.execPath, [join(root, 'checkers/binding-lint.mjs'), join(evalDir, file)], { encoding: 'utf8' })
+
+    it('pass.state-roles.css: every state paints the role its contract binds', () => {
+      const result = bindingLint('pass.state-roles.css')
+      expect(result.status, result.stdout + result.stderr).toBe(0)
+    })
+
+    it('fail.wrong-state-role.css: Button Hover with action.primary.default fails, pointing at the hover role', () => {
+      const result = bindingLint('fail.wrong-state-role.css')
+      expect(result.status, result.stdout + result.stderr).toBe(1)
+      expect(result.stdout).toContain('State=Hover')
+      expect(result.stdout).toContain('var(--color-action-primary-default)')
+      expect(result.stdout).toContain('color.action.primary.hover → var(--color-action-primary-hover)')
+      expect(result.stdout.match(/✗/g)).toHaveLength(1) // the Default rule is right
+    })
+
+    it('token-lint alone does not see it (every value is a token)', () => {
+      const result = runLint(checker, join(evalDir, 'fail.wrong-state-role.css'))
+      expect(result.status, result.stdout).toBe(0)
+    })
   })
 
   it('AGENTS.md in the bundle forbids inventing names', () => {

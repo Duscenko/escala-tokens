@@ -243,7 +243,7 @@ Every component is ONE recipe: the same table paints the Figma component set and
 2. **Load the styles once, in this order:** \`variables.css\` (the tokens), then [\`react/recipes.css\`](react/recipes.css) (every component below, painted only with \`var()\`). Copy both into the app's styles.
 3. **The stylesheet paints by attribute, never by class**: the root carries \`data-escala="<Component>"\` and one \`data-<axis>\` per variant property; every other part carries \`data-part="<Component>.<slot>"\`. States come from the real element: \`:hover\`, \`:active\`, \`:focus-visible\`, \`aria-disabled="true"\`, \`aria-invalid="true"\`. \`data-force-state\` pins a state for docs only.
 4. **No colour, length or font in \`className\` or \`style\`.** An override uses the same \`var()\` the recipe uses for that part.
-5. Run \`node checkers/token-lint.mjs\` on the files you touched.
+5. Run \`node checkers/token-lint.mjs\` and \`node checkers/binding-lint.mjs\` on the files you touched: the first catches a raw value that has a token, the second a token on the wrong state (a Hover painted with the Default role).
 
 ## Machine contracts
 
