@@ -2817,7 +2817,7 @@ export default function Configurator() {
           </div>
         )}
         <div
-          className={`flex-1 min-w-0 flex ${themesCanvas ? 'flex-col' : ''} overflow-hidden ${themesCanvas || componentsCanvas ? 'bg-nav' : !foundationCanvas ? 'bg-app border-l border-line' : ''}`}
+          className={`group/canvas flex-1 min-w-0 flex ${themesCanvas ? 'flex-col' : ''} overflow-hidden ${themesCanvas || componentsCanvas ? 'bg-nav' : !foundationCanvas ? 'bg-app border-l border-line' : ''}`}
         >
           {/* Folded, the column is an icon strip: Collections + Groups go back
               to the inspector (their old place) so nothing becomes unreachable. */}
@@ -2921,12 +2921,14 @@ export default function Configurator() {
             className={themesCanvas
               ? homePage
                 ? `flex-1 min-w-0 flex flex-col my-3 mr-3 overflow-hidden rounded-2xl border border-line bg-app dark:border-white/[0.08] dark:bg-[#161617] ${chromeAppearance === 'dark' ? 'dark' : 'light'}`
-                : `flex-1 min-w-0 flex flex-col my-3 overflow-hidden ${foundationCanvas ? 'rounded-r-2xl border-l-0' : `rounded-2xl ${navRailVisible ? '' : 'ml-3'}`} border ${chromeAppearance === 'dark' ? 'border-white/[0.08]' : 'border-line'} bg-app ${(homeRailOnly ? chromeAppearance : (boardShownAppearance ?? previewAppearance)) === 'dark' ? 'dark' : 'light'}`
+                : `flex-1 min-w-0 flex flex-col my-3 overflow-hidden ${foundationCanvas ? 'border-l-0' : `rounded-l-2xl ${navRailVisible ? '' : 'ml-3'}`} border ${chromeAppearance === 'dark' ? 'border-white/[0.08]' : 'border-line'} bg-app ${(homeRailOnly ? chromeAppearance : (boardShownAppearance ?? previewAppearance)) === 'dark' ? 'dark' : 'light'}`
               : componentsCanvas
                 // Components reads like the Generator: [rail] [directory | page CARD] [inspector].
                 // The directory is the card's left pane (proposal C): the page
                 // drops its left edge so the two read as one card.
-                ? `flex-1 min-w-0 flex flex-col my-3 mr-3 overflow-hidden rounded-r-2xl border-l-0 border ${chromeAppearance === 'dark' ? 'border-white/[0.08]' : 'border-line'} bg-app`
+                // A page's inspector (when its dock holds a panel) is the card's
+                // right pane: the page then drops its right corners and margin.
+                ? `flex-1 min-w-0 flex flex-col my-3 mr-3 overflow-hidden rounded-r-2xl border-l-0 border group-has-[[data-inspector-dock]>*]/canvas:mr-0 group-has-[[data-inspector-dock]>*]/canvas:rounded-r-none ${chromeAppearance === 'dark' ? 'border-white/[0.08]' : 'border-line'} bg-app`
                 : 'flex-1 min-w-0 flex flex-col'}
           >
             {/* No CenterHeader on the Themes canvas — the icons ARE the section
@@ -3218,7 +3220,7 @@ export default function Configurator() {
           {componentsCanvas && (
             <aside
               aria-label={t('Inspector')}
-              className="relative my-3 mr-3 hidden min-h-0 flex-shrink-0 flex-col overflow-hidden rounded-2xl border border-line bg-side-panel has-[[data-inspector-dock]>*]:flex"
+              className="relative my-3 mr-3 hidden min-h-0 flex-shrink-0 flex-col overflow-hidden rounded-r-2xl border border-l-0 border-line bg-side-panel has-[[data-inspector-dock]>*]:flex"
               style={{ width: INSPECTOR_WIDTH }}
             >
               <div ref={setComponentsSlot} data-inspector-dock="" className="contents" />

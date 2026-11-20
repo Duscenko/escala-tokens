@@ -20,6 +20,9 @@ Two islands, not three. The mode rail (Home · Board · Variables · Code · Com
 The nav column is the card's left pane: rounded on the left only, its border is the divider, the canvas drops its left
 edge, and the pane's header is 52px like the canvas header so one rule crosses the card. The pane keeps the platform's
 chrome colours; only the canvas side paints the previewed theme (hard rule 11).
+Owner's follow-up the same day: no gap before the inspector either. The inspector is the card's right pane on Board,
+Variables, Code and a component/block page (rounded on the right only, the canvas's right border is the divider), so
+the Generator is ONE card: `[nav pane | canvas | inspector]`. A Components index has no inspector and keeps its corners.
 
 - `WorkspaceNavColumn` (new): the left column, 248px, foldable to a 44px strip. Folded/open is per mode and per browser
   (localStorage, `escala.navColumn.folded.<mode>`), never in the store. Below 1360px it starts folded until opened once.
