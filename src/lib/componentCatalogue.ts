@@ -3,12 +3,12 @@
 // catalogue UI can import it without circular dependencies.
 //
 // Each `key` here equals a CATALOG `gate` in the Figma plugin
-// (../escala-figma-plugin/src/code.ts); `axes` is the variant matrix the plugin's
-// "Full catalogue" import must build for it (every value, every combination) and
-// `figmaSets` lists every component set the key unlocks in the generated Figma
-// library. The plugin may carry EXTRA axes/values (e.g. Chip State, Badge Icon),
-// never fewer: if an axis or value is added or changed here, change the plugin's
-// SPECS to match in the same change, and re-check a Full catalogue import.
+// (../escala-figma-plugin/src/code.ts); `axes` is the variant matrix of the
+// key's set (the plugin builds a base cut of it, the Escala Design System file
+// holds all of it) and `figmaSets` lists every component set the key maps to in
+// the Figma library. The plugin may carry EXTRA axes/values (e.g. Chip State,
+// Badge Icon), never fewer: if an axis or value is added or changed here,
+// change the plugin's SPECS to match in the same change.
 //
 // Entries with an EMPTY `figmaSets` are catalogue-first: they document + preview
 // in the configurator and export in `atoms`, but their plugin gate doesn't exist
@@ -2988,22 +2988,29 @@ export const CATEGORIES = ['Button & Actions', 'Form Controls', 'Indicators', 'C
 
 // ── Figma import scope ───────────────────────────────────────────────────────
 // `figmaSets` above names the component set(s) a key maps to in the plugin's
-// full CATALOG (../escala-figma-plugin/src/code.ts) — the variant matrix the
-// plugin CAN build. The default live import builds a FIXED 9-component sample
-// sheet ('⬡ Components Overview'), each of the nine with every variant — the
-// same set the Full catalogue builds for it. The explicit Full catalogue option
-// builds every component type, using representative source variants that cover
-// each axis value instead of materializing the 1,403-combination cartesian product.
+// CATALOG (../escala-figma-plugin/src/code.ts) and in the Escala Design System
+// Figma file. Since plugin 0.35.0 (owner, 2026-11-20) the plugin gives away
+// the variables, the styles, the Getting started · Token Architecture ·
+// Documentation pages and a CORE KIT drawn on the Figma file's grammar — the
+// sets below, each as a base cut of its matrix. No screen of the plugin offers
+// its old Full catalogue any more: the complete library (70+ components,
+// blocks and pages) is the Escala Design System, sold on its own through
+// `/figma-kit` (`lib/figmaKit.ts`).
 //
-// Every one still ships as a full spec — props, variant axes,
-// tokens, accessibility notes — into `tokens.json` (`atoms`) and the agent
-// bundle. Only the keys below additionally land as real component nodes in a
-// Figma file in the DEFAULT mode. Don't infer this from `figmaSets.length` —
-// that field describes full-catalogue capability.
+// Every key still ships as a full spec — props, variant axes, tokens,
+// accessibility notes — into `tokens.json` (`atoms`) and the agent bundle.
+// Only the keys below additionally land as real component nodes when the
+// plugin builds a file. Don't infer this from `figmaSets.length` — that field
+// names the library's sets, not what the plugin builds.
 //
-// Keep this list in lockstep with the plugin's `SAMPLE_SETS` array in code.ts.
+// Keep this list in lockstep with the plugin's `SAMPLE_SETS` (code.ts) and
+// `CORE_KIT` (ui.html): Button, IconButton, Input, Checkbox, Radio, Switch,
+// Badge, Avatar. These are catalogue keys (the plugin's gates). The plugin's
+// `Radio` set has no key here: it is the RadioGroup item, painted from the
+// RadioGroup + Checkbox recipes, and `RadioGroup` itself maps to the
+// 'Radio Group' set, which the core kit does not build — so neither is listed.
 export const FIGMA_SAMPLE_KEYS: readonly string[] = [
-  'Button', 'Input', 'Select', 'Checkbox', 'Switch', 'Badge', 'StatusBadge', 'Toast', 'Avatar',
+  'Button', 'IconButton', 'Input', 'Checkbox', 'Switch', 'Badge', 'Avatar',
 ]
 
 /** Does the live Figma import render this key as a real component today —

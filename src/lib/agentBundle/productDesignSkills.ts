@@ -226,7 +226,7 @@ description: "Build ${project} components in Figma or in React: which variable g
 
 Design skills. Load \`AGENTS.md\` and \`SKILL.md\` first.
 
-Every component is ONE recipe: the same table paints the Figma component set and the web component. The Escala plugin builds the Figma sets for you (sync from Escala). Use this skill when you build one by hand, extend one, or check one.
+Every component is ONE recipe: the same table paints the Figma component set and the web component. The Escala plugin builds the core kit's sets for you (sync from Escala); every other set is in the Escala Design System Figma file. Use this skill when you build one by hand, extend one, or check one.
 
 ## Figma rules
 

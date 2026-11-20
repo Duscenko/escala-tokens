@@ -7,6 +7,7 @@ import { type ReactNode } from 'react'
 import { useI18n } from '../../../lib/i18n'
 import { withAgentEnvelope } from '../../../lib/aiContext'
 import { FIGMA_PLUGIN_COMMUNITY } from '../../../lib/utils'
+import { FIGMA_KIT_PATH } from '../../../lib/figmaKit'
 import { AIContextButton } from '../../ui/AIContextButton'
 import {
   DocHeader, DocSection, DocTitle, Pager, type TocEntry,
@@ -24,6 +25,7 @@ export function getStartedToc(key: string, t: Translate = (source) => source): T
       { id: 'description', label: t('Overview') },
       { id: 'plugin', label: t('Install the plugin') },
       { id: 'context', label: t('Copy the context') },
+      { id: 'builds', label: t('What the plugin builds') },
       { id: 'file', label: t('Optional file') },
     ]
   }
@@ -46,6 +48,12 @@ function guideMarkdown(key: string): string {
       '3. On escalatokens.com open Figma, check brands and viewports, then Copy context.',
       '4. In the plugin, paste it in the context card (⌘V) → Import into this file.',
       '5. Optional file: Export → Escala JSON (the same payload, as a download).',
+      '',
+      '## What the plugin builds',
+      '',
+      'Variables and styles, the Getting started, Token Architecture and Documentation pages, and the core kit: Button, Icon Button, Input, Checkbox, Radio, Switch, Badge and Avatar, drawn like the Escala Design System and bound to your variables.',
+      '',
+      `The complete library (70+ components, blocks and pages) is the Escala Design System, sold on its own: https://www.escalatokens.com${FIGMA_KIT_PATH}`,
       '',
     ].join('\n')
   }
@@ -164,6 +172,24 @@ function FigmaGuide({ exits }: { exits: DocsExits }) {
           <li>{t('In the plugin, paste it in the context card (⌘V) → Import into this file.')}</li>
         </ol>
         <ExitButton onClick={exits.onOpenFigmaSync}>{t('Open Figma')}</ExitButton>
+      </DocSection>
+
+      <DocSection
+        id="builds"
+        title={t('What the plugin builds')}
+        description={t('Variables and styles, three pages and a core kit, every fill, stroke, radius and gap bound to your variables. The complete library is the Escala Design System, sold on its own.')}
+      >
+        <ul className="flex flex-col gap-1.5 text-ui text-fg-muted leading-relaxed pl-4 list-disc mb-3">
+          <li>{t('Variables and styles: every collection and mode, plus text, effect, grid and gradient styles.')}</li>
+          <li>{t('Pages: Getting started, Token Architecture and Documentation, with live specimens of every foundation.')}</li>
+          <li>{t('The core kit: Button, Icon Button, Input, Checkbox, Radio, Switch, Badge and Avatar, drawn like the Escala Design System.')}</li>
+        </ul>
+        <a
+          href={FIGMA_KIT_PATH}
+          className="self-start text-body font-medium text-fg border border-line-strong rounded-lg px-3 py-1.5 hover:bg-elevated/60 transition-colors"
+        >
+          {t('See the Escala Design System')}
+        </a>
       </DocSection>
 
       <DocSection

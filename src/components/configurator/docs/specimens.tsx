@@ -109,6 +109,19 @@ export function iconName(_prefix: string, concept: IconConcept): string {
 // (`import { MagnifyingGlass } from "@phosphor-icons/react"`).
 export const ICON_COMPONENT: Record<IconConcept, string> = PHOSPHOR_CORE_COMPONENT
 
+/** A Figma component's BOOLEAN properties that are not variant axes (the catalogue's `axes` hold only those), shown in
+ *  the settings panel as switches, named and defaulted as the component's Storybook controls are. The value rides in the
+ *  page's axis values as 'true' · 'false', so the specimen reads it as `v.<Name>`. */
+export const BOOLEAN_PROPS: Record<string, { name: string; default: boolean }[]> = {
+  SplitBar: [{ name: 'LegendVisible', default: true }],
+  ActivityHeatmap: [
+    { name: 'LegendVisible', default: true },
+    { name: 'MonthLabelsVisible', default: true },
+    { name: 'DayLabelsVisible', default: true },
+  ],
+  ReactionGroup: [{ name: 'SummaryVisible', default: true }],
+}
+
 /** Which components expose leading/trailing icon slots, and their default glyphs. */
 export const ICON_SLOTS: Record<string, { leading: IconConcept; trailing: IconConcept }> = {
   Button: { leading: 'star', trailing: 'arrow' },

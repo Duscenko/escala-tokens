@@ -41,10 +41,10 @@ export const CARD_STACK_ITEMS: CardStackItem[] = [
     facts: [{ icon: 'airplane', text: '2 h 35 min direct' }, { icon: 'sun', text: '24 °C, mostly sunny' }, { icon: 'currency-eur', text: '€640 per person' }] },
   { id: 'kyoto', city: 'Kyoto', country: 'Japan', code: 'KIX', photo: TRAVEL.kyoto, description: 'Temples at dawn, quiet lanes and a tea house on every corner. Best in autumn.',
     facts: [{ icon: 'airplane', text: '13 h 20 min, 1 stop' }, { icon: 'sun', text: '19 °C, clear' }, { icon: 'currency-eur', text: '€1,180 per person' }] },
-  { id: 'marrakech', city: 'Marrakech', country: 'Morocco', code: 'RAK', photo: TRAVEL.marrakech, description: 'Markets, courtyards and rooftop dinners. Warm even in winter.',
-    facts: [{ icon: 'airplane', text: '3 h 10 min direct' }, { icon: 'sun', text: '27 °C, sunny' }, { icon: 'currency-eur', text: '€520 per person' }] },
-  { id: 'reykjavik', city: 'Reykjavik', country: 'Iceland', code: 'KEF', photo: TRAVEL.reykjavik, description: 'Hot springs, black beaches and long blue evenings, a short hop from Europe.',
-    facts: [{ icon: 'airplane', text: '3 h 45 min direct' }, { icon: 'sun', text: '8 °C, windy' }, { icon: 'currency-eur', text: '€710 per person' }] },
+  { id: 'copenhagen', city: 'Copenhagen', country: 'Denmark', code: 'CPH', photo: TRAVEL.copenhagen, description: 'Painted harbour fronts, bikes everywhere and long summer evenings by the water.',
+    facts: [{ icon: 'airplane', text: '2 h 05 min direct' }, { icon: 'sun', text: '17 °C, light breeze' }, { icon: 'currency-eur', text: '€580 per person' }] },
+  { id: 'porto', city: 'Porto', country: 'Portugal', code: 'OPO', photo: TRAVEL.porto, description: 'Port cellars across the river, tiled churches and the Dom Luís bridge at sunset.',
+    facts: [{ icon: 'airplane', text: '2 h 20 min direct' }, { icon: 'sun', text: '22 °C, sunny' }, { icon: 'currency-eur', text: '€520 per person' }] },
 ]
 
 // ── CardStackCard ────────────────────────────────────────────────────────────

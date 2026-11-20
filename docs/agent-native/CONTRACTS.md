@@ -141,7 +141,7 @@ Always emit when present in the store:
 - `platforms`, `platform` — only when `platformAxis.shipped` has a native target (also per theme under `foundationsByTheme.<theme>`). Never emit them for a web-only system: that payload must stay byte-identical.
 - `borders.width` — copy of `stroke`, so a v5 plugin still creates the Border collection
 - `icons` (library + `aiSource` + `custom`)
-- `atoms` (component selection/spec payload; the plugin's default Overview is fixed at 9 types, while its explicit Full catalogue mode renders all 58 catalogue types)
+- `atoms` (component selection/spec payload; the plugin builds the core kit — `FIGMA_SAMPLE_KEYS` in `componentCatalogue.ts` — and no longer offers a Full catalogue; every other set is in the Escala Design System, `/figma-kit`)
 - `descriptions` — `{ [collectionName]: { [variableName]: string } }` from role catalogues (`ALL_ROLES`, `CATEGORICAL_ROLE_COMMENTS`, layout/type roles). Plugin sets `Variable.description` on sync. Additive.
 
 Plugin also *reads* optional `copy` that the configurator does not emit yet. Do not reuse that name for something else.

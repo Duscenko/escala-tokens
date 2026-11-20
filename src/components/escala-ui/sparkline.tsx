@@ -138,7 +138,9 @@ function Sparkline({
     const el = rootRef.current
     if (!el) return
     const measure = () => {
-      const r = el.getBoundingClientRect()
+      // Layout size, not getBoundingClientRect: a scaled ancestor (the Board's tiles, a zoomed canvas)
+      // would shrink the box, and the SVG drawn at that size is then scaled down a second time.
+      const r = { width: el.offsetWidth, height: el.offsetHeight }
       const d = el.querySelector<HTMLElement>('[data-part="Sparkline.dot"]')?.offsetWidth ?? 0
       setBox((b) => (b.w === r.width && b.h === r.height && b.dot === d ? b : { w: r.width, h: r.height, dot: d }))
     }

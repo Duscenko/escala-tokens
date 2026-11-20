@@ -72,7 +72,7 @@ function FramedBlock({ block, values, frame }: { block: BlockDef; values: Record
   const layout = frame === 'mobile' ? 'mobile' : 'desktop'
   if (block.mockup && frame !== 'tablet') return <>{block.mockup(values, layout)}</>
   // A plain block has no card of its own: it sits straight on the page.
-  const onPage = block.wide || values.container === 'plain'
+  const onPage = block.wide || block.onPage || values.container === 'plain'
   const edgeToEdge = block.wide && !(block.phoneInset && frame === 'mobile')
   const page = `var(${cssVarOf(onPage ? 'color.surface.page' : 'color.surface.layer-1')})`
   const screen: CSSProperties = {
@@ -234,7 +234,7 @@ function BlockCard({ block, appearance, surface, tokens, onSelect, large = false
         <span className="absolute inset-3 transition-transform duration-200 ease-out group-hover:scale-[1.02]">
           <FittedSpecimen>
             <RecipeScope t={tokens}>
-              <div style={{ width: block.wide ? THUMB_LAYOUT_WIDTH : undefined }}>
+              <div style={{ width: block.wide ? THUMB_LAYOUT_WIDTH : block.canvasWidth }}>
                 {block.render(blockDefaults(block))}
               </div>
             </RecipeScope>
@@ -383,7 +383,7 @@ function BlockPage({ block, onSelect, previewTheme, onOpenComponent, onInspectRo
             title={block.name}
             ink={tokens.archTokens?.['content.secondary'] ?? tokens.neutralText}
             fitCap={frame === 'canvas' ? BARE_FIT_CAP : 1}
-            contentWidth={frame === 'canvas' ? BARE_LAYOUT_WIDTH : FRAME_LAYOUT_WIDTH[frame]}
+            contentWidth={frame === 'canvas' ? block.canvasWidth ?? BARE_LAYOUT_WIDTH : FRAME_LAYOUT_WIDTH[frame]}
             resetKey={frame}
             aside={
               // "Open as dialog" shows the block as the product would: at true

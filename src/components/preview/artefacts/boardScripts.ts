@@ -13,9 +13,8 @@
  *  button loads. Same total as the button's own loop (8 × 780 ms). */
 export const EMAIL_PLAY = { ms: 160, steps: 39, typeFrom: 1, focusUntil: 17 } as const
 
-/** Editors: the count steps up and back; the total follows it. */
+/** Editors: the count steps up and back (the NumberInput specimen plays it). */
 export const EDITORS_PLAY = { ms: 1600, values: [12, 13, 14, 13] } as const
-export const EDITOR_PRICE = 12
 
 /** Calendar: the selected day hops, and the event under the month follows. */
 export const CALENDAR_PLAY = {

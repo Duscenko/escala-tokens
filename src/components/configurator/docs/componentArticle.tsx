@@ -20,9 +20,10 @@ import { SELECT_LIST, SELECT_OPTION, SELECT_OPTION_OFF, SELECT_OPTION_FOCUS } fr
 import { NavIcon } from '../FoundationIconRail'
 import { PickerField, FIELD_SHELL, FIELD_SHELL_REST, FIELD_CHIP } from '../../ui/PickerField'
 import {
-  COMPONENT_KEYS, FIGMA_SAMPLE_KEYS, isInFigmaSample,
+  isInFigmaSample,
   type ComponentDef, type VariantAxis,
 } from '../../../lib/componentCatalogue'
+import { FIGMA_KIT_PATH } from '../../../lib/figmaKit'
 import { PLATFORM_FAMILIES, PLATFORM_FOLDERS, PLATFORM_PAGES, familiesIn, familyOf, familyLabel } from '../../../lib/platformCatalogue'
 import { CatalogueSwitcher } from './CatalogueSwitcher'
 import { PreviewStage, STAGE_ZOOM_STEPS, type StageControls } from './PreviewStage'
@@ -56,7 +57,7 @@ import type { ThemeAppearance } from '../../../lib/themeModes'
 import { InspectorModeProvider, InspectorOverlay, TokenInspector } from '../../preview/artefacts/TokenInspector'
 import { InspectGlyph, LockGlyph } from '../../ui/icons'
 import { OVERVIEWS, OVERVIEW_VALUE, hasOverview, type Overview } from './componentOverviews'
-import { SPECIMENS, snippetFor, ICON_SLOTS, PANEL_COMPONENTS, type AxisValues, type IconOpts } from './specimens'
+import { SPECIMENS, snippetFor, ICON_SLOTS, BOOLEAN_PROPS, PANEL_COMPONENTS, type AxisValues, type IconOpts } from './specimens'
 import {
   Prose, DocSection, SectionHeading,
   Pager,
@@ -76,7 +77,11 @@ const KEYBOARD_ROWS: { key: string; description: string }[] = [
 /** First value of each axis = the plugin's default variant. One definition —
  *  the two merged files each carried their own copy of this expression. */
 export function axisDefaults(def: ComponentDef): AxisValues {
-  return { ...Object.fromEntries(def.axes.map((a) => [a.name, a.values[0]])), ...AT_REST[def.key] }
+  return {
+    ...Object.fromEntries(def.axes.map((a) => [a.name, a.values[0]])),
+    ...Object.fromEntries((BOOLEAN_PROPS[def.key] ?? []).map((p) => [p.name, String(p.default)])),
+    ...AT_REST[def.key],
+  }
 }
 
 /** Where the file's first option is not the one to open on. TextLink lists
@@ -732,8 +737,10 @@ export function ComponentCatalogueHero({
   const [selection, setSelection] = useState<string | null>(null)
   // The Theme panel's open foundation row (Color, Font, Radius…).
   const [quickPanel, setQuickPanel] = useState<QuickPanelFoundation>('color')
-  const [panel, setPanel] = useState<CanvasPanel | null>(() => (def.axes.length > 0 || ICON_SLOTS[def.key] ? 'settings' : null))
-  const homePanel: CanvasPanel | null = def.axes.length > 0 || ICON_SLOTS[def.key] ? 'settings' : null
+  // A component opens on its settings when it has anything to set: variant axes, icon slots or boolean properties.
+  const settable = def.axes.length > 0 || Boolean(ICON_SLOTS[def.key]) || Boolean(BOOLEAN_PROPS[def.key])
+  const [panel, setPanel] = useState<CanvasPanel | null>(() => (settable ? 'settings' : null))
+  const homePanel: CanvasPanel | null = settable ? 'settings' : null
   const closePanel = useCallback(() => setPanel(homePanel), [homePanel])
   const backToHome = homePanel
     ? { label: t('Component settings'), onBack: closePanel }
@@ -764,7 +771,8 @@ export function ComponentCatalogueHero({
   )
   const Specimen = SPECIMENS[def.key]
   const variantCount = def.axes.reduce((n, a) => n * a.values.length, 1)
-  const hasControls = def.axes.length > 0 || Boolean(slots)
+  const boolProps = BOOLEAN_PROPS[def.key]
+  const hasControls = settable
   // Overview first: the curated row is what the page opens on. Picking a
   // variant in Settings switches the stage to that single specimen.
   const [overview, setOverview] = useState(() => hasOverview(def.key))
@@ -915,6 +923,10 @@ export function ComponentCatalogueHero({
                 }}
               />
             ))}
+            {boolProps?.map((p) => (
+              // "LegendVisible" reads as "Legend · On": the switch already says visible or not, and the chip stays unclipped.
+              <OptionSwitch key={p.name} label={p.name.replace(/Visible$/, '')} checked={values[p.name] !== 'false'} onChange={(on) => onValuesChange({ ...values, [p.name]: String(on) })} />
+            ))}
             {slots && (
               <>
                 <OptionSwitch label={t('Leading icon')} checked={leadingIcon} onChange={onLeadingIconChange} />
@@ -925,7 +937,9 @@ export function ComponentCatalogueHero({
           <p className="px-[var(--inspector-inset,12px)] pb-4 text-mini leading-relaxed text-fg-faint">
             {slots
               ? <>{t('Icons come from')} <span className="font-medium text-fg-muted">{PHOSPHOR_LIBRARY.label}</span>.</>
-              : t('Same axes as the Figma variant set the plugin generates.')}
+              : def.axes.length > 0
+                ? t('Same axes as the Figma variant set the plugin generates.')
+                : t('Same properties as the Figma component and its Storybook controls.')}
           </p>
         </CanvasSidePanel>
       )}
@@ -1053,18 +1067,25 @@ export function FigmaShipList({ component }: { component: ComponentDef }) {
   const variantCount = component.axes.reduce((n, a) => n * a.values.length, 1)
   // Every key ships a full spec — props, axes, tokens, accessibility — into
   // tokens.json and the agent bundle regardless of this check. This block is
-  // only about whether the LIVE Figma import additionally renders it as a
-  // real component node today. See FIGMA_SAMPLE_KEYS in componentCatalogue.ts.
+  // only about whether the plugin also builds it as a real component node: the
+  // core kit (FIGMA_SAMPLE_KEYS in componentCatalogue.ts). Every other set is
+  // in the Escala Design System, sold on its own (`/figma-kit`, lib/figmaKit.ts).
   if (!isInFigmaSample(component.key)) {
+    const inLibrary = component.figmaSets.length > 0
     return (
       <div className="rounded-xl border border-dashed border-line bg-surface/40 p-4 flex items-center gap-2.5">
         <FigmaGlyph className="text-fg-faint flex-shrink-0" />
         <p className="text-caption text-fg-faint leading-relaxed">
-          {/* Both counts are DERIVED. They were hardcoded "58" and "9" —
-              correct on the day they were typed and one catalogue entry away
-              from being a lie, which is the same drift that left the About
-              page claiming 39 semantic roles against a real 64. */}
-          {t("Not rendered in Figma yet — building all {count} specs as real variants locks the file on import, so today this one ships as a full spec (props, tokens, accessibility) in", { count: COMPONENT_KEYS.length })} <code className="font-mono">tokens.json</code> {t("and your coding agent's context, not as a component node in the file.")}
+          {inLibrary ? (
+            <>
+              {t('Not in the plugin’s core kit. Its Figma set is in the')}{' '}
+              <a href={FIGMA_KIT_PATH} className="font-medium text-fg-muted underline underline-offset-2 hover:text-fg">Escala Design System</a>
+              {t(', the complete library. Here it ships as a full spec (props, tokens, accessibility) in')}
+            </>
+          ) : (
+            t('Not in the Figma library yet. It ships as a full spec (props, tokens, accessibility) in')
+          )}{' '}
+          <code className="font-mono">tokens.json</code> {t("and your coding agent's context.")}
         </p>
       </div>
     )
@@ -1082,7 +1103,7 @@ export function FigmaShipList({ component }: { component: ComponentDef }) {
         </span>
       </div>
       <p className="text-caption text-fg-faint leading-relaxed">
-        {t("One of the {count} components on the '⬡ Components Overview' sample sheet every import builds — every fill, stroke and radius bound to your variables (component → semantic → primitive):", { count: FIGMA_SAMPLE_KEYS.length })}
+        {t('Part of the plugin’s core kit: every import builds it, drawn like the Escala Design System, with every fill, stroke and radius bound to your variables (component → semantic → primitive):')}
       </p>
       <div className="flex flex-wrap gap-1.5">
         {component.figmaSets.map((s) => (

@@ -4309,6 +4309,36 @@ var init_componentCatalogue = __esm({
         accessibility: 'role="group" with an aria-label. The trigger is a native <button> with aria-expanded; every item needs an accessible name (its label prop) since fan items are icon-only.'
       },
       {
+        key: "SplitButton",
+        label: "Split Button",
+        category: "Button & Actions",
+        box: "gray",
+        locks: ["size", "hit", "motion"],
+        description: "A main action joined to a menu of related alternatives. A ButtonGroup of two segments (the action with its label and leading icon, and an icon-only caret) over a DropdownMenu that opens below, aligned to the end edge. It paints nothing of its own: the segments are ButtonGroupItems (Action/primary or Action/secondary, Radius/action, Shadow/xs) and the menu is the DropdownMenu of the same size (xs opens sm), 8px below the group (Spacing/gap-control) and 256 wide. Open pins the caret Active and swaps CaretDown for CaretUp. Motion: the menu grows out of the caret on popover-enter (use-disclosure-in), its rows arrive one after another on use-stagger-in, and it leaves on popover-exit; the main half never scales, and reduced motion keeps only the fade.",
+        usage: "Use in toolbars and page headers when one action is primary and a few related ones sit behind it (Publish \xB7 Publish and notify \xB7 Save as draft). One per toolbar; risky actions go in the menu as critical rows. Use Button when there is a single action, and a DropdownMenu on an IconButton when none is primary. The pair never collapses: give it its own row on narrow screens.",
+        // The Figma file's axes, value for value, in the file's panel order (design-plans/split-button-contract.md).
+        axes: [
+          { name: "Variant", values: ["default", "secondary"] },
+          { name: "Size", values: ["default", "xs", "sm", "lg"] },
+          { name: "Open", values: ["false", "true"] }
+        ],
+        figmaSets: ["SplitButton"],
+        props: [
+          { name: "variant", type: '"default" | "secondary"', description: "Brand or neutral fill, inherited from ButtonGroup (Action/primary \xB7 Action/secondary and their paired ink)." },
+          { name: "size", type: '"default" | "xs" | "sm" | "lg"', description: "Size/control-md 40 \xB7 xs 24 \xB7 sm 32 \xB7 lg 48; the menu is the DropdownMenu of the same size (xs opens sm)." },
+          { name: "open", type: "boolean", description: "Figma Open: the menu is open and the caret is Active (controlled)." },
+          { name: "defaultOpen", type: "boolean", description: "Uncontrolled initial state." },
+          { name: "onOpenChange", type: "(open: boolean) => void", description: "Called when the caret, Escape or a pick opens or closes the menu." },
+          { name: "children", type: "ReactNode", description: "The main segment's label (the nested item's Label)." },
+          { name: "leading", type: "ReactNode", description: "The main segment's leading icon (IconLeadingIcon)." },
+          { name: "menu", type: "DropdownMenuItem[]", description: "The menu rows (Content slot); a critical row is Variant=critical. Defaults to the file's three." },
+          { name: "moreLabel", type: "string", description: `The caret's accessible name. Defaults to "<label> more actions".` },
+          { name: "onAction", type: "(event) => void", description: "Runs the main action." },
+          { name: "disabled", type: "boolean", description: "Disables both segments." }
+        ],
+        accessibility: `Two native <button>s. The caret is labelled "<label> more actions" with aria-haspopup="menu" and aria-expanded; the menu is a Radix DropdownMenu (arrows move and loop, typeahead, Escape closes and returns focus to the caret). The main segment is a plain action: no aria-pressed. In Dark the default Variant's label is light on the violet fill and is judged by perceived contrast (APCA), as on Button: a WCAG checker reads about 4.0:1 there by design.`
+      },
+      {
         key: "ButtonGroup",
         label: "Button Group",
         category: "Button & Actions",
@@ -6332,6 +6362,49 @@ var init_componentCatalogue = __esm({
         accessibility: "A single link named by the issue title. While dragged, only its edge and shadow ease; the position follows the pointer with no transition."
       },
       {
+        key: "Gauge",
+        label: "Gauge",
+        category: "Data Display",
+        box: "black",
+        locks: ["shape", "size", "hit", "motion"],
+        description: "One measurement against a fixed range on an open 270\xB0 arc with round ends: a muted track, a fill, and the value, its unit and a label in the middle. The fill reads the neutral chart series, or a severity when the colour means good or bad.",
+        usage: "Use for a single reading with a known range (workspace health, quota, score). Variant default for a neutral reading; success \xB7 warning \xB7 critical only when the colour carries the meaning, never to decorate. Use ProgressCircle for task completion and Sparkline for a trend.",
+        axes: [
+          { name: "Variant", values: ["default", "success", "warning", "critical"] },
+          { name: "Size", values: ["default", "sm", "lg"] },
+          { name: "Value", values: ["0", "25", "50", "75", "100"] }
+        ],
+        figmaSets: ["Gauge"],
+        props: [
+          { name: "variant / size", type: "Figma axes", description: "Variant default \xB7 success \xB7 warning \xB7 critical; Size sm 128 \xB7 default 160 \xB7 lg 192 across (arc 8 \xB7 12 \xB7 16 thick)." },
+          { name: "value / min / max", type: "number", description: "The measurement and its range (0\u2013100 by default). The file's Value axis (0 \xB7 25 \xB7 50 \xB7 75 \xB7 100) is a sample: code takes any value." },
+          { name: "valueText", type: "string", description: "Figma ValueText: the big number as written. Defaults to the value." },
+          { name: "unit / label", type: "string", description: "Figma Unit and Label (UnitVisible / LabelVisible): omit one to hide it." }
+        ],
+        accessibility: 'role="meter" with aria-valuenow, aria-valuemin, aria-valuemax and an aria-valuetext that reads the label ("72 %, Healthy"). Give it an accessible name (aria-label or aria-labelledby). Not focusable. A new value sweeps the fill on use-travel-in; reduced motion is instant.'
+      },
+      {
+        key: "Sparkline",
+        label: "Sparkline",
+        category: "Data Display",
+        box: "black",
+        locks: ["shape", "size", "hit", "motion"],
+        description: "A compact trend next to a value, with no axes or gridlines: a monotone line over a soft area, with a dot on the last point. Default binds the neutral chart series; success and critical use the Status roles because they carry meaning; secondary is a quiet grey.",
+        usage: "Use beside a number to show where it came from (a metric card, a table cell). Variant success when up is good and critical when down is bad; default when the direction has no judgement. For a full chart with axes use a charting layer, not this.",
+        axes: [
+          { name: "Variant", values: ["default", "secondary", "success", "critical"] },
+          { name: "Size", values: ["default", "sm", "lg"] }
+        ],
+        figmaSets: ["Sparkline"],
+        props: [
+          { name: "variant / size", type: "Figma axes", description: "Variant default \xB7 secondary \xB7 success \xB7 critical; Size default 256 \xD7 64 \xB7 sm 96 \xD7 32 \xB7 lg 480 \xD7 128." },
+          { name: "data", type: "number[]", description: "The series, oldest first; scaled to the box. The file draws one sample curve." },
+          { name: "area / dot", type: "boolean", description: "Figma AreaVisible and DotVisible (both on by default)." },
+          { name: "fluid", type: "boolean", description: "Code only: the width follows the container; the height stays the Size's." }
+        ],
+        accessibility: 'role="img" with a required aria-label that states the trend ("Daily active users, up 7.2 % this week"); the drawing itself is hidden from assistive tech. The line draws once on mount (use-reveal) and new data cross-fades (use-color); reduced motion is instant.'
+      },
+      {
         key: "BoardColumn",
         label: "Board Column",
         category: "Layout",
@@ -6402,6 +6475,110 @@ var init_componentCatalogue = __esm({
           { name: "href / asChild", type: "string / boolean", description: "A link; asChild for your router link." }
         ],
         accessibility: 'A link; the current one is aria-current="page", a disabled one aria-disabled and out of the Tab order.'
+      },
+      {
+        key: "ActivityHeatmap",
+        label: "Activity Heatmap",
+        category: "Data Display",
+        box: "gray",
+        locks: ["size", "hit", "motion"],
+        description: "A year of activity: one square per day, one column per week (53 \xD7 7, weeks from Sunday), filled on the Chart/sequential ladder, with month and day labels and a Less\u2013More legend.",
+        usage: "Contribution and habit calendars: one number per day over a year. Year switching is a SegmentedControl outside the component; the focused day is shown in a caption below by the consumer (onFocusDay). For one value over time use Sparkline; for a share of a whole, SplitBar. Related: ActivityHeatmapCell, SegmentedControl.",
+        axes: [],
+        figmaSets: ["ActivityHeatmap"],
+        props: [
+          { name: "data", type: "{ date: string; count: number }[]", description: "One entry per day with activity; dates are ISO YYYY-MM-DD, a missing day counts 0." },
+          { name: "thresholds", type: "[number, number, number, number, number]", description: "The count at which levels 1 to 5 begin. Default [1, 3, 6, 10, 15]." },
+          { name: "endDate", type: "string", description: "The last day shown; default the latest date in data. The grid is the 53 weeks that end on its week." },
+          { name: "showLegend / showMonthLabels / showDayLabels", type: "boolean", description: "Figma LegendVisible, MonthLabelsVisible and DayLabelsVisible (all true)." },
+          { name: "onFocusDay", type: "(day | null) => void", description: "The focused day changed; null when focus leaves the grid." },
+          { name: "getCellLabel", type: "(day) => string", description: 'The accessible name of a day; default "Tuesday, March 18: 8 contributions".' }
+        ],
+        accessibility: 'role="grid" with 7 rows (weekdays) of gridcells and one roving tab stop. Left/Right move by week, Up/Down by day, Home/End to the first/last day of the week, Ctrl+Home/End to the first/last day of the grid. Every cell is named by its day and count, so the level never relies on colour alone. The legend and the labels are decorative (aria-hidden).'
+      },
+      {
+        key: "ActivityHeatmapCell",
+        label: "Activity Heatmap Cell",
+        category: "Data Display",
+        box: "black",
+        locks: ["shape", "radius", "size", "hit", "motion"],
+        description: "One day of an ActivityHeatmap: a 12 px square filled Chart/sequential/<Value>; Focused adds a 2 px ring one pixel off its edge.",
+        usage: "Inside an ActivityHeatmap (and its legend). Value is the level 0 to 5: 0 no activity, 5 the most. It carries no text: its accessible name states the day and the count.",
+        axes: [
+          { name: "Value", values: ["0", "1", "2", "3", "4", "5"] },
+          { name: "State", values: ["Default", "Focused"] }
+        ],
+        figmaSets: ["ActivityHeatmapCell"],
+        props: [
+          { name: "value", type: "0 | 1 | 2 | 3 | 4 | 5", description: "Figma Value; Chart/sequential/<value>." },
+          { name: "forceState", type: '"Default" | "Focused"', description: "Pins a state without a keyboard (docs). The live ring is :focus-visible." }
+        ],
+        accessibility: 'role="gridcell" inside the heatmap, named by aria-label ("Tuesday, March 18: 8 contributions"). As a legend swatch it is role="presentation".'
+      },
+      {
+        key: "SplitBar",
+        label: "Split Bar",
+        category: "Indicators",
+        box: "gray",
+        locks: ["size", "hit", "motion"],
+        description: "A single bar that is 100 % of something, cut into shares (SplitBarSegment) over a legend (SplitBarLegendItem) that turns each series on and off. The bar clips its segments to Radius/action; the legend wraps on Spacing/gap-group.",
+        usage: "Parts of one whole, up to eight: traffic by source, spend by team, storage by type. Colours are Chart/series-1\u20268 (categories with no meaning); when a share means good or bad, use Status/* instead. A share that is not part of a whole is a ProgressLine; a trend is a Sparkline. Related: SplitBarSegment, SplitBarLegendItem, ProgressLine.",
+        axes: [],
+        figmaSets: ["SplitBar"],
+        props: [
+          { name: "segments", type: "{ id: string; label: string; value: number; series: 1\u20138 }[]", description: "The shares. `value` is any non-negative number; the bar shows each as its share of what is shown." },
+          { name: "aria-label / aria-labelledby", type: "string", description: `The chart's title: the bar is a role="group" named by it (one of the two is required).` },
+          { name: "showLegend", type: "boolean", description: "Figma LegendVisible. Default true." },
+          { name: "valueUnit", type: "string", description: 'Unit of `value` for the screen reader: "Organic search, 41.6%, 41,300 sessions".' },
+          { name: "hiddenIds / defaultHiddenIds / onHiddenIdsChange", type: "string[]", description: "The series that are turned off (controlled or not). The last series shown cannot be turned off." },
+          { name: "leaderBelow", type: "number", description: "A share under this percent (default 5) keeps its text out of the bar: a callout with a leader line sits under it." },
+          { name: "onSegmentClick", type: "(id: string) => void", description: "A segment was pressed." }
+        ],
+        accessibility: 'role="group" named by the chart title. Each segment is a button named "label, share, value unit"; each legend item an aria-pressed toggle. Tab visits segments then legend items; Enter or Space presses. Colour is never the only divider: every segment has a Chart/series-n/solid edge.'
+      },
+      {
+        key: "SplitBarSegment",
+        label: "Split Bar Segment",
+        category: "Indicators",
+        box: "gray",
+        locks: ["size", "hit", "motion"],
+        description: "One share of a SplitBar: Chart/series-n/soft fill, a Stroke/focus-wide Chart/series-n/solid edge on its right, label and value in Chart/series-n/content, Size/control-lg tall. No Hover colour: hovering or focusing widens it.",
+        usage: "Inside a SplitBar, never alone. Its width is its share of 100 %, set by the bar. Label shows when it fits, the value alone when it is narrower, nothing under that.",
+        axes: [
+          { name: "Series", values: ["1", "2", "3", "4", "5", "6", "7", "8"] },
+          { name: "State", values: ["Default", "Focused"] }
+        ],
+        figmaSets: ["SplitBarSegment"],
+        props: [
+          { name: "series", type: "1\u20138", description: "Figma Series: the Chart/series-n colours." },
+          { name: "label / value", type: "string", description: "Figma Label and Value (TEXT)." },
+          { name: "labelVisible / valueVisible", type: "boolean", description: "Figma LabelVisible and ValueVisible." },
+          { name: "forceState", type: '"Default" | "Focused"', description: "Pins a state in docs; in an app Focused comes from the keyboard." },
+          { name: "aria-label", type: "string", description: '"Organic search, 41.6%, 41,300 sessions": the text inside is decorative.' }
+        ],
+        accessibility: "A button. The visible text is aria-hidden: give it an aria-label with label, share and value. Focused draws a Stroke/focus ring inside the segment in Border/ring/neutral."
+      },
+      {
+        key: "SplitBarLegendItem",
+        label: "Split Bar Legend Item",
+        category: "Indicators",
+        box: "gray",
+        locks: ["size", "hit", "motion"],
+        description: "The legend entry of a SplitBar and the toggle of its series: a 12 px Chart/series-n/solid swatch, a label and a value, Size/control-xs tall. Off, the swatch is Surface/muted and the text Content/disabled.",
+        usage: "Inside the SplitBar legend. Turning a series off reflows the others to 100 %.",
+        axes: [
+          { name: "Series", values: ["1", "2", "3", "4", "5", "6", "7", "8"] },
+          { name: "Checked", values: ["true", "false"] },
+          { name: "State", values: ["Default", "Focused"] }
+        ],
+        figmaSets: ["SplitBarLegendItem"],
+        props: [
+          { name: "series", type: "1\u20138", description: "Figma Series: the swatch colour." },
+          { name: "checked / onCheckedChange", type: "boolean", description: "Figma Checked: the series is shown. Sets aria-pressed." },
+          { name: "label / value / valueVisible", type: "string / boolean", description: "Figma Label, Value and ValueVisible." },
+          { name: "forceState", type: '"Default" | "Focused"', description: "Pins a state in docs." }
+        ],
+        accessibility: "A button with aria-pressed (true = the series is shown). Focused draws the Button ring: 2px, 1px off the edge, in Border/ring/neutral."
       },
       {
         key: "Brand",
@@ -8501,6 +8678,225 @@ var init_chartPalette = __esm({
   }
 });
 
+// src/lib/chartRamps.generated.ts
+var CHART_RAMPS;
+var init_chartRamps_generated = __esm({
+  "src/lib/chartRamps.generated.ts"() {
+    CHART_RAMPS = {
+      "teal": {
+        "light": {
+          "1": "#fefdff",
+          "2": "#e2faf6",
+          "3": "#c4f4ec",
+          "4": "#9deee3",
+          "5": "#62e9d9",
+          "6": "#00d9c9",
+          "7": "#00c5b6",
+          "8": "#00b1a3",
+          "9": "#00a598",
+          "10": "#009488",
+          "11": "#00736a",
+          "12": "#00423c"
+        },
+        "dark": {
+          "1": "#100e13",
+          "2": "#001c19",
+          "3": "#002622",
+          "4": "#00312c",
+          "5": "#003d38",
+          "6": "#005049",
+          "7": "#00635b",
+          "8": "#007b71",
+          "9": "#00a99b",
+          "10": "#00baac",
+          "11": "#4cd7c8",
+          "12": "#cff4ef"
+        }
+      },
+      "amber": {
+        "light": {
+          "1": "#fefdff",
+          "2": "#fef2e1",
+          "3": "#fce4c4",
+          "4": "#fcd5a0",
+          "5": "#fdc471",
+          "6": "#fbaa00",
+          "7": "#e49a00",
+          "8": "#d59000",
+          "9": "#c78600",
+          "10": "#b37800",
+          "11": "#865900",
+          "12": "#4d3200"
+        },
+        "dark": {
+          "1": "#100e13",
+          "2": "#221400",
+          "3": "#2d1b00",
+          "4": "#3a2400",
+          "5": "#482e00",
+          "6": "#5d3d00",
+          "7": "#744c00",
+          "8": "#8e5f00",
+          "9": "#c38400",
+          "10": "#d79200",
+          "11": "#ebb25f",
+          "12": "#fbe8ce"
+        }
+      },
+      "blue": {
+        "light": {
+          "1": "#fefdff",
+          "2": "#edf5ff",
+          "3": "#daeaff",
+          "4": "#c6dfff",
+          "5": "#afd2ff",
+          "6": "#8fc0ff",
+          "7": "#6daeff",
+          "8": "#529fff",
+          "9": "#3893ff",
+          "10": "#0081f9",
+          "11": "#0061be",
+          "12": "#123865"
+        },
+        "dark": {
+          "1": "#100e13",
+          "2": "#06172e",
+          "3": "#031f41",
+          "4": "#002855",
+          "5": "#003369",
+          "6": "#004386",
+          "7": "#0053a5",
+          "8": "#0067c9",
+          "9": "#3492ff",
+          "10": "#5aa3ff",
+          "11": "#91c1ff",
+          "12": "#dfedff"
+        }
+      },
+      "rose": {
+        "light": {
+          "1": "#fefdff",
+          "2": "#fff0f0",
+          "3": "#ffdfe1",
+          "4": "#ffced0",
+          "5": "#ffbabe",
+          "6": "#ff9da4",
+          "7": "#ff8793",
+          "8": "#ff7183",
+          "9": "#ff5772",
+          "10": "#ff1359",
+          "11": "#b9003c",
+          "12": "#5e2029"
+        },
+        "dark": {
+          "1": "#100e13",
+          "2": "#2a0b0f",
+          "3": "#3b0c14",
+          "4": "#4f0818",
+          "5": "#67001d",
+          "6": "#830028",
+          "7": "#a10033",
+          "8": "#c50041",
+          "9": "#ff3963",
+          "10": "#ff677c",
+          "11": "#ff9ea6",
+          "12": "#ffe3e5"
+        }
+      },
+      "lime": {
+        "light": {
+          "1": "#fefdff",
+          "2": "#eff7e5",
+          "3": "#dfefcc",
+          "4": "#cde7ae",
+          "5": "#b8de88",
+          "6": "#9cd146",
+          "7": "#87c000",
+          "8": "#79ad00",
+          "9": "#70a100",
+          "10": "#649000",
+          "11": "#4d7000",
+          "12": "#2a4000"
+        },
+        "dark": {
+          "1": "#100e13",
+          "2": "#101b01",
+          "3": "#162500",
+          "4": "#1e2f00",
+          "5": "#273c00",
+          "6": "#344e00",
+          "7": "#426100",
+          "8": "#527700",
+          "9": "#73a500",
+          "10": "#80b600",
+          "11": "#a7cd77",
+          "12": "#e3f1d5"
+        }
+      },
+      "magenta": {
+        "light": {
+          "1": "#fefdff",
+          "2": "#ffeef9",
+          "3": "#ffddf2",
+          "4": "#ffcaec",
+          "5": "#ffb4e5",
+          "6": "#ff96de",
+          "7": "#ff7fd9",
+          "8": "#ff64d4",
+          "9": "#ff3fd0",
+          "10": "#f200c3",
+          "11": "#ab0089",
+          "12": "#552247"
+        },
+        "dark": {
+          "1": "#100e13",
+          "2": "#260c1e",
+          "3": "#350e2a",
+          "4": "#470d38",
+          "5": "#5c0749",
+          "6": "#78005f",
+          "7": "#940076",
+          "8": "#b50091",
+          "9": "#f700c7",
+          "10": "#ff4bd1",
+          "11": "#f19fd6",
+          "12": "#ffe1f4"
+        }
+      },
+      "orange": {
+        "light": {
+          "1": "#fefdff",
+          "2": "#fff0e9",
+          "3": "#ffe1d3",
+          "4": "#ffd1ba",
+          "5": "#ffbe9e",
+          "6": "#ffa372",
+          "7": "#ff8946",
+          "8": "#ff7407",
+          "9": "#ef6c00",
+          "10": "#d86100",
+          "11": "#9e4500",
+          "12": "#5c2603"
+        },
+        "dark": {
+          "1": "#100e13",
+          "2": "#290e02",
+          "3": "#371300",
+          "4": "#461a00",
+          "5": "#572200",
+          "6": "#6f2e00",
+          "7": "#893b00",
+          "8": "#a84a00",
+          "9": "#e66700",
+          "10": "#fd7200",
+          "11": "#fda578",
+          "12": "#ffe5d8"
+        }
+      }
+    };
+  }
+});
+
 // src/lib/semanticArchitectures.ts
 function rampOf(look, fam) {
   const out = {};
@@ -8743,6 +9139,8 @@ function scaleLookup(scales, palette, kind = "light", pageBackground, darkBackgr
     warning: palette?.warning ?? darkTwin("warning") ?? scales.warning,
     success: palette?.success ?? darkTwin("success") ?? scales.success,
     info: palette?.info ?? darkTwin("info") ?? scales.info,
+    // The Chart hue ramps (series 2–8): fixed data from the Figma file, kind-aware like `accent`.
+    ...Object.fromEntries(Object.entries(CHART_RAMPS).map(([hue, r]) => [`chart-${hue}`, r[kind]])),
     // The theme's extra brand palettes — only defined when it carries them.
     secondary: palette?.secondary,
     tertiary: palette?.tertiary,
@@ -8832,12 +9230,13 @@ function projectArchitecture(kind, input, errorSeed, overrides = {}, themeOrder 
       return null;
   }
 }
-var APCA_BODY_TEXT, WCAG_UI, APCA_UI, WCAG_CONTROL, APCA_CONTROL, INK_REFS, REF_RE, TEXT_END_TONE, APCA_LINK_RAISED, DISABLED_CAP, WCAG_DISABLED, APCA_DISABLED, OPAQUE6, SOLID_JOB, CATEGORICAL_ROLES, STATUS_SEVERITY_ORDER, STATUS_SLOT_ORDER, CATEGORICAL_ROLE_COMMENTS, CATEGORICAL_ROLE_RENAME;
+var APCA_BODY_TEXT, WCAG_UI, APCA_UI, WCAG_CONTROL, APCA_CONTROL, INK_REFS, REF_RE, TEXT_END_TONE, APCA_LINK_RAISED, DISABLED_CAP, WCAG_DISABLED, APCA_DISABLED, OPAQUE6, SOLID_JOB, CATEGORICAL_ROLES, STATUS_SEVERITY_ORDER, STATUS_SLOT_ORDER, CATEGORICAL_ROLE_COMMENTS, CHART_SLOT_COMMENT, CHART_HUE_NAME, CATEGORICAL_ROLE_RENAME;
 var init_semanticArchitectures = __esm({
   "src/lib/semanticArchitectures.ts"() {
     init_colorUtils();
     init_apca();
     init_chartPalette();
+    init_chartRamps_generated();
     init_chartPalette();
     APCA_BODY_TEXT = INTENT_THRESHOLDS["body-text"].apcaLc ?? 75;
     WCAG_UI = INTENT_THRESHOLDS["ui-component"].wcag ?? 3;
@@ -9359,7 +9758,42 @@ var init_semanticArchitectures = __esm({
       { group: "elevation", key: "shadow-ambient", light: "{black-a.1}", dark: "{black-a.4}" },
       { group: "elevation", key: "shadow-ring", light: "{white-a.1}", dark: "{white-a.1}" },
       // DEC-2026-11-16-006: the file's Light highlight is White Alpha/05 (#ffffff4d); Dark stays at /03.
-      { group: "elevation", key: "highlight", light: "{white-a.5}", dark: "{white-a.3}" }
+      { group: "elevation", key: "highlight", light: "{white-a.5}", dark: "{white-a.3}" },
+      // Chart — the data-viz layer (Figma `Chart/*`, DEC-2026-11-19 ARC-CHART-01). Series order is fixed: series 1 is the
+      // brand accent, 2–8 are fixed hue ramps (`chartRamps.generated.ts`, from the file's `Charts/EscalaDS/<Hue>`). `solid`
+      // (step 9) draws lines, bars, dots, swatches and segment edges; `soft` (4) area fills and segment backgrounds; `content`
+      // (11) labels on `soft` or on the page. Categories with no meaning only; a colour that means good or bad stays in `status`.
+      { group: "chart", key: "series-1.solid", light: "{accent.9}", dark: "{accent.9}" },
+      { group: "chart", key: "series-1.soft", light: "{accent.4}", dark: "{accent.4}" },
+      { group: "chart", key: "series-1.content", light: "{accent.11}", dark: "{accent.11}" },
+      { group: "chart", key: "series-2.solid", light: "{chart-teal.9}", dark: "{chart-teal.9}" },
+      { group: "chart", key: "series-2.soft", light: "{chart-teal.4}", dark: "{chart-teal.4}" },
+      { group: "chart", key: "series-2.content", light: "{chart-teal.11}", dark: "{chart-teal.11}" },
+      { group: "chart", key: "series-3.solid", light: "{chart-amber.9}", dark: "{chart-amber.9}" },
+      { group: "chart", key: "series-3.soft", light: "{chart-amber.4}", dark: "{chart-amber.4}" },
+      { group: "chart", key: "series-3.content", light: "{chart-amber.11}", dark: "{chart-amber.11}" },
+      { group: "chart", key: "series-4.solid", light: "{chart-blue.9}", dark: "{chart-blue.9}" },
+      { group: "chart", key: "series-4.soft", light: "{chart-blue.4}", dark: "{chart-blue.4}" },
+      { group: "chart", key: "series-4.content", light: "{chart-blue.11}", dark: "{chart-blue.11}" },
+      { group: "chart", key: "series-5.solid", light: "{chart-rose.9}", dark: "{chart-rose.9}" },
+      { group: "chart", key: "series-5.soft", light: "{chart-rose.4}", dark: "{chart-rose.4}" },
+      { group: "chart", key: "series-5.content", light: "{chart-rose.11}", dark: "{chart-rose.11}" },
+      { group: "chart", key: "series-6.solid", light: "{chart-lime.9}", dark: "{chart-lime.9}" },
+      { group: "chart", key: "series-6.soft", light: "{chart-lime.4}", dark: "{chart-lime.4}" },
+      { group: "chart", key: "series-6.content", light: "{chart-lime.11}", dark: "{chart-lime.11}" },
+      { group: "chart", key: "series-7.solid", light: "{chart-magenta.9}", dark: "{chart-magenta.9}" },
+      { group: "chart", key: "series-7.soft", light: "{chart-magenta.4}", dark: "{chart-magenta.4}" },
+      { group: "chart", key: "series-7.content", light: "{chart-magenta.11}", dark: "{chart-magenta.11}" },
+      { group: "chart", key: "series-8.solid", light: "{chart-orange.9}", dark: "{chart-orange.9}" },
+      { group: "chart", key: "series-8.soft", light: "{chart-orange.4}", dark: "{chart-orange.4}" },
+      { group: "chart", key: "series-8.content", light: "{chart-orange.11}", dark: "{chart-orange.11}" },
+      // Sequential — heatmaps and density: 0 = no data … 5 = most intense, in both themes.
+      { group: "chart", key: "sequential.0", light: "{neutral.3}", dark: "{neutral-dark.3}" },
+      { group: "chart", key: "sequential.1", light: "{accent.3}", dark: "{accent.3}" },
+      { group: "chart", key: "sequential.2", light: "{accent.5}", dark: "{accent.5}" },
+      { group: "chart", key: "sequential.3", light: "{accent.7}", dark: "{accent.7}" },
+      { group: "chart", key: "sequential.4", light: "{accent.9}", dark: "{accent.9}" },
+      { group: "chart", key: "sequential.5", light: "{accent.11}", dark: "{accent.11}" }
       // `border.critical` / `border.warning` / `border.success` moved to
       // `status.<sev>.border-strong` (audit F3 — a severity-family stroke belongs in
       // the `status` group, beside `status.<sev>.border`), and `info` joined them so
@@ -9466,6 +9900,20 @@ var init_semanticArchitectures = __esm({
       "border.rim-highlight": "[ROLE: Elevation Rim] 1px light rim along the top of an elevated surface in dark mode. Below a near-black page only ~5% of the luminance range is left to spend downward, so elevation has to be bought with light, not shadow \u2014 this is the token for the rim darkShadow() already paints.",
       "border.accent": "[ROLE: Accent Border] Border painted in the brand accent \u2014 a selected card, a toggled button, any element that needs its stroke to read as the primary accent. For keyboard focus use border.focus."
     };
+    CHART_SLOT_COMMENT = {
+      solid: "step 9 \u2014 lines, bars, dots, legend swatches and segment edges. 3:1 on the page in both themes (WCAG 1.4.11). Never add opacity on top of it.",
+      soft: "step 4 \u2014 area fills and segment backgrounds. A fill, never a line or text.",
+      content: "step 11 \u2014 labels on `soft` or on the page. 4.5:1."
+    };
+    CHART_HUE_NAME = ["", "accent (the brand violet)", "Teal", "Amber", "Blue", "Rose", "Lime", "Magenta", "Orange"];
+    for (let n = 1; n <= 8; n++) {
+      for (const slot of ["solid", "soft", "content"]) {
+        CATEGORICAL_ROLE_COMMENTS[`chart.series-${n}.${slot}`] = `[ROLE: Chart Series ${n} ${slot[0].toUpperCase()}${slot.slice(1)}] Series ${n} of a categorical chart (${CHART_HUE_NAME[n]}): ${CHART_SLOT_COMMENT[slot]} Series order is fixed. Use Chart/* for categories with no meaning; Status/* when the colour means good or bad.`;
+      }
+    }
+    for (let n = 0; n <= 5; n++) {
+      CATEGORICAL_ROLE_COMMENTS[`chart.sequential.${n}`] = `[ROLE: Chart Sequential ${n}] Heatmap and density ramp, level ${n}: ${n === 0 ? "no data" : n === 5 ? "most intense" : "increasing intensity"}, in both themes. A fill only.`;
+    }
     CATEGORICAL_ROLE_RENAME = {
       "content.link-default": "content.link.default",
       "content.link-hover": "content.link.hover",
@@ -9617,7 +10065,7 @@ function figmaSemanticName(id) {
   const label = GROUP_LABEL[group] ?? (group ? group.charAt(0).toUpperCase() + group.slice(1) : id);
   return rest.length ? `${label}/${rest.join("/")}` : label;
 }
-var GROUP_LABEL;
+var GROUP_LABEL, FAMILY_FROM_GROUP;
 var init_names = __esm({
   "src/lib/agentBundle/names.ts"() {
     init_utils();
@@ -9627,7 +10075,26 @@ var init_names = __esm({
       surface: "Surface",
       status: "Status",
       border: "Border",
-      elevation: "Elevation"
+      elevation: "Elevation",
+      chart: "Chart"
+    };
+    FAMILY_FROM_GROUP = {
+      Accent: "accent",
+      "Accent Dark": "accent-dark",
+      Neutral: "neutral",
+      "Neutral Dark": "neutral-dark",
+      "States/Error": "error",
+      "States/Error Dark": "error-dark",
+      "States/Success": "success",
+      "States/Success Dark": "success-dark",
+      "States/Warning": "warning",
+      "States/Warning Dark": "warning-dark",
+      "States/Info": "info",
+      "States/Info Dark": "info-dark",
+      ...Object.fromEntries(["Teal", "Amber", "Blue", "Rose", "Lime", "Magenta", "Orange"].flatMap((h) => [
+        [`Charts/${h}`, `chart-${h.toLowerCase()}`],
+        [`Charts/${h} Dark`, `chart-${h.toLowerCase()}-dark`]
+      ]))
     };
   }
 });
@@ -12363,7 +12830,9 @@ var init_navigation = __esm({
           // Concentric with the overlay: 24 − inset-control 12 = Radius/action 12 for the rows (DEC-2026-11-16-001).
           // The header sits on the content, so its bottom padding is none.
           header: { paddingX: "spacing.inset-control", paddingY: "spacing.inset-control", paddingBottom: "spacing.none" },
-          content: { paddingX: "spacing.inset-control", paddingY: "spacing.inset-control" },
+          // The content bleeds `stroke.focus` on every side (HALO_BLEED: that much padding taken back by an equal negative margin) so a row's
+          // focus halo is not clipped; its padding therefore carries the bleed on top of the file's 12 (row 13, width 230, menu 256×122).
+          content: { paddingX: "spacing.inset-control+stroke.focus", paddingY: "spacing.inset-control+stroke.focus" },
           // A separator row: 4px above and below a 1px subtle rule.
           separator: { fill: c("border.subtle"), height: "stroke.divider" }
         }))
@@ -12553,6 +13022,132 @@ var init_pages = __esm({
           count: { text: c("content.secondary"), font: "type.caption" },
           addIcon: { width: "icon.small", height: "icon.small" },
           content: { gap: "spacing.gap-control" }
+        }))
+      ]
+    };
+  }
+});
+
+// src/lib/recipes/activityHeatmap.ts
+var ACTIVITY_HEATMAP_CELL_VALUES, ACTIVITY_HEATMAP_CELL_STATES, ACTIVITY_HEATMAP_CELL, ACTIVITY_HEATMAP;
+var init_activityHeatmap = __esm({
+  "src/lib/recipes/activityHeatmap.ts"() {
+    init_helpers();
+    ACTIVITY_HEATMAP_CELL_VALUES = ["0", "1", "2", "3", "4", "5"];
+    ACTIVITY_HEATMAP_CELL_STATES = ["Default", "Focused"];
+    ACTIVITY_HEATMAP_CELL = {
+      key: "ActivityHeatmapCell",
+      slots: ["root"],
+      defaults: { Value: "0", State: "Default" },
+      parts: [
+        // Figma: 12 × 12, both bound to the Dimension primitive `12` (no role). `spacing.3` is that step on the scale (DIM-01).
+        // The radius is `Radius/control`, capped so no Selectors pick turns the square into a dot (SELECTOR_SQUARE_RADIUS).
+        part({}, () => ({ root: { width: "spacing.3", height: "spacing.3", radius: SELECTOR_SQUARE_RADIUS.compact } })),
+        part({ Value: ACTIVITY_HEATMAP_CELL_VALUES }, (value) => ({ root: { fill: c(`chart.sequential.${value}`) } })),
+        // Focused: Figma's `focus-ring`, a rectangle 1px larger than the cell on every side (14 × 14, radius 5), stroked `Border/ring/default`,
+        // `Stroke/focus` wide, OUTSIDE — the Button `gapRing` (outline + 1px offset). The fill stays the cell's.
+        part({ State: ACTIVITY_HEATMAP_CELL_STATES }, (state2) => ({
+          root: { gapRing: state2 === "Focused" ? c("border.ring.default") : NONE }
+        }))
+      ]
+    };
+    ACTIVITY_HEATMAP = {
+      key: "ActivityHeatmap",
+      slots: ["root", "monthLabels", "monthSlot", "month", "body", "dayLabels", "day", "dayLabel", "grid", "row", "legendRow", "legend", "legendLabel"],
+      defaults: {},
+      parts: [
+        part({}, () => ({
+          // Figma root: VERTICAL, gap `Spacing/gap-control` (8) between the month labels, the body and the legend row.
+          root: { gap: "spacing.gap-control" },
+          // The month row is one slot per week column, each as wide as a cell, so a label starts on its week. Figma sets the
+          // labels by hand at x = 32 + 16 × week; here the row is the grid's own column rhythm (gap `Spacing/gap-tight`).
+          monthLabels: { gap: "spacing.gap-tight" },
+          monthSlot: { width: "spacing.3", font: "type.caption" },
+          month: { text: c("content.secondary"), font: "type.caption" },
+          // body: HORIZONTAL, gap `Spacing/gap-tight` between the day labels and the grid.
+          body: { gap: "spacing.gap-tight" },
+          // day-labels: VERTICAL, gap `Spacing/gap-tight`, 28 wide (a raw width in the file: 24 + 4 on the scale).
+          dayLabels: { gap: "spacing.gap-tight", width: "spacing.6+spacing.1" },
+          // One row per weekday, 12 high (the Dimension primitive `12`): the label is centred on it, as `Type/caption` is 16 high.
+          day: { height: "spacing.3" },
+          dayLabel: { text: c("content.secondary"), font: "type.caption" },
+          // grid: the weeks side by side, the days stacked, both with `Spacing/gap-tight`.
+          grid: { gap: "spacing.gap-tight" },
+          row: { gap: "spacing.gap-tight" },
+          // legend-row: HORIZONTAL, content pushed to the end; legend: HORIZONTAL centre, gap `Spacing/gap-tight`.
+          legend: { gap: "spacing.gap-tight" },
+          legendLabel: { text: c("content.secondary"), font: "type.caption" }
+        }))
+      ]
+    };
+  }
+});
+
+// src/lib/recipes/splitBar.ts
+var SPLIT_BAR_SERIES, SPLIT_BAR_SEGMENT_STATES, SPLIT_BAR_LEGEND_ITEM_STATES, SPLIT_BAR_LEGEND_CHECKED, chart, SPLIT_BAR_SEGMENT, SPLIT_BAR_LEGEND_ITEM, SPLIT_BAR;
+var init_splitBar = __esm({
+  "src/lib/recipes/splitBar.ts"() {
+    init_helpers();
+    SPLIT_BAR_SERIES = ["1", "2", "3", "4", "5", "6", "7", "8"];
+    SPLIT_BAR_SEGMENT_STATES = ["Default", "Focused"];
+    SPLIT_BAR_LEGEND_ITEM_STATES = ["Default", "Focused"];
+    SPLIT_BAR_LEGEND_CHECKED = ["true", "false"];
+    chart = (n, slot) => c(`chart.series-${n}.${slot}`);
+    SPLIT_BAR_SEGMENT = {
+      key: "SplitBarSegment",
+      slots: ["root", "content", "label", "value"],
+      defaults: { Series: "1", State: "Default" },
+      parts: [
+        part({ Series: SPLIT_BAR_SERIES }, (n) => ({
+          root: { fill: chart(n, "soft"), stroke: chart(n, "solid"), strokeRightWidth: "stroke.focus", text: chart(n, "content") },
+          label: { text: chart(n, "content") },
+          value: { text: chart(n, "content") }
+        })),
+        part({}, () => ({
+          root: { height: "size.lg", paddingX: "spacing.inset-control", gap: "spacing.gap-control" },
+          'root[data-fit="none"]': { paddingX: "spacing.0" },
+          "root[data-collapsed]": { strokeRightWidth: "spacing.0" },
+          content: { gap: "spacing.gap-control" },
+          label: { font: "type.body-sm" },
+          value: { font: "type.label" }
+        })),
+        part({ State: SPLIT_BAR_SEGMENT_STATES }, (state2) => ({ root: { ring: state2 === "Focused" ? c("border.ring.neutral") : NONE } }))
+      ]
+    };
+    SPLIT_BAR_LEGEND_ITEM = {
+      key: "SplitBarLegendItem",
+      slots: ["root", "swatch", "label", "value"],
+      defaults: { Series: "1", Checked: "true", State: "Default" },
+      parts: [
+        part({ Series: SPLIT_BAR_SERIES, Checked: SPLIT_BAR_LEGEND_CHECKED }, (n, checked) => ({
+          swatch: { fill: checked === "true" ? chart(n, "solid") : c("surface.muted") },
+          label: { text: checked === "true" ? c("content.secondary") : c("content.disabled") },
+          value: { text: checked === "true" ? c("content.primary") : c("content.disabled") }
+        })),
+        part({}, () => ({
+          root: { height: "size.xs", paddingX: "spacing.gap-tight", gap: "spacing.gap-control", radius: "radius.control" },
+          swatch: { width: "spacing.3", height: "spacing.3", radius: "radius.control" },
+          label: { font: "type.body-sm" },
+          value: { font: "type.label" }
+        })),
+        part({ State: SPLIT_BAR_LEGEND_ITEM_STATES }, (state2) => ({ root: { gapRing: state2 === "Focused" ? c("border.ring.neutral") : NONE } }))
+      ]
+    };
+    SPLIT_BAR = {
+      key: "SplitBar",
+      slots: ["root", "bar", "leaders", "leaderRow", "leaderLine", "leaderText", "leaderLabel", "leaderValue", "legend"],
+      defaults: {},
+      parts: [
+        part({}, () => ({
+          root: { gap: "spacing.gap-group" },
+          bar: { radius: "radius.action" },
+          leaderRow: { height: "size.xs" },
+          leaderLine: { width: "stroke.divider" },
+          leaderText: { gap: "spacing.gap-tight", paddingX: "spacing.gap-tight" },
+          leaderLabel: { font: "type.body-sm", text: c("content.secondary") },
+          leaderValue: { font: "type.label", text: c("content.primary") },
+          legend: { gap: "spacing.gap-group", rowGap: "spacing.gap-group" },
+          ...Object.fromEntries(SPLIT_BAR_SERIES.map((n) => [`leaderLine[data-series="${n}"]`, { fill: chart(n, "solid") }]))
         }))
       ]
     };
@@ -13387,9 +13982,33 @@ var init_motion2 = __esm({
       // The pill fills and the icon and label re-ink on `use-hover`, the same roles as NavItem; becoming Current uses the same
       // transition. No mount animation. TabBar itself: motion none (it does not change state).
       TabBarItem: { transitions: { indicator: FILL, icon: FILL, label: FILL } },
+      // A day square: no motion on load, none on a data change (the consumer cross-fades a year switch). Only the ring follows `use-focus`.
+      ActivityHeatmapCell: { transitions: { root: { "outline-color": "use-focus" } } },
       // The card's edge and lift ease; the position that follows the pointer never does (MOT-005).
       IssueCard: { transitions: { root: { "border-color": "use-hover", "box-shadow": "use-hover" } } },
       AccountMenuTrigger: { transitions: { root: FILL } },
+      // SplitBar: a segment widens on hover or focus on `use-hover` (its width is its share of the bar, so it is `width` that moves). Turning
+      // a series off reflows the bar: the segments that grow travel on `use-travel-in`, the ones that shrink on `use-travel-out`.
+      // The focus ring and the colours do not animate here: the file draws no Hover colour.
+      SplitBarSegment: {
+        transitions: {
+          root: { width: "use-hover" },
+          'root[data-motion="in"]': { width: "use-travel-in" },
+          'root[data-motion="out"]': { width: "use-travel-out" }
+        }
+      },
+      // The callouts under the bar follow their segment: the same roles, the same direction.
+      SplitBar: {
+        transitions: {
+          leaderLine: { left: "use-hover" },
+          'leaderLine[data-motion="in"]': { left: "use-travel-in" },
+          'leaderLine[data-motion="out"]': { left: "use-travel-out" },
+          leaderText: { left: "use-hover", right: "use-hover" },
+          'leaderText[data-motion="in"]': { left: "use-travel-in", right: "use-travel-in" },
+          'leaderText[data-motion="out"]': { left: "use-travel-out", right: "use-travel-out" }
+        }
+      },
+      SplitBarLegendItem: { transitions: { swatch: states("background-color"), label: states("color"), value: states("color") } },
       SegmentedControlItem: { transitions: { root: FILL } },
       SidebarMenuButton: { transitions: { root: FILL } },
       TableRow: { transitions: { root: states("background-color") } },
@@ -13422,6 +14041,18 @@ var init_motion2 = __esm({
       RatingGroupItem: { transitions: { root: FILL } },
       SliderThumb: { transitions: { root: states("border-color", "box-shadow") } },
       ProgressLine: { transitions: { indicator: { width: "use-progress" } } },
+      // A new value sweeps the fill along the arc on `use-travel-in` (the arc's dash is the value). Reduced motion comes from the role.
+      Gauge: { transitions: { arc: { "stroke-dasharray": "use-travel-in" } } },
+      // The line draws once on mount (`use-reveal`: its dash offset, with the area and the dot fading in); new data cross-fades the old
+      // layer into the new one on `use-color`.
+      Sparkline: {
+        transitions: {
+          layer: { opacity: "use-color" },
+          line: { "stroke-dashoffset": "use-reveal", opacity: "use-reveal" },
+          area: { opacity: "use-reveal" },
+          dot: { opacity: "use-reveal" }
+        }
+      },
       // Sonner keeps the queue, the stack and the live region; the toast itself moves on the system's roles (DEC-2026-11-18-001).
       Toast: {
         enter: { name: "toast-enter" },
@@ -13451,6 +14082,106 @@ var init_motion2 = __esm({
   }
 });
 
+// src/lib/recipes/splitButton.ts
+var SPLIT_BUTTON_VARIANTS, SPLIT_BUTTON_SIZES, SPLIT_BUTTON_OPEN, SPLIT_BUTTON;
+var init_splitButton = __esm({
+  "src/lib/recipes/splitButton.ts"() {
+    init_helpers();
+    SPLIT_BUTTON_VARIANTS = ["default", "secondary"];
+    SPLIT_BUTTON_SIZES = ["default", "xs", "sm", "lg"];
+    SPLIT_BUTTON_OPEN = ["false", "true"];
+    SPLIT_BUTTON = {
+      key: "SplitButton",
+      slots: ["root"],
+      defaults: { Variant: "default", Size: "default", Open: "false" },
+      parts: [
+        part({ Variant: SPLIT_BUTTON_VARIANTS, Size: SPLIT_BUTTON_SIZES, Open: SPLIT_BUTTON_OPEN }, () => ({
+          root: { gap: "spacing.gap-control" }
+        }))
+      ]
+    };
+  }
+});
+
+// src/lib/recipes/dataDisplay.ts
+function gaugeTone(variant) {
+  return variant === "default" ? { arc: c("chart.series-1.solid"), label: c("chart.series-1.content") } : { arc: c(`status.${variant}.surface-solid`), label: c(`status.${variant}.content`) };
+}
+function sparklineTone(variant) {
+  switch (variant) {
+    case "secondary":
+      return { line: c("content.secondary"), area: c("surface.muted") };
+    case "success":
+    case "critical":
+      return { line: c(`status.${variant}.surface-solid`), area: c(`status.${variant}.surface`) };
+    default:
+      return { line: c("chart.series-1.solid"), area: c("chart.series-1.soft") };
+  }
+}
+var GAUGE_VARIANTS, GAUGE_SIZES, GAUGE_DIAMETER, GAUGE_TYPE, GAUGE, SPARKLINE_VARIANTS, SPARKLINE_SIZES, SPARKLINE_BOX, SPARKLINE;
+var init_dataDisplay = __esm({
+  "src/lib/recipes/dataDisplay.ts"() {
+    init_helpers();
+    GAUGE_VARIANTS = ["default", "success", "warning", "critical"];
+    GAUGE_SIZES = ["default", "sm", "lg"];
+    GAUGE_DIAMETER = { sm: "spacing.32", default: "spacing.32+spacing.8", lg: "spacing.32+spacing.16" };
+    GAUGE_TYPE = {
+      sm: { value: "type.heading-md", unit: "type.body-sm", label: "type.body-sm" },
+      default: { value: "type.heading-lg", unit: "type.body-md", label: "type.label" },
+      lg: { value: "type.heading-xl", unit: "type.body-md", label: "type.label" }
+    };
+    GAUGE = {
+      key: "Gauge",
+      slots: ["root", "track", "arc", "content", "valueRow", "value", "unit", "label"],
+      defaults: { Variant: "default", Size: "default" },
+      parts: [
+        part({ Size: GAUGE_SIZES }, (size) => ({
+          root: { width: GAUGE_DIAMETER[size], height: GAUGE_DIAMETER[size] },
+          // The arc is open at the bottom, so the content sits under the centre: 6 · 4 · 6 px (the file's y 55.5 · 40.5 · 64.5), read as `--escala-travel`.
+          content: { gap: "spacing.gap-tight", travel: size === "sm" ? "spacing.1" : "spacing.1_5" },
+          valueRow: { gap: "spacing.gap-tight" },
+          value: { font: GAUGE_TYPE[size].value },
+          unit: { font: GAUGE_TYPE[size].unit },
+          label: { font: GAUGE_TYPE[size].label }
+        })),
+        part({ Variant: GAUGE_VARIANTS }, (variant) => ({
+          track: { text: c("surface.muted") },
+          arc: { text: gaugeTone(variant).arc },
+          value: { text: c("content.primary") },
+          unit: { text: c("content.secondary") },
+          label: { text: gaugeTone(variant).label }
+        }))
+      ]
+    };
+    SPARKLINE_VARIANTS = ["default", "secondary", "success", "critical"];
+    SPARKLINE_SIZES = ["default", "sm", "lg"];
+    SPARKLINE_BOX = {
+      sm: { w: "spacing.24", h: "spacing.8", dot: "spacing.1" },
+      default: { w: "spacing.32+spacing.32", h: "spacing.16", dot: "spacing.1_5" },
+      lg: { w: "spacing.32+spacing.32+spacing.32+spacing.24", h: "spacing.32", dot: "spacing.2" }
+    };
+    SPARKLINE = {
+      key: "Sparkline",
+      slots: ["root", "layer", "area", "line", "dot"],
+      defaults: { Variant: "default", Size: "default" },
+      parts: [
+        part({ Size: SPARKLINE_SIZES }, (size) => ({
+          root: { width: SPARKLINE_BOX[size].w, height: SPARKLINE_BOX[size].h },
+          // A dot is a circle: its box is the Figma ellipse (6 · 4 · 8). The line is `Stroke/focus` except on sm, where the file
+          // draws a raw 1.5 (`hairline` is the recipe's hand-set px width: DIM-03).
+          dot: { width: SPARKLINE_BOX[size].dot, height: SPARKLINE_BOX[size].dot, radius: "radius.pill" },
+          line: size === "sm" ? { hairline: "1.5" } : { strokeWidth: "stroke.focus" }
+        })),
+        part({ Variant: SPARKLINE_VARIANTS }, (variant) => ({
+          area: { text: sparklineTone(variant).area },
+          line: { text: sparklineTone(variant).line },
+          dot: { fill: sparklineTone(variant).line }
+        }))
+      ]
+    };
+  }
+});
+
 // src/lib/componentRecipes.ts
 function serializeRecipes() {
   return JSON.parse(JSON.stringify(COMPONENT_RECIPES));
@@ -13463,11 +14194,15 @@ var init_componentRecipes = __esm({
     init_surfaces();
     init_navigation();
     init_pages();
+    init_activityHeatmap();
+    init_splitBar();
     init_feedback();
     init_indicators();
     init_helpers();
     init_table();
     init_motion2();
+    init_splitButton();
+    init_dataDisplay();
     init_roleNames();
     init_helpers();
     COMPONENT_RECIPES = {
@@ -13483,6 +14218,7 @@ var init_componentRecipes = __esm({
       ButtonGroup: BUTTON_GROUP,
       ButtonGroupItem: BUTTON_GROUP_ITEM,
       ButtonGroupDivider: BUTTON_GROUP_DIVIDER,
+      SplitButton: SPLIT_BUTTON,
       SocialLoginButton: SOCIAL_LOGIN_BUTTON,
       Input: INPUT,
       Textarea: TEXTAREA,
@@ -13523,6 +14259,8 @@ var init_componentRecipes = __esm({
       Chip: CHIP,
       ProgressLine: PROGRESS_LINE,
       ProgressCircle: PROGRESS_CIRCLE,
+      Gauge: GAUGE,
+      Sparkline: SPARKLINE,
       Spinner: SPINNER,
       FeaturedIcon: FEATURED_ICON,
       RatingGroup: RATING_GROUP,
@@ -13565,9 +14303,14 @@ var init_componentRecipes = __esm({
       NavItem: NAV_ITEM,
       TabBar: TAB_BAR,
       TabBarItem: TAB_BAR_ITEM,
+      ActivityHeatmap: ACTIVITY_HEATMAP,
+      ActivityHeatmapCell: ACTIVITY_HEATMAP_CELL,
       SettingsRow: SETTINGS_ROW,
       SettingsSection: SETTINGS_SECTION,
       IssueCard: ISSUE_CARD,
+      SplitBar: SPLIT_BAR,
+      SplitBarSegment: SPLIT_BAR_SEGMENT,
+      SplitBarLegendItem: SPLIT_BAR_LEGEND_ITEM,
       BoardColumn: BOARD_COLUMN,
       Brand: BRAND,
       AccountMenuTrigger: ACCOUNT_MENU_TRIGGER,
@@ -13858,6 +14601,10 @@ function generateTokenJSON(source, opts) {
     addFamily("warning-dark", store.warningDarkScale);
     addFamily("success-dark", store.successDarkScale);
     addFamily("info-dark", store.infoDarkScale);
+  }
+  for (const [hue, ramp] of Object.entries(CHART_RAMPS)) {
+    Object.assign(primitive, flattenScale(`chart-${hue}`, ramp.light, colorNaming));
+    if (hasDarkTheme) Object.assign(primitive, flattenScale(`chart-${hue}-dark`, ramp.dark, colorNaming));
   }
   store.customColors.forEach((c2) => {
     if (!shipsFamily(c2.key)) return;
@@ -14188,6 +14935,7 @@ var init_tokenGenerator = __esm({
     init_customFonts();
     init_layoutTokens();
     init_elevationTokens();
+    init_chartRamps_generated();
     init_socialBrands();
     init_gradients();
     init_themeModes();
@@ -14512,6 +15260,11 @@ function primitiveRampLines(store, kind) {
       if (v) out.push(`  --color-${name}-${toneLabel(colorNaming, Number(k))}: ${v};`);
     });
   }
+  for (const [hue, ramp] of Object.entries(CHART_RAMPS)) {
+    out.push(`
+  /* Chart ${hue.charAt(0).toUpperCase() + hue.slice(1)} */`);
+    sorted(ramp[dark ? "dark" : "light"]).forEach(([k, v]) => out.push(`  --color-chart-${hue}-${toneLabel(colorNaming, Number(k))}: ${v};`));
+  }
   out.push("\n  /* Alpha twins \u2014 reproduce a solid tone over the page, for translucent fills */");
   for (const [name, scale, page, pinned] of fams) {
     if (!Object.keys(scale).length) continue;
@@ -14787,6 +15540,7 @@ var init_exporters = __esm({
     init_semanticArchitectures();
     init_typeRoles();
     init_elevationTokens();
+    init_chartRamps_generated();
     init_socialBrands();
     init_layoutTokens();
     init_gradients();
@@ -14794,6 +15548,24 @@ var init_exporters = __esm({
     init_tokenGenerator();
     init_dimensions();
     PANEL_KEYS = ["background-secondary"];
+  }
+});
+
+// src/lib/brandCssPack.ts
+async function gzip(text) {
+  const stream = new Blob([text]).stream().pipeThrough(new CompressionStream("gzip"));
+  return new Uint8Array(await new Response(stream).arrayBuffer());
+}
+function toBase64(bytes) {
+  let bin = "";
+  for (let i = 0; i < bytes.length; i += 32768) bin += String.fromCharCode(...bytes.subarray(i, i + 32768));
+  return btoa(bin);
+}
+async function packBrandCss(list) {
+  return Promise.all(list.map(async ({ key: key2, name, css }) => ({ key: key2, name, gzip: toBase64(await gzip(css)) })));
+}
+var init_brandCssPack = __esm({
+  "src/lib/brandCssPack.ts"() {
   }
 });
 
@@ -14811,18 +15583,29 @@ function brandCssFor(store, keys) {
   }));
 }
 function withBrandCss(json, store) {
-  const brandCss = brandCssFor(store, payloadBrandKeys(json));
+  return attachPlain(json, brandCssFor(store, payloadBrandKeys(json)));
+}
+function attachPlain(json, brandCss, room = ROOM) {
   if (!brandCss.length) return json;
   const out = { ...json, brandCss };
-  return JSON.stringify(out).length > ROOM ? json : out;
+  return JSON.stringify(out).length > room ? json : out;
 }
-var ROOM;
+async function withPublishBrandCss(json, store, room = ROOM) {
+  const brandCss = brandCssFor(store, payloadBrandKeys(json));
+  const plain = attachPlain(json, brandCss, room);
+  if (plain !== json || !brandCss.length) return plain;
+  const out = { ...json, brandCssGzip: await packBrandCss(brandCss) };
+  return JSON.stringify(out).length > room ? json : out;
+}
+var PUBLISH_LIMIT, ROOM;
 var init_brandCss = __esm({
   "src/lib/brandCss.ts"() {
     init_codeScope();
     init_exporters();
     init_themeSources();
-    ROOM = 18e5;
+    init_brandCssPack();
+    PUBLISH_LIMIT = 2 * 1024 * 1024;
+    ROOM = PUBLISH_LIMIT - 64 * 1024;
   }
 });
 
@@ -14953,7 +15736,7 @@ async function publishTokens(themeOrOpts, section) {
 async function postPublishedTokens(opts) {
   if (opts.theme) setActiveThemeHint(opts.theme);
   const slug = useDesignStore.getState().ensurePublishId();
-  const body = JSON.stringify(withBrandCss(generateTokenJSON(void 0, {
+  const body = JSON.stringify(await withPublishBrandCss(generateTokenJSON(void 0, {
     ...opts.theme ? { theme: opts.theme } : {},
     ...opts.themes?.length ? { themes: opts.themes } : {},
     ...opts.modes?.length ? { modes: opts.modes } : {},

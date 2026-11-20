@@ -16,11 +16,11 @@ const TRAFFIC: SplitBarSegmentData[] = [
   { id: 'other', label: 'Other', value: 1_500, series: 6 },
 ]
 
-export function SkeletonSplitBarSpecimen({ t, w }: SpecimenProps) {
+export function SkeletonSplitBarSpecimen({ t, v, w }: SpecimenProps) {
   return (
     <RecipeScope t={t}>
       <div style={{ width: w ?? '100%', maxWidth: '100%' }}>
-        <SkSplitBar aria-label="Traffic by source" segments={TRAFFIC} valueUnit="sessions" />
+        <SkSplitBar aria-label="Traffic by source" segments={TRAFFIC} valueUnit="sessions" showLegend={v.LegendVisible !== 'false'} />
       </div>
     </RecipeScope>
   )

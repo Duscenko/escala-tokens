@@ -118,7 +118,8 @@
       "spacing.none"
     ],
     "stroke": [
-      "stroke.divider"
+      "stroke.divider",
+      "stroke.focus"
     ]
   },
   "names": {

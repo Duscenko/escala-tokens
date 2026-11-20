@@ -62,14 +62,15 @@ const type = blockType
 const motion = (role: string) => `var(--motion-${role}-duration) var(--motion-${role}-easing)`
 
 /** Mounts transparent and low, then settles on a motion role: a content swap, a disclosure or a success moment. */
-function Appear({ role, children, style }: { role: 'use-page-transition' | 'use-disclosure-in' | 'use-celebration'; children: React.ReactNode; style?: React.CSSProperties }) {
+function Appear({ role, from = 'var(--motion-transform-enter, none)', inline = false, children, style }: { role: 'use-page-transition' | 'use-disclosure-in' | 'use-celebration'; from?: string; inline?: boolean; children: React.ReactNode; style?: React.CSSProperties }) {
   const [on, setOn] = React.useState(false)
   // A timer, not requestAnimationFrame: a hidden tab never ticks a frame and the content would stay transparent.
   React.useEffect(() => { const id = setTimeout(() => setOn(true), 16); return () => clearTimeout(id) }, [])
+  const Tag = inline ? 'span' : 'div'
   return (
-    <div style={{ opacity: on ? 1 : 0, transform: on ? 'none' : 'var(--motion-transform-enter, none)', transition: `opacity ${motion(role)}, transform ${motion(role)}`, ...style }}>
+    <Tag style={{ opacity: on ? 1 : 0, transform: on ? 'none' : from, transition: `opacity ${motion(role)}, transform ${motion(role)}`, ...style }}>
       {children}
-    </div>
+    </Tag>
   )
 }
 
@@ -306,24 +307,34 @@ export function AuthForgotPassword({
   const method = controlled ?? inner
   const email = method === 'email'
   const choose = (m: string) => { const next = m as 'email' | 'sms'; setInner(next); onMethodChange?.(next) }
+  // The first draw does not slide: only a change of method does.
+  const mounted = React.useRef(false)
+  React.useEffect(() => { mounted.current = true }, [])
   return (
     <AuthShell block="AuthForgotPassword" container={container} layout={layout} iconVariant="secondary" icon={glyph('lock')} title="Forgot password?" description="No worries, we'll send you reset instructions." {...props}>
       <SegmentedControl size={s.control} fullWidth value={method} onValueChange={choose} aria-label="Send reset instructions by">
         <SegmentedControlItem value="email" label="Email" />
         <SegmentedControlItem value="sms" label="SMS" />
       </SegmentedControl>
-      <Appear key={method} role="use-page-transition" style={{ display: 'flex', flexDirection: 'column', gap: v('spacing.gap-group') }}>
-        <Field
-          size={s.control}
-          label={email ? 'Email address' : 'Phone number'}
-          required
-          state={invalid(status)}
-          error={error ?? (email ? FIELD_ERRORS.email : FIELD_ERRORS.phone)}
-        >
-          {email ? <Input type="email" placeholder="you@company.com" /> : <PhoneNumberInput placeholder="(201) 555-0123" />}
-        </Field>
-        <Button size={s.control} loading={busy(status)} onClick={onSubmit}>{email ? 'Send reset link' : 'Send reset code'}</Button>
-      </Appear>
+      {/* Only the field swaps: it slides in from the side of the segment just chosen (SMS is on the right, so it enters
+          from the right; Email from the left) and fades on `use-page-transition`. The button stays put and only its label
+          cross-fades, so nothing under the switch jumps or flashes. Reduced motion zeroes the role: a plain swap. */}
+      <div data-part="method-region" style={{ overflow: 'hidden', margin: `calc(${v('spacing.gap-tight')} * -1)`, padding: v('spacing.gap-tight') }}>
+        <Appear key={method} role="use-page-transition" from={`translateX(calc(${v('spacing.gap-section')} * ${mounted.current ? (email ? -1 : 1) : 0}))`}>
+          <Field
+            size={s.control}
+            label={email ? 'Email address' : 'Phone number'}
+            required
+            state={invalid(status)}
+            error={error ?? (email ? FIELD_ERRORS.email : FIELD_ERRORS.phone)}
+          >
+            {email ? <Input type="email" placeholder="you@company.com" /> : <PhoneNumberInput placeholder="(201) 555-0123" />}
+          </Field>
+        </Appear>
+      </div>
+      <Button size={s.control} loading={busy(status)} onClick={onSubmit}>
+        <Appear key={method} inline role="use-page-transition" from="none">{email ? 'Send reset link' : 'Send reset code'}</Appear>
+      </Button>
       <Button size={s.control} variant="secondary" leading={boxedGlyph('caret-left')} onClick={() => onNavigate?.('sign-in')}>Back to sign in</Button>
     </AuthShell>
   )
@@ -400,14 +411,15 @@ export function AuthSocialSignIn({ container, layout, onSubmit, onNavigate, ...p
     <AuthShell block="AuthSocialSignIn" container={container} layout={layout} headerSize="lg" iconVariant="secondary" icon={glyph('user')} title="Continue with" description="Use the account you already have. We never post on your behalf." {...props}>
       {(['Google', 'Discord', 'Apple'] as SocialBrand[]).map((brand) => <SocialLoginButton size={s.control} key={brand} brand={brand} appearance="brand" onClick={onSubmit} />)}
       <OrRule label="OR PICK A PROVIDER" />
-      <div data-part="provider-grid" style={{ display: 'flex', flexDirection: 'column', gap: v('spacing.gap-control') }}>
-        <div style={{ display: 'flex', gap: v('spacing.gap-control') }}>
-          {(['GitHub', 'X'] as SocialBrand[]).map((brand) => <SocialLoginButton size={s.control} key={brand} brand={brand} onClick={onSubmit} style={{ flex: 1 }} />)}
-        </div>
-        <div style={{ display: 'flex', gap: v('spacing.gap-control') }}>
-          <SocialLoginButton size={s.control} brand="LinkedIn" onClick={onSubmit} style={{ flex: 1 }} />
-          <Button size={s.control} variant="secondary" appearance="outline" style={{ flex: 1 }} onClick={() => onNavigate?.('sso')}>SAML SSO</Button>
-        </div>
+      {/* Two equal columns of the same white SocialLoginButton, each labelled with the provider only (as the Figma grid
+          draws them). SAML SSO is the fourth cell: the same SocialLoginButton with the globe as its mark. The white
+          appearance paints every brand alike; GitHub is named only for its neutral focus ring. */}
+      <div data-part="provider-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', gap: v('spacing.gap-control') }}>
+        {(['GitHub', 'X', 'LinkedIn'] as SocialBrand[]).map((brand) => <SocialLoginButton size={s.control} key={brand} brand={brand} label={brand} onClick={onSubmit} />)}
+        <SocialLoginButton
+          size={s.control} brand="GitHub" label="SAML SSO" onClick={() => onNavigate?.('sso')}
+          leading={<span data-part="SocialLoginButton.icon" className="inline-flex shrink-0">{boxedGlyph('globe')}</span>}
+        />
       </div>
       <AuthFooter layout={layout} text="New to Escala?" linkLabel="Create an account" onLink={() => onNavigate?.('sign-up')} />
     </AuthShell>
@@ -485,11 +497,16 @@ function useTabletUp() {
 
 /** Figma `AuthSplit` (2146:8199): a brand panel beside any Auth block. `children` is the block, in `container="plain"`: its header
  *  aligns left and hides its icon here. Below the Tablet breakpoint only `children` is drawn. No motion on load. */
-export function AuthSplit({ title = 'One source of tokens. Every surface in sync.', description = 'Sign in to pick up where your team left off: variables, components and reviews in one place.', mediaIcon, children, style, ...props }: Omit<React.ComponentProps<'section'>, 'title'> & {
+export function AuthSplit({ title = 'One source of tokens. Every surface in sync.', description = 'Sign in to pick up where your team left off: variables, components and reviews in one place.', mediaIcon, media, mediaAlt = '', children, style, ...props }: Omit<React.ComponentProps<'section'>, 'title'> & {
   title?: React.ReactNode
   description?: React.ReactNode
   /** Figma MediaIcon: the glyph of the panel's FeaturedIcon. */
   mediaIcon?: React.ReactNode
+  /** A photo (URL) between the icon and the copy, filling the panel's free height. The Figma set draws the bare
+   *  accent panel; the photo is a code addition (the copy never sits on it, so no on-image ink role is needed). */
+  media?: string
+  /** The photo's alt text; empty (decorative) by default. */
+  mediaAlt?: string
 }) {
   const tabletUp = useTabletUp()
   const content = <AuthSplitContext.Provider value>{children}</AuthSplitContext.Provider>
@@ -508,6 +525,9 @@ export function AuthSplit({ title = 'One source of tokens. Every surface in sync
       {/* 520 = 4 × spacing-32 + spacing-2. */}
       <div data-part="media" style={{ flex: '0 1 calc(var(--spacing-32) * 4 + var(--spacing-2))', minWidth: 0, display: 'flex', flexDirection: 'column', justifyContent: 'space-between', gap: v('spacing.gap-section'), padding: page, background: v('color.surface.accent') }}>
         <FeaturedIcon size="xl" variant="default" appearance="gradient" shape="rounded" icon={mediaIcon} />
+        {media ? (
+          <img data-part="photo" src={media} alt={mediaAlt} style={{ flex: 1, minHeight: 0, width: '100%', objectFit: 'cover', borderRadius: v('radius.container'), display: 'block' }} />
+        ) : null}
         <div data-part="copy" style={{ display: 'flex', flexDirection: 'column', gap: v('spacing.gap-control') }}>
           <h2 style={{ margin: 0, color: v('color.content.primary'), ...type('heading-lg') }}>{title}</h2>
           <p style={{ margin: 0, color: v('color.content.secondary'), ...type('body-lg') }}>{description}</p>
