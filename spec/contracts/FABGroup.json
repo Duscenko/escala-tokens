@@ -115,7 +115,8 @@
   },
   "anatomy": {
     "slots": [
-      "root"
+      "root",
+      "item"
     ]
   },
   "tokens": {
@@ -152,7 +153,34 @@
       }
     }
   ],
-  "motion": null,
+  "motion": {
+    "transitions": {
+      "item": {
+        "background-color": "use-hover",
+        "color": "use-hover",
+        "border-color": "use-hover",
+        "box-shadow": "use-focus",
+        "scale": "use-hover",
+        "opacity": "use-travel-out",
+        "transform": "use-travel-out",
+        "visibility": "use-travel-out"
+      },
+      "item[data-open=\"true\"]": {
+        "background-color": "use-hover",
+        "color": "use-hover",
+        "border-color": "use-hover",
+        "box-shadow": "use-focus",
+        "scale": "use-hover",
+        "opacity": "use-travel-in",
+        "transform": "use-travel-in",
+        "visibility": "use-travel-in"
+      }
+    },
+    "stagger": {
+      "slot": "item",
+      "when": "[data-open=\"true\"]"
+    }
+  },
   "behaviour": {
     "primitives": [],
     "roles": [

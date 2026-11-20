@@ -14,13 +14,13 @@ import { Accordion, AccordionItem } from 'src/components/escala-ui/accordion'
 
 | Axis | Values | Default |
 |---|---|---|
-| Variant | ghost-default · ghost-underline · ghost-rounded · outline-rounded · outline-sharp · filled-rounded | ghost-default |
+| Variant | ghost-default · ghost-underline · ghost-rounded · outline-rounded · outline-sharp · filled-rounded · card | ghost-default |
 
 ## Props
 
 | Prop | Type | What |
 |---|---|---|
-| `variant` | `Figma Variant` | Shared by every item; ghost-default and ghost-underline sit 0 apart, the rest 8. |
+| `variant` | `Figma Variant` | Shared by every item; ghost-default, ghost-underline and card sit 0 apart, the rest 8; card frames the items (Surface/layer-2, Border/default, Radius/container). |
 | `value / defaultValue / onValueChange` | `string[]` | The open items (independent). |
 | `children` | `AccordionItem[]` | The items. |
 

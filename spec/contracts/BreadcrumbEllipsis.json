@@ -477,7 +477,14 @@
       }
     }
   ],
-  "motion": null,
+  "motion": {
+    "transitions": {
+      "root": {
+        "background-color": "use-hover",
+        "color": "use-hover"
+      }
+    }
+  },
   "behaviour": {
     "primitives": [],
     "roles": [

@@ -109,6 +109,9 @@ export interface RecipeMotion {
   /** Items that arrive one after another: while `when` holds, each `slot` waits its place in the row (`--escala-index`,
    *  set by the component) times the system's stagger (`--motion-stagger`, 0 under reduced motion). */
   stagger?: { slot: string; when: string }
+  /** Slots a component mounts and unmounts (a label shown only while expanded): when one mounts it starts transparent
+   *  (`@starting-style`) and runs its own `opacity` transition, so it fades in on that role. Unmounting is not animated. */
+  appear?: string[]
 }
 
 export interface ComponentRecipe {

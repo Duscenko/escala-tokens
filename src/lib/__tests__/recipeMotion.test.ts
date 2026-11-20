@@ -27,6 +27,11 @@ describe('recipe motion', () => {
         expect(recipe.slots, `${key}.${slotKey}`).toContain(slotName(slotKey))
       }
       for (const c of [m.enter, m.exit]) if (c?.slot) expect(recipe.slots, `${key} ${c.name}`).toContain(c.slot)
+      for (const slot of m.appear ?? []) {
+        expect(recipe.slots, `${key} appear`).toContain(slot)
+        // A slot that fades in on mount must say which role times the fade.
+        expect(m.transitions?.[slot]?.opacity, `${key}.${slot} appear`).toBeTruthy()
+      }
     }
   })
 

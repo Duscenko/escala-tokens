@@ -316,7 +316,7 @@
       }
     }
   ],
-  "motion": null,
+  "motion": {},
   "behaviour": {
     "primitives": [
       {

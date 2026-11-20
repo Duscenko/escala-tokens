@@ -753,7 +753,18 @@
       }
     }
   ],
-  "motion": null,
+  "motion": {
+    "transitions": {
+      "root": {
+        "background-color": "use-hover",
+        "color": "use-hover",
+        "border-color": "use-hover",
+        "box-shadow": "use-focus",
+        "scale": "use-hover"
+      }
+    },
+    "press": {}
+  },
   "behaviour": {
     "primitives": [],
     "roles": [],

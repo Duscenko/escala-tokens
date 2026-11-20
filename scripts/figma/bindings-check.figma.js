@@ -26,6 +26,15 @@ async function vname(id) {
 // `stack`: a fill reads every visible paint bottom to top, joined ' + ' (a state drawn as a
 // translucent fill over the rest fill is a stack in the contract too: `overlay`, `overlay2`).
 async function readOne(p, consumer) {
+  // A gradient binds its stops: read them in order, joined ' → ' (the contract's fill → fillMid → fillEnd).
+  if (Array.isArray(p.gradientStops) && p.gradientStops.length) {
+    const stops = []
+    for (const g of [...p.gradientStops].sort((x, y) => x.position - y.position)) {
+      const sb = g.boundVariables && g.boundVariables.color
+      stops.push(sb ? await vname(sb.id) : 'unbound')
+    }
+    return { got: stops.join(' → '), opacity: null }
+  }
   const b = p.boundVariables && p.boundVariables.color
   if (!b) return { got: p.type === 'SOLID' ? 'unbound' : p.type.toLowerCase() }
   const op = p.opacity ?? 1
@@ -73,7 +82,8 @@ function firstText(n) {
 }
 function firstPainted(n) {
   if (n.type === 'TEXT' || n.type === 'VECTOR' || n.type === 'BOOLEAN_OPERATION' || n.type === 'ELLIPSE' || n.type === 'RECTANGLE') return n
-  for (const ch of n.children || []) { if (ch.visible === false) continue; const t = firstPainted(ch); if (t) return t }
+  // A field's text caret (a RECTANGLE named `caret`, Focused fields) is a mark beside the text, not the text's colour.
+  for (const ch of n.children || []) { if (ch.visible === false || (ch.type === 'RECTANGLE' && norm(ch.name) === 'caret')) continue; const t = firstPainted(ch); if (t) return t }
   return null
 }
 
@@ -104,6 +114,8 @@ for (const set of EXPECT.sets) {
         if (t !== null) slots.t = t
       }
     }
+    // Value=placeholder: Figma's value text layer shows the placeholder, which the code paints through its `placeholder` part.
+    if (props.Value === 'placeholder' && want.text && want.placeholder && want.placeholder.t != null && want.text.t != null) want.text.t = want.placeholder.t
     const layers = layersOf(variant)
     const claimedText = new Set()
     // A part's text target is claimed, so the root's text never reads it.

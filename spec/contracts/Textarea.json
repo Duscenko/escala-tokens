@@ -510,7 +510,14 @@
       }
     }
   ],
-  "motion": null,
+  "motion": {
+    "transitions": {
+      "root": {
+        "border-color": "use-hover",
+        "box-shadow": "use-focus"
+      }
+    }
+  },
   "behaviour": {
     "primitives": [],
     "roles": [],

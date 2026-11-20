@@ -476,6 +476,7 @@ export function contractMarkdown(c: ComponentContract): string {
   }
   L.push('## Motion', '')
   if (!c.motion) L.push(motionTrigger(c) ? `No decision yet (MOT-002): it has a ${motionTrigger(c)}.` : 'None needed: no state axis, no open / close.', '')
+  else if (Object.keys(c.motion).length === 0) L.push('None, by decision: it does not animate (a child may carry its own motion; see `src/lib/recipes/motion.ts`).', '')
   else {
     for (const [slot, props] of Object.entries(c.motion.transitions ?? {})) L.push(`- \`${slot}\`: ${Object.entries(props).map(([p, role]) => `${p} → \`${role}\``).join(', ')}`)
     for (const k of ['enter', 'exit'] as const) { const ch = c.motion[k]; if (ch) L.push(`- ${k}: \`${ch.name}\` on \`${ch.slot ?? 'root'}\``) }

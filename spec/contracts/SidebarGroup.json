@@ -106,7 +106,16 @@
       }
     }
   ],
-  "motion": null,
+  "motion": {
+    "transitions": {
+      "label": {
+        "opacity": "use-disclosure-in"
+      }
+    },
+    "appear": [
+      "label"
+    ]
+  },
   "behaviour": {
     "primitives": [],
     "roles": [

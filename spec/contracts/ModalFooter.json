@@ -185,8 +185,8 @@
             "paddingX": "spacing.inset-surface",
             "paddingY": "spacing.inset-surface",
             "gap": "spacing.gap-control",
-            "stroke": "color.border.subtle",
-            "strokeTopWidth": "stroke.divider"
+            "stroke": "none",
+            "strokeTopWidth": "stroke.none"
           },
           "leading": {
             "gap": "spacing.gap-tight",
@@ -205,44 +205,53 @@
         "Layout"
       ],
       "values": {
-        "plain|inline": {},
-        "plain|stacked": {},
-        "plain|equal": {},
+        "plain|inline": {
+          "root": {
+            "stroke": "color.border.subtle",
+            "strokeTopWidth": "stroke.divider"
+          }
+        },
+        "plain|stacked": {
+          "root": {
+            "stroke": "color.border.subtle",
+            "strokeTopWidth": "stroke.divider"
+          }
+        },
+        "plain|equal": {
+          "root": {
+            "stroke": "color.border.subtle",
+            "strokeTopWidth": "stroke.divider"
+          }
+        },
         "tray|inline": {
           "root": {
-            "strokeTopWidth": "stroke.none",
             "paddingY": "spacing.inset-control"
           }
         },
         "tray|stacked": {
           "root": {
-            "strokeTopWidth": "stroke.none",
             "paddingY": "spacing.inset-surface"
           }
         },
         "tray|equal": {
           "root": {
-            "strokeTopWidth": "stroke.none",
             "paddingY": "spacing.inset-control"
           }
         },
         "simple|inline": {
           "root": {
-            "strokeTopWidth": "stroke.none",
             "paddingX": "spacing.0",
             "paddingY": "spacing.0"
           }
         },
         "simple|stacked": {
           "root": {
-            "strokeTopWidth": "stroke.none",
             "paddingX": "spacing.0",
             "paddingY": "spacing.0"
           }
         },
         "simple|equal": {
           "root": {
-            "strokeTopWidth": "stroke.none",
             "paddingX": "spacing.0",
             "paddingY": "spacing.0"
           }

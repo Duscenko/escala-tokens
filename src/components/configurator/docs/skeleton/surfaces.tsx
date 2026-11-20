@@ -140,7 +140,7 @@ export function SkeletonAccordionItemSpecimen({ t, v }: SpecimenProps) {
   return (
     <RecipeScope t={t}>
       <div style={{ width: 480 }}>
-        <SkAccordion variant={(v.Variant ?? 'ghost-default') as AccordionVariant} defaultValue={state === 'Open' ? ['item'] : []}>
+        <SkAccordion standalone variant={(v.Variant ?? 'ghost-default') as AccordionVariant} defaultValue={state === 'Open' ? ['item'] : []}>
           <SkAccordionItem value="item" disabled={state === 'Disabled'} />
         </SkAccordion>
       </div>

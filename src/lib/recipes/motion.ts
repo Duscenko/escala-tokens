@@ -154,4 +154,70 @@ export const RECIPE_MOTION: Record<string, RecipeMotion> = {
   Popover: popover('--radix-popover-content-transform-origin'),
   TooltipContent: popover('--radix-tooltip-content-transform-origin'),
   DropdownMenu: popover('--radix-dropdown-menu-content-transform-origin'),
+
+  // ── MOT-002 closed (owner decision 2026-11-20). An empty `{}` is an explicit decision: the contract carries it
+  // (motion is no longer null) and the stylesheet emits nothing for it.
+  // Press: sink and colours exactly like Button.
+  CloseButton: { transitions: { root: { ...states('background-color', 'color', 'border-color', 'box-shadow'), scale: 'use-hover' } }, press: {} },
+  FABButton: { transitions: { root: { ...states('background-color', 'color', 'border-color', 'box-shadow'), scale: 'use-hover' } }, press: {} },
+  ButtonGroupItem: { transitions: { root: { ...states('background-color', 'color', 'border-color', 'box-shadow'), scale: 'use-hover' } }, press: {} },
+  SocialLoginButton: { transitions: { root: { ...states('background-color', 'color', 'border-color', 'box-shadow'), scale: 'use-hover' } }, press: {} },
+  // Fill: colour only, no press.
+  TextLink: { transitions: { root: FILL } },
+  BreadcrumbItem: { transitions: { root: FILL } },
+  BreadcrumbEllipsis: { transitions: { root: FILL } },
+  TooltipInfoTrigger: { transitions: { root: FILL } },
+  // Field: the edge and the focus halo, like Input.
+  Textarea: { transitions: { root: FIELD } },
+  NumberInput: { transitions: { root: FIELD } },
+  // A child carries the motion; the wrapper itself does not move.
+  InputOTP: {}, // InputOTPSlot animates (FIELD).
+  CheckboxItem: {}, // Checkbox animates.
+  CheckboxGroup: {}, // Checkbox animates.
+  SwitchGroup: {}, // Switch animates.
+  Slider: {}, // SliderThumb animates; the range follows the pointer and must not lag.
+  // Static: Disabled/Loading are not animated.
+  TableCell: {},
+  TableMediaCell: {},
+  TableTrendCell: {},
+  TableLoadMore: {}, // Disabled/Loading are not animated; the Spinner has its own loop.
+  StepperItem: {},
+  StepperIndicator: {},
+  StepperIcon: {},
+
+  // ── MOT-002 closed, batch 2 (owner decision 2026-11-20).
+  // The menu is the DropdownMenu's own panel (`data-escala="DropdownMenu"`, portaled outside the group), so it already grows out
+  // of the caret on `popover-enter` / `popover-exit` (the DropdownMenu entry above) and its rows arrive on `use-stagger-in`
+  // (split-button.tsx). A second popover here would play the panel twice: the empty entry records the decision.
+  SplitButton: {},
+  // Open: the items arrive one after another on `use-travel-in` (opacity + transform, each `--motion-stagger` behind the last,
+  // `--escala-index` set by the component); closing fades and travels back on `use-travel-out`, all at once. The item keeps
+  // the FABButton's own colour and press timing (a slot's `transition` replaces the button's). Reduced motion: the roles
+  // shorten to the fade, the stagger and the travel go to 0 (`--motion-stagger: 0`, neutral transforms).
+  FABGroup: {
+    transitions: {
+      item: {
+        ...states('background-color', 'color', 'border-color', 'box-shadow'), scale: 'use-hover',
+        opacity: 'use-travel-out', transform: 'use-travel-out', visibility: 'use-travel-out',
+      },
+      'item[data-open="true"]': {
+        ...states('background-color', 'color', 'border-color', 'box-shadow'), scale: 'use-hover',
+        opacity: 'use-travel-in', transform: 'use-travel-in', visibility: 'use-travel-in',
+      },
+    },
+    stagger: { slot: 'item', when: '[data-open="true"]' },
+  },
+  // Collapse: the rail's width (the recipe's two widths, 48 px and 272 px) eases open on `use-disclosure-in` and shut on
+  // `use-disclosure-out`. Under reduced motion both roles shorten to the fade.
+  Sidebar: {
+    transitions: {
+      root: { width: 'use-disclosure-out' },
+      'root[data-collapsed="false"]': { width: 'use-disclosure-in' },
+    },
+  },
+  // The title and subtitle mount when the rail expands and fade in on `use-disclosure-in` (`appear`); collapsing unmounts
+  // them at once, under the rail's `use-disclosure-out`.
+  SidebarBrand: { transitions: { text: { opacity: 'use-disclosure-in' } }, appear: ['text'] },
+  // The group's heading (SidebarGroupLabel, `SidebarGroup.label`): the same fade as the brand's text, the same roles.
+  SidebarGroup: { transitions: { label: { opacity: 'use-disclosure-in' } }, appear: ['label'] },
 }

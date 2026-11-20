@@ -843,8 +843,10 @@
       "side": "code",
       "entity": "CloseButton",
       "evidence": "State axis (Default · Hover · Pressed · Focused · Disabled) and no motion decision in the contract (recipes/motion.ts has no entry)",
-      "status": "Open",
-      "resolution": null,
+      "status": "Fixed",
+      "resolution": {
+        "ref": "25c4b3e"
+      },
       "firstSeen": "2026-11-20",
       "lastSeen": "2026-11-20",
       "regression": false,
@@ -862,8 +864,10 @@
       "side": "code",
       "entity": "TextLink",
       "evidence": "State axis (Default · Hover · Pressed · Visited · Focused · Disabled) and no motion decision in the contract (recipes/motion.ts has no entry)",
-      "status": "Open",
-      "resolution": null,
+      "status": "Fixed",
+      "resolution": {
+        "ref": "25c4b3e"
+      },
       "firstSeen": "2026-11-20",
       "lastSeen": "2026-11-20",
       "regression": false,
@@ -881,8 +885,10 @@
       "side": "code",
       "entity": "FABButton",
       "evidence": "State axis (Default · Hover · Pressed · Focused · Disabled) and no motion decision in the contract (recipes/motion.ts has no entry)",
-      "status": "Open",
-      "resolution": null,
+      "status": "Fixed",
+      "resolution": {
+        "ref": "25c4b3e"
+      },
       "firstSeen": "2026-11-20",
       "lastSeen": "2026-11-20",
       "regression": false,
@@ -900,15 +906,17 @@
       "side": "code",
       "entity": "FABGroup",
       "evidence": "Open axis (false · true) and no motion decision in the contract (recipes/motion.ts has no entry)",
-      "status": "Open",
-      "resolution": null,
+      "status": "Fixed",
+      "resolution": {
+        "ref": "3422122"
+      },
       "firstSeen": "2026-11-20",
       "lastSeen": "2026-11-20",
       "regression": false,
       "source": "contracts:report",
       "links": {
         "contract": "https://github.com/Duscenko/escala-tokens/blob/main/spec/contracts/FABGroup.json",
-        "figma": "https://www.figma.com/design/7j5zukN5HpihGVJMmyjA20/?node-id=643-411",
+        "figma": "https://www.figma.com/design/7j5zukN5HpihGVJMmyjA20/?node-id=346-448",
         "storybook": "https://escala-storybook.vercel.app/?path=/story/buttons-fabbutton--fab-group-playground"
       }
     },
@@ -919,15 +927,17 @@
       "side": "code",
       "entity": "FABGroup",
       "evidence": "Storybook control Open differs from the contract axis (false · true); details: npx vitest run contractGates",
-      "status": "Open",
-      "resolution": null,
+      "status": "Fixed",
+      "resolution": {
+        "ref": "3422122"
+      },
       "firstSeen": "2026-11-20",
       "lastSeen": "2026-11-20",
       "regression": false,
       "source": "contracts:report",
       "links": {
         "contract": "https://github.com/Duscenko/escala-tokens/blob/main/spec/contracts/FABGroup.json",
-        "figma": "https://www.figma.com/design/7j5zukN5HpihGVJMmyjA20/?node-id=643-411",
+        "figma": "https://www.figma.com/design/7j5zukN5HpihGVJMmyjA20/?node-id=346-448",
         "storybook": "https://escala-storybook.vercel.app/?path=/story/buttons-fabbutton--fab-group-playground"
       }
     },
@@ -938,15 +948,17 @@
       "side": "code",
       "entity": "SplitButton",
       "evidence": "Open axis (false · true) and no motion decision in the contract (recipes/motion.ts has no entry)",
-      "status": "Open",
-      "resolution": null,
+      "status": "Fixed",
+      "resolution": {
+        "ref": "3422122"
+      },
       "firstSeen": "2026-11-20",
       "lastSeen": "2026-11-20",
       "regression": false,
       "source": "contracts:report",
       "links": {
         "contract": "https://github.com/Duscenko/escala-tokens/blob/main/spec/contracts/SplitButton.json",
-        "figma": "https://www.figma.com/design/7j5zukN5HpihGVJMmyjA20/?node-id=2391-78",
+        "figma": "https://www.figma.com/design/7j5zukN5HpihGVJMmyjA20/?node-id=2391-2107",
         "storybook": "https://escala-storybook.vercel.app/?path=/story/buttons-splitbutton--playground"
       }
     },
@@ -978,8 +990,10 @@
       "side": "code",
       "entity": "ButtonGroupItem",
       "evidence": "State axis (Default · Hover · Pressed · Focused · Disabled) and no motion decision in the contract (recipes/motion.ts has no entry)",
-      "status": "Open",
-      "resolution": null,
+      "status": "Fixed",
+      "resolution": {
+        "ref": "25c4b3e"
+      },
       "firstSeen": "2026-11-20",
       "lastSeen": "2026-11-20",
       "regression": false,
@@ -1081,8 +1095,10 @@
       "side": "code",
       "entity": "SocialLoginButton",
       "evidence": "State axis (Default · Hover · Pressed · Focused · Disabled) and no motion decision in the contract (recipes/motion.ts has no entry)",
-      "status": "Open",
-      "resolution": null,
+      "status": "Fixed",
+      "resolution": {
+        "ref": "25c4b3e"
+      },
       "firstSeen": "2026-11-20",
       "lastSeen": "2026-11-20",
       "regression": false,
@@ -1100,8 +1116,10 @@
       "side": "code",
       "entity": "Textarea",
       "evidence": "State axis (Default · Hover · Focused · Invalid · Loading · Disabled) and no motion decision in the contract (recipes/motion.ts has no entry)",
-      "status": "Open",
-      "resolution": null,
+      "status": "Fixed",
+      "resolution": {
+        "ref": "25c4b3e"
+      },
       "firstSeen": "2026-11-20",
       "lastSeen": "2026-11-20",
       "regression": false,
@@ -1119,8 +1137,10 @@
       "side": "code",
       "entity": "InputOTP",
       "evidence": "State axis (Empty · Typing · Filled · Invalid · Disabled) and no motion decision in the contract (recipes/motion.ts has no entry)",
-      "status": "Open",
-      "resolution": null,
+      "status": "Fixed",
+      "resolution": {
+        "ref": "25c4b3e"
+      },
       "firstSeen": "2026-11-20",
       "lastSeen": "2026-11-20",
       "regression": false,
@@ -1159,8 +1179,10 @@
       "side": "code",
       "entity": "NumberInput",
       "evidence": "State axis (Default · Hover · Focused · Invalid · Disabled) and no motion decision in the contract (recipes/motion.ts has no entry)",
-      "status": "Open",
-      "resolution": null,
+      "status": "Fixed",
+      "resolution": {
+        "ref": "25c4b3e"
+      },
       "firstSeen": "2026-11-20",
       "lastSeen": "2026-11-20",
       "regression": false,
@@ -1283,8 +1305,10 @@
       "side": "code",
       "entity": "CheckboxItem",
       "evidence": "State axis (Default · Disabled · Invalid) and no motion decision in the contract (recipes/motion.ts has no entry)",
-      "status": "Open",
-      "resolution": null,
+      "status": "Fixed",
+      "resolution": {
+        "ref": "25c4b3e"
+      },
       "firstSeen": "2026-11-20",
       "lastSeen": "2026-11-20",
       "regression": false,
@@ -1302,8 +1326,10 @@
       "side": "code",
       "entity": "CheckboxGroup",
       "evidence": "State axis (Default · Invalid · Disabled) and no motion decision in the contract (recipes/motion.ts has no entry)",
-      "status": "Open",
-      "resolution": null,
+      "status": "Fixed",
+      "resolution": {
+        "ref": "25c4b3e"
+      },
       "firstSeen": "2026-11-20",
       "lastSeen": "2026-11-20",
       "regression": false,
@@ -1342,8 +1368,10 @@
       "side": "code",
       "entity": "SwitchGroup",
       "evidence": "State axis (Default · Disabled · Invalid · Loading) and no motion decision in the contract (recipes/motion.ts has no entry)",
-      "status": "Open",
-      "resolution": null,
+      "status": "Fixed",
+      "resolution": {
+        "ref": "25c4b3e"
+      },
       "firstSeen": "2026-11-20",
       "lastSeen": "2026-11-20",
       "regression": false,
@@ -1361,8 +1389,10 @@
       "side": "code",
       "entity": "Slider",
       "evidence": "State axis (Default · Dragging · Disabled) and no motion decision in the contract (recipes/motion.ts has no entry)",
-      "status": "Open",
-      "resolution": null,
+      "status": "Fixed",
+      "resolution": {
+        "ref": "25c4b3e"
+      },
       "firstSeen": "2026-11-20",
       "lastSeen": "2026-11-20",
       "regression": false,
@@ -1631,7 +1661,7 @@
       "source": "contracts:report",
       "links": {
         "contract": "https://github.com/Duscenko/escala-tokens/blob/main/spec/contracts/Modal.json",
-        "figma": "https://www.figma.com/design/7j5zukN5HpihGVJMmyjA20/?node-id=931-87046",
+        "figma": "https://www.figma.com/design/7j5zukN5HpihGVJMmyjA20/?node-id=967-102",
         "storybook": "https://escala-storybook.vercel.app/?path=/story/content-surfaces-modal--playground"
       }
     },
@@ -1692,7 +1722,7 @@
       "source": "contracts:report",
       "links": {
         "contract": "https://github.com/Duscenko/escala-tokens/blob/main/spec/contracts/ModalFooter.json",
-        "figma": "https://www.figma.com/design/7j5zukN5HpihGVJMmyjA20/?node-id=931-87046",
+        "figma": "https://www.figma.com/design/7j5zukN5HpihGVJMmyjA20/?node-id=966-114",
         "storybook": "https://escala-storybook.vercel.app/?path=/story/content-surfaces-modal--modal-footer-playground"
       }
     },
@@ -1766,8 +1796,10 @@
       "side": "code",
       "entity": "TooltipInfoTrigger",
       "evidence": "State axis (Default · Hover · Open · Focused) and no motion decision in the contract (recipes/motion.ts has no entry)",
-      "status": "Open",
-      "resolution": null,
+      "status": "Fixed",
+      "resolution": {
+        "ref": "25c4b3e"
+      },
       "firstSeen": "2026-11-20",
       "lastSeen": "2026-11-20",
       "regression": false,
@@ -1827,8 +1859,10 @@
       "side": "code",
       "entity": "TableCell",
       "evidence": "State axis (Default · Disabled) and no motion decision in the contract (recipes/motion.ts has no entry)",
-      "status": "Open",
-      "resolution": null,
+      "status": "Fixed",
+      "resolution": {
+        "ref": "25c4b3e"
+      },
       "firstSeen": "2026-11-20",
       "lastSeen": "2026-11-20",
       "regression": false,
@@ -1888,8 +1922,10 @@
       "side": "code",
       "entity": "TableMediaCell",
       "evidence": "State axis (Default · Disabled) and no motion decision in the contract (recipes/motion.ts has no entry)",
-      "status": "Open",
-      "resolution": null,
+      "status": "Fixed",
+      "resolution": {
+        "ref": "25c4b3e"
+      },
       "firstSeen": "2026-11-20",
       "lastSeen": "2026-11-20",
       "regression": false,
@@ -1928,8 +1964,10 @@
       "side": "code",
       "entity": "TableTrendCell",
       "evidence": "State axis (Default · Disabled) and no motion decision in the contract (recipes/motion.ts has no entry)",
-      "status": "Open",
-      "resolution": null,
+      "status": "Fixed",
+      "resolution": {
+        "ref": "25c4b3e"
+      },
       "firstSeen": "2026-11-20",
       "lastSeen": "2026-11-20",
       "regression": false,
@@ -2136,8 +2174,10 @@
       "side": "code",
       "entity": "TableLoadMore",
       "evidence": "State axis (Default · Loading) and no motion decision in the contract (recipes/motion.ts has no entry)",
-      "status": "Open",
-      "resolution": null,
+      "status": "Fixed",
+      "resolution": {
+        "ref": "25c4b3e"
+      },
       "firstSeen": "2026-11-20",
       "lastSeen": "2026-11-20",
       "regression": false,
@@ -2260,8 +2300,10 @@
       "side": "code",
       "entity": "Gauge",
       "evidence": "contract lacks: figma set (codeOnly)",
-      "status": "Open",
-      "resolution": null,
+      "status": "Fixed",
+      "resolution": {
+        "ref": "25c4b3e"
+      },
       "firstSeen": "2026-11-20",
       "lastSeen": "2026-11-20",
       "regression": false,
@@ -2278,8 +2320,10 @@
       "side": "code",
       "entity": "Sparkline",
       "evidence": "contract lacks: figma set (codeOnly)",
-      "status": "Open",
-      "resolution": null,
+      "status": "Fixed",
+      "resolution": {
+        "ref": "25c4b3e"
+      },
       "firstSeen": "2026-11-20",
       "lastSeen": "2026-11-20",
       "regression": false,
@@ -2359,8 +2403,10 @@
       "side": "code",
       "entity": "ActivityHeatmap",
       "evidence": "contract lacks: figma set (codeOnly)",
-      "status": "Open",
-      "resolution": null,
+      "status": "Fixed",
+      "resolution": {
+        "ref": "25c4b3e"
+      },
       "firstSeen": "2026-11-20",
       "lastSeen": "2026-11-20",
       "regression": false,
@@ -2377,8 +2423,10 @@
       "side": "code",
       "entity": "ActivityHeatmapCell",
       "evidence": "contract lacks: figma set (codeOnly)",
-      "status": "Open",
-      "resolution": null,
+      "status": "Fixed",
+      "resolution": {
+        "ref": "25c4b3e"
+      },
       "firstSeen": "2026-11-20",
       "lastSeen": "2026-11-20",
       "regression": false,
@@ -2395,8 +2443,10 @@
       "side": "code",
       "entity": "SplitBar",
       "evidence": "contract lacks: figma set (codeOnly)",
-      "status": "Open",
-      "resolution": null,
+      "status": "Fixed",
+      "resolution": {
+        "ref": "25c4b3e"
+      },
       "firstSeen": "2026-11-20",
       "lastSeen": "2026-11-20",
       "regression": false,
@@ -2413,8 +2463,10 @@
       "side": "code",
       "entity": "SplitBarSegment",
       "evidence": "contract lacks: figma set (codeOnly)",
-      "status": "Open",
-      "resolution": null,
+      "status": "Fixed",
+      "resolution": {
+        "ref": "25c4b3e"
+      },
       "firstSeen": "2026-11-20",
       "lastSeen": "2026-11-20",
       "regression": false,
@@ -2431,8 +2483,10 @@
       "side": "code",
       "entity": "SplitBarLegendItem",
       "evidence": "contract lacks: figma set (codeOnly)",
-      "status": "Open",
-      "resolution": null,
+      "status": "Fixed",
+      "resolution": {
+        "ref": "25c4b3e"
+      },
       "firstSeen": "2026-11-20",
       "lastSeen": "2026-11-20",
       "regression": false,
@@ -2512,8 +2566,10 @@
       "side": "code",
       "entity": "BreadcrumbItem",
       "evidence": "State axis (Default · Hover · Focused · Current · Disabled) and no motion decision in the contract (recipes/motion.ts has no entry)",
-      "status": "Open",
-      "resolution": null,
+      "status": "Fixed",
+      "resolution": {
+        "ref": "25c4b3e"
+      },
       "firstSeen": "2026-11-20",
       "lastSeen": "2026-11-20",
       "regression": false,
@@ -2552,8 +2608,10 @@
       "side": "code",
       "entity": "BreadcrumbEllipsis",
       "evidence": "State axis (Default · Hover · Focused · Disabled) and no motion decision in the contract (recipes/motion.ts has no entry)",
-      "status": "Open",
-      "resolution": null,
+      "status": "Fixed",
+      "resolution": {
+        "ref": "25c4b3e"
+      },
       "firstSeen": "2026-11-20",
       "lastSeen": "2026-11-20",
       "regression": false,
@@ -2655,8 +2713,10 @@
       "side": "code",
       "entity": "StepperItem",
       "evidence": "State axis (Default · Disabled) and no motion decision in the contract (recipes/motion.ts has no entry)",
-      "status": "Open",
-      "resolution": null,
+      "status": "Fixed",
+      "resolution": {
+        "ref": "25c4b3e"
+      },
       "firstSeen": "2026-11-20",
       "lastSeen": "2026-11-20",
       "regression": false,
@@ -2695,8 +2755,10 @@
       "side": "code",
       "entity": "StepperIndicator",
       "evidence": "State axis (Default · Disabled) and no motion decision in the contract (recipes/motion.ts has no entry)",
-      "status": "Open",
-      "resolution": null,
+      "status": "Fixed",
+      "resolution": {
+        "ref": "25c4b3e"
+      },
       "firstSeen": "2026-11-20",
       "lastSeen": "2026-11-20",
       "regression": false,
@@ -2735,8 +2797,10 @@
       "side": "code",
       "entity": "StepperIcon",
       "evidence": "State axis (Default · Disabled) and no motion decision in the contract (recipes/motion.ts has no entry)",
-      "status": "Open",
-      "resolution": null,
+      "status": "Fixed",
+      "resolution": {
+        "ref": "25c4b3e"
+      },
       "firstSeen": "2026-11-20",
       "lastSeen": "2026-11-20",
       "regression": false,
@@ -2817,15 +2881,17 @@
       "side": "code",
       "entity": "Sidebar",
       "evidence": "Collapsed axis (false · true) and no motion decision in the contract (recipes/motion.ts has no entry)",
-      "status": "Open",
-      "resolution": null,
+      "status": "Fixed",
+      "resolution": {
+        "ref": "3422122"
+      },
       "firstSeen": "2026-11-20",
       "lastSeen": "2026-11-20",
       "regression": false,
       "source": "contracts:report",
       "links": {
         "contract": "https://github.com/Duscenko/escala-tokens/blob/main/spec/contracts/Sidebar.json",
-        "figma": "https://www.figma.com/design/7j5zukN5HpihGVJMmyjA20/?node-id=931-87050",
+        "figma": "https://www.figma.com/design/7j5zukN5HpihGVJMmyjA20/?node-id=982-1003",
         "storybook": "https://escala-storybook.vercel.app/?path=/story/navigation-sidebar--playground"
       }
     },
@@ -2878,15 +2944,17 @@
       "side": "code",
       "entity": "SidebarGroup",
       "evidence": "Collapsed axis (false · true) and no motion decision in the contract (recipes/motion.ts has no entry)",
-      "status": "Open",
-      "resolution": null,
+      "status": "Fixed",
+      "resolution": {
+        "ref": "3422122"
+      },
       "firstSeen": "2026-11-20",
       "lastSeen": "2026-11-20",
       "regression": false,
       "source": "contracts:report",
       "links": {
         "contract": "https://github.com/Duscenko/escala-tokens/blob/main/spec/contracts/SidebarGroup.json",
-        "figma": "https://www.figma.com/design/7j5zukN5HpihGVJMmyjA20/?node-id=931-87050",
+        "figma": "https://www.figma.com/design/7j5zukN5HpihGVJMmyjA20/?node-id=982-292",
         "storybook": "https://escala-storybook.vercel.app/?path=/story/navigation-sidebar--sidebar-group-playground"
       }
     },
@@ -2939,15 +3007,17 @@
       "side": "code",
       "entity": "SidebarBrand",
       "evidence": "Collapsed axis (false · true) and no motion decision in the contract (recipes/motion.ts has no entry)",
-      "status": "Open",
-      "resolution": null,
+      "status": "Fixed",
+      "resolution": {
+        "ref": "3422122"
+      },
       "firstSeen": "2026-11-20",
       "lastSeen": "2026-11-20",
       "regression": false,
       "source": "contracts:report",
       "links": {
         "contract": "https://github.com/Duscenko/escala-tokens/blob/main/spec/contracts/SidebarBrand.json",
-        "figma": "https://www.figma.com/design/7j5zukN5HpihGVJMmyjA20/?node-id=931-87050",
+        "figma": "https://www.figma.com/design/7j5zukN5HpihGVJMmyjA20/?node-id=980-419",
         "storybook": "https://escala-storybook.vercel.app/?path=/story/navigation-sidebar--sidebar-brand-playground"
       }
     },
@@ -3156,8 +3226,10 @@
       "side": "both",
       "entity": "Input",
       "evidence": "text.text: Figma Content/subtle, contract Content/primary — 99 variant(s), e.g. node 4:10610",
-      "status": "Open",
-      "resolution": null,
+      "status": "Fixed",
+      "resolution": {
+        "ref": "figma-bindings 9caeac6"
+      },
       "firstSeen": "2026-11-20",
       "lastSeen": "2026-11-20",
       "regression": false,
@@ -3198,8 +3270,10 @@
       "side": "both",
       "entity": "DatePickerTrigger",
       "evidence": "text.text: Figma Content/subtle, contract Content/primary — 15 variant(s), e.g. node 425:19",
-      "status": "Open",
-      "resolution": null,
+      "status": "Fixed",
+      "resolution": {
+        "ref": "figma-bindings 9caeac6"
+      },
       "firstSeen": "2026-11-20",
       "lastSeen": "2026-11-20",
       "regression": false,
@@ -3416,8 +3490,10 @@
       "side": "both",
       "entity": "Switch",
       "evidence": "io.text: Figma Content/on-action, contract Action/primary/default — 12 variant(s), e.g. node 405:70",
-      "status": "Open",
-      "resolution": null,
+      "status": "Fixed",
+      "resolution": {
+        "ref": "figma-bindings 9caeac6"
+      },
       "firstSeen": "2026-11-20",
       "lastSeen": "2026-11-20",
       "regression": false,
@@ -3436,8 +3512,10 @@
       "side": "both",
       "entity": "Switch",
       "evidence": "io.text: Figma none, contract Surface/muted — 18 variant(s), e.g. node 405:76",
-      "status": "Open",
-      "resolution": null,
+      "status": "Fixed",
+      "resolution": {
+        "ref": "figma-bindings 9caeac6"
+      },
       "firstSeen": "2026-11-20",
       "lastSeen": "2026-11-20",
       "regression": false,
@@ -3456,8 +3534,10 @@
       "side": "both",
       "entity": "Switch",
       "evidence": "io.text: Figma Content/on-action, contract Action/primary/hover — 6 variant(s), e.g. node 405:82",
-      "status": "Open",
-      "resolution": null,
+      "status": "Fixed",
+      "resolution": {
+        "ref": "figma-bindings 9caeac6"
+      },
       "firstSeen": "2026-11-20",
       "lastSeen": "2026-11-20",
       "regression": false,
@@ -3476,8 +3556,10 @@
       "side": "both",
       "entity": "Switch",
       "evidence": "io.text: Figma none, contract Surface/muted-hover — 6 variant(s), e.g. node 405:88",
-      "status": "Open",
-      "resolution": null,
+      "status": "Fixed",
+      "resolution": {
+        "ref": "figma-bindings 9caeac6"
+      },
       "firstSeen": "2026-11-20",
       "lastSeen": "2026-11-20",
       "regression": false,
@@ -3518,8 +3600,10 @@
       "side": "both",
       "entity": "FeaturedIcon",
       "evidence": "root.fill: Figma gradient_linear, contract Action/primary/default — 8 variant(s), e.g. node 1588:11236",
-      "status": "Open",
-      "resolution": null,
+      "status": "Fixed",
+      "resolution": {
+        "ref": "figma-bindings 9caeac6"
+      },
       "firstSeen": "2026-11-20",
       "lastSeen": "2026-11-20",
       "regression": false,
@@ -3538,8 +3622,10 @@
       "side": "both",
       "entity": "FeaturedIcon",
       "evidence": "root.fill: Figma gradient_linear, contract Action/secondary/default — 8 variant(s), e.g. node 1588:11248",
-      "status": "Open",
-      "resolution": null,
+      "status": "Fixed",
+      "resolution": {
+        "ref": "figma-bindings 9caeac6"
+      },
       "firstSeen": "2026-11-20",
       "lastSeen": "2026-11-20",
       "regression": false,
@@ -3558,8 +3644,10 @@
       "side": "both",
       "entity": "FeaturedIcon",
       "evidence": "root.fill: Figma gradient_linear, contract Status/critical/surface-solid — 8 variant(s), e.g. node 1588:11260",
-      "status": "Open",
-      "resolution": null,
+      "status": "Fixed",
+      "resolution": {
+        "ref": "figma-bindings 9caeac6"
+      },
       "firstSeen": "2026-11-20",
       "lastSeen": "2026-11-20",
       "regression": false,
@@ -3578,8 +3666,10 @@
       "side": "both",
       "entity": "FeaturedIcon",
       "evidence": "root.fill: Figma gradient_linear, contract Status/success/surface-solid — 8 variant(s), e.g. node 1588:11272",
-      "status": "Open",
-      "resolution": null,
+      "status": "Fixed",
+      "resolution": {
+        "ref": "figma-bindings 9caeac6"
+      },
       "firstSeen": "2026-11-20",
       "lastSeen": "2026-11-20",
       "regression": false,
@@ -3598,8 +3688,10 @@
       "side": "both",
       "entity": "FeaturedIcon",
       "evidence": "root.fill: Figma gradient_linear, contract Status/warning/surface-solid — 8 variant(s), e.g. node 1588:11284",
-      "status": "Open",
-      "resolution": null,
+      "status": "Fixed",
+      "resolution": {
+        "ref": "figma-bindings 9caeac6"
+      },
       "firstSeen": "2026-11-20",
       "lastSeen": "2026-11-20",
       "regression": false,
@@ -3618,8 +3710,10 @@
       "side": "both",
       "entity": "FeaturedIcon",
       "evidence": "root.fill: Figma gradient_linear, contract Status/info/surface-solid — 8 variant(s), e.g. node 1588:11296",
-      "status": "Open",
-      "resolution": null,
+      "status": "Fixed",
+      "resolution": {
+        "ref": "figma-bindings 9caeac6"
+      },
       "firstSeen": "2026-11-20",
       "lastSeen": "2026-11-20",
       "regression": false,
@@ -3770,8 +3864,10 @@
       "side": "both",
       "entity": "ModalFooter",
       "evidence": "root.stroke: Figma none, contract Border/subtle — 6 variant(s), e.g. node 966:26",
-      "status": "Open",
-      "resolution": null,
+      "status": "Fixed",
+      "resolution": {
+        "ref": "figma-bindings 9caeac6"
+      },
       "firstSeen": "2026-11-20",
       "lastSeen": "2026-11-20",
       "regression": false,
@@ -3790,8 +3886,10 @@
       "side": "both",
       "entity": "Sheet",
       "evidence": "content.fill: Figma none, contract Surface/layer-2 — 3 variant(s), e.g. node 1648:1448",
-      "status": "Open",
-      "resolution": null,
+      "status": "Fixed",
+      "resolution": {
+        "ref": "figma-bindings 9caeac6"
+      },
       "firstSeen": "2026-11-20",
       "lastSeen": "2026-11-20",
       "regression": false,
@@ -3810,8 +3908,10 @@
       "side": "both",
       "entity": "Sheet",
       "evidence": "content.stroke: Figma none, contract Border/default — 3 variant(s), e.g. node 1648:1448",
-      "status": "Open",
-      "resolution": null,
+      "status": "Fixed",
+      "resolution": {
+        "ref": "figma-bindings 9caeac6"
+      },
       "firstSeen": "2026-11-20",
       "lastSeen": "2026-11-20",
       "regression": false,

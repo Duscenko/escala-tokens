@@ -11,7 +11,7 @@ const load = (key: string): ComponentContract => JSON.parse(readFileSync(join(RO
 const button = load('Button')
 const TEMPLATE = readFileSync(join(ROOT, 'scripts/figma/bindings-check.figma.js'), 'utf8')
 
-type Paint = { type: string; visible?: boolean; opacity?: number; boundVariables?: { color?: { id: string } } }
+type Paint = { type: string; visible?: boolean; opacity?: number; boundVariables?: { color?: { id: string } }; gradientStops?: { position: number; boundVariables?: { color?: { id: string } } }[] }
 const solid = (id: string | null, opacity = 1): Paint => ({ type: 'SOLID', opacity, ...(id ? { boundVariables: { color: { id } } } : {}) })
 interface FakeNode { id: string; name: string; type: string; fills?: Paint[]; strokes?: Paint[]; children?: FakeNode[]; visible?: boolean }
 
@@ -104,5 +104,25 @@ describe('figma bindings check', () => {
     const out = await runTemplate(wire, [set], vars)
     expect(out.diffs).toEqual([])
     expect(out.checked.CloseButton).toContain('Variant=brand not in the contract')
+  })
+
+  it('PAR-001 follow-up: reads a gradient by its stops, a placeholder text, and the Sheet panel on the variant', async () => {
+    const names: string[] = []
+    const fi = expectationOf(load('FeaturedIcon'), names)!
+    const fv = fi.rules.find((r) => r.a.join() === 'Variant,Appearance')!.v
+    expect(names[fv['default|gradient'].root.f!]).toBe('Action/primary/default → Action/primary/hover → Action/primary/pressed')
+    const sheet = expectationOf(load('Sheet'), names)!
+    expect(Object.keys(sheet.rules[0].v[''])).toEqual(expect.arrayContaining(['root', 'content']))
+    const input = expectationOf(load('Input'), names)!
+    const wire = encode({ names, sets: [fi, input] })
+    const vars = { p: { name: 'Action/primary/default' }, h: { name: 'Action/primary/hover' }, x: { name: 'Action/primary/pressed' }, o: { name: 'Content/on-action' }, s: { name: 'Content/subtle' }, f: { name: 'Surface/input' }, b: { name: 'Border/control' } }
+    const stop = (position: number, id: string) => ({ position, boundVariables: { color: { id } } })
+    const icon: FakeNode = { id: '3:1', name: 'Size=default, Variant=default, Appearance=gradient, Shape=circle', type: 'COMPONENT', fills: [{ type: 'GRADIENT_LINEAR', gradientStops: [stop(1, 'x'), stop(0, 'p'), stop(0.52, 'h')] }], strokes: [], children: [{ id: '3:2', name: 'label', type: 'TEXT', fills: [solid('o')] }] }
+    const field: FakeNode = { id: '4:1', name: 'Size=default, State=Default, Type=default, Value=placeholder', type: 'COMPONENT', fills: [solid('f')], strokes: [solid('b')], children: [{ id: '4:2', name: 'text', type: 'FRAME', children: [{ id: '4:3', name: 'placeholder', type: 'TEXT', fills: [solid('s')] }] }] }
+    const out = await runTemplate(wire, [
+      { id: fi.id, name: 'FeaturedIcon', type: 'COMPONENT_SET', children: [icon] },
+      { id: input.id, name: 'Input', type: 'COMPONENT_SET', children: [field] },
+    ], vars)
+    expect(out.diffs.filter((d) => d[2] === 'root' || d[2] === 'text' || d[2] === 'placeholder')).toEqual([])
   })
 })

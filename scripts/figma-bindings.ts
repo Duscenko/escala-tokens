@@ -50,6 +50,8 @@ export const PART_LAYER: Record<string, Record<string, string>> = {
   CalendarPresets: { label: 'rail-label' },
   ComboboxPopover: { empty: 'empty-state' },
   AvatarGroup: { action: 'action-surface' },
+  // The code's `content` is the Sheet panel, which Figma draws on the variant itself; Figma's `Content` slot is the code's `body`.
+  Sheet: { content: 'root', body: 'content' },
 }
 
 /** The colour roles a contract binds per state, under their Figma names (a table shared per batch). */
@@ -73,7 +75,11 @@ export function expectationOf(c: ComponentContract, names: string[]): SetExpecta
           // so Figma's stroke at that state is the focus role, not the resting `stroke`.
           if (slot === 'stroke' && typeof props.focus === 'string' && props.focus !== 'none') ref = props.focus
           let idx: number | null = null
-          if (slot === 'fill' && (typeof props.overlay === 'string' || typeof props.overlay2 === 'string')) {
+          if (slot === 'fill' && typeof props.fillMid === 'string' && typeof props.fillEnd === 'string') {
+            // A gradient fill (fill → fillMid → fillEnd): Figma binds each stop.
+            const stops = [ref, props.fillMid, props.fillEnd].map(figmaOf)
+            if (stops.every(Boolean)) idx = at(stops.join(' → '))
+          } else if (slot === 'fill' && (typeof props.overlay === 'string' || typeof props.overlay2 === 'string')) {
             // Translucent fills stacked over the fill (`overlay`, `overlay2`): Figma draws them as a
             // paint stack, read bottom to top.
             const stack = [ref, props.overlay, props.overlay2].filter((r) => typeof r === 'string' && r !== 'none').map(figmaOf)

@@ -544,7 +544,7 @@
             "fill": "color.content.on-action"
           },
           "io": {
-            "text": "color.action.primary.default"
+            "text": "color.content.on-action"
           },
           "thumbIcon": {
             "text": "color.action.primary.default"
@@ -560,7 +560,7 @@
             "fill": "color.content.on-action"
           },
           "io": {
-            "text": "color.action.primary.hover"
+            "text": "color.content.on-action"
           },
           "thumbIcon": {
             "text": "color.action.primary.hover"
@@ -576,7 +576,7 @@
             "fill": "color.content.on-action"
           },
           "io": {
-            "text": "color.action.primary.default"
+            "text": "color.content.on-action"
           },
           "thumbIcon": {
             "text": "color.action.primary.default"

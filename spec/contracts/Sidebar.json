@@ -200,7 +200,16 @@
       }
     }
   ],
-  "motion": null,
+  "motion": {
+    "transitions": {
+      "root": {
+        "width": "use-disclosure-out"
+      },
+      "root[data-collapsed=\"false\"]": {
+        "width": "use-disclosure-in"
+      }
+    }
+  },
   "behaviour": {
     "primitives": [],
     "roles": [

@@ -231,7 +231,7 @@
       }
     }
   ],
-  "motion": null,
+  "motion": {},
   "behaviour": {
     "primitives": [],
     "roles": [

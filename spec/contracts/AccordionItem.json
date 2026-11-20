@@ -73,7 +73,8 @@
           "ghost-rounded",
           "outline-rounded",
           "outline-sharp",
-          "filled-rounded"
+          "filled-rounded",
+          "card"
         ]
       },
       {
@@ -111,14 +112,18 @@
     "slots": [
       "root",
       "trigger",
+      "iconBox",
       "icon",
       "label",
       "chevron",
-      "content"
+      "content",
+      "contentRow",
+      "iconOffset"
     ]
   },
   "tokens": {
     "color": [
+      "color.action.disabled.default",
       "color.border.default",
       "color.border.strong",
       "color.border.subtle",
@@ -132,11 +137,16 @@
       "icon.medium"
     ],
     "radius": [
+      "radius.action",
       "radius.container",
       "radius.none"
     ],
+    "size": [
+      "size.compact"
+    ],
     "spacing": [
       "spacing.gap-group",
+      "spacing.inset-control",
       "spacing.inset-surface",
       "spacing.none"
     ],
@@ -146,10 +156,16 @@
     ],
     "type": [
       "type.body-md",
-      "type.heading-2xs"
+      "type.body-sm",
+      "type.heading-2xs",
+      "type.label"
     ]
   },
   "names": {
+    "color.action.disabled.default": {
+      "css": "--color-action-disabled-default",
+      "figma": "Action/disabled/default"
+    },
     "color.border.default": {
       "css": "--color-border-default",
       "figma": "Border/default"
@@ -186,6 +202,10 @@
       "css": "--size-icon-md",
       "figma": "Size/icon-md"
     },
+    "radius.action": {
+      "css": "--radius-action",
+      "figma": "Radius/action"
+    },
     "radius.container": {
       "css": "--radius-container",
       "figma": "Radius/container"
@@ -194,9 +214,17 @@
       "css": "--radius-none",
       "figma": "Radius/none"
     },
+    "size.compact": {
+      "css": "--size-control-sm",
+      "figma": "Size/control-sm"
+    },
     "spacing.gap-group": {
       "css": "--spacing-gap-group",
       "figma": "Spacing/gap-group"
+    },
+    "spacing.inset-control": {
+      "css": "--spacing-inset-control",
+      "figma": "Spacing/inset-control"
     },
     "spacing.inset-surface": {
       "css": "--spacing-inset-surface",
@@ -218,9 +246,17 @@
       "css": "--text-body-md-font-size",
       "figma": "Type/body-md"
     },
+    "type.body-sm": {
+      "css": "--text-body-sm-font-size",
+      "figma": "Type/body-sm"
+    },
     "type.heading-2xs": {
       "css": "--text-heading-2xs-font-size",
       "figma": "Type/heading-2xs"
+    },
+    "type.label": {
+      "css": "--text-label-font-size",
+      "figma": "Type/label"
     }
   },
   "bindings": [
@@ -250,6 +286,12 @@
             "font": "type.body-md",
             "text": "color.content.secondary",
             "paddingBottom": "spacing.inset-surface"
+          },
+          "contentRow": {
+            "gap": "spacing.gap-group"
+          },
+          "iconOffset": {
+            "width": "icon.medium"
           }
         }
       }
@@ -305,6 +347,28 @@
           },
           "content": {
             "paddingX": "spacing.inset-surface"
+          }
+        },
+        "card": {
+          "trigger": {
+            "paddingX": "spacing.inset-surface",
+            "paddingY": "spacing.inset-control"
+          },
+          "iconBox": {
+            "width": "size.compact",
+            "height": "size.compact",
+            "radius": "radius.action"
+          },
+          "label": {
+            "font": "type.label"
+          },
+          "content": {
+            "paddingX": "spacing.inset-surface",
+            "paddingBottom": "spacing.inset-control",
+            "font": "type.body-sm"
+          },
+          "iconOffset": {
+            "width": "size.compact"
           }
         }
       }
@@ -478,6 +542,48 @@
           "root": {
             "fill": "color.surface.muted",
             "radius": "radius.container"
+          },
+          "icon": {
+            "text": "color.content.disabled"
+          },
+          "label": {
+            "text": "color.content.disabled"
+          },
+          "chevron": {
+            "text": "color.content.disabled"
+          }
+        },
+        "card|Closed": {
+          "root": {
+            "fill": "none",
+            "stroke": "color.border.subtle",
+            "strokeBottomWidth": "stroke.divider",
+            "radius": "radius.none"
+          },
+          "iconBox": {
+            "fill": "color.surface.muted"
+          }
+        },
+        "card|Open": {
+          "root": {
+            "fill": "none",
+            "stroke": "color.border.subtle",
+            "strokeBottomWidth": "stroke.divider",
+            "radius": "radius.none"
+          },
+          "iconBox": {
+            "fill": "color.surface.muted"
+          }
+        },
+        "card|Disabled": {
+          "root": {
+            "fill": "none",
+            "stroke": "color.border.subtle",
+            "strokeBottomWidth": "stroke.divider",
+            "radius": "radius.none"
+          },
+          "iconBox": {
+            "fill": "color.action.disabled.default"
           },
           "icon": {
             "text": "color.content.disabled"

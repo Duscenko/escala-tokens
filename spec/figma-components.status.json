@@ -187,12 +187,6 @@
     "SocialLoginButton": {
       "status": "rebuild"
     },
-    "Accordion": {
-      "status": "rebuild"
-    },
-    "AccordionItem": {
-      "status": "rebuild"
-    },
     "ModalFooter": {
       "status": "rebuild"
     },

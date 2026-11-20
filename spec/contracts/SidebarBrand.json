@@ -154,7 +154,16 @@
       }
     }
   ],
-  "motion": null,
+  "motion": {
+    "transitions": {
+      "text": {
+        "opacity": "use-disclosure-in"
+      }
+    },
+    "appear": [
+      "text"
+    ]
+  },
   "behaviour": {
     "primitives": [],
     "roles": [

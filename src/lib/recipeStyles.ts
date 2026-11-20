@@ -462,6 +462,8 @@ export function recipeMotionCss(recipe: ComponentRecipe): string {
       .flatMap(([prop, role]) => (prop === 'transform' ? ['transform', 'translate', 'rotate', 'scale'] : [prop]).map((p) => `${p} var(--motion-${role}, ${TRANSITION_FALLBACK})`))
     rules.push(`${slotSelector(recipe, `${root}:active${live}`, slot)} {\n  scale: var(--motion-transform-shrink, 1);\n  transition: ${down.join(', ')};\n}`)
   }
+  // A slot that mounts fades in from transparent on its own `opacity` role (`@starting-style`: the browser's first style for it).
+  for (const slot of m.appear ?? []) rules.push(`@starting-style {\n  ${slotSelector(recipe, root, slot)} {\n    opacity: 0;\n  }\n}`)
   if (m.stagger) rules.push(`${slotSelector(recipe, root, m.stagger.slot)}${m.stagger.when} {\n  transition-delay: calc(var(--escala-index, 0) * var(--motion-stagger, 0ms));\n}`)
   rules.push(...timerRules(recipe, root, m.timer), ...queueRules(m.queue))
   // A disclosure's enter and exit both declare its height: once is enough.

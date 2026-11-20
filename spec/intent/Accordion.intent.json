@@ -20,7 +20,7 @@
     "Default": {
       "setBy": "component",
       "meaning": "The stack itself has no state; each item opens and closes.",
-      "visual": "Items stacked 0 apart (ghost-default, ghost-underline) or 8 apart (the other variants)."
+      "visual": "Items stacked 0 apart (ghost-default, ghost-underline, card) or 8 apart (the other variants). card frames the stack: Surface/layer-2, a 1px Border/default edge, Radius/container, clipped; the last item drops its rule."
     }
   },
   "a11y": {
@@ -30,7 +30,6 @@
     "contrast": "AA"
   },
   "openQuestions": [
-    "Variant=card exists only in the Figma set; the code stops at filled-rounded. Should card be built, or is it leaving the file?",
     "Only independent opening (type multiple) is offered. Is a one-open-at-a-time mode needed?"
   ],
   "approval": {

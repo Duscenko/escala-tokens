@@ -39,7 +39,7 @@ Other states: `bindings` in the JSON (1 part; merge every matching part in order
 
 ## Motion
 
-No decision yet (MOT-002): it has a Collapsed axis (false · true).
+- `label`: opacity → `use-disclosure-in`
 
 ## Behaviour
 

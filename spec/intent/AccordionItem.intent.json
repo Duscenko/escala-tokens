@@ -16,7 +16,7 @@
     "Closed": {
       "setBy": "both",
       "meaning": "Content hidden; the person toggles it, the app can control it.",
-      "visual": "Icon and chevron Content/secondary, label Content/primary. Fill and edge by variant: none (ghost-default, ghost-rounded), Border/default bottom edge (ghost-underline), Surface/layer-1 with Border/default (outline-rounded, outline-sharp), Surface/muted (filled-rounded)."
+      "visual": "Icon and chevron Content/secondary, label Content/primary. Fill and edge by variant: none (ghost-default, ghost-rounded), Border/default bottom edge (ghost-underline), Surface/layer-1 with Border/default (outline-rounded, outline-sharp), Surface/muted (filled-rounded), Border/subtle bottom rule (card: denser, the icon in a Size/control-sm Surface/muted box, label Type/label)."
     },
     "Open": {
       "setBy": "both",
@@ -25,7 +25,7 @@
     "Disabled": {
       "setBy": "app",
       "meaning": "Cannot be toggled.",
-      "visual": "Icon, label and chevron Content/disabled; edges move to Border/subtle (ghost-underline, outline variants)."
+      "visual": "Icon, label and chevron Content/disabled; edges move to Border/subtle (ghost-underline, outline variants); card's icon box moves to Action/disabled/default."
     }
   },
   "a11y": {

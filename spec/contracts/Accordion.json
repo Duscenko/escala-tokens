@@ -47,7 +47,8 @@
           "ghost-rounded",
           "outline-rounded",
           "outline-sharp",
-          "filled-rounded"
+          "filled-rounded",
+          "card"
         ]
       }
     ],
@@ -58,7 +59,7 @@
       {
         "name": "variant",
         "type": "Figma Variant",
-        "description": "Shared by every item; ghost-default and ghost-underline sit 0 apart, the rest 8."
+        "description": "Shared by every item; ghost-default, ghost-underline and card sit 0 apart, the rest 8; card frames the items (Surface/layer-2, Border/default, Radius/container)."
       },
       {
         "name": "value / defaultValue / onValueChange",
@@ -78,12 +79,35 @@
     ]
   },
   "tokens": {
+    "color": [
+      "color.border.default",
+      "color.surface.layer-2"
+    ],
+    "radius": [
+      "radius.container"
+    ],
     "spacing": [
       "spacing.gap-control",
       "spacing.none"
+    ],
+    "stroke": [
+      "stroke.divider",
+      "stroke.none"
     ]
   },
   "names": {
+    "color.border.default": {
+      "css": "--color-border-default",
+      "figma": "Border/default"
+    },
+    "color.surface.layer-2": {
+      "css": "--color-surface-layer-2",
+      "figma": "Surface/layer-2"
+    },
+    "radius.container": {
+      "css": "--radius-container",
+      "figma": "Radius/container"
+    },
     "spacing.gap-control": {
       "css": "--spacing-gap-control",
       "figma": "Spacing/gap-control"
@@ -91,6 +115,14 @@
     "spacing.none": {
       "css": "--spacing-none",
       "figma": "Spacing/none"
+    },
+    "stroke.divider": {
+      "css": "--stroke-divider",
+      "figma": "Stroke/divider"
+    },
+    "stroke.none": {
+      "css": "--stroke-none",
+      "figma": "Stroke/none"
     }
   },
   "bindings": [
@@ -127,6 +159,20 @@
         "filled-rounded": {
           "root": {
             "gap": "spacing.gap-control"
+          }
+        },
+        "card": {
+          "root": {
+            "gap": "spacing.none"
+          },
+          "root:not([data-standalone])": {
+            "fill": "color.surface.layer-2",
+            "stroke": "color.border.default",
+            "strokeWidth": "stroke.divider",
+            "radius": "radius.container"
+          },
+          "root:not([data-standalone]) > :last-child": {
+            "strokeBottomWidth": "stroke.none"
           }
         }
       }
