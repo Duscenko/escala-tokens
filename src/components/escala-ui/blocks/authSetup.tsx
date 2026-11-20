@@ -144,6 +144,8 @@ function SetupShell({ block, step, status, inline = true, open = true, onOpenCha
         data-type={step}
         data-status={status}
         aria-describedby={describedBy}
+        // The shell sets its own body type so it never inherits the page's base size (the platform's phone frame is 18, Storybook's 16).
+        style={type('body-md')}
         {...(inline ? {} : { onOpenAutoFocus: (e: Event) => { e.preventDefault(); focusStep() } })}
         header={<ModalHeader align="vertical-left" iconVisible={false} descriptionVisible={false} title={title} />}
         footer={(
