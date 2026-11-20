@@ -3,6 +3,8 @@ import { COLLAPSED_RAIL_WELL, COLOR_RAIL_COLLAPSED_WIDTH, COLOR_RAIL_WIDTH } fro
 import { WORKSPACE_CHROME } from './themeWorkspaceLayout'
 import { ViewportRail } from './ViewportRail'
 import { InspectorPortal, useInInspector } from './WorkspaceInspector'
+import { NavPortal, useInNavColumn } from './WorkspaceNavColumn'
+import { useI18n } from '../../lib/i18n'
 import ThemeSaveBar, { WorkspaceFooterContext } from './ThemeSaveBar'
 
 export type VariableCollectionKey = 'primitives' | 'semantics' | 'gradients' | 'responsive'
@@ -209,6 +211,7 @@ export default function VariableCollectionRail({
   navRef,
   groupsLabel = 'Groups',
   footer,
+  settings,
 }: {
   children: ReactNode
   collapsed?: boolean
@@ -220,16 +223,28 @@ export default function VariableCollectionRail({
   /** Under the groups, apart from the navigation: a tool for the whole
    *  collection (Color's suggested colours). Hidden while collapsed. */
   footer?: ReactNode
+  /** Controls that regrade the whole collection (Radius' preset, Motion's
+   *  preset). Only rendered while the left nav column is mounted — they go to
+   *  the inspector; callers keep them in `children` otherwise. */
+  settings?: ReactNode
 }) {
+  const { t } = useI18n()
   const context = useContext(CollectionContext)
-  // In the inspector the column owns width and collapse.
-  const inInspector = useInInspector()
+  // In the inspector (or the left nav column) the column owns width and collapse.
+  const inColumn = useInNavColumn()
+  const inInspector = useInInspector() || inColumn
   const shellFooter = useContext(WorkspaceFooterContext)
   const collapsed = inInspector ? false : collapsedProp
   if (!context) return <>{children}</>
+  // With the left column mounted, the navigation (collections, groups) goes
+  // there and only what EDITS stays in the inspector: a collection-wide tool
+  // (Color's suggested colours), settings that are not groups (Icons), Save.
+  const settingsNotGroups = groupsLabel === null
+  const saveBar = inInspector && (shellFooter ? <ThemeSaveBar /> : <ThemeSaveBar inactive />)
 
   return (
-    <InspectorPortal>
+    <>
+    <NavPortal>
     <nav
       ref={navRef}
       aria-label={ariaLabel}
@@ -283,19 +298,35 @@ export default function VariableCollectionRail({
 
       <div className={`${collapsed ? 'my-2' : 'my-3'} h-px bg-line`} aria-hidden />
 
-      {groupsLabel === null ? children : (
+      {settingsNotGroups ? (inColumn ? null : children) : (
         <section aria-labelledby="variable-groups-heading">
           {!collapsed && <h2 id="variable-groups-heading" className="px-1 pb-2 text-ui font-semibold text-fg">{groupsLabel}</h2>}
           {children}
         </section>
       )}
-      {footer && !collapsed && <div className="mt-4">{footer}</div>}
+      {footer && !collapsed && !inColumn && <div className="mt-4">{footer}</div>}
       </div>
     </nav>
     {/* Variables is an editing tab too: the Board's footer, live — the doors
         out and Save, so the top bar needs no Export pill of its own. Outside
         the Generator (no shell footer) it stays the greyed bar. */}
-    {inInspector && (shellFooter ? <ThemeSaveBar /> : <ThemeSaveBar inactive />)}
-    </InspectorPortal>
+    {!inColumn && saveBar}
+    </NavPortal>
+    {inColumn && (
+      <InspectorPortal>
+        <div className="flex min-h-0 flex-1 flex-col">
+          <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto px-3 py-3">
+            {settings && <div className="flex flex-col gap-0.5">{settings}</div>}
+            {settingsNotGroups && children}
+            {footer}
+            {!settings && !settingsNotGroups && !footer && (
+              <p className="px-1 text-caption leading-relaxed text-fg-faint">{t('Edit values right in the table. Settings for the whole collection appear here.')}</p>
+            )}
+          </div>
+          {saveBar}
+        </div>
+      </InspectorPortal>
+    )}
+    </>
   )
 }

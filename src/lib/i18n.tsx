@@ -2114,6 +2114,13 @@ const es: Record<string, string> = {
   'Token Details in the plugin: a role\'s value per theme, its contrast and a one-click fix': 'Token Details en el plugin: el valor de un rol por tema, su contraste y una corrección en un clic',
   'Pause animations': 'Pausar animaciones',
   'Play animations': 'Reanudar animaciones',
+  // Generator left nav column (design-plans/generator-left-nav.md)
+  'Show navigation': 'Mostrar navegación',
+  'Hide navigation': 'Ocultar navegación',
+  'Dimensions': 'Dimensiones',
+  'Scale': 'Escala base',
+  'Edit values right in the table. Settings for the whole collection appear here.': 'Edite los valores directamente en la tabla. Los ajustes de toda la colección aparecen aquí.',
+  'Parts of {name}': 'Partes de {name}',
 }
 
 const fr: Record<string, string> = {
@@ -4173,6 +4180,13 @@ const fr: Record<string, string> = {
   'Token Details in the plugin: a role\'s value per theme, its contrast and a one-click fix': 'Token Details dans le plugin : la valeur d’un rôle par thème, son contraste et une correction en un clic',
   'Pause animations': 'Mettre les animations en pause',
   'Play animations': 'Reprendre les animations',
+  // Generator left nav column (design-plans/generator-left-nav.md)
+  'Show navigation': 'Afficher la navigation',
+  'Hide navigation': 'Masquer la navigation',
+  'Dimensions': 'Dimensions',
+  'Scale': 'Échelle',
+  'Edit values right in the table. Settings for the whole collection appear here.': 'Modifiez les valeurs directement dans le tableau. Les réglages de toute la collection apparaissent ici.',
+  'Parts of {name}': 'Parties de {name}',
 }
 
 /** English is normally empty — an unmatched key falls through to the source

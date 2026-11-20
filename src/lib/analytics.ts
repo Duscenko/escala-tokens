@@ -1,4 +1,5 @@
 import { track } from '@vercel/analytics/react'
+import type { VariablesNavFoundation } from './variablesNav'
 import type { BeforeSendEvent } from '@vercel/analytics/react'
 
 // Product analytics — the ONE place the app reports what people do.
@@ -30,6 +31,12 @@ export type AnalyticsEvent =
   | { name: 'mobile_copy_prompt'; props: { ok: 'yes' | 'no' } }
   /** A `?remix=` link opened on a laptop. */
   | { name: 'remix_open'; props: { kind: 'style' | 'remix' } }
+  /** Variables' left column: which foundation was opened from it. Measures
+   *  whether naming them gets the less-visited ones (Radius, Stroke, Grid…)
+   *  opened more (design-plans/generator-left-nav.md). Throttled. */
+  | { name: 'variables_nav'; props: { foundation: VariablesNavFoundation } }
+  /** The left nav column folded or opened, per mode. */
+  | { name: 'nav_column'; props: { mode: 'variables' | 'components'; state: 'folded' | 'open' } }
 
 /** Throttle window for events that can fire in bursts (auto-sync republishes
  *  ~1.5s after every edit). One per window per tab is plenty to count usage

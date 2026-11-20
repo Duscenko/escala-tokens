@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react'
 import VariableCollectionRail, { RailDivider, RailGroupNav, type RailGroupItem } from './VariableCollectionRail'
+import { useInNavColumn } from './WorkspaceNavColumn'
 
 /** Kept as its own name because five semantic surfaces import it, but the row
  *  itself is `RailGroupNav` now — the same one Spacing and Sizes render. */
@@ -25,9 +26,11 @@ export default function SemanticGroupRail<Key extends string>({
    *  the rail is collapsed to its glyph strip. */
   controls?: ReactNode
 }) {
+  // With the left nav column, the controls edit — they go to the inspector.
+  const inColumn = useInNavColumn()
   return (
-    <VariableCollectionRail collapsed={collapsed} ariaLabel={ariaLabel}>
-      {controls && !collapsed && (
+    <VariableCollectionRail collapsed={collapsed} ariaLabel={ariaLabel} settings={inColumn ? controls : undefined}>
+      {controls && !collapsed && !inColumn && (
         <>
           <div className="flex flex-col gap-0.5">{controls}</div>
           <RailDivider />

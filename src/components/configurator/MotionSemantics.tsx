@@ -78,7 +78,8 @@ export default function MotionSemantics({ previewTheme, query }: { previewTheme?
   return (
     <div className="flex h-full min-h-0 flex-1 flex-col bg-app">
       <div className="flex min-h-0 flex-1 items-stretch">
-        <VariableCollectionRail>
+        {/* Motion has no groups: its rail body is the preset, a setting. */}
+        <VariableCollectionRail groupsLabel={null}>
           <div className="flex flex-col gap-0.5">
             <RailControl label="Preset" trailing={`×${settings.durationFactor}`}>
               <RailSelect<MotionPresetKey>

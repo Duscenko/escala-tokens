@@ -2,6 +2,7 @@ import { useMemo, useState, type ComponentType, type CSSProperties } from 'react
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
 import { useI18n } from '../../lib/i18n'
 import FoundationSwitchStrip from './FoundationSwitchStrip'
+import { NAV_COLUMN_HEADER_H, NavFoldButton } from './WorkspaceNavColumn'
 import { WorkspaceSaveBar } from './ThemeSaveBar'
 import { INSPECTOR_WIDTH } from './WorkspaceInspector'
 import { INSPECTOR_TABS_H } from './themeWorkspaceLayout'
@@ -28,13 +29,18 @@ function Chevron({ open }: { open: boolean }) {
  * then every group as an accordion, the open block's group expanded.
  */
 export default function BlocksRail({
-  catalogue: kind = 'blocks', icons, active, onSelect, onOpenIndex, search = '', onSearch, onInspectorSlot,
+  catalogue: kind = 'blocks', icons, active, onSelect, onOpenIndex, search = '', onSearch, onInspectorSlot, side = 'right', onFold,
 }: {
   /** Blocks or Screens: the same directory, two catalogues. */
   catalogue?: BlockCatalogue
   /** Where a block page's panels dock (Block settings, Edit theme, a pinned
    *  token list): the same slot the Components rail offers. */
   onInspectorSlot?: (el: HTMLElement | null) => void
+  /** `left`: the directory is the Generator's left nav column (its panels
+   *  dock in a separate inspector on the right). Default: the old right column. */
+  side?: 'left' | 'right'
+  /** Folds the left column (side `left` only). */
+  onFold?: () => void
   icons: Record<string, ComponentType>
   /** null = the index is open. */
   active: BlockDef | null
@@ -68,12 +74,12 @@ export default function BlocksRail({
   return (
     <aside
       aria-label={copy.aside}
-      className="relative my-3 mr-3 ml-3 flex min-h-0 flex-shrink-0 flex-col overflow-hidden rounded-2xl border border-line bg-side-panel"
+      className={`relative my-3 ${side === 'left' ? 'rounded-l-2xl' : 'ml-3 mr-3 rounded-2xl'} flex min-h-0 flex-shrink-0 flex-col overflow-hidden border border-line bg-side-panel`}
       style={{ width: INSPECTOR_WIDTH } as CSSProperties}
     >
       <div
         className="flex flex-shrink-0 items-center border-b border-line"
-        style={{ height: INSPECTOR_TABS_H, paddingInline: `calc((${INSPECTOR_TABS_H}px - 2.5rem) / 2)` }}
+        style={{ height: side === 'left' ? NAV_COLUMN_HEADER_H : INSPECTOR_TABS_H, paddingInline: `calc((${side === 'left' ? NAV_COLUMN_HEADER_H : INSPECTOR_TABS_H}px - 2.5rem) / 2)` }}
       >
         <FoundationSwitchStrip
           ariaLabel={screens ? t('Screen groups') : t('Block groups')}
@@ -88,6 +94,7 @@ export default function BlocksRail({
             setOpen(new Set())
           }}
         />
+        {side === 'left' && onFold && <span className="ml-1 flex-shrink-0"><NavFoldButton folded={false} onClick={onFold} /></span>}
       </div>
 
       <div className="flex-shrink-0 px-3 pt-3">

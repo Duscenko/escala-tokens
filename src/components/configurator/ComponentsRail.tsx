@@ -1,9 +1,10 @@
-import { useMemo, useState, type ComponentType, type CSSProperties } from 'react'
+import { Fragment, useMemo, useState, type ComponentType, type CSSProperties } from 'react'
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
 import type { ComponentDef } from '../../lib/componentCatalogue'
 import { PLATFORM_FOLDERS, PLATFORM_FAMILIES, FOLDER_CATEGORY, familiesIn, familyLabel, familyOf } from '../../lib/platformCatalogue'
 import { useI18n } from '../../lib/i18n'
 import FoundationSwitchStrip from './FoundationSwitchStrip'
+import { NAV_COLUMN_HEADER_H, NavFoldButton } from './WorkspaceNavColumn'
 import { WorkspaceSaveBar } from './ThemeSaveBar'
 import { INSPECTOR_WIDTH } from './WorkspaceInspector'
 import { INSPECTOR_TABS_H } from './themeWorkspaceLayout'
@@ -45,6 +46,8 @@ export default function ComponentsRail({
   search = '',
   onSearch,
   onInspectorSlot,
+  side = 'right',
+  onFold,
 }: {
   icons: Record<string, ComponentType>
   /** null = the index page is open. */
@@ -56,6 +59,11 @@ export default function ComponentsRail({
   onSearch?: (q: string) => void
   /** Callback ref for the dock a pinned component's token list renders into. */
   onInspectorSlot?: (el: HTMLElement | null) => void
+  /** `left`: the directory is the Generator's left nav column (its panels
+   *  dock in a separate inspector on the right). Default: the old right column. */
+  side?: 'left' | 'right'
+  /** Folds the left column (side `left` only). */
+  onFold?: () => void
 }) {
   const { t } = useI18n()
   const reduce = useReducedMotion() ?? false
@@ -103,12 +111,12 @@ export default function ComponentsRail({
   return (
     <aside
       aria-label={t('Components')}
-      className="relative my-3 mr-3 ml-3 flex min-h-0 flex-shrink-0 flex-col overflow-hidden rounded-2xl border border-line bg-side-panel"
+      className={`relative my-3 ${side === 'left' ? 'rounded-l-2xl' : 'ml-3 mr-3 rounded-2xl'} flex min-h-0 flex-shrink-0 flex-col overflow-hidden border border-line bg-side-panel`}
       style={{ width: INSPECTOR_WIDTH } as CSSProperties}
     >
       <div
         className="flex flex-shrink-0 items-center border-b border-line"
-        style={{ height: INSPECTOR_TABS_H, paddingInline: `calc((${INSPECTOR_TABS_H}px - 2.5rem) / 2)` }}
+        style={{ height: side === 'left' ? NAV_COLUMN_HEADER_H : INSPECTOR_TABS_H, paddingInline: `calc((${side === 'left' ? NAV_COLUMN_HEADER_H : INSPECTOR_TABS_H}px - 2.5rem) / 2)` }}
       >
         <FoundationSwitchStrip
           ariaLabel={t('Component categories')}
@@ -123,6 +131,7 @@ export default function ComponentsRail({
           current={activeCategory}
           onSelect={selectCategory}
         />
+        {side === 'left' && onFold && <span className="ml-1 flex-shrink-0"><NavFoldButton folded={false} onClick={onFold} /></span>}
       </div>
 
       {onSearch && (
@@ -226,8 +235,8 @@ export default function ComponentsRail({
                       {items.map((fam) => {
                         const isActive = fam === activeFamily
                         return (
+                          <Fragment key={fam.id}>
                           <button
-                            key={fam.id}
                             type="button"
                             aria-current={isActive ? 'page' : undefined}
                             onClick={() => onSelect(fam.lead)}
@@ -237,6 +246,30 @@ export default function ComponentsRail({
                           >
                             <span className="min-w-0 truncate">{familyLabel(fam)}</span>
                           </button>
+                          {/* The open family's parts, under it (left column
+                              only): a part is a place too, reachable without
+                              scrolling the family page to its Anatomy. */}
+                          {side === 'left' && isActive && fam.parts.length > 0 && (
+                            <div role="group" aria-label={t('Parts of {name}', { name: familyLabel(fam) })} className="ml-3 flex flex-col gap-0.5 border-l border-line py-0.5 pl-1.5">
+                              {fam.parts.map((part) => {
+                                const partActive = active?.key === part.key
+                                return (
+                                  <button
+                                    key={part.key}
+                                    type="button"
+                                    aria-current={partActive ? 'page' : undefined}
+                                    onClick={() => onSelect(part)}
+                                    className={`flex w-full items-center rounded-lg border px-2.5 py-1 text-left text-caption transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50 ${
+                                      partActive ? ROW_ACTIVE : ROW_IDLE
+                                    }`}
+                                  >
+                                    <span className="min-w-0 truncate">{part.label}</span>
+                                  </button>
+                                )
+                              })}
+                            </div>
+                          )}
+                          </Fragment>
                         )
                       })}
                     </div>

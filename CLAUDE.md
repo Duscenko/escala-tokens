@@ -158,7 +158,10 @@ One line each. Detail: search the archive or the plan named.
   (`platformBlocks.test.ts`). A screen (Storybook folder `Screens`, `escala-ui/screens/`) keeps its pieces as parts on its own page, never in Elements.
 - **Preview canvas:** component and block pages share `docs/PreviewStage.tsx`: opens fitted, zoom reads true pixels, pan, expand; one header row, Elements · Blocks · Screens then find · Storybook · Figma (`docs/stageActions.tsx`); a block's Frame also sets its layout.
 - **Configurator UI:** top bar About · Generator · Components · Docs; Generator rail
-  Home · Board · Variables · Code · Components; right inspector; ship doors CSS · Figma · Agent.
+  Home · Board · Variables · Code · Components (56px, icons only, on the page chrome); Variables and Components list
+  their places by name in a foldable left pane of the canvas card (`WorkspaceNavColumn`); the inspector is the card's
+  right pane (no gap) and only edits (DEC-2026-11-20-001, `generator-left-nav.md`);
+  ship doors CSS · Figma · Agent.
   Open beta: everything open, 5 brands per system (`openBeta.ts`). Accounts keep systems in the cloud.
 - **Plugin (0.35.0):** builds variables, styles, Getting started, Token Architecture, Documentation and
   the core kit (Button, IconButton, Input, Checkbox, Radio, Switch, Badge, Avatar — `FIGMA_SAMPLE_KEYS`),
