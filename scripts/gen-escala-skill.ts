@@ -1,7 +1,7 @@
 /**
  * `npm run gen:escala-skill`
  *
- * Writes `.claude/skills/escala-architecture/` (SKILL.md + references) from the
+ * Writes `.claude/skills/escala-platform-roles/` (SKILL.md + references) from the
  * role tables in `src/lib` (colour, dimensions, type). Run it after changing a
  * role or the skill text in `src/lib/escalaArchitectureSkill.ts`.
  * `__tests__/escalaArchitectureSkill.test.ts` fails while the committed files
@@ -23,7 +23,7 @@ if (flag >= 0 && !portableDir) throw new Error('--portable needs a folder')
 
 const root = portableDir
   ? resolve(portableDir, 'escala-architecture')
-  : resolve(dirname(fileURLToPath(import.meta.url)), '..', '.claude', 'skills', 'escala-architecture')
+  : resolve(dirname(fileURLToPath(import.meta.url)), '..', '.claude', 'skills', 'escala-platform-roles')
 
 for (const [path, body] of Object.entries(portableDir ? buildPortableEscalaSkill() : buildEscalaSkillReferences())) {
   const file = resolve(root, path)

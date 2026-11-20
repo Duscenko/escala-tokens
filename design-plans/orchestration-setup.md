@@ -36,8 +36,8 @@ intent file (`spec/intent/<Key>.intent.json`) says what it is **for**. Branch `c
 | `check:docs-links` | report | 164 broken: 133 moved or renamed, 18 deleted on purpose (MCP, Polar, Untitled icons), 10 planned (`tokens/`, `governance/lock.json`, `governance/rules/`), 3 sibling plugin repo |
 
 ## Contradictions found (for the owner)
-- The governance skill says the five Escala skills are never copied into the repo; `CLAUDE.md` lists
-  `.claude/skills/escala-architecture/` as a generated repo file. Which one stays?
+- ~~Repo skill named like the account skill~~ → decided 2026-11-20: the repo copy is now `escala-platform-roles`
+  (generated, says the account `escala-architecture` wins); the portable build keeps the account name.
 - `storybook-builder` requires a Workshop page `✎ <Name> · ready` before code, but the last weeks built Blocks
   straight from the library (exceptions `STG-001`). From now on the gate applies.
 

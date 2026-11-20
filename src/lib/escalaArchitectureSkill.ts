@@ -2,9 +2,11 @@
 // use — built from the role tables the product ships, never typed by hand.
 // Two outputs, one text:
 //
-//   • REPO   `.claude/skills/escala-architecture/` in this repo: default values
+//   • REPO   `.claude/skills/escala-platform-roles/` in this repo: default values
 //            (the schema refs before a theme resolves them) and a section on
-//            editing the roles here. `npm run gen:escala-skill` writes it.
+//            editing the roles here. `npm run gen:escala-skill` writes it. Named
+//            apart from the owner's account skill `escala-architecture` (the
+//            governance rule: the repo keeps only skills with no account twin).
 //   • BRAND  `skills/architecture/` in the agent package every export and
 //            GitHub push ships: the same rules, the catalogue filled with THAT
 //            brand's resolved values (hex per theme, px per viewport).
@@ -499,11 +501,11 @@ decides its STRUCTURE; this skill decides every VALUE.
 
 function skillMd(json: Source, repo: boolean): string {
   const project = json ? projectOf(json) : 'Escala'
-  const frontName = json ? `${slugOf(project)}-architecture` : 'escala-architecture'
+  const frontName = json ? `${slugOf(project)}-architecture` : repo ? 'escala-platform-roles' : 'escala-architecture'
   const figmaUse = 'Also use when building or editing components, component sets or a UI kit in Figma: finding the synced Escala variables, binding every fill, stroke, padding, gap, radius, size and text style to them, and checking Light/Dark and Desktop/Tablet/Mobile modes.'
   const description = json
     ? `How the ${project} design system's token architecture works and which role to use — every semantic role of Color (surface · content · action · status · border · elevation), Dimensions (radius · spacing · size · selector · stroke · breakpoint · icon) and Typography (display · heading · body · control), with this system's values. Use when writing or reviewing UI, CSS, components or Figma bindings; when picking a token for a fill, ink, border, shadow, gap, padding, radius, height or text style. ${figmaUse}`
-    : `How Escala's token architecture works and how to build with it — the semantic roles of Color (surface · content · action · status · border · elevation), Dimensions (radius · spacing · size · selector · stroke · breakpoint · icon) and Typography (display · heading · body · control). Use whenever writing or reviewing UI, CSS or components that consume Escala tokens, or picking a token for a fill, ink, border, shadow, gap, padding, radius, height or text style. ${figmaUse}${repo ? ' And when adding or renaming a role in the Escala repo.' : ''}`
+    : `${repo ? "The Escala generator's platform defaults (generated from this repo's role tables; the account skill `escala-architecture` is the design system's own and wins on any difference). " : ''}How Escala's token architecture works and how to build with it — the semantic roles of Color (surface · content · action · status · border · elevation), Dimensions (radius · spacing · size · selector · stroke · breakpoint · icon) and Typography (display · heading · body · control). Use whenever writing or reviewing UI, CSS or components that consume Escala tokens, or picking a token for a fill, ink, border, shadow, gap, padding, radius, height or text style. ${figmaUse}${repo ? ' And when adding or renaming a role in the Escala repo.' : ''}`
   const intro = json
     ? `${project} is built on Escala's three-tier token system. Load \`AGENTS.md\` first; this skill says which ROLE to use. Agents that skip a tier produce UI that looks right in one brand and breaks in the next.`
     : 'Escala is a three-tier token system. Agents that skip a tier produce UI that looks right in one brand and breaks in the next.'
@@ -706,7 +708,7 @@ function files(json: Source, repo = false): Record<string, string> {
   return out
 }
 
-/** The repo skill (`.claude/skills/escala-architecture/`), keyed by path inside it. */
+/** The repo skill (`.claude/skills/escala-platform-roles/`), keyed by path inside it. */
 export function buildEscalaSkillReferences(): Record<string, string> {
   return files(undefined, true)
 }
