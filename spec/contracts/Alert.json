@@ -165,7 +165,6 @@
       "color.border.default",
       "color.content.accent",
       "color.content.inverse",
-      "color.content.inverse-secondary",
       "color.content.on-action",
       "color.content.on-secondary",
       "color.content.primary",
@@ -245,10 +244,6 @@
     "color.content.inverse": {
       "css": "--color-content-inverse",
       "figma": "Content/inverse"
-    },
-    "color.content.inverse-secondary": {
-      "css": "--color-content-inverse-secondary",
-      "figma": "Content/inverse-secondary"
     },
     "color.content.on-action": {
       "css": "--color-content-on-action",
@@ -626,7 +621,7 @@
             "fill": "color.surface.inverse"
           },
           "icon": {
-            "text": "color.content.inverse-secondary"
+            "text": "color.content.inverse"
           },
           "description": {
             "text": "color.content.inverse"
@@ -640,7 +635,7 @@
             "fill": "color.surface.inverse"
           },
           "icon": {
-            "text": "color.content.inverse-secondary"
+            "text": "color.content.inverse"
           },
           "description": {
             "text": "color.content.inverse"
@@ -742,7 +737,7 @@
             "fill": "color.surface.inverse"
           },
           "icon": {
-            "text": "color.content.inverse-secondary"
+            "text": "color.content.inverse"
           },
           "description": {
             "text": "color.content.inverse"
@@ -756,7 +751,7 @@
             "fill": "color.surface.inverse"
           },
           "icon": {
-            "text": "color.content.inverse-secondary"
+            "text": "color.content.inverse"
           },
           "description": {
             "text": "color.content.inverse"
@@ -858,7 +853,7 @@
             "fill": "color.surface.inverse"
           },
           "icon": {
-            "text": "color.content.inverse-secondary"
+            "text": "color.content.inverse"
           },
           "description": {
             "text": "color.content.inverse"
@@ -872,7 +867,7 @@
             "fill": "color.surface.inverse"
           },
           "icon": {
-            "text": "color.content.inverse-secondary"
+            "text": "color.content.inverse"
           },
           "description": {
             "text": "color.content.inverse"
@@ -974,7 +969,7 @@
             "fill": "color.surface.inverse"
           },
           "icon": {
-            "text": "color.content.inverse-secondary"
+            "text": "color.content.inverse"
           },
           "description": {
             "text": "color.content.inverse"
@@ -988,7 +983,7 @@
             "fill": "color.surface.inverse"
           },
           "icon": {
-            "text": "color.content.inverse-secondary"
+            "text": "color.content.inverse"
           },
           "description": {
             "text": "color.content.inverse"
@@ -1090,7 +1085,7 @@
             "fill": "color.surface.inverse"
           },
           "icon": {
-            "text": "color.content.inverse-secondary"
+            "text": "color.content.inverse"
           },
           "description": {
             "text": "color.content.inverse"
@@ -1104,7 +1099,7 @@
             "fill": "color.surface.inverse"
           },
           "icon": {
-            "text": "color.content.inverse-secondary"
+            "text": "color.content.inverse"
           },
           "description": {
             "text": "color.content.inverse"
@@ -1206,7 +1201,7 @@
             "fill": "color.surface.inverse"
           },
           "icon": {
-            "text": "color.content.inverse-secondary"
+            "text": "color.content.inverse"
           },
           "description": {
             "text": "color.content.inverse"
@@ -1220,7 +1215,7 @@
             "fill": "color.surface.inverse"
           },
           "icon": {
-            "text": "color.content.inverse-secondary"
+            "text": "color.content.inverse"
           },
           "description": {
             "text": "color.content.inverse"

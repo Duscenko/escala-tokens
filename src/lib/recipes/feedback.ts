@@ -65,7 +65,8 @@ export const ALERT: ComponentRecipe = {
         case 'soft':
           return { root: { fill: c(t.soft) }, icon: { text: c(t.softInk) }, description: { text: c(t.softText) }, title: { text: c(t.softText) } }
         case 'inverse':
-          return { root: { fill: c('surface.inverse') }, icon: { text: c('content.inverse-secondary') }, description: { text: c('content.inverse') }, title: { text: c('content.inverse') } }
+          // The icon takes the title's ink, Content/inverse (Figma binds it on all 24 inverse variants, 397:232).
+          return { root: { fill: c('surface.inverse') }, icon: { text: c('content.inverse') }, description: { text: c('content.inverse') }, title: { text: c('content.inverse') } }
         default:
           return {
             root: layout === 'horizontal'

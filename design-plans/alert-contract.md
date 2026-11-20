@@ -20,7 +20,7 @@ Set text: message bar for app-wide notices; horizontal = full-width banner (no r
 | outline | Surface/layer-1 | severity border* | severity ink* | Content/primary | soft default (Action/secondary/default, ink Content/on-secondary) |
 | solid | severity solid* | none | severity on-solid* | on-solid* | soft inverse (Surface/inverse-muted, Content/inverse) |
 | soft | severity surface* | none | severity content* | severity content* (secondary: Content/primary) | ghost default (no fill, Content/secondary) |
-| inverse | Surface/inverse | none | Content/inverse-secondary | Content/inverse | soft inverse |
+| inverse | Surface/inverse | none | Content/inverse | Content/inverse | soft inverse |
 *Severity table — default: stroke Border/accent · outline icon Content/accent · solid fill Action/primary/default, ink Content/on-action · soft fill Surface/accent, ink Content/accent. critical / success / info / warning: stroke Status/<s>/border · icon + soft text Status/<s>/content · solid fill Status/<s>/surface-solid, ink Status/<s>/on-solid · soft fill Status/<s>/surface. secondary: stroke Border/default · icon Content/secondary · solid fill Action/secondary/default, ink Content/on-secondary · soft fill Surface/layer-2, icon Content/secondary, text Content/primary.
 Inverse is identical for every severity.
 Odd: the Icon default is the SPARKLE for every severity (the file does not swap a severity glyph); the actions Button is the same secondary solid on every appearance (even on solid / inverse).
