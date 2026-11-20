@@ -11,6 +11,16 @@ export const LOCALES: { key: Locale; label: string; shortLabel: string }[] = [
 const STORAGE_KEY = 'escala-language'
 
 const es: Record<string, string> = {
+  // Brand plan (BrandPlanCard)
+  '{done} of {total}': '{done} de {total}',
+  'Fold the plan': 'Plegar el plan',
+  'From {name}': 'De {name}',
+  'To do': 'Por hacer',
+  'Keep it as it is and mark it done': 'Dejarlo como está y marcarlo hecho',
+  'Keep': 'Mantener',
+  'Themes': 'Temas',
+  'All set. Save the brand, or ship it as CSS, Figma or Agent.': 'Todo listo. Guarda la marca o publícala como CSS, Figma o Agent.',
+  'A suggested order, not a required one. Save or ship at any time.': 'Un orden sugerido, no obligatorio. Guarda o publica cuando quieras.',
   // Preview canvas
   'Open in the Figma Preview library': 'Abrir en la biblioteca Preview de Figma',
   'Bare canvas': 'Lienzo libre',
@@ -2107,6 +2117,16 @@ const es: Record<string, string> = {
 }
 
 const fr: Record<string, string> = {
+  // Brand plan (BrandPlanCard)
+  '{done} of {total}': '{done} sur {total}',
+  'Fold the plan': 'Replier le plan',
+  'From {name}': 'De {name}',
+  'To do': 'À faire',
+  'Keep it as it is and mark it done': 'Le garder tel quel et le marquer fait',
+  'Keep': 'Garder',
+  'Themes': 'Thèmes',
+  'All set. Save the brand, or ship it as CSS, Figma or Agent.': 'Tout est prêt. Enregistrez la marque ou livrez-la en CSS, Figma ou Agent.',
+  'A suggested order, not a required one. Save or ship at any time.': 'Un ordre suggéré, pas obligatoire. Enregistrez ou livrez à tout moment.',
   // Preview canvas
   'Open in the Figma Preview library': 'Ouvrir dans la bibliothèque Preview de Figma',
   'Bare canvas': 'Canevas nu',

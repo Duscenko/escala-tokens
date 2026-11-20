@@ -17,9 +17,12 @@ import { FolderIcon } from './VariableCollectionRail'
 import { InspectorPortal } from './WorkspaceInspector'
 import { INSPECTOR_TABS_H, MENU_SURFACE } from './themeWorkspaceLayout'
 import type { GridViewport } from '../../lib/layoutTokens'
-import { mintTheme, slotsFromAccent } from '../../lib/themeMint'
+import { mintTheme, slotsFromAccent, uniqueThemeLabel } from '../../lib/themeMint'
 import { adoptPreset } from '../../lib/adoptPreset'
 import { seedAddedBrand, systemBrandFor } from '../../lib/brandFoundations'
+import { PLAN_FOCUS_TILES, PLAN_MOTION, activePlanItem, brandPlan, type PlanItemKey } from '../../lib/brandPlan'
+import { pickBlankBrandSeed } from '../../lib/blankBrandSeed'
+import { BrandPlanCard } from './BrandPlanCard'
 import { shippedThemes } from '../../lib/brandThemes'
 import { THEME_STYLE_PRESETS } from '../../lib/themePresets'
 import { useEditHistory } from '../../lib/editHistory'
@@ -234,9 +237,35 @@ const CREATE_STEPS = [
 ] as const
 type CreateStep = (typeof CREATE_STEPS)[number]['key']
 
+/** The plan's corner: bottom-left, on the board toolbar's line, as the pause
+ *  sits bottom-right. Folded it is a pill on that line; open it grows upward
+ *  from just above it, so it never covers the toolbar on a narrow screen. */
+const BOARD_PLAN_DOCK = 'pointer-events-none absolute bottom-4 left-5 z-30 grid'
+
+/** The board while a plan item is pointed at: its tiles ringed in the
+ *  platform's violet, the others faded. `filter`, not `opacity`: a tile
+ *  writes its own opacity inline while it measures itself (and fades in on
+ *  the board's entrance wave), so the two never fight over one property.
+ *  A transition runs on the state it lands in: the pointed state grabs in
+ *  `focusIn`, the plain state lets go in `focusOut`, both on the chrome's
+ *  `--ease-out-quint`. Reduced motion: the same states, no transition. */
+function planFocusCss(root: string, tiles: readonly string[], reduceMotion: boolean): string {
+  const id = `#${CSS.escape(root)}`
+  const on = `${id}[data-plan-focus]`
+  const hot = tiles.map((tile) => `${on} [data-collage-tile="${tile}"]`).join(',')
+  const move = (s: number) => (reduceMotion ? 'none' : `filter ${s}s var(--ease-out-quint),outline-color ${s}s var(--ease-out-quint)`)
+  return `${id} [data-collage-tile]{transition:${move(PLAN_MOTION.focusOut)};outline:2px solid transparent;outline-offset:3px}`
+    + `${on} [data-collage-tile]{filter:saturate(.35) opacity(.35);transition:${move(PLAN_MOTION.focusIn)}}`
+    + (hot ? `${hot}{filter:none;outline-color:var(--accent-solid)}` : '')
+}
+
 function CreateBoard({
-  store, themeKey, appearance, title, stepLabel, platform = 'desktop', onOpenComponent, onRandom,
+  store, themeKey, appearance, title, stepLabel, platform = 'desktop', onOpenComponent, onRandom, plan, focusTiles,
 }: {
+  /** The brand plan (`BrandPlanCard`), docked at the board's bottom-left. */
+  plan?: ReactNode
+  /** Tiles to point at (`data-collage-tile`): the rest of the board dims. */
+  focusTiles?: readonly string[] | null
   /** A whole new look for the draft — the header's die. */
   onRandom?: () => void
   /** Components view: a cover's ↗ opens that component's page. Only once the
@@ -271,12 +300,18 @@ function CreateBoard({
     [appearance],
   )
   const page = stage.archTokens?.['surface.page'] ?? stage.pageBackground ?? stage.surface
+  // The plan points only on the bento board, never while Inspector mode reads it.
+  const focusOn = Boolean(focusTiles?.length) && view === 'theme' && !inspecting
+  // The last tiles pointed at stay in the sheet, so letting go fades back.
+  const [lastFocus, setLastFocus] = useState<readonly string[]>(focusTiles ?? [])
+  if (focusTiles?.length && focusTiles !== lastFocus) setLastFocus(focusTiles)
   return (
     <div className={`relative flex min-h-0 flex-1 flex-col ${appearance === 'dark' ? 'dark' : 'light'}`} style={{ background: page }}>
       {/* The screen's name, for screen readers: the brand's name heads the
           inspector, as on the Board, so the canvas carries no title band. */}
       <h2 className="sr-only">{title} · {stepLabel}</h2>
-      <div ref={canvasRef} id={panelId} role="tabpanel" aria-labelledby={boardTabId(panelId, view)} className="min-h-0 flex-1 overflow-y-auto px-5 pt-5 pb-20">
+      {plan && <style>{planFocusCss(panelId, lastFocus, reduceMotion)}</style>}
+      <div ref={canvasRef} id={panelId} role="tabpanel" aria-labelledby={boardTabId(panelId, view)} data-plan-focus={focusOn ? '' : undefined} className="min-h-0 flex-1 overflow-y-auto px-5 pt-5 pb-20">
         <div style={inspecting ? { cursor: 'crosshair' } : undefined}>
         <InspectorModeProvider active={inspecting}>
         {view === 'theme' ? (
@@ -325,6 +360,7 @@ function CreateBoard({
       {view === 'theme' && !inspecting && !reduceMotion && (
         <div className={BOARD_PLAY_DOCK}><BoardPlayToggle /></div>
       )}
+      {plan && <div className={BOARD_PLAN_DOCK}>{plan}</div>}
       <InspectorOverlay
         active={inspecting}
         rootRef={canvasRef}
@@ -518,6 +554,12 @@ export default function ThemeLibraryPage({
   // the one its colour is being picked in (the board's look), as in the
   // plugin. Light + Dark stays one click away on the Color row.
   const [shipsPicked, setShipsPicked] = useState(false)
+  // The plan's Keep: items marked done without being changed.
+  const [kept, setKept] = useState<Set<string>>(() => new Set())
+  // What the plan points at on the board: the item under the pointer, else
+  // the one just opened, for a moment (`planFlash`).
+  const [planHover, setPlanHover] = useState<PlanItemKey | null>(null)
+  const [planFlash, setPlanFlash] = useState<CreateStep | null>(null)
   // The embedded rail's Random, for the footer's die.
   const randomHandle = useRef<(() => void) | null>(null)
   // The mint-on-open guard is a ref, not state: React runs that effect twice
@@ -532,6 +574,9 @@ export default function ThemeLibraryPage({
     setStartStyle(DEFAULT_START_STYLE)
     setChangedRows(new Set())
     setShipsPicked(false)
+    setKept(new Set())
+    setPlanHover(null)
+    setPlanFlash(null)
     mintedRef.current = false
   }, [creating])
   useEffect(() => {
@@ -699,19 +744,28 @@ export default function ThemeLibraryPage({
     const firstBrand = myThemeKeys(live.themeOrder, live.themes).length === 0
     const preset = styleId ? THEME_STYLE_PRESETS.find((p) => p.id === styleId) : undefined
     const kind = chromeAppearance
+    // A brand beside others is named "New brand" until renamed — with a number
+    // when one already is, since a taken name would be refused.
+    const newName = firstBrand ? '' : uniqueThemeLabel(t('New brand'), live.themes)
     let res: { key: string } | { error: string }
     if (preset) {
       res = adoptPreset(preset, kind)
     } else {
       const tint = live.neutralTint
-      const slots = slotsFromAccent(live.primaryColor, tint)
+      // A blank brand beside others starts on an accent none of them wears,
+      // so the board visibly turns into a new brand (lib/blankBrandSeed.ts).
+      const accent = firstBrand
+        ? live.primaryColor
+        : pickBlankBrandSeed(myThemeKeys(live.themeOrder, live.themes)
+          .map((key) => resolvePreviewTokens(live, key, 'light').brandSolid)).hex
+      const slots = slotsFromAccent(accent, tint)
       const pages = { light: backgroundFromBase(slots.gray, 'light', tint), dark: backgroundFromBase(slots.gray, 'dark', tint) }
-      res = mintTheme(slots, kind, keepLabel || (firstBrand ? live.projectName : t('Brand')), null, tint, pages, live.contrastShift)
+      res = mintTheme(slots, kind, keepLabel || (firstBrand ? live.projectName : newName), null, tint, pages, live.contrastShift)
     }
     if ('error' in res) { setCreateError(t(res.error, { count: MY_THEME_HARD_CAP })); return undefined }
     // Blank on the first brand means "keep the design system name"; a later
     // brand takes the style's short name until it is renamed in the band.
-    const label = keepLabel || (firstBrand ? live.projectName.trim() : (preset?.shortLabel ?? t('Brand')))
+    const label = keepLabel || (firstBrand ? live.projectName.trim() : (preset?.shortLabel ?? newName))
     if (label) useDesignStore.getState().setThemeLabel(res.key, label)
     // A brand added to a system shares its foundations (type scale, shadow,
     // icons, motion, sizes, stroke) and starts on the system's font, radius
@@ -738,6 +792,7 @@ export default function ThemeLibraryPage({
     forgetUnsavedBrand(createdKey)
     deleteTheme(createdKey)
     setChangedRows(new Set())
+    setKept(new Set())
     const key = mintStart(id, label)
     if (key && ships) useDesignStore.getState().setBrandThemes(key, ships)
   }
@@ -757,7 +812,13 @@ export default function ThemeLibraryPage({
       if (step && CREATE_STEPS.some((item) => item.key === step)) setCreateStep(step)
       return
     }
-    mintStart(startStyle)
+    // Start from blank, beside other brands: Scratch, on an accent of its
+    // own. The system's style is one pick away on the Color row. The first
+    // brand still opens on the default style, the board About promised.
+    const live = useDesignStore.getState()
+    const blank = myThemeKeys(live.themeOrder, live.themes).length > 0 ? '' : startStyle
+    if (blank !== startStyle) setStartStyle(blank)
+    mintStart(blank)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [creating, createdKey])
   // Every edit lands in the row that is open: count that row as changed.
@@ -834,6 +895,26 @@ export default function ThemeLibraryPage({
     const look = createdKind === 'dark' ? 'dark' : 'light'
     if (createdShips !== look) useDesignStore.getState().setBrandThemes(createdKey, [look])
   }, [createdKey, systemBrand, shipsPicked, createdKind, createdShips])
+  // The plan: the accordion's rows as a checklist, with how far it got.
+  const planItems = brandPlan({ addBrand: Boolean(systemBrand), changed: changedRows, kept, shipsPicked })
+  const planActive = activePlanItem(planItems, createStep)
+  // Opening a row points at its tiles for a moment, wherever it was opened
+  // (the plan, the accordion). Only an OPENED row: not the studio's first
+  // frame, where the board is still running its entrance wave, and not the
+  // plan moving on by itself (Color done → Themes) in the middle of an edit,
+  // which used to dim the board under a hue being dragged.
+  const flashedStep = useRef<string | null>(null)
+  useEffect(() => {
+    if (!creating) { flashedStep.current = null; return }
+    if (flashedStep.current === null) { flashedStep.current = createStep; return }
+    if (flashedStep.current === createStep) return
+    flashedStep.current = createStep
+    setPlanFlash(createStep)
+    const id = window.setTimeout(() => setPlanFlash(null), PLAN_MOTION.flashMs)
+    return () => window.clearTimeout(id)
+  }, [creating, createStep])
+  // The flash holds the row that was opened; the plan names its item.
+  const planFocus = planHover ?? (planFlash ? activePlanItem(planItems, planFlash) ?? null : null)
   const getCreatedCode = (key: string) => {
     keepCreatedBrand(key)
     setCreating(false)
@@ -922,9 +1003,21 @@ export default function ThemeLibraryPage({
               // tokens — not "design system" or "brand" (phase 3).
               title={firstSystem ? t('Set your foundations') : t('New brand')}
               // Not a step: how big the job is, and how much of it was touched.
-              stepLabel={`${t('{n} foundations', { n: String(systemBrand ? 4 : CREATE_STEPS.length) })} · ${t('{n} changed', { n: String(changedRows.size) })}`}
+              stepLabel={t('{done} of {total}', { done: String(planItems.filter((item) => item.done).length), total: String(planItems.length) })}
               onOpenComponent={onOpenComponent}
               onRandom={() => randomHandle.current?.()}
+              focusTiles={planFocus ? PLAN_FOCUS_TILES[planFocus] : null}
+              plan={(
+                <BrandPlanCard
+                  title={firstSystem ? t('Set your foundations') : themeDisplayName(createdKey, store.themeLabels)}
+                  items={planItems}
+                  active={planActive}
+                  systemLabel={systemBrand ? themeDisplayName(systemBrand, store.themeLabels) : undefined}
+                  onOpen={(item) => setCreateStep(item.row)}
+                  onKeep={(item) => setKept((set) => new Set(set).add(item.key))}
+                  onFocus={setPlanHover}
+                />
+              )}
             />
           )}
         </>

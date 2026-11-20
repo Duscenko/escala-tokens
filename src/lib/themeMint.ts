@@ -24,6 +24,19 @@ export function uniqueKey(wanted: string, taken: Set<string>): string {
   return key
 }
 
+/** A name for a new theme whose key is free: "New brand", then "New brand 2",
+ *  "New brand 3"… A typed name that is taken is refused by `mintTheme`
+ *  ("…already exists"), so a door that names the brand itself asks here first. */
+export function uniqueThemeLabel(label: string, themes: Record<string, unknown>): string {
+  const taken = (name: string) => {
+    const key = slugify(name)
+    return Boolean(themes[key]) || RESERVED_COLOR_KEYS.includes(key)
+  }
+  let name = label
+  for (let n = 2; taken(name); n++) name = `${label} ${n}`
+  return name
+}
+
 function titleCaseKey(key: string) {
   return key.replace(/-/g, ' ').replace(/\b\w/g, (m) => m.toUpperCase())
 }

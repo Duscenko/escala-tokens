@@ -399,8 +399,11 @@ function ModuleSurface({ t, children, style }: { t: PreviewTokens; children: Rea
  * inner — `overflow: hidden` + `scale()` made Strong look like None.
  */
 function ScaledModule({
-  t, appearance = 'light', children, chrome = true, clip = true, elev, style, sourceWidth = MODULE_SOURCE, frameWidth = MODULE_DISPLAY, fill = false, inspect = true, band = 0,
+  t, appearance = 'light', children, chrome = true, clip = true, elev, style, sourceWidth = MODULE_SOURCE, frameWidth = MODULE_DISPLAY, fill = false, inspect = true, band = 0, tile,
 }: {
+  /** The tile's name on the board (`data-collage-tile`): the create studio's
+   *  plan points at tiles by it (lib/brandPlan.ts `PLAN_FOCUS_TILES`). */
+  tile?: string
   /** Diagonal position in the board's entrance wave (see `boardReveal`). */
   band?: number
   t: PreviewTokens
@@ -566,6 +569,7 @@ function ScaledModule({
       ref={outerRef}
       className={`relative overflow-visible ${appearanceClass}`}
       data-collage-appearance={appearance}
+      data-collage-tile={tile}
       onPointerEnter={() => setPointerIn(true)}
       onPointerLeave={() => setPointerIn(false)}
       {...(inspect ? inspectGroupAttrs(inspecting) : { [INSPECT_EXEMPT_ATTR]: '' })}
@@ -834,7 +838,7 @@ export function SystemCollage({
   // squared bento (see `board` below).
   const mod = {
     verify: (
-        <ScaledModule key="verify" t={tile(2)} appearance={appearanceAt(2)}>
+        <ScaledModule key="verify" tile="verify" t={tile(2)} appearance={appearanceAt(2)}>
           <span style={{ ...typeStyleOf(tile(2), 'heading-sm'), color: tile(2).neutralText }}>{translate('Verify account')}</span>
           <InputOTP t={tile(2)} v={{ State: 'Filled' }} />
           <span style={{ ...typeStyleOf(tile(2), 'body-sm'), color: muted(2) }}>
@@ -847,7 +851,7 @@ export function SystemCollage({
     // Appearance (solid · outline · ghost · link) — then the IconButton set and a
     // ButtonGroup, the three action families a screen is built from.
     buttons: (
-        <ScaledModule key="buttons"
+        <ScaledModule key="buttons" tile="buttons"
           t={tile(3)}
           appearance={appearanceAt(3)}
           style={{ gap: gap(tile(3), 'gap-group', '16px') }}
@@ -921,7 +925,7 @@ export function SystemCollage({
     // Settings as a person meets them: switches in rows, each with its label.
     // A lone switch read as a widget, not a screen.
     notifications: (
-        <ScaledModule key="notifications" t={tile(13)} appearance={appearanceAt(13)}>
+        <ScaledModule key="notifications" tile="notifications" t={tile(13)} appearance={appearanceAt(13)}>
           <TokenInspector component="Switch" variant={{ Checked: 'true' }}>
             <SkeletonSettingsList
               t={tile(13)}
@@ -939,7 +943,7 @@ export function SystemCollage({
     // Feedback as a screen shows it: an in-page Alert with its action, and a
     // Toast arriving on the brand's own choreography.
     toasts: (
-        <ScaledModule key="toasts"
+        <ScaledModule key="toasts" tile="toasts"
           t={tile(15)}
           appearance={appearanceAt(15)}
           style={{ gap: gap(tile(15), 'gap-group', '16px') }}
@@ -964,7 +968,7 @@ export function SystemCollage({
     // The Calendar's root is a card, so it IS the tile (no Card around it);
     // the selected day's event sits under the month (the Calendar's children).
     calendar: (
-        <ScaledModule key="calendar" t={tile(9)} appearance={appearanceAt(9)} chrome={false} elev="sm">
+        <ScaledModule key="calendar" tile="calendar" t={tile(9)} appearance={appearanceAt(9)} chrome={false} elev="sm">
           {/* As wide as the tiles around it: the weeks spread their seven cells
               (`w`), so the tile keeps the column's edges instead of floating
               narrower in the middle of it. */}
@@ -974,17 +978,17 @@ export function SystemCollage({
         </ScaledModule>
     ),
     inputTag: (
-        <ScaledModule key="inputTag" t={tile(19)} appearance={appearanceAt(19)}>
+        <ScaledModule key="inputTag" tile="inputTag" t={tile(19)} appearance={appearanceAt(19)}>
           <InputTag t={tile(19)} v={{}} w="100%" />
         </ScaledModule>
     ),
     fileUpload: (
-        <ScaledModule key="fileUpload" t={tile(21)} appearance={appearanceAt(21)}>
+        <ScaledModule key="fileUpload" tile="fileUpload" t={tile(21)} appearance={appearanceAt(21)}>
           <FileUpload t={tile(21)} v={{}} w="100%" />
         </ScaledModule>
     ),
     stepper: (
-        <ScaledModule key="stepper"
+        <ScaledModule key="stepper" tile="stepper"
           t={tile(22)}
           appearance={appearanceAt(22)}
           style={{ gap: gap(tile(22), 'gap-group', '16px') }}
@@ -1001,7 +1005,7 @@ export function SystemCollage({
   // `Blocks/`), placed as they ship: their own card, header, fields and copy.
   // Nothing on these tiles is composed here.
   const block = (key: string, i: number, node: ReactNode, size?: { frameWidth: number; sourceWidth: number }) => (
-    <ScaledModule key={key} t={tile(i)} appearance={appearanceAt(i)} chrome={false} elev={false} {...size}>
+    <ScaledModule key={key} tile={key} t={tile(i)} appearance={appearanceAt(i)} chrome={false} elev={false} {...size}>
       <RecipeScope t={tile(i)}>
         <div data-board-block={key} className="flex w-full justify-center">{node}</div>
       </RecipeScope>
@@ -1024,7 +1028,7 @@ export function SystemCollage({
   // The Calendar at the width the file draws its full panel: the presets rail,
   // one month in range mode and the footer — it needs two columns.
   const calendarPanel = (
-    <ScaledModule key="calendarPanel" t={tile(9)} appearance={appearanceAt(9)} chrome={false} elev={false} {...calendarPhoto}>
+    <ScaledModule key="calendarPanel" tile="calendarPanel" t={tile(9)} appearance={appearanceAt(9)} chrome={false} elev={false} {...calendarPhoto}>
       {/* The panel fills its slot (`w`): when the column is set by a tile wider
           than the blocks need (the OTP's six cells), the slot is wider than the
           file's panel, and the presets rail takes the difference. Centred at its
@@ -1035,12 +1039,12 @@ export function SystemCollage({
     </ScaledModule>
   )
   const colorStyle = (wide: boolean, fill = false) => (
-    <ScaledModule key="colorStyle" t={tile(0)} appearance={appearanceAt(0)} fill={fill} inspect={false} {...(wide ? widePhoto : {})}>
+    <ScaledModule key="colorStyle" tile="colorStyle" t={tile(0)} appearance={appearanceAt(0)} fill={fill} inspect={false} {...(wide ? widePhoto : {})}>
       <ColorStyleSpecimen t={tile(0)} />
     </ScaledModule>
   )
   const typeStyle = (wide: boolean, fill = false) => (
-    <ScaledModule key="typeStyle" t={tile(1)} appearance={appearanceAt(1)} fill={fill} inspect={false} {...(wide ? widePhoto : {})}>
+    <ScaledModule key="typeStyle" tile="typeStyle" t={tile(1)} appearance={appearanceAt(1)} fill={fill} inspect={false} {...(wide ? widePhoto : {})}>
       <TypeStyleSpecimen t={tile(1)} />
     </ScaledModule>
   )
