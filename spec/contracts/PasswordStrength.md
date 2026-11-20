@@ -4,7 +4,7 @@
 
 A card that scores a password: the rules checklist, a five-segment PasswordStrengthMeter and the level label (Too Weak · Weak · Fair · Strong · Very Strong).
 
-**Category** Form Controls · **Box** white · **Figma set** `PasswordStrength` (18 variants, page PasswordStrength (✓) (D)) · [Figma](https://www.figma.com/design/7j5zukN5HpihGVJMmyjA20/?node-id=89-14) · [Storybook](https://escala-storybook.vercel.app/?path=/story/forms-passwordstrength--playground)
+**Category** Form Controls · **Box** white · **Figma set** `PasswordStrength` (18 variants, page PasswordStrength (✓) (D)) · [Figma](https://www.figma.com/design/7j5zukN5HpihGVJMmyjA20/?node-id=417-679) · [Storybook](https://escala-storybook.vercel.app/?path=/story/forms-passwordstrength--playground)
 
 ```tsx
 import { PasswordStrength, PasswordStrengthMeter, PasswordStrengthRule } from 'src/components/escala-ui/password-strength'

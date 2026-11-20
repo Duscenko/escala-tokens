@@ -4,7 +4,7 @@
 
 Single-choice scale of 5 items. Type star for scores, emoji for sentiment; Size cascades to every item.
 
-**Category** Indicators · **Box** gray · **Figma set** `RatingGroup` (6 variants, page RatingGroup (✓) (D)) · [Figma](https://www.figma.com/design/7j5zukN5HpihGVJMmyjA20/?node-id=1122-2) · [Storybook](https://escala-storybook.vercel.app/?path=/story/indicators-ratinggroup--playground)
+**Category** Indicators · **Box** gray · **Figma set** `RatingGroup` (6 variants, page RatingGroup (✓) (D)) · [Figma](https://www.figma.com/design/7j5zukN5HpihGVJMmyjA20/?node-id=1122-316) · [Storybook](https://escala-storybook.vercel.app/?path=/story/indicators-ratinggroup--playground)
 
 ```tsx
 import { RatingGroup, RatingGroupItem } from 'src/components/escala-ui/rating-group'

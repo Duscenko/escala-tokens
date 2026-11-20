@@ -4,7 +4,7 @@
 
 The brand block at the top of the Sidebar: a logo with a title and an optional subtitle; collapses to the logo only.
 
-**Category** Navigation · **Box** gray · **Figma set** `SidebarBrand` (2 variants, page Sidebar (✓) --) · [Figma](https://www.figma.com/design/7j5zukN5HpihGVJMmyjA20/?node-id=931-87050) · [Storybook](https://escala-storybook.vercel.app/?path=/story/navigation-sidebar--sidebar-brand-playground)
+**Category** Navigation · **Box** gray · **Figma set** `SidebarBrand` (2 variants, page Sidebar (✓) --) · [Figma](https://www.figma.com/design/7j5zukN5HpihGVJMmyjA20/?node-id=980-419) · [Storybook](https://escala-storybook.vercel.app/?path=/story/navigation-sidebar--sidebar-brand-playground)
 
 ```tsx
 import { Sidebar, SidebarBrand, SidebarContent, SidebarFooter, SidebarGroup, SidebarGroupContent, SidebarGroupLabel, SidebarHeader, SidebarMenu, SidebarMenuButton, SidebarMenuItem, SidebarSeparator, SidebarTrigger } from 'src/components/escala-ui/sidebar'

@@ -4,7 +4,7 @@
 
 Header row of the Modal: an optional icon, the title and description, and an optional trailing slot.
 
-**Category** Content & Surfaces · **Box** gray · **Figma set** `ModalHeader` (6 variants, page Modal (✓) (D)) · [Figma](https://www.figma.com/design/7j5zukN5HpihGVJMmyjA20/?node-id=931-87046) · [Storybook](https://escala-storybook.vercel.app/?path=/story/content-surfaces-modal--modal-header-playground)
+**Category** Content & Surfaces · **Box** gray · **Figma set** `ModalHeader` (6 variants, page Modal (✓) (D)) · [Figma](https://www.figma.com/design/7j5zukN5HpihGVJMmyjA20/?node-id=965-81) · [Storybook](https://escala-storybook.vercel.app/?path=/story/content-surfaces-modal--modal-header-playground)
 
 ```tsx
 import { ModalContext, Modal, ModalClose, ModalContent, ModalDescription, ModalFooter, ModalHeader, ModalOverlay, ModalPortal, ModalTitle, ModalTrigger, Dialog, DialogClose, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogOverlay, DialogPortal, DialogTitle, DialogTrigger } from 'src/components/escala-ui/modal'

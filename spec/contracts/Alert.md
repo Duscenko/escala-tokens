@@ -4,7 +4,7 @@
 
 A message bar for app-wide notices, subscription warnings, announcements and global errors: an icon, a description, optional actions and a close.
 
-**Category** Feedback · **Box** gray · **Figma set** `Alert` (96 variants, page Alert (✓) (D)) · [Figma](https://www.figma.com/design/7j5zukN5HpihGVJMmyjA20/?node-id=89-42) · [Storybook](https://escala-storybook.vercel.app/?path=/story/feedback-alert--playground)
+**Category** Feedback · **Box** gray · **Figma set** `Alert` (96 variants, page Alert (✓) (D)) · [Figma](https://www.figma.com/design/7j5zukN5HpihGVJMmyjA20/?node-id=397-1932) · [Storybook](https://escala-storybook.vercel.app/?path=/story/feedback-alert--playground)
 
 ```tsx
 import { Alert, AlertAction, AlertDescription, AlertIcon, AlertTitle } from 'src/components/escala-ui/alert'

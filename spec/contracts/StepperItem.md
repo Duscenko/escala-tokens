@@ -4,7 +4,7 @@
 
 One step of a Stepper: marker and connector with a title and an optional description, coloured by status.
 
-**Category** Navigation · **Box** gray · **Figma set** `StepperItem` (56 variants, page Stepper (✓) WIP) · [Figma](https://www.figma.com/design/7j5zukN5HpihGVJMmyjA20/?node-id=931-87054) · [Storybook](https://escala-storybook.vercel.app/?path=/story/navigation-stepper--stepper-item-playground)
+**Category** Navigation · **Box** gray · **Figma set** `StepperItem` (56 variants, page Stepper (✓) WIP) · [Figma](https://www.figma.com/design/7j5zukN5HpihGVJMmyjA20/?node-id=994-1904) · [Storybook](https://escala-storybook.vercel.app/?path=/story/navigation-stepper--stepper-item-playground)
 
 ```tsx
 import { Stepper, StepperIcon, StepperIndicator, StepperItem } from 'src/components/escala-ui/stepper'

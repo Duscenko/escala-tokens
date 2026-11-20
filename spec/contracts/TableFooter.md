@@ -4,7 +4,7 @@
 
 Totals row of a Table: TableCell values in Type/label on Surface/muted.
 
-**Category** Content & Surfaces · **Box** gray · **Figma set** `TableFooter` (8 variants, page Table) · [Figma](https://www.figma.com/design/7j5zukN5HpihGVJMmyjA20/?node-id=1023-120189) · [Storybook](https://escala-storybook.vercel.app/?path=/story/content-surfaces-table--table-footer-playground)
+**Category** Content & Surfaces · **Box** gray · **Figma set** `TableFooter` (8 variants, page Table) · [Figma](https://www.figma.com/design/7j5zukN5HpihGVJMmyjA20/?node-id=1034-8163) · [Storybook](https://escala-storybook.vercel.app/?path=/story/content-surfaces-table--table-footer-playground)
 
 ```tsx
 import { Table, TableHeader, TableBody, TableFooter, TableHead, TableRow, TableCell, TableMediaCell, TableTrendCell, TableResizer, TableCaption, TableDropIndicator, TableEmpty, TableLoading, TableLoadMore } from 'src/components/escala-ui/table'

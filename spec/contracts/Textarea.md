@@ -4,7 +4,7 @@
 
 Multi-line text field for free-form input with an optional resize glyph. Invalid shows a warning glyph and Loading a spinner in the top-right corner.
 
-**Category** Form Controls · **Box** gray · **Figma set** `Textarea` (36 variants, page Textarea (✓) (D)) · [Figma](https://www.figma.com/design/7j5zukN5HpihGVJMmyjA20/?node-id=89-9) · [Storybook](https://escala-storybook.vercel.app/?path=/story/forms-textarea--playground)
+**Category** Form Controls · **Box** gray · **Figma set** `Textarea` (36 variants, page Textarea (✓) (D)) · [Figma](https://www.figma.com/design/7j5zukN5HpihGVJMmyjA20/?node-id=394-152) · [Storybook](https://escala-storybook.vercel.app/?path=/story/forms-textarea--playground)
 
 ```tsx
 import { Textarea } from 'src/components/escala-ui/textarea'

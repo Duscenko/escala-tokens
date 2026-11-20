@@ -85,7 +85,7 @@ export interface PackageContract extends Omit<ContractCore, 'authored'> {
   $comment: string
   figma: {
     file: string; page: null; pageNodeId: null; set: null; variants: null; axes: null; properties: null
-    catalogueSets: string[]; url: null
+    catalogueSets: string[]; url: null; setNodeId: null; setUrl: null
   }
   behaviour: { primitives: null; roles: null; ariaAttributes: null; authored: ContractCore['authored'] }
   code: { files: null; import: { name: string; module: string; exports: string[] }; story: null }
@@ -109,7 +109,7 @@ export function packageContract(key: string): PackageContract {
     owners: core.owners,
     figma: {
       file: FIGMA_FILE_KEY, page: null, pageNodeId: null, set: null, variants: null, axes: null, properties: null,
-      catalogueSets: def.figmaSets, url: null,
+      catalogueSets: def.figmaSets, url: null, setNodeId: null, setUrl: null,
     },
     api: core.api,
     anatomy: core.anatomy,

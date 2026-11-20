@@ -2,7 +2,7 @@
 // (`use_figma`) or the plugin console. READ-ONLY: it changes nothing in the file.
 //
 // It returns the component inventory of every `❖` page: each component set (or
-// standalone component) with its variant axes (`Axis: "a|b"`, values in Figma's
+// standalone component) with its node id (`id`, for direct links), its variant axes (`Axis: "a|b"`, values in Figma's
 // order) and its other properties (`Name:TYPE`, sorted), plus a
 // checksum of the JSON so the copy saved to `spec/figma-components.json` can be
 // verified byte for byte (`node scripts/figma/save-inventory.mjs --check`).
@@ -35,7 +35,7 @@ for (const page of figma.root.children) {
       if (d.type === 'VARIANT') axes[key] = d.variantOptions.join('|')
       else props.push(key.replace(/#[^#]*$/, '') + ':' + d.type)
     }
-    const entry = { name: n.name, variants: n.type === 'COMPONENT_SET' ? n.children.length : 1 }
+    const entry = { name: n.name, id: n.id, variants: n.type === 'COMPONENT_SET' ? n.children.length : 1 }
     if (Object.keys(axes).length) entry.axes = axes
     if (props.length) entry.props = props.sort().join(',')
     sets.push(entry)

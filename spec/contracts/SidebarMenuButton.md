@@ -4,7 +4,7 @@
 
 A navigation row of the Sidebar: leading icon, label, trailing count, trend Badge and trailing icon. Current marks the page you are on.
 
-**Category** Navigation · **Box** gray · **Figma set** `SidebarMenuButton` (30 variants, page Sidebar (✓) --) · [Figma](https://www.figma.com/design/7j5zukN5HpihGVJMmyjA20/?node-id=931-87050) · [Storybook](https://escala-storybook.vercel.app/?path=/story/navigation-sidebar--sidebar-menu-button-playground)
+**Category** Navigation · **Box** gray · **Figma set** `SidebarMenuButton` (30 variants, page Sidebar (✓) --) · [Figma](https://www.figma.com/design/7j5zukN5HpihGVJMmyjA20/?node-id=980-368) · [Storybook](https://escala-storybook.vercel.app/?path=/story/navigation-sidebar--sidebar-menu-button-playground)
 
 ```tsx
 import { Sidebar, SidebarBrand, SidebarContent, SidebarFooter, SidebarGroup, SidebarGroupContent, SidebarGroupLabel, SidebarHeader, SidebarMenu, SidebarMenuButton, SidebarMenuItem, SidebarSeparator, SidebarTrigger } from 'src/components/escala-ui/sidebar'

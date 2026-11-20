@@ -62,7 +62,7 @@ Schema `escala-component-contract/2`, additive over v1 (no key renamed or remove
       `bindings` and fails them.
 
 ### Phase 5 — Figma side (needs `use_figma`, owner OK before any write)
-- [ ] Inventory script returns the set node id → `figma.setNodeId` + a direct link per contract.
+- [x] Inventory script returns the set node id → `figma.setNodeId` + a direct link per contract.
 - [ ] Daily review compares Figma's per-state bindings with `bindings` (governance §4.5.2).
 
 ## Loop rules
@@ -118,6 +118,16 @@ Schema `escala-component-contract/2`, additive over v1 (no key renamed or remove
   border-color) or a component with no contract. `evals/agent-output/fail.wrong-state-role.css` (Button
   Hover with `action.primary.default`: token-lint passes, binding-lint fails) + `pass.state-roles.css`, in
   `agentEvals.test.ts` (`npm run eval`). `npm test`: the 5 known failures only; `npx tsc -b` clean.
+
+- 2026-11-20 · Phase 5 (1/2): `components-inventory.figma.js` returns each set's node `id` (read-only run on
+  `7j5zukN5HpihGVJMmyjA20`, checksum `3aa17cb4`, 71 pages, 192 sets). Contracts gain `figma.setNodeId` +
+  `figma.setUrl` (direct link to the set; `url` stays the page), `index.json` `figmaNode` = the set id
+  (131 of 134 components; the 3 without are codeOnly), the package twin carries both as null, `.md` views and
+  governance links open the set. The fresh snapshot also brought Figma's drift since 11-19: 16 new sets
+  (Gauge, Sparkline, ActivityHeatmap, SplitBar, Dashboard/Media/CardStack blocks), `ActionButton` gone,
+  pages renamed (`SplitButton (PRO)`, `FileUpload (✓)  (D)`, `UserMenu & MorphNav (PRO)`,
+  `ReactionGroup (PRO) (1)`): ledger, families manifest and the block-page list follow Figma. `npm test`:
+  4 known failures (exportAudit goldens ×3, pluginGithubPush size) — the figmaComponentsParity one is gone.
 
 ## Next
 Everything automatable is done. What waits for the owner:

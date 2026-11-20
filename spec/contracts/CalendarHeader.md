@@ -4,7 +4,7 @@
 
 The row above the days of a Calendar: previous and next month arrows flanking the month and year, as a combined chip, two chips or a plain heading.
 
-**Category** Form Controls · **Box** gray · **Figma set** `CalendarHeader` (6 variants, page Calendar (✓) (D)) · [Figma](https://www.figma.com/design/7j5zukN5HpihGVJMmyjA20/?node-id=89-13) · [Storybook](https://escala-storybook.vercel.app/?path=/story/forms-calendar--calendar-header-playground)
+**Category** Form Controls · **Box** gray · **Figma set** `CalendarHeader` (6 variants, page Calendar (✓) (D)) · [Figma](https://www.figma.com/design/7j5zukN5HpihGVJMmyjA20/?node-id=422-355) · [Storybook](https://escala-storybook.vercel.app/?path=/story/forms-calendar--calendar-header-playground)
 
 ```tsx
 import { Calendar, CalendarDay, CalendarHeader, CalendarMonth, CalendarPresets, CalendarFooter } from 'src/components/escala-ui/calendar'

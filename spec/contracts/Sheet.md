@@ -4,7 +4,7 @@
 
 An edge-anchored panel on the Modal surface: a desktop drawer from the right or left, a mobile sheet from the bottom.
 
-**Category** Content & Surfaces · **Box** white · **Figma set** `Sheet` (3 variants, page Sheet) · [Figma](https://www.figma.com/design/7j5zukN5HpihGVJMmyjA20/?node-id=1652-8) · [Storybook](https://escala-storybook.vercel.app/?path=/story/content-surfaces-sheet--playground)
+**Category** Content & Surfaces · **Box** white · **Figma set** `Sheet` (3 variants, page Sheet) · [Figma](https://www.figma.com/design/7j5zukN5HpihGVJMmyjA20/?node-id=1648-1577) · [Storybook](https://escala-storybook.vercel.app/?path=/story/content-surfaces-sheet--playground)
 
 ```tsx
 import { Sheet, SheetClose, SheetContent, SheetDescription, SheetOverlay, SheetPortal, SheetTitle, SheetTrigger, SheetHeader, SheetFooter } from 'src/components/escala-ui/sheet'

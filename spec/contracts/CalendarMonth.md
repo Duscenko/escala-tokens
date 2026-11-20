@@ -4,7 +4,7 @@
 
 One visible month of a Calendar: the weekday row over the weeks of day cells, Sunday first.
 
-**Category** Form Controls · **Box** white · **Figma set** `CalendarMonth` (12 variants, page Calendar (✓) (D)) · [Figma](https://www.figma.com/design/7j5zukN5HpihGVJMmyjA20/?node-id=89-13) · [Storybook](https://escala-storybook.vercel.app/?path=/story/forms-calendar--calendar-month-playground)
+**Category** Form Controls · **Box** white · **Figma set** `CalendarMonth` (12 variants, page Calendar (✓) (D)) · [Figma](https://www.figma.com/design/7j5zukN5HpihGVJMmyjA20/?node-id=422-1713) · [Storybook](https://escala-storybook.vercel.app/?path=/story/forms-calendar--calendar-month-playground)
 
 ```tsx
 import { Calendar, CalendarDay, CalendarHeader, CalendarMonth, CalendarPresets, CalendarFooter } from 'src/components/escala-ui/calendar'

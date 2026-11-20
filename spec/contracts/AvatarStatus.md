@@ -4,7 +4,7 @@
 
 The presence dot of an Avatar: online, busy, away, offline or do-not-disturb, with an outside Surface/page edge.
 
-**Category** Content & Surfaces · **Box** black · **Figma set** `AvatarStatus` (20 variants, page Avatar (✓) (D) (P)) · [Figma](https://www.figma.com/design/7j5zukN5HpihGVJMmyjA20/?node-id=89-21) · [Storybook](https://escala-storybook.vercel.app/?path=/story/content-surfaces-avatar--avatar-status-playground)
+**Category** Content & Surfaces · **Box** black · **Figma set** `AvatarStatus` (20 variants, page Avatar (✓) (D) (P)) · [Figma](https://www.figma.com/design/7j5zukN5HpihGVJMmyjA20/?node-id=377-54) · [Storybook](https://escala-storybook.vercel.app/?path=/story/content-surfaces-avatar--avatar-status-playground)
 
 ```tsx
 import { Avatar, AvatarStatus, AvatarGroup } from 'src/components/escala-ui/avatar'

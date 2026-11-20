@@ -23,7 +23,9 @@
     "catalogueSets": [
       "Card"
     ],
-    "url": null
+    "url": null,
+    "setNodeId": null,
+    "setUrl": null
   },
   "api": {
     "axes": [

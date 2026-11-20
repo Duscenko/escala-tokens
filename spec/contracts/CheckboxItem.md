@@ -4,7 +4,7 @@
 
 Checkbox with a visible label and optional description; the whole row toggles the checkbox.
 
-**Category** Form Controls · **Box** black · **Figma set** `CheckboxItem` (324 variants, page Checkbox (✓) (D)) · [Figma](https://www.figma.com/design/7j5zukN5HpihGVJMmyjA20/?node-id=1012-113047) · [Storybook](https://escala-storybook.vercel.app/?path=/story/forms-checkbox--checkbox-item-playground)
+**Category** Form Controls · **Box** black · **Figma set** `CheckboxItem` (324 variants, page Checkbox (✓) (D)) · [Figma](https://www.figma.com/design/7j5zukN5HpihGVJMmyjA20/?node-id=1015-7515) · [Storybook](https://escala-storybook.vercel.app/?path=/story/forms-checkbox--checkbox-item-playground)
 
 ```tsx
 import { Checkbox, CheckboxItem, CheckboxGroup } from 'src/components/escala-ui/checkbox'

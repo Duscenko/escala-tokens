@@ -4,7 +4,7 @@
 
 One box of an InputOTP: a digit, or the caret while it is the active empty slot. InputOTP draws it; it reads the code from it.
 
-**Category** Form Controls · **Box** gray · **Figma set** `InputOTPSlot` (54 variants, page InputOTP (✓) (D)) · [Figma](https://www.figma.com/design/7j5zukN5HpihGVJMmyjA20/?node-id=89-6) · [Storybook](https://escala-storybook.vercel.app/?path=/story/forms-inputotp--input-otp-slot-playground)
+**Category** Form Controls · **Box** gray · **Figma set** `InputOTPSlot` (54 variants, page InputOTP (✓) (D)) · [Figma](https://www.figma.com/design/7j5zukN5HpihGVJMmyjA20/?node-id=416-108) · [Storybook](https://escala-storybook.vercel.app/?path=/story/forms-inputotp--input-otp-slot-playground)
 
 ```tsx
 import { InputOTP, InputOTPGroup, InputOTPSeparator, InputOTPSlot } from 'src/components/escala-ui/input-otp'

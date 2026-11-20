@@ -4,7 +4,7 @@
 
 The legend entry of a SplitBar and the toggle of its series: a 12 px Chart/series-n/solid swatch, a label and a value, Size/control-xs tall. Off, the swatch is Surface/muted and the text Content/disabled.
 
-**Category** Indicators · **Box** gray · **Figma set** none (codeOnly) · [Storybook](https://escala-storybook.vercel.app/?path=/story/indicators-splitbar--split-bar-legend-item-playground)
+**Category** Indicators · **Box** gray · **Figma set** `SplitBarLegendItem` (32 variants, page SplitBar (PRO)) · [Figma](https://www.figma.com/design/7j5zukN5HpihGVJMmyjA20/?node-id=2401-211) · [Storybook](https://escala-storybook.vercel.app/?path=/story/indicators-splitbar--split-bar-legend-item-playground)
 
 ```tsx
 import { SplitBar, SplitBarSegment, SplitBarLegendItem } from 'src/components/escala-ui/split-bar'
@@ -17,6 +17,8 @@ import { SplitBar, SplitBarSegment, SplitBarLegendItem } from 'src/components/es
 | Series | 1 · 2 · 3 · 4 · 5 · 6 · 7 · 8 | 1 |
 | Checked | true · false | true |
 | State | Default · Focused | Default |
+
+**Figma properties** Label (text) · Value (text) · ValueVisible (boolean)
 
 ## Props
 

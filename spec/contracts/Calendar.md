@@ -4,7 +4,7 @@
 
 The date panel: a month with its header, an optional presets rail beside it and an optional Today · Clear · Apply footer.
 
-**Category** Form Controls · **Box** white · **Figma set** `Calendar` (18 variants, page Calendar (✓) (D)) · [Figma](https://www.figma.com/design/7j5zukN5HpihGVJMmyjA20/?node-id=89-13) · [Storybook](https://escala-storybook.vercel.app/?path=/story/forms-calendar--playground)
+**Category** Form Controls · **Box** white · **Figma set** `Calendar` (18 variants, page Calendar (✓) (D)) · [Figma](https://www.figma.com/design/7j5zukN5HpihGVJMmyjA20/?node-id=424-4667) · [Storybook](https://escala-storybook.vercel.app/?path=/story/forms-calendar--playground)
 
 ```tsx
 import { Calendar, CalendarDay, CalendarHeader, CalendarMonth, CalendarPresets, CalendarFooter } from 'src/components/escala-ui/calendar'

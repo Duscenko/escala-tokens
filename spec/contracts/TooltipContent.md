@@ -4,7 +4,7 @@
 
 Short hint bubble on hover or focus: an optional title, the text and an arrow on the edge opposite to Side.
 
-**Category** Content & Surfaces · **Box** gray · **Figma set** `TooltipContent` (180 variants, page Tooltip (✓) (D)) · [Figma](https://www.figma.com/design/7j5zukN5HpihGVJMmyjA20/?node-id=89-41) · [Storybook](https://escala-storybook.vercel.app/?path=/story/content-surfaces-tooltip--tooltip-content-playground)
+**Category** Content & Surfaces · **Box** gray · **Figma set** `TooltipContent` (180 variants, page Tooltip (✓) (D)) · [Figma](https://www.figma.com/design/7j5zukN5HpihGVJMmyjA20/?node-id=415-773) · [Storybook](https://escala-storybook.vercel.app/?path=/story/content-surfaces-tooltip--tooltip-content-playground)
 
 ```tsx
 import { Tooltip, TooltipContent, TooltipInfoTrigger, TooltipProvider, TooltipTrigger } from 'src/components/escala-ui/tooltip'

@@ -4,7 +4,7 @@
 
 Page navigation: First / Previous, numbered links with ellipses, Next / Last. Joined like a ButtonGroup or as ghost buttons apart.
 
-**Category** Navigation · **Box** gray · **Figma set** `Pagination` (8 variants, page Pagination (✓) WIP) · [Figma](https://www.figma.com/design/7j5zukN5HpihGVJMmyjA20/?node-id=931-87052) · [Storybook](https://escala-storybook.vercel.app/?path=/story/navigation-pagination--playground)
+**Category** Navigation · **Box** gray · **Figma set** `Pagination` (8 variants, page Pagination (✓) WIP) · [Figma](https://www.figma.com/design/7j5zukN5HpihGVJMmyjA20/?node-id=989-714) · [Storybook](https://escala-storybook.vercel.app/?path=/story/navigation-pagination--playground)
 
 ```tsx
 import { Pagination, PaginationEllipsis, PaginationLink, PaginationScope } from 'src/components/escala-ui/pagination'

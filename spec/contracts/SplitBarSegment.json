@@ -18,16 +18,50 @@
   },
   "figma": {
     "file": "7j5zukN5HpihGVJMmyjA20",
-    "page": null,
-    "pageNodeId": null,
-    "set": null,
-    "variants": null,
-    "axes": null,
-    "properties": null,
+    "page": "SplitBar (PRO)",
+    "pageNodeId": "2397:81",
+    "set": "SplitBarSegment",
+    "variants": 16,
+    "axes": {
+      "Series": [
+        "1",
+        "2",
+        "3",
+        "4",
+        "5",
+        "6",
+        "7",
+        "8"
+      ],
+      "State": [
+        "Default",
+        "Focused"
+      ]
+    },
+    "properties": [
+      {
+        "name": "Label",
+        "type": "TEXT"
+      },
+      {
+        "name": "LabelVisible",
+        "type": "BOOLEAN"
+      },
+      {
+        "name": "Value",
+        "type": "TEXT"
+      },
+      {
+        "name": "ValueVisible",
+        "type": "BOOLEAN"
+      }
+    ],
     "catalogueSets": [
       "SplitBarSegment"
     ],
-    "url": null
+    "url": "https://www.figma.com/design/7j5zukN5HpihGVJMmyjA20/?node-id=2397-81",
+    "setNodeId": "2401:102",
+    "setUrl": "https://www.figma.com/design/7j5zukN5HpihGVJMmyjA20/?node-id=2401-102"
   },
   "api": {
     "axes": [

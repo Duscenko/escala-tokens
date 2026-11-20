@@ -4,7 +4,7 @@
 
 Body cell: a label with optional description, a leading slot (Checkbox, Avatar, Badge) and a trailing slot (overflow IconButton or Badge).
 
-**Category** Content & Surfaces · **Box** gray · **Figma set** `TableCell` (48 variants, page Table) · [Figma](https://www.figma.com/design/7j5zukN5HpihGVJMmyjA20/?node-id=1023-120189) · [Storybook](https://escala-storybook.vercel.app/?path=/story/content-surfaces-table--table-cell-playground)
+**Category** Content & Surfaces · **Box** gray · **Figma set** `TableCell` (48 variants, page Table) · [Figma](https://www.figma.com/design/7j5zukN5HpihGVJMmyjA20/?node-id=1024-18323) · [Storybook](https://escala-storybook.vercel.app/?path=/story/content-surfaces-table--table-cell-playground)
 
 ```tsx
 import { Table, TableHeader, TableBody, TableFooter, TableHead, TableRow, TableCell, TableMediaCell, TableTrendCell, TableResizer, TableCaption, TableDropIndicator, TableEmpty, TableLoading, TableLoadMore } from 'src/components/escala-ui/table'

@@ -4,7 +4,7 @@
 
 One requirement of a password: a success check when met, an empty ring when not, and its label.
 
-**Category** Form Controls · **Box** gray · **Figma set** `PasswordStrengthRule` (6 variants, page PasswordStrength (✓) (D)) · [Figma](https://www.figma.com/design/7j5zukN5HpihGVJMmyjA20/?node-id=89-14) · [Storybook](https://escala-storybook.vercel.app/?path=/story/forms-passwordstrength--password-strength-rule-playground)
+**Category** Form Controls · **Box** gray · **Figma set** `PasswordStrengthRule` (6 variants, page PasswordStrength (✓) (D)) · [Figma](https://www.figma.com/design/7j5zukN5HpihGVJMmyjA20/?node-id=417-156) · [Storybook](https://escala-storybook.vercel.app/?path=/story/forms-passwordstrength--password-strength-rule-playground)
 
 ```tsx
 import { PasswordStrength, PasswordStrengthMeter, PasswordStrengthRule } from 'src/components/escala-ui/password-strength'

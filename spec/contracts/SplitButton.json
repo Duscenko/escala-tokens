@@ -18,7 +18,7 @@
   },
   "figma": {
     "file": "7j5zukN5HpihGVJMmyjA20",
-    "page": "SplitButton",
+    "page": "SplitButton (PRO)",
     "pageNodeId": "2391:78",
     "set": "SplitButton",
     "variants": 16,
@@ -42,7 +42,9 @@
     "catalogueSets": [
       "SplitButton"
     ],
-    "url": "https://www.figma.com/design/7j5zukN5HpihGVJMmyjA20/?node-id=2391-78"
+    "url": "https://www.figma.com/design/7j5zukN5HpihGVJMmyjA20/?node-id=2391-78",
+    "setNodeId": "2391:2107",
+    "setUrl": "https://www.figma.com/design/7j5zukN5HpihGVJMmyjA20/?node-id=2391-2107"
   },
   "api": {
     "axes": [

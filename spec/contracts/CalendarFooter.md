@@ -4,7 +4,7 @@
 
 The bar under a Calendar: a Today link at the start, Clear and Apply at the end, under a divider.
 
-**Category** Form Controls · **Box** white · **Figma set** `CalendarFooter` (2 variants, page Calendar (✓) (D)) · [Figma](https://www.figma.com/design/7j5zukN5HpihGVJMmyjA20/?node-id=89-13) · [Storybook](https://escala-storybook.vercel.app/?path=/story/forms-calendar--calendar-footer-playground)
+**Category** Form Controls · **Box** white · **Figma set** `CalendarFooter` (2 variants, page Calendar (✓) (D)) · [Figma](https://www.figma.com/design/7j5zukN5HpihGVJMmyjA20/?node-id=423-963) · [Storybook](https://escala-storybook.vercel.app/?path=/story/forms-calendar--calendar-footer-playground)
 
 ```tsx
 import { Calendar, CalendarDay, CalendarHeader, CalendarMonth, CalendarPresets, CalendarFooter } from 'src/components/escala-ui/calendar'

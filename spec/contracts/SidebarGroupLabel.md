@@ -4,7 +4,7 @@
 
 The heading of a group of SidebarMenuButtons; hidden while the Sidebar is collapsed. A twin of DropdownMenuLabel.
 
-**Category** Navigation · **Box** white · **Figma set** `SidebarGroupLabel` (3 variants, page Sidebar (✓) --) · [Figma](https://www.figma.com/design/7j5zukN5HpihGVJMmyjA20/?node-id=931-87050) · [Storybook](https://escala-storybook.vercel.app/?path=/story/navigation-sidebar--sidebar-group-label-playground)
+**Category** Navigation · **Box** white · **Figma set** `SidebarGroupLabel` (3 variants, page Sidebar (✓) --) · [Figma](https://www.figma.com/design/7j5zukN5HpihGVJMmyjA20/?node-id=980-390) · [Storybook](https://escala-storybook.vercel.app/?path=/story/navigation-sidebar--sidebar-group-label-playground)
 
 ```tsx
 import { Sidebar, SidebarBrand, SidebarContent, SidebarFooter, SidebarGroup, SidebarGroupContent, SidebarGroupLabel, SidebarHeader, SidebarMenu, SidebarMenuButton, SidebarMenuItem, SidebarSeparator, SidebarTrigger } from 'src/components/escala-ui/sidebar'

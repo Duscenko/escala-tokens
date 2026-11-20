@@ -4,7 +4,7 @@
 
 Button tab of a TabMenu: optional leading icon, label and a trailing count badge. Selected fills Surface/selected.
 
-**Category** Navigation · **Box** gray · **Figma set** `TabMenuItem` (15 variants, page TabMenu (✓) WIP) · [Figma](https://www.figma.com/design/7j5zukN5HpihGVJMmyjA20/?node-id=931-87049) · [Storybook](https://escala-storybook.vercel.app/?path=/story/navigation-tabmenu--tab-menu-item-playground)
+**Category** Navigation · **Box** gray · **Figma set** `TabMenuItem` (15 variants, page TabMenu (✓) WIP) · [Figma](https://www.figma.com/design/7j5zukN5HpihGVJMmyjA20/?node-id=984-939) · [Storybook](https://escala-storybook.vercel.app/?path=/story/navigation-tabmenu--tab-menu-item-playground)
 
 ```tsx
 import { TabMenu, TabMenuItem, TabMenuLineItem } from 'src/components/escala-ui/tab-menu'

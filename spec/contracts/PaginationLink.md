@@ -4,7 +4,7 @@
 
 Numbered page link: ghost when inactive, outlined (or filled in a grouped Pagination) when Active.
 
-**Category** Navigation · **Box** gray · **Figma set** `PaginationLink` (40 variants, page Pagination (✓) WIP) · [Figma](https://www.figma.com/design/7j5zukN5HpihGVJMmyjA20/?node-id=931-87052) · [Storybook](https://escala-storybook.vercel.app/?path=/story/navigation-pagination--pagination-link-playground)
+**Category** Navigation · **Box** gray · **Figma set** `PaginationLink` (40 variants, page Pagination (✓) WIP) · [Figma](https://www.figma.com/design/7j5zukN5HpihGVJMmyjA20/?node-id=988-330) · [Storybook](https://escala-storybook.vercel.app/?path=/story/navigation-pagination--pagination-link-playground)
 
 ```tsx
 import { Pagination, PaginationEllipsis, PaginationLink, PaginationScope } from 'src/components/escala-ui/pagination'

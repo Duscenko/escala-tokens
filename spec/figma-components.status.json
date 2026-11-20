@@ -198,14 +198,11 @@
     },
     "MorphNav": {
       "status": "block",
-      "page": "UserMenu & MorphNav"
+      "page": "UserMenu & MorphNav (PRO)"
     },
     "UserMenu": {
       "status": "block",
-      "page": "UserMenu & MorphNav"
-    },
-    "ActionButton": {
-      "status": "new"
+      "page": "UserMenu & MorphNav (PRO)"
     },
     "AuthPasskeySetup": {
       "status": "block",
@@ -226,6 +223,42 @@
     "AuthTwoFactorSetupItem": {
       "status": "block",
       "page": "AuthTwoFactorSetup (PRO)"
+    },
+    "DashboardActivityCard": {
+      "status": "block",
+      "page": "Dashboard (PRO)"
+    },
+    "DashboardGaugeCard": {
+      "status": "block",
+      "page": "Dashboard (PRO)"
+    },
+    "DashboardMetricCard": {
+      "status": "block",
+      "page": "Dashboard (PRO)"
+    },
+    "DashboardTrafficCard": {
+      "status": "block",
+      "page": "Dashboard (PRO)"
+    },
+    "MediaPlayer": {
+      "status": "block",
+      "page": "MediaPlayer & NowPlaying (PRO)"
+    },
+    "MediaPlayerTrack": {
+      "status": "block",
+      "page": "MediaPlayer & NowPlaying (PRO)"
+    },
+    "NowPlaying": {
+      "status": "block",
+      "page": "MediaPlayer & NowPlaying (PRO)"
+    },
+    "CardStack": {
+      "status": "block",
+      "page": "CardStack (PRO)"
+    },
+    "CardStackCard": {
+      "status": "block",
+      "page": "CardStack (PRO)"
     }
   },
   "codeOnly": [

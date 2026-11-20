@@ -4,7 +4,7 @@
 
 A compact tag for filter, selection or input values with an optional leading icon and close action.
 
-**Category** Indicators · **Box** gray · **Figma set** `Chip` (480 variants, page Chip (✓) (D)) · [Figma](https://www.figma.com/design/7j5zukN5HpihGVJMmyjA20/?node-id=90-4) · [Storybook](https://escala-storybook.vercel.app/?path=/story/indicators-chip--playground)
+**Category** Indicators · **Box** gray · **Figma set** `Chip` (480 variants, page Chip (✓) (D)) · [Figma](https://www.figma.com/design/7j5zukN5HpihGVJMmyjA20/?node-id=390-10982) · [Storybook](https://escala-storybook.vercel.app/?path=/story/indicators-chip--playground)
 
 ```tsx
 import { Chip } from 'src/components/escala-ui/chip'

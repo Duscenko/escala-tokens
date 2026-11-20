@@ -4,7 +4,7 @@
 
 A keyboard key hint for shortcuts and navigation legends (⌘, K, Esc, ↑, ↓, ↵); KbdGroup spaces several keys.
 
-**Category** Indicators · **Box** black · **Figma set** `Kbd` (3 variants, page Kbd (✓) (D)) · [Figma](https://www.figma.com/design/7j5zukN5HpihGVJMmyjA20/?node-id=949-965) · [Storybook](https://escala-storybook.vercel.app/?path=/story/indicators-kbd--playground)
+**Category** Indicators · **Box** black · **Figma set** `Kbd` (3 variants, page Kbd (✓) (D)) · [Figma](https://www.figma.com/design/7j5zukN5HpihGVJMmyjA20/?node-id=1091-6) · [Storybook](https://escala-storybook.vercel.app/?path=/story/indicators-kbd--playground)
 
 ```tsx
 import { Kbd, KbdGroup } from 'src/components/escala-ui/kbd'

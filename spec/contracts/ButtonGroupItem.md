@@ -4,7 +4,7 @@
 
 One segment of a ButtonGroup: a selectable action with no radius or border of its own (the group clips the corners and draws the shared edge).
 
-**Category** Button & Actions · **Box** gray · **Figma set** `ButtonGroupItem` (400 variants, page ButtonGroup (✓) (D) ) · [Figma](https://www.figma.com/design/7j5zukN5HpihGVJMmyjA20/?node-id=350-2) · [Storybook](https://escala-storybook.vercel.app/?path=/story/buttons-buttongroup--button-group-item-playground)
+**Category** Button & Actions · **Box** gray · **Figma set** `ButtonGroupItem` (400 variants, page ButtonGroup (✓) (D) ) · [Figma](https://www.figma.com/design/7j5zukN5HpihGVJMmyjA20/?node-id=350-5337) · [Storybook](https://escala-storybook.vercel.app/?path=/story/buttons-buttongroup--button-group-item-playground)
 
 ```tsx
 import { ButtonGroup, ButtonGroupItem, ButtonGroupDivider } from 'src/components/escala-ui/button-group'

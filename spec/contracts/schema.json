@@ -140,6 +140,18 @@
             "string",
             "null"
           ]
+        },
+        "setNodeId": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "setUrl": {
+          "type": [
+            "string",
+            "null"
+          ]
         }
       }
     },

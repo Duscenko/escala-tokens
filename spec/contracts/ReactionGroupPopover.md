@@ -4,7 +4,7 @@
 
 The reaction picker of a ReactionGroup: a toolbar of ghost IconButtons on an overlay surface. Concentric: the overlay radius minus its inset is the IconButton radius.
 
-**Category** Button & Actions · **Box** gray · **Figma set** `ReactionGroupPopover` (1 variants, page ReactionGroup (PRO)) · [Figma](https://www.figma.com/design/7j5zukN5HpihGVJMmyjA20/?node-id=2381-42) · [Storybook](https://escala-storybook.vercel.app/?path=/story/buttons-reactiongroup--reaction-group-popover-playground)
+**Category** Button & Actions · **Box** gray · **Figma set** `ReactionGroupPopover` (1 variants, page ReactionGroup (PRO) (1)) · [Figma](https://www.figma.com/design/7j5zukN5HpihGVJMmyjA20/?node-id=2381-130) · [Storybook](https://escala-storybook.vercel.app/?path=/story/buttons-reactiongroup--reaction-group-popover-playground)
 
 ```tsx
 import { ReactionGroup, ReactionGroupPopover, ReactionGroupTrigger } from 'src/components/escala-ui/reaction-group'

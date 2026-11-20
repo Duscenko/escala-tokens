@@ -4,7 +4,7 @@
 
 Single checkbox for an independent boolean or a parent row summarising a partial selection (indeterminate). The box alone: label it with CheckboxItem.
 
-**Category** Form Controls · **Box** black · **Figma set** `Checkbox` (270 variants, page Checkbox (✓) (D)) · [Figma](https://www.figma.com/design/7j5zukN5HpihGVJMmyjA20/?node-id=1012-113047) · [Storybook](https://escala-storybook.vercel.app/?path=/story/forms-checkbox--playground)
+**Category** Form Controls · **Box** black · **Figma set** `Checkbox` (270 variants, page Checkbox (✓) (D)) · [Figma](https://www.figma.com/design/7j5zukN5HpihGVJMmyjA20/?node-id=1014-686) · [Storybook](https://escala-storybook.vercel.app/?path=/story/forms-checkbox--playground)
 
 ```tsx
 import { Checkbox, CheckboxItem, CheckboxGroup } from 'src/components/escala-ui/checkbox'

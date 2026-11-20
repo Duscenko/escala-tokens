@@ -4,7 +4,7 @@
 
 Dialog card that interrupts the flow for a decision or a short task: a header, a content slot and a footer over a scrim.
 
-**Category** Content & Surfaces · **Box** white · **Figma set** `Modal` (3 variants, page Modal (✓) (D)) · [Figma](https://www.figma.com/design/7j5zukN5HpihGVJMmyjA20/?node-id=931-87046) · [Storybook](https://escala-storybook.vercel.app/?path=/story/content-surfaces-modal--playground)
+**Category** Content & Surfaces · **Box** white · **Figma set** `Modal` (3 variants, page Modal (✓) (D)) · [Figma](https://www.figma.com/design/7j5zukN5HpihGVJMmyjA20/?node-id=967-102) · [Storybook](https://escala-storybook.vercel.app/?path=/story/content-surfaces-modal--playground)
 
 ```tsx
 import { ModalContext, Modal, ModalClose, ModalContent, ModalDescription, ModalFooter, ModalHeader, ModalOverlay, ModalPortal, ModalTitle, ModalTrigger, Dialog, DialogClose, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogOverlay, DialogPortal, DialogTitle, DialogTrigger } from 'src/components/escala-ui/modal'

@@ -4,7 +4,7 @@
 
 The thumb of a Slider: a white square with an edge in the variant colour; Hover, Focused, Dragging and Disabled states.
 
-**Category** Form Controls · **Box** black · **Figma set** `SliderThumb` (30 variants, page Slider (✓)  (D)) · [Figma](https://www.figma.com/design/7j5zukN5HpihGVJMmyjA20/?node-id=89-18) · [Storybook](https://escala-storybook.vercel.app/?path=/story/forms-slider--slider-thumb-playground)
+**Category** Form Controls · **Box** black · **Figma set** `SliderThumb` (30 variants, page Slider (✓)  (D)) · [Figma](https://www.figma.com/design/7j5zukN5HpihGVJMmyjA20/?node-id=441-75) · [Storybook](https://escala-storybook.vercel.app/?path=/story/forms-slider--slider-thumb-playground)
 
 ```tsx
 import { Slider, SliderThumb } from 'src/components/escala-ui/slider'

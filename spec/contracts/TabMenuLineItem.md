@@ -4,7 +4,7 @@
 
 Line tab of a TabMenu: the selected item carries a 2px accent bar on its bottom or left edge.
 
-**Category** Navigation · **Box** gray · **Figma set** `TabMenuLineItem` (30 variants, page TabMenu (✓) WIP) · [Figma](https://www.figma.com/design/7j5zukN5HpihGVJMmyjA20/?node-id=931-87049) · [Storybook](https://escala-storybook.vercel.app/?path=/story/navigation-tabmenu--tab-menu-line-item-playground)
+**Category** Navigation · **Box** gray · **Figma set** `TabMenuLineItem` (30 variants, page TabMenu (✓) WIP) · [Figma](https://www.figma.com/design/7j5zukN5HpihGVJMmyjA20/?node-id=984-1156) · [Storybook](https://escala-storybook.vercel.app/?path=/story/navigation-tabmenu--tab-menu-line-item-playground)
 
 ```tsx
 import { TabMenu, TabMenuItem, TabMenuLineItem } from 'src/components/escala-ui/tab-menu'

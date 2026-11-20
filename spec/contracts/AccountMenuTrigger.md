@@ -4,7 +4,7 @@
 
 Opens the user menu: an Avatar, an optional name and a caret, on ghost button roles.
 
-**Category** Navigation · **Box** gray · **Figma set** `AccountMenuTrigger` (8 variants, page AccountMenuTrigger (✓) WIP) · [Figma](https://www.figma.com/design/7j5zukN5HpihGVJMmyjA20/?node-id=1098-43) · [Storybook](https://escala-storybook.vercel.app/?path=/story/navigation-accountmenutrigger--playground)
+**Category** Navigation · **Box** gray · **Figma set** `AccountMenuTrigger` (8 variants, page AccountMenuTrigger (✓) WIP) · [Figma](https://www.figma.com/design/7j5zukN5HpihGVJMmyjA20/?node-id=1098-119) · [Storybook](https://escala-storybook.vercel.app/?path=/story/navigation-accountmenutrigger--playground)
 
 ```tsx
 import { AccountMenuTrigger } from 'src/components/escala-ui/account-menu-trigger'

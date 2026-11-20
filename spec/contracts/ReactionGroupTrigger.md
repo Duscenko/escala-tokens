@@ -4,7 +4,7 @@
 
 The add-reaction button of a ReactionGroup: an icon-only pill that opens ReactionGroupPopover. It mirrors the outline pill Chip (same sizes, edge and ink) so it sits in the row with the reaction pills.
 
-**Category** Button & Actions · **Box** gray · **Figma set** `ReactionGroupTrigger` (25 variants, page ReactionGroup (PRO)) · [Figma](https://www.figma.com/design/7j5zukN5HpihGVJMmyjA20/?node-id=2381-42) · [Storybook](https://escala-storybook.vercel.app/?path=/story/buttons-reactiongroup--reaction-group-trigger-playground)
+**Category** Button & Actions · **Box** gray · **Figma set** `ReactionGroupTrigger` (25 variants, page ReactionGroup (PRO) (1)) · [Figma](https://www.figma.com/design/7j5zukN5HpihGVJMmyjA20/?node-id=2381-124) · [Storybook](https://escala-storybook.vercel.app/?path=/story/buttons-reactiongroup--reaction-group-trigger-playground)
 
 ```tsx
 import { ReactionGroup, ReactionGroupPopover, ReactionGroupTrigger } from 'src/components/escala-ui/reaction-group'

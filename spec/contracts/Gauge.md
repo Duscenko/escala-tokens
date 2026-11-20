@@ -4,7 +4,7 @@
 
 One measurement against a fixed range on an open 270° arc with round ends: a muted track, a fill, and the value, its unit and a label in the middle. The fill reads the neutral chart series, or a severity when the colour means good or bad.
 
-**Category** Data Display · **Box** black · **Figma set** none (codeOnly) · [Storybook](https://escala-storybook.vercel.app/?path=/story/indicators-gauge--playground)
+**Category** Data Display · **Box** black · **Figma set** `Gauge` (60 variants, page Gauge (PRO)) · [Figma](https://www.figma.com/design/7j5zukN5HpihGVJMmyjA20/?node-id=2398-762) · [Storybook](https://escala-storybook.vercel.app/?path=/story/indicators-gauge--playground)
 
 ```tsx
 import { Gauge } from 'src/components/escala-ui/gauge'
@@ -17,6 +17,8 @@ import { Gauge } from 'src/components/escala-ui/gauge'
 | Variant | default · success · warning · critical | default |
 | Size | default · sm · lg | default |
 | Value | 0 · 25 · 50 · 75 · 100 | — |
+
+**Figma properties** Label (text) · LabelVisible (boolean) · Unit (text) · UnitVisible (boolean) · ValueText (text)
 
 ## Props
 

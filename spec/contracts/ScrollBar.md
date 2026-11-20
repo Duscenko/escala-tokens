@@ -4,7 +4,7 @@
 
 Overlay scrollbar of a ScrollArea: a Radius/full thumb on a Surface/muted track (filled) or on nothing (ghost).
 
-**Category** Content & Surfaces · **Box** black · **Figma set** `ScrollBar` (12 variants, page ScrollArea (✓) WIP) · [Figma](https://www.figma.com/design/7j5zukN5HpihGVJMmyjA20/?node-id=931-87048) · [Storybook](https://escala-storybook.vercel.app/?path=/story/content-surfaces-scrollarea--scroll-bar-playground)
+**Category** Content & Surfaces · **Box** black · **Figma set** `ScrollBar` (12 variants, page ScrollArea (✓) WIP) · [Figma](https://www.figma.com/design/7j5zukN5HpihGVJMmyjA20/?node-id=976-27) · [Storybook](https://escala-storybook.vercel.app/?path=/story/content-surfaces-scrollarea--scroll-bar-playground)
 
 ```tsx
 import { ScrollArea, ScrollAreaRow, ScrollBar } from 'src/components/escala-ui/scroll-area'

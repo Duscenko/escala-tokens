@@ -4,7 +4,7 @@
 
 Column header cell: a label, an optional leading slot (select-all Checkbox), a sort arrow and a resizer.
 
-**Category** Content & Surfaces · **Box** gray · **Figma set** `TableHead` (144 variants, page Table) · [Figma](https://www.figma.com/design/7j5zukN5HpihGVJMmyjA20/?node-id=1023-120189) · [Storybook](https://escala-storybook.vercel.app/?path=/story/content-surfaces-table--table-head-playground)
+**Category** Content & Surfaces · **Box** gray · **Figma set** `TableHead` (144 variants, page Table) · [Figma](https://www.figma.com/design/7j5zukN5HpihGVJMmyjA20/?node-id=1024-21090) · [Storybook](https://escala-storybook.vercel.app/?path=/story/content-surfaces-table--table-head-playground)
 
 ```tsx
 import { Table, TableHeader, TableBody, TableFooter, TableHead, TableRow, TableCell, TableMediaCell, TableTrendCell, TableResizer, TableCaption, TableDropIndicator, TableEmpty, TableLoading, TableLoadMore } from 'src/components/escala-ui/table'

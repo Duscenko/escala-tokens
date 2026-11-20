@@ -4,7 +4,7 @@
 
 App navigation rail: a header (SidebarBrand and a trigger), a scrollable content of SidebarGroups and an optional footer. Collapsed is the 48 px icon rail.
 
-**Category** Navigation · **Box** white · **Figma set** `Sidebar` (2 variants, page Sidebar (✓) --) · [Figma](https://www.figma.com/design/7j5zukN5HpihGVJMmyjA20/?node-id=931-87050) · [Storybook](https://escala-storybook.vercel.app/?path=/story/navigation-sidebar--playground)
+**Category** Navigation · **Box** white · **Figma set** `Sidebar` (2 variants, page Sidebar (✓) --) · [Figma](https://www.figma.com/design/7j5zukN5HpihGVJMmyjA20/?node-id=982-1003) · [Storybook](https://escala-storybook.vercel.app/?path=/story/navigation-sidebar--playground)
 
 ```tsx
 import { Sidebar, SidebarBrand, SidebarContent, SidebarFooter, SidebarGroup, SidebarGroupContent, SidebarGroupLabel, SidebarHeader, SidebarMenu, SidebarMenuButton, SidebarMenuItem, SidebarSeparator, SidebarTrigger } from 'src/components/escala-ui/sidebar'

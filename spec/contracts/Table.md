@@ -4,7 +4,7 @@
 
 Data table root: a header, rows and an optional footer; Size and Dividers cascade to every row and cell.
 
-**Category** Content & Surfaces · **Box** white · **Figma set** `Table` (16 variants, page Table) · [Figma](https://www.figma.com/design/7j5zukN5HpihGVJMmyjA20/?node-id=1023-120189) · [Storybook](https://escala-storybook.vercel.app/?path=/story/content-surfaces-table--playground)
+**Category** Content & Surfaces · **Box** white · **Figma set** `Table` (16 variants, page Table) · [Figma](https://www.figma.com/design/7j5zukN5HpihGVJMmyjA20/?node-id=1024-23937) · [Storybook](https://escala-storybook.vercel.app/?path=/story/content-surfaces-table--playground)
 
 ```tsx
 import { Table, TableHeader, TableBody, TableFooter, TableHead, TableRow, TableCell, TableMediaCell, TableTrendCell, TableResizer, TableCaption, TableDropIndicator, TableEmpty, TableLoading, TableLoadMore } from 'src/components/escala-ui/table'

@@ -4,7 +4,7 @@
 
 One section: a trigger (optional icon, label, a chevron that flips when open) and collapsible content.
 
-**Category** Content & Surfaces · **Box** white · **Figma set** `AccordionItem` (21 variants, page Accordion (✓) (P)) · [Figma](https://www.figma.com/design/7j5zukN5HpihGVJMmyjA20/?node-id=89-25) · [Storybook](https://escala-storybook.vercel.app/?path=/story/content-surfaces-accordion--accordion-item-playground)
+**Category** Content & Surfaces · **Box** white · **Figma set** `AccordionItem` (21 variants, page Accordion (✓) (P)) · [Figma](https://www.figma.com/design/7j5zukN5HpihGVJMmyjA20/?node-id=451-188) · [Storybook](https://escala-storybook.vercel.app/?path=/story/content-surfaces-accordion--accordion-item-playground)
 
 ```tsx
 import { Accordion, AccordionItem } from 'src/components/escala-ui/accordion'

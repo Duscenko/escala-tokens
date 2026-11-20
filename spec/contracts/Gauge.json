@@ -19,16 +19,58 @@
   },
   "figma": {
     "file": "7j5zukN5HpihGVJMmyjA20",
-    "page": null,
-    "pageNodeId": null,
-    "set": null,
-    "variants": null,
-    "axes": null,
-    "properties": null,
+    "page": "Gauge (PRO)",
+    "pageNodeId": "2397:78",
+    "set": "Gauge",
+    "variants": 60,
+    "axes": {
+      "Size": [
+        "default",
+        "sm",
+        "lg"
+      ],
+      "Value": [
+        "0",
+        "25",
+        "50",
+        "75",
+        "100"
+      ],
+      "Variant": [
+        "default",
+        "success",
+        "warning",
+        "critical"
+      ]
+    },
+    "properties": [
+      {
+        "name": "Label",
+        "type": "TEXT"
+      },
+      {
+        "name": "LabelVisible",
+        "type": "BOOLEAN"
+      },
+      {
+        "name": "Unit",
+        "type": "TEXT"
+      },
+      {
+        "name": "UnitVisible",
+        "type": "BOOLEAN"
+      },
+      {
+        "name": "ValueText",
+        "type": "TEXT"
+      }
+    ],
     "catalogueSets": [
       "Gauge"
     ],
-    "url": null
+    "url": "https://www.figma.com/design/7j5zukN5HpihGVJMmyjA20/?node-id=2397-78",
+    "setNodeId": "2398:762",
+    "setUrl": "https://www.figma.com/design/7j5zukN5HpihGVJMmyjA20/?node-id=2398-762"
   },
   "api": {
     "axes": [

@@ -4,7 +4,7 @@
 
 One file row in FileUpload with format icon, name, status, size readout, progress and row actions.
 
-**Category** Form Controls · **Box** gray · **Figma set** `FileUploadItem` (10 variants, page FileUpload (✓)  WIP) · [Figma](https://www.figma.com/design/7j5zukN5HpihGVJMmyjA20/?node-id=931-88585) · [Storybook](https://escala-storybook.vercel.app/?path=/story/forms-fileupload--file-upload-item-playground)
+**Category** Form Controls · **Box** gray · **Figma set** `FileUploadItem` (10 variants, page FileUpload (✓)  (D)) · [Figma](https://www.figma.com/design/7j5zukN5HpihGVJMmyjA20/?node-id=994-1074) · [Storybook](https://escala-storybook.vercel.app/?path=/story/forms-fileupload--file-upload-item-playground)
 
 ```tsx
 import { FileUploadDropzone, FileUploadItem, FileUpload } from 'src/components/escala-ui/file-upload'

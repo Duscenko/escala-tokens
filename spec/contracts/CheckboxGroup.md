@@ -4,7 +4,7 @@
 
 Labelled multi-select: group label, CheckboxItem rows and an optional footer (helper or error). Each checkbox stays independent.
 
-**Category** Form Controls · **Box** white · **Figma set** `CheckboxGroup` (108 variants, page Checkbox (✓) (D)) · [Figma](https://www.figma.com/design/7j5zukN5HpihGVJMmyjA20/?node-id=1012-113047) · [Storybook](https://escala-storybook.vercel.app/?path=/story/forms-checkbox--checkbox-group-playground)
+**Category** Form Controls · **Box** white · **Figma set** `CheckboxGroup` (108 variants, page Checkbox (✓) (D)) · [Figma](https://www.figma.com/design/7j5zukN5HpihGVJMmyjA20/?node-id=1015-10216) · [Storybook](https://escala-storybook.vercel.app/?path=/story/forms-checkbox--checkbox-group-playground)
 
 ```tsx
 import { Checkbox, CheckboxItem, CheckboxGroup } from 'src/components/escala-ui/checkbox'

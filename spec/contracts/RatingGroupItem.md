@@ -4,7 +4,7 @@
 
 One option of a RatingGroup. A checked star fills in Content/accent; an emoji keeps its glyph and marks the choice with Surface/selected.
 
-**Category** Indicators · **Box** black · **Figma set** `RatingGroupItem` (60 variants, page RatingGroup (✓) (D)) · [Figma](https://www.figma.com/design/7j5zukN5HpihGVJMmyjA20/?node-id=1122-2) · [Storybook](https://escala-storybook.vercel.app/?path=/story/indicators-ratinggroup--rating-group-item-playground)
+**Category** Indicators · **Box** black · **Figma set** `RatingGroupItem` (60 variants, page RatingGroup (✓) (D)) · [Figma](https://www.figma.com/design/7j5zukN5HpihGVJMmyjA20/?node-id=1122-195) · [Storybook](https://escala-storybook.vercel.app/?path=/story/indicators-ratinggroup--rating-group-item-playground)
 
 ```tsx
 import { RatingGroup, RatingGroupItem } from 'src/components/escala-ui/rating-group'

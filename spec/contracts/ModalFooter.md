@@ -4,7 +4,7 @@
 
 Action tray below the Modal content, divided by a Border/subtle rule.
 
-**Category** Content & Surfaces · **Box** gray · **Figma set** `ModalFooter` (6 variants, page Modal (✓) (D)) · [Figma](https://www.figma.com/design/7j5zukN5HpihGVJMmyjA20/?node-id=931-87046) · [Storybook](https://escala-storybook.vercel.app/?path=/story/content-surfaces-modal--modal-footer-playground)
+**Category** Content & Surfaces · **Box** gray · **Figma set** `ModalFooter` (6 variants, page Modal (✓) (D)) · [Figma](https://www.figma.com/design/7j5zukN5HpihGVJMmyjA20/?node-id=966-114) · [Storybook](https://escala-storybook.vercel.app/?path=/story/content-surfaces-modal--modal-footer-playground)
 
 ```tsx
 import { ModalContext, Modal, ModalClose, ModalContent, ModalDescription, ModalFooter, ModalHeader, ModalOverlay, ModalPortal, ModalTitle, ModalTrigger, Dialog, DialogClose, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogOverlay, DialogPortal, DialogTitle, DialogTrigger } from 'src/components/escala-ui/modal'

@@ -4,7 +4,7 @@
 
 Bottom navigation of a mobile app: three to five TabBarItem destinations on Surface/page with a Border/subtle hairline on top. Not a tablist: each item changes the page.
 
-**Category** Navigation · **Box** gray · **Figma set** `TabBar` (1 variants, page TabBar) · [Figma](https://www.figma.com/design/7j5zukN5HpihGVJMmyjA20/?node-id=2354-42) · [Storybook](https://escala-storybook.vercel.app/?path=/story/navigation-tabbar--playground)
+**Category** Navigation · **Box** gray · **Figma set** `TabBar` (1 variants, page TabBar) · [Figma](https://www.figma.com/design/7j5zukN5HpihGVJMmyjA20/?node-id=2354-124) · [Storybook](https://escala-storybook.vercel.app/?path=/story/navigation-tabbar--playground)
 
 ```tsx
 import { TabBar, TabBarItem } from 'src/components/escala-ui/tab-bar'

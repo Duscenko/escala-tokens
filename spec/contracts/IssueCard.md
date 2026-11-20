@@ -4,7 +4,7 @@
 
 One issue on a board: key, linked pull request, assignee, title, priority, tags, comments and due date.
 
-**Category** Data Display · **Box** gray · **Figma set** `IssueCard` (3 variants, page IssueBoardPage) · [Figma](https://www.figma.com/design/7j5zukN5HpihGVJMmyjA20/?node-id=2223-839) · [Storybook](https://escala-storybook.vercel.app/?path=/story/screens-issueboardpage--issue-card-playground)
+**Category** Data Display · **Box** gray · **Figma set** `IssueCard` (3 variants, page IssueBoardPage) · [Figma](https://www.figma.com/design/7j5zukN5HpihGVJMmyjA20/?node-id=2228-160) · [Storybook](https://escala-storybook.vercel.app/?path=/story/screens-issueboardpage--issue-card-playground)
 
 ```tsx
 import { IssueCard } from 'src/components/escala-ui/issue-card'

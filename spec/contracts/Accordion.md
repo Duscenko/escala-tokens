@@ -4,7 +4,7 @@
 
 A stack of AccordionItem sharing one Variant. The first item is open by default; items open and close independently.
 
-**Category** Content & Surfaces · **Box** white · **Figma set** `Accordion` (7 variants, page Accordion (✓) (P)) · [Figma](https://www.figma.com/design/7j5zukN5HpihGVJMmyjA20/?node-id=89-25) · [Storybook](https://escala-storybook.vercel.app/?path=/story/content-surfaces-accordion--playground)
+**Category** Content & Surfaces · **Box** white · **Figma set** `Accordion` (7 variants, page Accordion (✓) (P)) · [Figma](https://www.figma.com/design/7j5zukN5HpihGVJMmyjA20/?node-id=451-375) · [Storybook](https://escala-storybook.vercel.app/?path=/story/content-surfaces-accordion--playground)
 
 ```tsx
 import { Accordion, AccordionItem } from 'src/components/escala-ui/accordion'

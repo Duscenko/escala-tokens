@@ -4,7 +4,7 @@
 
 One status lane: status icon, title, count, add action and a list of IssueCard.
 
-**Category** Layout · **Box** gray · **Figma set** `BoardColumn` (1 variants, page IssueBoardPage) · [Figma](https://www.figma.com/design/7j5zukN5HpihGVJMmyjA20/?node-id=2223-839) · [Storybook](https://escala-storybook.vercel.app/?path=/story/screens-issueboardpage--board-column-playground)
+**Category** Layout · **Box** gray · **Figma set** `BoardColumn` (1 variants, page IssueBoardPage) · [Figma](https://www.figma.com/design/7j5zukN5HpihGVJMmyjA20/?node-id=2228-161) · [Storybook](https://escala-storybook.vercel.app/?path=/story/screens-issueboardpage--board-column-playground)
 
 ```tsx
 import { BoardColumn } from 'src/components/escala-ui/board-column'

@@ -20,16 +20,31 @@
   },
   "figma": {
     "file": "7j5zukN5HpihGVJMmyjA20",
-    "page": null,
-    "pageNodeId": null,
-    "set": null,
-    "variants": null,
-    "axes": null,
+    "page": "ActivityHeatmap (PRO)",
+    "pageNodeId": "2397:80",
+    "set": "ActivityHeatmapCell",
+    "variants": 12,
+    "axes": {
+      "State": [
+        "Default",
+        "Focused"
+      ],
+      "Value": [
+        "0",
+        "1",
+        "2",
+        "3",
+        "4",
+        "5"
+      ]
+    },
     "properties": null,
     "catalogueSets": [
       "ActivityHeatmapCell"
     ],
-    "url": null
+    "url": "https://www.figma.com/design/7j5zukN5HpihGVJMmyjA20/?node-id=2397-80",
+    "setNodeId": "2400:57",
+    "setUrl": "https://www.figma.com/design/7j5zukN5HpihGVJMmyjA20/?node-id=2400-57"
   },
   "api": {
     "axes": [

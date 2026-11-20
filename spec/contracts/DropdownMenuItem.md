@@ -4,7 +4,7 @@
 
 A command row: optional leading icon, media, description, shortcut, control, caret and a selection check; critical for irreversible commands.
 
-**Category** Navigation · **Box** gray · **Figma set** `DropdownMenuItem` (27 variants, page DropdownMenu (✓) (D)) · [Figma](https://www.figma.com/design/7j5zukN5HpihGVJMmyjA20/?node-id=912-77794) · [Storybook](https://escala-storybook.vercel.app/?path=/story/navigation-dropdownmenu--dropdown-menu-item-playground)
+**Category** Navigation · **Box** gray · **Figma set** `DropdownMenuItem` (27 variants, page DropdownMenu (✓) (D)) · [Figma](https://www.figma.com/design/7j5zukN5HpihGVJMmyjA20/?node-id=947-161) · [Storybook](https://escala-storybook.vercel.app/?path=/story/navigation-dropdownmenu--dropdown-menu-item-playground)
 
 ```tsx
 import { DropdownMenu, DropdownMenuContent, DropdownMenuFooter, DropdownMenuGroup, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuShortcut, DropdownMenuTrigger } from 'src/components/escala-ui/dropdown-menu'

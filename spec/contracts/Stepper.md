@@ -4,7 +4,7 @@
 
 Ordered list of steps: a marker joined to the next by a line, with a title and an optional description. Vertical or horizontal.
 
-**Category** Navigation · **Box** gray · **Figma set** `Stepper` (8 variants, page Stepper (✓) WIP) · [Figma](https://www.figma.com/design/7j5zukN5HpihGVJMmyjA20/?node-id=931-87054) · [Storybook](https://escala-storybook.vercel.app/?path=/story/navigation-stepper--playground)
+**Category** Navigation · **Box** gray · **Figma set** `Stepper` (8 variants, page Stepper (✓) WIP) · [Figma](https://www.figma.com/design/7j5zukN5HpihGVJMmyjA20/?node-id=994-3222) · [Storybook](https://escala-storybook.vercel.app/?path=/story/navigation-stepper--playground)
 
 ```tsx
 import { Stepper, StepperIcon, StepperIndicator, StepperItem } from 'src/components/escala-ui/stepper'

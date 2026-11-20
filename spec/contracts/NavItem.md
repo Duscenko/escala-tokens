@@ -4,7 +4,7 @@
 
 Header navigation link or menu trigger: label, optional leading icon, count Badge and trailing caret.
 
-**Category** Navigation · **Box** gray · **Figma set** `NavItem` (15 variants, page NavItem (✓) WIP) · [Figma](https://www.figma.com/design/7j5zukN5HpihGVJMmyjA20/?node-id=1095-19642) · [Storybook](https://escala-storybook.vercel.app/?path=/story/navigation-navitem--playground)
+**Category** Navigation · **Box** gray · **Figma set** `NavItem` (15 variants, page NavItem (✓) WIP) · [Figma](https://www.figma.com/design/7j5zukN5HpihGVJMmyjA20/?node-id=1095-19644) · [Storybook](https://escala-storybook.vercel.app/?path=/story/navigation-navitem--playground)
 
 ```tsx
 import { NavItem } from 'src/components/escala-ui/nav-item'

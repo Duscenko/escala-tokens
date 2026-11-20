@@ -4,11 +4,13 @@
 
 A year of activity: one square per day, one column per week (53 × 7, weeks from Sunday), filled on the Chart/sequential ladder, with month and day labels and a Less–More legend.
 
-**Category** Data Display · **Box** gray · **Figma set** none (codeOnly) · [Storybook](https://escala-storybook.vercel.app/?path=/story/indicators-activityheatmap--playground)
+**Category** Data Display · **Box** gray · **Figma set** `ActivityHeatmap` (1 variants, page ActivityHeatmap (PRO)) · [Figma](https://www.figma.com/design/7j5zukN5HpihGVJMmyjA20/?node-id=2400-58) · [Storybook](https://escala-storybook.vercel.app/?path=/story/indicators-activityheatmap--playground)
 
 ```tsx
 import { ActivityHeatmap, ActivityHeatmapCell } from 'src/components/escala-ui/activity-heatmap'
 ```
+
+**Figma properties** DayLabelsVisible (boolean) · LegendVisible (boolean) · MonthLabelsVisible (boolean)
 
 ## Props
 

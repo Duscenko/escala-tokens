@@ -27,7 +27,9 @@
     "catalogueSets": [
       "Label"
     ],
-    "url": null
+    "url": null,
+    "setNodeId": null,
+    "setUrl": null
   },
   "api": {
     "axes": [],

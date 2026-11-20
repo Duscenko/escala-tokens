@@ -4,7 +4,7 @@
 
 A labelled form field: a label with an optional required marker and trailing link, one form control, and helper or error text. Field never draws the control — it wires the Input (or Textarea, Combobox, NumberInput, InputTag, DatePickerTrigger, InputOTP) you give it.
 
-**Category** Form Controls · **Box** gray · **Figma set** `Field` (9 variants, page Field (✓) (D) ) · [Figma](https://www.figma.com/design/7j5zukN5HpihGVJMmyjA20/?node-id=1003-2) · [Storybook](https://escala-storybook.vercel.app/?path=/story/forms-field--playground)
+**Category** Form Controls · **Box** gray · **Figma set** `Field` (9 variants, page Field (✓) (D) ) · [Figma](https://www.figma.com/design/7j5zukN5HpihGVJMmyjA20/?node-id=1003-102) · [Storybook](https://escala-storybook.vercel.app/?path=/story/forms-field--playground)
 
 ```tsx
 import { Field, FieldContent, FieldDescription, FieldError, FieldGroup, FieldLabel, FieldLegend, FieldSeparator, FieldSet, FieldTitle } from 'src/components/escala-ui/field'

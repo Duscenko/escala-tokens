@@ -4,7 +4,7 @@
 
 A number field with decrement and increment buttons, also a quantity stepper. The value is a spinbutton; the buttons are ghost IconButtons that disable at the min and max.
 
-**Category** Form Controls · **Box** gray · **Figma set** `NumberInput` (15 variants, page NumberInput (✓) (D)) · [Figma](https://www.figma.com/design/7j5zukN5HpihGVJMmyjA20/?node-id=1107-2) · [Storybook](https://escala-storybook.vercel.app/?path=/story/forms-numberinput--playground)
+**Category** Form Controls · **Box** gray · **Figma set** `NumberInput` (15 variants, page NumberInput (✓) (D)) · [Figma](https://www.figma.com/design/7j5zukN5HpihGVJMmyjA20/?node-id=1107-243) · [Storybook](https://escala-storybook.vercel.app/?path=/story/forms-numberinput--playground)
 
 ```tsx
 import { NumberInput } from 'src/components/escala-ui/number-input'

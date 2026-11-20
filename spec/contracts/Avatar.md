@@ -4,7 +4,7 @@
 
 A person or entity as a photo, initials or an icon, in seven sizes, with an optional selection ring and presence dot.
 
-**Category** Content & Surfaces · **Box** gray · **Figma set** `Avatar` (350 variants, page Avatar (✓) (D) (P)) · [Figma](https://www.figma.com/design/7j5zukN5HpihGVJMmyjA20/?node-id=89-21) · [Storybook](https://escala-storybook.vercel.app/?path=/story/content-surfaces-avatar--playground)
+**Category** Content & Surfaces · **Box** gray · **Figma set** `Avatar` (350 variants, page Avatar (✓) (D) (P)) · [Figma](https://www.figma.com/design/7j5zukN5HpihGVJMmyjA20/?node-id=378-2094) · [Storybook](https://escala-storybook.vercel.app/?path=/story/content-surfaces-avatar--playground)
 
 ```tsx
 import { Avatar, AvatarStatus, AvatarGroup } from 'src/components/escala-ui/avatar'

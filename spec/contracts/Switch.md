@@ -4,7 +4,7 @@
 
 Binary on/off control for a setting that applies immediately. The track alone: name it with SwitchGroup, a Label or a Field.
 
-**Category** Form Controls · **Box** black · **Figma set** `Switch` (48 variants, page Switch & SwitchGroup (✓)  (D)) · [Figma](https://www.figma.com/design/7j5zukN5HpihGVJMmyjA20/?node-id=89-19) · [Storybook](https://escala-storybook.vercel.app/?path=/story/forms-switch--playground)
+**Category** Form Controls · **Box** black · **Figma set** `Switch` (48 variants, page Switch & SwitchGroup (✓)  (D)) · [Figma](https://www.figma.com/design/7j5zukN5HpihGVJMmyjA20/?node-id=405-358) · [Storybook](https://escala-storybook.vercel.app/?path=/story/forms-switch--playground)
 
 ```tsx
 import { Switch, SwitchGroup } from 'src/components/escala-ui/switch'

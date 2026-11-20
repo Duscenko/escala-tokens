@@ -4,7 +4,7 @@
 
 One segment of a breadcrumb trail, rendered as a link (or the current page).
 
-**Category** Navigation · **Box** gray · **Figma set** `BreadcrumbItem` (90 variants, page Breadcrumb (✓) WIP) · [Figma](https://www.figma.com/design/7j5zukN5HpihGVJMmyjA20/?node-id=89-46) · [Storybook](https://escala-storybook.vercel.app/?path=/story/navigation-breadcrumb--breadcrumb-item-playground)
+**Category** Navigation · **Box** gray · **Figma set** `BreadcrumbItem` (90 variants, page Breadcrumb (✓) WIP) · [Figma](https://www.figma.com/design/7j5zukN5HpihGVJMmyjA20/?node-id=402-998) · [Storybook](https://escala-storybook.vercel.app/?path=/story/navigation-breadcrumb--breadcrumb-item-playground)
 
 ```tsx
 import { Breadcrumb, BreadcrumbEllipsis, BreadcrumbItem, BreadcrumbList, BreadcrumbSeparator } from 'src/components/escala-ui/breadcrumb'

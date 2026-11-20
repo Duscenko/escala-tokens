@@ -4,7 +4,7 @@
 
 Header row of a Table: a strip of TableHead cells on Surface/muted.
 
-**Category** Content & Surfaces · **Box** gray · **Figma set** `TableHeader` (16 variants, page Table) · [Figma](https://www.figma.com/design/7j5zukN5HpihGVJMmyjA20/?node-id=1023-120189) · [Storybook](https://escala-storybook.vercel.app/?path=/story/content-surfaces-table--table-header-playground)
+**Category** Content & Surfaces · **Box** gray · **Figma set** `TableHeader` (16 variants, page Table) · [Figma](https://www.figma.com/design/7j5zukN5HpihGVJMmyjA20/?node-id=1024-22168) · [Storybook](https://escala-storybook.vercel.app/?path=/story/content-surfaces-table--table-header-playground)
 
 ```tsx
 import { Table, TableHeader, TableBody, TableFooter, TableHead, TableRow, TableCell, TableMediaCell, TableTrendCell, TableResizer, TableCaption, TableDropIndicator, TableEmpty, TableLoading, TableLoadMore } from 'src/components/escala-ui/table'

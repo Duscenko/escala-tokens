@@ -4,7 +4,7 @@
 
 Body row: a strip of TableCell instances with a hairline under it and its own states.
 
-**Category** Content & Surfaces · **Box** gray · **Figma set** `TableRow` (48 variants, page Table) · [Figma](https://www.figma.com/design/7j5zukN5HpihGVJMmyjA20/?node-id=1023-120189) · [Storybook](https://escala-storybook.vercel.app/?path=/story/content-surfaces-table--table-row-playground)
+**Category** Content & Surfaces · **Box** gray · **Figma set** `TableRow` (48 variants, page Table) · [Figma](https://www.figma.com/design/7j5zukN5HpihGVJMmyjA20/?node-id=1024-22071) · [Storybook](https://escala-storybook.vercel.app/?path=/story/content-surfaces-table--table-row-playground)
 
 ```tsx
 import { Table, TableHeader, TableBody, TableFooter, TableHead, TableRow, TableCell, TableMediaCell, TableTrendCell, TableResizer, TableCaption, TableDropIndicator, TableEmpty, TableLoading, TableLoadMore } from 'src/components/escala-ui/table'

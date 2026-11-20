@@ -4,7 +4,7 @@
 
 One setting: its title, an optional description and a single control.
 
-**Category** Layout · **Box** gray · **Figma set** `SettingsRow` (2 variants, page SettingsPage) · [Figma](https://www.figma.com/design/7j5zukN5HpihGVJMmyjA20/?node-id=2223-838) · [Storybook](https://escala-storybook.vercel.app/?path=/story/screens-settingspage--settings-row-playground)
+**Category** Layout · **Box** gray · **Figma set** `SettingsRow` (2 variants, page SettingsPage) · [Figma](https://www.figma.com/design/7j5zukN5HpihGVJMmyjA20/?node-id=2225-89) · [Storybook](https://escala-storybook.vercel.app/?path=/story/screens-settingspage--settings-row-playground)
 
 ```tsx
 import { SettingsRow } from 'src/components/escala-ui/settings-row'

@@ -4,7 +4,7 @@
 
 Floating listbox panel for the Combobox with list, grouped or empty content and an optional footer.
 
-**Category** Form Controls · **Box** white · **Figma set** `ComboboxPopover` (9 variants, page Combobox (✓) (D)) · [Figma](https://www.figma.com/design/7j5zukN5HpihGVJMmyjA20/?node-id=89-3) · [Storybook](https://escala-storybook.vercel.app/?path=/story/forms-combobox--combobox-popover-playground)
+**Category** Form Controls · **Box** white · **Figma set** `ComboboxPopover` (9 variants, page Combobox (✓) (D)) · [Figma](https://www.figma.com/design/7j5zukN5HpihGVJMmyjA20/?node-id=415-489) · [Storybook](https://escala-storybook.vercel.app/?path=/story/forms-combobox--combobox-popover-playground)
 
 ```tsx
 import { Combobox, ComboboxPopover, ComboboxItem, ComboboxGroup, ComboboxGroupLabel, ComboboxSeparator } from 'src/components/escala-ui/combobox'

@@ -18,16 +18,31 @@
   },
   "figma": {
     "file": "7j5zukN5HpihGVJMmyjA20",
-    "page": null,
-    "pageNodeId": null,
-    "set": null,
-    "variants": null,
+    "page": "ActivityHeatmap (PRO)",
+    "pageNodeId": "2397:80",
+    "set": "ActivityHeatmap",
+    "variants": 1,
     "axes": null,
-    "properties": null,
+    "properties": [
+      {
+        "name": "DayLabelsVisible",
+        "type": "BOOLEAN"
+      },
+      {
+        "name": "LegendVisible",
+        "type": "BOOLEAN"
+      },
+      {
+        "name": "MonthLabelsVisible",
+        "type": "BOOLEAN"
+      }
+    ],
     "catalogueSets": [
       "ActivityHeatmap"
     ],
-    "url": null
+    "url": "https://www.figma.com/design/7j5zukN5HpihGVJMmyjA20/?node-id=2397-80",
+    "setNodeId": "2400:58",
+    "setUrl": "https://www.figma.com/design/7j5zukN5HpihGVJMmyjA20/?node-id=2400-58"
   },
   "api": {
     "axes": [],

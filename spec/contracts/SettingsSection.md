@@ -4,7 +4,7 @@
 
 A titled group of SettingsRow.
 
-**Category** Layout · **Box** gray · **Figma set** `SettingsSection` (1 variants, page SettingsPage) · [Figma](https://www.figma.com/design/7j5zukN5HpihGVJMmyjA20/?node-id=2223-838) · [Storybook](https://escala-storybook.vercel.app/?path=/story/screens-settingspage--settings-section-playground)
+**Category** Layout · **Box** gray · **Figma set** `SettingsSection` (1 variants, page SettingsPage) · [Figma](https://www.figma.com/design/7j5zukN5HpihGVJMmyjA20/?node-id=2224-123) · [Storybook](https://escala-storybook.vercel.app/?path=/story/screens-settingspage--settings-section-playground)
 
 ```tsx
 import { SettingsSection } from 'src/components/escala-ui/settings-section'

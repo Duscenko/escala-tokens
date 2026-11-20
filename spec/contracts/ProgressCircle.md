@@ -4,7 +4,7 @@
 
 A circular progress indicator for a value from 0 to 100: a muted ring and an arc from the top, with round or butt ends.
 
-**Category** Indicators · **Box** black · **Figma set** `ProgressCircle` (80 variants, page ProgressLine & ProgressCircle (✓) (D)) · [Figma](https://www.figma.com/design/7j5zukN5HpihGVJMmyjA20/?node-id=90-6) · [Storybook](https://escala-storybook.vercel.app/?path=/story/indicators-progresscircle--playground)
+**Category** Indicators · **Box** black · **Figma set** `ProgressCircle` (80 variants, page ProgressLine & ProgressCircle (✓) (D)) · [Figma](https://www.figma.com/design/7j5zukN5HpihGVJMmyjA20/?node-id=411-523) · [Storybook](https://escala-storybook.vercel.app/?path=/story/indicators-progresscircle--playground)
 
 ```tsx
 import { ProgressLine, ProgressCircle } from 'src/components/escala-ui/progress-line'

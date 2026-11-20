@@ -4,7 +4,7 @@
 
 Managed file upload: a FileUploadDropzone (or a single trigger Button) above a list of FileUploadItem rows; Size sets row density and cascades to every item.
 
-**Category** Form Controls · **Box** white · **Figma set** `FileUpload` (4 variants, page FileUpload (✓)  WIP) · [Figma](https://www.figma.com/design/7j5zukN5HpihGVJMmyjA20/?node-id=931-88585) · [Storybook](https://escala-storybook.vercel.app/?path=/story/forms-fileupload--playground)
+**Category** Form Controls · **Box** white · **Figma set** `FileUpload` (4 variants, page FileUpload (✓)  (D)) · [Figma](https://www.figma.com/design/7j5zukN5HpihGVJMmyjA20/?node-id=994-1399) · [Storybook](https://escala-storybook.vercel.app/?path=/story/forms-fileupload--playground)
 
 ```tsx
 import { FileUploadDropzone, FileUploadItem, FileUpload } from 'src/components/escala-ui/file-upload'

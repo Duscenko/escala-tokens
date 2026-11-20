@@ -25,7 +25,7 @@ Schema: `escala-component-contract/2` — [`schema.json`](./schema.json).
 | | Components | Blocks |
 |---|---|---|
 | Contracts | 134 | 58 |
-| With a Figma set | 124 | 58 |
+| With a Figma set | 131 | 58 |
 | With a Storybook story | 134 | 47 |
 | With a motion decision | 51 | 58 |
 | Registered in governance | 16 | 47 |

@@ -4,7 +4,7 @@
 
 Divided action bar pinned below the menu list: status text and buttons.
 
-**Category** Navigation · **Box** gray · **Figma set** `DropdownMenuFooter` (6 variants, page DropdownMenu (✓) (D)) · [Figma](https://www.figma.com/design/7j5zukN5HpihGVJMmyjA20/?node-id=912-77794) · [Storybook](https://escala-storybook.vercel.app/?path=/story/navigation-dropdownmenu--dropdown-menu-footer-playground)
+**Category** Navigation · **Box** gray · **Figma set** `DropdownMenuFooter` (6 variants, page DropdownMenu (✓) (D)) · [Figma](https://www.figma.com/design/7j5zukN5HpihGVJMmyjA20/?node-id=949-3290) · [Storybook](https://escala-storybook.vercel.app/?path=/story/navigation-dropdownmenu--dropdown-menu-footer-playground)
 
 ```tsx
 import { DropdownMenu, DropdownMenuContent, DropdownMenuFooter, DropdownMenuGroup, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuShortcut, DropdownMenuTrigger } from 'src/components/escala-ui/dropdown-menu'

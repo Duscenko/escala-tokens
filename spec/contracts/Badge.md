@@ -4,7 +4,7 @@
 
 A small non-interactive label for statuses, counts and categories. Variant is the severity; Appearance soft, solid, outline or ghost; Type default, icon, number or dot.
 
-**Category** Indicators · **Box** gray · **Figma set** `Badge` (525 variants, page Badge (✓) (D)) · [Figma](https://www.figma.com/design/7j5zukN5HpihGVJMmyjA20/?node-id=90-3) · [Storybook](https://escala-storybook.vercel.app/?path=/story/indicators-badge--playground)
+**Category** Indicators · **Box** gray · **Figma set** `Badge` (525 variants, page Badge (✓) (D)) · [Figma](https://www.figma.com/design/7j5zukN5HpihGVJMmyjA20/?node-id=383-176) · [Storybook](https://escala-storybook.vercel.app/?path=/story/indicators-badge--playground)
 
 ```tsx
 import { Badge } from 'src/components/escala-ui/badge'

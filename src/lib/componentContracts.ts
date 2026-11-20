@@ -28,6 +28,8 @@ export const STORYBOOK_URL = 'https://escala-storybook.vercel.app'
 
 export interface FigmaSnapshotSet {
   name: string
+  /** Node id of the component set (or standalone component) in the Figma file. */
+  id?: string
   variants?: number
   axes?: Record<string, string>
   props?: string
@@ -73,7 +75,12 @@ export interface ComponentContract {
     axes: Record<string, string[]> | null
     properties: { name: string; type: string }[] | null
     catalogueSets: string[]
+    /** Page link (kept for readers of schema v2 before phase 5). */
     url: string | null
+    /** Node id of the component set itself (phase 5), from `spec/figma-components.json`. */
+    setNodeId: string | null
+    /** Direct link to the component set: an agent opens the set, not the page. */
+    setUrl: string | null
   }
   api: {
     axes: { name: string; values: string[] }[]
@@ -200,6 +207,11 @@ function behaviourOf(authored: AuthoredBehaviour | null, files: string[], uiFile
   }
 }
 
+/** Link to a node of the Escala Figma library. */
+export function figmaNodeUrl(nodeId: string): string {
+  return `https://www.figma.com/design/${FIGMA_FILE_KEY}/?node-id=${nodeId.replace(':', '-')}`
+}
+
 export function buildContract(def: ComponentDef, src: ContractSources): ComponentContract {
   const core = contractCore(def)
   const files = filesDrawing(def.key, src.uiFiles)
@@ -231,7 +243,9 @@ export function buildContract(def: ComponentDef, src: ContractSources): Componen
       axes,
       properties,
       catalogueSets: def.figmaSets,
-      url: hit ? `https://www.figma.com/design/${FIGMA_FILE_KEY}/?node-id=${hit.page.id.replace(':', '-')}` : null,
+      url: hit ? figmaNodeUrl(hit.page.id) : null,
+      setNodeId: hit?.set.id ?? null,
+      setUrl: hit?.set.id ? figmaNodeUrl(hit.set.id) : null,
     },
     api: core.api,
     anatomy: core.anatomy,
@@ -257,7 +271,7 @@ export interface ContractIndexEntry {
   locks: ComponentLock[]
   file: string
   figmaSet: string | null
-  /** Figma node id of the set, when the source carries it (blocks today; components in phase 5). */
+  /** Figma node id of the set (components: `figma.setNodeId`; blocks: their contract's `figmaSet`). */
   figmaNode: string | null
   story: string | null
   tokens: number
@@ -278,7 +292,7 @@ export function buildContracts(src: ContractSources): { contracts: ComponentCont
     locks: c.locks,
     file: `spec/contracts/${c.key}.json`,
     figmaSet: c.figma.set,
-    figmaNode: null,
+    figmaNode: c.figma.setNodeId,
     story: c.code.story?.id ?? null,
     tokens: Object.values(c.tokens).reduce((n, list) => n + list.length, 0),
     motion: c.motion ? 'declared' as const : null,
@@ -349,6 +363,8 @@ export function contractSchema(): Record<string, unknown> {
           properties: { type: ['array', 'null'], items: { type: 'object', properties: { name: str, type: str } } },
           catalogueSets: strList,
           url: strOrNull,
+          setNodeId: strOrNull,
+          setUrl: strOrNull,
         },
       },
       api: {
@@ -430,7 +446,7 @@ export function contractMarkdown(c: ComponentContract): string {
     (c.docs.humanContract ? `Authored notes: \`${c.docs.humanContract}\`.` : 'No authored contract in design-plans/ yet; this view stands in for it.'), '')
   L.push(prose(c.description), '')
   const links = [
-    c.figma.url && `[Figma](${c.figma.url})`,
+    (c.figma.setUrl ?? c.figma.url) && `[Figma](${c.figma.setUrl ?? c.figma.url})`,
     c.code.story?.url && `[Storybook](${c.code.story.url})`,
   ].filter(Boolean)
   L.push(`**Category** ${c.category} · **Box** ${c.box} · **Figma set** ${c.figma.set ? `\`${c.figma.set}\` (${c.figma.variants ?? '?'} variants, page ${c.figma.page})` : 'none (codeOnly)'}${links.length ? ` · ${links.join(' · ')}` : ''}`, '')

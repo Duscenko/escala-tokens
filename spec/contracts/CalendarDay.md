@@ -4,7 +4,7 @@
 
 One day cell of the Calendar: the date, a ghost cell that fills when selected, the range band behind it and the dash under today or a marked day.
 
-**Category** Form Controls · **Box** gray · **Figma set** `CalendarDay` (44 variants, page Calendar (✓) (D)) · [Figma](https://www.figma.com/design/7j5zukN5HpihGVJMmyjA20/?node-id=89-13) · [Storybook](https://escala-storybook.vercel.app/?path=/story/forms-calendar--calendar-day-playground)
+**Category** Form Controls · **Box** gray · **Figma set** `CalendarDay` (44 variants, page Calendar (✓) (D)) · [Figma](https://www.figma.com/design/7j5zukN5HpihGVJMmyjA20/?node-id=421-309) · [Storybook](https://escala-storybook.vercel.app/?path=/story/forms-calendar--calendar-day-playground)
 
 ```tsx
 import { Calendar, CalendarDay, CalendarHeader, CalendarMonth, CalendarPresets, CalendarFooter } from 'src/components/escala-ui/calendar'

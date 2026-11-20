@@ -4,7 +4,7 @@
 
 shadcn/ui Radio Group: RadioGroup with RadioGroupItems, each labelled by a horizontal Field. A checked item is filled with the primary colour.
 
-**Category** Form Controls · **Box** black · **Figma set** `RadioGroup` (90 variants, page RadioGroup (✓) (D)) · [Figma](https://www.figma.com/design/7j5zukN5HpihGVJMmyjA20/?node-id=89-15) · [Storybook](https://escala-storybook.vercel.app/?path=/story/forms-radiogroup--playground)
+**Category** Form Controls · **Box** black · **Figma set** `RadioGroup` (90 variants, page RadioGroup (✓) (D)) · [Figma](https://www.figma.com/design/7j5zukN5HpihGVJMmyjA20/?node-id=438-652) · [Storybook](https://escala-storybook.vercel.app/?path=/story/forms-radiogroup--playground)
 
 ```tsx
 import { RadioGroup, RadioGroupItem } from 'src/components/escala-ui/radio-group'

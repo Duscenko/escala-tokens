@@ -4,7 +4,7 @@
 
 A speed-dial: one trigger FABButton that opens up to five action items. Stack lists them vertically with labels; the three fan layouts open them on an arc of icon-only FABs, centered, left or right of the trigger.
 
-**Category** Button & Actions · **Box** gray · **Figma set** `FABGroup` (8 variants, page FABButton & FABGroup (✓) (D)) · [Figma](https://www.figma.com/design/7j5zukN5HpihGVJMmyjA20/?node-id=643-411) · [Storybook](https://escala-storybook.vercel.app/?path=/story/buttons-fabbutton--fab-group-playground)
+**Category** Button & Actions · **Box** gray · **Figma set** `FABGroup` (8 variants, page FABButton & FABGroup (✓) (D)) · [Figma](https://www.figma.com/design/7j5zukN5HpihGVJMmyjA20/?node-id=346-448) · [Storybook](https://escala-storybook.vercel.app/?path=/story/buttons-fabbutton--fab-group-playground)
 
 ```tsx
 import { FABGroup } from 'src/components/escala-ui/fab-group'

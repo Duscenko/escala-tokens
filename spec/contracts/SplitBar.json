@@ -18,16 +18,31 @@
   },
   "figma": {
     "file": "7j5zukN5HpihGVJMmyjA20",
-    "page": null,
-    "pageNodeId": null,
-    "set": null,
-    "variants": null,
+    "page": "SplitBar (PRO)",
+    "pageNodeId": "2397:81",
+    "set": "SplitBar",
+    "variants": 1,
     "axes": null,
-    "properties": null,
+    "properties": [
+      {
+        "name": "Bar",
+        "type": "SLOT"
+      },
+      {
+        "name": "Legend",
+        "type": "SLOT"
+      },
+      {
+        "name": "LegendVisible",
+        "type": "BOOLEAN"
+      }
+    ],
     "catalogueSets": [
       "SplitBar"
     ],
-    "url": null
+    "url": "https://www.figma.com/design/7j5zukN5HpihGVJMmyjA20/?node-id=2397-81",
+    "setNodeId": "2401:248",
+    "setUrl": "https://www.figma.com/design/7j5zukN5HpihGVJMmyjA20/?node-id=2401-248"
   },
   "api": {
     "axes": [],

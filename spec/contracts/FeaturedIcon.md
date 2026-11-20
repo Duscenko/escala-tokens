@@ -4,7 +4,7 @@
 
 A decorative glyph in a tinted or solid shape: cards, empty states, dialogs, feature lists.
 
-**Category** Indicators · **Box** gray · **Figma set** `FeaturedIcon` (144 variants, page FeaturedIcon (✓) (D)) · [Figma](https://www.figma.com/design/7j5zukN5HpihGVJMmyjA20/?node-id=1119-10568) · [Storybook](https://escala-storybook.vercel.app/?path=/story/indicators-featuredicon--playground)
+**Category** Indicators · **Box** gray · **Figma set** `FeaturedIcon` (144 variants, page FeaturedIcon (✓) (D)) · [Figma](https://www.figma.com/design/7j5zukN5HpihGVJMmyjA20/?node-id=1119-10857) · [Storybook](https://escala-storybook.vercel.app/?path=/story/indicators-featuredicon--playground)
 
 ```tsx
 import { FeaturedIcon } from 'src/components/escala-ui/featured-icon'

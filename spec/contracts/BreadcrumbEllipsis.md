@@ -4,7 +4,7 @@
 
 Collapsed middle of a long breadcrumb trail that opens a menu of the hidden segments.
 
-**Category** Navigation · **Box** gray · **Figma set** `BreadcrumbEllipsis` (72 variants, page Breadcrumb (✓) WIP) · [Figma](https://www.figma.com/design/7j5zukN5HpihGVJMmyjA20/?node-id=89-46) · [Storybook](https://escala-storybook.vercel.app/?path=/story/navigation-breadcrumb--breadcrumb-ellipsis-playground)
+**Category** Navigation · **Box** gray · **Figma set** `BreadcrumbEllipsis` (72 variants, page Breadcrumb (✓) WIP) · [Figma](https://www.figma.com/design/7j5zukN5HpihGVJMmyjA20/?node-id=402-999) · [Storybook](https://escala-storybook.vercel.app/?path=/story/navigation-breadcrumb--breadcrumb-ellipsis-playground)
 
 ```tsx
 import { Breadcrumb, BreadcrumbEllipsis, BreadcrumbItem, BreadcrumbList, BreadcrumbSeparator } from 'src/components/escala-ui/breadcrumb'

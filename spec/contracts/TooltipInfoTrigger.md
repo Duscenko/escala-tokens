@@ -4,7 +4,7 @@
 
 Info-circle button that opens a tooltip.
 
-**Category** Content & Surfaces · **Box** black · **Figma set** `TooltipInfoTrigger` (60 variants, page Tooltip (✓) (D)) · [Figma](https://www.figma.com/design/7j5zukN5HpihGVJMmyjA20/?node-id=89-41) · [Storybook](https://escala-storybook.vercel.app/?path=/story/content-surfaces-tooltip--tooltip-info-trigger-playground)
+**Category** Content & Surfaces · **Box** black · **Figma set** `TooltipInfoTrigger` (60 variants, page Tooltip (✓) (D)) · [Figma](https://www.figma.com/design/7j5zukN5HpihGVJMmyjA20/?node-id=415-556) · [Storybook](https://escala-storybook.vercel.app/?path=/story/content-surfaces-tooltip--tooltip-info-trigger-playground)
 
 ```tsx
 import { Tooltip, TooltipContent, TooltipInfoTrigger, TooltipProvider, TooltipTrigger } from 'src/components/escala-ui/tooltip'

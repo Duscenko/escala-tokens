@@ -4,7 +4,7 @@
 
 A labelled section of the Sidebar: a SidebarGroupLabel and a SidebarMenu. Size cascades to every row.
 
-**Category** Navigation · **Box** white · **Figma set** `SidebarGroup` (6 variants, page Sidebar (✓) --) · [Figma](https://www.figma.com/design/7j5zukN5HpihGVJMmyjA20/?node-id=931-87050) · [Storybook](https://escala-storybook.vercel.app/?path=/story/navigation-sidebar--sidebar-group-playground)
+**Category** Navigation · **Box** white · **Figma set** `SidebarGroup` (6 variants, page Sidebar (✓) --) · [Figma](https://www.figma.com/design/7j5zukN5HpihGVJMmyjA20/?node-id=982-292) · [Storybook](https://escala-storybook.vercel.app/?path=/story/navigation-sidebar--sidebar-group-playground)
 
 ```tsx
 import { Sidebar, SidebarBrand, SidebarContent, SidebarFooter, SidebarGroup, SidebarGroupContent, SidebarGroupLabel, SidebarHeader, SidebarMenu, SidebarMenuButton, SidebarMenuItem, SidebarSeparator, SidebarTrigger } from 'src/components/escala-ui/sidebar'

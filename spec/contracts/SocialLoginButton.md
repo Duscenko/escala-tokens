@@ -4,7 +4,7 @@
 
 Sign-in button carrying a provider mark: white (a bordered control) or in the provider's own colour, full width or icon-only.
 
-**Category** Button & Actions · **Box** gray · **Figma set** `SocialLoginButton` (360 variants, page SocialLoginButton) · [Figma](https://www.figma.com/design/7j5zukN5HpihGVJMmyjA20/?node-id=364-20) · [Storybook](https://escala-storybook.vercel.app/?path=/story/buttons-socialloginbutton--playground)
+**Category** Button & Actions · **Box** gray · **Figma set** `SocialLoginButton` (360 variants, page SocialLoginButton) · [Figma](https://www.figma.com/design/7j5zukN5HpihGVJMmyjA20/?node-id=368-1330) · [Storybook](https://escala-storybook.vercel.app/?path=/story/buttons-socialloginbutton--playground)
 
 ```tsx
 import { SocialLoginButton } from 'src/components/escala-ui/social-login-button'

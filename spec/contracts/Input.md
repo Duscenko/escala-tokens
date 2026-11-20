@@ -4,7 +4,7 @@
 
 The text field: a box with the field inside it, at three sizes on the Size roles (sm 32 · default 40 · lg 48). Eleven types compose their own parts — phone and currency-select open a select, currency, url and tag carry a prefix, password a show / hide toggle, upload a Browse button, copy-link a Copy button, search the ⌘ K shortcut.
 
-**Category** Form Controls · **Box** gray · **Figma set** `Input` (222 variants, page Input (✓) (D) ) · [Figma](https://www.figma.com/design/7j5zukN5HpihGVJMmyjA20/?node-id=4-10609) · [Storybook](https://escala-storybook.vercel.app/?path=/story/forms-input--playground)
+**Category** Form Controls · **Box** gray · **Figma set** `Input` (222 variants, page Input (✓) (D) ) · [Figma](https://www.figma.com/design/7j5zukN5HpihGVJMmyjA20/?node-id=4-12380) · [Storybook](https://escala-storybook.vercel.app/?path=/story/forms-input--playground)
 
 ```tsx
 import { Input } from 'src/components/escala-ui/input'

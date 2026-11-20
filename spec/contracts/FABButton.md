@@ -4,7 +4,7 @@
 
 The floating action button: a leading icon and an optional label on a surface that lifts. Brand, neutral or inverse, solid or soft, rounded or pill, at 48 and 56 px, with the elevation rising on hover and settling on press.
 
-**Category** Button & Actions · **Box** gray · **Figma set** `FABButton` (100 variants, page FABButton & FABGroup (✓) (D)) · [Figma](https://www.figma.com/design/7j5zukN5HpihGVJMmyjA20/?node-id=643-411) · [Storybook](https://escala-storybook.vercel.app/?path=/story/buttons-fabbutton--playground)
+**Category** Button & Actions · **Box** gray · **Figma set** `FABButton` (100 variants, page FABButton & FABGroup (✓) (D)) · [Figma](https://www.figma.com/design/7j5zukN5HpihGVJMmyjA20/?node-id=345-868) · [Storybook](https://escala-storybook.vercel.app/?path=/story/buttons-fabbutton--playground)
 
 ```tsx
 import { FABButton } from 'src/components/escala-ui/fab-button'

@@ -4,7 +4,7 @@
 
 Single choice between 2 to 5 short options shown as one track; the checked segment is raised on it. Size cascades to every segment.
 
-**Category** Navigation · **Box** gray · **Figma set** `SegmentedControl` (3 variants, page SegmentedControl (✓)  (D)) · [Figma](https://www.figma.com/design/7j5zukN5HpihGVJMmyjA20/?node-id=1102-4960) · [Storybook](https://escala-storybook.vercel.app/?path=/story/navigation-segmentedcontrol--playground)
+**Category** Navigation · **Box** gray · **Figma set** `SegmentedControl` (3 variants, page SegmentedControl (✓)  (D)) · [Figma](https://www.figma.com/design/7j5zukN5HpihGVJMmyjA20/?node-id=1102-5136) · [Storybook](https://escala-storybook.vercel.app/?path=/story/navigation-segmentedcontrol--playground)
 
 ```tsx
 import { SegmentedControl, SegmentedControlItem } from 'src/components/escala-ui/segmented-control'

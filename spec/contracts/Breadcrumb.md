@@ -4,7 +4,7 @@
 
 Navigation trail of items, separators and an optional ellipsis that collapses the start of a long trail.
 
-**Category** Navigation · **Box** gray · **Figma set** `Breadcrumb` (27 variants, page Breadcrumb (✓) WIP) · [Figma](https://www.figma.com/design/7j5zukN5HpihGVJMmyjA20/?node-id=89-46) · [Storybook](https://escala-storybook.vercel.app/?path=/story/navigation-breadcrumb--playground)
+**Category** Navigation · **Box** gray · **Figma set** `Breadcrumb` (27 variants, page Breadcrumb (✓) WIP) · [Figma](https://www.figma.com/design/7j5zukN5HpihGVJMmyjA20/?node-id=402-7814) · [Storybook](https://escala-storybook.vercel.app/?path=/story/navigation-breadcrumb--playground)
 
 ```tsx
 import { Breadcrumb, BreadcrumbEllipsis, BreadcrumbItem, BreadcrumbList, BreadcrumbSeparator } from 'src/components/escala-ui/breadcrumb'

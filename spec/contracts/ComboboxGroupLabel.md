@@ -4,7 +4,7 @@
 
 Heading for a group of options inside the Combobox popover.
 
-**Category** Form Controls · **Box** gray · **Figma set** `ComboboxGroupLabel` (3 variants, page Combobox (✓) (D)) · [Figma](https://www.figma.com/design/7j5zukN5HpihGVJMmyjA20/?node-id=89-3) · [Storybook](https://escala-storybook.vercel.app/?path=/story/forms-combobox--combobox-group-label-playground)
+**Category** Form Controls · **Box** gray · **Figma set** `ComboboxGroupLabel` (3 variants, page Combobox (✓) (D)) · [Figma](https://www.figma.com/design/7j5zukN5HpihGVJMmyjA20/?node-id=406-147) · [Storybook](https://escala-storybook.vercel.app/?path=/story/forms-combobox--combobox-group-label-playground)
 
 ```tsx
 import { Combobox, ComboboxPopover, ComboboxItem, ComboboxGroup, ComboboxGroupLabel, ComboboxSeparator } from 'src/components/escala-ui/combobox'

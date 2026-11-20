@@ -4,7 +4,7 @@
 
 Option row in the Combobox listbox with optional leading icon, description, trailing value and selection indicator.
 
-**Category** Form Controls · **Box** gray · **Figma set** `ComboboxItem` (15 variants, page Combobox (✓) (D)) · [Figma](https://www.figma.com/design/7j5zukN5HpihGVJMmyjA20/?node-id=89-3) · [Storybook](https://escala-storybook.vercel.app/?path=/story/forms-combobox--combobox-item-playground)
+**Category** Form Controls · **Box** gray · **Figma set** `ComboboxItem` (15 variants, page Combobox (✓) (D)) · [Figma](https://www.figma.com/design/7j5zukN5HpihGVJMmyjA20/?node-id=406-140) · [Storybook](https://escala-storybook.vercel.app/?path=/story/forms-combobox--combobox-item-playground)
 
 ```tsx
 import { Combobox, ComboboxPopover, ComboboxItem, ComboboxGroup, ComboboxGroupLabel, ComboboxSeparator } from 'src/components/escala-ui/combobox'

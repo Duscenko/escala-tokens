@@ -4,7 +4,7 @@
 
 A multi-value text field that turns entries into removable tag chips, inline or stacked outside the field.
 
-**Category** Form Controls · **Box** gray · **Figma set** `InputTag` (72 variants, page InputTag (✓)  (D)) · [Figma](https://www.figma.com/design/7j5zukN5HpihGVJMmyjA20/?node-id=89-8) · [Storybook](https://escala-storybook.vercel.app/?path=/story/forms-inputtag--playground)
+**Category** Form Controls · **Box** gray · **Figma set** `InputTag` (72 variants, page InputTag (✓)  (D)) · [Figma](https://www.figma.com/design/7j5zukN5HpihGVJMmyjA20/?node-id=390-744) · [Storybook](https://escala-storybook.vercel.app/?path=/story/forms-inputtag--playground)
 
 ```tsx
 import { InputTag, InputTagChip, InputTagOption } from 'src/components/escala-ui/input-tag'

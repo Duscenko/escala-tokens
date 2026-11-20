@@ -4,7 +4,7 @@
 
 A photo or illustration cropped to a fixed ratio (object-fit: cover), on Surface/muted while it loads. Ratio auto fills its parent.
 
-**Category** Content & Surfaces · **Box** white · **Figma set** `Image` (12 variants, page Image (✓) (D)) · [Figma](https://www.figma.com/design/7j5zukN5HpihGVJMmyjA20/?node-id=1126-2) · [Storybook](https://escala-storybook.vercel.app/?path=/story/content-surfaces-image--playground)
+**Category** Content & Surfaces · **Box** white · **Figma set** `Image` (12 variants, page Image (✓) (D)) · [Figma](https://www.figma.com/design/7j5zukN5HpihGVJMmyjA20/?node-id=1126-15) · [Storybook](https://escala-storybook.vercel.app/?path=/story/content-surfaces-image--playground)
 
 ```tsx
 import { Image } from 'src/components/escala-ui/image'

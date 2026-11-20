@@ -4,7 +4,7 @@
 
 Decorative divider between breadcrumb items: chevron, slash or dot.
 
-**Category** Navigation · **Box** gray · **Figma set** `BreadcrumbSeparator` (9 variants, page Breadcrumb (✓) WIP) · [Figma](https://www.figma.com/design/7j5zukN5HpihGVJMmyjA20/?node-id=89-46) · [Storybook](https://escala-storybook.vercel.app/?path=/story/navigation-breadcrumb--breadcrumb-separator-playground)
+**Category** Navigation · **Box** gray · **Figma set** `BreadcrumbSeparator` (9 variants, page Breadcrumb (✓) WIP) · [Figma](https://www.figma.com/design/7j5zukN5HpihGVJMmyjA20/?node-id=402-1000) · [Storybook](https://escala-storybook.vercel.app/?path=/story/navigation-breadcrumb--breadcrumb-separator-playground)
 
 ```tsx
 import { Breadcrumb, BreadcrumbEllipsis, BreadcrumbItem, BreadcrumbList, BreadcrumbSeparator } from 'src/components/escala-ui/breadcrumb'

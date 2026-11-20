@@ -4,7 +4,7 @@
 
 The 1px line between two ButtonGroupItems (Stroke/divider), painted per Variant. ButtonGroup inserts it.
 
-**Category** Button & Actions · **Box** gray · **Figma set** `ButtonGroupDivider` (8 variants, page ButtonGroup (✓) (D) ) · [Figma](https://www.figma.com/design/7j5zukN5HpihGVJMmyjA20/?node-id=350-2) · [Storybook](https://escala-storybook.vercel.app/?path=/story/buttons-buttongroup--button-group-divider-playground)
+**Category** Button & Actions · **Box** gray · **Figma set** `ButtonGroupDivider` (8 variants, page ButtonGroup (✓) (D) ) · [Figma](https://www.figma.com/design/7j5zukN5HpihGVJMmyjA20/?node-id=351-410) · [Storybook](https://escala-storybook.vercel.app/?path=/story/buttons-buttongroup--button-group-divider-playground)
 
 ```tsx
 import { ButtonGroup, ButtonGroupItem, ButtonGroupDivider } from 'src/components/escala-ui/button-group'

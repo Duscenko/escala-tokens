@@ -4,7 +4,7 @@
 
 A horizontal progress indicator for a value from 0 to 100: a muted track and a bar that is solid or a gradient of the primary action.
 
-**Category** Indicators · **Box** black · **Figma set** `ProgressLine` (40 variants, page ProgressLine & ProgressCircle (✓) (D)) · [Figma](https://www.figma.com/design/7j5zukN5HpihGVJMmyjA20/?node-id=90-6) · [Storybook](https://escala-storybook.vercel.app/?path=/story/indicators-progressline--playground)
+**Category** Indicators · **Box** black · **Figma set** `ProgressLine` (40 variants, page ProgressLine & ProgressCircle (✓) (D)) · [Figma](https://www.figma.com/design/7j5zukN5HpihGVJMmyjA20/?node-id=410-687) · [Storybook](https://escala-storybook.vercel.app/?path=/story/indicators-progressline--playground)
 
 ```tsx
 import { ProgressLine, ProgressCircle } from 'src/components/escala-ui/progress-line'

@@ -4,7 +4,7 @@
 
 A main action joined to a menu of related alternatives. A ButtonGroup of two segments (the action with its label and leading icon, and an icon-only caret) over a DropdownMenu that opens below, aligned to the end edge. It paints nothing of its own: the segments are ButtonGroupItems (Action/primary or Action/secondary, Radius/action, Shadow/xs) and the menu is the DropdownMenu of the same size (xs opens sm), 8px below the group (Spacing/gap-control) and 256 wide. Open pins the caret Active and swaps CaretDown for CaretUp. Motion: the menu grows out of the caret on popover-enter (use-disclosure-in), its rows arrive one after another on use-stagger-in, and it leaves on popover-exit; the main half never scales, and reduced motion keeps only the fade.
 
-**Category** Button & Actions · **Box** gray · **Figma set** `SplitButton` (16 variants, page SplitButton) · [Figma](https://www.figma.com/design/7j5zukN5HpihGVJMmyjA20/?node-id=2391-78) · [Storybook](https://escala-storybook.vercel.app/?path=/story/buttons-splitbutton--playground)
+**Category** Button & Actions · **Box** gray · **Figma set** `SplitButton` (16 variants, page SplitButton (PRO)) · [Figma](https://www.figma.com/design/7j5zukN5HpihGVJMmyjA20/?node-id=2391-2107) · [Storybook](https://escala-storybook.vercel.app/?path=/story/buttons-splitbutton--playground)
 
 ```tsx
 import { SplitButton } from 'src/components/escala-ui/split-button'

@@ -4,7 +4,7 @@
 
 Column resize handle on the end edge of a TableHead.
 
-**Category** Content & Surfaces · **Box** black · **Figma set** `TableResizer` (3 variants, page Table) · [Figma](https://www.figma.com/design/7j5zukN5HpihGVJMmyjA20/?node-id=1023-120189) · [Storybook](https://escala-storybook.vercel.app/?path=/story/content-surfaces-table--table-resizer-playground)
+**Category** Content & Surfaces · **Box** black · **Figma set** `TableResizer` (3 variants, page Table) · [Figma](https://www.figma.com/design/7j5zukN5HpihGVJMmyjA20/?node-id=1030-5794) · [Storybook](https://escala-storybook.vercel.app/?path=/story/content-surfaces-table--table-resizer-playground)
 
 ```tsx
 import { Table, TableHeader, TableBody, TableFooter, TableHead, TableRow, TableCell, TableMediaCell, TableTrendCell, TableResizer, TableCaption, TableDropIndicator, TableEmpty, TableLoading, TableLoadMore } from 'src/components/escala-ui/table'

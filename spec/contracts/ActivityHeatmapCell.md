@@ -4,7 +4,7 @@
 
 One day of an ActivityHeatmap: a 12 px square filled Chart/sequential/<Value>; Focused adds a 2 px ring one pixel off its edge.
 
-**Category** Data Display · **Box** black · **Figma set** none (codeOnly) · [Storybook](https://escala-storybook.vercel.app/?path=/story/indicators-activityheatmap--activity-heatmap-cell-playground)
+**Category** Data Display · **Box** black · **Figma set** `ActivityHeatmapCell` (12 variants, page ActivityHeatmap (PRO)) · [Figma](https://www.figma.com/design/7j5zukN5HpihGVJMmyjA20/?node-id=2400-57) · [Storybook](https://escala-storybook.vercel.app/?path=/story/indicators-activityheatmap--activity-heatmap-cell-playground)
 
 ```tsx
 import { ActivityHeatmap, ActivityHeatmapCell } from 'src/components/escala-ui/activity-heatmap'

@@ -4,7 +4,7 @@
 
 Switch with a label, an optional description and a footer; Placement sets the side the switch sits on, Invalid shows critical helper text and Loading replaces the switch with a spinner.
 
-**Category** Form Controls · **Box** white · **Figma set** `SwitchGroup` (24 variants, page Switch & SwitchGroup (✓)  (D)) · [Figma](https://www.figma.com/design/7j5zukN5HpihGVJMmyjA20/?node-id=89-19) · [Storybook](https://escala-storybook.vercel.app/?path=/story/forms-switch--switch-group-playground)
+**Category** Form Controls · **Box** white · **Figma set** `SwitchGroup` (24 variants, page Switch & SwitchGroup (✓)  (D)) · [Figma](https://www.figma.com/design/7j5zukN5HpihGVJMmyjA20/?node-id=405-2153) · [Storybook](https://escala-storybook.vercel.app/?path=/story/forms-switch--switch-group-playground)
 
 ```tsx
 import { Switch, SwitchGroup } from 'src/components/escala-ui/switch'

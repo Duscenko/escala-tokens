@@ -4,7 +4,7 @@
 
 A compact trend next to a value, with no axes or gridlines: a monotone line over a soft area, with a dot on the last point. Default binds the neutral chart series; success and critical use the Status roles because they carry meaning; secondary is a quiet grey.
 
-**Category** Data Display · **Box** black · **Figma set** none (codeOnly) · [Storybook](https://escala-storybook.vercel.app/?path=/story/indicators-sparkline--playground)
+**Category** Data Display · **Box** black · **Figma set** `Sparkline` (12 variants, page Sparkline (PRO)) · [Figma](https://www.figma.com/design/7j5zukN5HpihGVJMmyjA20/?node-id=2399-90) · [Storybook](https://escala-storybook.vercel.app/?path=/story/indicators-sparkline--playground)
 
 ```tsx
 import { Sparkline } from 'src/components/escala-ui/sparkline'
@@ -16,6 +16,8 @@ import { Sparkline } from 'src/components/escala-ui/sparkline'
 |---|---|---|
 | Variant | default · secondary · success · critical | default |
 | Size | default · sm · lg | default |
+
+**Figma properties** AreaVisible (boolean) · DotVisible (boolean)
 
 ## Props
 

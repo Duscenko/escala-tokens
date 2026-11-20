@@ -4,7 +4,7 @@
 
 Five pill segments; Strength n fills the first n — critical, warning, warning pressed, success pressed, success.
 
-**Category** Form Controls · **Box** black · **Figma set** `PasswordStrengthMeter` (18 variants, page PasswordStrength (✓) (D)) · [Figma](https://www.figma.com/design/7j5zukN5HpihGVJMmyjA20/?node-id=89-14) · [Storybook](https://escala-storybook.vercel.app/?path=/story/forms-passwordstrength--password-strength-meter-playground)
+**Category** Form Controls · **Box** black · **Figma set** `PasswordStrengthMeter` (18 variants, page PasswordStrength (✓) (D)) · [Figma](https://www.figma.com/design/7j5zukN5HpihGVJMmyjA20/?node-id=417-131) · [Storybook](https://escala-storybook.vercel.app/?path=/story/forms-passwordstrength--password-strength-meter-playground)
 
 ```tsx
 import { PasswordStrength, PasswordStrengthMeter, PasswordStrengthRule } from 'src/components/escala-ui/password-strength'

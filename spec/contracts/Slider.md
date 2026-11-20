@@ -4,7 +4,7 @@
 
 Single or range value with an optional tooltip above the thumbs and tick marks under the track.
 
-**Category** Form Controls · **Box** gray · **Figma set** `Slider` (36 variants, page Slider (✓)  (D)) · [Figma](https://www.figma.com/design/7j5zukN5HpihGVJMmyjA20/?node-id=89-18) · [Storybook](https://escala-storybook.vercel.app/?path=/story/forms-slider--playground)
+**Category** Form Controls · **Box** gray · **Figma set** `Slider` (36 variants, page Slider (✓)  (D)) · [Figma](https://www.figma.com/design/7j5zukN5HpihGVJMmyjA20/?node-id=447-19) · [Storybook](https://escala-storybook.vercel.app/?path=/story/forms-slider--playground)
 
 ```tsx
 import { Slider, SliderThumb } from 'src/components/escala-ui/slider'

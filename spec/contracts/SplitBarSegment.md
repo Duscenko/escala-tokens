@@ -4,7 +4,7 @@
 
 One share of a SplitBar: Chart/series-n/soft fill, a Stroke/focus-wide Chart/series-n/solid edge on its right, label and value in Chart/series-n/content, Size/control-lg tall. No Hover colour: hovering or focusing widens it.
 
-**Category** Indicators · **Box** gray · **Figma set** none (codeOnly) · [Storybook](https://escala-storybook.vercel.app/?path=/story/indicators-splitbar--split-bar-segment-playground)
+**Category** Indicators · **Box** gray · **Figma set** `SplitBarSegment` (16 variants, page SplitBar (PRO)) · [Figma](https://www.figma.com/design/7j5zukN5HpihGVJMmyjA20/?node-id=2401-102) · [Storybook](https://escala-storybook.vercel.app/?path=/story/indicators-splitbar--split-bar-segment-playground)
 
 ```tsx
 import { SplitBar, SplitBarSegment, SplitBarLegendItem } from 'src/components/escala-ui/split-bar'
@@ -16,6 +16,8 @@ import { SplitBar, SplitBarSegment, SplitBarLegendItem } from 'src/components/es
 |---|---|---|
 | Series | 1 · 2 · 3 · 4 · 5 · 6 · 7 · 8 | 1 |
 | State | Default · Focused | Default |
+
+**Figma properties** Label (text) · LabelVisible (boolean) · Value (text) · ValueVisible (boolean)
 
 ## Props
 

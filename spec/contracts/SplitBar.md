@@ -4,11 +4,13 @@
 
 A single bar that is 100 % of something, cut into shares (SplitBarSegment) over a legend (SplitBarLegendItem) that turns each series on and off. The bar clips its segments to Radius/action; the legend wraps on Spacing/gap-group.
 
-**Category** Indicators · **Box** gray · **Figma set** none (codeOnly) · [Storybook](https://escala-storybook.vercel.app/?path=/story/indicators-splitbar--playground)
+**Category** Indicators · **Box** gray · **Figma set** `SplitBar` (1 variants, page SplitBar (PRO)) · [Figma](https://www.figma.com/design/7j5zukN5HpihGVJMmyjA20/?node-id=2401-248) · [Storybook](https://escala-storybook.vercel.app/?path=/story/indicators-splitbar--playground)
 
 ```tsx
 import { SplitBar, SplitBarSegment, SplitBarLegendItem } from 'src/components/escala-ui/split-bar'
 ```
+
+**Figma properties** Bar (slot) · Legend (slot) · LegendVisible (boolean)
 
 ## Props
 

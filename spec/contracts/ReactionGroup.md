@@ -4,7 +4,7 @@
 
 A lightweight acknowledgement under a post or comment: a wrapping row of reaction pills (the outline pill Chip, Selected when you reacted, its label the count), a trigger that opens the picker, and an optional summary line.
 
-**Category** Button & Actions · **Box** gray · **Figma set** `ReactionGroup` (1 variants, page ReactionGroup (PRO)) · [Figma](https://www.figma.com/design/7j5zukN5HpihGVJMmyjA20/?node-id=2381-42) · [Storybook](https://escala-storybook.vercel.app/?path=/story/buttons-reactiongroup--playground)
+**Category** Button & Actions · **Box** gray · **Figma set** `ReactionGroup` (1 variants, page ReactionGroup (PRO) (1)) · [Figma](https://www.figma.com/design/7j5zukN5HpihGVJMmyjA20/?node-id=2381-169) · [Storybook](https://escala-storybook.vercel.app/?path=/story/buttons-reactiongroup--playground)
 
 ```tsx
 import { ReactionGroup, ReactionGroupPopover, ReactionGroupTrigger } from 'src/components/escala-ui/reaction-group'

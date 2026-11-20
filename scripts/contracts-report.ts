@@ -25,7 +25,7 @@ const GITHUB = 'https://github.com/Duscenko/escala-tokens/blob/main'
 
 function links(c: ComponentContract): Record<string, string> {
   const out: Record<string, string> = { contract: `${GITHUB}/spec/contracts/${c.key}.json` }
-  if (c.figma.url) out.figma = c.figma.url
+  if (c.figma.setUrl ?? c.figma.url) out.figma = (c.figma.setUrl ?? c.figma.url)!
   if (c.code.story?.url) out.storybook = c.code.story.url
   return out
 }

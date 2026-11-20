@@ -4,7 +4,7 @@
 
 Text input trigger that opens a filterable listbox, with optional leading icon, clear button and trailing chevron.
 
-**Category** Form Controls · **Box** gray · **Figma set** `Combobox` (168 variants, page Combobox (✓) (D)) · [Figma](https://www.figma.com/design/7j5zukN5HpihGVJMmyjA20/?node-id=89-3) · [Storybook](https://escala-storybook.vercel.app/?path=/story/forms-combobox--playground)
+**Category** Form Controls · **Box** gray · **Figma set** `Combobox` (168 variants, page Combobox (✓) (D)) · [Figma](https://www.figma.com/design/7j5zukN5HpihGVJMmyjA20/?node-id=413-1478) · [Storybook](https://escala-storybook.vercel.app/?path=/story/forms-combobox--playground)
 
 ```tsx
 import { Combobox, ComboboxPopover, ComboboxItem, ComboboxGroup, ComboboxGroupLabel, ComboboxSeparator } from 'src/components/escala-ui/combobox'

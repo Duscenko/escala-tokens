@@ -4,7 +4,7 @@
 
 An overlapping stack of avatars, each in a Surface/page ring, ending in a +N tile.
 
-**Category** Content & Surfaces · **Box** gray · **Figma set** `AvatarGroup` (14 variants, page Avatar (✓) (D) (P)) · [Figma](https://www.figma.com/design/7j5zukN5HpihGVJMmyjA20/?node-id=89-21) · [Storybook](https://escala-storybook.vercel.app/?path=/story/content-surfaces-avatar--avatar-group-playground)
+**Category** Content & Surfaces · **Box** gray · **Figma set** `AvatarGroup` (14 variants, page Avatar (✓) (D) (P)) · [Figma](https://www.figma.com/design/7j5zukN5HpihGVJMmyjA20/?node-id=378-2507) · [Storybook](https://escala-storybook.vercel.app/?path=/story/content-surfaces-avatar--avatar-group-playground)
 
 ```tsx
 import { Avatar, AvatarStatus, AvatarGroup } from 'src/components/escala-ui/avatar'

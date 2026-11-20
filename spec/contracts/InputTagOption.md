@@ -4,7 +4,7 @@
 
 A suggestion row of the InputTag dropdown: an existing option or a create-new action.
 
-**Category** Form Controls · **Box** gray · **Figma set** `InputTagOption` (8 variants, page InputTag (✓)  (D)) · [Figma](https://www.figma.com/design/7j5zukN5HpihGVJMmyjA20/?node-id=89-8) · [Storybook](https://escala-storybook.vercel.app/?path=/story/forms-inputtag--input-tag-option-playground)
+**Category** Form Controls · **Box** gray · **Figma set** `InputTagOption` (8 variants, page InputTag (✓)  (D)) · [Figma](https://www.figma.com/design/7j5zukN5HpihGVJMmyjA20/?node-id=390-793) · [Storybook](https://escala-storybook.vercel.app/?path=/story/forms-inputtag--input-tag-option-playground)
 
 ```tsx
 import { InputTag, InputTagChip, InputTagOption } from 'src/components/escala-ui/input-tag'

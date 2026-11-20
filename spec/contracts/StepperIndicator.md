@@ -4,7 +4,7 @@
 
 Marker column or row of a Stepper step: a StepperIcon and the connector line tinted by status.
 
-**Category** Navigation · **Box** black · **Figma set** `StepperIndicator` (56 variants, page Stepper (✓) WIP) · [Figma](https://www.figma.com/design/7j5zukN5HpihGVJMmyjA20/?node-id=931-87054) · [Storybook](https://escala-storybook.vercel.app/?path=/story/navigation-stepper--stepper-indicator-playground)
+**Category** Navigation · **Box** black · **Figma set** `StepperIndicator` (56 variants, page Stepper (✓) WIP) · [Figma](https://www.figma.com/design/7j5zukN5HpihGVJMmyjA20/?node-id=994-850) · [Storybook](https://escala-storybook.vercel.app/?path=/story/navigation-stepper--stepper-indicator-playground)
 
 ```tsx
 import { Stepper, StepperIcon, StepperIndicator, StepperItem } from 'src/components/escala-ui/stepper'

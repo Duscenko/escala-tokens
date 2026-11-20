@@ -4,7 +4,7 @@
 
 The rail beside a range Calendar: a "PRESETS" label over quick ranges, the one matching the selection tinted like the range.
 
-**Category** Form Controls · **Box** gray · **Figma set** `CalendarPresets` (4 variants, page Calendar (✓) (D)) · [Figma](https://www.figma.com/design/7j5zukN5HpihGVJMmyjA20/?node-id=89-13) · [Storybook](https://escala-storybook.vercel.app/?path=/story/forms-calendar--calendar-presets-playground)
+**Category** Form Controls · **Box** gray · **Figma set** `CalendarPresets` (4 variants, page Calendar (✓) (D)) · [Figma](https://www.figma.com/design/7j5zukN5HpihGVJMmyjA20/?node-id=423-988) · [Storybook](https://escala-storybook.vercel.app/?path=/story/forms-calendar--calendar-presets-playground)
 
 ```tsx
 import { Calendar, CalendarDay, CalendarHeader, CalendarMonth, CalendarPresets, CalendarFooter } from 'src/components/escala-ui/calendar'

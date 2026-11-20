@@ -4,7 +4,7 @@
 
 Triggers an action or navigation. Variant is the intent — default (brand), secondary (neutral), critical (destructive) — and Appearance the style — solid, outline, ghost, link — in all 12 combinations, four sizes and six states.
 
-**Category** Button & Actions · **Box** gray · **Figma set** `Button` (288 variants, page Button (✓)  (D)) · [Figma](https://www.figma.com/design/7j5zukN5HpihGVJMmyjA20/?node-id=4-2185) · [Storybook](https://escala-storybook.vercel.app/?path=/story/buttons-button--playground)
+**Category** Button & Actions · **Box** gray · **Figma set** `Button` (288 variants, page Button (✓)  (D)) · [Figma](https://www.figma.com/design/7j5zukN5HpihGVJMmyjA20/?node-id=4-5066) · [Storybook](https://escala-storybook.vercel.app/?path=/story/buttons-button--playground)
 
 ```tsx
 import { Button } from 'src/components/escala-ui/button'

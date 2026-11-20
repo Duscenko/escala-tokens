@@ -4,7 +4,7 @@
 
 Overline heading for a group of items inside the DropdownMenu.
 
-**Category** Navigation · **Box** gray · **Figma set** `DropdownMenuLabel` (3 variants, page DropdownMenu (✓) (D)) · [Figma](https://www.figma.com/design/7j5zukN5HpihGVJMmyjA20/?node-id=912-77794) · [Storybook](https://escala-storybook.vercel.app/?path=/story/navigation-dropdownmenu--dropdown-menu-label-playground)
+**Category** Navigation · **Box** gray · **Figma set** `DropdownMenuLabel` (3 variants, page DropdownMenu (✓) (D)) · [Figma](https://www.figma.com/design/7j5zukN5HpihGVJMmyjA20/?node-id=947-169) · [Storybook](https://escala-storybook.vercel.app/?path=/story/navigation-dropdownmenu--dropdown-menu-label-playground)
 
 ```tsx
 import { DropdownMenu, DropdownMenuContent, DropdownMenuFooter, DropdownMenuGroup, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuShortcut, DropdownMenuTrigger } from 'src/components/escala-ui/dropdown-menu'

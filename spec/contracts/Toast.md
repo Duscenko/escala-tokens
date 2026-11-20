@@ -4,7 +4,7 @@
 
 A short, non-blocking confirmation over the page that dismisses itself: an icon told apart by severity, a title, an optional description, actions, a close and a progress hairline.
 
-**Category** Feedback · **Box** gray · **Figma set** `Toast` (24 variants, page Toast (✓) (D)) · [Figma](https://www.figma.com/design/7j5zukN5HpihGVJMmyjA20/?node-id=1117-2) · [Storybook](https://escala-storybook.vercel.app/?path=/story/feedback-toast--playground)
+**Category** Feedback · **Box** gray · **Figma set** `Toast` (24 variants, page Toast (✓) (D)) · [Figma](https://www.figma.com/design/7j5zukN5HpihGVJMmyjA20/?node-id=1117-114) · [Storybook](https://escala-storybook.vercel.app/?path=/story/feedback-toast--playground)
 
 ```tsx
 import { Toast, Toaster } from 'src/components/escala-ui/toast'

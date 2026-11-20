@@ -4,7 +4,7 @@
 
 Floating menu of commands opened from a trigger (a Button or IconButton): an optional search header, labelled groups of items and an optional footer.
 
-**Category** Navigation · **Box** white · **Figma set** `DropdownMenu` (3 variants, page DropdownMenu (✓) (D)) · [Figma](https://www.figma.com/design/7j5zukN5HpihGVJMmyjA20/?node-id=912-77794) · [Storybook](https://escala-storybook.vercel.app/?path=/story/navigation-dropdownmenu--playground)
+**Category** Navigation · **Box** white · **Figma set** `DropdownMenu` (3 variants, page DropdownMenu (✓) (D)) · [Figma](https://www.figma.com/design/7j5zukN5HpihGVJMmyjA20/?node-id=947-299) · [Storybook](https://escala-storybook.vercel.app/?path=/story/navigation-dropdownmenu--playground)
 
 ```tsx
 import { DropdownMenu, DropdownMenuContent, DropdownMenuFooter, DropdownMenuGroup, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuShortcut, DropdownMenuTrigger } from 'src/components/escala-ui/dropdown-menu'

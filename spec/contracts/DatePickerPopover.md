@@ -4,7 +4,7 @@
 
 The panel DatePickerTrigger opens: a Calendar with Radius/overlay and the Shadow/lg lift, 8 px below the trigger. Size default / sm, Mode single / range (range adds the presets rail).
 
-**Category** Form Controls · **Box** white · **Figma set** `DatePickerPopover` (4 variants, page DatePicker (✓) (D)) · [Figma](https://www.figma.com/design/7j5zukN5HpihGVJMmyjA20/?node-id=425-2) · [Storybook](https://escala-storybook.vercel.app/?path=/story/forms-datepicker--date-picker-popover-playground)
+**Category** Form Controls · **Box** white · **Figma set** `DatePickerPopover` (4 variants, page DatePicker (✓) (D)) · [Figma](https://www.figma.com/design/7j5zukN5HpihGVJMmyjA20/?node-id=425-2276) · [Storybook](https://escala-storybook.vercel.app/?path=/story/forms-datepicker--date-picker-popover-playground)
 
 ```tsx
 import { DatePicker, DatePickerTrigger, DatePickerPopover } from 'src/components/escala-ui/date-picker'

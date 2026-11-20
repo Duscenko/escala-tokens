@@ -4,7 +4,7 @@
 
 The dismiss control for alerts, toasts, dialogs and tags: one X in a square. Soft by default, with solid, outline and ghost; rounded, pill or square corners; five sizes; and an inverse variant for a dark chip.
 
-**Category** Button & Actions · **Box** gray · **Figma set** `CloseButton` (600 variants, page CloseButton (✓) (D)) · [Figma](https://www.figma.com/design/7j5zukN5HpihGVJMmyjA20/?node-id=335-2) · [Storybook](https://escala-storybook.vercel.app/?path=/story/buttons-closebutton--playground)
+**Category** Button & Actions · **Box** gray · **Figma set** `CloseButton` (600 variants, page CloseButton (✓) (D)) · [Figma](https://www.figma.com/design/7j5zukN5HpihGVJMmyjA20/?node-id=337-2762) · [Storybook](https://escala-storybook.vercel.app/?path=/story/buttons-closebutton--playground)
 
 ```tsx
 import { CloseButton } from 'src/components/escala-ui/close-button'

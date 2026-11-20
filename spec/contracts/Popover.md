@@ -4,7 +4,7 @@
 
 Non-modal floating panel anchored to a trigger for rich, interactive content: optional media, a title, a description, a content slot and a footer.
 
-**Category** Content & Surfaces · **Box** white · **Figma set** `Popover` (12 variants, page Popover (✓) (D)) · [Figma](https://www.figma.com/design/7j5zukN5HpihGVJMmyjA20/?node-id=931-87047) · [Storybook](https://escala-storybook.vercel.app/?path=/story/content-surfaces-popover--playground)
+**Category** Content & Surfaces · **Box** white · **Figma set** `Popover` (12 variants, page Popover (✓) (D)) · [Figma](https://www.figma.com/design/7j5zukN5HpihGVJMmyjA20/?node-id=973-364) · [Storybook](https://escala-storybook.vercel.app/?path=/story/content-surfaces-popover--playground)
 
 ```tsx
 import { Popover, PopoverAnchor, PopoverClose, PopoverContent, PopoverDescription, PopoverFooter, PopoverTitle, PopoverTrigger } from 'src/components/escala-ui/popover'

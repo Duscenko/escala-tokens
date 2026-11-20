@@ -4,7 +4,7 @@
 
 Non-interactive gap marker between page ranges.
 
-**Category** Navigation · **Box** gray · **Figma set** `PaginationEllipsis` (4 variants, page Pagination (✓) WIP) · [Figma](https://www.figma.com/design/7j5zukN5HpihGVJMmyjA20/?node-id=931-87052) · [Storybook](https://escala-storybook.vercel.app/?path=/story/navigation-pagination--pagination-ellipsis-playground)
+**Category** Navigation · **Box** gray · **Figma set** `PaginationEllipsis` (4 variants, page Pagination (✓) WIP) · [Figma](https://www.figma.com/design/7j5zukN5HpihGVJMmyjA20/?node-id=988-343) · [Storybook](https://escala-storybook.vercel.app/?path=/story/navigation-pagination--pagination-ellipsis-playground)
 
 ```tsx
 import { Pagination, PaginationEllipsis, PaginationLink, PaginationScope } from 'src/components/escala-ui/pagination'

@@ -4,7 +4,7 @@
 
 Group of buttons that switches between sibling views or routes: a line layout (hairline track and accent bar) or a button layout (selected item filled), horizontal or vertical.
 
-**Category** Navigation · **Box** gray · **Figma set** `TabMenu` (12 variants, page TabMenu (✓) WIP) · [Figma](https://www.figma.com/design/7j5zukN5HpihGVJMmyjA20/?node-id=931-87049) · [Storybook](https://escala-storybook.vercel.app/?path=/story/navigation-tabmenu--playground)
+**Category** Navigation · **Box** gray · **Figma set** `TabMenu` (12 variants, page TabMenu (✓) WIP) · [Figma](https://www.figma.com/design/7j5zukN5HpihGVJMmyjA20/?node-id=984-1830) · [Storybook](https://escala-storybook.vercel.app/?path=/story/navigation-tabmenu--playground)
 
 ```tsx
 import { TabMenu, TabMenuItem, TabMenuLineItem } from 'src/components/escala-ui/tab-menu'

@@ -4,7 +4,7 @@
 
 Drop area that opens the file picker on click and accepts dragged files; the Choose file trigger is a Button.
 
-**Category** Form Controls · **Box** white · **Figma set** `FileUploadDropzone` (15 variants, page FileUpload (✓)  WIP) · [Figma](https://www.figma.com/design/7j5zukN5HpihGVJMmyjA20/?node-id=931-88585) · [Storybook](https://escala-storybook.vercel.app/?path=/story/forms-fileupload--file-upload-dropzone-playground)
+**Category** Form Controls · **Box** white · **Figma set** `FileUploadDropzone` (15 variants, page FileUpload (✓)  (D)) · [Figma](https://www.figma.com/design/7j5zukN5HpihGVJMmyjA20/?node-id=994-472) · [Storybook](https://escala-storybook.vercel.app/?path=/story/forms-fileupload--file-upload-dropzone-playground)
 
 ```tsx
 import { FileUploadDropzone, FileUploadItem, FileUpload } from 'src/components/escala-ui/file-upload'

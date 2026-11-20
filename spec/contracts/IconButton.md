@@ -4,7 +4,7 @@
 
 An action with a single icon and no visible label: a square at the Button heights. Same Variant × Appearance grammar as Button, four sizes and six states, with an optional badge for a count or a dot.
 
-**Category** Button & Actions · **Box** gray · **Figma set** `IconButton` (288 variants, page IconButton (✓) (D)) · [Figma](https://www.figma.com/design/7j5zukN5HpihGVJMmyjA20/?node-id=627-785) · [Storybook](https://escala-storybook.vercel.app/?path=/story/buttons-iconbutton--playground)
+**Category** Button & Actions · **Box** gray · **Figma set** `IconButton` (288 variants, page IconButton (✓) (D)) · [Figma](https://www.figma.com/design/7j5zukN5HpihGVJMmyjA20/?node-id=614-785) · [Storybook](https://escala-storybook.vercel.app/?path=/story/buttons-iconbutton--playground)
 
 ```tsx
 import { Button } from 'src/components/escala-ui/button'

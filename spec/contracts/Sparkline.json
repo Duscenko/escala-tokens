@@ -19,16 +19,39 @@
   },
   "figma": {
     "file": "7j5zukN5HpihGVJMmyjA20",
-    "page": null,
-    "pageNodeId": null,
-    "set": null,
-    "variants": null,
-    "axes": null,
-    "properties": null,
+    "page": "Sparkline (PRO)",
+    "pageNodeId": "2397:79",
+    "set": "Sparkline",
+    "variants": 12,
+    "axes": {
+      "Size": [
+        "default",
+        "sm",
+        "lg"
+      ],
+      "Variant": [
+        "default",
+        "secondary",
+        "success",
+        "critical"
+      ]
+    },
+    "properties": [
+      {
+        "name": "AreaVisible",
+        "type": "BOOLEAN"
+      },
+      {
+        "name": "DotVisible",
+        "type": "BOOLEAN"
+      }
+    ],
     "catalogueSets": [
       "Sparkline"
     ],
-    "url": null
+    "url": "https://www.figma.com/design/7j5zukN5HpihGVJMmyjA20/?node-id=2397-79",
+    "setNodeId": "2399:90",
+    "setUrl": "https://www.figma.com/design/7j5zukN5HpihGVJMmyjA20/?node-id=2399-90"
   },
   "api": {
     "axes": [

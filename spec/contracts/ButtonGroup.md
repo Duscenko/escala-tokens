@@ -4,7 +4,7 @@
 
 A joined row or column of up to five ButtonGroupItem segments sharing one surface, outer radius and Shadow/xs. The group sets every segment's Variant and Size and puts a ButtonGroupDivider between them.
 
-**Category** Button & Actions · **Box** gray · **Figma set** `ButtonGroup` (100 variants, page ButtonGroup (✓) (D) ) · [Figma](https://www.figma.com/design/7j5zukN5HpihGVJMmyjA20/?node-id=350-2) · [Storybook](https://escala-storybook.vercel.app/?path=/story/buttons-buttongroup--playground)
+**Category** Button & Actions · **Box** gray · **Figma set** `ButtonGroup` (100 variants, page ButtonGroup (✓) (D) ) · [Figma](https://www.figma.com/design/7j5zukN5HpihGVJMmyjA20/?node-id=351-8921) · [Storybook](https://escala-storybook.vercel.app/?path=/story/buttons-buttongroup--playground)
 
 ```tsx
 import { ButtonGroup, ButtonGroupItem, ButtonGroupDivider } from 'src/components/escala-ui/button-group'

@@ -4,7 +4,7 @@
 
 Product logo, name and an optional version Badge.
 
-**Category** Navigation · **Box** gray · **Figma set** `Brand` (2 variants, page Brand (✓) WIP) · [Figma](https://www.figma.com/design/7j5zukN5HpihGVJMmyjA20/?node-id=1098-2) · [Storybook](https://escala-storybook.vercel.app/?path=/story/navigation-brand--playground)
+**Category** Navigation · **Box** gray · **Figma set** `Brand` (2 variants, page Brand (✓) WIP) · [Figma](https://www.figma.com/design/7j5zukN5HpihGVJMmyjA20/?node-id=1098-42) · [Storybook](https://escala-storybook.vercel.app/?path=/story/navigation-brand--playground)
 
 ```tsx
 import { Brand } from 'src/components/escala-ui/brand'

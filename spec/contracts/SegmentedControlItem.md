@@ -4,7 +4,7 @@
 
 One option of a SegmentedControl. Checked shows a raised Surface/input thumb with Shadow/xs on the Surface/muted track.
 
-**Category** Navigation · **Box** gray · **Figma set** `SegmentedControlItem` (30 variants, page SegmentedControl (✓)  (D)) · [Figma](https://www.figma.com/design/7j5zukN5HpihGVJMmyjA20/?node-id=1102-4960) · [Storybook](https://escala-storybook.vercel.app/?path=/story/navigation-segmentedcontrol--segmented-control-item-playground)
+**Category** Navigation · **Box** gray · **Figma set** `SegmentedControlItem` (30 variants, page SegmentedControl (✓)  (D)) · [Figma](https://www.figma.com/design/7j5zukN5HpihGVJMmyjA20/?node-id=1102-5087) · [Storybook](https://escala-storybook.vercel.app/?path=/story/navigation-segmentedcontrol--segmented-control-item-playground)
 
 ```tsx
 import { SegmentedControl, SegmentedControlItem } from 'src/components/escala-ui/segmented-control'

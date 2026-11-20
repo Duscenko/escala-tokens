@@ -4,7 +4,7 @@
 
 An input-styled button that opens the date picker popover: the calendar glyph and the placeholder or the formatted date.
 
-**Category** Form Controls · **Box** gray · **Figma set** `DatePickerTrigger` (36 variants, page DatePicker (✓) (D)) · [Figma](https://www.figma.com/design/7j5zukN5HpihGVJMmyjA20/?node-id=425-2) · [Storybook](https://escala-storybook.vercel.app/?path=/story/forms-datepicker--date-picker-trigger-playground)
+**Category** Form Controls · **Box** gray · **Figma set** `DatePickerTrigger` (36 variants, page DatePicker (✓) (D)) · [Figma](https://www.figma.com/design/7j5zukN5HpihGVJMmyjA20/?node-id=425-199) · [Storybook](https://escala-storybook.vercel.app/?path=/story/forms-datepicker--date-picker-trigger-playground)
 
 ```tsx
 import { DatePicker, DatePickerTrigger, DatePickerPopover } from 'src/components/escala-ui/date-picker'

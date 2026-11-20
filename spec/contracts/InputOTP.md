@@ -4,7 +4,7 @@
 
 A one-time code field: a row of InputOTPSlots over one hidden input, with a separator between the halves of a 6- or 8-digit code. Paste fills every slot.
 
-**Category** Form Controls · **Box** gray · **Figma set** `InputOTP` (135 variants, page InputOTP (✓) (D)) · [Figma](https://www.figma.com/design/7j5zukN5HpihGVJMmyjA20/?node-id=89-6) · [Storybook](https://escala-storybook.vercel.app/?path=/story/forms-inputotp--playground)
+**Category** Form Controls · **Box** gray · **Figma set** `InputOTP` (135 variants, page InputOTP (✓) (D)) · [Figma](https://www.figma.com/design/7j5zukN5HpihGVJMmyjA20/?node-id=416-994) · [Storybook](https://escala-storybook.vercel.app/?path=/story/forms-inputotp--playground)
 
 ```tsx
 import { InputOTP, InputOTPGroup, InputOTPSeparator, InputOTPSlot } from 'src/components/escala-ui/input-otp'

@@ -4,7 +4,7 @@
 
 An inline link for navigation and in-flow actions: a label with an optional icon on either side and a 1px underline. Six variants (brand, neutral, inverse and three status), four sizes and six states.
 
-**Category** Button & Actions · **Box** gray · **Figma set** `TextLink` (144 variants, page TextLink (✓) (D)) · [Figma](https://www.figma.com/design/7j5zukN5HpihGVJMmyjA20/?node-id=342-14798) · [Storybook](https://escala-storybook.vercel.app/?path=/story/buttons-textlink--playground)
+**Category** Button & Actions · **Box** gray · **Figma set** `TextLink` (144 variants, page TextLink (✓) (D)) · [Figma](https://www.figma.com/design/7j5zukN5HpihGVJMmyjA20/?node-id=358-6494) · [Storybook](https://escala-storybook.vercel.app/?path=/story/buttons-textlink--playground)
 
 ```tsx
 import { TextLink } from 'src/components/escala-ui/text-link'

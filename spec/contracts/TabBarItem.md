@@ -4,7 +4,7 @@
 
 One destination of a TabBar: an icon (or an Avatar) in a pill over a short label, with an optional unread count. Current fills the pill Surface/selected.
 
-**Category** Navigation · **Box** gray · **Figma set** `TabBarItem` (5 variants, page TabBar) · [Figma](https://www.figma.com/design/7j5zukN5HpihGVJMmyjA20/?node-id=2354-42) · [Storybook](https://escala-storybook.vercel.app/?path=/story/navigation-tabbar--tab-bar-item-playground)
+**Category** Navigation · **Box** gray · **Figma set** `TabBarItem` (5 variants, page TabBar) · [Figma](https://www.figma.com/design/7j5zukN5HpihGVJMmyjA20/?node-id=2354-84) · [Storybook](https://escala-storybook.vercel.app/?path=/story/navigation-tabbar--tab-bar-item-playground)
 
 ```tsx
 import { TabBar, TabBarItem } from 'src/components/escala-ui/tab-bar'

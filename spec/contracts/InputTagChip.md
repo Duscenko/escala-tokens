@@ -4,7 +4,7 @@
 
 One removable tag of an InputTag; the critical variant marks tags past the maximum.
 
-**Category** Form Controls · **Box** gray · **Figma set** `InputTagChip` (40 variants, page InputTag (✓)  (D)) · [Figma](https://www.figma.com/design/7j5zukN5HpihGVJMmyjA20/?node-id=89-8) · [Storybook](https://escala-storybook.vercel.app/?path=/story/forms-inputtag--input-tag-chip-playground)
+**Category** Form Controls · **Box** gray · **Figma set** `InputTagChip` (40 variants, page InputTag (✓)  (D)) · [Figma](https://www.figma.com/design/7j5zukN5HpihGVJMmyjA20/?node-id=388-235) · [Storybook](https://escala-storybook.vercel.app/?path=/story/forms-inputtag--input-tag-chip-playground)
 
 ```tsx
 import { InputTag, InputTagChip, InputTagOption } from 'src/components/escala-ui/input-tag'

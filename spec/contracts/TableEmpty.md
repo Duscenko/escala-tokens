@@ -4,7 +4,7 @@
 
 The empty state of a table: icon, title, description and an action.
 
-**Category** Content & Surfaces · **Box** gray · **Figma set** `TableEmpty` (1 variants, page Table) · [Figma](https://www.figma.com/design/7j5zukN5HpihGVJMmyjA20/?node-id=1023-120189) · [Storybook](https://escala-storybook.vercel.app/?path=/story/content-surfaces-table--table-empty-playground)
+**Category** Content & Surfaces · **Box** gray · **Figma set** `TableEmpty` (1 variants, page Table) · [Figma](https://www.figma.com/design/7j5zukN5HpihGVJMmyjA20/?node-id=1034-8130) · [Storybook](https://escala-storybook.vercel.app/?path=/story/content-surfaces-table--table-empty-playground)
 
 ```tsx
 import { Table, TableHeader, TableBody, TableFooter, TableHead, TableRow, TableCell, TableMediaCell, TableTrendCell, TableResizer, TableCaption, TableDropIndicator, TableEmpty, TableLoading, TableLoadMore } from 'src/components/escala-ui/table'

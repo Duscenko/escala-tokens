@@ -4,7 +4,7 @@
 
 Scrollable viewport with overlay ScrollBars and an optional fade at the scroll end. Size and Appearance cascade to the bars.
 
-**Category** Content & Surfaces · **Box** white · **Figma set** `ScrollArea` (18 variants, page ScrollArea (✓) WIP) · [Figma](https://www.figma.com/design/7j5zukN5HpihGVJMmyjA20/?node-id=931-87048) · [Storybook](https://escala-storybook.vercel.app/?path=/story/content-surfaces-scrollarea--playground)
+**Category** Content & Surfaces · **Box** white · **Figma set** `ScrollArea` (18 variants, page ScrollArea (✓) WIP) · [Figma](https://www.figma.com/design/7j5zukN5HpihGVJMmyjA20/?node-id=977-572) · [Storybook](https://escala-storybook.vercel.app/?path=/story/content-surfaces-scrollarea--playground)
 
 ```tsx
 import { ScrollArea, ScrollAreaRow, ScrollBar } from 'src/components/escala-ui/scroll-area'

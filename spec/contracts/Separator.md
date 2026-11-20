@@ -4,7 +4,7 @@
 
 Thin rule that divides content, horizontal or vertical, solid or dashed, with an optional label at its start, centre or end.
 
-**Category** Content & Surfaces · **Box** black · **Figma set** `Separator` (48 variants, page Separator (✓) WIP) · [Figma](https://www.figma.com/design/7j5zukN5HpihGVJMmyjA20/?node-id=89-24) · [Storybook](https://escala-storybook.vercel.app/?path=/story/content-surfaces-separator--playground)
+**Category** Content & Surfaces · **Box** black · **Figma set** `Separator` (48 variants, page Separator (✓) WIP) · [Figma](https://www.figma.com/design/7j5zukN5HpihGVJMmyjA20/?node-id=402-9063) · [Storybook](https://escala-storybook.vercel.app/?path=/story/content-surfaces-separator--playground)
 
 ```tsx
 import { Separator } from 'src/components/escala-ui/separator'
