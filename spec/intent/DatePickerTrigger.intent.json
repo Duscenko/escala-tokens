@@ -1,0 +1,39 @@
+{
+  "$schema": "./intent.schema.json",
+  "component": "DatePickerTrigger",
+  "purpose": "An input-styled button that opens the date picker without leaving the form, showing the calendar glyph and either the placeholder or the chosen date.",
+  "notFor": [
+    { "case": "A date panel that is always visible on the page.", "use": "Calendar" },
+    { "case": "A known date, such as a birthday, typed faster than picked.", "use": "Input" },
+    { "case": "Picking from a list of options that are not dates.", "use": "Combobox" }
+  ],
+  "states": {
+    "Default": { "setBy": "component", "meaning": "At rest.", "visual": "Surface/input box with a Border/control edge; glyph and placeholder in Content/subtle, date in Content/primary." },
+    "Hover": { "setBy": "component", "visual": "The edge moves to Border/control-hover." },
+    "Focused": { "setBy": "component", "meaning": "Reached by keyboard.", "visual": "Border/focus edge with a Border/ring/default halo." },
+    "Invalid": { "setBy": "app", "meaning": "The date failed validation (aria-invalid).", "visual": "Status/critical/border-strong edge." },
+    "Disabled": { "setBy": "app", "meaning": "Cannot be opened.", "visual": "Surface/muted fill; glyph, date and placeholder in Content/disabled." },
+    "Loading": { "setBy": "app", "meaning": "Dates are being fetched (aria-busy).", "visual": "The Default look with a spinner in Content/subtle in place of the glyph." },
+    "Value=placeholder": { "setBy": "user", "meaning": "No date chosen.", "visual": "Placeholder (\"Select date\") in Content/subtle." },
+    "Value=filled": { "setBy": "user", "meaning": "A date is chosen.", "visual": "The formatted date in Content/primary." }
+  },
+  "a11y": {
+    "role": "button with aria-haspopup=\"dialog\", opening a non-modal Radix Popover",
+    "keyboard": "Tab reaches it; Space or Enter opens and closes the picker; Escape closes it and returns focus here.",
+    "minHitArea": 24,
+    "contrast": "AA",
+    "reducedMotion": "NOT DECIDED",
+    "notes": [
+      "Its text is the chosen date, so no separate label is read; pair it with a Label (Field).",
+      "Expose the error through aria-describedby.",
+      "The edge moves with use-hover and the halo with use-focus."
+    ]
+  },
+  "openQuestions": [
+    "Date colour: Figma paints the date text Content/subtle in 15 variants, the contract uses Content/primary. Which is right? (finding PAR-001 DatePickerTrigger text.text)",
+    "Invalid: Figma draws no halo on Invalid, unlike Input. Intended?",
+    "Accessible name: when a date is chosen the button reads only the date. Should the field's label also be part of its name (aria-labelledby)?",
+    "Reduced motion: should the edge and halo transitions (use-hover, use-focus) be instant with reduced motion?"
+  ],
+  "approval": { "status": "draft", "by": null, "date": null }
+}

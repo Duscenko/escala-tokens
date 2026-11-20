@@ -1,0 +1,34 @@
+{
+  "$schema": "./intent.schema.json",
+  "component": "TableRow",
+  "purpose": "One body row of a Table: a strip of cells with a hairline under it and its own states for hover, selection, focus, disabled and drag.",
+  "notFor": [
+    {"case": "The header row with the column names.", "use": "TableHeader"},
+    {"case": "The totals row.", "use": "TableFooter"},
+    {"case": "Not for standalone use outside a Table.", "use": "Table"},
+    {"case": "A card people drag between lanes on a board.", "use": "IssueCard"}
+  ],
+  "states": {
+    "Default": {"setBy": "component", "meaning": "At rest.", "visual": "No fill; a bottom hairline in Border/subtle (Stroke/divider)."},
+    "Hover": {"setBy": "component", "meaning": "The pointer is over an interactive row; only selectable or actionable rows hover.", "visual": "Fill Action/ghost/hover on use-hover."},
+    "Selected": {"setBy": "both", "meaning": "Chosen; sets aria-selected.", "visual": "Fill Surface/selected."},
+    "Focused": {"setBy": "component", "meaning": "An interactive row reached by keyboard (focus-visible).", "visual": "No fill; a Border/focus stroke at Stroke/focus all round in place of the bottom hairline."},
+    "Disabled": {"setBy": "app", "meaning": "Cannot be used: sets aria-disabled and skips its action.", "visual": "Same as Default; the cells carry their own Disabled ink."},
+    "Dragging": {"setBy": "both", "meaning": "The row is being moved.", "visual": "Fill Surface/layer-2 with a Border/default stroke (Stroke/divider) all round."}
+  },
+  "a11y": {
+    "role": "row",
+    "keyboard": "Not focusable unless it is interactive (interactive / onClick); then Tab reaches it. The contract does not say which keys act on it.",
+    "minHitArea": 24,
+    "contrast": "AA",
+    "reducedMotion": "Fill and ink changes run on use-hover, which keeps its duration under reduced motion: a colour change, not travel (lib/motion.ts KEEP_UNDER_REDUCED).",
+    "notes": [
+      "While a row is dragged, announce the move through a live region; TableDropIndicator is decorative."
+    ]
+  },
+  "openQuestions": [
+    "Keyboard: Table's behaviour says rows never take focus, yet TableRow has a Focused state for interactive rows. Which keys act on a focused row (Enter to open, Space to select)?",
+    "Reordering: is there a keyboard way to move a row, or is Dragging pointer-only?"
+  ],
+  "approval": { "status": "draft", "by": null, "date": null }
+}

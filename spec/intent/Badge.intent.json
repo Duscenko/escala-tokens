@@ -1,0 +1,51 @@
+{
+  "$schema": "./intent.schema.json",
+  "component": "Badge",
+  "purpose": "A small, non-interactive label for a status, a count or a category, coloured by severity. Use it to tag or count, never to act.",
+  "notFor": [
+    {
+      "case": "A filter or selection the person can toggle or remove.",
+      "use": "Chip"
+    },
+    {
+      "case": "Triggering an action.",
+      "use": "Button"
+    },
+    {
+      "case": "A person's presence (online, away) on an avatar.",
+      "use": "AvatarStatus"
+    },
+    {
+      "case": "A message that needs a title, text or actions.",
+      "use": "Alert"
+    }
+  ],
+  "states": {
+    "Default": {
+      "setBy": "component",
+      "meaning": "Static; Variant and Appearance set the look.",
+      "visual": "soft: Status/<severity>/surface fill with Status/<severity>/content text; solid: Status/<severity>/surface-solid with Status/<severity>/on-solid; outline: no fill, Status/<severity>/border edge, Status/<severity>/content text; ghost: text only. A dot is always solid."
+    }
+  },
+  "a11y": {
+    "role": "none (static text)",
+    "keyboard": "Not focusable: a label, never a control.",
+    "minHitArea": 24,
+    "contrast": "AA",
+    "reducedMotion": "NOT DECIDED",
+    "notes": [
+      "Colour is never the only signal: the label says what it means. An icon-only badge needs an accessible name.",
+      "Fill, text and edge move on use-hover when the app changes the variant (recipes/motion.ts)."
+    ]
+  },
+  "openQuestions": [
+    "Reduced motion: should the colour transitions (use-hover) be dropped?",
+    "Badge xs and sm heights are bound to Dimension primitives, not a role. Which role should they use? (finding TOK-002 Badge xs / sm height)",
+    "Usage points to \"Status Badge\" for presence; there is no such component. Is AvatarStatus the intended one?"
+  ],
+  "approval": {
+    "status": "draft",
+    "by": null,
+    "date": null
+  }
+}

@@ -1,0 +1,29 @@
+{
+  "$schema": "./intent.schema.json",
+  "component": "ModalFooter",
+  "purpose": "Holds a Modal's actions at the bottom of the card, primary last, with an optional step counter or link at the start. It is also the SheetFooter of a Sheet.",
+  "notFor": [
+    {"case": "Actions at the bottom of a Popover panel.", "use": "PopoverFooter"},
+    {"case": "Actions at the bottom of a dropdown menu.", "use": "DropdownMenuFooter"},
+    {"case": "A row of related buttons outside a dialog.", "use": "ButtonGroup"}
+  ],
+  "states": {
+    "Default": {"setBy": "component", "meaning": "At rest; it has no interactive state of its own.", "visual": "Actions row; the leading text in Content/secondary (Type/caption). Surface plain draws a top hairline in Border/subtle (Stroke/divider); tray and simple drop it (Stroke/none) and simple also removes the padding (Spacing/0)."}
+  },
+  "a11y": {
+    "role": "None of its own: a region inside the Modal's dialog (Radix Dialog).",
+    "keyboard": "No keys of its own. Inside the open Modal, Tab / Shift+Tab cycle through its buttons in the focus trap; Escape closes the dialog and returns focus to the trigger.",
+    "minHitArea": 24,
+    "contrast": "AA",
+    "notes": [
+      "Put the primary action last in inline order; the buttons keep their own focus order.",
+      "Stacked gives full-width buttons for narrow viewports."
+    ]
+  },
+  "openQuestions": [
+    "Top stroke: Figma draws none on ModalFooter (6 variants, e.g. node 966:26) while the contract binds Border/subtle. Which is right? (finding PAR-001 ModalFooter root.stroke)",
+    "Surface (plain · tray · simple) is a code axis with no Figma variant, and the Storybook control does not match it (finding PAR-001 ModalFooter story/Surface). Should Surface become a Figma axis, or stay code-only?",
+    "The layout prop is typed 'inline' | 'stacked' but the Figma Layout axis also has equal. When is equal used, and should the prop accept it?"
+  ],
+  "approval": { "status": "draft", "by": null, "date": null }
+}

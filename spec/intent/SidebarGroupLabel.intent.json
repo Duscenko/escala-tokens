@@ -1,0 +1,42 @@
+{
+  "$schema": "./intent.schema.json",
+  "component": "SidebarGroupLabel",
+  "purpose": "The short heading that names a group of Sidebar rows; it hides while the Sidebar is collapsed. Not for standalone use.",
+  "notFor": [
+    {
+      "case": "Used on its own, outside a SidebarGroup.",
+      "use": "SidebarGroup"
+    },
+    {
+      "case": "A heading inside a DropdownMenu.",
+      "use": "DropdownMenuLabel"
+    },
+    {
+      "case": "A form field label.",
+      "use": "Label"
+    }
+  ],
+  "states": {
+    "Default": {
+      "setBy": "component",
+      "visual": "Caption text in Content/secondary, in its original case."
+    }
+  },
+  "a11y": {
+    "role": "none",
+    "keyboard": "None: not focusable.",
+    "minHitArea": 24,
+    "contrast": "AA",
+    "notes": [
+      "It is the label of the group (aria-labelledby)."
+    ]
+  },
+  "openQuestions": [
+    "The Figma description says uppercase but the text case is original. Which is right?"
+  ],
+  "approval": {
+    "status": "draft",
+    "by": null,
+    "date": null
+  }
+}

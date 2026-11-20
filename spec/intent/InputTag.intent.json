@@ -1,0 +1,38 @@
+{
+  "$schema": "./intent.schema.json",
+  "component": "InputTag",
+  "purpose": "Collects several open-ended values, such as emails or labels, turning each entry into a removable chip inline in the field or stacked outside it.",
+  "notFor": [
+    { "case": "Values chosen from a known list.", "use": "Combobox" },
+    { "case": "A single free-text value.", "use": "Input" },
+    { "case": "Quick reactions under a post.", "use": "ReactionGroup" }
+  ],
+  "states": {
+    "Default": { "setBy": "component", "meaning": "At rest.", "visual": "Surface/input box with a Border/control edge; typed text in Content/primary, placeholder in Content/subtle." },
+    "Hover": { "setBy": "component", "visual": "The edge moves to Border/control-hover." },
+    "Focused": { "setBy": "component", "meaning": "The text input has focus.", "visual": "Border/focus edge with a Border/ring/default halo." },
+    "Invalid": { "setBy": "app", "meaning": "The values failed validation (aria-invalid).", "visual": "Status/critical/border-strong edge with a Status/critical/border halo." },
+    "Disabled": { "setBy": "app", "meaning": "Cannot be edited.", "visual": "Action/disabled/default fill; placeholder in Content/disabled; chips go Disabled." },
+    "Loading": { "setBy": "app", "meaning": "Work on the values is running (aria-busy).", "visual": "The Default look with a spinner." },
+    "Value=placeholder": { "setBy": "user", "meaning": "No tags yet.", "visual": "Placeholder in Content/subtle." },
+    "Value=filled": { "setBy": "user", "meaning": "Holds tags.", "visual": "InputTagChips; tags past max are drawn critical." }
+  },
+  "a11y": {
+    "role": "textbox (native text input); chips are removable tags with their own remove buttons",
+    "keyboard": "Tab reaches the text input; each chip's remove button is its own tab stop. Enter or comma commits the draft as a tag; Backspace on an empty draft takes the last tag back.",
+    "minHitArea": 24,
+    "contrast": "AA",
+    "reducedMotion": "NOT DECIDED",
+    "notes": [
+      "Each remove button is named \"Remove {tag}\".",
+      "Keep a visible label (Field) and expose the error through aria-describedby.",
+      "Clicking anywhere in the box focuses the text input."
+    ]
+  },
+  "openQuestions": [
+    "Announcements: the contract says added and removed tags must be announced, but names no live region. Who announces them, and with what words?",
+    "Reduced motion: should the edge and halo transitions (use-hover, use-focus) be instant with reduced motion?",
+    "Over max: tags past max are drawn critical. Is the field also Invalid then, or only the extra chips?"
+  ],
+  "approval": { "status": "draft", "by": null, "date": null }
+}

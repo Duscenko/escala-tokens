@@ -1,0 +1,63 @@
+{
+  "$schema": "./intent.schema.json",
+  "component": "StepperIcon",
+  "purpose": "The round marker of a Stepper step: its number or icon while active or locked, a check when completed and a warning on error. Not for standalone use.",
+  "notFor": [
+    {
+      "case": "Used on its own, outside a StepperIndicator.",
+      "use": "StepperIndicator"
+    },
+    {
+      "case": "A decorative icon in a tinted circle.",
+      "use": "FeaturedIcon"
+    },
+    {
+      "case": "A count or label chip.",
+      "use": "Badge"
+    }
+  ],
+  "states": {
+    "Status=active": {
+      "setBy": "app",
+      "visual": "Fill Action/primary/default, number or icon in Content/on-action."
+    },
+    "Status=completed": {
+      "setBy": "app",
+      "visual": "Fill Surface/accent, an automatic check in Content/accent."
+    },
+    "Status=error": {
+      "setBy": "app",
+      "visual": "Fill Status/critical/surface-solid, an automatic warning in Status/critical/on-solid."
+    },
+    "Status=locked": {
+      "setBy": "app",
+      "visual": "Fill Surface/muted, number in Content/secondary."
+    },
+    "Default": {
+      "setBy": "component",
+      "visual": "The colours of its Status."
+    },
+    "Disabled": {
+      "setBy": "app",
+      "visual": "Fill Action/disabled/default, glyph Content/disabled for every Status."
+    }
+  },
+  "a11y": {
+    "role": "presentation",
+    "keyboard": "None: not focusable.",
+    "minHitArea": 24,
+    "contrast": "AA",
+    "notes": [
+      "Completed and error markers carry a screen-reader-only \"Completed\" / \"Error\"."
+    ]
+  },
+  "openQuestions": [
+    "Motion: the State axis has no motion decision and recipes/motion.ts has no entry (finding MOT-002). Should the marker change animate?",
+    "A locked step shows its number on Surface/muted, not a lock icon. Is that intended?"
+  ],
+  "approval": {
+    "status": "draft",
+    "by": null,
+    "date": null
+  }
+}

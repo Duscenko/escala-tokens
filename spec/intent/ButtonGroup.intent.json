@@ -1,0 +1,30 @@
+{
+  "$schema": "./intent.schema.json",
+  "component": "ButtonGroup",
+  "purpose": "Joins two to five related actions or views into one control that shares a surface and an outer edge, such as Previous, Today, Next or Day, Week, Month. The group sets every segment's Variant and Size.",
+  "notFor": [
+    { "case": "One primary action with related alternatives behind a menu.", "use": "SplitButton" },
+    { "case": "Switching between two or three short, mutually exclusive views where one must always be chosen.", "use": "SegmentedControl" },
+    { "case": "A single standalone action.", "use": "Button" },
+    { "case": "Unrelated actions that only happen to sit side by side.", "use": "none" }
+  ],
+  "states": {
+    "Default": { "setBy": "component", "meaning": "The group has no states of its own; each segment carries its own (ButtonGroupItem).", "visual": "Segments share the outer radius; outline draws a Border/control edge around the group; a ButtonGroupDivider sits between segments." }
+  },
+  "a11y": {
+    "role": "group, with an aria-label supplied by the app",
+    "keyboard": "Tab moves through the segments one by one; Enter or Space activates the focused one (native buttons).",
+    "minHitArea": 24,
+    "contrast": "AA",
+    "notes": [
+      "A selected segment carries aria-pressed (ButtonGroupItem active).",
+      "Icon-only segments need an aria-label.",
+      "Shape pill is horizontal only."
+    ]
+  },
+  "openQuestions": [
+    "Keyboard: should the group be one tab stop with arrow keys between segments (toolbar pattern), or keep one tab stop per segment as now?",
+    "Selection: when segments act as views (Day · Week · Month), may more than one be active at once, and who enforces it?"
+  ],
+  "approval": { "status": "draft", "by": null, "date": null }
+}

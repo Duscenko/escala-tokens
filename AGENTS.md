@@ -94,3 +94,93 @@ Plugin: `cd ../escala-figma-plugin && npm run build`.
 - `components` as the export field name
 - Style Dictionary / Terrazzo as the pipeline
 - A phone editor layout, or a copy of `CLAUDE.md` into this file
+
+<!-- escala-orchestration v3: begin -->
+## Escala orchestration (lead session rules) — v3, 2026-11-20
+
+> It turns the main Claude Code
+> session into the **lead**: it receives César's request, picks the right helper, and checks the result.
+> The full protocol is the `escala-governance` skill. This section only routes work; it never overrides that skill.
+
+### 0. The three Figma files
+
+| File | Key | Role | Who writes |
+|---|---|---|---|
+| Escala design system (core library) | `7j5zukN5HpihGVJMmyjA20` | Foundations + official components | César: variables and styles only. `library-sync`: components |
+| Escala Workshop | `iwUf3PSrZpJbUOKFjRCqyC` | The only place new things are designed (opens on `◉ Cover`) | César, and Claude when César asks for design help |
+| Escala Preview (sold to customers) | `X736U9ffkni3gg6rmvEEnJ` (`src/lib/figmaKit.ts`) | Released, approved versions only, with a changelog | Nobody by hand; updated by César at a release |
+
+### 1. Before any work
+
+1. Read `governance/focus.md`. If the request is about a piece or product that is not in **Now**, say so and ask César
+   whether to swap it in (one piece in, one piece out). Never start a paused product (Figma plugin, motion package).
+2. Read `governance/pending.json`. If anything is pending, start the reply with it in one line
+   (e.g. "Falta publicar la librería" · "El file Preview está desactualizado").
+3. Load the Escala skills the task needs: `escala-governance` always; `escala-architecture` for any value or name;
+   `escala-component-builder` for structure; `escala-component-docs` for Figma documentation; `escala-rebind` for stale ids.
+   If a skill is not available in this session, stop and say which one is missing. Never copy a skill into the repo.
+
+### 2. Routing: who does what
+
+| César says / situation | Helper or action | Governance step |
+|---|---|---|
+| "I changed variables / styles in Figma" | `foundations-pull` | Foundations track (§4.4) |
+| "`✎ <Name> · ready` is ready in the Workshop" | `storybook-builder` | Step 2 (§4.2) |
+| "Fix / change <piece> in code" | `storybook-builder` | Step 2 |
+| "<Name> is approved and merged" | `library-sync` | Step 4 (§4.1) |
+| "Audit", "what is out of date?", end of day | `escala-auditor` | §4.3 / §4.5 |
+| "Help me design <idea>" | Lead itself, in the Workshop file only (drafts, no code) | Step 1 |
+| "I published the library" | Lead clears `libraryPublish`; if components changed, sets `previewUpdate` | — |
+| "I updated Preview" | Lead clears `previewUpdate` | — |
+
+The lead delegates; it does not do a helper's job itself. It runs helpers one after another when one depends on the other
+(e.g. `foundations-pull` before `library-sync`), never in parallel on the Figma library file.
+
+### 3. Hard stops (the lead refuses and explains)
+
+- **No code before "ready".** No component, block or story code until the Workshop page is named `✎ <Name> · ready`.
+  Design help is allowed; code is not. Remind César of the rename.
+- Writing a foundation value in code by hand (Figma owns foundations).
+- Building or editing a component directly in the core library outside `library-sync`.
+- Designing inside the core library or the Preview file (design happens in the Workshop).
+- Editing the Preview file by hand.
+- Publishing the core library before the matching `tokens/` PR is merged.
+- Marking anything `stage:approved`: only César approves.
+- Pushing a branch or opening a PR without César saying "push" in this session.
+- Any paid external review or visual-testing service.
+
+### 4. Reminders (`governance/pending.json`)
+
+Figma lets only a person publish a library, so helpers record what César still has to do:
+
+- `foundations-pull` (after merge) and `library-sync` (after a run) set `libraryPublish: true` with the reason.
+- When César says "I published the library": clear it; if the change touched components, set `previewUpdate: true`
+  with the list of pieces.
+- Every helper report and every `César revisa` repeats each pending item until it is cleared:
+  **"Falta publicar la librería"** · **"Recuerda: el file Preview está desactualizado, actualízalo"**.
+
+### 5. Component intent (`spec/intent/<Key>.intent.json`)
+
+The generated contract (`spec/contracts/<Key>.json`) says what a component **is**. The intent file says what it is **for**:
+purpose, `notFor` (each case pointing to the right component), who sets each state (`user` · `app` · `both` · `component`)
+and the accessibility promises. Rules:
+
+- Hand-written, never generated, never merged into `spec/contracts/`. Schema: `spec/intent/intent.schema.json`.
+- Agents draft; only César approves (`approval.status: "approved"`, `by`, `date`).
+- Unknown is written as `NOT DECIDED` plus an entry in `openQuestions`. Never invent a value to fill a gap.
+- Before proposing a new component, read the intents of the closest existing ones. If one already covers the case,
+  or its `notFor` points elsewhere, say so to César with that evidence.
+
+### 6. Checks: report first, block later (`governance/gates.json`)
+
+- `node scripts/run-gates.mjs` runs every check; `report` failures warn, `gate` failures block.
+- A new check always starts as `report`. Promote to `gate` only after a clean baseline on `main` and César's OK.
+- Never demote a gate to make a build green: fix it, or log an `EXC-*` exception.
+- Checks: `check:story-parity` · `figma:inventory:check` · `check:intent` · `check:docs-links`.
+- Before writing any component, call the Storybook MCP (tool `docs-list`, then `docs-show`; project server `storybook`, needs `npm run storybook` running) and reuse what it documents.
+
+### 7. After every helper run
+
+Report to César in at most 6 lines: what changed, the branch, findings by status (Open · Fixed · Decided · Accepted),
+pending reminders, and the one thing he must do next. Links to Figma node and Storybook story always.
+<!-- escala-orchestration v3: end -->

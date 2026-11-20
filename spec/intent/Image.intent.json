@@ -1,0 +1,43 @@
+{
+  "$schema": "./intent.schema.json",
+  "component": "Image",
+  "purpose": "Shows a photo or illustration cropped to a fixed ratio on a muted placeholder, so layouts never shift while it loads. Ratio auto fills its parent.",
+  "notFor": [
+    {
+      "case": "A person or entity's picture.",
+      "use": "Avatar"
+    },
+    {
+      "case": "A decorative icon tile.",
+      "use": "FeaturedIcon"
+    },
+    {
+      "case": "A drop area for uploading pictures.",
+      "use": "FileUploadDropzone"
+    }
+  ],
+  "states": {
+    "Default": {
+      "setBy": "component",
+      "meaning": "Static; shown on Surface/muted while the media loads.",
+      "visual": "Surface/muted fill behind the media; Radius/none (square) or Radius/container (rounded)."
+    }
+  },
+  "a11y": {
+    "role": "img (alt is the accessible name; alt=\"\" when decorative)",
+    "keyboard": "Not focusable.",
+    "minHitArea": 24,
+    "contrast": "AA",
+    "notes": [
+      "Always give alt text."
+    ]
+  },
+  "openQuestions": [
+    "What shows when the media fails to load: the muted placeholder only, or an icon or message? No error look is designed."
+  ],
+  "approval": {
+    "status": "draft",
+    "by": null,
+    "date": null
+  }
+}

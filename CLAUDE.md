@@ -34,6 +34,8 @@ About + the phone generator (`MobileThemeSheet.tsx`, picks only, no free inputs)
 
 - Never edit the Figma file to make it consistent with code. If it looks wrong, say so in one line
   and build from it as it is.
+- Lead-session routing (helpers in `.claude/agents/`, `governance/focus.md`, `pending.json`, `gates.json`, intents in
+  `spec/intent/`): the *Escala orchestration* section of `AGENTS.md`. Read it before any work.
 - Process, stages, agents, findings and tickets: the `escala-governance` skill. Data lives in
   `governance/` (`registry.json`, `findings/latest.json`, `ledger/`, `exceptions.yaml`, `runs/`).
 - A scheduled **daily review** (weekdays 18:37 Paris, read-only) reports every Figma ↔ Storybook

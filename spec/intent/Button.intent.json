@@ -1,0 +1,36 @@
+{
+  "$schema": "./intent.schema.json",
+  "component": "Button",
+  "purpose": "Starts an action or a navigation that the person names with a visible label. Variant says the intent (brand, neutral, destructive) and Appearance how loud it is, so one solid brand Button marks the main action of a view.",
+  "notFor": [
+    { "case": "The action is shown by an icon alone, with no visible label.", "use": "IconButton" },
+    { "case": "Dismissing an alert, toast, dialog or tag with an X.", "use": "CloseButton" },
+    { "case": "A destination or small action inside running text.", "use": "TextLink" },
+    { "case": "The one primary action that floats over the screen's content.", "use": "FABButton" }
+  ],
+  "states": {
+    "Default": { "setBy": "component", "meaning": "At rest.", "visual": "The Variant x Appearance roles: solid default is Action/primary/default with Content/on-action; secondary is Action/secondary/default with Content/on-secondary; critical solid is Status/critical/surface-solid with Status/critical/on-solid; outline adds a Border/accent (or Status/critical/border-strong) edge; link uses Content/link/default. Solid fills carry Elevation/highlight." },
+    "Hover": { "setBy": "component", "visual": "Each fill moves to its hover role (Action/primary/hover, Action/secondary/hover, Status/critical/surface-solid-hover); outline and ghost gain Action/ghost/hover (Status/critical/surface for critical); link ink moves to Content/link/hover." },
+    "Pressed": { "setBy": "component", "visual": "Fills move to their pressed role (Action/primary/pressed, Action/secondary/pressed, Action/ghost/pressed, Status/critical/surface-solid-pressed, Status/critical/surface-pressed)." },
+    "Focused": { "setBy": "component", "meaning": "Reached by keyboard (focus-visible).", "visual": "The Default look plus a ring set 1px outside the edge: Border/ring/default for brand, Border/ring/neutral for secondary, Status/critical/ring for critical." },
+    "Loading": { "setBy": "app", "meaning": "The action is running; the label stays.", "visual": "The Default look with a spinner in place of the leading icon." },
+    "Disabled": { "setBy": "app", "meaning": "Cannot be used right now.", "visual": "Action/disabled/default fill (solid), Border/control edge (outline) and Content/disabled ink; no highlight." }
+  },
+  "a11y": {
+    "role": "button (native <button>, or the child element with asChild)",
+    "keyboard": "Tab reaches it; Enter or Space activates it (native button).",
+    "minHitArea": 24,
+    "contrast": "AA",
+    "reducedMotion": "NOT DECIDED",
+    "notes": [
+      "The visible label is the accessible name; it is always shown.",
+      "Disabled sets aria-disabled; Loading sets aria-busy.",
+      "Colours, edge and ink move with the motion role use-hover; the focus ring with use-focus (recipes/motion.ts)."
+    ]
+  },
+  "openQuestions": [
+    "Reduced motion: should the hover and press transitions (use-hover, including the scale) be dropped, or only shortened?",
+    "Loading: should a loading Button also block clicks and announce progress, or does aria-busy alone cover it?"
+  ],
+  "approval": { "status": "draft", "by": null, "date": null }
+}

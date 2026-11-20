@@ -1,0 +1,66 @@
+{
+  "$schema": "./intent.schema.json",
+  "component": "RatingGroupItem",
+  "purpose": "One option of a RatingGroup: a star that fills when chosen, or a smiley marked by a selected background.",
+  "notFor": [
+    {
+      "case": "Any use outside a RatingGroup.",
+      "use": "RatingGroup"
+    },
+    {
+      "case": "A single icon the person presses for an action.",
+      "use": "IconButton"
+    }
+  ],
+  "states": {
+    "Checked=false": {
+      "setBy": "user",
+      "visual": "No fill; icon Content/secondary."
+    },
+    "Checked=true": {
+      "setBy": "user",
+      "meaning": "Chosen (the app can preset it).",
+      "visual": "Star: icon Content/accent, no fill. Emoji: Surface/selected fill, icon Content/accent."
+    },
+    "Default": {
+      "setBy": "component",
+      "visual": "The fill and icon of its Checked value."
+    },
+    "Hover": {
+      "setBy": "component",
+      "visual": "Action/ghost/hover fill; unchecked icon moves to Content/primary (checked stays Content/accent; a checked emoji keeps Surface/selected)."
+    },
+    "Pressed": {
+      "setBy": "component",
+      "visual": "Action/ghost/pressed fill (checked emoji: Surface/selected-pressed)."
+    },
+    "Focused": {
+      "setBy": "component",
+      "meaning": "Reached by keyboard (focus-visible).",
+      "visual": "Border/focus with a Border/ring/default ring."
+    },
+    "Disabled": {
+      "setBy": "app",
+      "visual": "Icon Content/disabled; a checked emoji keeps Surface/selected."
+    }
+  },
+  "a11y": {
+    "role": "radio (aria-checked); the roving tabindex belongs to the group",
+    "keyboard": "Reached through the RatingGroup's single tab stop; arrows and Home / End come from the group.",
+    "minHitArea": 24,
+    "contrast": "AA",
+    "reducedMotion": "NOT DECIDED",
+    "notes": [
+      "Every item needs an aria-label.",
+      "Fill and icon move on use-hover (recipes/motion.ts)."
+    ]
+  },
+  "openQuestions": [
+    "Reduced motion: should the fill and icon transitions (use-hover) be dropped?"
+  ],
+  "approval": {
+    "status": "draft",
+    "by": null,
+    "date": null
+  }
+}

@@ -1,0 +1,87 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "escala/intent.schema.json",
+  "title": "Escala component intent",
+  "description": "Hand-written, owner-approved half of a component's contract: what it is for, what it is not for, who may change each state, and its accessibility promises. The generated contract (spec/contracts/<Key>.json) says what the component IS; this file says what it is FOR. Never generated, never merged into spec/contracts.",
+  "type": "object",
+  "required": ["component", "purpose", "notFor", "states", "a11y", "openQuestions", "approval"],
+  "additionalProperties": false,
+  "properties": {
+    "$schema": { "type": "string" },
+    "component": {
+      "type": "string",
+      "pattern": "^[A-Z][A-Za-z0-9]*$",
+      "description": "PascalCase key, identical to the Figma set and the spec/contracts key."
+    },
+    "purpose": {
+      "type": "string",
+      "minLength": 20,
+      "description": "One or two sentences: the job this component does and when to reach for it."
+    },
+    "notFor": {
+      "type": "array",
+      "minItems": 1,
+      "description": "Situations where this component is the wrong choice, each pointing to the right one.",
+      "items": {
+        "type": "object",
+        "required": ["case", "use"],
+        "additionalProperties": false,
+        "properties": {
+          "case": { "type": "string", "minLength": 10 },
+          "use": {
+            "type": "string",
+            "description": "An existing Escala component key, or 'none' when no component should be used."
+          }
+        }
+      }
+    },
+    "states": {
+      "type": "object",
+      "description": "Every state the component can be in, keyed by the state name used in the contract.",
+      "additionalProperties": {
+        "type": "object",
+        "required": ["setBy", "visual"],
+        "additionalProperties": false,
+        "properties": {
+          "setBy": {
+            "enum": ["user", "app", "both", "component"],
+            "description": "user = the person interacting; app = the product code using the component; both = either; component = the component itself (hover, focus-visible)."
+          },
+          "meaning": { "type": "string" },
+          "visual": {
+            "type": "string",
+            "description": "What changes on screen, or exactly 'NOT DECIDED' when no treatment has been designed."
+          }
+        }
+      }
+    },
+    "a11y": {
+      "type": "object",
+      "required": ["role", "keyboard", "minHitArea", "contrast"],
+      "additionalProperties": false,
+      "properties": {
+        "role": { "type": "string" },
+        "keyboard": { "type": "string" },
+        "minHitArea": { "type": "integer", "minimum": 24 },
+        "contrast": { "enum": ["AA", "AAA", "NOT DECIDED"] },
+        "reducedMotion": { "type": "string" },
+        "notes": { "type": "array", "items": { "type": "string" } }
+      }
+    },
+    "openQuestions": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "Everything marked NOT DECIDED above, written as a question for the owner."
+    },
+    "approval": {
+      "type": "object",
+      "required": ["status"],
+      "additionalProperties": false,
+      "properties": {
+        "status": { "enum": ["draft", "approved"] },
+        "by": { "type": ["string", "null"] },
+        "date": { "type": ["string", "null"], "pattern": "^\\d{4}-\\d{2}-\\d{2}$" }
+      }
+    }
+  }
+}

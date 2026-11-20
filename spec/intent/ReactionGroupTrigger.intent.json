@@ -1,0 +1,31 @@
+{
+  "$schema": "./intent.schema.json",
+  "component": "ReactionGroupTrigger",
+  "purpose": "The add-reaction button at the end of a ReactionGroup row: an icon-only pill that opens the reaction picker and sits in line with the reaction pills.",
+  "notFor": [
+    { "case": "Standalone use outside a ReactionGroup.", "use": "ReactionGroup" },
+    { "case": "Any other icon-only action.", "use": "IconButton" }
+  ],
+  "states": {
+    "Default": { "setBy": "component", "meaning": "At rest.", "visual": "Border/control edge, Content/secondary icon, no fill." },
+    "Hover": { "setBy": "component", "visual": "Surface/muted fill, Border/control-hover edge, Content/primary icon." },
+    "Focused": { "setBy": "component", "meaning": "Reached by keyboard (focus-visible).", "visual": "The Default look plus one 2px Border/ring/default ring 1px outside the pill." },
+    "Open": { "setBy": "component", "meaning": "Its picker is open (set by the popover).", "visual": "Surface/selected fill, Border/accent edge, Content/accent icon." },
+    "Disabled": { "setBy": "app", "meaning": "Reactions cannot be added.", "visual": "Border/subtle edge, Content/disabled icon." }
+  },
+  "a11y": {
+    "role": "button (native <button>) with aria-haspopup and aria-expanded",
+    "keyboard": "Tab reaches it; Space or Enter opens and closes the picker (Radix Popover); Escape closes and returns focus here.",
+    "minHitArea": 24,
+    "contrast": "AA",
+    "reducedMotion": "NOT DECIDED",
+    "notes": [
+      "Named \"Add reaction\" by default.",
+      "Fill, edge and ink move with the motion role use-hover."
+    ]
+  },
+  "openQuestions": [
+    "Reduced motion: should the use-hover colour transition be dropped, or follow the shortened tokens as ReactionGroup does?"
+  ],
+  "approval": { "status": "draft", "by": null, "date": null }
+}

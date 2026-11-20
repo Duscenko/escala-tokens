@@ -1,0 +1,56 @@
+{
+  "$schema": "./intent.schema.json",
+  "component": "CheckboxGroup",
+  "purpose": "A labelled set of independent checkboxes answering one question, with an optional footer for helper text or the error. Its size, placement, state and variant cascade to every row.",
+  "notFor": [
+    {
+      "case": "A single opt-in or terms checkbox.",
+      "use": "CheckboxItem"
+    },
+    {
+      "case": "Only one of the options may be chosen.",
+      "use": "RadioGroup"
+    },
+    {
+      "case": "A list of settings that each apply immediately.",
+      "use": "SwitchGroup"
+    },
+    {
+      "case": "Choosing from a long, searchable list of options.",
+      "use": "Combobox"
+    }
+  ],
+  "states": {
+    "Default": {
+      "setBy": "component",
+      "visual": "Group label Content/primary, footer Content/secondary."
+    },
+    "Invalid": {
+      "setBy": "app",
+      "meaning": "The selection fails validation; the footer becomes the error.",
+      "visual": "Footer Status/critical/content; every row takes CheckboxItem Invalid."
+    },
+    "Disabled": {
+      "setBy": "app",
+      "meaning": "No row can be changed.",
+      "visual": "Group label and footer Content/disabled; every row takes CheckboxItem Disabled."
+    }
+  },
+  "a11y": {
+    "role": "group (aria-labelledby the group label, aria-describedby the footer)",
+    "keyboard": "Each checkbox is its own tab stop; Space toggles the focused one (Radix Checkbox).",
+    "minHitArea": 24,
+    "contrast": "AA",
+    "notes": [
+      "Each checkbox stays independent; the group only names and describes them."
+    ]
+  },
+  "openQuestions": [
+    "Motion: the State axis (Default · Invalid · Disabled) has no motion decision and recipes/motion.ts has no entry. Should the footer's switch to the error animate? (finding MOT-002 CheckboxGroup)"
+  ],
+  "approval": {
+    "status": "draft",
+    "by": null,
+    "date": null
+  }
+}

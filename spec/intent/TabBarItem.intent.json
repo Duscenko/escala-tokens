@@ -1,0 +1,67 @@
+{
+  "$schema": "./intent.schema.json",
+  "component": "TabBarItem",
+  "purpose": "One destination of a TabBar: an icon or Avatar in a pill over a short label, with an optional unread count. It is a link to a top-level page.",
+  "notFor": [
+    {
+      "case": "Used on its own, outside a TabBar.",
+      "use": "TabBar"
+    },
+    {
+      "case": "A destination row in desktop navigation.",
+      "use": "NavItem"
+    },
+    {
+      "case": "A tab that swaps a view inside the page.",
+      "use": "TabMenuItem"
+    }
+  ],
+  "states": {
+    "Default": {
+      "setBy": "component",
+      "meaning": "At rest, not the current page.",
+      "visual": "No pill fill; icon, media and label in Content/secondary."
+    },
+    "Hover": {
+      "setBy": "component",
+      "visual": "The pill fills Surface/muted; icon, media and label move to Content/primary."
+    },
+    "Focused": {
+      "setBy": "component",
+      "meaning": "Reached by keyboard (focus-visible).",
+      "visual": "A focus ring (Border/ring/default) 1 px outside the pill; inks stay Content/secondary."
+    },
+    "Current": {
+      "setBy": "app",
+      "meaning": "The page the person is on (aria-current=\"page\").",
+      "visual": "The pill fills Surface/selected; icon, media and label in Content/accent."
+    },
+    "Disabled": {
+      "setBy": "app",
+      "meaning": "Not available; aria-disabled and out of the Tab order.",
+      "visual": "No pill fill; icon, media and label in Content/disabled."
+    }
+  },
+  "a11y": {
+    "role": "link",
+    "keyboard": "Tab reaches it unless disabled; Enter follows the link.",
+    "minHitArea": 44,
+    "contrast": "AA",
+    "reducedMotion": "NOT DECIDED",
+    "notes": [
+      "Minimum height is Size/target-min (44 on Tablet and Mobile).",
+      "A hidden label (hideLabel) needs an aria-label; the badge count belongs in that name (for example \"Inbox, 3\").",
+      "Indicator, icon and label change colour with the motion role use-hover (recipes/motion.ts)."
+    ]
+  },
+  "openQuestions": [
+    "Reduced motion: should the use-hover colour change stay as a short fade or become instant?",
+    "The Figma prototype moves to Current with use-toggle, the code with use-hover. Which one is right?",
+    "The count Badge xs height is bound to a Dimension primitive, not a role (finding TOK-002, inherited from Badge). Which role should it read?"
+  ],
+  "approval": {
+    "status": "draft",
+    "by": null,
+    "date": null
+  }
+}

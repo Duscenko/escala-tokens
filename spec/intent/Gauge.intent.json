@@ -1,0 +1,33 @@
+{
+  "$schema": "./intent.schema.json",
+  "component": "Gauge",
+  "purpose": "Shows one reading against a known range, such as workspace health, a quota or a score, on a 270° arc with the value, unit and label in the middle.",
+  "notFor": [
+    {"case": "Completion of a task.", "use": "ProgressCircle"},
+    {"case": "A trend over time.", "use": "Sparkline"},
+    {"case": "Progress of a long operation in a row.", "use": "ProgressLine"}
+  ],
+  "states": {
+    "Variant=default": {"setBy": "app", "meaning": "A neutral reading.", "visual": "Arc in Chart/series-1/solid on a Surface/muted track; value Content/primary, unit Content/secondary, label Chart/series-1/content."},
+    "Variant=success": {"setBy": "app", "meaning": "The reading is good.", "visual": "Arc in Status/success/surface-solid; label Status/success/content."},
+    "Variant=warning": {"setBy": "app", "meaning": "The reading needs attention.", "visual": "Arc in Status/warning/surface-solid; label Status/warning/content."},
+    "Variant=critical": {"setBy": "app", "meaning": "The reading is bad.", "visual": "Arc in Status/critical/surface-solid; label Status/critical/content."}
+  },
+  "a11y": {
+    "role": "meter",
+    "keyboard": "None; not focusable.",
+    "minHitArea": 24,
+    "contrast": "AA",
+    "reducedMotion": "Instant: a new value no longer sweeps the arc on use-travel-in.",
+    "notes": [
+      "aria-valuenow, aria-valuemin, aria-valuemax and an aria-valuetext that reads the label (\"72 %, Healthy\").",
+      "Needs an accessible name (aria-label or aria-labelledby).",
+      "Use success · warning · critical only when the colour carries the meaning, never to decorate."
+    ]
+  },
+  "openQuestions": [
+    "The contract has no Figma set (codeOnly, finding DOC-001 Gauge). Is a Figma set planned, or is code the owner here?",
+    "Who picks success · warning · critical: fixed bands on the range, or the app for each reading?"
+  ],
+  "approval": { "status": "draft", "by": null, "date": null }
+}

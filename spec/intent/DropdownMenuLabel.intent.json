@@ -1,0 +1,40 @@
+{
+  "$schema": "./intent.schema.json",
+  "component": "DropdownMenuLabel",
+  "purpose": "An overline heading that names a group of items inside a DropdownMenu. It is not selectable.",
+  "notFor": [
+    {
+      "case": "Used on its own, outside a DropdownMenu.",
+      "use": "DropdownMenu"
+    },
+    {
+      "case": "A heading of a group of Sidebar rows.",
+      "use": "SidebarGroupLabel"
+    },
+    {
+      "case": "A form field label.",
+      "use": "Label"
+    }
+  ],
+  "states": {
+    "Default": {
+      "setBy": "component",
+      "visual": "Caption text in Content/secondary."
+    }
+  },
+  "a11y": {
+    "role": "none",
+    "keyboard": "None: skipped by arrow-key navigation.",
+    "minHitArea": 24,
+    "contrast": "AA",
+    "notes": [
+      "Render it as the label of a role group (aria-labelledby) so screen readers announce the group name."
+    ]
+  },
+  "openQuestions": [],
+  "approval": {
+    "status": "draft",
+    "by": null,
+    "date": null
+  }
+}

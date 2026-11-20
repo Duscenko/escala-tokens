@@ -1,0 +1,29 @@
+{
+  "$schema": "./intent.schema.json",
+  "component": "ReactionGroupPopover",
+  "purpose": "The reaction picker of a ReactionGroup: a toolbar of ghost icon buttons on an overlay surface that opens above the trigger and closes when an option is picked.",
+  "notFor": [
+    { "case": "Standalone use outside a ReactionGroup.", "use": "ReactionGroup" },
+    { "case": "A general popover with arbitrary content.", "use": "Popover" }
+  ],
+  "states": {
+    "Open=true": { "setBy": "both", "meaning": "Shown above the trigger.", "visual": "Surface/layer-2 overlay with a Border/default edge; one ghost secondary IconButton per reaction." },
+    "Open=false": { "setBy": "both", "meaning": "Closed, after a pick, Escape or an outside click.", "visual": "Not rendered." }
+  },
+  "a11y": {
+    "role": "toolbar with a roving tabindex, inside a non-modal Radix Popover",
+    "keyboard": "Arrow keys move and wrap, Home and End jump, Enter or Space picks, Escape closes and returns focus to the trigger; Tab moves through the content.",
+    "minHitArea": 24,
+    "contrast": "AA",
+    "reducedMotion": "NOT DECIDED",
+    "notes": [
+      "Focus moves into the picker on open and back to the trigger on close.",
+      "Every option has an aria-label.",
+      "Enters on popover-enter and leaves on popover-exit."
+    ]
+  },
+  "openQuestions": [
+    "Reduced motion: should popover-enter / popover-exit keep only the fade (as SplitButton's menu does), or follow the shortened tokens?"
+  ],
+  "approval": { "status": "draft", "by": null, "date": null }
+}

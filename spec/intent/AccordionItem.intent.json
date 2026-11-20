@@ -1,0 +1,50 @@
+{
+  "$schema": "./intent.schema.json",
+  "component": "AccordionItem",
+  "purpose": "One collapsible section: a trigger with an optional icon, the label and a chevron that flips when open, over its content. It only exists inside an Accordion.",
+  "notFor": [
+    {
+      "case": "Any use outside an Accordion.",
+      "use": "Accordion"
+    },
+    {
+      "case": "A menu of actions behind a trigger.",
+      "use": "DropdownMenu"
+    }
+  ],
+  "states": {
+    "Closed": {
+      "setBy": "both",
+      "meaning": "Content hidden; the person toggles it, the app can control it.",
+      "visual": "Icon and chevron Content/secondary, label Content/primary. Fill and edge by variant: none (ghost-default, ghost-rounded), Border/default bottom edge (ghost-underline), Surface/layer-1 with Border/default (outline-rounded, outline-sharp), Surface/muted (filled-rounded)."
+    },
+    "Open": {
+      "setBy": "both",
+      "visual": "Content shown in Content/secondary; the chevron flips. ghost-rounded gains Surface/layer-1; outline variants move the edge to Border/strong."
+    },
+    "Disabled": {
+      "setBy": "app",
+      "meaning": "Cannot be toggled.",
+      "visual": "Icon, label and chevron Content/disabled; edges move to Border/subtle (ghost-underline, outline variants)."
+    }
+  },
+  "a11y": {
+    "role": "button in a heading, with aria-expanded and aria-controls; the panel is labelled by its trigger",
+    "keyboard": "Tab reaches the trigger; Space or Enter toggles it; arrows and Home / End move between triggers (Radix Accordion).",
+    "minHitArea": 24,
+    "contrast": "AA",
+    "reducedMotion": "Expand and collapse become instant (the reduced version of accordion-expand / accordion-collapse in src/lib/motion.ts). The chevron turn on use-disclosure-in under reduced motion is not decided.",
+    "notes": [
+      "Give every item a value."
+    ]
+  },
+  "openQuestions": [
+    "Variant=card exists only in Figma; the code API has no card. Build it in code, or remove it from the file?",
+    "Reduced motion: should the chevron still turn (use-disclosure-in), or flip at once like the content?"
+  ],
+  "approval": {
+    "status": "draft",
+    "by": null,
+    "date": null
+  }
+}

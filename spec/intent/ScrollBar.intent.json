@@ -1,0 +1,22 @@
+{
+  "$schema": "./intent.schema.json",
+  "component": "ScrollBar",
+  "purpose": "The overlay scrollbar a ScrollArea places on its edges: it shows where the viewport is and how much content is left.",
+  "notFor": [
+    {"case": "Not for standalone use: a scrollable region places its own bars.", "use": "ScrollArea"},
+    {"case": "Showing how far a task has progressed.", "use": "ProgressLine"}
+  ],
+  "states": {
+    "Default": {"setBy": "component", "meaning": "At rest; it follows the viewport's scroll.", "visual": "A Radius/full thumb in Surface/muted-hover on a Surface/muted track (filled) or on no track (ghost)."}
+  },
+  "a11y": {
+    "role": "None: decorative and aria-hidden.",
+    "keyboard": "Not focusable; the ScrollArea viewport carries keyboard scrolling.",
+    "minHitArea": 24,
+    "contrast": "AA"
+  },
+  "openQuestions": [
+    "The set has no state axis: should the thumb change when it is hovered or dragged?"
+  ],
+  "approval": { "status": "draft", "by": null, "date": null }
+}

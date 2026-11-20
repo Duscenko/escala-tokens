@@ -1,0 +1,32 @@
+{
+  "$schema": "./intent.schema.json",
+  "component": "SplitButton",
+  "purpose": "Offers one primary action with a few related alternatives behind a caret, such as Publish next to Publish and notify or Save as draft. Use it once per toolbar or page header.",
+  "notFor": [
+    { "case": "There is a single action with no alternatives.", "use": "Button" },
+    { "case": "Several actions where none is primary.", "use": "DropdownMenu" },
+    { "case": "Two to five related actions or views that read as one control.", "use": "ButtonGroup" }
+  ],
+  "states": {
+    "Open=false": { "setBy": "both", "meaning": "Only the two segments show.", "visual": "Two ButtonGroupItem segments in the brand fill (default) or the neutral fill (secondary); the caret shows CaretDown." },
+    "Open=true": { "setBy": "both", "meaning": "The menu of alternatives is shown.", "visual": "The caret segment is pinned Active and shows CaretUp; the DropdownMenu opens below, aligned to the end edge." }
+  },
+  "a11y": {
+    "role": "two native <button>s; the caret has aria-haspopup=\"menu\" and aria-expanded and opens a Radix DropdownMenu",
+    "keyboard": "Tab reaches each segment; Enter or Space runs the main action or opens the menu. In the menu, arrows move and loop, typeahead jumps, Escape closes and returns focus to the caret.",
+    "minHitArea": 24,
+    "contrast": "AA",
+    "reducedMotion": "Only the fade is kept: the menu does not grow out of the caret and its rows do not stagger.",
+    "notes": [
+      "The caret is named \"<label> more actions\" by default.",
+      "The main segment is a plain action, never aria-pressed.",
+      "In Dark the default label on the violet fill is judged by APCA, as on Button; a WCAG checker reads about 4.0:1 there by design.",
+      "The pair never collapses; on narrow screens give it its own row."
+    ]
+  },
+  "openQuestions": [
+    "Contrast: the default Variant in Dark reads about 4.0:1 under WCAG and passes only by APCA. Is AA (WCAG) the promise, or APCA?",
+    "Disabled: there is no disabled variant in the Figma set; is disabling both segments with ButtonGroupItem's Disabled look the intended treatment?"
+  ],
+  "approval": { "status": "draft", "by": null, "date": null }
+}

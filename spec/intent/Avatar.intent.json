@@ -1,0 +1,44 @@
+{
+  "$schema": "./intent.schema.json",
+  "component": "Avatar",
+  "purpose": "Represents a person or entity as a photo, initials or an icon, with an optional selection ring and presence dot. Use one size per context.",
+  "notFor": [
+    {
+      "case": "Several people shown together.",
+      "use": "AvatarGroup"
+    },
+    {
+      "case": "A decorative icon tile in a card or empty state.",
+      "use": "FeaturedIcon"
+    },
+    {
+      "case": "A photo or illustration as content.",
+      "use": "Image"
+    }
+  ],
+  "states": {
+    "Default": {
+      "setBy": "component",
+      "meaning": "Static; Type, Variant and Appearance set the look (a photo has no colour variants).",
+      "visual": "Surface/muted base with a Border/subtle edge; initials and icon in the variant's roles (soft secondary: Surface/muted with Content/secondary; solid default: Action/primary/default with Content/on-action; status: Status/<severity>/surface or surface-solid). The ring, when shown, is Border/accent."
+    }
+  },
+  "a11y": {
+    "role": "img with an accessible name (aria-label, or the photo's alt); aria-hidden when decorative",
+    "keyboard": "Not focusable.",
+    "minHitArea": 24,
+    "contrast": "AA",
+    "notes": [
+      "The presence dot is announced as text, not by colour."
+    ]
+  },
+  "openQuestions": [
+    "What shows when the photo fails to load: initials, the icon, or the muted base? The contract does not say.",
+    "The ring (RingVisible) marks selection, but Avatar is not focusable. What makes an avatar selectable, and who announces it?"
+  ],
+  "approval": {
+    "status": "draft",
+    "by": null,
+    "date": null
+  }
+}

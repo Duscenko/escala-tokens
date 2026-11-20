@@ -1,0 +1,20 @@
+{
+  "$schema": "./intent.schema.json",
+  "component": "TableCaption",
+  "purpose": "The visible title and description of a Table; the same text is the table's accessible name.",
+  "notFor": [
+    {"case": "Not for standalone use: a heading outside a table.", "use": "Table"},
+    {"case": "The heading of a group of settings.", "use": "SettingsSection"}
+  ],
+  "states": {
+    "Default": {"setBy": "component", "meaning": "At rest.", "visual": "Title in Content/primary (Type/heading-2xs) over a description in Content/secondary (Type/body-sm)."}
+  },
+  "a11y": {
+    "role": "caption (a real <caption>)",
+    "keyboard": "None; not focusable.",
+    "minHitArea": 24,
+    "contrast": "AA"
+  },
+  "openQuestions": [],
+  "approval": { "status": "draft", "by": null, "date": null }
+}

@@ -1,0 +1,26 @@
+{
+  "$schema": "./intent.schema.json",
+  "component": "TabMenuItem",
+  "purpose": "A button tab of a button-variant TabMenu: an optional icon, a label and a count Badge; the selected item fills Surface/selected.",
+  "notFor": [
+    {"case": "Not for standalone use outside a TabMenu.", "use": "TabMenu"},
+    {"case": "A tab in a line-variant TabMenu.", "use": "TabMenuLineItem"},
+    {"case": "A link in a header or navbar.", "use": "NavItem"}
+  ],
+  "states": {
+    "Default": {"setBy": "component", "meaning": "At rest, not selected.", "visual": "Ink Content/secondary, no fill."},
+    "Hover": {"setBy": "component", "visual": "Ink Content/primary on Action/ghost/hover."},
+    "Focused": {"setBy": "component", "meaning": "Reached by keyboard (focus-visible).", "visual": "Ink Content/secondary, no fill; a Border/focus stroke with the Border/ring/default ring."},
+    "Selected": {"setBy": "both", "meaning": "The current view.", "visual": "Ink Content/accent on Surface/selected; aria-pressed=\"true\"."},
+    "Disabled": {"setBy": "app", "meaning": "Cannot be chosen; native disabled.", "visual": "Ink Content/disabled, no fill."}
+  },
+  "a11y": {
+    "role": "button (aria-pressed)",
+    "keyboard": "Tab reaches it unless disabled; Space or Enter activates it.",
+    "minHitArea": 24,
+    "contrast": "AA",
+    "reducedMotion": "Fill and ink changes run on use-hover, which keeps its duration under reduced motion: a colour change, not travel (lib/motion.ts KEEP_UNDER_REDUCED)."
+  },
+  "openQuestions": [],
+  "approval": { "status": "draft", "by": null, "date": null }
+}

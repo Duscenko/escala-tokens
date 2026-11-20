@@ -1,0 +1,72 @@
+{
+  "$schema": "./intent.schema.json",
+  "component": "PaginationLink",
+  "purpose": "One numbered page inside a Pagination; the active one marks the current page. Not for standalone use.",
+  "notFor": [
+    {
+      "case": "Used on its own, outside a Pagination.",
+      "use": "Pagination"
+    },
+    {
+      "case": "A general action button.",
+      "use": "Button"
+    },
+    {
+      "case": "A link inside running text.",
+      "use": "TextLink"
+    }
+  ],
+  "states": {
+    "Active=false": {
+      "setBy": "app",
+      "meaning": "Not the current page.",
+      "visual": "No stroke; label Content/primary."
+    },
+    "Active=true": {
+      "setBy": "app",
+      "meaning": "The current page (aria-current=\"page\").",
+      "visual": "Border/control stroke; label Content/primary (in a grouped Pagination the active page is a fill instead)."
+    },
+    "Default": {
+      "setBy": "component",
+      "visual": "No fill."
+    },
+    "Hover": {
+      "setBy": "component",
+      "visual": "Fill Action/ghost/hover."
+    },
+    "Pressed": {
+      "setBy": "component",
+      "visual": "Fill Action/ghost/pressed."
+    },
+    "Focused": {
+      "setBy": "component",
+      "meaning": "Reached by keyboard (focus-visible).",
+      "visual": "Border/focus inside plus a Border/ring/default ring."
+    },
+    "Disabled": {
+      "setBy": "app",
+      "visual": "Label Content/disabled; an active link keeps its Border/control stroke."
+    }
+  },
+  "a11y": {
+    "role": "button",
+    "keyboard": "Tab reaches it unless disabled; Enter or Space activates it.",
+    "minHitArea": 24,
+    "contrast": "AA",
+    "reducedMotion": "NOT DECIDED",
+    "notes": [
+      "The active one is aria-current=\"page\".",
+      "Fill and ink change with the motion role use-hover (recipes/motion.ts)."
+    ]
+  },
+  "openQuestions": [
+    "Reduced motion: should the use-hover colour change stay as a short fade or become instant?",
+    "It is a button, yet named Link and marked aria-current=\"page\". When pages are routes, should it render as a link (href / asChild)?"
+  ],
+  "approval": {
+    "status": "draft",
+    "by": null,
+    "date": null
+  }
+}

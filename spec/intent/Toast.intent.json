@@ -1,0 +1,31 @@
+{
+  "$schema": "./intent.schema.json",
+  "component": "Toast",
+  "purpose": "Short, non-blocking feedback over the page (saved, copied, undone) that closes itself when its time bar runs out. A critical toast stays until it is closed.",
+  "notFor": [
+    {"case": "A persistent notice about the product or the page.", "use": "Alert"},
+    {"case": "Form validation.", "use": "Field"},
+    {"case": "A decision the person must make.", "use": "Modal"}
+  ],
+  "states": {
+    "Open": {"setBy": "app", "meaning": "Put in the queue with showToast.", "visual": "Enters on toast-enter: it fades in while it rises, and the icon lands a beat later. Colours by Appearance × Variant; e.g. filled: Surface/layer-2 with a Border/default stroke, title Content/primary, description Content/secondary, icon Content/accent (default), Content/secondary (secondary) or the status content role such as Status/success/content; the bar empties over the countdown."},
+    "Paused": {"setBy": "user", "meaning": "Hover or focus on the toast, a swipe, or a hidden page.", "visual": "The progress bar stops emptying."},
+    "Closed": {"setBy": "both", "meaning": "The bar ran out (4 s for one line, 6 s with a description, 10 s with an action) or the person pressed close.", "visual": "Leaves on toast-exit."}
+  },
+  "a11y": {
+    "role": "status (polite live region); alert for critical",
+    "keyboard": "Alt+T moves focus to the toast region (sonner hotkey); focus pauses the timer.",
+    "minHitArea": 24,
+    "contrast": "AA",
+    "reducedMotion": "It fades instead of moving; the time bar keeps running because it is information (toast-countdown keeps use-countdown).",
+    "notes": [
+      "Severity is carried by the icon and the text, never colour alone.",
+      "An action such as Undo needs a second way to be reached, because the toast times out.",
+      "A critical toast never closes by itself."
+    ]
+  },
+  "openQuestions": [
+    "The close button stays ghost with the default ink on every appearance, solid included (toast-contract.md). Intended, or should it take the solid ink?"
+  ],
+  "approval": { "status": "draft", "by": null, "date": null }
+}

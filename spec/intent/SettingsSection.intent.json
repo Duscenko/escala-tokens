@@ -1,0 +1,27 @@
+{
+  "$schema": "./intent.schema.json",
+  "component": "SettingsSection",
+  "purpose": "A titled group of SettingsRow on a settings page; the page stacks sections, and the section carries no outer spacing.",
+  "notFor": [
+    {"case": "A single setting.", "use": "SettingsRow"},
+    {"case": "A group that opens and closes.", "use": "Accordion"},
+    {"case": "Grouping content on a contained surface.", "use": "Card"}
+  ],
+  "states": {
+    "Default": {"setBy": "component", "meaning": "At rest.", "visual": "Title in Content/primary (Type/heading-2xs), description in Content/secondary (Type/body-md)."}
+  },
+  "a11y": {
+    "role": "None stated; the title is an h2 and labels the section (aria-labelledby).",
+    "keyboard": "None; not focusable.",
+    "minHitArea": 24,
+    "contrast": "AA",
+    "notes": [
+      "The title is an h2, so the page stays navigable by headings."
+    ]
+  },
+  "openQuestions": [
+    "Built Figma-first under exception STG-001 (governance/exceptions.yaml, review by 2026-12-02): the stories still need the owner's approval. Is the Figma set final for this intent?",
+    "The heading level is fixed at h2. What happens when a settings page sits under another h2?"
+  ],
+  "approval": { "status": "draft", "by": null, "date": null }
+}

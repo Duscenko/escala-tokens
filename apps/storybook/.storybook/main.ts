@@ -5,7 +5,10 @@ import type { StorybookConfig } from '@storybook/react-vite'
 // story's args and argTypes are the Figma component's properties, 1:1.
 const config: StorybookConfig = {
   stories: ['../stories/**/*.mdx', '../stories/**/*.stories.@(ts|tsx)'],
-  addons: ['@storybook/addon-docs', '@storybook/addon-a11y'],
+  // addon-mcp: agents read the documented components at http://localhost:6006/mcp before writing one (AGENTS.md).
+  addons: ['@storybook/addon-docs', '@storybook/addon-a11y', '@storybook/addon-mcp'],
+  // The components manifest feeds the MCP's docs tools (docs-list, docs-show).
+  features: { componentsManifest: true },
   // The autodocs page of every component is its "Documentation" (drawn by docs/ComponentDocPage.tsx).
   docs: { defaultName: 'Documentation' },
   // One sidebar entry per family (design-plans/storybook-families.md): a part's stories live inside its family's

@@ -1,0 +1,78 @@
+{
+  "$schema": "./intent.schema.json",
+  "component": "ActivityHeatmapCell",
+  "purpose": "One day of an ActivityHeatmap: a small square shaded by its activity level from 0 to 5. It also serves as the swatch in the heatmap's legend.",
+  "notFor": [
+    {
+      "case": "Used on its own, outside an ActivityHeatmap.",
+      "use": "ActivityHeatmap"
+    },
+    {
+      "case": "A colour swatch for categorical series.",
+      "use": "SplitBarLegendItem"
+    },
+    {
+      "case": "A status dot on a person or object.",
+      "use": "AvatarStatus"
+    }
+  ],
+  "states": {
+    "Value=0": {
+      "setBy": "app",
+      "meaning": "No activity that day.",
+      "visual": "Fill Chart/sequential/0."
+    },
+    "Value=1": {
+      "setBy": "app",
+      "visual": "Fill Chart/sequential/1."
+    },
+    "Value=2": {
+      "setBy": "app",
+      "visual": "Fill Chart/sequential/2."
+    },
+    "Value=3": {
+      "setBy": "app",
+      "visual": "Fill Chart/sequential/3."
+    },
+    "Value=4": {
+      "setBy": "app",
+      "visual": "Fill Chart/sequential/4."
+    },
+    "Value=5": {
+      "setBy": "app",
+      "meaning": "The most activity.",
+      "visual": "Fill Chart/sequential/5."
+    },
+    "Default": {
+      "setBy": "component",
+      "visual": "The fill of its Value only."
+    },
+    "Focused": {
+      "setBy": "component",
+      "meaning": "Reached by keyboard (focus-visible).",
+      "visual": "A 2 px ring in Border/ring/default 1 px off the square; the fill does not change."
+    }
+  },
+  "a11y": {
+    "role": "gridcell",
+    "keyboard": "Moved to by the heatmap's arrow keys; the cell itself has no keys of its own.",
+    "minHitArea": 24,
+    "contrast": "NOT DECIDED",
+    "reducedMotion": "NOT DECIDED",
+    "notes": [
+      "Named by aria-label (\"Tuesday, March 18: 8 contributions\"); as a legend swatch it is role=\"presentation\".",
+      "The ring colour changes with the motion role use-focus (recipes/motion.ts)."
+    ]
+  },
+  "openQuestions": [
+    "The cell is a 12 px square, under the 24 px target. Is the keyboard grid plus the named cells enough, or does the pointer target need to grow?",
+    "Contrast: must neighbouring Chart/sequential levels, and level 1 against the page, meet a non-text contrast ratio, given that the level is also in the accessible name?",
+    "Reduced motion: should the focus ring appear with no fade (use-focus)?",
+    "The contract has no Figma set linked (finding DOC-001, codeOnly). Should it be added?"
+  ],
+  "approval": {
+    "status": "draft",
+    "by": null,
+    "date": null
+  }
+}

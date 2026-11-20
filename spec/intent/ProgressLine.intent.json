@@ -1,0 +1,55 @@
+{
+  "$schema": "./intent.schema.json",
+  "component": "ProgressLine",
+  "purpose": "A horizontal bar that shows how far an operation that takes more than a couple of seconds has got, from 0 to 100. Pair it with a label and the percentage.",
+  "notFor": [
+    {
+      "case": "The duration is unknown.",
+      "use": "Spinner"
+    },
+    {
+      "case": "A bar does not fit (a button, a card corner, an avatar).",
+      "use": "ProgressCircle"
+    },
+    {
+      "case": "A value the person sets.",
+      "use": "Slider"
+    },
+    {
+      "case": "A measured value against a range, not progress toward completion.",
+      "use": "Gauge"
+    }
+  ],
+  "states": {
+    "Default": {
+      "setBy": "app",
+      "meaning": "The value the app reports (0–100).",
+      "visual": "Track Surface/muted; bar Action/primary/default (solid) or a gradient from Action/primary/default to Action/primary/hover (gradient)."
+    },
+    "Indeterminate": {
+      "setBy": "app",
+      "meaning": "No value given (Radix reports indeterminate).",
+      "visual": "NOT DECIDED"
+    }
+  },
+  "a11y": {
+    "role": "progressbar (aria-valuenow / min / max)",
+    "keyboard": "Not focusable (Radix Progress).",
+    "minHitArea": 24,
+    "contrast": "AA",
+    "reducedMotion": "NOT DECIDED",
+    "notes": [
+      "Give it an accessible name (aria-label).",
+      "The bar width moves on use-progress (recipes/motion.ts)."
+    ]
+  },
+  "openQuestions": [
+    "Indeterminate: Radix reports it when there is no value, but no look is designed. What does it show?",
+    "Reduced motion: should the bar jump to the new value instead of moving on use-progress?"
+  ],
+  "approval": {
+    "status": "draft",
+    "by": null,
+    "date": null
+  }
+}

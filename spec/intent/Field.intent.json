@@ -1,0 +1,59 @@
+{
+  "$schema": "./intent.schema.json",
+  "component": "Field",
+  "purpose": "Wraps one form control with its visible label, an optional required marker and trailing link, and helper or error text, and wires them to the control. It never draws the control itself.",
+  "notFor": [
+    {
+      "case": "A control that needs no visible label, such as a search box.",
+      "use": "Input"
+    },
+    {
+      "case": "A labelled group of checkboxes.",
+      "use": "CheckboxGroup"
+    },
+    {
+      "case": "A labelled switch setting.",
+      "use": "SwitchGroup"
+    },
+    {
+      "case": "Naming a control without helper or error text.",
+      "use": "Label"
+    }
+  ],
+  "states": {
+    "Default": {
+      "setBy": "component",
+      "visual": "Label Content/primary, required marker and description Content/secondary."
+    },
+    "Invalid": {
+      "setBy": "app",
+      "meaning": "The value fails validation; sets aria-invalid on the control.",
+      "visual": "The error text appears in Status/critical/content under the control."
+    },
+    "Disabled": {
+      "setBy": "app",
+      "meaning": "Disables the control.",
+      "visual": "Label, required marker and description Content/disabled."
+    }
+  },
+  "a11y": {
+    "role": "group",
+    "keyboard": "No tab stop of its own; the wrapped control and the trailing link take focus.",
+    "minHitArea": 24,
+    "contrast": "AA",
+    "reducedMotion": "NOT DECIDED",
+    "notes": [
+      "The label is a <label htmlFor> on the control; description and error reach it through aria-describedby; aria-required with required.",
+      "The error region opens on use-disclosure-in and closes on use-disclosure-out (recipes/motion.ts).",
+      "Mark required in text (the * marker), not by colour alone."
+    ]
+  },
+  "openQuestions": [
+    "Reduced motion: should the error region appear at once (no height or opacity transition on use-disclosure-in / -out)?"
+  ],
+  "approval": {
+    "status": "draft",
+    "by": null,
+    "date": null
+  }
+}

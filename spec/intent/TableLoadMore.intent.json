@@ -1,0 +1,28 @@
+{
+  "$schema": "./intent.schema.json",
+  "component": "TableLoadMore",
+  "purpose": "The row under a paged table that fetches the next rows on request and shows their loading state.",
+  "notFor": [
+    {"case": "Numbered pages people jump between.", "use": "Pagination"},
+    {"case": "The first load of a table.", "use": "TableLoading"},
+    {"case": "Totals.", "use": "TableFooter"}
+  ],
+  "states": {
+    "Default": {"setBy": "app", "meaning": "More rows exist and none are loading.", "visual": "A centred ghost secondary Button (sm) labelled Load more."},
+    "Loading": {"setBy": "app", "meaning": "The next rows are being fetched.", "visual": "The button is replaced by a TableLoading row."}
+  },
+  "a11y": {
+    "role": "None of its own; it holds a real button.",
+    "keyboard": "Tab reaches the button; Enter or Space calls onLoadMore.",
+    "minHitArea": 24,
+    "contrast": "AA",
+    "notes": [
+      "The loading row announces itself (TableLoading)."
+    ]
+  },
+  "openQuestions": [
+    "Motion: State Default · Loading has no motion decision in the contract (finding MOT-002 TableLoadMore). Should the swap ease, or cut?",
+    "Focus: when the button is swapped for the loading row, where does focus go, and where after the rows arrive?"
+  ],
+  "approval": { "status": "draft", "by": null, "date": null }
+}

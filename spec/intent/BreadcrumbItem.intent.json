@@ -1,0 +1,62 @@
+{
+  "$schema": "./intent.schema.json",
+  "component": "BreadcrumbItem",
+  "purpose": "One segment of a Breadcrumb trail: a link to an ancestor page, or the current page as plain text. Not for standalone use.",
+  "notFor": [
+    {
+      "case": "Used on its own, outside a Breadcrumb.",
+      "use": "Breadcrumb"
+    },
+    {
+      "case": "A standalone inline link in text.",
+      "use": "TextLink"
+    },
+    {
+      "case": "A navigation row in a side rail.",
+      "use": "NavItem"
+    }
+  ],
+  "states": {
+    "Default": {
+      "setBy": "component",
+      "visual": "default: label Content/secondary. ghost has no fill; outline adds a Border/control stroke; solid fills Surface/muted."
+    },
+    "Hover": {
+      "setBy": "component",
+      "visual": "default: label Content/accent (outline stroke Border/accent, solid fill Surface/accent). secondary: label Content/primary (outline stroke Border/control-hover, solid fill Surface/muted-hover)."
+    },
+    "Focused": {
+      "setBy": "component",
+      "meaning": "Reached by keyboard (focus-visible).",
+      "visual": "default: Border/focus stroke with a Border/ring/default halo. secondary: Border/strong stroke with a Border/subtle halo. Label stays Content/secondary."
+    },
+    "Current": {
+      "setBy": "app",
+      "meaning": "The page the person is on (aria-current=\"page\"), not interactive.",
+      "visual": "Label Content/primary; outline stroke Border/default, solid fill Surface/muted."
+    },
+    "Disabled": {
+      "setBy": "app",
+      "visual": "Label Content/disabled; outline stroke Border/subtle, solid fill Action/disabled/default."
+    }
+  },
+  "a11y": {
+    "role": "link",
+    "keyboard": "Tab reaches it unless it is current or disabled; Enter follows the link.",
+    "minHitArea": 24,
+    "contrast": "AA",
+    "notes": [
+      "The current item is aria-current=\"page\" and not interactive.",
+      "Use asChild for the router link."
+    ]
+  },
+  "openQuestions": [
+    "Motion: the State axis has no motion decision and recipes/motion.ts has no entry (finding MOT-002). Should hover and focus colour changes animate (for example use-hover)?",
+    "Disabled: when is an ancestor segment disabled rather than simply left out, and should it leave the Tab order?"
+  ],
+  "approval": {
+    "status": "draft",
+    "by": null,
+    "date": null
+  }
+}

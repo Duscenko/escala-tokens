@@ -1,0 +1,39 @@
+{
+  "$schema": "./intent.schema.json",
+  "component": "Combobox",
+  "purpose": "Lets the person find and pick one option from a long list by typing to filter it. Use it when the options pass about ten or need search.",
+  "notFor": [
+    { "case": "A short list of options that can all be shown at once.", "use": "RadioGroup" },
+    { "case": "Several open-ended values the person invents.", "use": "InputTag" },
+    { "case": "Free text with no list of options.", "use": "Input" },
+    { "case": "A menu of actions rather than a value to choose.", "use": "DropdownMenu" }
+  ],
+  "states": {
+    "Default": { "setBy": "component", "meaning": "At rest.", "visual": "Surface/input box with a Border/control edge; value in Content/primary, placeholder and icons in Content/subtle." },
+    "Hover": { "setBy": "component", "visual": "The edge moves to Border/control-hover." },
+    "Focused": { "setBy": "component", "meaning": "The field has focus.", "visual": "Border/focus edge with a Border/ring/default halo." },
+    "Open": { "setBy": "both", "meaning": "The list is shown.", "visual": "As Focused (Border/focus with Border/ring/default), with the ComboboxPopover below." },
+    "Invalid": { "setBy": "app", "meaning": "The choice failed validation (aria-invalid).", "visual": "Status/critical/border-strong edge with a Status/critical/border halo." },
+    "Disabled": { "setBy": "app", "meaning": "Cannot be used.", "visual": "Action/disabled/default fill; value, placeholder and icons in Content/disabled." },
+    "Loading": { "setBy": "app", "meaning": "Options are being fetched (aria-busy).", "visual": "The Default look with a spinner in place of the chevron." },
+    "Value=placeholder": { "setBy": "user", "meaning": "Nothing chosen.", "visual": "Placeholder in Content/subtle." },
+    "Value=filled": { "setBy": "user", "meaning": "An option is chosen.", "visual": "The option's label in Content/primary." }
+  },
+  "a11y": {
+    "role": "combobox (editable, list autocomplete) with aria-expanded, aria-controls and aria-activedescendant",
+    "keyboard": "Typing filters and opens the list. Arrow Down / Up open it when closed and move the active option when open; Enter picks it; Escape closes the list and clears the query. Focus stays in the field; leaving it closes the list.",
+    "minHitArea": 24,
+    "contrast": "AA",
+    "reducedMotion": "NOT DECIDED",
+    "notes": [
+      "Keep a visible label (Field) and expose the error through aria-describedby.",
+      "The edge moves with use-hover and the halo with use-focus."
+    ]
+  },
+  "openQuestions": [
+    "Short lists: the usage says a plain Select is enough for short lists, but there is no Select component. Which component should short lists use?",
+    "Free text: if the typed text matches no option, is it kept as the value, or cleared on blur?",
+    "Reduced motion: should the edge and halo transitions be instant, and the popover appear with no motion?"
+  ],
+  "approval": { "status": "draft", "by": null, "date": null }
+}

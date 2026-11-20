@@ -1,0 +1,58 @@
+{
+  "$schema": "./intent.schema.json",
+  "component": "SwitchGroup",
+  "purpose": "A Switch with its label, an optional description and a footer in one row; clicking the text toggles the switch. Use it for one labelled setting that applies immediately.",
+  "notFor": [
+    {
+      "case": "A switch whose label lives elsewhere, such as in a table cell.",
+      "use": "Switch"
+    },
+    {
+      "case": "A choice that only applies after Save or Submit.",
+      "use": "CheckboxItem"
+    },
+    {
+      "case": "Picking one option out of several.",
+      "use": "RadioGroup"
+    }
+  ],
+  "states": {
+    "Default": {
+      "setBy": "component",
+      "visual": "Label Content/primary, description Content/secondary, footer Content/subtle."
+    },
+    "Disabled": {
+      "setBy": "app",
+      "meaning": "The setting cannot be changed.",
+      "visual": "Label, description and footer Content/disabled; the switch takes Switch Disabled."
+    },
+    "Invalid": {
+      "setBy": "app",
+      "meaning": "The footer becomes the error.",
+      "visual": "Footer Status/critical/content; label and description as Default."
+    },
+    "Loading": {
+      "setBy": "app",
+      "meaning": "The change is being saved.",
+      "visual": "A Spinner replaces the switch; label, description and footer keep their Default roles."
+    }
+  },
+  "a11y": {
+    "role": "switch (the row is a <label htmlFor> around it; description and footer are aria-describedby)",
+    "keyboard": "Tab reaches the switch. Space or Enter toggles it (Radix Switch). A click on the text toggles it.",
+    "minHitArea": 24,
+    "contrast": "AA",
+    "notes": [
+      "Hover and Focused belong to the nested Switch."
+    ]
+  },
+  "openQuestions": [
+    "Motion: the State axis (Default · Disabled · Invalid · Loading) has no motion decision and recipes/motion.ts has no entry. Should the swap to the Spinner animate? (finding MOT-002 SwitchGroup)",
+    "Loading: is the control focusable and announced while the Spinner replaces it, and does focus return to the switch afterwards? The contract does not say."
+  ],
+  "approval": {
+    "status": "draft",
+    "by": null,
+    "date": null
+  }
+}

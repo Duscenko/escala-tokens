@@ -1,0 +1,63 @@
+{
+  "$schema": "./intent.schema.json",
+  "component": "StepperIndicator",
+  "purpose": "The marker column or row of a Stepper step: a StepperIcon and the connector line to the next step, tinted by status. Not for standalone use.",
+  "notFor": [
+    {
+      "case": "Used on its own, outside a StepperItem.",
+      "use": "StepperItem"
+    },
+    {
+      "case": "A divider between content.",
+      "use": "Separator"
+    },
+    {
+      "case": "A progress fill.",
+      "use": "ProgressLine"
+    }
+  ],
+  "states": {
+    "Status=active": {
+      "setBy": "app",
+      "visual": "Line Border/default."
+    },
+    "Status=completed": {
+      "setBy": "app",
+      "visual": "Line Border/accent."
+    },
+    "Status=error": {
+      "setBy": "app",
+      "visual": "Line Status/critical/border."
+    },
+    "Status=locked": {
+      "setBy": "app",
+      "visual": "Line Border/default."
+    },
+    "Default": {
+      "setBy": "component",
+      "visual": "The line colour of its Status."
+    },
+    "Disabled": {
+      "setBy": "app",
+      "visual": "Line Border/subtle for every Status."
+    }
+  },
+  "a11y": {
+    "role": "presentation",
+    "keyboard": "None: not focusable.",
+    "minHitArea": 24,
+    "contrast": "AA",
+    "notes": [
+      "The line is presentational; the status is announced by the marker.",
+      "Hide the line on the last step."
+    ]
+  },
+  "openQuestions": [
+    "Motion: the State axis has no motion decision and recipes/motion.ts has no entry (finding MOT-002). Should the line colour change animate?"
+  ],
+  "approval": {
+    "status": "draft",
+    "by": null,
+    "date": null
+  }
+}

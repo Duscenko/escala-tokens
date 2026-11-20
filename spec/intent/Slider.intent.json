@@ -1,0 +1,58 @@
+{
+  "$schema": "./intent.schema.json",
+  "component": "Slider",
+  "purpose": "Picks a value, or a range between two ends, by position on a track where the place in the range matters more than the exact number. Optional tooltips show the value and tick marks show the scale.",
+  "notFor": [
+    {
+      "case": "The exact number matters or will be typed.",
+      "use": "NumberInput"
+    },
+    {
+      "case": "Collecting a 1–5 score or a sentiment.",
+      "use": "RatingGroup"
+    },
+    {
+      "case": "Showing progress or a measured value the person cannot change.",
+      "use": "ProgressLine"
+    },
+    {
+      "case": "A few labelled, discrete options.",
+      "use": "SegmentedControl"
+    }
+  ],
+  "states": {
+    "Default": {
+      "setBy": "component",
+      "visual": "Track Surface/muted; range Action/primary/default (default) or Content/primary (secondary); marks Border/strong with Content/secondary labels; tooltip Surface/inverse with Content/inverse text."
+    },
+    "Dragging": {
+      "setBy": "user",
+      "meaning": "A thumb is being dragged.",
+      "visual": "The range keeps its Default fill; the dragged thumb takes SliderThumb Dragging."
+    },
+    "Disabled": {
+      "setBy": "app",
+      "meaning": "Cannot be changed.",
+      "visual": "Range Action/disabled/default, mark labels Content/disabled; thumbs take SliderThumb Disabled."
+    }
+  },
+  "a11y": {
+    "role": "slider (one per thumb, with aria-valuenow / min / max)",
+    "keyboard": "Each thumb is one tab stop. Arrow Right / Up increases by one step, Arrow Left / Down decreases; Page Up / Page Down and Shift+Arrow move a larger step; Home / End go to the minimum / maximum (Radix Slider).",
+    "minHitArea": 24,
+    "contrast": "AA",
+    "notes": [
+      "Give the slider an aria-label; show the value (tooltip) when it matters."
+    ]
+  },
+  "openQuestions": [
+    "Motion: the State axis (Default · Dragging · Disabled) has no motion decision and recipes/motion.ts has no entry. Should the range fill or the tooltip move with a role? (finding MOT-002 Slider)",
+    "Figma paints the mark tick Border/strong at 50 % opacity; no role covers that opacity. Is a role missing?",
+    "Range: does each of the two thumbs need its own accessible name (start / end), and who supplies it?"
+  ],
+  "approval": {
+    "status": "draft",
+    "by": null,
+    "date": null
+  }
+}

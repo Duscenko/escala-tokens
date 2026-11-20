@@ -1,0 +1,38 @@
+{
+  "$schema": "./intent.schema.json",
+  "component": "Switch",
+  "purpose": "Turns a single setting on or off, and the change applies the moment it is flipped. Use it in settings lists and panels where each row controls one independent option.",
+  "notFor": [
+    { "case": "The choice only takes effect after the person presses Save or Submit.", "use": "Checkbox" },
+    { "case": "The value can be partly selected, such as a parent row over a mixed group.", "use": "Checkbox" },
+    { "case": "The person picks one option out of several.", "use": "RadioGroup" },
+    { "case": "Two or three short, mutually exclusive views or modes shown side by side.", "use": "SegmentedControl" },
+    { "case": "Triggering a one-off action such as Delete or Send.", "use": "Button" }
+  ],
+  "states": {
+    "Checked=true": { "setBy": "both", "meaning": "The setting is active.", "visual": "Thumb at the end of the track; the track takes the action fill (Action/primary/default)." },
+    "Checked=false": { "setBy": "both", "meaning": "The setting is inactive.", "visual": "Thumb at the start of the track; the track takes the muted fill (Surface/muted)." },
+    "Default": { "setBy": "component", "meaning": "At rest.", "visual": "The track fill of its Checked value." },
+    "Hover": { "setBy": "component", "visual": "The track moves to its hover role (Action/primary/hover when on, Surface/muted-hover when off)." },
+    "Focused": { "setBy": "component", "meaning": "Reached by keyboard (focus-visible).", "visual": "Focus ring around the track; the padding grows by the focus stroke so the thumb travel shortens." },
+    "Disabled": { "setBy": "app", "meaning": "Cannot be changed and leaves the tab order.", "visual": "Disabled content and surface roles." }
+  },
+  "a11y": {
+    "role": "switch",
+    "keyboard": "Tab reaches it unless disabled. Space or Enter toggles it (Radix Switch).",
+    "minHitArea": 24,
+    "contrast": "AA",
+    "reducedMotion": "NOT DECIDED",
+    "notes": [
+      "Needs a visible label (SwitchGroup) or an aria-label supplied by the app; the component does not provide one.",
+      "On and off differ by thumb position, never by colour alone.",
+      "The track and thumb move with the motion role use-toggle; the focus ring with use-focus (recipes/motion.ts)."
+    ]
+  },
+  "openQuestions": [
+    "Reduced motion: should the thumb jump to its end with no slide, or keep a shorter slide?",
+    "Read-only: the Figma set has no read-only state. Does Switch need one (focusable, shows the value, cannot change), or is Disabled enough?",
+    "The io marks (IoVisible): Figma paints them Content/on-action when on and nothing when off; code takes the track role. Which is right? (finding PAR-001 Switch io)"
+  ],
+  "approval": { "status": "draft", "by": null, "date": null }
+}

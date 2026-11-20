@@ -1,0 +1,49 @@
+{
+  "$schema": "./intent.schema.json",
+  "component": "ActivityHeatmap",
+  "purpose": "Shows one number per day over a year as a grid of shaded squares, for contribution and habit calendars. Reach for it when the pattern across days and weeks matters more than exact values.",
+  "notFor": [
+    {
+      "case": "One value over time, read as a trend.",
+      "use": "Sparkline"
+    },
+    {
+      "case": "Shares of one whole.",
+      "use": "SplitBar"
+    },
+    {
+      "case": "Exact values the person must read and compare.",
+      "use": "Table"
+    },
+    {
+      "case": "Switching the year shown.",
+      "use": "SegmentedControl"
+    }
+  ],
+  "states": {
+    "Default": {
+      "setBy": "component",
+      "visual": "53 × 7 cells on the Chart/sequential ladder; month, day and Less–More legend labels in Content/secondary."
+    }
+  },
+  "a11y": {
+    "role": "grid",
+    "keyboard": "One roving tab stop. ArrowLeft / ArrowRight move one week, ArrowUp / ArrowDown one day, Home / End the first / last day of the week, Ctrl+Home / Ctrl+End the first / last day of the grid.",
+    "minHitArea": 24,
+    "contrast": "AA",
+    "notes": [
+      "7 rows (weekdays) of gridcells; every cell is named by its day and count (getCellLabel), so the level never relies on colour alone.",
+      "The legend, month and day labels are decorative (aria-hidden).",
+      "The focused day is shown by the consumer through onFocusDay; there is no built-in tooltip."
+    ]
+  },
+  "openQuestions": [
+    "The contract has no Figma set linked (finding DOC-001, codeOnly). Should the set be added to the inventory?",
+    "Empty and loading data: is an all-zero grid enough, or does the heatmap need its own empty or loading treatment?"
+  ],
+  "approval": {
+    "status": "draft",
+    "by": null,
+    "date": null
+  }
+}

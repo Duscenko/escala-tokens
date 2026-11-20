@@ -1,0 +1,36 @@
+{
+  "$schema": "./intent.schema.json",
+  "component": "IconButton",
+  "purpose": "Starts an action shown by a single icon with no visible label, as a square at the Button heights. Use it in toolbars, table rows and dialog headers where the icon is unambiguous.",
+  "notFor": [
+    { "case": "The action needs words to be understood.", "use": "Button" },
+    { "case": "Dismissing an alert, toast, dialog or tag with an X.", "use": "CloseButton" },
+    { "case": "The one primary action that floats over the screen's content.", "use": "FABButton" }
+  ],
+  "states": {
+    "Default": { "setBy": "component", "meaning": "At rest.", "visual": "The same Variant x Appearance roles as Button: Action/primary/default with Content/on-action, Action/secondary/default with Content/on-secondary, Status/critical/surface-solid with Status/critical/on-solid; outline edges Border/accent or Status/critical/border-strong." },
+    "Hover": { "setBy": "component", "visual": "Fills move to their hover role (Action/primary/hover, Action/secondary/hover, Action/ghost/hover, Status/critical/surface-solid-hover, Status/critical/surface); link ink to Content/link/hover." },
+    "Pressed": { "setBy": "component", "visual": "Fills move to their pressed role (Action/primary/pressed, Action/secondary/pressed, Action/ghost/pressed, Status/critical/surface-solid-pressed, Status/critical/surface-pressed)." },
+    "Focused": { "setBy": "component", "meaning": "Reached by keyboard (focus-visible).", "visual": "The Default look plus a ring: Border/ring/default, Border/ring/neutral or Status/critical/ring by Variant." },
+    "Loading": { "setBy": "app", "meaning": "The action is running.", "visual": "The Default look with a spinner in place of the icon." },
+    "Disabled": { "setBy": "app", "meaning": "Cannot be used right now.", "visual": "Action/disabled/default fill, Border/control edge, Content/disabled ink." }
+  },
+  "a11y": {
+    "role": "button (native <button>)",
+    "keyboard": "Tab reaches it; Enter or Space activates it (native button).",
+    "minHitArea": 24,
+    "contrast": "AA",
+    "reducedMotion": "NOT DECIDED",
+    "notes": [
+      "aria-label is required (no visible text); it must include the count when the badge shows one.",
+      "Disabled sets aria-disabled; Loading sets aria-busy.",
+      "Colours move with the motion role use-hover; the focus ring with use-focus."
+    ]
+  },
+  "openQuestions": [
+    "Reduced motion: should the hover and press transitions (use-hover, including the scale) be dropped, or only shortened?",
+    "Badge: is the badge's count announced only through the aria-label, or should the badge part be exposed to assistive tech too?",
+    "IconButton has no human contract (design-plans/icon-button-contract.md does not exist). Should one be written, or does button-contract.md cover it?"
+  ],
+  "approval": { "status": "draft", "by": null, "date": null }
+}

@@ -1,0 +1,48 @@
+{
+  "$schema": "./intent.schema.json",
+  "component": "TabBar",
+  "purpose": "Bottom navigation of a mobile app: three to five top-level destinations, always visible, each one changing the page. Reach for it as the main navigation on phone layouts.",
+  "notFor": [
+    {
+      "case": "Switching views or filters inside one page.",
+      "use": "TabMenu"
+    },
+    {
+      "case": "Navigation on desktop or laptop layouts.",
+      "use": "Sidebar"
+    },
+    {
+      "case": "More than five destinations, or secondary destinations.",
+      "use": "Sidebar"
+    },
+    {
+      "case": "A single choice between short options of the same data.",
+      "use": "SegmentedControl"
+    }
+  ],
+  "states": {
+    "Default": {
+      "setBy": "component",
+      "visual": "A full-width bar on Surface/page with a Border/subtle hairline on top; the items share the width equally."
+    }
+  },
+  "a11y": {
+    "role": "navigation",
+    "keyboard": "Natural Tab order through the item links; Enter follows a link. No roving tabindex and no arrow keys: it is not a tablist.",
+    "minHitArea": 44,
+    "contrast": "AA",
+    "notes": [
+      "A nav landmark named by aria-label (for example \"Main\") wrapping a list of links.",
+      "Each item is at least Size/target-min tall, which is 44 on the Tablet and Mobile viewports where the bar lives.",
+      "Exactly one item is Current (aria-current=\"page\")."
+    ]
+  },
+  "openQuestions": [
+    "Three to five items and exactly one Current: should the component enforce this, or is it guidance only?"
+  ],
+  "approval": {
+    "status": "draft",
+    "by": null,
+    "date": null
+  }
+}

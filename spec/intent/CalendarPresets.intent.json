@@ -1,0 +1,25 @@
+{
+  "$schema": "./intent.schema.json",
+  "component": "CalendarPresets",
+  "purpose": "The rail beside a range Calendar offering quick spans such as Today or Last 7 days, with the one matching the selection tinted like the range.",
+  "notFor": [
+    { "case": "Standalone use without a range Calendar.", "use": "Calendar" },
+    { "case": "Switching between views or modes.", "use": "SegmentedControl" }
+  ],
+  "states": {
+    "Default": { "setBy": "component", "meaning": "The rail at rest.", "visual": "Border/default edge; \"PRESETS\" label in Content/secondary; presets in Content/primary." },
+    "Selected": { "setBy": "both", "meaning": "The preset that matches the current range.", "visual": "Surface/selected fill with Content/accent (secondary: Surface/muted with Content/primary)." }
+  },
+  "a11y": {
+    "role": "buttons; the selected one carries aria-pressed",
+    "keyboard": "Tab reaches each preset; Enter or Space picks it (native buttons).",
+    "minHitArea": 28,
+    "contrast": "AA",
+    "notes": ["Each preset's visible text is its name."]
+  },
+  "openQuestions": [
+    "Hover and focus: the contract binds no hover or focus roles for a preset row. What do they look like?",
+    "Custom range: when the selection matches no preset, should anything be marked?"
+  ],
+  "approval": { "status": "draft", "by": null, "date": null }
+}

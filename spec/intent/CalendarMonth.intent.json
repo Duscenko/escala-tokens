@@ -1,0 +1,24 @@
+{
+  "$schema": "./intent.schema.json",
+  "component": "CalendarMonth",
+  "purpose": "One visible month of a Calendar: the weekday row over the weeks of day cells, Sunday first, marking the chosen days by Mode.",
+  "notFor": [
+    { "case": "Standalone use without the header and selection logic.", "use": "Calendar" },
+    { "case": "A grid of activity over many weeks.", "use": "ActivityHeatmap" }
+  ],
+  "states": {
+    "Default": { "setBy": "component", "meaning": "No states of its own; each day carries its own (CalendarDay).", "visual": "Weekday names in Content/secondary over the CalendarDay grid." }
+  },
+  "a11y": {
+    "role": "grid of day buttons (date picker dialog, APG)",
+    "keyboard": "One day is the tab stop (the selection, else today, else the first enabled day). Arrow Left / Right move one day, Arrow Up / Down one week, skipping disabled days; Enter or Space selects.",
+    "minHitArea": 32,
+    "contrast": "AA",
+    "notes": ["The weekday row is plain text."]
+  },
+  "openQuestions": [
+    "Keyboard: should Page Up / Page Down change month and Home / End jump to the week's start and end, as the APG date grid does?",
+    "Week start: the month is Sunday first. Should the first day follow the locale?"
+  ],
+  "approval": { "status": "draft", "by": null, "date": null }
+}

@@ -1,0 +1,70 @@
+{
+  "$schema": "./intent.schema.json",
+  "component": "CheckboxItem",
+  "purpose": "A checkbox with its visible label and an optional description in one row, where a click anywhere on the row toggles it. Use it on its own for terms and opt-ins, or as one row of a CheckboxGroup.",
+  "notFor": [
+    {
+      "case": "Several related options that need a shared question and one error message.",
+      "use": "CheckboxGroup"
+    },
+    {
+      "case": "A labelled setting that applies immediately.",
+      "use": "SwitchGroup"
+    },
+    {
+      "case": "A row inside a table or list that already provides the label elsewhere.",
+      "use": "Checkbox"
+    },
+    {
+      "case": "Picking one option out of several.",
+      "use": "RadioGroup"
+    }
+  ],
+  "states": {
+    "Checked=false": {
+      "setBy": "both",
+      "visual": "The nested Checkbox unchecked; label and description unchanged."
+    },
+    "Checked=true": {
+      "setBy": "both",
+      "visual": "The nested Checkbox checked; label and description unchanged."
+    },
+    "Checked=indeterminate": {
+      "setBy": "app",
+      "meaning": "Parent row of a partly checked list.",
+      "visual": "The nested Checkbox indeterminate; label and description unchanged."
+    },
+    "Default": {
+      "setBy": "component",
+      "visual": "Label Content/primary, description Content/secondary."
+    },
+    "Disabled": {
+      "setBy": "app",
+      "meaning": "The whole row cannot be changed.",
+      "visual": "Label and description Content/disabled; the box takes Checkbox Disabled."
+    },
+    "Invalid": {
+      "setBy": "app",
+      "visual": "Label Content/primary and description Content/secondary as Default; the box edge turns critical (Checkbox Invalid)."
+    }
+  },
+  "a11y": {
+    "role": "checkbox (the row is its <label>; the description is aria-describedby)",
+    "keyboard": "Tab reaches the box (one tab stop). Space toggles it (Radix Checkbox). A click anywhere on the row toggles it.",
+    "minHitArea": 24,
+    "contrast": "AA",
+    "notes": [
+      "Size, Checked, State and Variant always match the nested Checkbox.",
+      "Hover and Focused belong to the nested Checkbox; the row has no state of its own for them."
+    ]
+  },
+  "openQuestions": [
+    "Motion: the State axis (Default · Disabled · Invalid) has no motion decision and recipes/motion.ts has no entry. Should the label and description colours transition? (finding MOT-002 CheckboxItem)",
+    "A standalone CheckboxItem (terms) in Invalid has no slot for the error text. Where does the message go when there is no CheckboxGroup footer?"
+  ],
+  "approval": {
+    "status": "draft",
+    "by": null,
+    "date": null
+  }
+}

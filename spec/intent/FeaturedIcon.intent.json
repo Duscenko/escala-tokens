@@ -1,0 +1,45 @@
+{
+  "$schema": "./intent.schema.json",
+  "component": "FeaturedIcon",
+  "purpose": "A decorative glyph in a tinted, solid or gradient shape that gives a card, empty state, dialog header or feature list a visual anchor. The text beside it carries the meaning.",
+  "notFor": [
+    {
+      "case": "An icon the person can press.",
+      "use": "IconButton"
+    },
+    {
+      "case": "A person or entity.",
+      "use": "Avatar"
+    },
+    {
+      "case": "A status or count label.",
+      "use": "Badge"
+    }
+  ],
+  "states": {
+    "Default": {
+      "setBy": "component",
+      "meaning": "Static; Variant and Appearance set the look.",
+      "visual": "soft: Surface/accent with Content/accent (default), Surface/muted with Content/secondary (secondary), Status/<severity>/surface with Status/<severity>/content; solid: Action/primary/default with Content/on-action, Surface/inverse with Content/inverse, Status/<severity>/surface-solid with Status/<severity>/on-solid; gradient: the solid role through its hover and pressed steps, with Elevation/highlight."
+    }
+  },
+  "a11y": {
+    "role": "none (aria-hidden, decorative)",
+    "keyboard": "Not focusable: a decorative tile.",
+    "minHitArea": 24,
+    "contrast": "AA",
+    "notes": [
+      "Never the only carrier of meaning: the title or text beside it says what it means."
+    ]
+  },
+  "openQuestions": [
+    "Gradient: Figma paints root.fill as a linear gradient, while the contract binds a solid role (Action/primary/default, Action/secondary/default, Status/<severity>/surface-solid). No gradient role exists. Should one be added? (findings PAR-001 FeaturedIcon root.fill)",
+    "Gradient in dark: the warning and info stops converge on pale tones. Should their stops change? (finding COL-003)",
+    "Gradient shadow: Figma paints no spread, the CSS has -1 and -2. Which is right? (finding SYN-009)"
+  ],
+  "approval": {
+    "status": "draft",
+    "by": null,
+    "date": null
+  }
+}

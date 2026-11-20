@@ -1,0 +1,58 @@
+{
+  "$schema": "./intent.schema.json",
+  "component": "SliderThumb",
+  "purpose": "The draggable handle of a Slider, showing hover, focus, drag and disabled feedback. It only exists inside a Slider.",
+  "notFor": [
+    {
+      "case": "Any standalone use; it has no value or role of its own.",
+      "use": "Slider"
+    },
+    {
+      "case": "A draggable on/off handle.",
+      "use": "Switch"
+    }
+  ],
+  "states": {
+    "Default": {
+      "setBy": "component",
+      "visual": "Content/on-action fill, edge Action/primary/default (default) or Content/primary (secondary), xs shadow (shadow.xs)."
+    },
+    "Hover": {
+      "setBy": "component",
+      "visual": "Edge moves to Action/primary/hover (default) or Content/secondary (secondary); shadow kept."
+    },
+    "Focused": {
+      "setBy": "component",
+      "meaning": "Reached by keyboard (focus-visible).",
+      "visual": "Edge and focus Border/focus with ring Border/ring/default (default); Border/strong with Border/subtle (secondary)."
+    },
+    "Dragging": {
+      "setBy": "user",
+      "visual": "Edge as Default with no shadow."
+    },
+    "Disabled": {
+      "setBy": "app",
+      "visual": "Surface/muted fill, Action/disabled/default edge."
+    }
+  },
+  "a11y": {
+    "role": "slider, given by the parent Slider (Radix); the thumb is presentational on its own",
+    "keyboard": "One tab stop per thumb; the arrow, Page, Shift+Arrow, Home and End keys come from the Slider.",
+    "minHitArea": 24,
+    "contrast": "AA",
+    "reducedMotion": "NOT DECIDED",
+    "notes": [
+      "Edge moves on use-hover, the focus ring on use-focus (recipes/motion.ts)."
+    ]
+  },
+  "openQuestions": [
+    "Reduced motion: should the edge and ring transitions (use-hover, use-focus) be dropped?",
+    "Dragging differs from Default only by the missing shadow (Figma's 4 px drag ring is not painted). Should dragging have a clearer treatment?",
+    "The xs thumb is 14 px, under the 24 px hit area. Does the Slider's track extend the hit area, or does the thumb need padding?"
+  ],
+  "approval": {
+    "status": "draft",
+    "by": null,
+    "date": null
+  }
+}

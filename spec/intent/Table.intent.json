@@ -1,0 +1,30 @@
+{
+  "$schema": "./intent.schema.json",
+  "component": "Table",
+  "purpose": "Shows tabular data that people read and compare across columns: a header, body rows and an optional footer, with caption, empty, loading and load-more parts.",
+  "notFor": [
+    {"case": "A list of items with one action each (usage prefers a list).", "use": "none"},
+    {"case": "Moving between pages of results: Pagination sits outside the table.", "use": "Pagination"},
+    {"case": "A lane of cards on a board.", "use": "BoardColumn"},
+    {"case": "Settings, each with its own control.", "use": "SettingsRow"}
+  ],
+  "states": {
+    "Default": {"setBy": "component", "meaning": "At rest; rows and heads carry their own states.", "visual": "Filled: Surface/page with a Border/default stroke (Stroke/divider) and Radius/container. Ghost: no fill and no stroke. Size and Dividers cascade to every row and cell."}
+  },
+  "a11y": {
+    "role": "table",
+    "keyboard": "Only interactive content takes focus: a sortable column header (onSort) is a button that Enter or Space activates; rows and cells are not focusable.",
+    "minHitArea": 24,
+    "contrast": "NOT DECIDED",
+    "notes": [
+      "Give it an aria-label or a TableCaption.",
+      "Pagination sits outside the table, next to the container."
+    ]
+  },
+  "openQuestions": [
+    "Contrast: the TableHead label measures 4.22:1 in Light, below AA for text (table-contract.md). Keep it as Figma binds it, or change a role?",
+    "Pinned columns: the file draws only the 1px edge and code does not make them sticky (table-contract.md, not built). Should pinned cells stick when the table scrolls sideways?",
+    "Column resizing: TableResizer is only the handle and the consumer resizes. Should Table own the resize logic?"
+  ],
+  "approval": { "status": "draft", "by": null, "date": null }
+}

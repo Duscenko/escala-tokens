@@ -1,0 +1,29 @@
+{
+  "$schema": "./intent.schema.json",
+  "component": "Calendar",
+  "purpose": "Lets the person pick a date when the day of the week matters, several dates, or a range: a month with its header, an optional presets rail and an optional Today, Clear, Apply footer.",
+  "notFor": [
+    { "case": "A known date such as a birthday, typed faster than picked.", "use": "Input" },
+    { "case": "A date field inside a form that opens a picker on demand.", "use": "DatePickerTrigger" },
+    { "case": "Showing activity over time rather than picking dates.", "use": "ActivityHeatmap" }
+  ],
+  "states": {
+    "Default": { "setBy": "component", "meaning": "No states of its own; selection lives in its days (CalendarDay).", "visual": "Surface/layer-1 panel with a Border/default edge." }
+  },
+  "a11y": {
+    "role": "grid of day buttons (date picker dialog, APG)",
+    "keyboard": "One day takes Tab (the selection, else today, else the first enabled day); Arrow Left / Right move a day and Arrow Up / Down a week, skipping disabled days; Enter or Space selects. The month arrows and footer Buttons are their own tab stops.",
+    "minHitArea": 32,
+    "contrast": "AA",
+    "notes": [
+      "Each day is a button named with its full date and pressed when selected.",
+      "The arrows are named Previous month and Next month."
+    ]
+  },
+  "openQuestions": [
+    "Keyboard: should Page Up / Page Down change month and Home / End jump within the week, as the APG date grid does?",
+    "Multiple and range on keyboard: how does a keyboard user set a range's start and end, and is the current range announced?",
+    "Locale: should the week start and the date names follow the locale?"
+  ],
+  "approval": { "status": "draft", "by": null, "date": null }
+}

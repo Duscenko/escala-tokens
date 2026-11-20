@@ -1,0 +1,54 @@
+{
+  "$schema": "./intent.schema.json",
+  "component": "AvatarStatus",
+  "purpose": "The presence dot on an Avatar: online, busy, away, offline or do-not-disturb, with a Surface/page edge that separates it from the photo.",
+  "notFor": [
+    {
+      "case": "A status label anywhere other than an avatar.",
+      "use": "Badge"
+    },
+    {
+      "case": "Any use without an avatar under it.",
+      "use": "Avatar"
+    }
+  ],
+  "states": {
+    "Status=online": {
+      "setBy": "app",
+      "visual": "Status/success/surface-solid dot."
+    },
+    "Status=busy": {
+      "setBy": "app",
+      "visual": "Status/critical/surface-solid dot."
+    },
+    "Status=away": {
+      "setBy": "app",
+      "visual": "Status/warning/surface-solid dot."
+    },
+    "Status=offline": {
+      "setBy": "app",
+      "visual": "Content/subtle dot."
+    },
+    "Status=do-not-disturb": {
+      "setBy": "app",
+      "visual": "Status/critical/surface-solid dot with a Status/critical/on-solid bar."
+    }
+  },
+  "a11y": {
+    "role": "img labelled with the presence (\"Online\"); the app can override the label",
+    "keyboard": "Not focusable.",
+    "minHitArea": 24,
+    "contrast": "AA",
+    "notes": [
+      "Never rely on colour alone: the label names the presence. The outside edge is Surface/page."
+    ]
+  },
+  "openQuestions": [
+    "Busy and do-not-disturb share Status/critical/surface-solid; only the bar tells them apart. Is that readable at the 6 px xs size?"
+  ],
+  "approval": {
+    "status": "draft",
+    "by": null,
+    "date": null
+  }
+}

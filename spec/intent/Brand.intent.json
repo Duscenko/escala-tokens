@@ -1,0 +1,40 @@
+{
+  "$schema": "./intent.schema.json",
+  "component": "Brand",
+  "purpose": "Shows the product's logo and name, with an optional version Badge, in app and marketing headers and footers. Wrap it in a link to make it go home.",
+  "notFor": [
+    {
+      "case": "The brand block at the top of a Sidebar.",
+      "use": "SidebarBrand"
+    },
+    {
+      "case": "A person's or organisation's picture on its own.",
+      "use": "Avatar"
+    },
+    {
+      "case": "A clickable home control by itself; it is not focusable.",
+      "use": "none"
+    }
+  ],
+  "states": {
+    "Default": {
+      "setBy": "component",
+      "visual": "Logo, then the name in Content/primary, then the optional version Badge. sm in app headers, default in marketing headers and footers."
+    }
+  },
+  "a11y": {
+    "role": "none",
+    "keyboard": "Not focusable. When wrapped in a link, Tab reaches the link and Enter follows it.",
+    "minHitArea": 24,
+    "contrast": "AA",
+    "notes": [
+      "Decorative on its own; the link around it gives the accessible name (for example \"Escala home\")."
+    ]
+  },
+  "openQuestions": [],
+  "approval": {
+    "status": "draft",
+    "by": null,
+    "date": null
+  }
+}

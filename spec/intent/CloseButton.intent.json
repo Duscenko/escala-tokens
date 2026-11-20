@@ -1,0 +1,32 @@
+{
+  "$schema": "./intent.schema.json",
+  "component": "CloseButton",
+  "purpose": "Puts something away: the X in the corner of an alert, toast, dialog or tag. Use the inverse variant when it sits on an inverse surface such as a tooltip or snackbar.",
+  "notFor": [
+    { "case": "A dismiss action that needs words, such as Cancel or Not now.", "use": "Button" },
+    { "case": "Any other icon-only action in a toolbar or row.", "use": "IconButton" },
+    { "case": "Removing one tag from a tag input.", "use": "InputTagChip" }
+  ],
+  "states": {
+    "Default": { "setBy": "component", "meaning": "At rest.", "visual": "soft takes Action/secondary/default with Content/on-secondary; outline a Border/control edge; ghost no fill and Content/secondary ink; inverse sits on Surface/inverse or Surface/inverse-muted with Content/inverse inks and a Border/inverse edge." },
+    "Hover": { "setBy": "component", "visual": "Fill moves to Action/secondary/hover, or an Action/ghost/hover overlay (Surface/inverse-muted on inverse)." },
+    "Pressed": { "setBy": "component", "visual": "Fill moves to Action/secondary/pressed, or an Action/ghost/pressed overlay (Surface/inverse-muted on inverse)." },
+    "Focused": { "setBy": "component", "meaning": "Reached by keyboard (focus-visible).", "visual": "A halo outside the control (Border/subtle, Surface/inverse-muted on inverse); outline and ghost also take a Border/strong (Border/inverse) edge." },
+    "Disabled": { "setBy": "app", "meaning": "Cannot be used right now.", "visual": "Action/disabled/default fill, Border/control edge, Content/disabled ink." }
+  },
+  "a11y": {
+    "role": "button (native <button>)",
+    "keyboard": "Tab reaches it; Enter or Space activates it (native button).",
+    "minHitArea": 24,
+    "contrast": "AA",
+    "notes": [
+      "aria-label defaults to \"Close\"; the app should name what closes when the default is ambiguous.",
+      "The glyph is decorative (aria-hidden).",
+      "Disabled sets aria-disabled."
+    ]
+  },
+  "openQuestions": [
+    "Escape: should the parent (Dialog, Toast) always offer Escape as the keyboard twin of this button, or is that left to each parent?"
+  ],
+  "approval": { "status": "draft", "by": null, "date": null }
+}

@@ -1,0 +1,32 @@
+{
+  "$schema": "./intent.schema.json",
+  "component": "ReactionGroup",
+  "purpose": "Collects quick, lightweight reactions under a post, comment or message: a row of reaction pills with their counts, a trigger that opens the picker, and an optional summary line.",
+  "notFor": [
+    { "case": "A single like or favourite toggle.", "use": "IconButton" },
+    { "case": "Giving a score or rating.", "use": "RatingGroup" },
+    { "case": "Tagging content with labels the person types.", "use": "InputTag" }
+  ],
+  "states": {
+    "Default": { "setBy": "both", "meaning": "The reactions on the post as the value lists them.", "visual": "A wrapping row of outline pill Chips, Selected where the person reacted, then the ReactionGroupTrigger; the summary in Content/secondary." },
+    "Open=true": { "setBy": "both", "meaning": "The picker is open.", "visual": "ReactionGroupPopover above the trigger; the trigger in its Open state." },
+    "Open=false": { "setBy": "both", "meaning": "The picker is closed.", "visual": "Only the row and summary." }
+  },
+  "a11y": {
+    "role": "group named \"Reactions\", with a role=\"status\" region for announcements",
+    "keyboard": "Tab moves through the pills and the trigger; Enter or Space toggles a pill or opens the picker. In the picker (toolbar), arrows move, Home and End jump, Enter or Space picks, Escape closes and returns focus to the trigger.",
+    "minHitArea": 24,
+    "contrast": "AA",
+    "reducedMotion": "From the tokens: the motion roles shorten and the stagger is 0.",
+    "notes": [
+      "Each pill is a toggle button (aria-pressed) named \"{reaction}, {count} reactions, you reacted\".",
+      "A pill whose count reaches zero leaves the row; focus moves to the neighbour pill or the trigger.",
+      "Every change is announced in the status region.",
+      "Pills travel in and out with use-travel-in / use-travel-out, enter staggered on use-stagger-in; the count digit swaps on use-toggle."
+    ]
+  },
+  "openQuestions": [
+    "Disabled: the contract has a disabled prop but the Figma file shows no disabled ReactionGroup. What should a disabled group look like?"
+  ],
+  "approval": { "status": "draft", "by": null, "date": null }
+}

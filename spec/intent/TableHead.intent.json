@@ -1,0 +1,33 @@
+{
+  "$schema": "./intent.schema.json",
+  "component": "TableHead",
+  "purpose": "A column header cell: names the column, can hold a select-all Checkbox and, when sortable, shows the sort direction and sorts on click or key.",
+  "notFor": [
+    {"case": "Not for standalone use: one per column inside a TableHeader.", "use": "TableHeader"},
+    {"case": "A body cell.", "use": "TableCell"}
+  ],
+  "states": {
+    "Default": {"setBy": "component", "meaning": "At rest.", "visual": "Fill Surface/muted; label in Content/secondary (Content/primary when sorted), Type/label."},
+    "Hover": {"setBy": "component", "meaning": "The pointer is over a sortable column; only sortable columns hover.", "visual": "Fill moves to Surface/muted-hover on use-hover."},
+    "Sort=none": {"setBy": "both", "meaning": "Not the sorted column. The person triggers onSort; the app decides the order.", "visual": "No arrow; label in Content/secondary."},
+    "Sort=ascending": {"setBy": "both", "visual": "Up arrow in Content/primary (Size/icon-sm); label in Content/primary; aria-sort=ascending."},
+    "Sort=descending": {"setBy": "both", "visual": "Down arrow in Content/primary (Size/icon-sm); label in Content/primary; aria-sort=descending."}
+  },
+  "a11y": {
+    "role": "columnheader (th scope=\"col\")",
+    "keyboard": "With onSort the header is a button: Tab reaches it and Enter or Space calls onSort. Without onSort it is not focusable.",
+    "minHitArea": 24,
+    "contrast": "NOT DECIDED",
+    "reducedMotion": "Fill and ink changes run on use-hover, which keeps its duration under reduced motion: a colour change, not travel (lib/motion.ts KEEP_UNDER_REDUCED).",
+    "notes": [
+      "aria-sort is set on the sorted column and omitted for none.",
+      "Code draws Border/focus on a focus-visible sortable header; the Figma set has no Focused variant."
+    ]
+  },
+  "openQuestions": [
+    "Contrast: the label (Content/secondary on Surface/muted) measures 4.22:1 in Light, below AA for text (table-contract.md). Keep it as Figma binds it, or change a role?",
+    "Focus: code draws Border/focus on a focused sortable header but the Figma set has no Focused state. Should Figma get one?",
+    "Sort cycle: does a third press go back to none, or only toggle ascending / descending? The contract leaves it to onSort."
+  ],
+  "approval": { "status": "draft", "by": null, "date": null }
+}

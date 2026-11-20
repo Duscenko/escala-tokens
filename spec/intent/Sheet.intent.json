@@ -1,0 +1,32 @@
+{
+  "$schema": "./intent.schema.json",
+  "component": "Sheet",
+  "purpose": "An edge-anchored panel for secondary tasks that keep the page in context: filters, a cart, details or settings. It comes from the right or left on desktop and from the bottom on mobile.",
+  "notFor": [
+    {"case": "A blocking decision or a short task that needs full attention.", "use": "Modal"},
+    {"case": "Rich content or choices anchored to a trigger, with no scrim.", "use": "Popover"},
+    {"case": "App-level navigation between sections.", "use": "Sidebar"},
+    {"case": "Transient feedback that dismisses itself.", "use": "Toast"}
+  ],
+  "states": {
+    "Open": {"setBy": "both", "meaning": "Shown over the page; focus is trapped inside and the page behind is inert.", "visual": "Scrim in Surface/overlay; the panel on Surface/layer-2 with a Border/default edge (Stroke/divider) on the side that faces the page and the sheet lift; the bottom side shows a grabber in Border/strong. Enters on sheet-enter: the scrim fades while the panel travels in from its edge."},
+    "Closed": {"setBy": "both", "meaning": "Focus returns to the trigger.", "visual": "Not rendered. Leaves on sheet-exit: the panel goes back the way it came and the scrim follows."}
+  },
+  "a11y": {
+    "role": "dialog (Radix Dialog, modal)",
+    "keyboard": "Escape closes it and returns focus to the trigger; Tab / Shift+Tab cycle inside the panel (focus trap).",
+    "minHitArea": 24,
+    "contrast": "AA",
+    "reducedMotion": "The scrim and the panel fade instead of travelling (the sheet-enter / sheet-exit reduced-motion bodies in lib/motion.ts).",
+    "notes": [
+      "The header's title is the accessible name and its description the aria-describedby; the close button has an accessible name.",
+      "The bottom side is capped by the visual viewport (not 100vh) and keeps the safe area under its footer."
+    ]
+  },
+  "openQuestions": [
+    "Panel fill: Figma paints no fill on the Sheet content (3 variants, e.g. node 1648:1448) while code binds Surface/layer-2. Which is right? (finding PAR-001 Sheet content.fill)",
+    "Panel edge: Figma draws no stroke on the content while code binds Border/default. Which is right? (finding PAR-001 Sheet content.stroke)",
+    "The bottom side has a grabber, but the contract names no drag behaviour. Should a swipe down close it?"
+  ],
+  "approval": { "status": "draft", "by": null, "date": null }
+}

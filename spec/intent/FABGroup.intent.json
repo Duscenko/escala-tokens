@@ -1,0 +1,32 @@
+{
+  "$schema": "./intent.schema.json",
+  "component": "FABGroup",
+  "purpose": "A speed-dial: one floating trigger that opens up to five related actions. Use it when several floating actions share one entry point, such as create a photo, a note or a share.",
+  "notFor": [
+    { "case": "A single floating action.", "use": "FABButton" },
+    { "case": "More than five actions, or actions that need a scrolling list.", "use": "none" },
+    { "case": "A row of related actions that sit in the layout, not floating.", "use": "ButtonGroup" }
+  ],
+  "states": {
+    "Open=false": { "setBy": "both", "meaning": "Only the trigger shows.", "visual": "The trigger FABButton with its plus icon; it keeps its own fill in both states." },
+    "Open=true": { "setBy": "both", "meaning": "The actions are shown.", "visual": "The trigger icon swaps to an X; the items appear as a labelled vertical stack, or as icon-only FABs on an arc (fan-center, fan-left, fan-right)." }
+  },
+  "a11y": {
+    "role": "group, with an aria-label; the trigger is a native <button> with aria-expanded",
+    "keyboard": "Tab reaches the trigger; Enter or Space toggles it. Items are native buttons reached by Tab.",
+    "minHitArea": 48,
+    "contrast": "AA",
+    "reducedMotion": "NOT DECIDED",
+    "notes": [
+      "The trigger's accessible name defaults to its Label (\"Create\"), which is never shown.",
+      "Fan items are icon-only, so each item's label becomes its aria-label.",
+      "Disabled turns off the trigger and every item."
+    ]
+  },
+  "openQuestions": [
+    "Reduced motion: the opening uses use-stagger-in / use-stagger-out (design plan), but the contract declares no motion. Should items appear at once with reduced motion?",
+    "Closing: does Escape or a click outside close the group, and does focus return to the trigger? Nothing in the contract says.",
+    "Arrow keys: should arrow keys move between items, or is Tab the only way?"
+  ],
+  "approval": { "status": "draft", "by": null, "date": null }
+}

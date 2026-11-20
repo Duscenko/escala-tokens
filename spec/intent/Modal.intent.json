@@ -1,0 +1,54 @@
+{
+  "$schema": "./intent.schema.json",
+  "component": "Modal",
+  "purpose": "A dialog card over a scrim that interrupts the flow for a decision or a short task, such as a confirmation or a small form. It holds a header, a content slot and a footer.",
+  "notFor": [
+    {
+      "case": "A notification that should not block the page.",
+      "use": "Toast"
+    },
+    {
+      "case": "A message that stays on the page.",
+      "use": "Alert"
+    },
+    {
+      "case": "A long task or a panel beside the page.",
+      "use": "Sheet"
+    },
+    {
+      "case": "A small floating panel attached to its trigger.",
+      "use": "Popover"
+    }
+  ],
+  "states": {
+    "Open": {
+      "setBy": "both",
+      "meaning": "The app opens it; it takes focus and makes the page inert.",
+      "visual": "Surface/overlay scrim behind the card. simple: Surface/layer-2 card with a Border/default edge. tray: a Surface/layer-1 shell around a Surface/layer-2 panel (Border/subtle dividers), footer on the tray. Enters with dialog-enter."
+    },
+    "Closed": {
+      "setBy": "both",
+      "meaning": "Closed by the app, or by the person with Escape, the scrim or the close button; focus returns to the trigger.",
+      "visual": "Not shown. Leaves with dialog-exit."
+    }
+  },
+  "a11y": {
+    "role": "dialog with aria-modal=\"true\", labelled by the title and described by the description",
+    "keyboard": "Focus moves into the dialog on open and is trapped: Tab / Shift+Tab cycle inside. Escape closes it and returns focus to the trigger (Radix Dialog).",
+    "minHitArea": 24,
+    "contrast": "AA",
+    "reducedMotion": "dialog-enter and dialog-exit collapse to a fade of the scrim and the card (their reduced versions in src/lib/motion.ts).",
+    "notes": [
+      "Never hide the title: it is the dialog's name."
+    ]
+  },
+  "openQuestions": [
+    "The Storybook control Layout differs from the contract axis (tray · simple). Which one is right? (finding PAR-001 Modal story/Layout)",
+    "Layout simple is the default \"for now\". Which layout becomes the default?"
+  ],
+  "approval": {
+    "status": "draft",
+    "by": null,
+    "date": null
+  }
+}

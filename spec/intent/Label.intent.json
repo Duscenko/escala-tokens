@@ -1,0 +1,44 @@
+{
+  "$schema": "./intent.schema.json",
+  "component": "Label",
+  "purpose": "The accessible name of a control as a real label: clicking it focuses or toggles the control it points to. It is the label part of Field, for the rare control that needs a label without Field.",
+  "notFor": [
+    {
+      "case": "A form control with helper text or an error message.",
+      "use": "Field"
+    },
+    {
+      "case": "A checkbox with its label in one row.",
+      "use": "CheckboxItem"
+    },
+    {
+      "case": "A switch with its label in one row.",
+      "use": "SwitchGroup"
+    }
+  ],
+  "states": {
+    "Default": {
+      "setBy": "component",
+      "visual": "Text Content/primary."
+    }
+  },
+  "a11y": {
+    "role": "native <label> (Radix Label); no ARIA role",
+    "keyboard": "Not focusable. A click focuses or toggles its control (htmlFor).",
+    "minHitArea": 24,
+    "contrast": "AA",
+    "notes": [
+      "Mark required fields in the text, not with colour alone."
+    ]
+  },
+  "openQuestions": [
+    "Label is code-only, with no Figma set (finding DOC-001 Label). Should it get a Figma set, or stay a code part of Field?",
+    "Label has no Disabled state, while Field mutes its label when Disabled. Should Label follow the disabled control?",
+    "Usage says to prefer FieldLabel inside a form; FieldLabel is not an Escala component. Is that Field's label prop?"
+  ],
+  "approval": {
+    "status": "draft",
+    "by": null,
+    "date": null
+  }
+}

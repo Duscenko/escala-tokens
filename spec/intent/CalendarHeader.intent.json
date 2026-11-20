@@ -1,0 +1,25 @@
+{
+  "$schema": "./intent.schema.json",
+  "component": "CalendarHeader",
+  "purpose": "The row above a Calendar's days: previous and next month arrows around the month and year, shown as one picker chip, separate month and year chips, or a plain heading.",
+  "notFor": [
+    { "case": "Standalone use outside a Calendar.", "use": "Calendar" },
+    { "case": "Paging through results or pages of a list.", "use": "Pagination" }
+  ],
+  "states": {
+    "Default": { "setBy": "component", "meaning": "No states of its own; the arrows and chips are buttons.", "visual": "Arrows with a Border/control edge and Content/secondary glyph; month and year in Content/primary; chevrons in Content/secondary." }
+  },
+  "a11y": {
+    "role": "buttons: \"Previous month\", \"Next month\" and one chip per picker; plain is static text",
+    "keyboard": "Tab reaches each arrow and chip; Enter or Space activates it (native buttons).",
+    "minHitArea": 24,
+    "contrast": "AA",
+    "notes": ["Each chip's visible text is its name."]
+  },
+  "openQuestions": [
+    "Month and year pickers: the chips call onLabelClick / onMonthClick / onYearClick, but no picker is specified. What opens, and how is it navigated by keyboard?",
+    "Live region: should the new month be announced when the arrows change it?",
+    "Hover and focus: the contract binds no hover or focus roles for the arrows and chips. What do they look like?"
+  ],
+  "approval": { "status": "draft", "by": null, "date": null }
+}

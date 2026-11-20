@@ -1,0 +1,41 @@
+{
+  "$schema": "./intent.schema.json",
+  "component": "Accordion",
+  "purpose": "A stack of collapsible sections that share one look, for FAQs and settings where people open only what they need. Items open and close independently; the first is open by default.",
+  "notFor": [
+    {
+      "case": "A single expandable region.",
+      "use": "AccordionItem"
+    },
+    {
+      "case": "Switching between views where only one shows at a time.",
+      "use": "TabMenu"
+    },
+    {
+      "case": "Content that must always be visible.",
+      "use": "Card"
+    }
+  ],
+  "states": {
+    "Default": {
+      "setBy": "component",
+      "meaning": "The stack itself has no state; each item opens and closes.",
+      "visual": "Items stacked 0 apart (ghost-default, ghost-underline) or 8 apart (the other variants)."
+    }
+  },
+  "a11y": {
+    "role": "none on the root; each trigger is a button in a heading with aria-expanded",
+    "keyboard": "Each trigger is in the tab order. Space or Enter toggles the focused section; Arrow Down / Up move to the next / previous trigger; Home / End to the first / last (Radix Accordion).",
+    "minHitArea": 24,
+    "contrast": "AA"
+  },
+  "openQuestions": [
+    "Variant=card exists only in the Figma set; the code stops at filled-rounded. Should card be built, or is it leaving the file?",
+    "Only independent opening (type multiple) is offered. Is a one-open-at-a-time mode needed?"
+  ],
+  "approval": {
+    "status": "draft",
+    "by": null,
+    "date": null
+  }
+}
