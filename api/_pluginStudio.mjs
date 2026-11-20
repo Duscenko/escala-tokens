@@ -9818,7 +9818,7 @@ var init_semanticArchitectures = __esm({
       "elevation.shadow-ambient": "[ROLE: Shadow Ambient] The tight, secondary layer of the shadow and depth recipes, and the solid Button label shadow (Shadow/text-2xs, 0 1px 0.5px). EFFECT colour only. {black-a.1} (5%) in Light, {black-a.4} (20%) in Dark.",
       "elevation.shadow-key": "[ROLE: Shadow Key] The main, larger-offset layer of every Shadow/* and Depth/* recipe. EFFECT colour only, never a fill or stroke. {black-a.2} (10%) in Light, {black-a.6} (40%) in Dark, so one shadow style follows the theme.",
       "border.inverse": "[ROLE: Inverse Border] Any stroke ON surface.inverse \u2014 an outline badge, a divider in a tooltip, a group edge. {white-a.5} in Light, {black-a.5} in Dark. Decoration: no 1.4.11 floor, never the only boundary of a control.",
-      "content.inverse-secondary": "[ROLE: Inverse Secondary Text] Body copy, icons and the dismiss icon on surface.inverse \u2014 content.secondary points the wrong way there. {white-a.9} in Light, {black-a.9} in Dark. STRICT 4.5:1 against surface.inverse.",
+      "content.inverse-secondary": "[ROLE: Inverse Secondary Text] Body copy and the resting dismiss icon on surface.inverse (status icons there use content.inverse, as Figma binds them) \u2014 content.secondary points the wrong way there. {white-a.9} in Light, {black-a.9} in Dark. STRICT 4.5:1 against surface.inverse.",
       "surface.inverse-muted": "[ROLE: Inverse Soft Fill] Passive soft fill on surface.inverse \u2014 a soft badge, chip or track inside a tooltip or snackbar. The alpha ladder pointing away from the chip: {white-a.3} in Light (dark chip), {black-a.3} in Dark (light chip). Ink on it: content.inverse. No hover / pressed twins: it is not an action.",
       "surface.page": "[ROLE: Base Background] Elevation level 0. Root application background. content.primary and content.secondary must maintain WCAG AA (4.5:1) against this token.",
       "surface.layer-1": "[ROLE: Container Background] Elevation level 1. Cards, panels, grouped content. Must read slightly distinct from surface.page.",
@@ -9827,7 +9827,7 @@ var init_semanticArchitectures = __esm({
       "surface.raised": "[ROLE: Raised Surface] A part lifted above the track or surface it sits on: the selected segment of a SegmentedControl. Lighter than surface.muted in both themes (Light = surface.input's tone, Dark = action.secondary.default's tone). DEC-2026-11-17-003, DEC-2026-11-18-009.",
       "surface.selected": "[ROLE: Active State Background] Subtle fill for mutual selection (e.g. a selected table row). Must guarantee 4.5:1 against content.primary on top.",
       "surface.selected-pressed": "[ROLE: Active State Background Pressed] A pressed soft brand control (Button Soft / Outline pressed). {accent-a.5}, two steps deeper than surface.selected \u2014 the brand twin of status.*.surface-pressed.",
-      "surface.inverse": "[ROLE: Inverted Background] High-contrast background for tooltips, snackbars and inverse alerts or badges. Always pair with content.inverse (title) and content.inverse-secondary (body, icons). {neutral.12} in both themes: a dark chip in Light, a light one in Dark.",
+      "surface.inverse": "[ROLE: Inverted Background] High-contrast background for tooltips, snackbars and inverse alerts or badges. Always pair with content.inverse (title, icons) and content.inverse-secondary (body). {neutral.12} in both themes: a dark chip in Light, a light one in Dark.",
       "surface.overlay": "[ROLE: Scrim] Semi-transparent layer over surface.page to focus attention on modals (layer-2 surfaces). Ships at 60% black alpha (`{black-a.8}`), same in both themes.",
       "surface.accent": "[ROLE: Accent Wash] Ambient brand-tinted background \u2014 a section that leans brand without being an interactive fill. {accent.2} in Light, {accent.4} in Dark (the Figma file is the rule, 2026-11-17).",
       "surface.muted": "[ROLE: Control Track] Neutral fill of a control's passive part \u2014 a Switch's off track, a Slider or Progress track, an OTP segment, a step connector. {neutral.3} in light. Not a button: a secondary CTA uses action.secondary.default.",
@@ -11190,7 +11190,8 @@ var init_forms = __esm({
         part({}, () => ({
           root: { radius: "radius.action", strokeWidth: "stroke.control" },
           status: { text: c("status.critical.content") },
-          spinner: { text: c("content.secondary") },
+          // Field chrome: the Loading spinner is Content/subtle, like the field's other glyphs (Figma 394:71).
+          spinner: { text: c("content.subtle") },
           // The resize glyph: 8×8, 6px in from the bottom-right corner at every Size.
           corner: { paddingX: "spacing.1_5", paddingY: "spacing.1_5" },
           grip: { width: "spacing.2", height: "spacing.2" }
@@ -11827,7 +11828,9 @@ var init_forms = __esm({
           track: { height: SLIDER_CONTROL[size].track }
         })),
         part({ Variant: SLIDER_VARIANTS, State: SLIDER_STATES }, (variant, state2) => ({
-          range: { fill: c(state2 === "Disabled" ? "action.disabled.default" : variant === "secondary" ? "content.primary" : "action.primary.default") }
+          range: { fill: c(state2 === "Disabled" ? "action.disabled.default" : variant === "secondary" ? "content.primary" : "action.primary.default") },
+          // Disabled marks: the labels go Content/disabled, the ticks keep Border/strong (Figma 443:69).
+          ...state2 === "Disabled" ? { markLabel: { text: c("content.disabled") } } : {}
         }))
       ]
     };
@@ -12034,11 +12037,11 @@ function accordionItemShell(variant, state2) {
     case "ghost-underline":
       return { fill: NONE, stroke: c(state2 === "Disabled" ? "border.subtle" : "border.default"), strokeBottomWidth: "stroke.divider" };
     case "ghost-rounded":
-      return { fill: open ? c("surface.muted") : NONE, radius: "radius.container" };
+      return { fill: open ? c("surface.layer-1") : NONE, radius: "radius.container" };
     case "outline-rounded":
     case "outline-sharp":
       return {
-        fill: c("surface.page"),
+        fill: c("surface.layer-1"),
         strokeWidth: "stroke.control",
         radius: variant === "outline-sharp" ? "radius.none" : "radius.container",
         stroke: c(state2 === "Disabled" ? "border.subtle" : open ? "border.strong" : "border.default")
@@ -13210,7 +13213,7 @@ var init_feedback = __esm({
             case "soft":
               return { root: { fill: c(t.soft) }, icon: { text: c(t.softInk) }, description: { text: c(t.softText) }, title: { text: c(t.softText) } };
             case "inverse":
-              return { root: { fill: c("surface.inverse") }, icon: { text: c("content.inverse-secondary") }, description: { text: c("content.inverse") }, title: { text: c("content.inverse") } };
+              return { root: { fill: c("surface.inverse") }, icon: { text: c("content.inverse") }, description: { text: c("content.inverse") }, title: { text: c("content.inverse") } };
             default:
               return {
                 root: layout === "horizontal" ? { fill: c("surface.layer-1"), stroke: c(t.stroke), strokeBottomWidth: "stroke.control" } : { fill: c("surface.layer-1"), stroke: c(t.stroke), strokeWidth: "stroke.control" },

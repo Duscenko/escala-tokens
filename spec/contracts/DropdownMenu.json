@@ -166,6 +166,10 @@
     "stroke.divider": {
       "css": "--stroke-divider",
       "figma": "Stroke/divider"
+    },
+    "stroke.focus": {
+      "css": "--stroke-focus",
+      "figma": "Stroke/focus"
     }
   },
   "bindings": [
@@ -187,8 +191,8 @@
             "paddingBottom": "spacing.none"
           },
           "content": {
-            "paddingX": "spacing.inset-control",
-            "paddingY": "spacing.inset-control"
+            "paddingX": "spacing.inset-control+stroke.focus",
+            "paddingY": "spacing.inset-control+stroke.focus"
           },
           "separator": {
             "fill": "color.border.subtle",

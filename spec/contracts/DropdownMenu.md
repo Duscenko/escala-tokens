@@ -47,8 +47,8 @@ Other states: `bindings` in the JSON (1 part; merge every matching part in order
 | header | paddingX | `spacing.inset-control` | `--spacing-inset-control` | `Spacing/inset-control` |
 | header | paddingY | `spacing.inset-control` | `--spacing-inset-control` | `Spacing/inset-control` |
 | header | paddingBottom | `spacing.none` | `--spacing-none` | `Spacing/none` |
-| content | paddingX | `spacing.inset-control` | `--spacing-inset-control` | `Spacing/inset-control` |
-| content | paddingY | `spacing.inset-control` | `--spacing-inset-control` | `Spacing/inset-control` |
+| content | paddingX | `spacing.inset-control+stroke.focus` | — | — |
+| content | paddingY | `spacing.inset-control+stroke.focus` | — | — |
 | separator | fill | `color.border.subtle` | `--color-border-subtle` | `Border/subtle` |
 | separator | height | `stroke.divider` | `--stroke-divider` | `Stroke/divider` |
 

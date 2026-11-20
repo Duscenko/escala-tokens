@@ -11569,7 +11569,7 @@
                 "text": "color.status.critical.content"
               },
               "spinner": {
-                "text": "color.content.secondary"
+                "text": "color.content.subtle"
               },
               "corner": {
                 "paddingX": "spacing.1_5",
@@ -17297,6 +17297,9 @@
             "default|Disabled": {
               "range": {
                 "fill": "color.action.disabled.default"
+              },
+              "markLabel": {
+                "text": "color.content.disabled"
               }
             },
             "secondary|Default": {
@@ -17312,6 +17315,9 @@
             "secondary|Disabled": {
               "range": {
                 "fill": "color.action.disabled.default"
+              },
+              "markLabel": {
+                "text": "color.content.disabled"
               }
             }
           }
@@ -24804,7 +24810,7 @@
             },
             "ghost-rounded|Open": {
               "root": {
-                "fill": "color.surface.muted",
+                "fill": "color.surface.layer-1",
                 "radius": "radius.container"
               }
             },
@@ -24825,7 +24831,7 @@
             },
             "outline-rounded|Closed": {
               "root": {
-                "fill": "color.surface.page",
+                "fill": "color.surface.layer-1",
                 "strokeWidth": "stroke.control",
                 "radius": "radius.container",
                 "stroke": "color.border.default"
@@ -24833,7 +24839,7 @@
             },
             "outline-rounded|Open": {
               "root": {
-                "fill": "color.surface.page",
+                "fill": "color.surface.layer-1",
                 "strokeWidth": "stroke.control",
                 "radius": "radius.container",
                 "stroke": "color.border.strong"
@@ -24841,7 +24847,7 @@
             },
             "outline-rounded|Disabled": {
               "root": {
-                "fill": "color.surface.page",
+                "fill": "color.surface.layer-1",
                 "strokeWidth": "stroke.control",
                 "radius": "radius.container",
                 "stroke": "color.border.subtle"
@@ -24858,7 +24864,7 @@
             },
             "outline-sharp|Closed": {
               "root": {
-                "fill": "color.surface.page",
+                "fill": "color.surface.layer-1",
                 "strokeWidth": "stroke.control",
                 "radius": "radius.none",
                 "stroke": "color.border.default"
@@ -24866,7 +24872,7 @@
             },
             "outline-sharp|Open": {
               "root": {
-                "fill": "color.surface.page",
+                "fill": "color.surface.layer-1",
                 "strokeWidth": "stroke.control",
                 "radius": "radius.none",
                 "stroke": "color.border.strong"
@@ -24874,7 +24880,7 @@
             },
             "outline-sharp|Disabled": {
               "root": {
-                "fill": "color.surface.page",
+                "fill": "color.surface.layer-1",
                 "strokeWidth": "stroke.control",
                 "radius": "radius.none",
                 "stroke": "color.border.subtle"
@@ -25885,7 +25891,7 @@
                 "fill": "color.surface.inverse"
               },
               "icon": {
-                "text": "color.content.inverse-secondary"
+                "text": "color.content.inverse"
               },
               "description": {
                 "text": "color.content.inverse"
@@ -25899,7 +25905,7 @@
                 "fill": "color.surface.inverse"
               },
               "icon": {
-                "text": "color.content.inverse-secondary"
+                "text": "color.content.inverse"
               },
               "description": {
                 "text": "color.content.inverse"
@@ -26001,7 +26007,7 @@
                 "fill": "color.surface.inverse"
               },
               "icon": {
-                "text": "color.content.inverse-secondary"
+                "text": "color.content.inverse"
               },
               "description": {
                 "text": "color.content.inverse"
@@ -26015,7 +26021,7 @@
                 "fill": "color.surface.inverse"
               },
               "icon": {
-                "text": "color.content.inverse-secondary"
+                "text": "color.content.inverse"
               },
               "description": {
                 "text": "color.content.inverse"
@@ -26117,7 +26123,7 @@
                 "fill": "color.surface.inverse"
               },
               "icon": {
-                "text": "color.content.inverse-secondary"
+                "text": "color.content.inverse"
               },
               "description": {
                 "text": "color.content.inverse"
@@ -26131,7 +26137,7 @@
                 "fill": "color.surface.inverse"
               },
               "icon": {
-                "text": "color.content.inverse-secondary"
+                "text": "color.content.inverse"
               },
               "description": {
                 "text": "color.content.inverse"
@@ -26233,7 +26239,7 @@
                 "fill": "color.surface.inverse"
               },
               "icon": {
-                "text": "color.content.inverse-secondary"
+                "text": "color.content.inverse"
               },
               "description": {
                 "text": "color.content.inverse"
@@ -26247,7 +26253,7 @@
                 "fill": "color.surface.inverse"
               },
               "icon": {
-                "text": "color.content.inverse-secondary"
+                "text": "color.content.inverse"
               },
               "description": {
                 "text": "color.content.inverse"
@@ -26349,7 +26355,7 @@
                 "fill": "color.surface.inverse"
               },
               "icon": {
-                "text": "color.content.inverse-secondary"
+                "text": "color.content.inverse"
               },
               "description": {
                 "text": "color.content.inverse"
@@ -26363,7 +26369,7 @@
                 "fill": "color.surface.inverse"
               },
               "icon": {
-                "text": "color.content.inverse-secondary"
+                "text": "color.content.inverse"
               },
               "description": {
                 "text": "color.content.inverse"
@@ -26465,7 +26471,7 @@
                 "fill": "color.surface.inverse"
               },
               "icon": {
-                "text": "color.content.inverse-secondary"
+                "text": "color.content.inverse"
               },
               "description": {
                 "text": "color.content.inverse"
@@ -26479,7 +26485,7 @@
                 "fill": "color.surface.inverse"
               },
               "icon": {
-                "text": "color.content.inverse-secondary"
+                "text": "color.content.inverse"
               },
               "description": {
                 "text": "color.content.inverse"
@@ -32935,7 +32941,7 @@
       "Elevation/shadow-ambient": "[ROLE: Shadow Ambient] The tight, secondary layer of the shadow and depth recipes, and the solid Button label shadow (Shadow/text-2xs, 0 1px 0.5px). EFFECT colour only. {black-a.1} (5%) in Light, {black-a.4} (20%) in Dark.",
       "Elevation/shadow-key": "[ROLE: Shadow Key] The main, larger-offset layer of every Shadow/* and Depth/* recipe. EFFECT colour only, never a fill or stroke. {black-a.2} (10%) in Light, {black-a.6} (40%) in Dark, so one shadow style follows the theme.",
       "Border/inverse": "[ROLE: Inverse Border] Any stroke ON surface.inverse — an outline badge, a divider in a tooltip, a group edge. {white-a.5} in Light, {black-a.5} in Dark. Decoration: no 1.4.11 floor, never the only boundary of a control.",
-      "Content/inverse-secondary": "[ROLE: Inverse Secondary Text] Body copy, icons and the dismiss icon on surface.inverse — content.secondary points the wrong way there. {white-a.9} in Light, {black-a.9} in Dark. STRICT 4.5:1 against surface.inverse.",
+      "Content/inverse-secondary": "[ROLE: Inverse Secondary Text] Body copy and the resting dismiss icon on surface.inverse (status icons there use content.inverse, as Figma binds them) — content.secondary points the wrong way there. {white-a.9} in Light, {black-a.9} in Dark. STRICT 4.5:1 against surface.inverse.",
       "Surface/inverse-muted": "[ROLE: Inverse Soft Fill] Passive soft fill on surface.inverse — a soft badge, chip or track inside a tooltip or snackbar. The alpha ladder pointing away from the chip: {white-a.3} in Light (dark chip), {black-a.3} in Dark (light chip). Ink on it: content.inverse. No hover / pressed twins: it is not an action.",
       "Surface/page": "[ROLE: Base Background] Elevation level 0. Root application background. content.primary and content.secondary must maintain WCAG AA (4.5:1) against this token.",
       "Surface/layer-1": "[ROLE: Container Background] Elevation level 1. Cards, panels, grouped content. Must read slightly distinct from surface.page.",
@@ -32944,7 +32950,7 @@
       "Surface/raised": "[ROLE: Raised Surface] A part lifted above the track or surface it sits on: the selected segment of a SegmentedControl. Lighter than surface.muted in both themes (Light = surface.input's tone, Dark = action.secondary.default's tone). DEC-2026-11-17-003, DEC-2026-11-18-009.",
       "Surface/selected": "[ROLE: Active State Background] Subtle fill for mutual selection (e.g. a selected table row). Must guarantee 4.5:1 against content.primary on top.",
       "Surface/selected-pressed": "[ROLE: Active State Background Pressed] A pressed soft brand control (Button Soft / Outline pressed). {accent-a.5}, two steps deeper than surface.selected — the brand twin of status.*.surface-pressed.",
-      "Surface/inverse": "[ROLE: Inverted Background] High-contrast background for tooltips, snackbars and inverse alerts or badges. Always pair with content.inverse (title) and content.inverse-secondary (body, icons). {neutral.12} in both themes: a dark chip in Light, a light one in Dark.",
+      "Surface/inverse": "[ROLE: Inverted Background] High-contrast background for tooltips, snackbars and inverse alerts or badges. Always pair with content.inverse (title, icons) and content.inverse-secondary (body). {neutral.12} in both themes: a dark chip in Light, a light one in Dark.",
       "Surface/overlay": "[ROLE: Scrim] Semi-transparent layer over surface.page to focus attention on modals (layer-2 surfaces). Ships at 60% black alpha (`{black-a.8}`), same in both themes.",
       "Surface/accent": "[ROLE: Accent Wash] Ambient brand-tinted background — a section that leans brand without being an interactive fill. {accent.2} in Light, {accent.4} in Dark (the Figma file is the rule, 2026-11-17).",
       "Surface/muted": "[ROLE: Control Track] Neutral fill of a control's passive part — a Switch's off track, a Slider or Progress track, an OTP segment, a step connector. {neutral.3} in light. Not a button: a secondary CTA uses action.secondary.default.",
