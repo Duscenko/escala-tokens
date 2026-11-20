@@ -54,11 +54,11 @@ Schema `escala-component-contract/2`, additive over v1 (no key renamed or remove
       (Storybook owns behaviour). Each one checked against its story.
 - [x] Missing human contracts: generate the 70 from the JSON (a readable view), never hand-copy.
 
-### Phase 4 — The agent's door
+### Phase 4 — The agent's door (done 2026-11-20)
 - [x] `AGENTS.md` / `llms.txt` / `escala-figma-to-code` skill: "Figma set name → `index.json` →
       contract → import + bindings"; remove the stale MCP lines (`AGENTS.md` predates its removal).
-- [ ] Agent package export (`src/lib/agentBundle/`) ships the contracts too.
-- [ ] Eval: `evals/agent-output/` gains cases that use a wrong role for a state; the checker reads
+- [x] Agent package export (`src/lib/agentBundle/`) ships the contracts too.
+- [x] Eval: `evals/agent-output/` gains cases that use a wrong role for a state; the checker reads
       `bindings` and fails them.
 
 ### Phase 5 — Figma side (needs `use_figma`, owner OK before any write)
@@ -103,18 +103,27 @@ Schema `escala-component-contract/2`, additive over v1 (no key renamed or remove
   existing contract first; `docs/agent-native/PLAN.md` and `GET-STARTED-PLAN.md` carry a status line that
   the hosted MCP is gone (their MCP sections are history).
 
+- 2026-11-20 · Phase 4 (2/3): `src/lib/contractCore.ts` = the pure core of a contract (catalogue + recipe +
+  motion + `componentBehaviour.ts`: api, anatomy, tokens, names, bindings, motion, behaviour.authored, usage,
+  accessibility). `componentContracts.ts` builds `spec/contracts/` from it (regenerated output identical byte
+  for byte). The agent package (`productDesignSkills.ts`) writes `contracts/<Key>.json` for all
+  `designSkillComponents()` + `contracts/index.json` (with `selected` and the catalogue's `figmaSets`): same
+  schema and key order, repo-only fields null (Figma snapshot, story, files, ARIA scan), `code.import` =
+  the product's `@/components/ui/<file>`. `contractCore.test.ts` holds every shared field equal to the repo file.
+
+- 2026-11-20 · Phase 4 (3/3): `checkers/binding-lint.mjs` in the package (`productBindingChecker.ts`): reads
+  CSS rules aimed at `[data-escala="<Key>"]` (variant attributes, `:hover` / `:active` / `:focus-visible` /
+  `aria-disabled` / `aria-invalid` / `data-force-state`, `[data-part]`), resolves the slot's role from the
+  contract's `bindings` and fails a different `var()` (fill → background, text → color, stroke →
+  border-color) or a component with no contract. `evals/agent-output/fail.wrong-state-role.css` (Button
+  Hover with `action.primary.default`: token-lint passes, binding-lint fails) + `pass.state-roles.css`, in
+  `agentEvals.test.ts` (`npm run eval`). `npm test`: the 5 known failures only; `npx tsc -b` clean.
+
 ## Next
-Phase 4, item 2 — the agent package ships the contracts. Constraint found: `src/lib/agentBundle/` is
-pure and runs in the browser (`skillExport.ts`); the CLI does not use it. The committed JSON is 1.8 MB
-(+0.65 MB `.md`), too heavy to import into the app bundle, and `buildContract` needs repo files
-(Figma snapshot, story and component sources). Suggested route: split `buildContract` into a pure core
-(catalogue def + recipe → api, anatomy, tokens, names, bindings, motion, behaviour from the two pure
-tables) used by both the generator and the package, and have `productDesignSkills.ts` write
-`contracts/<Key>.json` (+ `contracts/index.json`) for the package's `designSkillComponents()` keys,
-schema `escala-component-contract/2` with the repo-only fields (`figma` page/node, `code.story`,
-`code.files`) null. A test then holds the package core equal to `spec/contracts/<Key>.json` on those
-fields. Then item 3: an `evals/agent-output/` case that paints a state with the wrong role
-(e.g. a Button Hover with `action.primary.default`) and a checker that reads `bindings` and fails it
-(`agentEvals.test.ts`, `npm run eval`).
-Open question for the owner (not blocking): MOT-002 says `none` counts as a decision, but
-`RecipeMotion` cannot say `none` yet — add it when the owner decides the first static-state component.
+Everything automatable is done. What waits for the owner:
+1. **Phase 5 — Figma writes** (needs `use_figma` and the owner's OK before any write): the inventory script
+   returns each set's node id → `figma.setNodeId` + a direct link per contract; the daily review compares
+   Figma's per-state bindings with `bindings` (governance §4.5.2).
+2. **MOT-002 `none`**: the gate counts `none` as a decision, but `RecipeMotion` cannot say `none` yet —
+   add it when the owner names the first static-state component (27 components in the baseline).
+3. **Merge `feat/agent-ready-contracts`** (owner review; never pushed by an agent).
