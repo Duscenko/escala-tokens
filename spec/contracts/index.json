@@ -111,7 +111,7 @@
     "figmaNode": "346:448",
     "story": "buttons-fabbutton--fab-group-playground",
     "tokens": 1,
-    "motion": null,
+    "motion": "declared",
     "stage": null
   },
   {
@@ -130,7 +130,7 @@
     "figmaNode": "2391:2107",
     "story": "buttons-splitbutton--playground",
     "tokens": 1,
-    "motion": null,
+    "motion": "declared",
     "stage": null
   },
   {
@@ -2412,7 +2412,7 @@
     "figmaNode": "982:1003",
     "story": "navigation-sidebar--playground",
     "tokens": 10,
-    "motion": null,
+    "motion": "declared",
     "stage": null
   },
   {
@@ -2446,7 +2446,7 @@
     "figmaNode": "982:292",
     "story": "navigation-sidebar--sidebar-group-playground",
     "tokens": 1,
-    "motion": null,
+    "motion": "declared",
     "stage": null
   },
   {
@@ -2480,7 +2480,7 @@
     "figmaNode": "980:419",
     "story": "navigation-sidebar--sidebar-brand-playground",
     "tokens": 6,
-    "motion": null,
+    "motion": "declared",
     "stage": null
   },
   {

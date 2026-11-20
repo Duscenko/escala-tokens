@@ -449,7 +449,7 @@ export const FAB_GROUP_LAYOUTS = ['stack', 'fan-center', 'fan-left', 'fan-right'
 
 export const FAB_GROUP: ComponentRecipe = {
   key: 'FABGroup',
-  slots: ['root'],
+  slots: ['root', 'item'],
   defaults: { Layout: 'stack', Open: 'false' },
   parts: [
     part({ Layout: FAB_GROUP_LAYOUTS }, (layout) => ({

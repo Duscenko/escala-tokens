@@ -44,7 +44,7 @@ const meta: Meta<FABGroupStoryArgs> = {
   title: 'Buttons/FABButton',
   tags: ['!autodocs', 'part'],
   render,
-  args: { layout: 'stack', open: true, triggerLabel: 'Create' },
+  args: { layout: 'stack', open: false, triggerLabel: 'Create' },
   argTypes: {
     layout: { name: 'Layout', control: 'select', options: [...FAB_GROUP_LAYOUTS], description: 'Vertical and labelled (stack), or an icon-only arc centered, left or right of the trigger.' },
     open: { name: 'Open', control: 'boolean', description: 'Starting state (the trigger still opens/closes it by click).' },

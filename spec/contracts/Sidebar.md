@@ -56,7 +56,8 @@ Other states: `bindings` in the JSON (2 parts; merge every matching part in orde
 
 ## Motion
 
-No decision yet (MOT-002): it has a Collapsed axis (false · true).
+- `root`: width → `use-disclosure-out`
+- `root[data-collapsed="false"]`: width → `use-disclosure-in`
 
 ## Behaviour
 

@@ -1,9 +1,6 @@
 {
   "$comment": "Today's contract-gate debt (2026-11-20), read by src/lib/__tests__/contractGates.test.ts and npm run contracts:report. The gate fails on any gap not listed here and on an entry that is no longer needed: fix the gap, then delete its line. Never add a line to get past the gate without the owner's OK.",
   "PAR-001": {
-    "FABGroup": [
-      "Open"
-    ],
     "Modal": [
       "Layout"
     ],
@@ -11,11 +8,5 @@
       "Surface"
     ]
   },
-  "MOT-002": [
-    "FABGroup",
-    "Sidebar",
-    "SidebarBrand",
-    "SidebarGroup",
-    "SplitButton"
-  ]
+  "MOT-002": []
 }

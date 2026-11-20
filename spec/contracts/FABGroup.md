@@ -33,7 +33,7 @@ import { FABGroup } from 'src/components/escala-ui/fab-group'
 
 ## Anatomy
 
-`root`
+`root` · `item`
 
 ## Tokens at the defaults
 
@@ -45,7 +45,8 @@ Other states: `bindings` in the JSON (1 part; merge every matching part in order
 
 ## Motion
 
-No decision yet (MOT-002): it has a Open axis (false · true).
+- `item`: background-color → `use-hover`, color → `use-hover`, border-color → `use-hover`, box-shadow → `use-focus`, scale → `use-hover`, opacity → `use-travel-out`, transform → `use-travel-out`, visibility → `use-travel-out`
+- `item[data-open="true"]`: background-color → `use-hover`, color → `use-hover`, border-color → `use-hover`, box-shadow → `use-focus`, scale → `use-hover`, opacity → `use-travel-in`, transform → `use-travel-in`, visibility → `use-travel-in`
 
 ## Behaviour
 

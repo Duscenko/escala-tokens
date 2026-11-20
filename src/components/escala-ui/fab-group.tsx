@@ -9,11 +9,12 @@
 // (Appearance=soft, Shape=pill, Size=default, Variant=default) is fixed, exactly as the
 // Figma set has it — there is no per-trigger or per-item styling axis to expose.
 //
-// Motion (no role of its own): the items open as the system's `list-reveal` and close as its `list-dismiss` — each item
-// is one child of a stagger: `use-stagger-in` forward at the `--motion-stagger` step, `use-stagger-out` last item first at
-// 0.6 of it. A `stack` item rises (`--motion-transform-enter`); a fan item leaves the trigger's centre and settles on its arc
-// (`--motion-transform-pop`). Closed items stay mounted, hidden (`visibility`), so the exit plays; reduced motion (the
-// scope's `--motion-stagger: 0` and neutral transforms) leaves the fade, and the fan does not travel.
+// Motion (recipe FABGroup, lib/recipes/motion.ts): on open the items arrive one after another on `use-travel-in` (opacity
+// and transform, each `--motion-stagger` behind the last: the component sets each item's `--escala-index`); on close they
+// fade and travel back together on `use-travel-out`. A `stack` item rises (`--motion-transform-enter`); a fan item leaves the
+// trigger's centre and settles on its arc (`--motion-transform-pop`). Closed items stay mounted, hidden (`visibility`), so
+// the exit plays; reduced motion (the scope's `--motion-stagger: 0` and neutral transforms) leaves the fade, and the fan
+// does not travel.
 import * as React from 'react'
 import { useReducedMotion } from 'framer-motion'
 import { cn } from '../../lib/utils'
@@ -106,10 +107,8 @@ function Trigger({
  *  file; `labelled` decides whether its Label is shown (`stack`) or stays the aria-label
  *  (every fan Layout — icon-only, per the measured `LabelVisible` table). */
 function Item({
-  item, labelled, index, count, open, from, disabled,
-}: { item: FABGroupItem; labelled: boolean; index: number; count: number; open: boolean; from: string; disabled?: boolean }) {
-  const role = open ? 'var(--motion-use-stagger-in)' : 'var(--motion-use-stagger-out)'
-  const step = open ? index : count - 1 - index
+  item, labelled, index, open, from, disabled,
+}: { item: FABGroupItem; labelled: boolean; index: number; open: boolean; from: string; disabled?: boolean }) {
   return (
     <FABButton
       appearance="soft"
@@ -127,9 +126,8 @@ function Item({
         transform: open ? 'none' : from,
         visibility: open ? 'visible' : 'hidden',
         pointerEvents: open ? undefined : 'none',
-        transition: `opacity ${role}, transform ${role}, visibility ${role}`,
-        // The dismissal runs at 0.6 of the reveal's step, from the last item to the first (the `list-dismiss` choreography).
-        transitionDelay: `calc(${step} * var(--motion-stagger, 0ms) * ${open ? 1 : 0.6})`,
+        // Its place in the reveal: the recipe delays it by this times `--motion-stagger` (lib/recipes/motion.ts, FABGroup).
+        ...({ '--escala-index': index } as React.CSSProperties),
       }}
     >
       {labelled ? item.label : undefined}
@@ -195,7 +193,7 @@ function FABGroup({
       >
         {trigger}
         {items.map((item, i) => (
-          <Item key={i} item={item} labelled index={i} count={items.length} open={open} from="translateY(var(--motion-transform-enter))" disabled={disabled} />
+          <Item key={i} item={item} labelled index={i} open={open} from="translateY(var(--motion-transform-enter))" disabled={disabled} />
         ))}
       </div>
     )
@@ -223,7 +221,7 @@ function FABGroup({
               style={{ transform: `translate(-50%, -50%) translate(${x}px, ${y}px)` }}
             >
               {/* From the trigger's centre (back along the offset), small; reduced motion does not travel. */}
-              <Item item={item} labelled={false} index={i} count={items.length} open={open} from={reduced ? 'none' : `translate(${-x}px, ${-y}px) scale(var(--motion-transform-pop))`} disabled={disabled} />
+              <Item item={item} labelled={false} index={i} open={open} from={reduced ? 'none' : `translate(${-x}px, ${-y}px) scale(var(--motion-transform-pop))`} disabled={disabled} />
             </div>
           )
         })}

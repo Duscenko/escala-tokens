@@ -162,6 +162,7 @@ function SidebarGroupLabel({ size, asChild = false, className, ...props }: Sideb
     <Comp
       data-slot="sidebar-group-label"
       data-escala="SidebarGroupLabel"
+      data-part="SidebarGroup.label"
       data-size={size ?? ctx.size}
       className={cn('flex w-full shrink-0 items-center outline-none', className)}
       {...props}

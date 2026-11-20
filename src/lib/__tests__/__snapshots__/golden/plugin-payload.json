@@ -9466,7 +9466,8 @@
     "FABGroup": {
       "key": "FABGroup",
       "slots": [
-        "root"
+        "root",
+        "item"
       ],
       "defaults": {
         "Layout": "stack",
@@ -9494,7 +9495,35 @@
             }
           }
         }
-      ]
+      ],
+      "motion": {
+        "transitions": {
+          "item": {
+            "background-color": "use-hover",
+            "color": "use-hover",
+            "border-color": "use-hover",
+            "box-shadow": "use-focus",
+            "scale": "use-hover",
+            "opacity": "use-travel-out",
+            "transform": "use-travel-out",
+            "visibility": "use-travel-out"
+          },
+          "item[data-open=\"true\"]": {
+            "background-color": "use-hover",
+            "color": "use-hover",
+            "border-color": "use-hover",
+            "box-shadow": "use-focus",
+            "scale": "use-hover",
+            "opacity": "use-travel-in",
+            "transform": "use-travel-in",
+            "visibility": "use-travel-in"
+          }
+        },
+        "stagger": {
+          "slot": "item",
+          "when": "[data-open=\"true\"]"
+        }
+      }
     },
     "ButtonGroup": {
       "key": "ButtonGroup",
@@ -10258,7 +10287,8 @@
             }
           }
         }
-      ]
+      ],
+      "motion": {}
     },
     "SocialLoginButton": {
       "key": "SocialLoginButton",
@@ -31899,7 +31929,17 @@
             }
           }
         }
-      ]
+      ],
+      "motion": {
+        "transitions": {
+          "root": {
+            "width": "use-disclosure-out"
+          },
+          "root[data-collapsed=\"false\"]": {
+            "width": "use-disclosure-in"
+          }
+        }
+      }
     },
     "SidebarBrand": {
       "key": "SidebarBrand",
@@ -31936,7 +31976,17 @@
             }
           }
         }
-      ]
+      ],
+      "motion": {
+        "transitions": {
+          "text": {
+            "opacity": "use-disclosure-in"
+          }
+        },
+        "appear": [
+          "text"
+        ]
+      }
     },
     "SidebarGroup": {
       "key": "SidebarGroup",
@@ -31960,7 +32010,17 @@
             }
           }
         }
-      ]
+      ],
+      "motion": {
+        "transitions": {
+          "label": {
+            "opacity": "use-disclosure-in"
+          }
+        },
+        "appear": [
+          "label"
+        ]
+      }
     },
     "SidebarGroupLabel": {
       "key": "SidebarGroupLabel",
