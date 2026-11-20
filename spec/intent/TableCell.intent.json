@@ -1,0 +1,29 @@
+{
+  "$schema": "./intent.schema.json",
+  "component": "TableCell",
+  "purpose": "A body cell of a TableRow: a label with an optional description, a leading slot (Checkbox, Avatar, Badge) and a trailing slot (an overflow IconButton or a Badge).",
+  "notFor": [
+    {"case": "Not for standalone use outside a table row.", "use": "Table"},
+    {"case": "A cell that leads with a picture.", "use": "TableMediaCell"},
+    {"case": "A value with a delta that shows its direction.", "use": "TableTrendCell"},
+    {"case": "A column header.", "use": "TableHead"}
+  ],
+  "states": {
+    "Default": {"setBy": "app", "meaning": "Enabled.", "visual": "Label in Content/primary (Type/body-sm), description in Content/secondary (Type/helper). A pinned cell takes Surface/page under the row's state overlay and a Border/default edge (Stroke/divider)."},
+    "Disabled": {"setBy": "app", "meaning": "Its row cannot be used.", "visual": "Label and description in Content/disabled; no fill change."}
+  },
+  "a11y": {
+    "role": "cell (a th scope=\"row\" when rowHeader is set)",
+    "keyboard": "Not focusable; only the controls in its Leading and Trailing slots take focus.",
+    "minHitArea": 24,
+    "contrast": "AA",
+    "notes": [
+      "Actions in the trailing slot need an aria-label.",
+      "Align end is the numeric column."
+    ]
+  },
+  "openQuestions": [
+    "Motion: State Default · Disabled has no motion decision in the contract (finding MOT-002 TableCell). Confirm the cell needs none."
+  ],
+  "approval": { "status": "draft", "by": null, "date": null }
+}

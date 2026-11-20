@@ -9,7 +9,8 @@ The source of truth for a generated system is the live token payload, not this r
 - [AGENTS.md](AGENTS.md): Router — hard rules, where code lives, what not to invent
 - [Contracts](docs/agent-native/CONTRACTS.md): Frozen HTTP, schema versions, persist, color, naming
 - [Token JSON Schema](docs/agent-native/tokens.schema.json): Machine-readable `generateTokenJSON()` shape
-- [Component contracts](spec/contracts/index.json): One JSON per component — API, Figma set, anatomy, every token it consumes, Storybook story
+- [Component contracts](spec/contracts/README.md): One JSON per component (schema v2) plus a readable `<Key>.md` — API, Figma set, anatomy, the token each slot binds per state, CSS + Figma names, motion, keyboard/focus, import; blocks listed in the same index.json
+- [Contract index](spec/contracts/index.json): From a Figma frame: the instance's component set name = `figmaSet` → `file` → `code.import` + `bindings`. Never redraw a component that has a contract
 - [Get started (in-app Docs)](docs/agent-native/GET-STARTED-PLAN.md): Destinations (Figma / Code / AI), not file formats
 - [CLAUDE.md](CLAUDE.md): Current rules, repo map and sources of truth (short)
 - [CLAUDE archive](docs/history/CLAUDE-archive-2026-11-16.md): Why each rule exists — search by keyword, never load whole

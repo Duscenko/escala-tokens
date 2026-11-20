@@ -1,0 +1,32 @@
+{
+  "$schema": "./intent.schema.json",
+  "component": "NumberInput",
+  "purpose": "Holds a number in a small range, such as a quantity, count or seats, with decrease and increase buttons that step it. The buttons turn off at the bounds.",
+  "notFor": [
+    { "case": "A wide numeric range where the exact value matters less than its position.", "use": "Slider" },
+    { "case": "A long number such as a phone, card or ID, which is not stepped.", "use": "Input" }
+  ],
+  "states": {
+    "Default": { "setBy": "component", "meaning": "At rest.", "visual": "Surface/input box with a Border/control edge; value in Content/primary; ghost IconButtons on each side." },
+    "Hover": { "setBy": "component", "visual": "The edge moves to Border/control-hover." },
+    "Focused": { "setBy": "component", "meaning": "The value has focus.", "visual": "Border/focus edge with a Border/ring/default halo." },
+    "Invalid": { "setBy": "app", "meaning": "The value failed validation (aria-invalid).", "visual": "Status/critical/border-strong edge with a Status/critical/border halo." },
+    "Disabled": { "setBy": "app", "meaning": "Cannot be changed.", "visual": "Action/disabled/default fill; value in Content/disabled." }
+  },
+  "a11y": {
+    "role": "spinbutton, with aria-valuenow, aria-valuemin and aria-valuemax",
+    "keyboard": "Tab reaches the value (the only tab stop). Arrow Up adds one step, Arrow Down subtracts one, Enter commits a typed value.",
+    "minHitArea": 24,
+    "contrast": "AA",
+    "notes": [
+      "The Decrease and Increase buttons are labelled, are not tab stops, and turn Disabled at min and max.",
+      "Give the field a label (Field, or aria-label)."
+    ]
+  },
+  "openQuestions": [
+    "Keyboard: should Page Up / Page Down (larger steps) and Home / End (min / max) work, as the spinbutton pattern allows?",
+    "Out-of-range typing: when a typed value is past min or max, is it clamped on commit or shown Invalid?",
+    "Width: the field's fixed width is not bound to any variable. Should a size role own it?"
+  ],
+  "approval": { "status": "draft", "by": null, "date": null }
+}

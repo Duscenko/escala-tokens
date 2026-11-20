@@ -1,0 +1,74 @@
+{
+  "$schema": "./intent.schema.json",
+  "component": "SegmentedControlItem",
+  "purpose": "One option of a SegmentedControl: a short label, optionally with a leading icon. It is never used alone.",
+  "notFor": [
+    {
+      "case": "Used on its own, outside a SegmentedControl.",
+      "use": "SegmentedControl"
+    },
+    {
+      "case": "A tab that switches a view.",
+      "use": "TabMenuItem"
+    },
+    {
+      "case": "An independent action in a joined row.",
+      "use": "ButtonGroupItem"
+    }
+  ],
+  "states": {
+    "Checked=false": {
+      "setBy": "both",
+      "meaning": "Not the chosen option.",
+      "visual": "No fill; label Content/secondary."
+    },
+    "Checked=true": {
+      "setBy": "both",
+      "meaning": "The chosen option (aria-checked=\"true\").",
+      "visual": "Raised fill Surface/raised (the description says Surface/input with Shadow/xs); label Content/primary."
+    },
+    "Default": {
+      "setBy": "component",
+      "visual": "The look of its Checked value."
+    },
+    "Hover": {
+      "setBy": "component",
+      "visual": "Unchecked: fill Action/ghost/hover, label Content/primary. Checked: no change."
+    },
+    "Pressed": {
+      "setBy": "component",
+      "visual": "Unchecked: fill Action/ghost/pressed, label Content/primary. Checked: no change."
+    },
+    "Focused": {
+      "setBy": "component",
+      "meaning": "Reached by keyboard (focus-visible).",
+      "visual": "Border/focus inside plus a Border/ring/default ring, over the Checked look."
+    },
+    "Disabled": {
+      "setBy": "app",
+      "meaning": "Cannot be chosen; skipped by the arrow keys.",
+      "visual": "Label Content/disabled; a checked item keeps its raised fill."
+    }
+  },
+  "a11y": {
+    "role": "radio",
+    "keyboard": "The group owns the roving tab stop and the arrow keys; the item has no keys of its own.",
+    "minHitArea": 24,
+    "contrast": "NOT DECIDED",
+    "reducedMotion": "NOT DECIDED",
+    "notes": [
+      "With LabelVisible false the item needs an aria-label.",
+      "Fill and ink change with the motion role use-hover (recipes/motion.ts)."
+    ]
+  },
+  "openQuestions": [
+    "Checked fill: the bindings say Surface/raised, the description and the human contract say Surface/input with Shadow/xs, and Surface/raised equals Surface/muted in Dark (findings FIG-003, COL-002 SYN-003). Which role, and what is the new role's name?",
+    "Contrast: unchecked labels are Content/secondary on Surface/muted, 4.22:1 in Light. Fix the role or accept?",
+    "Reduced motion: should the use-hover colour change stay as a short fade or become instant?"
+  ],
+  "approval": {
+    "status": "draft",
+    "by": null,
+    "date": null
+  }
+}

@@ -1,0 +1,44 @@
+{
+  "$schema": "./intent.schema.json",
+  "component": "Card",
+  "purpose": "A contained surface that groups related content and its actions: header, title, description, an optional corner action, content and footer.",
+  "notFor": [
+    {
+      "case": "Interrupting the flow for a decision.",
+      "use": "Modal"
+    },
+    {
+      "case": "A message about the page or the system.",
+      "use": "Alert"
+    },
+    {
+      "case": "Stacked sections the person opens and closes.",
+      "use": "Accordion"
+    },
+    {
+      "case": "A card nested inside another card.",
+      "use": "none"
+    }
+  ],
+  "states": {
+    "Default": {
+      "setBy": "component",
+      "visual": "Surface/layer-1 fill, Border/subtle edge, xs shadow (shadow.xs); title and content Content/primary, description Content/secondary."
+    }
+  },
+  "a11y": {
+    "role": "none (a surface)",
+    "keyboard": "Not focusable; its content brings its own controls.",
+    "minHitArea": 24,
+    "contrast": "AA"
+  },
+  "openQuestions": [
+    "Card is code-only, with no Figma set (finding DOC-001 Card). Should it get one?",
+    "The accessibility note says clickable cards use role=\"button\" or a wrapping <a> with a visible focus ring, but the contract says Card is not focusable and has no hover or focus state. Are clickable cards supported?"
+  ],
+  "approval": {
+    "status": "draft",
+    "by": null,
+    "date": null
+  }
+}

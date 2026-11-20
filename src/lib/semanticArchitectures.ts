@@ -38,6 +38,7 @@ const APCA_UI = INTENT_THRESHOLDS['ui-component'].apcaLc ?? 45
 const WCAG_CONTROL = WCAG_UI
 const APCA_CONTROL = 0
 import { chartPalette } from './chartPalette'
+import { CHART_RAMPS } from './chartRamps.generated'
 import type { ThemePalette } from '../store/useDesignStore'
 
 export type SemanticArchitecture = 'flat' | 'categorical'
@@ -767,9 +768,10 @@ const CATEGORICAL_ROLES: { group: string; key: string; light: string; dark: stri
   { group: 'content', key: 'secondary', light: '{neutral.11}', dark: '{neutral-dark.11}' },
   // DE-EMPHASIS tier, not a third readable level. `primary` (12) and
   // `secondary` (11) are the two perceivable text levels this system can
-  // deliver; in dark mode step 9 measures Lc 21 against the page. Use it for
-  // placeholders and watermarks, never for information.
-  { group: 'content', key: 'subtle',    light: '{neutral.9}',  dark: '{neutral-dark.9}' },
+  // deliver. Use it for placeholders, field icons and watermarks, never for
+  // information. Step 10 since 2026-11-18 (DEC-2026-11-18-002): 3.6:1 Light and
+  // 4.0:1 Dark on `surface.input`.
+  { group: 'content', key: 'subtle',    light: '{neutral.10}', dark: '{neutral-dark.10}' },
   { group: 'content', key: 'accent',    light: '{accent.11}',  dark: '{accent.11}' },
   // Sits on action.primary, so its ink is SOLVED against that fill per theme
   // (see curatedRefs) — never assumed white. Ships as {neutral.1} or {neutral.12}.
@@ -823,9 +825,9 @@ const CATEGORICAL_ROLES: { group: string; key: string; light: string; dark: stri
   // pin it replaces, which wasn't a state at all for those hues.
   { group: 'action', key: 'primary.hover',   light: '{step:accent+1}', dark: '{step:accent+1}' },
   { group: 'action', key: 'primary.pressed', light: '{step:accent+2}', dark: '{step:accent+2}' },
-  // Two steps above `surface.layer-2` in both appearances (owner, 2026-11-17,
-  // decided in the Figma file first — DEC-2026-11-17-001). One step (tone 4
-  // on layer-2's tone 3) read 1.09–1.15:1 on a card in every style, so the
+  // Set apart from the card it sits on (owner, 2026-11-17, decided in the Figma
+  // file first — DEC-2026-11-17-001; Light cards are white since DEC-2026-11-18-006).
+  // One step above a tone 3 card read 1.09–1.15:1 in every style, so the
   // button was only its top highlight. Light: the resting fill takes the tone
   // hover used to have (5) and hover · pressed walk the ramp (6 · 7). Dark:
   // 6 · 7 · 8. No border in either appearance: one rule for both.
@@ -886,7 +888,7 @@ const CATEGORICAL_ROLES: { group: string; key: string; light: string; dark: stri
   // Surface — elevation levels
   { group: 'surface', key: 'page',    light: '{neutral.1}',  dark: '{neutral-dark.1}' },
   { group: 'surface', key: 'layer-1', light: '{neutral.2}',  dark: '{neutral-dark.2}' },
-  { group: 'surface', key: 'layer-2', light: '{neutral.3}',  dark: '{neutral-dark.3}' },
+  { group: 'surface', key: 'layer-2', light: '{neutral.1}',  dark: '{neutral-dark.3}' },
   // OWNER DECISION 2026-11-17: the Figma file is the rule. `Surface/accent` is Accents/EscalaDS/02 in Light and Dark/04 in Dark (a
   // brand wash needs a step more to read on the dark page). Pinned to the file's steps; `content.accent` (#b29bf9) reads on it at WCAG 6.3 · Lc 52 (the
   // file's own pair).
@@ -896,15 +898,16 @@ const CATEGORICAL_ROLES: { group: string; key: string; light: string; dark: stri
   // what those parts read off `action.secondary` before it became the
   // secondary CTA alone: a system may darken its secondary button without
   // turning every track black.
-  { group: 'surface', key: 'muted',       light: '{neutral.4}', dark: '{neutral-dark.4}' },
-  { group: 'surface', key: 'muted-hover', light: '{neutral.5}', dark: '{neutral-dark.5}' },
-  // Form background — same tone as the page, named separately so a form field
-  // has its own token to point at rather than reusing "page" by coincidence.
-  { group: 'surface', key: 'input', light: '{neutral.1}', dark: '{neutral-dark.1}' },
+  // Light moved one step lighter in the file (DEC-2026-11-18-009).
+  { group: 'surface', key: 'muted',       light: '{neutral.3}', dark: '{neutral-dark.4}' },
+  { group: 'surface', key: 'muted-hover', light: '{neutral.4}', dark: '{neutral-dark.5}' },
+  // Form background, named separately so a form field has its own token. Light is
+  // the page tone; Dark sits one step under its card (DEC-2026-11-18-002).
+  { group: 'surface', key: 'input', light: '{neutral.1}', dark: '{neutral-dark.2}' },
   // A part lifted above the track or surface it sits on — the selected segment
-  // of a SegmentedControl. Lighter than `surface.muted` in BOTH themes: Light
-  // takes the form tone (white on the grey track), Dark the secondary button's
-  // tone (`surface.input` sank below the track there). DEC-2026-11-17-003.
+  // of a SegmentedControl. Light takes the form tone; Dark is Gray Dark/06
+  // (DEC-2026-11-17-003, restored by DEC-2026-11-18-009): at /04 it equalled
+  // `surface.muted` and the selected segment disappeared. Invariant: raised ≠ muted in both themes.
   { group: 'surface', key: 'raised', light: '{neutral.1}', dark: '{neutral-dark.6}' },
   // Accent-tinted row/item selection — one step up from `surface.accent`,
   // the same tone `action.secondary` already uses for a component-level fill.
@@ -1157,7 +1160,8 @@ const CATEGORICAL_ROLES: { group: string; key: string; light: string; dark: stri
   // APCA Lc 0 (below the algorithm's noise floor) via `check_contrast`.
   // Step 2 is the smallest lift that leaves that floor in light (Lc ~12)
   // while staying decoration — still under `border.strong` (step 7 / 8).
-  { group: 'border', key: 'default',  light: '{black-a.2}', dark: '{white-a.2}' },
+  // Escala Dark borders are soft by owner decision (DEC-2026-11-18-008): `subtle` and `default` share White Alpha/01.
+  { group: 'border', key: 'default',  light: '{black-a.2}', dark: '{white-a.1}' },
   // Lightest decorative rung — a hairline divider, a quiet grouping edge.
   { group: 'border', key: 'subtle',   light: '{black-a.1}', dark: '{white-a.1}' },
   // ── The control boundary — SOLVED on the alpha ladder (`{ui-a:…}` composites
@@ -1183,10 +1187,11 @@ const CATEGORICAL_ROLES: { group: string; key: string; light: string; dark: stri
   // neighbours — and keeps the ui-component solve (black-a.7 / white-a.8).
   // OWNER DECISION 2026-11-16 (DEC-2026-11-16-004): the Figma file is the rule. `Border/control` sits at Black Alpha/03 ·
   // White Alpha/03 and its hover at /04, a soft hairline below the 3:1 of WCAG 1.4.11. Pinned to the file's steps, not solved.
-  // DEC-2026-11-16-006: in the file Dark `Border/control` moved to White Alpha/04 (the same step as its hover, #ffffff33).
-  { group: 'border', key: 'control',       light: '{black-a.3}', dark: '{white-a.4}' },
-  { group: 'border', key: 'control-hover', light: '{black-a.4}', dark: '{white-a.4}' },
-  { group: 'border', key: 'strong',        light: '{ui-a:black-a.5}',  dark: '{ui-a:white-a.5}' },
+  // DEC-2026-11-18-008: Escala Dark is soft: control White Alpha/01, hover /02, strong /03. Rest and hover still differ
+  // (COL-003 stays closed); the 3:1 of WCAG 1.4.11 moves to the future high-contrast mode (EXC-2026-11-16-001).
+  { group: 'border', key: 'control',       light: '{black-a.3}', dark: '{white-a.1}' },
+  { group: 'border', key: 'control-hover', light: '{black-a.4}', dark: '{white-a.2}' },
+  { group: 'border', key: 'strong',        light: '{ui-a:black-a.5}',  dark: '{white-a.3}' },
   // DECORATIVE brand emphasis — a tinted card edge or a grouping stroke. It is
   // NOT a state indicator: anything that says "this control is selected /
   // focused / active" conveys information and falls under WCAG 1.4.11, so it
@@ -1257,6 +1262,41 @@ const CATEGORICAL_ROLES: { group: string; key: string; light: string; dark: stri
   { group: 'elevation', key: 'shadow-ring',    light: '{white-a.1}', dark: '{white-a.1}' },
   // DEC-2026-11-16-006: the file's Light highlight is White Alpha/05 (#ffffff4d); Dark stays at /03.
   { group: 'elevation', key: 'highlight',      light: '{white-a.5}', dark: '{white-a.3}' },
+  // Chart — the data-viz layer (Figma `Chart/*`, DEC-2026-11-19 ARC-CHART-01). Series order is fixed: series 1 is the
+  // brand accent, 2–8 are fixed hue ramps (`chartRamps.generated.ts`, from the file's `Charts/EscalaDS/<Hue>`). `solid`
+  // (step 9) draws lines, bars, dots, swatches and segment edges; `soft` (4) area fills and segment backgrounds; `content`
+  // (11) labels on `soft` or on the page. Categories with no meaning only; a colour that means good or bad stays in `status`.
+  { group: 'chart', key: 'series-1.solid', light: '{accent.9}', dark: '{accent.9}' },
+  { group: 'chart', key: 'series-1.soft', light: '{accent.4}', dark: '{accent.4}' },
+  { group: 'chart', key: 'series-1.content', light: '{accent.11}', dark: '{accent.11}' },
+  { group: 'chart', key: 'series-2.solid', light: '{chart-teal.9}', dark: '{chart-teal.9}' },
+  { group: 'chart', key: 'series-2.soft', light: '{chart-teal.4}', dark: '{chart-teal.4}' },
+  { group: 'chart', key: 'series-2.content', light: '{chart-teal.11}', dark: '{chart-teal.11}' },
+  { group: 'chart', key: 'series-3.solid', light: '{chart-amber.9}', dark: '{chart-amber.9}' },
+  { group: 'chart', key: 'series-3.soft', light: '{chart-amber.4}', dark: '{chart-amber.4}' },
+  { group: 'chart', key: 'series-3.content', light: '{chart-amber.11}', dark: '{chart-amber.11}' },
+  { group: 'chart', key: 'series-4.solid', light: '{chart-blue.9}', dark: '{chart-blue.9}' },
+  { group: 'chart', key: 'series-4.soft', light: '{chart-blue.4}', dark: '{chart-blue.4}' },
+  { group: 'chart', key: 'series-4.content', light: '{chart-blue.11}', dark: '{chart-blue.11}' },
+  { group: 'chart', key: 'series-5.solid', light: '{chart-rose.9}', dark: '{chart-rose.9}' },
+  { group: 'chart', key: 'series-5.soft', light: '{chart-rose.4}', dark: '{chart-rose.4}' },
+  { group: 'chart', key: 'series-5.content', light: '{chart-rose.11}', dark: '{chart-rose.11}' },
+  { group: 'chart', key: 'series-6.solid', light: '{chart-lime.9}', dark: '{chart-lime.9}' },
+  { group: 'chart', key: 'series-6.soft', light: '{chart-lime.4}', dark: '{chart-lime.4}' },
+  { group: 'chart', key: 'series-6.content', light: '{chart-lime.11}', dark: '{chart-lime.11}' },
+  { group: 'chart', key: 'series-7.solid', light: '{chart-magenta.9}', dark: '{chart-magenta.9}' },
+  { group: 'chart', key: 'series-7.soft', light: '{chart-magenta.4}', dark: '{chart-magenta.4}' },
+  { group: 'chart', key: 'series-7.content', light: '{chart-magenta.11}', dark: '{chart-magenta.11}' },
+  { group: 'chart', key: 'series-8.solid', light: '{chart-orange.9}', dark: '{chart-orange.9}' },
+  { group: 'chart', key: 'series-8.soft', light: '{chart-orange.4}', dark: '{chart-orange.4}' },
+  { group: 'chart', key: 'series-8.content', light: '{chart-orange.11}', dark: '{chart-orange.11}' },
+  // Sequential — heatmaps and density: 0 = no data … 5 = most intense, in both themes.
+  { group: 'chart', key: 'sequential.0', light: '{neutral.3}', dark: '{neutral-dark.3}' },
+  { group: 'chart', key: 'sequential.1', light: '{accent.3}', dark: '{accent.3}' },
+  { group: 'chart', key: 'sequential.2', light: '{accent.5}', dark: '{accent.5}' },
+  { group: 'chart', key: 'sequential.3', light: '{accent.7}', dark: '{accent.7}' },
+  { group: 'chart', key: 'sequential.4', light: '{accent.9}', dark: '{accent.9}' },
+  { group: 'chart', key: 'sequential.5', light: '{accent.11}', dark: '{accent.11}' },
   // `border.critical` / `border.warning` / `border.success` moved to
   // `status.<sev>.border-strong` (audit F3 — a severity-family stroke belongs in
   // the `status` group, beside `status.<sev>.border`), and `info` joined them so
@@ -1306,25 +1346,25 @@ export function projectCategorical(
  * actually ship.
  */
 export const CATEGORICAL_ROLE_COMMENTS: Record<string, string> = {
-  'elevation.highlight': '[ROLE: Solid Control Highlight] The inner 2px top highlight of a solid filled control (primary and destructive buttons, every state but disabled): box-shadow: inset 0 2px 0 var(--color-elevation-highlight). {white-a.5} in Light, {white-a.3} in Dark (DEC-2026-11-16-006, the Figma file is the rule). EFFECT colour only.',
+  'elevation.highlight': '[ROLE: Solid Control Highlight] The inner 1px top highlight of a solid filled control (Figma style Highlight/solid; Button, IconButton, SocialLoginButton, every state but disabled): box-shadow: inset 0 1px 0 var(--color-elevation-highlight). FABButton and the gradient FeaturedIcon hand-set it at 2px. {white-a.5} in Light, {white-a.3} in Dark (DEC-2026-11-16-006, the Figma file is the rule). EFFECT colour only.',
   'elevation.shadow-ring': '[ROLE: Shadow Ring] The 0 0 0 1px highlight edge every shadow and depth recipe starts with. EFFECT colour only. {white-a.1} in both themes: invisible on a light surface, the rim that buys elevation on a dark page.',
-  'elevation.shadow-ambient': '[ROLE: Shadow Ambient] The tight, secondary layer of the shadow and depth recipes. EFFECT colour only. {black-a.1} (5%) in Light, {black-a.4} (20%) in Dark.',
+  'elevation.shadow-ambient': '[ROLE: Shadow Ambient] The tight, secondary layer of the shadow and depth recipes, and the solid Button label shadow (Shadow/text-2xs, 0 1px 0.5px). EFFECT colour only. {black-a.1} (5%) in Light, {black-a.4} (20%) in Dark.',
   'elevation.shadow-key': '[ROLE: Shadow Key] The main, larger-offset layer of every Shadow/* and Depth/* recipe. EFFECT colour only, never a fill or stroke. {black-a.2} (10%) in Light, {black-a.6} (40%) in Dark, so one shadow style follows the theme.',
   'border.inverse': '[ROLE: Inverse Border] Any stroke ON surface.inverse — an outline badge, a divider in a tooltip, a group edge. {white-a.5} in Light, {black-a.5} in Dark. Decoration: no 1.4.11 floor, never the only boundary of a control.',
-  'content.inverse-secondary': '[ROLE: Inverse Secondary Text] Body copy, icons and the dismiss icon on surface.inverse — content.secondary points the wrong way there. {white-a.9} in Light, {black-a.9} in Dark. STRICT 4.5:1 against surface.inverse.',
+  'content.inverse-secondary': '[ROLE: Inverse Secondary Text] Body copy and the resting dismiss icon on surface.inverse (status icons there use content.inverse, as Figma binds them) — content.secondary points the wrong way there. {white-a.9} in Light, {black-a.9} in Dark. STRICT 4.5:1 against surface.inverse.',
   'surface.inverse-muted': '[ROLE: Inverse Soft Fill] Passive soft fill on surface.inverse — a soft badge, chip or track inside a tooltip or snackbar. The alpha ladder pointing away from the chip: {white-a.3} in Light (dark chip), {black-a.3} in Dark (light chip). Ink on it: content.inverse. No hover / pressed twins: it is not an action.',
   'surface.page': '[ROLE: Base Background] Elevation level 0. Root application background. content.primary and content.secondary must maintain WCAG AA (4.5:1) against this token.',
   'surface.layer-1': '[ROLE: Container Background] Elevation level 1. Cards, panels, grouped content. Must read slightly distinct from surface.page.',
   'surface.layer-2': '[ROLE: Elevated Background] Elevation level 2. Popovers, dropdowns, modals. Pair with box-shadow in CSS — the color step alone does not convey floating.',
   'surface.input': "[ROLE: Form Background] Background for interactive data-entry fields. Ensures content.primary typed by the user stays legible. Same tone as surface.page by design — named separately so forms have their own token.",
-  'surface.raised': "[ROLE: Raised Surface] A part lifted above the track or surface it sits on: the selected segment of a SegmentedControl. Lighter than surface.muted in both themes (Light = surface.input's tone, Dark = action.secondary.default's tone). DEC-2026-11-17-003.",
+  'surface.raised': "[ROLE: Raised Surface] A part lifted above the track or surface it sits on: the selected segment of a SegmentedControl. Lighter than surface.muted in both themes (Light = surface.input's tone, Dark = action.secondary.default's tone). DEC-2026-11-17-003, DEC-2026-11-18-009.",
   'surface.selected': '[ROLE: Active State Background] Subtle fill for mutual selection (e.g. a selected table row). Must guarantee 4.5:1 against content.primary on top.',
   'surface.selected-pressed': '[ROLE: Active State Background Pressed] A pressed soft brand control (Button Soft / Outline pressed). {accent-a.5}, two steps deeper than surface.selected — the brand twin of status.*.surface-pressed.',
-  'surface.inverse': '[ROLE: Inverted Background] High-contrast background for tooltips, snackbars and inverse alerts or badges. Always pair with content.inverse (title) and content.inverse-secondary (body, icons). {neutral.12} in both themes: a dark chip in Light, a light one in Dark.',
+  'surface.inverse': '[ROLE: Inverted Background] High-contrast background for tooltips, snackbars and inverse alerts or badges. Always pair with content.inverse (title, icons) and content.inverse-secondary (body). {neutral.12} in both themes: a dark chip in Light, a light one in Dark.',
   'surface.overlay': '[ROLE: Scrim] Semi-transparent layer over surface.page to focus attention on modals (layer-2 surfaces). Ships at 60% black alpha (`{black-a.8}`), same in both themes.',
   'surface.accent': '[ROLE: Accent Wash] Ambient brand-tinted background — a section that leans brand without being an interactive fill. {accent.2} in Light, {accent.4} in Dark (the Figma file is the rule, 2026-11-17).',
-  'surface.muted': "[ROLE: Control Track] Neutral fill of a control's passive part — a Switch's off track, a Slider or Progress track, an OTP segment, a step connector. {neutral.4} in light. Not a button: a secondary CTA uses action.secondary.default.",
-  'surface.muted-hover': '[ROLE: Control Track Hover] Hover twin of surface.muted (a hovered off Switch, a scrollbar thumb). {neutral.5} in light — one step past the track.',
+  'surface.muted': "[ROLE: Control Track] Neutral fill of a control's passive part — a Switch's off track, a Slider or Progress track, an OTP segment, a step connector. {neutral.3} in light. Not a button: a secondary CTA uses action.secondary.default.",
+  'surface.muted-hover': '[ROLE: Control Track Hover] Hover twin of surface.muted (a hovered off Switch, a scrollbar thumb). {neutral.4} in light — one step past the track.',
   'content.primary': '[ROLE: High Contrast Text] Main body and headings. STRICT: must pass WCAG AA (4.5:1) against surface.page and surface.layer-1.',
   'content.secondary': '[ROLE: Medium Contrast Text] Supporting copy and descriptions. STRICT: WCAG AA (4.5:1) against standard surface backgrounds.',
   'content.subtle': '[ROLE: Low Contrast Text] Placeholders and decorative de-emphasis only — not a third readable body tier. Minimum ~3:1; do not convey information.',
@@ -1382,16 +1422,32 @@ export const CATEGORICAL_ROLE_COMMENTS: Record<string, string> = {
   'status.success.border-strong': '[ROLE: Success Control Boundary] Affects validated / success-state form fields. {success.10} — one step lighter than warning/critical; this ramp clears both metrics a full step earlier (3.32:1/Lc60 light, 8.21:1/Lc56 dark).',
   'status.info.border-strong': '[ROLE: Info Control Boundary] Affects informational-state form fields. Light {info.9} = 3.24:1/Lc59. Dark {info.10} = 7.15:1/Lc49 — info.9 fails APCA in dark (Lc 42), one step earlier than error needs.',
   'border.subtle': '[ROLE: Decorative Border 1/3] Affects hairline dividers, table rules, the edge of a quiet grouping. Lightest neutral stroke — {black-a.1} in light, {white-a.1} in dark (the FIXED alpha ladder, so it composites correctly on any surface): 5 %, owner decision 2026-11-16 (DEC-2026-11-16-003). It measures APCA Lc 0 on the dark page, which is accepted: shadow and surface carry the separation. DECORATION: separates regions, carries no state, no contrast floor. If the stroke is the only thing telling the user a control is there, that is border.control.',
-  'border.default': '[ROLE: Decorative Border 2/3] Affects a card edge, a panel boundary, a grouping box. {black-a.2} / {white-a.2} (10 %, owner decision 2026-11-16, DEC-2026-11-16-003). DECORATION, no contrast floor. One step above border.subtle so a panel edge still outranks a hairline. Never the only boundary of a control.',
-  'border.control': '[ROLE: Control Boundary] Affects the resting border of inputs, textareas, selects, checkboxes, radios, switch tracks and outline buttons. {black-a.3} in Light, {white-a.4} in Dark: a soft hairline, below the 3:1 of WCAG 1.4.11 BY OWNER DECISION (DEC-2026-11-16-004 and -006, the Figma file is the rule); a field is identified by its fill and its focus ring, not by this stroke alone.',
-  'border.control-hover': '[ROLE: Control Boundary Hover] Affects the hover state of a control\'s resting (border.control) border. One step past border.control: {black-a.4} in Light, {white-a.4} in Dark (DEC-2026-11-16-004).',
-  'border.strong': '[ROLE: Strong Border] Affects the edge of a grouping or a selected container that must read before its neighbours. Not the field outline — that is border.control. WCAG 1.4.11 + APCA Lc 45 against the page, SOLVED on the alpha ladder ({ui-a:…}): {black-a.7} in light, {white-a.8} in dark for the default system.',
+  'border.default': '[ROLE: Decorative Border 2/3] Affects a card edge, a panel boundary, a grouping box. {black-a.2} in Light (10 %, DEC-2026-11-16-003), {white-a.1} in Dark (5 %, DEC-2026-11-18-008). DECORATION, no contrast floor. In Light one step above border.subtle; in Dark both share a value on purpose. Never the only boundary of a control.',
+  'border.control': '[ROLE: Control Boundary] Affects the resting border of inputs, textareas, selects, checkboxes, radios, switch tracks and outline buttons. {black-a.3} in Light, {white-a.1} in Dark: a soft hairline, below the 3:1 of WCAG 1.4.11 BY OWNER DECISION (DEC-2026-11-16-004 and DEC-2026-11-18-008, the Figma file is the rule); a field is identified by its fill and its focus ring, not by this stroke alone.',
+  'border.control-hover': '[ROLE: Control Boundary Hover] Affects the hover state of a control\'s resting (border.control) border. One step past border.control: {black-a.4} in Light, {white-a.2} in Dark (DEC-2026-11-18-008).',
+  'border.strong': '[ROLE: Strong Border] Affects the edge of a grouping or a selected container that must read before its neighbours. Not the field outline — that is border.control. Light is SOLVED on the alpha ladder ({ui-a:…}) to WCAG 1.4.11 + APCA Lc 45 against the page: {black-a.7} for the default system. Dark is pinned soft at {white-a.3} (DEC-2026-11-18-008).',
   'border.focus': '[ROLE: A11y Focus Ring] The keyboard focus-visible boundary on every interactive element of the default / accent variant. SOLVED per theme ({focus:accent.9}): the first accent tone from 9 that clears WCAG 1.4.11 (3:1) on the page — tone 9 in both themes for the default system. Severity, neutral and inverse variants take their own boundary (status.<sev>.border-strong, border.strong, border.inverse). The translucent halo outside it is border.ring.*.',
   'border.ring.default': '[ROLE: Focus Ring · accent] The 2px focus ring drawn 1px OUTSIDE a focused control, with the page showing in the gap (owner decision 2026-11-17). Accent Alpha/06 in each mode. Used by every default-intent control. Decoration, never the only focus cue and never measured as a boundary; border.focus is the contrast-bearing edge of a field. Neutral controls use border.ring.neutral, critical ones status.critical.ring.',
   'border.ring.neutral': '[ROLE: Focus Ring · neutral] The 2px focus ring, 1px outside a focused neutral (secondary) control. Gray Alpha/06 in each mode, the neutral twin of border.ring.default.',
   'status.critical.ring': '[ROLE: Focus Ring · critical] The 2px focus ring, 1px outside a focused critical (destructive) control. Error Alpha/06 in each mode, the critical twin of border.ring.default and the same red as a field\'s error halo (status.critical.border).',
   'border.rim-highlight': '[ROLE: Elevation Rim] 1px light rim along the top of an elevated surface in dark mode. Below a near-black page only ~5% of the luminance range is left to spend downward, so elevation has to be bought with light, not shadow — this is the token for the rim darkShadow() already paints.',
   'border.accent': '[ROLE: Accent Border] Border painted in the brand accent — a selected card, a toggled button, any element that needs its stroke to read as the primary accent. For keyboard focus use border.focus.',
+}
+
+// Chart roles (DEC-2026-11-19, ARC-CHART-01): one comment per slot, generated from the table so it cannot drift.
+const CHART_SLOT_COMMENT: Record<string, string> = {
+  solid: 'step 9 — lines, bars, dots, legend swatches and segment edges. 3:1 on the page in both themes (WCAG 1.4.11). Never add opacity on top of it.',
+  soft: 'step 4 — area fills and segment backgrounds. A fill, never a line or text.',
+  content: 'step 11 — labels on `soft` or on the page. 4.5:1.',
+}
+const CHART_HUE_NAME = ['', 'accent (the brand violet)', 'Teal', 'Amber', 'Blue', 'Rose', 'Lime', 'Magenta', 'Orange']
+for (let n = 1; n <= 8; n++) {
+  for (const slot of ['solid', 'soft', 'content'] as const) {
+    CATEGORICAL_ROLE_COMMENTS[`chart.series-${n}.${slot}`] = `[ROLE: Chart Series ${n} ${slot[0].toUpperCase()}${slot.slice(1)}] Series ${n} of a categorical chart (${CHART_HUE_NAME[n]}): ${CHART_SLOT_COMMENT[slot]} Series order is fixed. Use Chart/* for categories with no meaning; Status/* when the colour means good or bad.`
+  }
+}
+for (let n = 0; n <= 5; n++) {
+  CATEGORICAL_ROLE_COMMENTS[`chart.sequential.${n}`] = `[ROLE: Chart Sequential ${n}] Heatmap and density ramp, level ${n}: ${n === 0 ? 'no data' : n === 5 ? 'most intense' : 'increasing intensity'}, in both themes. A fill only.`
 }
 
 /** Flat role id → nested export path segments. `content.link.default` → ['content','link','default']. */
@@ -1503,6 +1559,8 @@ export function scaleLookup(
     warning: palette?.warning ?? darkTwin('warning') ?? scales.warning,
     success: palette?.success ?? darkTwin('success') ?? scales.success,
     info: palette?.info ?? darkTwin('info') ?? scales.info,
+    // The Chart hue ramps (series 2–8): fixed data from the Figma file, kind-aware like `accent`.
+    ...Object.fromEntries(Object.entries(CHART_RAMPS).map(([hue, r]) => [`chart-${hue}`, r[kind] as Record<number, string>])),
     // The theme's extra brand palettes — only defined when it carries them.
     secondary: palette?.secondary,
     tertiary: palette?.tertiary,

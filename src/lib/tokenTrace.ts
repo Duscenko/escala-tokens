@@ -96,11 +96,13 @@ const PROP_LABEL: Record<RecipeProp, string> = {
   strokeRightWidth: 'Right border width',
   strokeLeftWidth: 'Left border width',
   radiusTop: 'Radius (top corners)',
+  radiusBottom: 'Radius (bottom corners)',
   radiusLeft: 'Radius (left corners)',
   radiusRight: 'Radius (right corners)',
   maxWidth: 'Max width',
   paddingTop: 'Padding top',
   font: 'Typography',
+  fontStep: 'Typography (scale step)',
   shadow: 'Shadow',
   hit: 'Target size',
   highlight: 'Top highlight',
@@ -114,6 +116,7 @@ const PROP_LABEL: Record<RecipeProp, string> = {
   lift: 'Elevation',
   fontLiteral: 'Typography (literal)',
   hairline: 'Border width (hairline)',
+  highlightWidth: 'Top highlight offset',
   outerStroke: 'Outside border',
   outerStrokeWidth: 'Outside border width',
   textShadow: 'Text shadow',
@@ -123,8 +126,8 @@ const PROP_LABEL: Record<RecipeProp, string> = {
 /** Display order inside a slot: paint first, then box, then type. */
 const PROP_ORDER: RecipeProp[] = [
   'fill', 'fillMid', 'fillEnd', 'overlay', 'overlay2', 'text', 'stroke', 'outerStroke', 'strokeTop', 'focus', 'ring', 'halo', 'gapRing', 'highlight', 'paint',
-  'radius', 'radiusTop', 'radiusLeft', 'radiusRight', 'paddingX', 'paddingY', 'paddingTop', 'paddingBottom', 'paddingRight', 'gap', 'rowGap', 'overlap', 'height', 'minHeight', 'minWidth', 'maxWidth', 'width', 'travel',
-  'strokeWidth', 'outerStrokeWidth', 'strokeTopWidth', 'strokeBottomWidth', 'strokeRightWidth', 'strokeLeftWidth', 'shadow', 'font', 'hit',
+  'radius', 'radiusTop', 'radiusBottom', 'radiusLeft', 'radiusRight', 'paddingX', 'paddingY', 'paddingTop', 'paddingBottom', 'paddingRight', 'gap', 'rowGap', 'overlap', 'height', 'minHeight', 'minWidth', 'maxWidth', 'width', 'travel',
+  'strokeWidth', 'outerStrokeWidth', 'strokeTopWidth', 'strokeBottomWidth', 'strokeRightWidth', 'strokeLeftWidth', 'shadow', 'font', 'fontStep', 'hit',
 ]
 
 function kindOf(ref: string): TraceKind {
@@ -352,7 +355,7 @@ export function motionRows(t: PreviewTokens, recipeKey: string): TraceRow[] {
     const facets: TraceFacet[] = def.tracks?.length
       ? def.tracks.map((track) => ({
           label: track.slot ?? recipe.slots[0],
-          cssVar: choreographyVar(c.name, track.slot),
+          cssVar: choreographyVar(c.name, track.id ?? track.slot),
           value: `${track.keyframes} · ${timing(track.motion, track.delay)}`,
         }))
       : def.motion
@@ -379,6 +382,85 @@ export function traceElement(t: PreviewTokens, el: Element): ElementTrace | null
   if (!root) return null
   const key = root.getAttribute('data-escala') ?? ''
   return traceRecipe(t, key, axesOf(root, key))
+}
+
+// ── A block's own box ──────────────────────────────────────────────────────
+// A block's card (the sign-in panel, a pricing card) is no recipe component: it is
+// the block's own frame, written as token references in its inline style. So the
+// trace READS that style, declaration by declaration: nothing is measured or guessed.
+
+let refsByVar: Map<string, string> | null = null
+/** CSS variable → the token it belongs to, from every length the recipes name. */
+function refOfVar(cssVar: string): string | null {
+  if (!refsByVar) {
+    refsByVar = new Map()
+    for (const [ref] of JSON.stringify(COMPONENT_RECIPES).matchAll(/\b(?:radius|spacing|stroke)\.[a-z0-9-]+/g)) refsByVar.set(cssVarOf(ref), ref)
+  }
+  const known = refsByVar.get(cssVar)
+  if (known) return known
+  const m = cssVar.match(/^--(color|radius|spacing|stroke)-(.+)$/)
+  if (!m) return null
+  return m[1] === 'color' ? null : `${m[1]}.${m[2]}`
+}
+
+/** `--color-surface-layer-2` → `color.surface.layer-2`, through the roles on screen. */
+function colorRefOfVar(t: PreviewTokens, cssVar: string): string | null {
+  const id = Object.keys(t.archTokens ?? {}).find((key) => `--color-${key.replace(/\./g, '-')}` === cssVar)
+  return id ? `color.${id}` : null
+}
+
+const BOX_DECLARATIONS: { css: RegExp; prop: RecipeProp; label?: string }[] = [
+  { css: /^background(-color)?$/, prop: 'fill' },
+  { css: /^border(-(top|right|bottom|left))?(-color)?$/, prop: 'stroke' },
+  { css: /^border(-(top|right|bottom|left))?(-width)?$/, prop: 'strokeWidth' },
+  { css: /^border-radius$/, prop: 'radius' },
+  { css: /^padding(-inline)?$/, prop: 'paddingX' },
+  { css: /^padding(-block)?$/, prop: 'paddingY' },
+  { css: /^padding-top$/, prop: 'paddingTop' },
+  { css: /^padding-bottom$/, prop: 'paddingBottom' },
+  { css: /^padding-right$/, prop: 'paddingRight' },
+  { css: /^gap$/, prop: 'gap' },
+  { css: /^box-shadow$/, prop: 'shadow' },
+]
+
+function boxRows(t: PreviewTokens, el: Element, slot: string): TraceRow[] {
+  const rows: TraceRow[] = []
+  const seen = new Set<string>()
+  for (const declaration of (el.getAttribute('style') ?? '').split(';')) {
+    const at = declaration.indexOf(':')
+    if (at < 0) continue
+    const name = declaration.slice(0, at).trim().toLowerCase()
+    const vars = [...declaration.slice(at + 1).matchAll(/var\((--[\w-]+)/g)].map((m) => m[1])
+    for (const { css, prop } of BOX_DECLARATIONS) {
+      if (!css.test(name)) continue
+      for (const cssVar of vars) {
+        const color = colorRefOfVar(t, cssVar)
+        const wantsColor = prop === 'fill' || prop === 'stroke' || prop === 'shadow'
+        if (wantsColor !== Boolean(color)) continue
+        const ref = color ?? refOfVar(cssVar)
+        if (!ref) continue
+        const key = `${slot}|${prop}|${ref}`
+        if (seen.has(key)) continue
+        seen.add(key)
+        const resolved = resolveValue(t, ref)
+        rows.push({ key, slot, prop, label: PROP_LABEL[prop], kind: kindOf(ref), ref, cssVar, value: resolved.value, pickId: pickIdOf(ref), facets: resolved.facets })
+      }
+    }
+  }
+  return rows.sort((a, b) => PROP_ORDER.indexOf(a.prop as RecipeProp) - PROP_ORDER.indexOf(b.prop as RecipeProp))
+}
+
+/** The trace of a block's own box and the regions it pads (`header-area`, `body`), or
+ *  null for an element that is a recipe component (a Modal traces through its recipe). */
+export function traceBlockBox(t: PreviewTokens, el: Element): ElementTrace | null {
+  if (!el.matches?.('[data-block]:not([data-escala])')) return null
+  const slots: TraceSlot[] = [{ slot: 'root', rows: boxRows(t, el, 'root') }]
+  for (const part of Array.from(el.children)) {
+    const name = part.getAttribute('data-part')
+    if (name) slots.push({ slot: name, rows: boxRows(t, part, name) })
+  }
+  const filled = slots.filter((s) => s.rows.length)
+  return filled.length ? { component: el.getAttribute('data-block') ?? 'Block', axes: {}, slots: filled } : null
 }
 
 /** Which anatomy slot the node under the pointer belongs to — `label` for the

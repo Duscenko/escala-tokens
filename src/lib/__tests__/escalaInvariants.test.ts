@@ -73,9 +73,9 @@ describe('the default Escala system — contrast invariants (WCAG 2.x)', () => {
         }
       })
 
-      it('boundaries: focus clears WCAG 1.4.11; the control outline is the owner\'s soft hairline (DEC-2026-11-16-004, below 3:1 on purpose)', () => {
+      it('boundaries: focus clears WCAG 1.4.11; the control outline is the owner\'s soft hairline (DEC-2026-11-16-004, DEC-2026-11-18-008, below 3:1 on purpose)', () => {
         expect(ratio('border.focus', 'surface.page', theme)).toBeGreaterThanOrEqual(3)
-        expect(ratio('border.control', 'surface.page', theme)).toBeGreaterThanOrEqual(1.4)
+        expect(ratio('border.control', 'surface.page', theme)).toBeGreaterThanOrEqual(theme === DARK ? 1.05 : 1.4)
         expect(ratio('border.control', 'surface.page', theme)).toBeLessThan(3)
       })
 
@@ -143,9 +143,9 @@ describe('the default Escala system — roles picked by job', () => {
     }
   })
 
-  it('the control outline sits on the alpha ladder: Light Alpha/03, Dark Alpha/04, hover /04 (the Figma file, DEC-2026-11-16-004 and -006)', () => {
+  it('the control outline sits on the alpha ladder: Light Alpha/03 · /04, Dark Alpha/01 · /02 (the Figma file, DEC-2026-11-18-008)', () => {
     expect([role('border.control', LIGHT), role('border.control-hover', LIGHT)]).toEqual([t.colors.primitiveAlpha['black-a-3'], t.colors.primitiveAlpha['black-a-4']])
-    expect([role('border.control', DARK), role('border.control-hover', DARK)]).toEqual([t.colors.primitiveAlpha['white-a-4'], t.colors.primitiveAlpha['white-a-4']])
+    expect([role('border.control', DARK), role('border.control-hover', DARK)]).toEqual([t.colors.primitiveAlpha['white-a-1'], t.colors.primitiveAlpha['white-a-2']])
   })
 })
 

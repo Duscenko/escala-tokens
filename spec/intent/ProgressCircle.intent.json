@@ -1,0 +1,50 @@
+{
+  "$schema": "./intent.schema.json",
+  "component": "ProgressCircle",
+  "purpose": "A circular progress indicator for a value from 0 to 100, for places a bar does not fit: a button, a card corner, an avatar.",
+  "notFor": [
+    {
+      "case": "There is room for a horizontal bar.",
+      "use": "ProgressLine"
+    },
+    {
+      "case": "The duration is unknown.",
+      "use": "Spinner"
+    },
+    {
+      "case": "A measured value against a range.",
+      "use": "Gauge"
+    }
+  ],
+  "states": {
+    "Default": {
+      "setBy": "app",
+      "meaning": "The value the app reports (0–100).",
+      "visual": "Ring Surface/muted; arc from the top Action/primary/default (solid), with round or butt caps."
+    },
+    "Indeterminate": {
+      "setBy": "app",
+      "meaning": "No value given (Radix reports indeterminate).",
+      "visual": "NOT DECIDED"
+    }
+  },
+  "a11y": {
+    "role": "progressbar (aria-valuenow / min / max)",
+    "keyboard": "Not focusable (Radix Progress).",
+    "minHitArea": 24,
+    "contrast": "AA",
+    "notes": [
+      "Give it an accessible name (aria-label); show the percentage next to it when it matters."
+    ]
+  },
+  "openQuestions": [
+    "Indeterminate: no look is designed. What does it show?",
+    "The gradient appearance has no arc role in the contract bindings. Which roles does the gradient arc use?",
+    "ProgressCircle has no motion while ProgressLine moves on use-progress. Should the arc animate value changes too?"
+  ],
+  "approval": {
+    "status": "draft",
+    "by": null,
+    "date": null
+  }
+}

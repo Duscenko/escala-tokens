@@ -1,0 +1,28 @@
+{
+  "$schema": "./intent.schema.json",
+  "component": "TableMediaCell",
+  "purpose": "A body cell that leads with a thumbnail at 1:1 or 2:1, with an optional label and description, for rows about products, people or files.",
+  "notFor": [
+    {"case": "Not for standalone use outside a table row.", "use": "Table"},
+    {"case": "A text cell, or one with a small Avatar or Checkbox in its leading slot.", "use": "TableCell"},
+    {"case": "A value with its trend.", "use": "TableTrendCell"}
+  ],
+  "states": {
+    "Default": {"setBy": "app", "meaning": "Enabled.", "visual": "The thumbnail; label in Content/primary (Type/body-sm), description in Content/secondary (Type/helper)."},
+    "Disabled": {"setBy": "app", "meaning": "Its row cannot be used.", "visual": "Label and description in Content/disabled."}
+  },
+  "a11y": {
+    "role": "cell",
+    "keyboard": "Not focusable.",
+    "minHitArea": 24,
+    "contrast": "AA",
+    "notes": [
+      "The image needs alt text, or alt=\"\" when the label already names it."
+    ]
+  },
+  "openQuestions": [
+    "Motion: State Default · Disabled has no motion decision in the contract (finding MOT-002 TableMediaCell). Confirm the cell needs none.",
+    "Disabled dims the text only; should the thumbnail dim too?"
+  ],
+  "approval": { "status": "draft", "by": null, "date": null }
+}

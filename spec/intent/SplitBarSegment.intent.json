@@ -1,0 +1,83 @@
+{
+  "$schema": "./intent.schema.json",
+  "component": "SplitBarSegment",
+  "purpose": "One share of a SplitBar, as wide as its percentage of what is shown, carrying its label and value when they fit. It is pressable and reports the press to the bar.",
+  "notFor": [
+    {
+      "case": "Used on its own, outside a SplitBar.",
+      "use": "SplitBar"
+    },
+    {
+      "case": "A progress fill for a single value.",
+      "use": "ProgressLine"
+    },
+    {
+      "case": "A tag or label coloured by category.",
+      "use": "Badge"
+    }
+  ],
+  "states": {
+    "Series=1": {
+      "setBy": "app",
+      "visual": "Fill Chart/series-1/soft, right edge Chart/series-1/solid, label and value in Chart/series-1/content."
+    },
+    "Series=2": {
+      "setBy": "app",
+      "visual": "Fill Chart/series-2/soft, right edge Chart/series-2/solid, label and value in Chart/series-2/content."
+    },
+    "Series=3": {
+      "setBy": "app",
+      "visual": "Fill Chart/series-3/soft, right edge Chart/series-3/solid, label and value in Chart/series-3/content."
+    },
+    "Series=4": {
+      "setBy": "app",
+      "visual": "Fill Chart/series-4/soft, right edge Chart/series-4/solid, label and value in Chart/series-4/content."
+    },
+    "Series=5": {
+      "setBy": "app",
+      "visual": "Fill Chart/series-5/soft, right edge Chart/series-5/solid, label and value in Chart/series-5/content."
+    },
+    "Series=6": {
+      "setBy": "app",
+      "visual": "Fill Chart/series-6/soft, right edge Chart/series-6/solid, label and value in Chart/series-6/content."
+    },
+    "Series=7": {
+      "setBy": "app",
+      "visual": "Fill Chart/series-7/soft, right edge Chart/series-7/solid, label and value in Chart/series-7/content."
+    },
+    "Series=8": {
+      "setBy": "app",
+      "visual": "Fill Chart/series-8/soft, right edge Chart/series-8/solid, label and value in Chart/series-8/content."
+    },
+    "Default": {
+      "setBy": "component",
+      "visual": "Its series fill at its share of the bar."
+    },
+    "Focused": {
+      "setBy": "component",
+      "meaning": "Reached by keyboard or hovered (there is no Hover colour).",
+      "visual": "A focus ring inside the segment in Border/ring/neutral; the segment widens to fit its text."
+    }
+  },
+  "a11y": {
+    "role": "button",
+    "keyboard": "Tab reaches it; Enter or Space presses it (onSegmentClick).",
+    "minHitArea": 24,
+    "contrast": "NOT DECIDED",
+    "reducedMotion": "Decided by the motion foundation: the motion roles fall back to the system fade with no travel (design-plans/splitbar-contract.md).",
+    "notes": [
+      "The visible text is aria-hidden; the aria-label carries label, share and value (\"Organic search, 41.6%, 41,300 sessions\").",
+      "The width changes with use-hover, and with use-travel-in / use-travel-out when series reflow (recipes/motion.ts)."
+    ]
+  },
+  "openQuestions": [
+    "Segments under 5 % can be narrower than 24 px. Should hover-widening or a minimum width guarantee the target size?",
+    "Contrast: Chart/series-n/content on Chart/series-n/soft is under 4.5:1 in Light for series 2, 3, 4 and 6 (COL-CHART-01). Fix the roles or accept?",
+    "The segment edge width is bound to Stroke/focus, the focus-ring width (candidate DIM-03). Does it need its own stroke role?"
+  ],
+  "approval": {
+    "status": "draft",
+    "by": null,
+    "date": null
+  }
+}

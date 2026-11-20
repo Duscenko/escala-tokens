@@ -1,0 +1,31 @@
+{
+  "$schema": "./intent.schema.json",
+  "component": "TableTrendCell",
+  "purpose": "A right-aligned metric cell whose delta shows how the value moved, up, down or unchanged, with an arrow, a colour and a hidden word.",
+  "notFor": [
+    {"case": "Not for standalone use outside a table row.", "use": "Table"},
+    {"case": "A trend over time drawn as a line.", "use": "Sparkline"},
+    {"case": "A plain number with no change.", "use": "TableCell"}
+  ],
+  "states": {
+    "Default": {"setBy": "app", "meaning": "Enabled.", "visual": "Value in Content/primary (Type/body-sm); the trend icon (Size/icon-sm) and delta label (Type/helper) in the Trend's ink."},
+    "Disabled": {"setBy": "app", "meaning": "Its row cannot be used.", "visual": "Value, trend icon and delta label in Content/disabled."},
+    "Trend=up": {"setBy": "app", "meaning": "The value went up.", "visual": "Trend icon and delta label in Status/success/content."},
+    "Trend=down": {"setBy": "app", "meaning": "The value went down.", "visual": "Trend icon and delta label in Status/critical/content."},
+    "Trend=neutral": {"setBy": "app", "meaning": "The value did not change.", "visual": "Trend icon and delta label in Content/secondary."}
+  },
+  "a11y": {
+    "role": "cell",
+    "keyboard": "Not focusable.",
+    "minHitArea": 24,
+    "contrast": "AA",
+    "notes": [
+      "A visually hidden word (up, down, unchanged) precedes the delta, so the direction is not colour alone."
+    ]
+  },
+  "openQuestions": [
+    "Motion: State Default · Disabled has no motion decision in the contract (finding MOT-002 TableTrendCell). Confirm the cell needs none.",
+    "Up is always success and down always critical. What about metrics where down is good, such as cost or errors?"
+  ],
+  "approval": { "status": "draft", "by": null, "date": null }
+}

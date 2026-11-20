@@ -1,0 +1,65 @@
+{
+  "$schema": "./intent.schema.json",
+  "component": "FileUploadDropzone",
+  "purpose": "A drop area that accepts dragged files and opens the file picker from its Choose file button. Use it at the top of a FileUpload, or alone where files are the whole task.",
+  "notFor": [
+    {
+      "case": "People need to follow the progress of several files.",
+      "use": "FileUpload"
+    },
+    {
+      "case": "A dense form row with no room for a drop area (FileUpload's trigger layout).",
+      "use": "FileUpload"
+    },
+    {
+      "case": "Showing a picture that is already uploaded.",
+      "use": "Image"
+    }
+  ],
+  "states": {
+    "Default": {
+      "setBy": "component",
+      "visual": "Surface/layer-1 fill, Border/control edge; icon and description Content/secondary, title Content/primary."
+    },
+    "Hover": {
+      "setBy": "component",
+      "visual": "Edge moves to Border/control-hover; everything else as Default."
+    },
+    "Dragging": {
+      "setBy": "user",
+      "meaning": "Files are dragged over the area.",
+      "visual": "Surface/accent fill, Border/accent edge; icon, title and description Content/accent."
+    },
+    "Invalid": {
+      "setBy": "app",
+      "meaning": "The drop or pick was rejected; the title becomes the message.",
+      "visual": "Status/critical/surface fill, Status/critical/border-strong edge; icon, title and description Status/critical/content."
+    },
+    "Disabled": {
+      "setBy": "app",
+      "meaning": "Accepts no files.",
+      "visual": "Action/disabled/default fill, Border/control edge; icon, title and description Content/disabled; the Button is disabled."
+    }
+  },
+  "a11y": {
+    "role": "none on the drop area (it takes no focus); the Choose file trigger is a Button",
+    "keyboard": "Tab reaches the Button; Enter or Space opens the native picker. Dropping is pointer only; the Button is the keyboard path.",
+    "minHitArea": 24,
+    "contrast": "AA",
+    "reducedMotion": "NOT DECIDED",
+    "notes": [
+      "aria-disabled when disabled; aria-invalid with a visible message when invalid.",
+      "The OR separator stays Content/secondary in every state, Disabled included.",
+      "Fill and edge move on use-hover (recipes/motion.ts)."
+    ]
+  },
+  "openQuestions": [
+    "Reduced motion: should the fill and edge transitions (use-hover) into Dragging be dropped?",
+    "Invalid replaces the title with the message. Is that change announced (live region), or only shown?"
+  ],
+  "approval": {
+    "status": "draft",
+    "by": null,
+    "date": null
+  }
+}

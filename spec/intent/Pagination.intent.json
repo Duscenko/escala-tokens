@@ -1,0 +1,45 @@
+{
+  "$schema": "./intent.schema.json",
+  "component": "Pagination",
+  "purpose": "Moves through a result set that spans several pages: First / Previous, numbered pages with ellipses, Next / Last. Use it below long tables and lists.",
+  "notFor": [
+    {
+      "case": "Results that fit on one page.",
+      "use": "none"
+    },
+    {
+      "case": "Loading more rows into the same list.",
+      "use": "TableLoadMore"
+    },
+    {
+      "case": "The steps of a linear flow.",
+      "use": "Stepper"
+    },
+    {
+      "case": "Showing where a page sits in a hierarchy.",
+      "use": "Breadcrumb"
+    }
+  ],
+  "states": {
+    "Default": {
+      "setBy": "component",
+      "visual": "compact-grouped: joined like a ButtonGroup; compact: ghost buttons set apart. Size cascades to every link and the ellipsis."
+    }
+  },
+  "a11y": {
+    "role": "navigation",
+    "keyboard": "Tab moves through the arrows and the page links; Enter or Space activates. First / Previous are disabled on page 1 and Next / Last on the last page.",
+    "minHitArea": 24,
+    "contrast": "AA",
+    "notes": [
+      "nav aria-label=\"pagination\"; the current page is aria-current=\"page\"; the arrows carry aria-labels.",
+      "The current page is never marked by colour alone."
+    ]
+  },
+  "openQuestions": [],
+  "approval": {
+    "status": "draft",
+    "by": null,
+    "date": null
+  }
+}

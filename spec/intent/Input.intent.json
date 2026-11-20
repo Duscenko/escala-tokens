@@ -1,0 +1,38 @@
+{
+  "$schema": "./intent.schema.json",
+  "component": "Input",
+  "purpose": "Lets the person type a single line of text, picking a Type for what the value holds (phone, currency, password, url, search and more) so the field brings the right parts and keyboard. Wrap it in a Field with a label.",
+  "notFor": [
+    { "case": "Text that runs over one line, such as a message or description.", "use": "Textarea" },
+    { "case": "A small numeric value stepped up and down.", "use": "NumberInput" },
+    { "case": "Several free values entered as tags.", "use": "InputTag" },
+    { "case": "Picking a value from a known list, with or without search.", "use": "Combobox" }
+  ],
+  "states": {
+    "Default": { "setBy": "component", "meaning": "At rest.", "visual": "Surface/input box with a Border/control edge; value in Content/primary, placeholder and icons in Content/subtle." },
+    "Hover": { "setBy": "component", "visual": "The edge moves to Border/control-hover." },
+    "Focused": { "setBy": "component", "meaning": "The field has focus.", "visual": "Border/focus edge with a Border/ring/default ring." },
+    "Invalid": { "setBy": "app", "meaning": "The value failed validation (aria-invalid).", "visual": "Status/critical/border-strong edge with a Status/critical/border ring." },
+    "Disabled": { "setBy": "app", "meaning": "Cannot be edited.", "visual": "Action/disabled/default fill; text, placeholder, icons and add-on in Content/disabled." },
+    "Value=placeholder": { "setBy": "user", "meaning": "Empty; the placeholder shows.", "visual": "Placeholder in Content/subtle." },
+    "Value=filled": { "setBy": "user", "meaning": "Holds a value.", "visual": "Value in Content/primary." }
+  },
+  "a11y": {
+    "role": "textbox (native <input>, with inputmode and autofill hint per Type)",
+    "keyboard": "Tab reaches the field; typing edits it. Parts that are buttons (Browse, Copy, the password toggle) and the select add-on are their own tab stops.",
+    "minHitArea": 24,
+    "contrast": "AA",
+    "reducedMotion": "NOT DECIDED",
+    "notes": [
+      "Pair it with a FieldLabel (htmlFor) or an aria-label.",
+      "The select add-on is a native <select> with its own name; the shortcut keys are <kbd>.",
+      "The edge moves with use-hover and the ring with use-focus."
+    ]
+  },
+  "openQuestions": [
+    "Reduced motion: should the edge and ring transitions (use-hover, use-focus) be instant with reduced motion?",
+    "Value colour: Figma paints the field's text Content/subtle in 99 variants, the contract uses Content/primary. Which is right? (finding PAR-001 Input text.text)",
+    "Invalid message: the error text comes from Field. Should Input ever show an invalid glyph itself, as Textarea does?"
+  ],
+  "approval": { "status": "draft", "by": null, "date": null }
+}

@@ -1,0 +1,30 @@
+{
+  "$schema": "./intent.schema.json",
+  "component": "InputOTPSlot",
+  "purpose": "One box of an InputOTP, showing a single character or the caret while it is the active empty slot. InputOTP draws it and reads the code from it.",
+  "notFor": [
+    { "case": "Standalone use outside a code field.", "use": "InputOTP" },
+    { "case": "A single-character text field.", "use": "Input" }
+  ],
+  "states": {
+    "Default": { "setBy": "component", "meaning": "Empty and not active.", "visual": "Fill of the variant (Surface/input, Surface/muted or Surface/page) with a Border/control or Border/subtle edge." },
+    "Filled": { "setBy": "component", "meaning": "Holds a character.", "visual": "The Default look with the character in Content/primary." },
+    "Typing": { "setBy": "component", "meaning": "The active empty slot.", "visual": "Border/focus edge, Border/ring/default halo and the caret in Content/primary." },
+    "Focused": { "setBy": "component", "meaning": "The active slot, already holding a character.", "visual": "Border/focus edge and Border/ring/default halo." },
+    "Invalid": { "setBy": "app", "meaning": "The code was rejected.", "visual": "Status/critical/border-strong edge." },
+    "Disabled": { "setBy": "app", "meaning": "Cannot be edited.", "visual": "Surface/muted fill; character in Content/disabled." }
+  },
+  "a11y": {
+    "role": "none (presentational; the hidden input inside InputOTP carries the value and label)",
+    "keyboard": "Not focusable on its own; InputOTP's input handles every key.",
+    "minHitArea": 24,
+    "contrast": "AA",
+    "reducedMotion": "NOT DECIDED",
+    "notes": ["The edge moves with use-hover and the halo with use-focus."]
+  },
+  "openQuestions": [
+    "Reduced motion: should the slot's edge and halo transitions (use-hover, use-focus) and the caret blink stop with reduced motion?",
+    "Digit property: in the filled and underline variants Figma's digit text is not bound to the Digit property (always \"7\"). Should Figma be fixed, or is it a known file quirk?"
+  ],
+  "approval": { "status": "draft", "by": null, "date": null }
+}

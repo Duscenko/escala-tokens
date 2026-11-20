@@ -1,0 +1,63 @@
+{
+  "$schema": "./intent.schema.json",
+  "component": "FileUploadItem",
+  "purpose": "One file row in a FileUpload: format icon, name, status, size readout, progress bar and the actions for its stage of the upload. It shows where a single file is in its lifecycle.",
+  "notFor": [
+    {
+      "case": "Any use outside a FileUpload list.",
+      "use": "FileUpload"
+    },
+    {
+      "case": "A generic progress bar with no file attached.",
+      "use": "ProgressLine"
+    },
+    {
+      "case": "A file attached as a removable tag in a compact field.",
+      "use": "Chip"
+    }
+  ],
+  "states": {
+    "Status=queued": {
+      "setBy": "app",
+      "meaning": "Waiting to start.",
+      "visual": "Surface/layer-1 row with a Border/default edge; icon, status icon and label Content/secondary; name Content/primary, meta Content/secondary."
+    },
+    "Status=uploading": {
+      "setBy": "app",
+      "meaning": "In progress.",
+      "visual": "As queued, plus the progress track Surface/muted with the bar Action/primary/default."
+    },
+    "Status=paused": {
+      "setBy": "app",
+      "meaning": "Stopped by the person; can resume.",
+      "visual": "As uploading: Border/default edge, Content/secondary readouts, the bar Action/primary/default at its last value."
+    },
+    "Status=completed": {
+      "setBy": "app",
+      "meaning": "Upload finished.",
+      "visual": "Status icon and label Status/success/content; edge Border/default."
+    },
+    "Status=error": {
+      "setBy": "app",
+      "meaning": "Upload failed; shows the reason and Retry.",
+      "visual": "Edge Status/critical/border; icon, status icon and label Status/critical/content."
+    }
+  },
+  "a11y": {
+    "role": "progressbar on the bar (aria-valuenow); every action is an IconButton with its aria-label (Pause, Resume, Remove, Retry, Change, Download)",
+    "keyboard": "Each action is a button in the tab order (Tab, Enter / Space).",
+    "minHitArea": 24,
+    "contrast": "AA",
+    "notes": [
+      "Completed, removed and failed files are announced from the FileUpload's live region, not by the row."
+    ]
+  },
+  "openQuestions": [
+    "Paused and uploading draw the bar with the same role (Action/primary/default) and the same readout colours. Should paused look different beyond its status text?"
+  ],
+  "approval": {
+    "status": "draft",
+    "by": null,
+    "date": null
+  }
+}

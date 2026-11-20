@@ -1,0 +1,23 @@
+{
+  "$schema": "./intent.schema.json",
+  "component": "ButtonGroupDivider",
+  "purpose": "The 1px line a ButtonGroup draws between two segments, painted to match the group's Variant. It is never placed by hand.",
+  "notFor": [
+    { "case": "Standalone use outside a group.", "use": "ButtonGroup" },
+    { "case": "Separating sections of a page, list or menu.", "use": "Separator" }
+  ],
+  "states": {
+    "Default": { "setBy": "component", "visual": "A 1px line: Action/primary/pressed (default), Border/subtle (secondary), Border/inverse (inverse) or Border/control (outline)." }
+  },
+  "a11y": {
+    "role": "none (decorative, aria-hidden)",
+    "keyboard": "Not focusable.",
+    "minHitArea": 24,
+    "contrast": "NOT DECIDED",
+    "notes": ["Decorative: the segments carry all meaning."]
+  },
+  "openQuestions": [
+    "Contrast: the divider is decorative. Does it need to meet a non-text contrast floor against the segment fills, or is it exempt?"
+  ],
+  "approval": { "status": "draft", "by": null, "date": null }
+}

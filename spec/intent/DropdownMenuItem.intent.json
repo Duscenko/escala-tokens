@@ -1,0 +1,67 @@
+{
+  "$schema": "./intent.schema.json",
+  "component": "DropdownMenuItem",
+  "purpose": "One command row inside a DropdownMenu, with optional icon, media, description, shortcut, control, caret and selection check. The critical variant marks irreversible commands. Not for standalone use.",
+  "notFor": [
+    {
+      "case": "Used on its own, outside a DropdownMenu.",
+      "use": "DropdownMenu"
+    },
+    {
+      "case": "An option in a searchable value picker.",
+      "use": "ComboboxItem"
+    },
+    {
+      "case": "A navigation row in a side rail.",
+      "use": "SidebarMenuButton"
+    }
+  ],
+  "states": {
+    "Default": {
+      "setBy": "component",
+      "visual": "No fill; label and leading icon Content/primary (critical: Status/critical/content); description and trailing Content/secondary."
+    },
+    "Hover": {
+      "setBy": "component",
+      "visual": "Fill Surface/muted (critical: Status/critical/surface)."
+    },
+    "Focused": {
+      "setBy": "component",
+      "meaning": "Highlighted by the keyboard.",
+      "visual": "Fill Surface/muted plus a ring 1 px off the row in Border/ring/default (critical: Status/critical/surface with Status/critical/ring)."
+    },
+    "Selected": {
+      "setBy": "both",
+      "meaning": "A checked menuitemcheckbox.",
+      "visual": "Fill Surface/selected and a check in Content/accent at the end."
+    },
+    "Disabled": {
+      "setBy": "app",
+      "meaning": "Skipped by the arrow keys.",
+      "visual": "Label, description, trailing and leading icon in Content/disabled; no fill."
+    }
+  },
+  "a11y": {
+    "role": "menuitem",
+    "keyboard": "Reached with the menu's arrow keys and typeahead; Enter / Space activate it and close the menu; skipped when disabled (Radix DropdownMenu).",
+    "minHitArea": 24,
+    "contrast": "AA",
+    "reducedMotion": "NOT DECIDED",
+    "notes": [
+      "menuitemcheckbox when selectable (checked).",
+      "Put irreversible commands last as the critical variant.",
+      "Fill and ink change with the motion role use-hover (recipes/motion.ts)."
+    ]
+  },
+  "openQuestions": [
+    "Reduced motion: should the use-hover colour change stay as a short fade or become instant?",
+    "Figma changed this set's axes and the code does not have them yet (finding PAR-001 SYN-004). Which axes change?",
+    "Focus: code follows DEC-2026-11-19-001 (one ring 1 px off the row) while the Figma file still draws the old inside stroke plus ring. When will the file be updated?",
+    "Disabled keeps the check in Content/accent and the caret in Content/secondary. Should both move to Content/disabled?"
+  ],
+  "approval": {
+    "status": "draft",
+    "by": null,
+    "date": null
+  }
+}

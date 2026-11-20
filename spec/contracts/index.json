@@ -1,5 +1,6 @@
 [
   {
+    "kind": "component",
     "key": "Button",
     "label": "Button",
     "category": "Button & Actions",
@@ -11,10 +12,14 @@
     ],
     "file": "spec/contracts/Button.json",
     "figmaSet": "Button",
+    "figmaNode": "4:5066",
     "story": "buttons-button--playground",
-    "tokens": 42
+    "tokens": 44,
+    "motion": "declared",
+    "stage": "storybook"
   },
   {
+    "kind": "component",
     "key": "IconButton",
     "label": "Icon Button",
     "category": "Button & Actions",
@@ -26,10 +31,14 @@
     ],
     "file": "spec/contracts/IconButton.json",
     "figmaSet": "IconButton",
+    "figmaNode": "614:785",
     "story": "buttons-iconbutton--playground",
-    "tokens": 42
+    "tokens": 42,
+    "motion": "declared",
+    "stage": null
   },
   {
+    "kind": "component",
     "key": "CloseButton",
     "label": "Close Button",
     "category": "Button & Actions",
@@ -41,10 +50,14 @@
     ],
     "file": "spec/contracts/CloseButton.json",
     "figmaSet": "CloseButton",
+    "figmaNode": "337:2762",
     "story": "buttons-closebutton--playground",
-    "tokens": 33
+    "tokens": 33,
+    "motion": null,
+    "stage": null
   },
   {
+    "kind": "component",
     "key": "TextLink",
     "label": "Text Link",
     "category": "Button & Actions",
@@ -57,10 +70,14 @@
     ],
     "file": "spec/contracts/TextLink.json",
     "figmaSet": "TextLink",
+    "figmaNode": "358:6494",
     "story": "buttons-textlink--playground",
-    "tokens": 33
+    "tokens": 33,
+    "motion": null,
+    "stage": null
   },
   {
+    "kind": "component",
     "key": "FABButton",
     "label": "FAB Button",
     "category": "Button & Actions",
@@ -72,10 +89,14 @@
     ],
     "file": "spec/contracts/FABButton.json",
     "figmaSet": "FABButton",
+    "figmaNode": "345:868",
     "story": "buttons-fabbutton--playground",
-    "tokens": 37
+    "tokens": 37,
+    "motion": null,
+    "stage": null
   },
   {
+    "kind": "component",
     "key": "FABGroup",
     "label": "FAB Group",
     "category": "Button & Actions",
@@ -87,10 +108,33 @@
     ],
     "file": "spec/contracts/FABGroup.json",
     "figmaSet": "FABGroup",
+    "figmaNode": "346:448",
     "story": "buttons-fabbutton--fab-group-playground",
-    "tokens": 1
+    "tokens": 1,
+    "motion": null,
+    "stage": null
   },
   {
+    "kind": "component",
+    "key": "SplitButton",
+    "label": "Split Button",
+    "category": "Button & Actions",
+    "box": "gray",
+    "locks": [
+      "size",
+      "hit",
+      "motion"
+    ],
+    "file": "spec/contracts/SplitButton.json",
+    "figmaSet": "SplitButton",
+    "figmaNode": "2391:2107",
+    "story": "buttons-splitbutton--playground",
+    "tokens": 1,
+    "motion": null,
+    "stage": null
+  },
+  {
+    "kind": "component",
     "key": "ButtonGroup",
     "label": "Button Group",
     "category": "Button & Actions",
@@ -102,10 +146,14 @@
     ],
     "file": "spec/contracts/ButtonGroup.json",
     "figmaSet": "ButtonGroup",
+    "figmaNode": "351:8921",
     "story": "buttons-buttongroup--playground",
-    "tokens": 9
+    "tokens": 9,
+    "motion": null,
+    "stage": null
   },
   {
+    "kind": "component",
     "key": "ButtonGroupItem",
     "label": "Button Group Item",
     "category": "Button & Actions",
@@ -117,10 +165,14 @@
     ],
     "file": "spec/contracts/ButtonGroupItem.json",
     "figmaSet": "ButtonGroupItem",
+    "figmaNode": "350:5337",
     "story": "buttons-buttongroup--button-group-item-playground",
-    "tokens": 37
+    "tokens": 37,
+    "motion": null,
+    "stage": null
   },
   {
+    "kind": "component",
     "key": "ButtonGroupDivider",
     "label": "Button Group Divider",
     "category": "Button & Actions",
@@ -132,10 +184,71 @@
     ],
     "file": "spec/contracts/ButtonGroupDivider.json",
     "figmaSet": "ButtonGroupDivider",
+    "figmaNode": "351:410",
     "story": "buttons-buttongroup--button-group-divider-playground",
-    "tokens": 5
+    "tokens": 5,
+    "motion": null,
+    "stage": null
   },
   {
+    "kind": "component",
+    "key": "ReactionGroup",
+    "label": "Reaction Group",
+    "category": "Button & Actions",
+    "box": "gray",
+    "locks": [
+      "size",
+      "hit",
+      "motion"
+    ],
+    "file": "spec/contracts/ReactionGroup.json",
+    "figmaSet": "ReactionGroup",
+    "figmaNode": "2381:169",
+    "story": "buttons-reactiongroup--playground",
+    "tokens": 3,
+    "motion": "declared",
+    "stage": "storybook"
+  },
+  {
+    "kind": "component",
+    "key": "ReactionGroupTrigger",
+    "label": "Reaction Group Trigger",
+    "category": "Button & Actions",
+    "box": "gray",
+    "locks": [
+      "size",
+      "hit",
+      "motion"
+    ],
+    "file": "spec/contracts/ReactionGroupTrigger.json",
+    "figmaSet": "ReactionGroupTrigger",
+    "figmaNode": "2381:124",
+    "story": "buttons-reactiongroup--reaction-group-trigger-playground",
+    "tokens": 22,
+    "motion": "declared",
+    "stage": "storybook"
+  },
+  {
+    "kind": "component",
+    "key": "ReactionGroupPopover",
+    "label": "Reaction Group Popover",
+    "category": "Button & Actions",
+    "box": "gray",
+    "locks": [
+      "size",
+      "hit",
+      "motion"
+    ],
+    "file": "spec/contracts/ReactionGroupPopover.json",
+    "figmaSet": "ReactionGroupPopover",
+    "figmaNode": "2381:130",
+    "story": "buttons-reactiongroup--reaction-group-popover-playground",
+    "tokens": 9,
+    "motion": "declared",
+    "stage": "storybook"
+  },
+  {
+    "kind": "component",
     "key": "SocialLoginButton",
     "label": "Social Login Button",
     "category": "Button & Actions",
@@ -147,10 +260,14 @@
     ],
     "file": "spec/contracts/SocialLoginButton.json",
     "figmaSet": "SocialLoginButton",
+    "figmaNode": "368:1330",
     "story": "buttons-socialloginbutton--playground",
-    "tokens": 66
+    "tokens": 66,
+    "motion": null,
+    "stage": "storybook"
   },
   {
+    "kind": "component",
     "key": "Input",
     "label": "Input",
     "category": "Form Controls",
@@ -162,10 +279,14 @@
     ],
     "file": "spec/contracts/Input.json",
     "figmaSet": "Input",
+    "figmaNode": "4:12380",
     "story": "forms-input--playground",
-    "tokens": 28
+    "tokens": 29,
+    "motion": "declared",
+    "stage": null
   },
   {
+    "kind": "component",
     "key": "Textarea",
     "label": "Textarea",
     "category": "Form Controls",
@@ -178,10 +299,14 @@
     ],
     "file": "spec/contracts/Textarea.json",
     "figmaSet": "Textarea",
+    "figmaNode": "394:152",
     "story": "forms-textarea--playground",
-    "tokens": 32
+    "tokens": 31,
+    "motion": null,
+    "stage": null
   },
   {
+    "kind": "component",
     "key": "InputOTP",
     "label": "Input OTP",
     "category": "Form Controls",
@@ -193,10 +318,14 @@
     ],
     "file": "spec/contracts/InputOTP.json",
     "figmaSet": "InputOTP",
+    "figmaNode": "416:994",
     "story": "forms-inputotp--playground",
-    "tokens": 5
+    "tokens": 5,
+    "motion": null,
+    "stage": null
   },
   {
+    "kind": "component",
     "key": "InputOTPSlot",
     "label": "Input OTP Slot",
     "category": "Form Controls",
@@ -209,10 +338,14 @@
     ],
     "file": "spec/contracts/InputOTPSlot.json",
     "figmaSet": "InputOTPSlot",
+    "figmaNode": "416:108",
     "story": "forms-inputotp--input-otp-slot-playground",
-    "tokens": 26
+    "tokens": 26,
+    "motion": "declared",
+    "stage": null
   },
   {
+    "kind": "component",
     "key": "NumberInput",
     "label": "Number Input",
     "category": "Form Controls",
@@ -224,10 +357,14 @@
     ],
     "file": "spec/contracts/NumberInput.json",
     "figmaSet": "NumberInput",
+    "figmaNode": "1107:243",
     "story": "forms-numberinput--playground",
-    "tokens": 18
+    "tokens": 18,
+    "motion": null,
+    "stage": null
   },
   {
+    "kind": "component",
     "key": "InputTag",
     "label": "Input Tag",
     "category": "Form Controls",
@@ -239,10 +376,14 @@
     ],
     "file": "spec/contracts/InputTag.json",
     "figmaSet": "InputTag",
+    "figmaNode": "390:744",
     "story": "forms-inputtag--playground",
-    "tokens": 21
+    "tokens": 21,
+    "motion": "declared",
+    "stage": null
   },
   {
+    "kind": "component",
     "key": "InputTagChip",
     "label": "Input Tag Chip",
     "category": "Form Controls",
@@ -254,10 +395,14 @@
     ],
     "file": "spec/contracts/InputTagChip.json",
     "figmaSet": "InputTagChip",
+    "figmaNode": "388:235",
     "story": "forms-inputtag--input-tag-chip-playground",
-    "tokens": 33
+    "tokens": 33,
+    "motion": "declared",
+    "stage": null
   },
   {
+    "kind": "component",
     "key": "InputTagOption",
     "label": "Input Tag Option",
     "category": "Form Controls",
@@ -269,10 +414,14 @@
     ],
     "file": "spec/contracts/InputTagOption.json",
     "figmaSet": "InputTagOption",
+    "figmaNode": "390:793",
     "story": "forms-inputtag--input-tag-option-playground",
-    "tokens": 21
+    "tokens": 21,
+    "motion": "declared",
+    "stage": null
   },
   {
+    "kind": "component",
     "key": "DatePickerTrigger",
     "label": "Date Picker Trigger",
     "category": "Form Controls",
@@ -284,10 +433,14 @@
     ],
     "file": "spec/contracts/DatePickerTrigger.json",
     "figmaSet": "DatePickerTrigger",
+    "figmaNode": "425:199",
     "story": "forms-datepicker--date-picker-trigger-playground",
-    "tokens": 23
+    "tokens": 22,
+    "motion": "declared",
+    "stage": null
   },
   {
+    "kind": "component",
     "key": "DatePickerPopover",
     "label": "Date Picker Popover",
     "category": "Form Controls",
@@ -295,10 +448,14 @@
     "locks": [],
     "file": "spec/contracts/DatePickerPopover.json",
     "figmaSet": "DatePickerPopover",
+    "figmaNode": "425:2276",
     "story": "forms-datepicker--date-picker-popover-playground",
-    "tokens": 3
+    "tokens": 3,
+    "motion": "declared",
+    "stage": null
   },
   {
+    "kind": "component",
     "key": "CalendarDay",
     "label": "Calendar Day",
     "category": "Form Controls",
@@ -310,10 +467,14 @@
     ],
     "file": "spec/contracts/CalendarDay.json",
     "figmaSet": "CalendarDay",
+    "figmaNode": "421:309",
     "story": "forms-calendar--calendar-day-playground",
-    "tokens": 27
+    "tokens": 27,
+    "motion": "declared",
+    "stage": null
   },
   {
+    "kind": "component",
     "key": "CalendarHeader",
     "label": "Calendar Header",
     "category": "Form Controls",
@@ -325,10 +486,14 @@
     ],
     "file": "spec/contracts/CalendarHeader.json",
     "figmaSet": "CalendarHeader",
+    "figmaNode": "422:355",
     "story": "forms-calendar--calendar-header-playground",
-    "tokens": 16
+    "tokens": 16,
+    "motion": null,
+    "stage": null
   },
   {
+    "kind": "component",
     "key": "CalendarMonth",
     "label": "Calendar Month",
     "category": "Form Controls",
@@ -336,10 +501,14 @@
     "locks": [],
     "file": "spec/contracts/CalendarMonth.json",
     "figmaSet": "CalendarMonth",
+    "figmaNode": "422:1713",
     "story": "forms-calendar--calendar-month-playground",
-    "tokens": 5
+    "tokens": 5,
+    "motion": null,
+    "stage": null
   },
   {
+    "kind": "component",
     "key": "CalendarPresets",
     "label": "Calendar Presets",
     "category": "Form Controls",
@@ -351,10 +520,14 @@
     ],
     "file": "spec/contracts/CalendarPresets.json",
     "figmaSet": "CalendarPresets",
+    "figmaNode": "423:988",
     "story": "forms-calendar--calendar-presets-playground",
-    "tokens": 20
+    "tokens": 20,
+    "motion": null,
+    "stage": null
   },
   {
+    "kind": "component",
     "key": "CalendarFooter",
     "label": "Calendar Footer",
     "category": "Form Controls",
@@ -362,10 +535,14 @@
     "locks": [],
     "file": "spec/contracts/CalendarFooter.json",
     "figmaSet": "CalendarFooter",
+    "figmaNode": "423:963",
     "story": "forms-calendar--calendar-footer-playground",
-    "tokens": 7
+    "tokens": 7,
+    "motion": null,
+    "stage": null
   },
   {
+    "kind": "component",
     "key": "Calendar",
     "label": "Calendar",
     "category": "Form Controls",
@@ -373,10 +550,14 @@
     "locks": [],
     "file": "spec/contracts/Calendar.json",
     "figmaSet": "Calendar",
+    "figmaNode": "424:4667",
     "story": "forms-calendar--playground",
-    "tokens": 7
+    "tokens": 7,
+    "motion": null,
+    "stage": null
   },
   {
+    "kind": "component",
     "key": "Combobox",
     "label": "Combobox",
     "category": "Form Controls",
@@ -388,10 +569,14 @@
     ],
     "file": "spec/contracts/Combobox.json",
     "figmaSet": "Combobox",
+    "figmaNode": "413:1478",
     "story": "forms-combobox--playground",
-    "tokens": 28
+    "tokens": 28,
+    "motion": "declared",
+    "stage": null
   },
   {
+    "kind": "component",
     "key": "ComboboxPopover",
     "label": "Combobox Popover",
     "category": "Form Controls",
@@ -399,10 +584,14 @@
     "locks": [],
     "file": "spec/contracts/ComboboxPopover.json",
     "figmaSet": "ComboboxPopover",
+    "figmaNode": "415:489",
     "story": "forms-combobox--combobox-popover-playground",
-    "tokens": 14
+    "tokens": 14,
+    "motion": null,
+    "stage": null
   },
   {
+    "kind": "component",
     "key": "ComboboxItem",
     "label": "Combobox Item",
     "category": "Form Controls",
@@ -414,10 +603,14 @@
     ],
     "file": "spec/contracts/ComboboxItem.json",
     "figmaSet": "ComboboxItem",
+    "figmaNode": "406:140",
     "story": "forms-combobox--combobox-item-playground",
-    "tokens": 26
+    "tokens": 26,
+    "motion": "declared",
+    "stage": null
   },
   {
+    "kind": "component",
     "key": "ComboboxGroupLabel",
     "label": "Combobox Group Label",
     "category": "Form Controls",
@@ -429,10 +622,14 @@
     ],
     "file": "spec/contracts/ComboboxGroupLabel.json",
     "figmaSet": "ComboboxGroupLabel",
+    "figmaNode": "406:147",
     "story": "forms-combobox--combobox-group-label-playground",
-    "tokens": 6
+    "tokens": 6,
+    "motion": null,
+    "stage": null
   },
   {
+    "kind": "component",
     "key": "Checkbox",
     "label": "Checkbox",
     "category": "Form Controls",
@@ -446,10 +643,14 @@
     ],
     "file": "spec/contracts/Checkbox.json",
     "figmaSet": "Checkbox",
+    "figmaNode": "1014:686",
     "story": "forms-checkbox--playground",
-    "tokens": 43
+    "tokens": 43,
+    "motion": "declared",
+    "stage": null
   },
   {
+    "kind": "component",
     "key": "CheckboxItem",
     "label": "Checkbox Item",
     "category": "Form Controls",
@@ -462,10 +663,14 @@
     ],
     "file": "spec/contracts/CheckboxItem.json",
     "figmaSet": "CheckboxItem",
+    "figmaNode": "1015:7515",
     "story": "forms-checkbox--checkbox-item-playground",
-    "tokens": 11
+    "tokens": 11,
+    "motion": null,
+    "stage": null
   },
   {
+    "kind": "component",
     "key": "CheckboxGroup",
     "label": "Checkbox Group",
     "category": "Form Controls",
@@ -473,10 +678,14 @@
     "locks": [],
     "file": "spec/contracts/CheckboxGroup.json",
     "figmaSet": "CheckboxGroup",
+    "figmaNode": "1015:10216",
     "story": "forms-checkbox--checkbox-group-playground",
-    "tokens": 10
+    "tokens": 10,
+    "motion": null,
+    "stage": null
   },
   {
+    "kind": "component",
     "key": "RadioGroup",
     "label": "Radio Group",
     "category": "Form Controls",
@@ -489,10 +698,14 @@
     ],
     "file": "spec/contracts/RadioGroup.json",
     "figmaSet": "RadioGroup",
+    "figmaNode": "438:652",
     "story": "forms-radiogroup--playground",
-    "tokens": 14
+    "tokens": 14,
+    "motion": "declared",
+    "stage": null
   },
   {
+    "kind": "component",
     "key": "Switch",
     "label": "Switch",
     "category": "Form Controls",
@@ -505,10 +718,14 @@
     ],
     "file": "spec/contracts/Switch.json",
     "figmaSet": "Switch",
+    "figmaNode": "405:358",
     "story": "forms-switch--playground",
-    "tokens": 23
+    "tokens": 23,
+    "motion": "declared",
+    "stage": null
   },
   {
+    "kind": "component",
     "key": "SwitchGroup",
     "label": "Switch Group",
     "category": "Form Controls",
@@ -516,10 +733,14 @@
     "locks": [],
     "file": "spec/contracts/SwitchGroup.json",
     "figmaSet": "SwitchGroup",
+    "figmaNode": "405:2153",
     "story": "forms-switch--switch-group-playground",
-    "tokens": 19
+    "tokens": 19,
+    "motion": null,
+    "stage": null
   },
   {
+    "kind": "component",
     "key": "Slider",
     "label": "Slider",
     "category": "Form Controls",
@@ -531,10 +752,14 @@
     ],
     "file": "spec/contracts/Slider.json",
     "figmaSet": "Slider",
+    "figmaNode": "447:19",
     "story": "forms-slider--playground",
-    "tokens": 23
+    "tokens": 24,
+    "motion": null,
+    "stage": null
   },
   {
+    "kind": "component",
     "key": "SliderThumb",
     "label": "Slider Thumb",
     "category": "Form Controls",
@@ -547,10 +772,14 @@
     ],
     "file": "spec/contracts/SliderThumb.json",
     "figmaSet": "SliderThumb",
+    "figmaNode": "441:75",
     "story": "forms-slider--slider-thumb-playground",
-    "tokens": 19
+    "tokens": 19,
+    "motion": "declared",
+    "stage": null
   },
   {
+    "kind": "component",
     "key": "FileUpload",
     "label": "File Upload",
     "category": "Form Controls",
@@ -558,10 +787,14 @@
     "locks": [],
     "file": "spec/contracts/FileUpload.json",
     "figmaSet": "FileUpload",
+    "figmaNode": "994:1399",
     "story": "forms-fileupload--playground",
-    "tokens": 6
+    "tokens": 6,
+    "motion": null,
+    "stage": null
   },
   {
+    "kind": "component",
     "key": "FileUploadItem",
     "label": "File Upload Item",
     "category": "Form Controls",
@@ -573,10 +806,14 @@
     ],
     "file": "spec/contracts/FileUploadItem.json",
     "figmaSet": "FileUploadItem",
+    "figmaNode": "994:1074",
     "story": "forms-fileupload--file-upload-item-playground",
-    "tokens": 24
+    "tokens": 24,
+    "motion": null,
+    "stage": null
   },
   {
+    "kind": "component",
     "key": "FileUploadDropzone",
     "label": "File Upload Dropzone",
     "category": "Form Controls",
@@ -584,10 +821,14 @@
     "locks": [],
     "file": "spec/contracts/FileUploadDropzone.json",
     "figmaSet": "FileUploadDropzone",
+    "figmaNode": "994:472",
     "story": "forms-fileupload--file-upload-dropzone-playground",
-    "tokens": 30
+    "tokens": 30,
+    "motion": "declared",
+    "stage": null
   },
   {
+    "kind": "component",
     "key": "Field",
     "label": "Field",
     "category": "Form Controls",
@@ -599,10 +840,14 @@
     ],
     "file": "spec/contracts/Field.json",
     "figmaSet": "Field",
+    "figmaNode": "1003:102",
     "story": "forms-field--playground",
-    "tokens": 9
+    "tokens": 9,
+    "motion": "declared",
+    "stage": null
   },
   {
+    "kind": "component",
     "key": "Label",
     "label": "Label",
     "category": "Form Controls",
@@ -614,10 +859,14 @@
     ],
     "file": "spec/contracts/Label.json",
     "figmaSet": null,
+    "figmaNode": null,
     "story": "forms-label--playground",
-    "tokens": 2
+    "tokens": 2,
+    "motion": null,
+    "stage": null
   },
   {
+    "kind": "component",
     "key": "PasswordStrength",
     "label": "Password Strength",
     "category": "Form Controls",
@@ -625,10 +874,14 @@
     "locks": [],
     "file": "spec/contracts/PasswordStrength.json",
     "figmaSet": "PasswordStrength",
+    "figmaNode": "417:679",
     "story": "forms-passwordstrength--playground",
-    "tokens": 13
+    "tokens": 13,
+    "motion": null,
+    "stage": null
   },
   {
+    "kind": "component",
     "key": "PasswordStrengthMeter",
     "label": "Password Strength Meter",
     "category": "Form Controls",
@@ -641,10 +894,14 @@
     ],
     "file": "spec/contracts/PasswordStrengthMeter.json",
     "figmaSet": "PasswordStrengthMeter",
+    "figmaNode": "417:131",
     "story": "forms-passwordstrength--password-strength-meter-playground",
-    "tokens": 11
+    "tokens": 11,
+    "motion": null,
+    "stage": null
   },
   {
+    "kind": "component",
     "key": "PasswordStrengthRule",
     "label": "Password Strength Rule",
     "category": "Form Controls",
@@ -656,10 +913,14 @@
     ],
     "file": "spec/contracts/PasswordStrengthRule.json",
     "figmaSet": "PasswordStrengthRule",
+    "figmaNode": "417:156",
     "story": "forms-passwordstrength--password-strength-rule-playground",
-    "tokens": 15
+    "tokens": 15,
+    "motion": null,
+    "stage": null
   },
   {
+    "kind": "component",
     "key": "Badge",
     "label": "Badge",
     "category": "Indicators",
@@ -671,10 +932,14 @@
     ],
     "file": "spec/contracts/Badge.json",
     "figmaSet": "Badge",
+    "figmaNode": "383:176",
     "story": "indicators-badge--playground",
-    "tokens": 58
+    "tokens": 58,
+    "motion": "declared",
+    "stage": null
   },
   {
+    "kind": "component",
     "key": "Chip",
     "label": "Chip",
     "category": "Indicators",
@@ -686,10 +951,14 @@
     ],
     "file": "spec/contracts/Chip.json",
     "figmaSet": "Chip",
+    "figmaNode": "390:10982",
     "story": "indicators-chip--playground",
-    "tokens": 53
+    "tokens": 53,
+    "motion": "declared",
+    "stage": null
   },
   {
+    "kind": "component",
     "key": "ProgressLine",
     "label": "Progress Line",
     "category": "Indicators",
@@ -702,10 +971,14 @@
     ],
     "file": "spec/contracts/ProgressLine.json",
     "figmaSet": "ProgressLine",
+    "figmaNode": "410:687",
     "story": "indicators-progressline--playground",
-    "tokens": 7
+    "tokens": 7,
+    "motion": "declared",
+    "stage": null
   },
   {
+    "kind": "component",
     "key": "ProgressCircle",
     "label": "Progress Circle",
     "category": "Indicators",
@@ -718,10 +991,14 @@
     ],
     "file": "spec/contracts/ProgressCircle.json",
     "figmaSet": "ProgressCircle",
+    "figmaNode": "411:523",
     "story": "indicators-progresscircle--playground",
-    "tokens": 6
+    "tokens": 6,
+    "motion": null,
+    "stage": null
   },
   {
+    "kind": "component",
     "key": "Spinner",
     "label": "Spinner",
     "category": "Indicators",
@@ -734,10 +1011,14 @@
     ],
     "file": "spec/contracts/Spinner.json",
     "figmaSet": null,
+    "figmaNode": null,
     "story": "feedback-spinner--playground",
-    "tokens": 1
+    "tokens": 1,
+    "motion": null,
+    "stage": null
   },
   {
+    "kind": "component",
     "key": "FeaturedIcon",
     "label": "Featured Icon",
     "category": "Indicators",
@@ -750,10 +1031,14 @@
     ],
     "file": "spec/contracts/FeaturedIcon.json",
     "figmaSet": "FeaturedIcon",
+    "figmaNode": "1119:10857",
     "story": "indicators-featuredicon--playground",
-    "tokens": 48
+    "tokens": 50,
+    "motion": null,
+    "stage": "storybook"
   },
   {
+    "kind": "component",
     "key": "Kbd",
     "label": "Kbd",
     "category": "Indicators",
@@ -767,10 +1052,14 @@
     ],
     "file": "spec/contracts/Kbd.json",
     "figmaSet": "Kbd",
+    "figmaNode": "1091:6",
     "story": "indicators-kbd--playground",
-    "tokens": 13
+    "tokens": 13,
+    "motion": null,
+    "stage": null
   },
   {
+    "kind": "component",
     "key": "RatingGroup",
     "label": "Rating Group",
     "category": "Indicators",
@@ -782,10 +1071,14 @@
     ],
     "file": "spec/contracts/RatingGroup.json",
     "figmaSet": "RatingGroup",
+    "figmaNode": "1122:316",
     "story": "indicators-ratinggroup--playground",
-    "tokens": 2
+    "tokens": 2,
+    "motion": null,
+    "stage": null
   },
   {
+    "kind": "component",
     "key": "RatingGroupItem",
     "label": "Rating Group Item",
     "category": "Indicators",
@@ -798,10 +1091,14 @@
     ],
     "file": "spec/contracts/RatingGroupItem.json",
     "figmaSet": "RatingGroupItem",
+    "figmaNode": "1122:195",
     "story": "indicators-ratinggroup--rating-group-item-playground",
-    "tokens": 17
+    "tokens": 17,
+    "motion": "declared",
+    "stage": null
   },
   {
+    "kind": "component",
     "key": "Avatar",
     "label": "Avatar",
     "category": "Content & Surfaces",
@@ -814,10 +1111,14 @@
     ],
     "file": "spec/contracts/Avatar.json",
     "figmaSet": "Avatar",
+    "figmaNode": "378:2094",
     "story": "content-surfaces-avatar--playground",
-    "tokens": 47
+    "tokens": 47,
+    "motion": null,
+    "stage": null
   },
   {
+    "kind": "component",
     "key": "AvatarStatus",
     "label": "Avatar Status",
     "category": "Content & Surfaces",
@@ -830,10 +1131,14 @@
     ],
     "file": "spec/contracts/AvatarStatus.json",
     "figmaSet": "AvatarStatus",
+    "figmaNode": "377:54",
     "story": "content-surfaces-avatar--avatar-status-playground",
-    "tokens": 13
+    "tokens": 13,
+    "motion": null,
+    "stage": null
   },
   {
+    "kind": "component",
     "key": "AvatarGroup",
     "label": "Avatar Group",
     "category": "Content & Surfaces",
@@ -845,10 +1150,14 @@
     ],
     "file": "spec/contracts/AvatarGroup.json",
     "figmaSet": "AvatarGroup",
+    "figmaNode": "378:2507",
     "story": "content-surfaces-avatar--avatar-group-playground",
-    "tokens": 18
+    "tokens": 18,
+    "motion": null,
+    "stage": null
   },
   {
+    "kind": "component",
     "key": "Card",
     "label": "Card",
     "category": "Content & Surfaces",
@@ -856,10 +1165,14 @@
     "locks": [],
     "file": "spec/contracts/Card.json",
     "figmaSet": null,
+    "figmaNode": null,
     "story": "content-surfaces-card--playground",
-    "tokens": 14
+    "tokens": 14,
+    "motion": null,
+    "stage": null
   },
   {
+    "kind": "component",
     "key": "Separator",
     "label": "Separator",
     "category": "Content & Surfaces",
@@ -872,10 +1185,14 @@
     ],
     "file": "spec/contracts/Separator.json",
     "figmaSet": "Separator",
+    "figmaNode": "402:9063",
     "story": "content-surfaces-separator--playground",
-    "tokens": 7
+    "tokens": 7,
+    "motion": null,
+    "stage": null
   },
   {
+    "kind": "component",
     "key": "Accordion",
     "label": "Accordion",
     "category": "Content & Surfaces",
@@ -883,10 +1200,14 @@
     "locks": [],
     "file": "spec/contracts/Accordion.json",
     "figmaSet": "Accordion",
+    "figmaNode": "451:375",
     "story": "content-surfaces-accordion--playground",
-    "tokens": 2
+    "tokens": 2,
+    "motion": null,
+    "stage": null
   },
   {
+    "kind": "component",
     "key": "AccordionItem",
     "label": "Accordion Item",
     "category": "Content & Surfaces",
@@ -894,10 +1215,14 @@
     "locks": [],
     "file": "spec/contracts/AccordionItem.json",
     "figmaSet": "AccordionItem",
+    "figmaNode": "451:188",
     "story": "content-surfaces-accordion--accordion-item-playground",
-    "tokens": 18
+    "tokens": 18,
+    "motion": "declared",
+    "stage": null
   },
   {
+    "kind": "component",
     "key": "Image",
     "label": "Image",
     "category": "Content & Surfaces",
@@ -905,10 +1230,14 @@
     "locks": [],
     "file": "spec/contracts/Image.json",
     "figmaSet": "Image",
+    "figmaNode": "1126:15",
     "story": "content-surfaces-image--playground",
-    "tokens": 3
+    "tokens": 3,
+    "motion": null,
+    "stage": null
   },
   {
+    "kind": "component",
     "key": "Modal",
     "label": "Modal",
     "category": "Content & Surfaces",
@@ -916,10 +1245,14 @@
     "locks": [],
     "file": "spec/contracts/Modal.json",
     "figmaSet": "Modal",
+    "figmaNode": "967:102",
     "story": "content-surfaces-modal--playground",
-    "tokens": 14
+    "tokens": 20,
+    "motion": "declared",
+    "stage": null
   },
   {
+    "kind": "component",
     "key": "ModalHeader",
     "label": "Modal Header",
     "category": "Content & Surfaces",
@@ -931,10 +1264,14 @@
     ],
     "file": "spec/contracts/ModalHeader.json",
     "figmaSet": "ModalHeader",
+    "figmaNode": "965:81",
     "story": "content-surfaces-modal--modal-header-playground",
-    "tokens": 10
+    "tokens": 10,
+    "motion": null,
+    "stage": null
   },
   {
+    "kind": "component",
     "key": "ModalFooter",
     "label": "Modal Footer",
     "category": "Content & Surfaces",
@@ -946,10 +1283,14 @@
     ],
     "file": "spec/contracts/ModalFooter.json",
     "figmaSet": "ModalFooter",
+    "figmaNode": "966:114",
     "story": "content-surfaces-modal--modal-footer-playground",
-    "tokens": 7
+    "tokens": 10,
+    "motion": null,
+    "stage": null
   },
   {
+    "kind": "component",
     "key": "Sheet",
     "label": "Sheet",
     "category": "Content & Surfaces",
@@ -957,10 +1298,14 @@
     "locks": [],
     "file": "spec/contracts/Sheet.json",
     "figmaSet": "Sheet",
+    "figmaNode": "1648:1577",
     "story": "content-surfaces-sheet--playground",
-    "tokens": 20
+    "tokens": 20,
+    "motion": "declared",
+    "stage": null
   },
   {
+    "kind": "component",
     "key": "Popover",
     "label": "Popover",
     "category": "Content & Surfaces",
@@ -968,10 +1313,14 @@
     "locks": [],
     "file": "spec/contracts/Popover.json",
     "figmaSet": "Popover",
+    "figmaNode": "973:364",
     "story": "content-surfaces-popover--playground",
-    "tokens": 24
+    "tokens": 24,
+    "motion": "declared",
+    "stage": null
   },
   {
+    "kind": "component",
     "key": "PopoverFooter",
     "label": "Popover Footer",
     "category": "Content & Surfaces",
@@ -983,10 +1332,14 @@
     ],
     "file": "spec/contracts/PopoverFooter.json",
     "figmaSet": "PopoverFooter",
+    "figmaNode": "972:279",
     "story": "content-surfaces-popover--popover-footer-playground",
-    "tokens": 7
+    "tokens": 7,
+    "motion": null,
+    "stage": null
   },
   {
+    "kind": "component",
     "key": "TooltipContent",
     "label": "Tooltip",
     "category": "Content & Surfaces",
@@ -998,10 +1351,14 @@
     ],
     "file": "spec/contracts/TooltipContent.json",
     "figmaSet": "TooltipContent",
+    "figmaNode": "415:773",
     "story": "content-surfaces-tooltip--tooltip-content-playground",
-    "tokens": 23
+    "tokens": 23,
+    "motion": "declared",
+    "stage": null
   },
   {
+    "kind": "component",
     "key": "TooltipInfoTrigger",
     "label": "Tooltip Info Trigger",
     "category": "Content & Surfaces",
@@ -1014,10 +1371,14 @@
     ],
     "file": "spec/contracts/TooltipInfoTrigger.json",
     "figmaSet": "TooltipInfoTrigger",
+    "figmaNode": "415:556",
     "story": "content-surfaces-tooltip--tooltip-info-trigger-playground",
-    "tokens": 20
+    "tokens": 20,
+    "motion": null,
+    "stage": null
   },
   {
+    "kind": "component",
     "key": "ScrollArea",
     "label": "Scroll Area",
     "category": "Content & Surfaces",
@@ -1025,10 +1386,14 @@
     "locks": [],
     "file": "spec/contracts/ScrollArea.json",
     "figmaSet": "ScrollArea",
+    "figmaNode": "977:572",
     "story": "content-surfaces-scrollarea--playground",
-    "tokens": 6
+    "tokens": 6,
+    "motion": null,
+    "stage": null
   },
   {
+    "kind": "component",
     "key": "ScrollBar",
     "label": "Scroll Bar",
     "category": "Content & Surfaces",
@@ -1041,10 +1406,14 @@
     ],
     "file": "spec/contracts/ScrollBar.json",
     "figmaSet": "ScrollBar",
+    "figmaNode": "976:27",
     "story": "content-surfaces-scrollarea--scroll-bar-playground",
-    "tokens": 6
+    "tokens": 6,
+    "motion": null,
+    "stage": null
   },
   {
+    "kind": "component",
     "key": "Table",
     "label": "Table",
     "category": "Content & Surfaces",
@@ -1052,10 +1421,14 @@
     "locks": [],
     "file": "spec/contracts/Table.json",
     "figmaSet": "Table",
+    "figmaNode": "1024:23937",
     "story": "content-surfaces-table--playground",
-    "tokens": 5
+    "tokens": 5,
+    "motion": null,
+    "stage": null
   },
   {
+    "kind": "component",
     "key": "TableCell",
     "label": "TableCell",
     "category": "Content & Surfaces",
@@ -1067,10 +1440,14 @@
     ],
     "file": "spec/contracts/TableCell.json",
     "figmaSet": "TableCell",
+    "figmaNode": "1024:18323",
     "story": "content-surfaces-table--table-cell-playground",
-    "tokens": 20
+    "tokens": 20,
+    "motion": null,
+    "stage": null
   },
   {
+    "kind": "component",
     "key": "TableHead",
     "label": "TableHead",
     "category": "Content & Surfaces",
@@ -1082,10 +1459,14 @@
     ],
     "file": "spec/contracts/TableHead.json",
     "figmaSet": "TableHead",
+    "figmaNode": "1024:21090",
     "story": "content-surfaces-table--table-head-playground",
-    "tokens": 17
+    "tokens": 17,
+    "motion": "declared",
+    "stage": null
   },
   {
+    "kind": "component",
     "key": "TableMediaCell",
     "label": "TableMediaCell",
     "category": "Content & Surfaces",
@@ -1097,10 +1478,14 @@
     ],
     "file": "spec/contracts/TableMediaCell.json",
     "figmaSet": "TableMediaCell",
+    "figmaNode": "1035:8122",
     "story": "content-surfaces-table--table-media-cell-playground",
-    "tokens": 16
+    "tokens": 16,
+    "motion": null,
+    "stage": null
   },
   {
+    "kind": "component",
     "key": "TableTrendCell",
     "label": "TableTrendCell",
     "category": "Content & Surfaces",
@@ -1112,10 +1497,14 @@
     ],
     "file": "spec/contracts/TableTrendCell.json",
     "figmaSet": "TableTrendCell",
+    "figmaNode": "1035:8123",
     "story": "content-surfaces-table--table-trend-cell-playground",
-    "tokens": 17
+    "tokens": 17,
+    "motion": null,
+    "stage": null
   },
   {
+    "kind": "component",
     "key": "TableResizer",
     "label": "TableResizer",
     "category": "Content & Surfaces",
@@ -1128,10 +1517,14 @@
     ],
     "file": "spec/contracts/TableResizer.json",
     "figmaSet": "TableResizer",
+    "figmaNode": "1030:5794",
     "story": "content-surfaces-table--table-resizer-playground",
-    "tokens": 5
+    "tokens": 5,
+    "motion": "declared",
+    "stage": null
   },
   {
+    "kind": "component",
     "key": "TableRow",
     "label": "TableRow",
     "category": "Content & Surfaces",
@@ -1143,10 +1536,14 @@
     ],
     "file": "spec/contracts/TableRow.json",
     "figmaSet": "TableRow",
+    "figmaNode": "1024:22071",
     "story": "content-surfaces-table--table-row-playground",
-    "tokens": 12
+    "tokens": 12,
+    "motion": "declared",
+    "stage": null
   },
   {
+    "kind": "component",
     "key": "TableHeader",
     "label": "TableHeader",
     "category": "Content & Surfaces",
@@ -1158,10 +1555,14 @@
     ],
     "file": "spec/contracts/TableHeader.json",
     "figmaSet": "TableHeader",
+    "figmaNode": "1024:22168",
     "story": "content-surfaces-table--table-header-playground",
-    "tokens": 7
+    "tokens": 7,
+    "motion": null,
+    "stage": null
   },
   {
+    "kind": "component",
     "key": "TableFooter",
     "label": "TableFooter",
     "category": "Content & Surfaces",
@@ -1173,10 +1574,14 @@
     ],
     "file": "spec/contracts/TableFooter.json",
     "figmaSet": "TableFooter",
+    "figmaNode": "1034:8163",
     "story": "content-surfaces-table--table-footer-playground",
-    "tokens": 7
+    "tokens": 7,
+    "motion": null,
+    "stage": null
   },
   {
+    "kind": "component",
     "key": "TableCaption",
     "label": "TableCaption",
     "category": "Content & Surfaces",
@@ -1188,10 +1593,14 @@
     ],
     "file": "spec/contracts/TableCaption.json",
     "figmaSet": "TableCaption",
+    "figmaNode": "1034:8121",
     "story": "content-surfaces-table--table-caption-playground",
-    "tokens": 5
+    "tokens": 5,
+    "motion": null,
+    "stage": null
   },
   {
+    "kind": "component",
     "key": "TableDropIndicator",
     "label": "TableDropIndicator",
     "category": "Content & Surfaces",
@@ -1204,10 +1613,14 @@
     ],
     "file": "spec/contracts/TableDropIndicator.json",
     "figmaSet": "TableDropIndicator",
+    "figmaNode": "1034:8124",
     "story": "content-surfaces-table--table-drop-indicator-playground",
-    "tokens": 2
+    "tokens": 2,
+    "motion": null,
+    "stage": null
   },
   {
+    "kind": "component",
     "key": "TableEmpty",
     "label": "TableEmpty",
     "category": "Content & Surfaces",
@@ -1219,10 +1632,14 @@
     ],
     "file": "spec/contracts/TableEmpty.json",
     "figmaSet": "TableEmpty",
+    "figmaNode": "1034:8130",
     "story": "content-surfaces-table--table-empty-playground",
-    "tokens": 9
+    "tokens": 9,
+    "motion": null,
+    "stage": null
   },
   {
+    "kind": "component",
     "key": "TableLoading",
     "label": "TableLoading",
     "category": "Content & Surfaces",
@@ -1234,10 +1651,14 @@
     ],
     "file": "spec/contracts/TableLoading.json",
     "figmaSet": "TableLoading",
+    "figmaNode": "1034:8126",
     "story": "content-surfaces-table--table-loading-playground",
-    "tokens": 6
+    "tokens": 6,
+    "motion": null,
+    "stage": null
   },
   {
+    "kind": "component",
     "key": "TableLoadMore",
     "label": "TableLoadMore",
     "category": "Content & Surfaces",
@@ -1249,10 +1670,14 @@
     ],
     "file": "spec/contracts/TableLoadMore.json",
     "figmaSet": "TableLoadMore",
+    "figmaNode": "1034:8164",
     "story": "content-surfaces-table--table-load-more-playground",
-    "tokens": 1
+    "tokens": 1,
+    "motion": null,
+    "stage": null
   },
   {
+    "kind": "component",
     "key": "Toast",
     "label": "Toast",
     "category": "Feedback",
@@ -1264,10 +1689,14 @@
     ],
     "file": "spec/contracts/Toast.json",
     "figmaSet": "Toast",
+    "figmaNode": "1117:114",
     "story": "feedback-toast--playground",
-    "tokens": 46
+    "tokens": 46,
+    "motion": "declared",
+    "stage": null
   },
   {
+    "kind": "component",
     "key": "Alert",
     "label": "Alert",
     "category": "Feedback",
@@ -1279,10 +1708,14 @@
     ],
     "file": "spec/contracts/Alert.json",
     "figmaSet": "Alert",
+    "figmaNode": "397:1932",
     "story": "feedback-alert--playground",
-    "tokens": 48
+    "tokens": 47,
+    "motion": null,
+    "stage": null
   },
   {
+    "kind": "component",
     "key": "TabMenu",
     "label": "Tab Menu",
     "category": "Navigation",
@@ -1294,10 +1727,14 @@
     ],
     "file": "spec/contracts/TabMenu.json",
     "figmaSet": "TabMenu",
+    "figmaNode": "984:1830",
     "story": "navigation-tabmenu--playground",
-    "tokens": 4
+    "tokens": 4,
+    "motion": null,
+    "stage": null
   },
   {
+    "kind": "component",
     "key": "TabMenuItem",
     "label": "Tab Menu Item",
     "category": "Navigation",
@@ -1309,10 +1746,14 @@
     ],
     "file": "spec/contracts/TabMenuItem.json",
     "figmaSet": "TabMenuItem",
+    "figmaNode": "984:939",
     "story": "navigation-tabmenu--tab-menu-item-playground",
-    "tokens": 19
+    "tokens": 19,
+    "motion": "declared",
+    "stage": null
   },
   {
+    "kind": "component",
     "key": "TabMenuLineItem",
     "label": "Tab Menu Line Item",
     "category": "Navigation",
@@ -1324,10 +1765,130 @@
     ],
     "file": "spec/contracts/TabMenuLineItem.json",
     "figmaSet": "TabMenuLineItem",
+    "figmaNode": "984:1156",
     "story": "navigation-tabmenu--tab-menu-line-item-playground",
-    "tokens": 19
+    "tokens": 19,
+    "motion": "declared",
+    "stage": null
   },
   {
+    "kind": "component",
+    "key": "SettingsRow",
+    "label": "Settings Row",
+    "category": "Layout",
+    "box": "gray",
+    "locks": [
+      "size",
+      "hit",
+      "motion"
+    ],
+    "file": "spec/contracts/SettingsRow.json",
+    "figmaSet": "SettingsRow",
+    "figmaNode": "2225:89",
+    "story": "screens-settingspage--settings-row-playground",
+    "tokens": 10,
+    "motion": null,
+    "stage": "storybook"
+  },
+  {
+    "kind": "component",
+    "key": "SettingsSection",
+    "label": "Settings Section",
+    "category": "Layout",
+    "box": "gray",
+    "locks": [
+      "size",
+      "hit",
+      "motion"
+    ],
+    "file": "spec/contracts/SettingsSection.json",
+    "figmaSet": "SettingsSection",
+    "figmaNode": "2224:123",
+    "story": "screens-settingspage--settings-section-playground",
+    "tokens": 6,
+    "motion": null,
+    "stage": "storybook"
+  },
+  {
+    "kind": "component",
+    "key": "IssueCard",
+    "label": "Issue Card",
+    "category": "Data Display",
+    "box": "gray",
+    "locks": [
+      "size",
+      "hit",
+      "motion"
+    ],
+    "file": "spec/contracts/IssueCard.json",
+    "figmaSet": "IssueCard",
+    "figmaNode": "2228:160",
+    "story": "screens-issueboardpage--issue-card-playground",
+    "tokens": 18,
+    "motion": "declared",
+    "stage": "storybook"
+  },
+  {
+    "kind": "component",
+    "key": "Gauge",
+    "label": "Gauge",
+    "category": "Data Display",
+    "box": "black",
+    "locks": [
+      "shape",
+      "size",
+      "hit",
+      "motion"
+    ],
+    "file": "spec/contracts/Gauge.json",
+    "figmaSet": "Gauge",
+    "figmaNode": "2398:762",
+    "story": "indicators-gauge--playground",
+    "tokens": 23,
+    "motion": "declared",
+    "stage": "storybook"
+  },
+  {
+    "kind": "component",
+    "key": "Sparkline",
+    "label": "Sparkline",
+    "category": "Data Display",
+    "box": "black",
+    "locks": [
+      "shape",
+      "size",
+      "hit",
+      "motion"
+    ],
+    "file": "spec/contracts/Sparkline.json",
+    "figmaSet": "Sparkline",
+    "figmaNode": "2399:90",
+    "story": "indicators-sparkline--playground",
+    "tokens": 17,
+    "motion": "declared",
+    "stage": "storybook"
+  },
+  {
+    "kind": "component",
+    "key": "BoardColumn",
+    "label": "Board Column",
+    "category": "Layout",
+    "box": "gray",
+    "locks": [
+      "size",
+      "hit",
+      "motion"
+    ],
+    "file": "spec/contracts/BoardColumn.json",
+    "figmaSet": "BoardColumn",
+    "figmaNode": "2228:161",
+    "story": "screens-issueboardpage--board-column-playground",
+    "tokens": 8,
+    "motion": null,
+    "stage": "storybook"
+  },
+  {
+    "kind": "component",
     "key": "NavItem",
     "label": "Nav Item",
     "category": "Navigation",
@@ -1339,10 +1900,149 @@
     ],
     "file": "spec/contracts/NavItem.json",
     "figmaSet": "NavItem",
+    "figmaNode": "1095:19644",
     "story": "navigation-navitem--playground",
-    "tokens": 19
+    "tokens": 19,
+    "motion": "declared",
+    "stage": null
   },
   {
+    "kind": "component",
+    "key": "TabBar",
+    "label": "Tab Bar",
+    "category": "Navigation",
+    "box": "gray",
+    "locks": [
+      "size",
+      "hit",
+      "motion"
+    ],
+    "file": "spec/contracts/TabBar.json",
+    "figmaSet": "TabBar",
+    "figmaNode": "2354:124",
+    "story": "navigation-tabbar--playground",
+    "tokens": 5,
+    "motion": null,
+    "stage": "storybook"
+  },
+  {
+    "kind": "component",
+    "key": "TabBarItem",
+    "label": "Tab Bar Item",
+    "category": "Navigation",
+    "box": "gray",
+    "locks": [
+      "size",
+      "hit",
+      "motion"
+    ],
+    "file": "spec/contracts/TabBarItem.json",
+    "figmaSet": "TabBarItem",
+    "figmaNode": "2354:84",
+    "story": "navigation-tabbar--tab-bar-item-playground",
+    "tokens": 14,
+    "motion": "declared",
+    "stage": "storybook"
+  },
+  {
+    "kind": "component",
+    "key": "ActivityHeatmap",
+    "label": "Activity Heatmap",
+    "category": "Data Display",
+    "box": "gray",
+    "locks": [
+      "size",
+      "hit",
+      "motion"
+    ],
+    "file": "spec/contracts/ActivityHeatmap.json",
+    "figmaSet": "ActivityHeatmap",
+    "figmaNode": "2400:58",
+    "story": "indicators-activityheatmap--playground",
+    "tokens": 7,
+    "motion": null,
+    "stage": "storybook"
+  },
+  {
+    "kind": "component",
+    "key": "ActivityHeatmapCell",
+    "label": "Activity Heatmap Cell",
+    "category": "Data Display",
+    "box": "black",
+    "locks": [
+      "shape",
+      "radius",
+      "size",
+      "hit",
+      "motion"
+    ],
+    "file": "spec/contracts/ActivityHeatmapCell.json",
+    "figmaSet": "ActivityHeatmapCell",
+    "figmaNode": "2400:57",
+    "story": "indicators-activityheatmap--activity-heatmap-cell-playground",
+    "tokens": 10,
+    "motion": "declared",
+    "stage": "storybook"
+  },
+  {
+    "kind": "component",
+    "key": "SplitBar",
+    "label": "Split Bar",
+    "category": "Indicators",
+    "box": "gray",
+    "locks": [
+      "size",
+      "hit",
+      "motion"
+    ],
+    "file": "spec/contracts/SplitBar.json",
+    "figmaSet": "SplitBar",
+    "figmaNode": "2401:248",
+    "story": "indicators-splitbar--playground",
+    "tokens": 17,
+    "motion": "declared",
+    "stage": null
+  },
+  {
+    "kind": "component",
+    "key": "SplitBarSegment",
+    "label": "Split Bar Segment",
+    "category": "Indicators",
+    "box": "gray",
+    "locks": [
+      "size",
+      "hit",
+      "motion"
+    ],
+    "file": "spec/contracts/SplitBarSegment.json",
+    "figmaSet": "SplitBarSegment",
+    "figmaNode": "2401:102",
+    "story": "indicators-splitbar--split-bar-segment-playground",
+    "tokens": 32,
+    "motion": "declared",
+    "stage": null
+  },
+  {
+    "kind": "component",
+    "key": "SplitBarLegendItem",
+    "label": "Split Bar Legend Item",
+    "category": "Indicators",
+    "box": "gray",
+    "locks": [
+      "size",
+      "hit",
+      "motion"
+    ],
+    "file": "spec/contracts/SplitBarLegendItem.json",
+    "figmaSet": "SplitBarLegendItem",
+    "figmaNode": "2401:211",
+    "story": "indicators-splitbar--split-bar-legend-item-playground",
+    "tokens": 20,
+    "motion": "declared",
+    "stage": null
+  },
+  {
+    "kind": "component",
     "key": "Brand",
     "label": "Brand",
     "category": "Navigation",
@@ -1354,10 +2054,14 @@
     ],
     "file": "spec/contracts/Brand.json",
     "figmaSet": "Brand",
+    "figmaNode": "1098:42",
     "story": "navigation-brand--playground",
-    "tokens": 4
+    "tokens": 4,
+    "motion": null,
+    "stage": null
   },
   {
+    "kind": "component",
     "key": "AccountMenuTrigger",
     "label": "Account Menu Trigger",
     "category": "Navigation",
@@ -1369,10 +2073,14 @@
     ],
     "file": "spec/contracts/AccountMenuTrigger.json",
     "figmaSet": "AccountMenuTrigger",
+    "figmaNode": "1098:119",
     "story": "navigation-accountmenutrigger--playground",
-    "tokens": 15
+    "tokens": 15,
+    "motion": "declared",
+    "stage": null
   },
   {
+    "kind": "component",
     "key": "SegmentedControl",
     "label": "Segmented Control",
     "category": "Navigation",
@@ -1384,10 +2092,14 @@
     ],
     "file": "spec/contracts/SegmentedControl.json",
     "figmaSet": "SegmentedControl",
+    "figmaNode": "1102:5136",
     "story": "navigation-segmentedcontrol--playground",
-    "tokens": 3
+    "tokens": 3,
+    "motion": null,
+    "stage": null
   },
   {
+    "kind": "component",
     "key": "SegmentedControlItem",
     "label": "Segmented Control Item",
     "category": "Navigation",
@@ -1399,10 +2111,14 @@
     ],
     "file": "spec/contracts/SegmentedControlItem.json",
     "figmaSet": "SegmentedControlItem",
+    "figmaNode": "1102:5087",
     "story": "navigation-segmentedcontrol--segmented-control-item-playground",
-    "tokens": 20
+    "tokens": 20,
+    "motion": "declared",
+    "stage": null
   },
   {
+    "kind": "component",
     "key": "Breadcrumb",
     "label": "Breadcrumbs",
     "category": "Navigation",
@@ -1414,10 +2130,14 @@
     ],
     "file": "spec/contracts/Breadcrumb.json",
     "figmaSet": "Breadcrumb",
+    "figmaNode": "402:7814",
     "story": "navigation-breadcrumb--playground",
-    "tokens": 2
+    "tokens": 2,
+    "motion": null,
+    "stage": null
   },
   {
+    "kind": "component",
     "key": "BreadcrumbItem",
     "label": "Breadcrumb Item",
     "category": "Navigation",
@@ -1429,10 +2149,14 @@
     ],
     "file": "spec/contracts/BreadcrumbItem.json",
     "figmaSet": "BreadcrumbItem",
+    "figmaNode": "402:998",
     "story": "navigation-breadcrumb--breadcrumb-item-playground",
-    "tokens": 30
+    "tokens": 30,
+    "motion": null,
+    "stage": null
   },
   {
+    "kind": "component",
     "key": "BreadcrumbEllipsis",
     "label": "Breadcrumb Ellipsis",
     "category": "Navigation",
@@ -1444,10 +2168,14 @@
     ],
     "file": "spec/contracts/BreadcrumbEllipsis.json",
     "figmaSet": "BreadcrumbEllipsis",
+    "figmaNode": "402:999",
     "story": "navigation-breadcrumb--breadcrumb-ellipsis-playground",
-    "tokens": 23
+    "tokens": 23,
+    "motion": null,
+    "stage": null
   },
   {
+    "kind": "component",
     "key": "BreadcrumbSeparator",
     "label": "Breadcrumb Separator",
     "category": "Navigation",
@@ -1459,10 +2187,14 @@
     ],
     "file": "spec/contracts/BreadcrumbSeparator.json",
     "figmaSet": "BreadcrumbSeparator",
+    "figmaNode": "402:1000",
     "story": "navigation-breadcrumb--breadcrumb-separator-playground",
-    "tokens": 6
+    "tokens": 6,
+    "motion": null,
+    "stage": null
   },
   {
+    "kind": "component",
     "key": "Pagination",
     "label": "Pagination",
     "category": "Navigation",
@@ -1474,10 +2206,14 @@
     ],
     "file": "spec/contracts/Pagination.json",
     "figmaSet": "Pagination",
+    "figmaNode": "989:714",
     "story": "navigation-pagination--playground",
-    "tokens": 2
+    "tokens": 2,
+    "motion": null,
+    "stage": null
   },
   {
+    "kind": "component",
     "key": "PaginationLink",
     "label": "Pagination Link",
     "category": "Navigation",
@@ -1489,10 +2225,14 @@
     ],
     "file": "spec/contracts/PaginationLink.json",
     "figmaSet": "PaginationLink",
+    "figmaNode": "988:330",
     "story": "navigation-pagination--pagination-link-playground",
-    "tokens": 17
+    "tokens": 17,
+    "motion": "declared",
+    "stage": null
   },
   {
+    "kind": "component",
     "key": "PaginationEllipsis",
     "label": "Pagination Ellipsis",
     "category": "Navigation",
@@ -1504,10 +2244,14 @@
     ],
     "file": "spec/contracts/PaginationEllipsis.json",
     "figmaSet": "PaginationEllipsis",
+    "figmaNode": "988:343",
     "story": "navigation-pagination--pagination-ellipsis-playground",
-    "tokens": 8
+    "tokens": 8,
+    "motion": null,
+    "stage": null
   },
   {
+    "kind": "component",
     "key": "Stepper",
     "label": "Stepper",
     "category": "Navigation",
@@ -1519,10 +2263,14 @@
     ],
     "file": "spec/contracts/Stepper.json",
     "figmaSet": "Stepper",
+    "figmaNode": "994:3222",
     "story": "navigation-stepper--playground",
-    "tokens": 2
+    "tokens": 2,
+    "motion": null,
+    "stage": null
   },
   {
+    "kind": "component",
     "key": "StepperItem",
     "label": "Stepper Item",
     "category": "Navigation",
@@ -1534,10 +2282,14 @@
     ],
     "file": "spec/contracts/StepperItem.json",
     "figmaSet": "StepperItem",
+    "figmaNode": "994:1904",
     "story": "navigation-stepper--stepper-item-playground",
-    "tokens": 9
+    "tokens": 9,
+    "motion": null,
+    "stage": null
   },
   {
+    "kind": "component",
     "key": "StepperIndicator",
     "label": "Stepper Indicator",
     "category": "Navigation",
@@ -1550,10 +2302,14 @@
     ],
     "file": "spec/contracts/StepperIndicator.json",
     "figmaSet": "StepperIndicator",
+    "figmaNode": "994:850",
     "story": "navigation-stepper--stepper-indicator-playground",
-    "tokens": 6
+    "tokens": 6,
+    "motion": null,
+    "stage": null
   },
   {
+    "kind": "component",
     "key": "StepperIcon",
     "label": "Stepper Icon",
     "category": "Navigation",
@@ -1566,10 +2322,14 @@
     ],
     "file": "spec/contracts/StepperIcon.json",
     "figmaSet": "StepperIcon",
+    "figmaNode": "994:569",
     "story": "navigation-stepper--stepper-icon-playground",
-    "tokens": 20
+    "tokens": 20,
+    "motion": null,
+    "stage": null
   },
   {
+    "kind": "component",
     "key": "DropdownMenu",
     "label": "Dropdown Menu",
     "category": "Navigation",
@@ -1577,10 +2337,14 @@
     "locks": [],
     "file": "spec/contracts/DropdownMenu.json",
     "figmaSet": "DropdownMenu",
+    "figmaNode": "947:299",
     "story": "navigation-dropdownmenu--playground",
-    "tokens": 11
+    "tokens": 12,
+    "motion": "declared",
+    "stage": null
   },
   {
+    "kind": "component",
     "key": "DropdownMenuLabel",
     "label": "Dropdown Menu Label",
     "category": "Navigation",
@@ -1592,10 +2356,14 @@
     ],
     "file": "spec/contracts/DropdownMenuLabel.json",
     "figmaSet": "DropdownMenuLabel",
+    "figmaNode": "947:169",
     "story": "navigation-dropdownmenu--dropdown-menu-label-playground",
-    "tokens": 6
+    "tokens": 6,
+    "motion": null,
+    "stage": null
   },
   {
+    "kind": "component",
     "key": "DropdownMenuItem",
     "label": "Dropdown Menu Item",
     "category": "Navigation",
@@ -1607,10 +2375,14 @@
     ],
     "file": "spec/contracts/DropdownMenuItem.json",
     "figmaSet": "DropdownMenuItem",
+    "figmaNode": "947:161",
     "story": "navigation-dropdownmenu--dropdown-menu-item-playground",
-    "tokens": 24
+    "tokens": 22,
+    "motion": "declared",
+    "stage": null
   },
   {
+    "kind": "component",
     "key": "DropdownMenuFooter",
     "label": "Dropdown Menu Footer",
     "category": "Navigation",
@@ -1622,10 +2394,14 @@
     ],
     "file": "spec/contracts/DropdownMenuFooter.json",
     "figmaSet": "DropdownMenuFooter",
+    "figmaNode": "949:3290",
     "story": "navigation-dropdownmenu--dropdown-menu-footer-playground",
-    "tokens": 7
+    "tokens": 7,
+    "motion": null,
+    "stage": null
   },
   {
+    "kind": "component",
     "key": "Sidebar",
     "label": "Sidebar",
     "category": "Navigation",
@@ -1633,10 +2409,14 @@
     "locks": [],
     "file": "spec/contracts/Sidebar.json",
     "figmaSet": "Sidebar",
+    "figmaNode": "982:1003",
     "story": "navigation-sidebar--playground",
-    "tokens": 10
+    "tokens": 10,
+    "motion": null,
+    "stage": null
   },
   {
+    "kind": "component",
     "key": "SidebarMenuButton",
     "label": "Sidebar Menu Button",
     "category": "Navigation",
@@ -1648,10 +2428,14 @@
     ],
     "file": "spec/contracts/SidebarMenuButton.json",
     "figmaSet": "SidebarMenuButton",
+    "figmaNode": "980:368",
     "story": "navigation-sidebar--sidebar-menu-button-playground",
-    "tokens": 21
+    "tokens": 21,
+    "motion": "declared",
+    "stage": null
   },
   {
+    "kind": "component",
     "key": "SidebarGroup",
     "label": "Sidebar Group",
     "category": "Navigation",
@@ -1659,10 +2443,14 @@
     "locks": [],
     "file": "spec/contracts/SidebarGroup.json",
     "figmaSet": "SidebarGroup",
+    "figmaNode": "982:292",
     "story": "navigation-sidebar--sidebar-group-playground",
-    "tokens": 1
+    "tokens": 1,
+    "motion": null,
+    "stage": null
   },
   {
+    "kind": "component",
     "key": "SidebarGroupLabel",
     "label": "Sidebar Group Label",
     "category": "Navigation",
@@ -1670,10 +2458,14 @@
     "locks": [],
     "file": "spec/contracts/SidebarGroupLabel.json",
     "figmaSet": "SidebarGroupLabel",
+    "figmaNode": "980:390",
     "story": "navigation-sidebar--sidebar-group-label-playground",
-    "tokens": 6
+    "tokens": 6,
+    "motion": null,
+    "stage": null
   },
   {
+    "kind": "component",
     "key": "SidebarBrand",
     "label": "Sidebar Brand",
     "category": "Navigation",
@@ -1685,7 +2477,880 @@
     ],
     "file": "spec/contracts/SidebarBrand.json",
     "figmaSet": "SidebarBrand",
+    "figmaNode": "980:419",
     "story": "navigation-sidebar--sidebar-brand-playground",
-    "tokens": 6
+    "tokens": 6,
+    "motion": null,
+    "stage": null
+  },
+  {
+    "kind": "block",
+    "key": "AuthAccountLocked",
+    "label": "AuthAccountLocked",
+    "category": "Auth",
+    "box": null,
+    "locks": [],
+    "file": "src/components/escala-ui/blocks/auth.contract.json",
+    "figmaSet": "AuthAccountLocked",
+    "figmaNode": "1006:1473",
+    "story": "blocks-auth-accountlocked--playground",
+    "tokens": 0,
+    "motion": "declared",
+    "stage": "storybook"
+  },
+  {
+    "kind": "block",
+    "key": "AuthCheckEmail",
+    "label": "AuthCheckEmail",
+    "category": "Auth",
+    "box": null,
+    "locks": [],
+    "file": "src/components/escala-ui/blocks/auth.contract.json",
+    "figmaSet": "AuthCheckEmail",
+    "figmaNode": "1006:1036",
+    "story": "blocks-auth-checkemail--playground",
+    "tokens": 0,
+    "motion": "declared",
+    "stage": "storybook"
+  },
+  {
+    "kind": "block",
+    "key": "AuthError",
+    "label": "AuthError",
+    "category": "Auth",
+    "box": null,
+    "locks": [],
+    "file": "src/components/escala-ui/blocks/auth.contract.json",
+    "figmaSet": "AuthError",
+    "figmaNode": "1006:1635",
+    "story": "blocks-auth-error--playground",
+    "tokens": 0,
+    "motion": "declared",
+    "stage": "storybook"
+  },
+  {
+    "kind": "block",
+    "key": "AuthForgotPassword",
+    "label": "AuthForgotPassword",
+    "category": "Auth",
+    "box": null,
+    "locks": [],
+    "file": "src/components/escala-ui/blocks/auth.contract.json",
+    "figmaSet": "AuthForgotPassword",
+    "figmaNode": "1005:1497",
+    "story": "blocks-auth-forgotpassword--playground",
+    "tokens": 0,
+    "motion": "declared",
+    "stage": "storybook"
+  },
+  {
+    "kind": "block",
+    "key": "AuthMagicLinkSent",
+    "label": "AuthMagicLinkSent",
+    "category": "Auth",
+    "box": null,
+    "locks": [],
+    "file": "src/components/escala-ui/blocks/auth.contract.json",
+    "figmaSet": "AuthMagicLinkSent",
+    "figmaNode": "1006:1261",
+    "story": "blocks-auth-magiclinksent--playground",
+    "tokens": 0,
+    "motion": "declared",
+    "stage": "storybook"
+  },
+  {
+    "kind": "block",
+    "key": "AuthNewPassword",
+    "label": "AuthNewPassword",
+    "category": "Auth",
+    "box": null,
+    "locks": [],
+    "file": "src/components/escala-ui/blocks/auth.contract.json",
+    "figmaSet": "AuthNewPassword",
+    "figmaNode": "1005:1838",
+    "story": "blocks-auth-newpassword--playground",
+    "tokens": 0,
+    "motion": "declared",
+    "stage": "storybook"
+  },
+  {
+    "kind": "block",
+    "key": "AuthOTPVerification",
+    "label": "AuthOTPVerification",
+    "category": "Auth",
+    "box": null,
+    "locks": [],
+    "file": "src/components/escala-ui/blocks/auth.contract.json",
+    "figmaSet": "AuthOTPVerification",
+    "figmaNode": "1005:640",
+    "story": "blocks-auth-otpverification--playground",
+    "tokens": 0,
+    "motion": "declared",
+    "stage": "storybook"
+  },
+  {
+    "kind": "block",
+    "key": "AuthSignIn",
+    "label": "AuthSignIn",
+    "category": "Auth",
+    "box": null,
+    "locks": [],
+    "file": "src/components/escala-ui/blocks/auth.contract.json",
+    "figmaSet": "AuthSignIn",
+    "figmaNode": "1004:436",
+    "story": "blocks-auth-signin--playground",
+    "tokens": 0,
+    "motion": "declared",
+    "stage": "storybook"
+  },
+  {
+    "kind": "block",
+    "key": "AuthSignInPasskey",
+    "label": "AuthSignInPasskey",
+    "category": "Auth",
+    "box": null,
+    "locks": [],
+    "file": "src/components/escala-ui/blocks/auth.contract.json",
+    "figmaSet": "AuthSignInPasskey",
+    "figmaNode": "2146:8197",
+    "story": null,
+    "tokens": 0,
+    "motion": "declared",
+    "stage": null
+  },
+  {
+    "kind": "block",
+    "key": "AuthSignInPhone",
+    "label": "AuthSignInPhone",
+    "category": "Auth",
+    "box": null,
+    "locks": [],
+    "file": "src/components/escala-ui/blocks/auth.contract.json",
+    "figmaSet": "AuthSignInPhone",
+    "figmaNode": "1004:1199",
+    "story": "blocks-auth-signinphone--playground",
+    "tokens": 0,
+    "motion": "declared",
+    "stage": "storybook"
+  },
+  {
+    "kind": "block",
+    "key": "AuthSignUp",
+    "label": "AuthSignUp",
+    "category": "Auth",
+    "box": null,
+    "locks": [],
+    "file": "src/components/escala-ui/blocks/auth.contract.json",
+    "figmaSet": "AuthSignUp",
+    "figmaNode": "1004:971",
+    "story": "blocks-auth-signup--playground",
+    "tokens": 0,
+    "motion": "declared",
+    "stage": "storybook"
+  },
+  {
+    "kind": "block",
+    "key": "AuthSocialSignIn",
+    "label": "AuthSocialSignIn",
+    "category": "Auth",
+    "box": null,
+    "locks": [],
+    "file": "src/components/escala-ui/blocks/auth.contract.json",
+    "figmaSet": "AuthSocialSignIn",
+    "figmaNode": "1006:1904",
+    "story": "blocks-auth-socialsignin--playground",
+    "tokens": 0,
+    "motion": "declared",
+    "stage": "storybook"
+  },
+  {
+    "kind": "block",
+    "key": "AuthSplit",
+    "label": "AuthSplit",
+    "category": "Auth",
+    "box": null,
+    "locks": [],
+    "file": "src/components/escala-ui/blocks/auth.contract.json",
+    "figmaSet": "AuthSplit",
+    "figmaNode": "2146:8199",
+    "story": null,
+    "tokens": 0,
+    "motion": "declared",
+    "stage": null
+  },
+  {
+    "kind": "block",
+    "key": "AuthTwoFactor",
+    "label": "AuthTwoFactor",
+    "category": "Auth",
+    "box": null,
+    "locks": [],
+    "file": "src/components/escala-ui/blocks/auth.contract.json",
+    "figmaSet": "AuthTwoFactor",
+    "figmaNode": "1005:905",
+    "story": "blocks-auth-twofactor--playground",
+    "tokens": 0,
+    "motion": "declared",
+    "stage": "storybook"
+  },
+  {
+    "kind": "block",
+    "key": "AuthPasskeySetup",
+    "label": "AuthPasskeySetup",
+    "category": "Blocks",
+    "box": null,
+    "locks": [],
+    "file": "src/components/escala-ui/blocks/authSetup.contract.json",
+    "figmaSet": "AuthPasskeySetup",
+    "figmaNode": "2373:768",
+    "story": "blocks-auth-passkeysetup--playground",
+    "tokens": 0,
+    "motion": "declared",
+    "stage": "storybook"
+  },
+  {
+    "kind": "block",
+    "key": "AuthPasskeySetupIndicator",
+    "label": "AuthPasskeySetupIndicator",
+    "category": "Blocks",
+    "box": null,
+    "locks": [],
+    "file": "src/components/escala-ui/blocks/authSetup.contract.json",
+    "figmaSet": "AuthPasskeySetupIndicator",
+    "figmaNode": "2373:708",
+    "story": "blocks-auth-passkeysetup--indicator",
+    "tokens": 0,
+    "motion": "declared",
+    "stage": "storybook"
+  },
+  {
+    "kind": "block",
+    "key": "AuthTwoFactorSetup",
+    "label": "AuthTwoFactorSetup",
+    "category": "Blocks",
+    "box": null,
+    "locks": [],
+    "file": "src/components/escala-ui/blocks/authSetup.contract.json",
+    "figmaSet": "AuthTwoFactorSetup",
+    "figmaNode": "2374:837",
+    "story": "blocks-auth-twofactorsetup--playground",
+    "tokens": 0,
+    "motion": "declared",
+    "stage": "storybook"
+  },
+  {
+    "kind": "block",
+    "key": "AuthTwoFactorSetupGroup",
+    "label": "AuthTwoFactorSetupGroup",
+    "category": "Blocks",
+    "box": null,
+    "locks": [],
+    "file": "src/components/escala-ui/blocks/authSetup.contract.json",
+    "figmaSet": "AuthTwoFactorSetupGroup",
+    "figmaNode": "2374:64",
+    "story": "blocks-auth-twofactorsetup--parts",
+    "tokens": 0,
+    "motion": "declared",
+    "stage": "storybook"
+  },
+  {
+    "kind": "block",
+    "key": "AuthTwoFactorSetupItem",
+    "label": "AuthTwoFactorSetupItem",
+    "category": "Blocks",
+    "box": null,
+    "locks": [],
+    "file": "src/components/escala-ui/blocks/authSetup.contract.json",
+    "figmaSet": "AuthTwoFactorSetupItem",
+    "figmaNode": "2374:47",
+    "story": "blocks-auth-twofactorsetup--parts",
+    "tokens": 0,
+    "motion": "declared",
+    "stage": "storybook"
+  },
+  {
+    "kind": "block",
+    "key": "CardStack",
+    "label": "CardStack",
+    "category": "CardStack (PRO)",
+    "box": null,
+    "locks": [],
+    "file": "src/components/escala-ui/blocks/cardStack.contract.json",
+    "figmaSet": "CardStack",
+    "figmaNode": "2403:312",
+    "story": null,
+    "tokens": 0,
+    "motion": "declared",
+    "stage": null
+  },
+  {
+    "kind": "block",
+    "key": "CardStackCard",
+    "label": "CardStackCard",
+    "category": "CardStack (PRO)",
+    "box": null,
+    "locks": [],
+    "file": "src/components/escala-ui/blocks/cardStack.contract.json",
+    "figmaSet": "CardStackCard",
+    "figmaNode": "2403:104",
+    "story": null,
+    "tokens": 0,
+    "motion": "declared",
+    "stage": null
+  },
+  {
+    "kind": "block",
+    "key": "DashboardGaugeCard",
+    "label": "DashboardGaugeCard",
+    "category": "Dashboard (PRO)",
+    "box": null,
+    "locks": [],
+    "file": "src/components/escala-ui/blocks/dashboard.contract.json",
+    "figmaSet": "DashboardGaugeCard",
+    "figmaNode": "2401:309",
+    "story": null,
+    "tokens": 0,
+    "motion": "declared",
+    "stage": null
+  },
+  {
+    "kind": "block",
+    "key": "DashboardMetricCard",
+    "label": "DashboardMetricCard",
+    "category": "Dashboard (PRO)",
+    "box": null,
+    "locks": [],
+    "file": "src/components/escala-ui/blocks/dashboard.contract.json",
+    "figmaSet": "DashboardMetricCard",
+    "figmaNode": "2401:325",
+    "story": null,
+    "tokens": 0,
+    "motion": "declared",
+    "stage": null
+  },
+  {
+    "kind": "block",
+    "key": "DashboardActivityCard",
+    "label": "DashboardActivityCard",
+    "category": "Dashboard (PRO)",
+    "box": null,
+    "locks": [],
+    "file": "src/components/escala-ui/blocks/dashboard.contract.json",
+    "figmaSet": "DashboardActivityCard",
+    "figmaNode": "2401:362",
+    "story": null,
+    "tokens": 0,
+    "motion": "declared",
+    "stage": null
+  },
+  {
+    "kind": "block",
+    "key": "DashboardTrafficCard",
+    "label": "DashboardTrafficCard",
+    "category": "Dashboard (PRO)",
+    "box": null,
+    "locks": [],
+    "file": "src/components/escala-ui/blocks/dashboard.contract.json",
+    "figmaSet": "DashboardTrafficCard",
+    "figmaNode": "2401:844",
+    "story": null,
+    "tokens": 0,
+    "motion": "declared",
+    "stage": null
+  },
+  {
+    "kind": "block",
+    "key": "HeroHeader",
+    "label": "HeroHeader",
+    "category": "Marketing",
+    "box": null,
+    "locks": [],
+    "file": "src/components/escala-ui/blocks/marketing.contract.json",
+    "figmaSet": "HeroHeader",
+    "figmaNode": "1066:99",
+    "story": "blocks-marketing-heroheader--playground",
+    "tokens": 0,
+    "motion": "declared",
+    "stage": "storybook"
+  },
+  {
+    "kind": "block",
+    "key": "FAQSection",
+    "label": "FAQSection",
+    "category": "Marketing",
+    "box": null,
+    "locks": [],
+    "file": "src/components/escala-ui/blocks/marketing.contract.json",
+    "figmaSet": "FAQSection",
+    "figmaNode": "1066:422",
+    "story": "blocks-marketing-faqsection--playground",
+    "tokens": 0,
+    "motion": "declared",
+    "stage": "storybook"
+  },
+  {
+    "kind": "block",
+    "key": "PricingCard",
+    "label": "PricingCard",
+    "category": "Marketing",
+    "box": null,
+    "locks": [],
+    "file": "src/components/escala-ui/blocks/marketing.contract.json",
+    "figmaSet": "PricingCard",
+    "figmaNode": "1068:208",
+    "story": "blocks-marketing-pricingcard--playground",
+    "tokens": 0,
+    "motion": "declared",
+    "stage": "storybook"
+  },
+  {
+    "kind": "block",
+    "key": "PricingSection",
+    "label": "PricingSection",
+    "category": "Marketing",
+    "box": null,
+    "locks": [],
+    "file": "src/components/escala-ui/blocks/marketing.contract.json",
+    "figmaSet": "PricingSection",
+    "figmaNode": "1068:533",
+    "story": "blocks-marketing-pricingsection--playground",
+    "tokens": 0,
+    "motion": "declared",
+    "stage": "storybook"
+  },
+  {
+    "kind": "block",
+    "key": "ContactSection",
+    "label": "ContactSection",
+    "category": "Marketing",
+    "box": null,
+    "locks": [],
+    "file": "src/components/escala-ui/blocks/marketing.contract.json",
+    "figmaSet": "ContactSection",
+    "figmaNode": "1069:849",
+    "story": "blocks-marketing-contactsection--playground",
+    "tokens": 0,
+    "motion": "declared",
+    "stage": "storybook"
+  },
+  {
+    "kind": "block",
+    "key": "Footer",
+    "label": "Footer",
+    "category": "Marketing",
+    "box": null,
+    "locks": [],
+    "file": "src/components/escala-ui/blocks/marketing.contract.json",
+    "figmaSet": "Footer",
+    "figmaNode": "1129:3971",
+    "story": "blocks-marketing-footer--playground",
+    "tokens": 0,
+    "motion": "declared",
+    "stage": "storybook"
+  },
+  {
+    "kind": "block",
+    "key": "MediaPlayer",
+    "label": "MediaPlayer",
+    "category": "MediaPlayer & NowPlaying (PRO)",
+    "box": null,
+    "locks": [],
+    "file": "src/components/escala-ui/blocks/media.contract.json",
+    "figmaSet": "MediaPlayer",
+    "figmaNode": "2402:277",
+    "story": null,
+    "tokens": 0,
+    "motion": "declared",
+    "stage": null
+  },
+  {
+    "kind": "block",
+    "key": "MediaPlayerTrack",
+    "label": "MediaPlayerTrack",
+    "category": "MediaPlayer & NowPlaying (PRO)",
+    "box": null,
+    "locks": [],
+    "file": "src/components/escala-ui/blocks/media.contract.json",
+    "figmaSet": "MediaPlayerTrack",
+    "figmaNode": "2402:56",
+    "story": null,
+    "tokens": 0,
+    "motion": "declared",
+    "stage": null
+  },
+  {
+    "kind": "block",
+    "key": "NowPlaying",
+    "label": "NowPlaying",
+    "category": "MediaPlayer & NowPlaying (PRO)",
+    "box": null,
+    "locks": [],
+    "file": "src/components/escala-ui/blocks/media.contract.json",
+    "figmaSet": "NowPlaying",
+    "figmaNode": "2402:102",
+    "story": null,
+    "tokens": 0,
+    "motion": "declared",
+    "stage": null
+  },
+  {
+    "kind": "block",
+    "key": "AnnouncementBar",
+    "label": "AnnouncementBar",
+    "category": "Blocks",
+    "box": null,
+    "locks": [],
+    "file": "src/components/escala-ui/blocks/navigation.contract.json",
+    "figmaSet": "AnnouncementBar",
+    "figmaNode": "1059:3",
+    "story": "blocks-navigation-announcementbar--playground",
+    "tokens": 0,
+    "motion": "declared",
+    "stage": "storybook"
+  },
+  {
+    "kind": "block",
+    "key": "UtilityBar",
+    "label": "UtilityBar",
+    "category": "Blocks",
+    "box": null,
+    "locks": [],
+    "file": "src/components/escala-ui/blocks/navigation.contract.json",
+    "figmaSet": "UtilityBar",
+    "figmaNode": "1059:27",
+    "story": "blocks-navigation-utilitybar--playground",
+    "tokens": 0,
+    "motion": "declared",
+    "stage": "storybook"
+  },
+  {
+    "kind": "block",
+    "key": "AppHeader",
+    "label": "AppHeader",
+    "category": "Blocks",
+    "box": null,
+    "locks": [],
+    "file": "src/components/escala-ui/blocks/navigation.contract.json",
+    "figmaSet": "AppHeader",
+    "figmaNode": "1061:433",
+    "story": "blocks-navigation-appheader--playground",
+    "tokens": 0,
+    "motion": "declared",
+    "stage": "storybook"
+  },
+  {
+    "kind": "block",
+    "key": "AppHeaderExtended",
+    "label": "AppHeaderExtended",
+    "category": "Blocks",
+    "box": null,
+    "locks": [],
+    "file": "src/components/escala-ui/blocks/navigation.contract.json",
+    "figmaSet": "AppHeaderExtended",
+    "figmaNode": "1061:5849",
+    "story": "blocks-navigation-appheaderextended--playground",
+    "tokens": 0,
+    "motion": "declared",
+    "stage": "storybook"
+  },
+  {
+    "kind": "block",
+    "key": "FloatingHeader",
+    "label": "FloatingHeader",
+    "category": "Blocks",
+    "box": null,
+    "locks": [],
+    "file": "src/components/escala-ui/blocks/navigation.contract.json",
+    "figmaSet": "FloatingHeader",
+    "figmaNode": "1061:6090",
+    "story": "blocks-navigation-floatingheader--playground",
+    "tokens": 0,
+    "motion": "declared",
+    "stage": "storybook"
+  },
+  {
+    "kind": "block",
+    "key": "DualSidebar",
+    "label": "DualSidebar",
+    "category": "Blocks",
+    "box": null,
+    "locks": [],
+    "file": "src/components/escala-ui/blocks/navigation.contract.json",
+    "figmaSet": "DualSidebar",
+    "figmaNode": "1064:49",
+    "story": "blocks-navigation-dualsidebar--playground",
+    "tokens": 0,
+    "motion": "declared",
+    "stage": "storybook"
+  },
+  {
+    "kind": "block",
+    "key": "SidebarStatCard",
+    "label": "SidebarStatCard",
+    "category": "Blocks",
+    "box": null,
+    "locks": [],
+    "file": "src/components/escala-ui/blocks/navigation.contract.json",
+    "figmaSet": "SidebarStatCard",
+    "figmaNode": "1064:3",
+    "story": "blocks-navigation-sidebarstatcard--playground",
+    "tokens": 0,
+    "motion": "declared",
+    "stage": "storybook"
+  },
+  {
+    "kind": "block",
+    "key": "ConfirmDialog",
+    "label": "ConfirmDialog",
+    "category": "Overlay",
+    "box": null,
+    "locks": [],
+    "file": "src/components/escala-ui/blocks/overlay.contract.json",
+    "figmaSet": "ConfirmDialog",
+    "figmaNode": "1054:6187",
+    "story": "blocks-overlay-confirmdialog--playground",
+    "tokens": 0,
+    "motion": "declared",
+    "stage": "storybook"
+  },
+  {
+    "kind": "block",
+    "key": "DestructiveConfirm",
+    "label": "DestructiveConfirm",
+    "category": "Overlay",
+    "box": null,
+    "locks": [],
+    "file": "src/components/escala-ui/blocks/overlay.contract.json",
+    "figmaSet": "DestructiveConfirm",
+    "figmaNode": "1054:6209",
+    "story": "blocks-overlay-destructiveconfirm--playground",
+    "tokens": 0,
+    "motion": "declared",
+    "stage": "storybook"
+  },
+  {
+    "kind": "block",
+    "key": "FormModal",
+    "label": "FormModal",
+    "category": "Overlay",
+    "box": null,
+    "locks": [],
+    "file": "src/components/escala-ui/blocks/overlay.contract.json",
+    "figmaSet": "FormModal",
+    "figmaNode": "1055:99",
+    "story": "blocks-overlay-formmodal--playground",
+    "tokens": 0,
+    "motion": "declared",
+    "stage": "storybook"
+  },
+  {
+    "kind": "block",
+    "key": "SuccessModal",
+    "label": "SuccessModal",
+    "category": "Overlay",
+    "box": null,
+    "locks": [],
+    "file": "src/components/escala-ui/blocks/overlay.contract.json",
+    "figmaSet": "SuccessModal",
+    "figmaNode": "1055:265",
+    "story": "blocks-overlay-successmodal--playground",
+    "tokens": 0,
+    "motion": "declared",
+    "stage": "storybook"
+  },
+  {
+    "kind": "block",
+    "key": "ErrorModal",
+    "label": "ErrorModal",
+    "category": "Overlay",
+    "box": null,
+    "locks": [],
+    "file": "src/components/escala-ui/blocks/overlay.contract.json",
+    "figmaSet": "ErrorModal",
+    "figmaNode": "1055:346",
+    "story": "blocks-overlay-errormodal--playground",
+    "tokens": 0,
+    "motion": "declared",
+    "stage": "storybook"
+  },
+  {
+    "kind": "block",
+    "key": "FeedbackRating",
+    "label": "FeedbackRating",
+    "category": "Overlay",
+    "box": null,
+    "locks": [],
+    "file": "src/components/escala-ui/blocks/overlay.contract.json",
+    "figmaSet": "FeedbackRating",
+    "figmaNode": "1055:404",
+    "story": "blocks-overlay-feedbackrating--playground",
+    "tokens": 0,
+    "motion": "declared",
+    "stage": "storybook"
+  },
+  {
+    "kind": "block",
+    "key": "WarningDialog",
+    "label": "WarningDialog",
+    "category": "Overlay",
+    "box": null,
+    "locks": [],
+    "file": "src/components/escala-ui/blocks/overlay.contract.json",
+    "figmaSet": "WarningDialog",
+    "figmaNode": "1055:548",
+    "story": "blocks-overlay-warningdialog--playground",
+    "tokens": 0,
+    "motion": "declared",
+    "stage": "storybook"
+  },
+  {
+    "kind": "block",
+    "key": "ShareModal",
+    "label": "ShareModal",
+    "category": "Overlay",
+    "box": null,
+    "locks": [],
+    "file": "src/components/escala-ui/blocks/overlay.contract.json",
+    "figmaSet": "ShareModal",
+    "figmaNode": "1055:613",
+    "story": "blocks-overlay-sharemodal--playground",
+    "tokens": 0,
+    "motion": "declared",
+    "stage": "storybook"
+  },
+  {
+    "kind": "block",
+    "key": "SessionTimeoutWarning",
+    "label": "SessionTimeoutWarning",
+    "category": "Overlay",
+    "box": null,
+    "locks": [],
+    "file": "src/components/escala-ui/blocks/overlay.contract.json",
+    "figmaSet": "SessionTimeoutWarning",
+    "figmaNode": "1055:793",
+    "story": "blocks-overlay-sessiontimeoutwarning--playground",
+    "tokens": 0,
+    "motion": "declared",
+    "stage": "storybook"
+  },
+  {
+    "kind": "block",
+    "key": "CartDrawer",
+    "label": "CartDrawer",
+    "category": "Overlay",
+    "box": null,
+    "locks": [],
+    "file": "src/components/escala-ui/blocks/overlay.contract.json",
+    "figmaSet": "CartDrawer",
+    "figmaNode": "1074:2954",
+    "story": "blocks-overlay-cartdrawer--playground",
+    "tokens": 0,
+    "motion": "declared",
+    "stage": "storybook"
+  },
+  {
+    "kind": "block",
+    "key": "QuickEditDialog",
+    "label": "QuickEditDialog",
+    "category": "Overlay",
+    "box": null,
+    "locks": [],
+    "file": "src/components/escala-ui/blocks/overlay.contract.json",
+    "figmaSet": "QuickEditDialog",
+    "figmaNode": "1074:3374",
+    "story": "blocks-overlay-quickeditdialog--playground",
+    "tokens": 0,
+    "motion": "declared",
+    "stage": "storybook"
+  },
+  {
+    "kind": "block",
+    "key": "FilterDrawer",
+    "label": "FilterDrawer",
+    "category": "Overlay",
+    "box": null,
+    "locks": [],
+    "file": "src/components/escala-ui/blocks/overlay.contract.json",
+    "figmaSet": "FilterDrawer",
+    "figmaNode": "1074:3445",
+    "story": "blocks-overlay-filterdrawer--playground",
+    "tokens": 0,
+    "motion": "declared",
+    "stage": "storybook"
+  },
+  {
+    "kind": "block",
+    "key": "FilterModal",
+    "label": "FilterModal",
+    "category": "Overlay",
+    "box": null,
+    "locks": [],
+    "file": "src/components/escala-ui/blocks/overlay.contract.json",
+    "figmaSet": "FilterModal",
+    "figmaNode": "1074:3596",
+    "story": "blocks-overlay-filtermodal--playground",
+    "tokens": 0,
+    "motion": "declared",
+    "stage": "storybook"
+  },
+  {
+    "kind": "block",
+    "key": "ReleaseModal",
+    "label": "ReleaseModal",
+    "category": "Overlay",
+    "box": null,
+    "locks": [],
+    "file": "src/components/escala-ui/blocks/overlay.contract.json",
+    "figmaSet": "ReleaseModal",
+    "figmaNode": "1074:3824",
+    "story": "blocks-overlay-releasemodal--playground",
+    "tokens": 0,
+    "motion": "declared",
+    "stage": "storybook"
+  },
+  {
+    "kind": "block",
+    "key": "CookieConsent",
+    "label": "CookieConsent",
+    "category": "Overlay",
+    "box": null,
+    "locks": [],
+    "file": "src/components/escala-ui/blocks/overlay.contract.json",
+    "figmaSet": "CookieConsent",
+    "figmaNode": "1074:3929",
+    "story": "blocks-overlay-cookieconsent--playground",
+    "tokens": 0,
+    "motion": "declared",
+    "stage": "storybook"
+  },
+  {
+    "kind": "block",
+    "key": "UserMenu",
+    "label": "UserMenu",
+    "category": "Blocks",
+    "box": null,
+    "locks": [],
+    "file": "src/components/escala-ui/blocks/siteNavigation.contract.json",
+    "figmaSet": "UserMenu",
+    "figmaNode": "2259:589",
+    "story": "blocks-navigation-usermenu--playground",
+    "tokens": 0,
+    "motion": "declared",
+    "stage": "storybook"
+  },
+  {
+    "kind": "block",
+    "key": "MorphNav",
+    "label": "MorphNav",
+    "category": "Blocks",
+    "box": null,
+    "locks": [],
+    "file": "src/components/escala-ui/blocks/siteNavigation.contract.json",
+    "figmaSet": "MorphNav",
+    "figmaNode": "2259:594",
+    "story": "blocks-navigation-morphnav--playground",
+    "tokens": 0,
+    "motion": "declared",
+    "stage": "storybook"
   }
 ]

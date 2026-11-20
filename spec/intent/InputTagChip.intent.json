@@ -1,0 +1,33 @@
+{
+  "$schema": "./intent.schema.json",
+  "component": "InputTagChip",
+  "purpose": "One removable tag inside an InputTag; the critical variant marks tags past the maximum. Used alone only where a removable tag is needed outside the field.",
+  "notFor": [
+    { "case": "Standalone use as a filter or label that is not removable.", "use": "Chip" },
+    { "case": "A status or count label.", "use": "Badge" },
+    { "case": "Entering tags; the chip is a part of the field.", "use": "InputTag" }
+  ],
+  "states": {
+    "Default": { "setBy": "component", "meaning": "At rest.", "visual": "Surface/muted fill with Content/primary label and remove glyph; critical: Status/critical/surface fill, Status/critical/border edge, Status/critical/content ink." },
+    "Hover": { "setBy": "component", "visual": "Fill moves to Surface/muted-hover (critical: Status/critical/surface-pressed)." },
+    "Focused": { "setBy": "component", "meaning": "Reached by keyboard.", "visual": "Border/focus edge with a Border/ring/default halo (critical: Status/critical/border-strong with Status/critical/border)." },
+    "Disabled": { "setBy": "app", "meaning": "Cannot be removed.", "visual": "Action/disabled/default fill; label and glyph in Content/disabled." }
+  },
+  "a11y": {
+    "role": "the remove glyph is a button named \"Remove {label}\"",
+    "keyboard": "Tab reaches the remove button; Enter or Space removes the tag.",
+    "minHitArea": 24,
+    "contrast": "AA",
+    "reducedMotion": "NOT DECIDED",
+    "notes": [
+      "Set removeLabel when the label is not text.",
+      "Heights are 18 to 32px, so the remove button may sit under the 24px hit area at the smallest sizes."
+    ]
+  },
+  "openQuestions": [
+    "Hit area: the xs and sm chips are 18 and 20px high. Does the remove button get a 24px hit area beyond the chip, or is it exempt?",
+    "Reduced motion: should the edge and halo transitions (use-hover, use-focus) be instant with reduced motion?",
+    "Critical: is a critical chip announced as over the limit, or told only by colour?"
+  ],
+  "approval": { "status": "draft", "by": null, "date": null }
+}

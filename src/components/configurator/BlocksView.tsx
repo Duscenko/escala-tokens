@@ -9,6 +9,9 @@
 // Layout…, plus the Desktop · Tablet · Mobile frame), the real dialog for an
 // Overlay block, then what its contract says: the components it is built
 // from, accessibility and motion.
+//
+// The Screens tab is this same view (`catalogue="screens"`): a screen's page is a
+// block's page, and the pieces the screen is made of sit on it as its parts.
 
 import { useCallback, useEffect, useRef, useState, type CSSProperties, type ReactNode, type RefObject } from 'react'
 import { motion } from 'framer-motion'
@@ -18,34 +21,81 @@ import { useDesignStore } from '../../store/useDesignStore'
 import type { GridViewport } from '../../lib/layoutTokens'
 import type { ThemeAppearance } from '../../lib/themeModes'
 import { COMPONENTS, type ComponentDef } from '../../lib/componentCatalogue'
-import { isPlatformComponent } from '../../lib/platformCatalogue'
+import { cssVarOf } from '../../lib/componentRecipes'
+import { PLATFORM_FOLDERS, familiesIn, isPlatformComponent } from '../../lib/platformCatalogue'
 import { RecipeScope } from './docs/skeleton/scope'
 import { FittedSpecimen } from './docs/ComponentAvatars'
-import { SectionHeading, BlockChrome } from './docs/blocks'
+import { SectionHeading } from './docs/blocks'
 import { CatalogueSwitcher } from './docs/CatalogueSwitcher'
+import { PreviewStage } from './docs/PreviewStage'
+import { StageActions } from './docs/stageActions'
+import { FigmaLinkButton } from './docs/FigmaLinkButton'
+import { figmaPreviewPageUrl } from '../../lib/figmaPreviewPages'
 import { StorybookLinkButton } from './docs/StorybookLinkButton'
 import { blockStorybookUrl } from '../../lib/storybookLinks'
-import { CanvasBar, CanvasSidePanel, readInspectPref, writeInspectPref, type CanvasPanel } from './docs/componentArticle'
+import { CanvasBar, CanvasSidePanel, readInspectPref, writeInspectPref, type CanvasFrameOption, type CanvasPanel } from './docs/componentArticle'
 import { PickerField } from '../ui/PickerField'
 import { InspectorModeProvider, InspectorOverlay, inspectGroupAttrs } from '../preview/artefacts/TokenInspector'
 import SemanticTokenDrawer from './SemanticTokenGroups'
 import ThemeQuickSettingsRail, { type QuickPanelFoundation } from './ThemeQuickSettingsRail'
-import { DESKTOP_FRAME, PHONE_FRAME } from '../escala-ui/blocks/frames'
-import { BLOCK_GROUPS, blockDefaults, blocksIn, matchesBlock, type BlockDef } from './blocks/blockRegistry'
+import { AuthDeviceFrameContext } from '../escala-ui/blocks/auth'
+import { DESKTOP_FRAME, DesktopWindow, PHONE_FRAME, PhoneFrame, TABLET_FRAME } from '../escala-ui/blocks/frames'
+import { LISTED_BLOCKS, blockDefaults, blocksIn, catalogue, catalogueOf, matchesBlock, partsOf, stageBlockValues, type BlockCatalogue, type BlockDef } from './blocks/blockRegistry'
 
 /** The width a wide block is laid out at before a card scales it down. */
 const THUMB_LAYOUT_WIDTH = 1200
-/** Frame widths per viewport: the Grid's mobile and tablet frames. */
-const FRAME_WIDTH: Record<GridViewport, number | null> = { desktop: null, tablet: 768, mobile: 390 }
-const VIEWPORTS: GridViewport[] = ['desktop', 'tablet', 'mobile']
-/** What a block stage's "100 %" draws at: half true size. */
-const BLOCK_STAGE_BASE = 0.5
-/** Room around a prototype mockup on the stage, in true pixels. */
-const MOCKUP_MARGIN = 48
+/** What a block is drawn in. `canvas` is the bare block; the others are the Figma prototypes' device frames. */
+type StageFrame = 'canvas' | GridViewport
+/** The width a bare block lays out at on the canvas: room for a 480 dialog and its shadow. */
+const BARE_LAYOUT_WIDTH = 560
+/** Fit never draws a bare block above this: at 1:1 a sign-in card sits in the reader's face. */
+const BARE_FIT_CAP = 0.75
+const FRAME_LAYOUT_WIDTH: Record<GridViewport, number> = { desktop: DESKTOP_FRAME.width, tablet: TABLET_FRAME.width, mobile: PHONE_FRAME.width }
+/** The viewport an Auth block answers to on the stage: the frame's, never the window the platform runs in. */
+const PHONE_DEVICE = { tabletUp: false }
+const WIDE_DEVICE = { tabletUp: true }
+
+const frameIcon = (d: string) => (
+  <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden><path d={d} /></svg>
+)
+const FRAME_ICONS: Record<StageFrame, ReactNode> = {
+  canvas: frameIcon('M3 5.5v-2.5h2.5M10.5 3H13v2.5M13 10.5V13h-2.5M5.5 13H3v-2.5M6.5 8h3M8 6.5v3'),
+  desktop: frameIcon('M2.5 3.5h11v7.5h-11zM6 13.5h4M8 11v2.5'),
+  tablet: frameIcon('M4 2h8a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V3a1 1 0 0 1 1-1zM7.5 12h1'),
+  mobile: frameIcon('M5.5 1.75h5a1 1 0 0 1 1 1v10.5a1 1 0 0 1-1 1h-5a1 1 0 0 1-1-1V2.75a1 1 0 0 1 1-1zM7.5 12.25h1'),
+}
+
+/** The block in the frame on the stage. A page section runs edge to edge from the top of the screen; a card or a dialog
+ *  sits in its middle. A screen taller than its device scrolls inside it, like the real thing. */
+function FramedBlock({ block, values, frame }: { block: BlockDef; values: Record<string, string>; frame: StageFrame }) {
+  if (frame === 'canvas') return <div style={{ display: 'flex', justifyContent: 'center' }}>{block.render(values)}</div>
+  const layout = frame === 'mobile' ? 'mobile' : 'desktop'
+  if (block.mockup && frame !== 'tablet') return <>{block.mockup(values, layout)}</>
+  // A plain block has no card of its own: it sits straight on the page.
+  const onPage = block.wide || block.onPage || values.container === 'plain'
+  const edgeToEdge = block.wide && !(block.phoneInset && frame === 'mobile')
+  const page = `var(${cssVarOf(onPage ? 'color.surface.page' : 'color.surface.layer-1')})`
+  const screen: CSSProperties = {
+    flexDirection: 'column', alignItems: 'stretch', overflowY: 'auto', scrollbarWidth: 'none', background: page,
+    ...(edgeToEdge ? null : { padding: `var(${cssVarOf('spacing.inset-surface')})` }),
+    ...(frame === 'mobile' ? { paddingBottom: 34 } : null),
+  }
+  const content = edgeToEdge
+    ? <div style={{ flexShrink: 0 }}>{block.render(values)}</div>
+    : <div style={{ margin: 'auto 0', flexShrink: 0, display: 'flex', justifyContent: 'center', minWidth: 0 }}>{block.render(values)}</div>
+  if (frame === 'mobile') return <PhoneFrame label={`${block.name} in a phone`} screen={screen}>{content}</PhoneFrame>
+  return (
+    <DesktopWindow label={`${block.name} in a ${frame} window`} screen={screen} size={frame === 'tablet' ? TABLET_FRAME : DESKTOP_FRAME}>
+      {content}
+    </DesktopWindow>
+  )
+}
 
 export default function BlocksView({
-  previewTheme = 'light', active, onSelect, onOpenComponent, onInspectRole, onOpenFoundation, search = '', onClearSearch,
+  catalogue: kind = 'blocks', previewTheme = 'light', active, onSelect, onOpenComponent, onInspectRole, onOpenFoundation, search = '', onClearSearch,
 }: {
+  /** Blocks or Screens: the same view, two catalogues. */
+  catalogue?: BlockCatalogue
   /** A role named by the inspector: opens that token in Variables. */
   onInspectRole?: (roleId: string) => void
   /** The Theme panel's "Go to advanced edition". */
@@ -62,17 +112,17 @@ export default function BlocksView({
   const scrollRef = useRef<HTMLDivElement>(null)
   useEffect(() => { scrollRef.current?.scrollTo({ top: 0 }) }, [active])
   return (
-    <div ref={scrollRef} className="h-full min-h-0 overflow-y-auto">
+    <div ref={scrollRef} data-stage-scroller="" className="h-full min-h-0 overflow-y-auto">
       <motion.div
         key={active?.id ?? 'index'}
-        initial={{ opacity: 0, y: 8 }}
-        animate={{ opacity: 1, y: 0 }}
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
         transition={{ duration: 0.18 }}
         className="pb-8"
       >
         {active
           ? <BlockPage block={active} onSelect={onSelect} previewTheme={previewTheme} onOpenComponent={onOpenComponent} onInspectRole={onInspectRole} onOpenFoundation={onOpenFoundation} />
-          : <BlocksIndex previewTheme={previewTheme} onSelect={onSelect} search={search} onClearSearch={onClearSearch} />}
+          : <BlocksIndex kind={kind} previewTheme={previewTheme} onSelect={onSelect} search={search} onClearSearch={onClearSearch} />}
       </motion.div>
     </div>
   )
@@ -85,7 +135,21 @@ function useAppearance(previewTheme: string): ThemeAppearance {
 
 // ── Index ────────────────────────────────────────────────────────────────────
 
-function BlocksIndex({ previewTheme, onSelect, search, onClearSearch }: {
+const INDEX_COPY: Record<BlockCatalogue, { title: string; lead: string; one: string; many: string; none: string }> = {
+  blocks: {
+    title: 'Blocks',
+    lead: 'Ready-made screens and sections built only from Escala components and your tokens. Open one to try its options and see what it is made of.',
+    one: 'block', many: 'blocks', none: 'No blocks match',
+  },
+  screens: {
+    title: 'Screens',
+    lead: 'Whole screens composed only from Escala components and your tokens. Each one keeps the pieces it is made of on its own page.',
+    one: 'screen', many: 'screens', none: 'No screens match',
+  },
+}
+
+function BlocksIndex({ kind, previewTheme, onSelect, search, onClearSearch }: {
+  kind: BlockCatalogue
   previewTheme: string
   onSelect: (b: BlockDef) => void
   search: string
@@ -94,23 +158,26 @@ function BlocksIndex({ previewTheme, onSelect, search, onClearSearch }: {
   const { t } = useI18n()
   const appearance = useAppearance(previewTheme)
   const tokens = usePreviewTokens(previewTheme, appearance)
-  const groups = BLOCK_GROUPS
+  const groups = catalogue(kind).groups
     .map((g) => ({ g, items: blocksIn(g).filter((b) => matchesBlock(b, search)) }))
     .filter((x) => x.items.length > 0)
   const count = groups.reduce((n, x) => n + x.items.length, 0)
+  const copy = INDEX_COPY[kind]
+  // One group (Screens) needs no heading of its own: the page's title already names it.
+  const single = catalogue(kind).groups.length === 1
 
   return (
     <div className="mx-auto max-w-6xl px-6 py-8 lg:px-10">
       <header className="mb-6">
-        <h1 className="text-display font-semibold tracking-tight text-fg">{t('Blocks')}</h1>
+        <h1 className="text-display font-semibold tracking-tight text-fg">{t(copy.title)}</h1>
         <p className="mt-2 max-w-2xl text-strong leading-relaxed text-fg-muted">
-          {t('Ready-made screens and sections built only from Escala components and your tokens. Open one to try its options and see what it is made of.')}
+          {t(copy.lead)}
         </p>
-        <p className="mt-2 text-caption text-fg-faint">{count} {t(count === 1 ? 'block' : 'blocks')}</p>
+        <p className="mt-2 text-caption text-fg-faint">{count} {t(count === 1 ? copy.one : copy.many)}</p>
       </header>
       {count === 0 ? (
         <div role="status" className="flex flex-col items-start gap-3 rounded-xl border border-dashed border-line px-6 py-10">
-          <p className="text-strong text-fg">{t('No blocks match')} “{search.trim()}”.</p>
+          <p className="text-strong text-fg">{t(copy.none)} “{search.trim()}”.</p>
           {onClearSearch && (
             <button
               type="button"
@@ -125,13 +192,16 @@ function BlocksIndex({ previewTheme, onSelect, search, onClearSearch }: {
         <div className="flex flex-col gap-10">
           {groups.map(({ g, items }) => (
             <section key={g} className="flex flex-col gap-3">
-              <h2 className="text-strong font-semibold text-fg">
-                {t(g)} <span className="ml-1 text-caption font-normal text-fg-faint">{items.length}</span>
-              </h2>
-              <ul className="grid grid-cols-[repeat(auto-fill,minmax(260px,1fr))] gap-3">
+              {!single && (
+                <h2 className="text-strong font-semibold text-fg">
+                  {t(g)} <span className="ml-1 text-caption font-normal text-fg-faint">{items.length}</span>
+                </h2>
+              )}
+              {/* Screens are few and whole pages: two to a row, a taller preview and their description. */}
+              <ul className={`grid gap-3 ${kind === 'screens' ? 'grid-cols-[repeat(auto-fill,minmax(400px,1fr))]' : 'grid-cols-[repeat(auto-fill,minmax(260px,1fr))]'}`}>
                 {items.map((b) => (
                   <li key={b.id}>
-                    <BlockCard block={b} appearance={appearance} surface={tokens.surface} tokens={tokens} onSelect={onSelect} />
+                    <BlockCard block={b} appearance={appearance} surface={tokens.surface} tokens={tokens} onSelect={onSelect} large={kind === 'screens'} />
                   </li>
                 ))}
               </ul>
@@ -143,12 +213,14 @@ function BlocksIndex({ previewTheme, onSelect, search, onClearSearch }: {
   )
 }
 
-function BlockCard({ block, appearance, surface, tokens, onSelect }: {
+function BlockCard({ block, appearance, surface, tokens, onSelect, large = false }: {
   block: BlockDef
   appearance: ThemeAppearance
   surface: string
   tokens: ReturnType<typeof usePreviewTokens>
   onSelect: (b: BlockDef) => void
+  /** A screen's card: a taller preview and the description under the name. */
+  large?: boolean
 }) {
   const { t } = useI18n()
   return (
@@ -156,13 +228,13 @@ function BlockCard({ block, appearance, surface, tokens, onSelect }: {
       <span
         aria-hidden
         inert
-        className={`relative block h-[180px] w-full overflow-hidden border-b border-line ${appearance}`}
+        className={`relative block w-full overflow-hidden border-b border-line ${large ? 'h-[280px]' : 'h-[180px]'} ${appearance}`}
         style={{ background: surface }}
       >
         <span className="absolute inset-3 transition-transform duration-200 ease-out group-hover:scale-[1.02]">
           <FittedSpecimen>
             <RecipeScope t={tokens}>
-              <div style={{ width: block.wide ? THUMB_LAYOUT_WIDTH : undefined }}>
+              <div style={{ width: block.wide ? THUMB_LAYOUT_WIDTH : block.canvasWidth }}>
                 {block.render(blockDefaults(block))}
               </div>
             </RecipeScope>
@@ -172,6 +244,7 @@ function BlockCard({ block, appearance, surface, tokens, onSelect }: {
       <span aria-hidden className="flex flex-col gap-0.5 px-3.5 py-3">
         <span className="truncate text-caption text-fg-faint">{t(block.group)}</span>
         <span className="truncate text-strong font-medium text-fg">{block.name}</span>
+        {large && <span className="mt-1 line-clamp-2 text-caption leading-relaxed text-fg-muted">{t(block.description)}</span>}
       </span>
       <button
         type="button"
@@ -204,11 +277,16 @@ function useInspectMarkers(ref: RefObject<HTMLElement | null>, on: boolean) {
         const key = el.getAttribute('data-escala') ?? ''
         if (el.getAttribute('data-inspect') !== key) el.setAttribute('data-inspect', key)
       })
+      // The block's own box (a sign-in card, a pricing card): its fill, border, corner and padding are tokens too.
+      root.querySelectorAll('[data-block]:not([data-escala])').forEach((el) => {
+        const key = el.getAttribute('data-block') ?? ''
+        if (el.getAttribute('data-inspect') !== key) el.setAttribute('data-inspect', key)
+      })
     }
     stamp()
     // A control change re-renders the block: new nodes need their marker.
     const observer = new MutationObserver(stamp)
-    observer.observe(root, { subtree: true, childList: true, attributes: true, attributeFilter: ['data-escala'] })
+    observer.observe(root, { subtree: true, childList: true, attributes: true, attributeFilter: ['data-escala', 'data-block'] })
     return () => {
       observer.disconnect()
       root.querySelectorAll('[data-inspect]').forEach((el) => el.removeAttribute('data-inspect'))
@@ -225,15 +303,24 @@ function BlockPage({ block, onSelect, previewTheme, onOpenComponent, onInspectRo
   onOpenFoundation?: (key: string) => void
 }) {
   const { t } = useI18n()
+  const kind = catalogueOf(block)
+  const screen = kind === 'screens'
+  const settingsTitle = t(screen ? 'Screen settings' : 'Block settings')
   const appearance = useAppearance(previewTheme)
   const [values, setValues] = useState(() => blockDefaults(block))
-  const [viewport, setViewport] = useState<GridViewport>('desktop')
+  // A page section opens in its desktop window; a card or a dialog on the bare canvas, as large as it fits.
+  const [pickedFrame, setFrame] = useState<StageFrame>(block.wide || block.mockup ? 'desktop' : 'canvas')
+  // A plain block has no card to hold it together: alone on the canvas it reads as loose text, so it
+  // always shows in a window, like the headers. Back on `card`, the canvas returns.
+  const plain = values.container === 'plain'
+  const frame: StageFrame = pickedFrame === 'canvas' && plain ? 'desktop' : pickedFrame
+  const viewport: GridViewport = frame === 'canvas' ? 'desktop' : frame
   const [open, setOpen] = useState(false)
   // Block settings is home: the block's controls sit beside it, as a
   // component's do. Edit theme returns to it (‹ back, ✕, Esc).
   const [panel, setPanel] = useState<CanvasPanel | null>('settings')
   const closePanel = useCallback(() => setPanel('settings'), [])
-  const backToHome = { label: t('Block settings'), onBack: closePanel }
+  const backToHome = { label: settingsTitle, onBack: closePanel }
   const [quickPanel, setQuickPanel] = useState<QuickPanelFoundation>('color')
   // Only this stage flips Light / Dark; the brand on screen stays.
   const [canvasAppearance, setCanvasAppearance] = useState<ThemeAppearance>(appearance)
@@ -246,111 +333,65 @@ function BlockPage({ block, onSelect, previewTheme, onOpenComponent, onInspectRo
   }
   const [editing, setEditing] = useState<{ id: string; css: string; appearance: ThemeAppearance } | null>(null)
   const [selection, setSelection] = useState<string | null>(null)
-  // The stage's 100 % is HALF true size (`BLOCK_STAGE_BASE`, owner's call
-  // 2026-11-17): at 1:1 a sign-in card filled the canvas and sat in the
-  // reader's face. − / + step relative to it, like a component page's stage;
-  // 200 % is true pixel size.
-  const [zoom, setZoom] = useState(1)
   const canvasRef = useRef<HTMLDivElement>(null)
   const stageRef = useRef<HTMLDivElement>(null)
   useInspectMarkers(stageRef, inspecting)
 
-  // A navigation block shows in its Figma prototype frame: the 1440 window, or the phone on Mobile. The stage is the
-  // mockup's width plus a margin, drawn at the stage zoom like any block.
-  const mockupLayout = viewport === 'mobile' ? 'mobile' : 'desktop'
-  const mockupWidth = block.mockup ? (mockupLayout === 'mobile' ? PHONE_FRAME.width + 3 : DESKTOP_FRAME.width) + MOCKUP_MARGIN * 2 : null
-  const frame = mockupWidth ?? FRAME_WIDTH[viewport]
-  // A mockup's 100 % FITS the stage (a 1440 window at half size still overflowed it); − / + step from there.
-  const [canvasWidth, setCanvasWidth] = useState(0)
-  useEffect(() => {
-    const el = canvasRef.current
-    if (!el || typeof ResizeObserver === 'undefined') return
-    const ro = new ResizeObserver(([e]) => setCanvasWidth(e.contentRect.width))
-    ro.observe(el)
-    return () => ro.disconnect()
-  }, [])
-  // The phone stops at 60 %: at true size it is taller than the stage.
-  const mockupCap = mockupLayout === 'mobile' ? 0.6 : 1
-  const scale = zoom * (mockupWidth && canvasWidth ? Math.min(mockupCap, canvasWidth / mockupWidth) : BLOCK_STAGE_BASE)
+  const stageValues = stageBlockValues(block, values, frame)
+  const frameOptions: CanvasFrameOption<StageFrame>[] = ([...(block.wide || block.mockup || plain ? [] : ['canvas']), 'desktop', 'tablet', 'mobile'] as StageFrame[])
+    .map((value) => ({ value, icon: FRAME_ICONS[value], label: { canvas: t('Bare canvas'), desktop: t('Desktop'), tablet: t('Tablet'), mobile: t('Mobile') }[value] }))
+  const frameSize = frame === 'canvas' ? t('Bare canvas')
+    : frame === 'mobile' ? `${t('Mobile')} · iPhone ${PHONE_FRAME.screenWidth} × ${PHONE_FRAME.screenHeight}`
+      : frame === 'tablet' ? `${t('Tablet')} · ${TABLET_FRAME.width} × ${TABLET_FRAME.height}`
+        : `${t('Desktop')} · ${DESKTOP_FRAME.width} × ${DESKTOP_FRAME.height}`
+  const parts = partsOf(block)
+  // Where the catalogues meet: Elements → Blocks → Screens, each end leads to its neighbour.
+  const lastComponent = PLATFORM_FOLDERS.flatMap((folder) => familiesIn(folder)).at(-1)?.lead
+  const lastBlock = LISTED_BLOCKS.at(-1)
+  const firstScreen = catalogue('screens').listed[0]
   const contract = block.contract
-  const viewportLabel: Record<string, string> = { desktop: t('Desktop'), tablet: t('Tablet'), mobile: t('Mobile') }
+  const noun = screen ? 'screen' : 'block'
+  // What it nests, less its own parts: those are drawn above, with their page.
+  const builtFrom = [...new Set(contract?.nests ?? [])].filter((n) => !parts.some((p) => p.name === n))
 
   return (
     <div className="flex flex-col gap-8">
-      <div className="flex flex-col gap-2">
-        <div className="overflow-clip border-b border-line">
-          <BlockChrome
-            left={
-              <span className="flex items-center gap-2">
-                <span className="rounded-md bg-elevated px-2.5 py-1 text-caption font-medium text-fg">{t('{name} preview', { name: block.name })}</span>
-                <span className="text-mini text-fg-faint">{viewportLabel[viewport]}{block.mockup ? (mockupLayout === 'mobile' ? ` · iPhone ${PHONE_FRAME.screenWidth}px` : ` · ${DESKTOP_FRAME.width}px`) : frame ? ` · ${frame}px` : ''}</span>
-              </span>
-            }
-          >
-            <span className="flex items-center gap-1.5">
-            {block.dialog && (
-              <button
-                type="button"
-                onClick={() => setOpen(true)}
-                className="inline-flex h-8 items-center gap-1.5 rounded-lg border border-line px-3 text-caption font-medium text-fg transition-colors hover:bg-surface focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50"
-              >
-                {t('Open as dialog')}
-              </button>
-            )}
-            <CatalogueSwitcher
-              noun="block"
-              groups={BLOCK_GROUPS.map((g) => ({ label: g, items: blocksIn(g).map((b) => ({ id: b.id, label: b.name })) }))}
-              currentId={block.id}
-              onPick={(id) => { const b = BLOCK_GROUPS.flatMap((g) => blocksIn(g)).find((x) => x.id === id); if (b) onSelect(b) }}
-            />
-            <StorybookLinkButton href={blockStorybookUrl(block.id)} />
-            </span>
-          </BlockChrome>
+      <StageActions>
+        <CatalogueSwitcher
+          noun={noun}
+          groups={catalogue(kind).groups.map((g) => ({ label: g, items: blocksIn(g).map((b) => ({ id: b.id, label: b.name })) }))}
+          currentId={block.id}
+          onPick={(id) => { const b = catalogue(kind).listed.find((x) => x.id === id); if (b) onSelect(b) }}
+          bridgePrev={screen
+            ? (lastBlock ? { label: t('Blocks'), hint: `${t('Previous')}: ${lastBlock.name}`, onGo: () => onSelect(lastBlock) } : undefined)
+            : lastComponent && onOpenComponent
+              ? { label: t('Elements'), hint: `${t('Previous')}: ${lastComponent.label}`, onGo: () => onOpenComponent(lastComponent) }
+              : undefined}
+          bridgeNext={!screen && firstScreen
+            ? { label: t('Screens'), hint: `${t('Next')}: ${firstScreen.name}`, onGo: () => onSelect(firstScreen) }
+            : undefined}
+        />
+        <StorybookLinkButton href={blockStorybookUrl(block.id)} />
+        <FigmaLinkButton href={figmaPreviewPageUrl(contract?.name ?? block.name, parts.map((p) => p.name))} name={block.name} />
+      </StageActions>
 
-          <InspectorModeProvider active={inspecting}>
-            {/* `overflow-clip`, not `hidden`: the tool bar's `sticky` pins to
-                the page's scroll view, not to this stage. */}
-            <div
-              ref={canvasRef}
-              className={`relative flex flex-col overflow-clip ${canvasAppearance}`}
-              style={{ background: tokens.surface, cursor: inspecting ? 'crosshair' : undefined }}
-            >
-              {/* The empty stage is not a page to inspect. */}
-              {inspecting && <div data-inspect-exempt="" className="absolute inset-0" aria-hidden />}
-              {/* A frame narrower than the card centres; a wider block scrolls.
-                  `zoom`, not a transform: the stage keeps the scaled size. */}
-              <div className="relative overflow-x-auto pb-20">
-                <div
-                  className="mx-auto flex min-h-[420px] flex-col"
-                  style={{
-                    zoom: scale,
-                    // Read by index.css: a menu, popover or tooltip portaled in here is
-                    // positioned in true pixels and drawn at the stage's scale.
-                    '--stage-zoom': scale,
-                    // Inside a zoomed box a percentage resolves in its own scale:
-                    // 100 % at zoom 0.5 lays the section out twice as wide. The
-                    // desktop frame stays the stage's width, only drawn smaller.
-                    width: frame ?? `${zoom * 100}%`,
-                    maxWidth: frame ?? undefined,
-                    boxShadow: frame && !block.mockup ? '0 0 0 1px var(--color-border-subtle, rgba(127,127,127,.25))' : undefined,
-                  } as CSSProperties}
-                >
-                  <RecipeScope t={tokens}>
-                    <div
-                      ref={stageRef}
-                      {...inspectGroupAttrs(inspecting)}
-                      className="relative flex flex-1 flex-col"
-                      style={block.mockup ? { padding: MOCKUP_MARGIN, alignItems: 'center' } : block.wide ? undefined : { padding: 32, alignItems: 'center', justifyContent: 'center' }}
-                    >
-                      {block.mockup ? block.mockup(values, mockupLayout) : block.render(values)}
-                    </div>
-                  </RecipeScope>
-                </div>
-              </div>
-              {/* "Open as dialog" shows the block as the product would: at true
-                  size over the page, never at the stage's zoom (owner, 2026-11-17).
-                  Its own scope, so its layers portal outside the zoomed stage. */}
-              {block.dialog && <RecipeScope t={tokens}>{block.dialog({ open, onOpenChange: setOpen })}</RecipeScope>}
+      <InspectorModeProvider active={inspecting}>
+        <div className={canvasAppearance}>
+          <PreviewStage
+            rootRef={canvasRef}
+            canvasStyle={{ background: tokens.surface, cursor: inspecting ? 'crosshair' : undefined }}
+            title={block.name}
+            ink={tokens.archTokens?.['content.secondary'] ?? tokens.neutralText}
+            fitCap={frame === 'canvas' ? BARE_FIT_CAP : 1}
+            contentWidth={frame === 'canvas' ? block.canvasWidth ?? BARE_LAYOUT_WIDTH : FRAME_LAYOUT_WIDTH[frame]}
+            resetKey={frame}
+            aside={
+              // "Open as dialog" shows the block as the product would: at true
+              // size over the page, never at the stage's zoom (owner, 2026-11-17).
+              // Its own scope, so its layers portal outside the zoomed stage.
+              block.dialog ? <RecipeScope t={tokens}>{block.dialog({ open, onOpenChange: setOpen })}</RecipeScope> : undefined
+            }
+            bar={(stage) => (
               <CanvasBar
                 panel={panel}
                 onPanel={setPanel}
@@ -360,43 +401,56 @@ function BlockPage({ block, onSelect, previewTheme, onOpenComponent, onInspectRo
                 onAppearance={setCanvasAppearance}
                 hasSettings
                 hasContext={false}
-                settingsLabel={t('Block settings')}
-                toolbarLabel={t('Block tools')}
-                zoom={zoom}
-                onZoom={setZoom}
+                settingsLabel={settingsTitle}
+                toolbarLabel={t(screen ? 'Screen tools' : 'Block tools')}
+                stage={stage}
+                frames={{ value: frame, options: frameOptions, onChange: (v) => setFrame(v as StageFrame) }}
               />
-            </div>
-            <InspectorOverlay
-              active={inspecting}
-              rootRef={canvasRef}
-              tokensByAppearance={{ light: tokens, dark: tokens }}
-              defaultAppearance={canvasAppearance}
-              onPick={(roleId, css, a) => setEditing({ id: roleId, css, appearance: a })}
-              onOpenTable={onInspectRole}
-              editing={editing != null}
-              onSelectionChange={setSelection}
-              onExitMode={() => { setInspecting(false); writeInspectPref(false) }}
-            />
-            <SemanticTokenDrawer
-              previewTheme={previewTheme}
-              previewAppearance={editing?.appearance ?? canvasAppearance}
-              tokenId={editing?.id ?? null}
-              inspectedCss={editing?.css ?? null}
-              onClose={() => setEditing(null)}
-              onOpenInVariables={onInspectRole}
-              backLabel={inspecting ? selection : null}
-            />
-          </InspectorModeProvider>
+            )}
+            status={
+              <>
+                <span className="min-w-0 truncate">
+                  {inspecting
+                    ? t(screen ? 'Hover the screen to see the components it is made of and the tokens that paint them.' : 'Hover the block to see the components it is made of and the tokens that paint them.')
+                    : t(screen ? 'Inspector off — the screen responds to clicks and typing.' : 'Inspector off — the block responds to clicks and typing.')}
+                </span>
+                <span className="flex-shrink-0 tabular-nums">{frameSize}</span>
+              </>
+            }
+          >
+            <RecipeScope t={tokens}>
+              <div ref={stageRef} {...inspectGroupAttrs(inspecting)} className="relative flex flex-col">
+                <AuthDeviceFrameContext.Provider value={frame === 'mobile' ? PHONE_DEVICE : WIDE_DEVICE}>
+                  <FramedBlock block={block} values={stageValues} frame={frame} />
+                </AuthDeviceFrameContext.Provider>
+              </div>
+            </RecipeScope>
+          </PreviewStage>
         </div>
-        <p className="px-6 text-mini text-fg-faint lg:px-8">
-          {inspecting
-            ? t('Hover the block to see the components it is made of and the tokens that paint them.')
-            : t('Inspector off — the block responds to clicks and typing.')}
-        </p>
-      </div>
+        <InspectorOverlay
+          active={inspecting}
+          rootRef={canvasRef}
+          tokensByAppearance={{ light: tokens, dark: tokens }}
+          defaultAppearance={canvasAppearance}
+          onPick={(roleId, css, a) => setEditing({ id: roleId, css, appearance: a })}
+          onOpenTable={onInspectRole}
+          editing={editing != null}
+          onSelectionChange={setSelection}
+          onExitMode={() => { setInspecting(false); writeInspectPref(false) }}
+        />
+        <SemanticTokenDrawer
+          previewTheme={previewTheme}
+          previewAppearance={editing?.appearance ?? canvasAppearance}
+          tokenId={editing?.id ?? null}
+          inspectedCss={editing?.css ?? null}
+          onClose={() => setEditing(null)}
+          onOpenInVariables={onInspectRole}
+          backLabel={inspecting ? selection : null}
+        />
+      </InspectorModeProvider>
 
       {panel === 'settings' && (
-        <CanvasSidePanel title={t('Block settings')}>
+        <CanvasSidePanel title={settingsTitle}>
           <div className="flex flex-col gap-2 p-[var(--inspector-inset,12px)]">
             {block.controls.map((c) => (
               <PickerField
@@ -408,13 +462,6 @@ function BlockPage({ block, onSelect, previewTheme, onOpenComponent, onInspectRo
                 searchable={false}
               />
             ))}
-            <PickerField
-              label={t('Frame')}
-              value={viewport}
-              options={VIEWPORTS.map((o) => ({ value: o, label: viewportLabel[o] ?? o }))}
-              onChange={(v) => setViewport(v as GridViewport)}
-              searchable={false}
-            />
             {block.dialog && (
               <button
                 type="button"
@@ -427,8 +474,8 @@ function BlockPage({ block, onSelect, previewTheme, onOpenComponent, onInspectRo
           </div>
           <p className="px-[var(--inspector-inset,12px)] pb-4 text-mini leading-relaxed text-fg-faint">
             {block.controls.length
-              ? t('Same options as the block’s story in Storybook. Frame draws it at the Grid’s tablet and mobile widths.')
-              : t('This block has no options of its own. Frame draws it at the Grid’s tablet and mobile widths.')}
+              ? t('Same options as the block’s story in Storybook. The frame buttons under the canvas show it on desktop, tablet and phone.')
+              : t(screen ? 'This screen has no options of its own. The frame buttons under the canvas show it on desktop, tablet and phone.' : 'This block has no options of its own. The frame buttons under the canvas show it on desktop, tablet and phone.')}
           </p>
         </CanvasSidePanel>
       )}
@@ -451,19 +498,43 @@ function BlockPage({ block, onSelect, previewTheme, onOpenComponent, onInspectRo
 
       <div className="flex max-w-4xl flex-col gap-8 px-6 lg:px-8">
         <div className="flex flex-col gap-1.5">
-          <p className="text-caption text-fg-faint">{t('Blocks')} / {t(block.group)}</p>
+          <p className="text-caption text-fg-faint">{screen ? t('Screens') : `${t('Blocks')} / ${t(block.group)}`}</p>
           <h1 className="text-heading font-semibold tracking-tight text-fg">{block.name}</h1>
           <p className="max-w-xl text-sm leading-relaxed text-fg-muted">{t(block.description)}</p>
         </div>
 
-        {contract && contract.nests.length > 0 && (
+        {parts.length > 0 && (
+          <section className="flex flex-col gap-3">
+            <SectionHeading id={screen ? 'parts' : 'complementary'}>{t(screen ? 'Parts' : 'Complementary')}</SectionHeading>
+            {screen && (
+              <p className="text-ui leading-relaxed text-fg-muted">
+                {t('The pieces this screen is made of. They live here, not as loose components in Elements.')}
+              </p>
+            )}
+            {parts.map((part) => (
+              <div key={part.id} className="flex flex-col gap-3 rounded-xl border border-line p-4 sm:flex-row sm:items-center sm:gap-6">
+                <div className={`flex flex-shrink-0 justify-center rounded-lg p-4 ${canvasAppearance}`} style={{ background: tokens.surface }}>
+                  <RecipeScope t={tokens}>
+                    <div style={{ width: 280 }}>{part.render(blockDefaults(part))}</div>
+                  </RecipeScope>
+                </div>
+                <div className="flex min-w-0 flex-col gap-1">
+                  <h3 className="text-strong font-semibold text-fg">{part.name}</h3>
+                  <p className="text-ui leading-relaxed text-fg-muted">{t(part.description)}</p>
+                </div>
+              </div>
+            ))}
+          </section>
+        )}
+
+        {builtFrom.length > 0 && (
           <section className="flex flex-col gap-3">
             <SectionHeading id="built-from">{t('Built from')}</SectionHeading>
             <p className="text-ui leading-relaxed text-fg-muted">
-              {t('Every part of this block is an Escala component. Change the brand and the block follows.')}
+              {t(screen ? 'Every part of this screen is an Escala component. Change the brand and the screen follows.' : 'Every part of this block is an Escala component. Change the brand and the block follows.')}
             </p>
             <div className="flex flex-wrap gap-2">
-              {[...new Set(contract.nests)].map((name) => <NestChip key={name} name={name} onOpen={onOpenComponent} />)}
+              {builtFrom.map((name) => <NestChip key={name} name={name} onOpen={onOpenComponent} />)}
             </div>
           </section>
         )}
@@ -507,7 +578,9 @@ function BlockPage({ block, onSelect, previewTheme, onOpenComponent, onInspectRo
           <section className="flex flex-col gap-2.5">
             <SectionHeading id="figma">{t('Figma')}</SectionHeading>
             <p className="text-ui text-fg-muted">
-              {t('Block {name} in the Escala Figma file, {n} variants.', { name: contract.name, n: contract.variants })}
+              {screen
+                ? t('Page {name} in the Escala Figma file, with its pieces as component sets.', { name: contract.name })
+                : t('Block {name} in the Escala Figma file, {n} variants.', { name: contract.name, n: contract.variants })}
             </p>
           </section>
         )}

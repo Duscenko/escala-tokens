@@ -1,0 +1,55 @@
+{
+  "$schema": "./intent.schema.json",
+  "component": "DropdownMenu",
+  "purpose": "A floating menu of three or more secondary commands opened from a Button or IconButton, with optional search, labelled groups and a footer. Destructive commands go last.",
+  "notFor": [
+    {
+      "case": "Choosing a value for a form field.",
+      "use": "Combobox"
+    },
+    {
+      "case": "One or two actions that fit on screen.",
+      "use": "Button"
+    },
+    {
+      "case": "Rich, non-command content in a floating panel.",
+      "use": "Popover"
+    },
+    {
+      "case": "App-level navigation between sections.",
+      "use": "Sidebar"
+    }
+  ],
+  "states": {
+    "open": {
+      "setBy": "both",
+      "meaning": "Shown under its trigger (open / onOpenChange).",
+      "visual": "A Surface/layer-2 panel with a Border/default stroke and Border/subtle separators; it enters with popover-enter."
+    },
+    "closed": {
+      "setBy": "both",
+      "meaning": "Hidden; focus is back on the trigger.",
+      "visual": "Not shown; it leaves with popover-exit."
+    }
+  },
+  "a11y": {
+    "role": "menu",
+    "keyboard": "Space / Enter / ArrowDown on the trigger open it and focus the first item; ArrowDown / ArrowUp move between items (wrapping); Home / End jump to the first / last; Enter / Space activate the focused item and close; Escape closes and returns focus to the trigger; A–Z typeahead (Radix DropdownMenu).",
+    "minHitArea": 24,
+    "contrast": "AA",
+    "reducedMotion": "NOT DECIDED",
+    "notes": [
+      "The trigger keeps aria-expanded in sync.",
+      "Keep the footer outside the menu role; its controls are reached with Tab after the list.",
+      "Size cascades to every label, item and the footer."
+    ]
+  },
+  "openQuestions": [
+    "Reduced motion: should the menu appear and leave with no popover-enter / popover-exit animation, or with a fade only?"
+  ],
+  "approval": {
+    "status": "draft",
+    "by": null,
+    "date": null
+  }
+}

@@ -8,7 +8,7 @@ import { toId, storyNameFromExport } from 'storybook/internal/csf'
 
 const ROOT = join(__dirname, '..', '..', '..')
 const STORIES = join(ROOT, 'apps/storybook/stories')
-const BLOCK_PAGES = new Set(['Auth', 'Overlay', 'HeaderNavigation', 'SidebarNavigation', 'Marketing'])
+const BLOCK_PAGES = new Set(['Auth', 'AuthSignInPhone', 'Overlay', 'HeaderNavigation', 'SidebarNavigation', 'Marketing', 'UserMenu & MorphNav (PRO)', 'Dashboard (PRO)', 'MediaPlayer & NowPlaying (PRO)', 'CardStack (PRO)', 'AuthPasskeySetup (PRO)', 'AuthTwoFactorSetup (PRO)'])
 
 interface Family { id: string; page: string | null; folder: string; root: string | null; parts: string[] }
 const manifest = JSON.parse(readFileSync(join(ROOT, 'spec/storybook-families.json'), 'utf8')) as {

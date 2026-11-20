@@ -1,0 +1,48 @@
+{
+  "$schema": "./intent.schema.json",
+  "component": "SidebarGroup",
+  "purpose": "A labelled section of a Sidebar: a SidebarGroupLabel over a menu of rows, with Size cascading to every row. Not for standalone use.",
+  "notFor": [
+    {
+      "case": "Used on its own, outside a Sidebar.",
+      "use": "Sidebar"
+    },
+    {
+      "case": "A group of items in a floating menu.",
+      "use": "DropdownMenu"
+    },
+    {
+      "case": "A section of settings rows.",
+      "use": "SettingsSection"
+    }
+  ],
+  "states": {
+    "Collapsed=false": {
+      "setBy": "component",
+      "meaning": "Taken from the Sidebar.",
+      "visual": "The label above its rows."
+    },
+    "Collapsed=true": {
+      "setBy": "component",
+      "meaning": "Taken from the Sidebar.",
+      "visual": "The label is hidden; the rows are icon squares."
+    }
+  },
+  "a11y": {
+    "role": "group",
+    "keyboard": "None of its own: Tab moves through its rows.",
+    "minHitArea": 24,
+    "contrast": "AA",
+    "notes": [
+      "aria-labelledby points at its SidebarGroupLabel."
+    ]
+  },
+  "openQuestions": [
+    "Motion: the Collapsed axis has no motion decision (finding MOT-002). Should the label fade when the rail folds?"
+  ],
+  "approval": {
+    "status": "draft",
+    "by": null,
+    "date": null
+  }
+}

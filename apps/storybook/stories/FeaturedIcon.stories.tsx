@@ -59,6 +59,16 @@ export const AllCombinations: Story = {
   ),
 }
 
+/** `Appearance=gradient`: the two drops and the top highlight, every tone. Switch the toolbar to Escala Dark for the other theme. */
+export const Appearance: Story = {
+  args: { appearance: 'gradient', shape: 'rounded', size: 'xl' },
+  render: (args) => (
+    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 24, alignItems: 'center', padding: 16 }}>
+      {FEATURED_ICON_VARIANTS.map((variant) => <span key={variant}>{render({ ...args, variant })}</span>)}
+    </div>
+  ),
+}
+
 export const Sizes: Story = {
   render: (args) => (
     <div style={{ display: 'flex', flexWrap: 'wrap', gap: 16, alignItems: 'center' }}>

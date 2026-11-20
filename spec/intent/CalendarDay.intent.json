@@ -1,0 +1,40 @@
+{
+  "$schema": "./intent.schema.json",
+  "component": "CalendarDay",
+  "purpose": "One date cell of a Calendar: the date on a ghost cell that fills when selected, the band behind a range, and the dash under today or a marked day.",
+  "notFor": [
+    { "case": "Standalone use outside a month grid.", "use": "Calendar" },
+    { "case": "A cell of an activity or contribution heatmap.", "use": "ActivityHeatmapCell" }
+  ],
+  "states": {
+    "Default": { "setBy": "component", "meaning": "A day of the month at rest.", "visual": "No fill; date in Content/primary." },
+    "Hover": { "setBy": "component", "visual": "The cell fills with Action/ghost/hover." },
+    "Today": { "setBy": "app", "meaning": "The current date.", "visual": "A Border/accent edge (Border/strong for secondary) on the cell." },
+    "Selected": { "setBy": "both", "meaning": "A chosen day.", "visual": "Cell filled Action/primary/default with Content/on-action (secondary: Surface/inverse with Content/inverse)." },
+    "RangeStart": { "setBy": "both", "meaning": "First day of a chosen range.", "visual": "The Selected cell over the range band (Surface/selected; secondary Surface/muted)." },
+    "RangeMiddle": { "setBy": "both", "meaning": "A day inside a chosen range.", "visual": "The range band (Surface/selected; secondary Surface/muted) with the date in Content/accent (secondary Content/primary)." },
+    "RangeEnd": { "setBy": "both", "meaning": "Last day of a chosen range.", "visual": "The Selected cell over the range band." },
+    "Outside": { "setBy": "app", "meaning": "A day of the previous or next month.", "visual": "Date in Content/secondary." },
+    "Disabled": { "setBy": "app", "meaning": "Cannot be picked.", "visual": "Date in Content/disabled; the button is disabled." },
+    "Unavailable": { "setBy": "app", "meaning": "Cannot be picked because it is taken or blocked.", "visual": "Identical to Disabled: date in Content/disabled, no strike or fill." },
+    "Focused": { "setBy": "component", "meaning": "The day with keyboard focus.", "visual": "Border/focus edge (secondary Border/strong) with a Border/ring/default halo (secondary Border/subtle)." }
+  },
+  "a11y": {
+    "role": "button, aria-pressed when selected",
+    "keyboard": "Reached through the month grid's roving tabindex; Enter or Space selects it (native button).",
+    "minHitArea": 32,
+    "contrast": "AA",
+    "reducedMotion": "NOT DECIDED",
+    "notes": [
+      "Its accessible name is the full date when the number alone is not enough.",
+      "Disabled and Unavailable both set disabled.",
+      "Fill, edge and ink move with use-hover; the halo with use-focus."
+    ]
+  },
+  "openQuestions": [
+    "Unavailable vs Disabled: they look and behave the same. Should Unavailable differ (a strike, a reason read aloud), or be merged into Disabled?",
+    "Today: is today announced to screen readers, or is the edge the only cue?",
+    "Reduced motion: should the cell's colour and halo transitions be instant with reduced motion?"
+  ],
+  "approval": { "status": "draft", "by": null, "date": null }
+}

@@ -422,8 +422,8 @@ export const AVATAR_GROUP: ComponentRecipe = {
 }
 
 // ── FeaturedIcon ───────────────────────────────────────────────────────────
-// The Figma set (design-plans/featured-icon-contract.md, 1119:10857, 96 variants): Size sm · default · lg ·
-// xl (32 · 40 · 48 · 56) × Variant × Appearance soft · solid × Shape circle (Radius/full) · rounded
+// The Figma set (design-plans/featured-icon-contract.md, 1119:10857, 144 variants): Size sm · default · lg ·
+// xl (32 · 40 · 48 · 56) × Variant × Appearance soft · solid · gradient × Shape circle (Radius/full) · rounded
 // (Radius/action), a glyph centred in it: 20 on sm, 24 from default up. Same tones as an Avatar.
 export const FEATURED_ICON_APPEARANCES = ['soft', 'solid', 'gradient'] as const
 export const FEATURED_ICON_SIZES = ['default', 'sm', 'lg', 'xl'] as const
@@ -458,9 +458,9 @@ export const FEATURED_ICON: ComponentRecipe = {
     part({ Variant: FEATURED_ICON_VARIANTS, Appearance: FEATURED_ICON_APPEARANCES }, (variant, appearance) => {
       if (appearance === 'gradient') {
         // Three stops, all roles of the variant's SOLID: rest → hover → pressed, 135deg, with the solid-control
-        // highlight (Figma: an inner shadow 0 · 2 · 0 on `Elevation/highlight`). Ink = the solid's ink.
+        // highlight (Figma: a hand-set inner shadow 0 · 2 · 0 on `Elevation/highlight`, not the shared `Highlight/solid`) over the `feature` lift. Ink = the solid's ink.
         const g = FEATURED_ICON_GRADIENT[variant]
-        return { root: { fill: c(g.stops[0]), fillMid: c(g.stops[1]), fillEnd: c(g.stops[2]), text: c(g.ink), highlight: c('elevation.highlight') } }
+        return { root: { fill: c(g.stops[0]), fillMid: c(g.stops[1]), fillEnd: c(g.stops[2]), text: c(g.ink), highlight: c('elevation.highlight'), highlightWidth: '2', lift: 'feature' } }
       }
       const [fill, ink] = AVATAR_TONE[variant][appearance as 'soft' | 'solid']
       return { root: { fill: c(fill), text: c(ink) } }

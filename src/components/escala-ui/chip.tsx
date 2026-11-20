@@ -46,11 +46,13 @@ export interface ChipProps extends Omit<React.ComponentProps<'span'>, 'onChange'
   iconLeading?: React.ReactNode
   /** Accessible name of the close control (default "Remove"). */
   closeLabel?: string
+  /** Accessible name of the toggle when the visible label does not say enough (a bare count). */
+  toggleLabel?: string
 }
 
 function Chip({
   variant = 'default', appearance = 'outline', size = 'default', shape = 'rounded', selected = false, dragging = false,
-  disabled = false, forceState, onPressedChange, closeVisible, onRemove, iconLeading, closeLabel = 'Remove', className, children, ...props
+  disabled = false, forceState, onPressedChange, closeVisible, onRemove, iconLeading, closeLabel = 'Remove', toggleLabel, className, children, ...props
 }: ChipProps) {
   const showClose = closeVisible ?? onRemove != null
   const state = forceState && forceState !== 'Default' ? forceState : selected ? 'Selected' : dragging ? 'Dragging' : disabled ? 'Disabled' : undefined
@@ -71,6 +73,7 @@ function Chip({
       <button
         type="button"
         aria-pressed={selected}
+        aria-label={toggleLabel}
         disabled={isDisabled}
         onClick={() => onPressedChange?.(!selected)}
         className="inline-flex cursor-[inherit] items-center gap-[inherit] border-0 bg-transparent p-0 text-inherit outline-none [font:inherit]"

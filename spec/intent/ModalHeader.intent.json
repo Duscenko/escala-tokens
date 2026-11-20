@@ -1,0 +1,43 @@
+{
+  "$schema": "./intent.schema.json",
+  "component": "ModalHeader",
+  "purpose": "The header row of a Modal: an optional featured icon, the title that names the dialog, its description and an optional trailing slot for header actions or a count.",
+  "notFor": [
+    {
+      "case": "A heading for a page or a card outside a dialog.",
+      "use": "none"
+    },
+    {
+      "case": "A modal's action buttons.",
+      "use": "ModalFooter"
+    },
+    {
+      "case": "Any use outside a Modal.",
+      "use": "Modal"
+    }
+  ],
+  "states": {
+    "Default": {
+      "setBy": "component",
+      "meaning": "Static; Align and Size set the layout.",
+      "visual": "Title Content/primary, description Content/secondary; the icon is a FeaturedIcon (rounded)."
+    }
+  },
+  "a11y": {
+    "role": "none of its own; the title is the Modal's aria-labelledby and the description its aria-describedby",
+    "keyboard": "No tab stop of its own; controls in the trailing slot take focus.",
+    "minHitArea": 24,
+    "contrast": "AA",
+    "notes": [
+      "Never hide the title: it is the dialog's name."
+    ]
+  },
+  "openQuestions": [
+    "Which heading level does the title render as? The contract does not say."
+  ],
+  "approval": {
+    "status": "draft",
+    "by": null,
+    "date": null
+  }
+}

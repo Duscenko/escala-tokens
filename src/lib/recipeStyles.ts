@@ -38,7 +38,12 @@ function stateSuffixes(recipe: ComponentRecipe, state: string): string[] {
     case 'Hover': return recipe.hover === 'highlight' ? [forced] : [`:hover${free}`, forced]
     case 'Pressed': return [`:active${free}`, forced]
     // The root itself (a button) or a wrapper around the focusable control.
-    case 'Focused': return [`:focus-visible${free}`, `:has(:focus-visible)${free}`, forced]
+    // A menu row: Radix moves focus to the row under the pointer and the browser still calls it `:focus-visible`,
+    // so a row reached with the pointer keeps the fill alone. The ring is for the keyboard (`data-modality`, DropdownMenuContent).
+    case 'Focused': {
+      const live = recipe.hover === 'highlight' ? `${free}:not([data-modality="pointer"] *)` : free
+      return [`:focus-visible${live}`, `:has(:focus-visible)${live}`, forced]
+    }
     case 'Disabled': return ['[aria-disabled="true"]', forced]
     case 'Error': return ['[aria-invalid="true"]', forced]
     default: return [forced]
@@ -54,9 +59,9 @@ function dim(ref: string): string {
 
 /** The focus halo is `stroke.focus` wide (2px), as in the Figma file. */
 const HALO = 'var(--stroke-focus, 2px)'
-/** The top highlight of a solid control: Figma's inner shadow 0 · 2 · 0 · 0
- *  (the same 2px the focus edge is drawn at). */
-const highlightShadow = (color: string) => `inset 0 var(--stroke-focus, 2px) 0 0 ${color}`
+/** The top highlight of a solid control: Figma's shared style `Highlight/solid`, an inner shadow 0 · 1 · 0 · 0.
+ *  A set that hand-sets it instead (FABButton, FeaturedIcon gradient: 0 · 2 · 0) gives `highlightWidth`. */
+const highlightShadow = (color: string, width = '1') => `inset 0 ${width}px 0 0 ${color}`
 /** The named elevations a recipe can lift on, as the Figma FAB draws them: a key
  *  shadow and an ambient one. The file hand-sets the numbers per state (offset and
  *  blur 12·16 / 20·24 / 4·6 and 4·6 / 8·8 / 2·4) and gives each a negative spread
@@ -82,6 +87,8 @@ const LIFT: Record<string, (key: string, ambient: string, ring: string) => strin
   'card-sm': (k) => [`0 1px 3px ${k}`, `0 1px 2px ${k}`],
   // The FloatingHeader's Shadow/md on a frame that does not clip: no ring, no spreads.
   'floating-md': (k, a) => [`0 4px 6px ${k}`, `0 2px 4px ${a}`],
+  // FeaturedIcon `Appearance=gradient` (DEC-2026-11-18-003): the two drops under its top highlight, every tone, size and shape.
+  feature: (k, a) => [`0 4px 6px -1px ${k}`, `0 2px 4px -2px ${a}`],
 }
 /** A named elevation as one CSS `box-shadow` value on the Elevation roles (a block's card draws the Modal's `modal`). */
 export function liftShadow(name: keyof typeof LIFT): string {
@@ -98,7 +105,7 @@ const outerStrokeShadow = (props: SlotProps, v: (ref: string) => string) =>
 function surfaceShadows(props: SlotProps, v: (ref: string) => string): string[] {
   const lift = props.lift && LIFT[props.lift] ? LIFT[props.lift](v('color.elevation.shadow-key'), v('color.elevation.shadow-ambient'), v('color.elevation.shadow-ring')) : []
   const outer = props.outerStroke && props.outerStroke !== 'none' ? [outerStrokeShadow(props, v)] : []
-  return [...lift, ...outer, ...(props.highlight && props.highlight !== 'none' ? [highlightShadow(v(props.highlight))] : [])]
+  return [...lift, ...outer, ...(props.highlight && props.highlight !== 'none' ? [highlightShadow(v(props.highlight), props.highlightWidth && props.highlightWidth !== 'none' ? props.highlightWidth : undefined)] : [])]
 }
 /** A slot whose box-shadow is written by `focus`, `halo`, `lift` or `highlight`
  *  (each composes `surfaceShadows`), so `outerStroke` must not write its own. */
@@ -142,7 +149,8 @@ function declarations(props: SlotProps): string[] {
         if (ref === 'none' || composesShadow(props)) break // composed into that box-shadow
         out.push(`box-shadow: ${outerStrokeShadow(props, v)}`)
         break
-      case 'textShadow': out.push(ref === 'none' ? 'text-shadow: none' : 'text-shadow: 0 1px 0 rgb(0 0 0 / 0.15)'); break
+      // Figma's shared style `Shadow/text-2xs`: a drop 0 · 1 · 0.5 · 0 on `Elevation/shadow-ambient`.
+      case 'textShadow': out.push(ref === 'none' ? 'text-shadow: none' : `text-shadow: 0 1px 0.5px ${v('color.elevation.shadow-ambient')}`); break
       case 'fontLiteral': out.push(`font-size: ${ref}px`, 'line-height: 100%', 'font-weight: 500', 'letter-spacing: 0'); break
       // A halo fully outside the control (no edge): Figma's `focus-ring` frame,
       // `stroke.focus` wide, stroked OUTSIDE. The transparent outline is what
@@ -238,6 +246,8 @@ function declarations(props: SlotProps): string[] {
       }
       // The corners that face the page on an edge panel (a Sheet): two corners, one radius.
       case 'radiusTop': { const r = v(ref); out.push(`border-top-left-radius: ${r}`, `border-top-right-radius: ${r}`); break }
+      // The corners that face the footer of a tray Modal's panel.
+      case 'radiusBottom': { const r = v(ref); out.push(`border-bottom-left-radius: ${r}`, `border-bottom-right-radius: ${r}`); break }
       case 'radiusLeft': { const r = v(ref); out.push(`border-top-left-radius: ${r}`, `border-bottom-left-radius: ${r}`); break }
       case 'radiusRight': { const r = v(ref); out.push(`border-top-right-radius: ${r}`, `border-bottom-right-radius: ${r}`); break }
       // Figma draws a stroke INSIDE the frame; a CSS border sits outside the
@@ -259,6 +269,9 @@ function declarations(props: SlotProps): string[] {
       case 'shadow': out.push(`box-shadow: ${v(ref)}`); break
       // The target itself is the `::before` (see `hitRule`); its host anchors it.
       case 'hit': out.push('position: relative'); break
+      case 'fontStep':
+        out.push(`font-size: ${v(ref, 'font-size')}`, `line-height: ${v(ref, 'line-height')}`, `letter-spacing: ${v(ref, 'letter-spacing')}`)
+        break
       case 'font':
         out.push(
           `font-family: ${v(ref, 'font-family')}`,
@@ -361,21 +374,27 @@ const SIDES = ['top', 'right', 'bottom', 'left'] as const
  *  preset — only the values behind the custom properties change. */
 const CHOREOGRAPHIES = motionChoreographies(defaultMotionSettings())
 
-function choreographyRules(recipe: ComponentRecipe, root: string, c: RecipeChoreo, states: string[]): string[] {
+function choreographyRules(recipe: ComponentRecipe, root: string, c: RecipeChoreo, states: string[], hosts?: string[]): string[] {
   const def = CHOREOGRAPHIES[c.name]
   if (!def) return []
   const rules: string[] = []
-  const at = (el: string) => states.map((st) => `${el}${st}${LIVE}`).join(',\n')
+  const at = (el: string) => (hosts ? hosts.map((h) => `${h} ${el}${LIVE}`) : states.map((st) => `${el}${st}${LIVE}`)).join(',\n')
   if (def.pattern === 'disclosure') {
     const el = slotSelector(recipe, root, c.slot ?? recipe.slots[0])
     if (c.heightVar) rules.push(`${el} {\n  --escala-disclosure-height: var(${c.heightVar});\n  overflow: hidden;\n}`)
     rules.push(`${at(el)} {\n  animation: var(${choreographyVar(c.name)}, none);\n}`)
     return rules
   }
+  // Tracks on one element play together, as one `animation` list.
+  const playing = new Map<string, string[]>()
+  for (const t of def.tracks ?? []) {
+    const el = slotSelector(recipe, root, t.slot ?? c.slot ?? recipe.slots[0])
+    playing.set(el, [...(playing.get(el) ?? []), `var(${choreographyVar(c.name, t.id ?? t.slot)}, none)`])
+  }
+  for (const [el, list] of playing) rules.push(`${at(el)} {\n  animation: ${list.join(', ')};\n}`)
   for (const t of def.tracks ?? []) {
     const slot = t.slot ?? c.slot ?? recipe.slots[0]
     const el = slotSelector(recipe, root, slot)
-    rules.push(`${at(el)} {\n  animation: var(${choreographyVar(c.name, t.slot)}, none);\n}`)
     // A panel that slides: the keyframes follow the edge it is attached to.
     // Only with full motion — reduced motion swaps the slide for a fade.
     const side = recipe.motion?.sideAttr
@@ -387,6 +406,36 @@ function choreographyRules(recipe: ComponentRecipe, root: string, c: RecipeChore
   return rules
 }
 
+/** A running clock: it plays on the slot carrying `attr` and holds under the given states, on hover and on focus. */
+function timerRules(recipe: ComponentRecipe, root: string, timer: NonNullable<ComponentRecipe['motion']>['timer']): string[] {
+  if (!timer) return []
+  const el = slotSelector(recipe, root, timer.slot ?? recipe.slots[0])
+  const on = `${el}${timer.attr}`
+  const track = CHOREOGRAPHIES[timer.name]?.tracks?.[0]
+  const held = [...timer.pausedBy.map((state) => `${state} ${on}`), ...[':hover', ':focus-within', '[data-paused]'].map((state) => `${root}${state}${on.slice(root.length)}`)]
+  return [
+    `${el} {\n  transform-origin: left center;\n}`,
+    `${on}${LIVE} {\n  animation: var(${choreographyVar(timer.name, track?.id ?? track?.slot)}, motion-${track?.keyframes} 6s linear both);\n}`,
+    `${held.join(',\n')} {\n  animation-play-state: paused;\n}`,
+  ]
+}
+
+/** The queue's item stays put while the component inside it enters and leaves; only the stack moves it. */
+function queueRules(queue: NonNullable<ComponentRecipe['motion']>['queue']): string[] {
+  if (!queue) return []
+  const { item, reflow, release } = queue
+  const move = (role: string) => `transform var(--motion-${role}, ${TRANSITION_FALLBACK}), height var(--motion-${role}, ${TRANSITION_FALLBACK})`
+  const gone = `${item}[data-removed="true"][data-swipe-out="false"]`
+  return [
+    `${item}[data-swiping="false"] {\n  transition: ${move(reflow)};\n}`,
+    `${item}[data-swiping="false"][data-swiped="true"] {\n  transition: ${move(release)};\n}`,
+    `${item}[data-mounted="false"] {\n  --y: translateY(0);\n  opacity: 1;\n}`,
+    `${gone}[data-front="true"][data-expanded="false"] {\n  --y: translateY(0);\n  opacity: 1;\n}`,
+    `${gone}[data-front="true"][data-expanded="true"],\n${gone}[data-front="false"][data-expanded="true"] {\n  --y: translateY(calc(var(--lift) * var(--offset)));\n  opacity: 1;\n}`,
+    `${gone}[data-front="false"][data-expanded="false"] {\n  --y: translateY(calc(var(--lift-amount) * var(--toasts-before))) scale(calc(-1 * var(--scale)));\n  opacity: 1;\n}`,
+  ]
+}
+
 /** The transitions and choreographies of one recipe. */
 export function recipeMotionCss(recipe: ComponentRecipe): string {
   const m = recipe.motion
@@ -396,12 +445,25 @@ export function recipeMotionCss(recipe: ComponentRecipe): string {
   for (const [slotKey, props] of Object.entries(m.transitions ?? {})) {
     const [slot, suffix] = splitSlotKey(slotKey)
     const sel = slotSelector(recipe, root, slot) + suffix
-    const list = Object.entries(props).map(([prop, role]) => `${prop} var(--motion-${role}, ${TRANSITION_FALLBACK})`)
+    // `transform` also covers the individual transform properties: Tailwind v4's `translate-x-*`, `rotate-*` and `scale-*`
+    // write `translate` / `rotate` / `scale`, not `transform`, so a Switch thumb or an Accordion chevron jumped with no motion.
+    const expand = (prop: string) => (prop === 'transform' ? ['transform', 'translate', 'rotate', 'scale'] : [prop])
+    const list = Object.entries(props).flatMap(([prop, role]) => expand(prop).map((p) => `${p} var(--motion-${role}, ${TRANSITION_FALLBACK})`))
     rules.push(`${sel} {\n  transition: ${list.join(', ')};\n}`)
   }
   if (m.origin) rules.push(`${slotSelector(recipe, root, m.enter?.slot ?? recipe.slots[0])} {\n  transform-origin: ${m.origin};\n}`)
-  if (m.enter) rules.push(...choreographyRules(recipe, root, m.enter, OPEN))
-  if (m.exit) rules.push(...choreographyRules(recipe, root, m.exit, CLOSED))
+  if (m.enter) rules.push(...choreographyRules(recipe, root, m.enter, OPEN, m.host?.enter))
+  if (m.exit) rules.push(...choreographyRules(recipe, root, m.exit, CLOSED, m.host?.exit))
+  if (m.press) {
+    const live = ':not([data-force-state]):not([aria-disabled="true"]):not(:disabled)'
+    const slot = m.press.slot ?? recipe.slots[0]
+    // Going down plays `use-press` (the exit curve: a press); coming back plays the slot's own scale role (`use-hover`).
+    const down = Object.entries({ ...(m.transitions?.[slot] ?? {}), scale: 'use-press' })
+      .flatMap(([prop, role]) => (prop === 'transform' ? ['transform', 'translate', 'rotate', 'scale'] : [prop]).map((p) => `${p} var(--motion-${role}, ${TRANSITION_FALLBACK})`))
+    rules.push(`${slotSelector(recipe, `${root}:active${live}`, slot)} {\n  scale: var(--motion-transform-shrink, 1);\n  transition: ${down.join(', ')};\n}`)
+  }
+  if (m.stagger) rules.push(`${slotSelector(recipe, root, m.stagger.slot)}${m.stagger.when} {\n  transition-delay: calc(var(--escala-index, 0) * var(--motion-stagger, 0ms));\n}`)
+  rules.push(...timerRules(recipe, root, m.timer), ...queueRules(m.queue))
   // A disclosure's enter and exit both declare its height: once is enough.
   return [...new Set(rules)].join('\n')
 }
@@ -411,7 +473,7 @@ export function recipeMotionCss(recipe: ComponentRecipe): string {
  *  (a list's stagger, a switch's squash are data for a product's own runtime). */
 export function playedKeyframes(recipes: readonly ComponentRecipe[] = Object.values(COMPONENT_RECIPES)): string[] {
   const names = new Set<string>()
-  const used = new Set(recipes.flatMap((r) => [r.motion?.enter?.name, r.motion?.exit?.name]).filter(Boolean))
+  const used = new Set(recipes.flatMap((r) => [r.motion?.enter?.name, r.motion?.exit?.name, r.motion?.timer?.name]).filter(Boolean))
   const add = (body: Choreography | Choreography['reducedMotion']) => {
     for (const t of body.tracks ?? []) {
       names.add(t.keyframes)
@@ -446,6 +508,12 @@ export const RECIPE_CSS: string = [
   motionKeyframesCss(playedKeyframes()).join('\n'),
 ].join('\n\n')
 
+/** An item's place in its row, set inline by the component that staggers it (`motion.stagger`): never a token. */
+const INDEX_VAR = '--escala-index'
+
+/** What Sonner publishes on each toast of its queue: never a token. */
+const QUEUE_VARS = new Set(['--lift', '--lift-amount', '--offset', '--scale', '--toasts-before'])
+
 /** Every custom property the sheet reads — what a container must provide.
  *  Not counted: a property the sheet declares itself (a disclosure's height)
  *  and one Radix publishes on its own element (`--radix-*`, a popper's origin
@@ -454,6 +522,6 @@ export const RECIPE_CSS: string = [
 export function recipeCssVars(css: string = RECIPE_CSS): string[] {
   const own = new Set(css.match(/--[a-z0-9_-]+(?=:)/g) ?? [])
   return [...new Set(css.match(/var\((--[a-z0-9_-]+)/g)?.map((m) => m.slice(4)) ?? [])]
-    .filter((v) => !own.has(v) && !v.startsWith('--radix-') && v !== STROKE_WIDTH_VAR)
+    .filter((v) => !own.has(v) && !v.startsWith('--radix-') && !QUEUE_VARS.has(v) && v !== STROKE_WIDTH_VAR && v !== INDEX_VAR)
     .sort()
 }

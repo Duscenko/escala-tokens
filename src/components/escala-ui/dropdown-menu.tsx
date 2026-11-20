@@ -15,7 +15,7 @@ export const DROPDOWN_MENU_SIZES = ['default', 'sm', 'lg'] as const
 export type DropdownMenuSize = (typeof DROPDOWN_MENU_SIZES)[number]
 export const DROPDOWN_MENU_ITEM_STATES = ['Default', 'Hover', 'Focused', 'Selected', 'Disabled'] as const
 export type DropdownMenuItemState = (typeof DROPDOWN_MENU_ITEM_STATES)[number]
-export const DROPDOWN_MENU_ITEM_VARIANTS = ['default', 'destructive'] as const
+export const DROPDOWN_MENU_ITEM_VARIANTS = ['default', 'critical'] as const
 export type DropdownMenuItemVariant = (typeof DROPDOWN_MENU_ITEM_VARIANTS)[number]
 export const DROPDOWN_MENU_FOOTER_LAYOUTS = ['inline', 'stacked'] as const
 export type DropdownMenuFooterLayout = (typeof DROPDOWN_MENU_FOOTER_LAYOUTS)[number]
@@ -42,7 +42,7 @@ export interface DropdownMenuContentProps extends React.ComponentProps<typeof Dr
   inline?: boolean
 }
 
-function DropdownMenuContent({ size = 'default', header, footer, inline = false, sideOffset = 6, className, children, ...props }: DropdownMenuContentProps) {
+function DropdownMenuContent({ size = 'default', header, footer, inline = false, sideOffset = 6, className, children, onKeyDownCapture, onPointerMoveCapture, ...props }: DropdownMenuContentProps) {
   const container = usePortalContainer()
   const inner = (
     <>
@@ -78,6 +78,9 @@ function DropdownMenuContent({ size = 'default', header, footer, inline = false,
           data-size={size}
           sideOffset={sideOffset}
           className={cn('z-50 flex max-w-full flex-col overflow-hidden outline-none', className)}
+          // Radix focuses the row under the pointer: this tells the recipe which rows the keyboard reached, the only ones with a ring.
+          onKeyDownCapture={(e) => { e.currentTarget.dataset.modality = 'keyboard'; onKeyDownCapture?.(e) }}
+          onPointerMoveCapture={(e) => { e.currentTarget.dataset.modality = 'pointer'; onPointerMoveCapture?.(e) }}
           {...props}
         >
           {inner}

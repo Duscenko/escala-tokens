@@ -13,6 +13,7 @@ import {
   durationRange,
   matchMotionPreset,
   motionChoreographies,
+  motionCssVars,
   motionKeyframes,
   motionPresetPatch,
   motionRootCss,
@@ -23,6 +24,7 @@ import {
   resolveMotionRole,
 } from '../motion'
 import { COMPONENT_KEYS } from '../componentCatalogue'
+import { TOAST_LIFETIMES } from '../../components/escala-ui/toast'
 
 const presets = MOTION_PRESET_KEYS.map((k) => MOTION_PRESETS[k].settings)
 
@@ -94,6 +96,37 @@ describe('motion presets', () => {
   })
 })
 
+describe('notification motion', () => {
+  it.each(MOTION_PRESET_KEYS)('%s: a toast finishes leaving before the queue unmounts it (200 ms)', (key) => {
+    expect(resolveMotionRole('use-notify-out', MOTION_PRESETS[key].settings).ms).toBeLessThanOrEqual(200)
+  })
+
+  it.each(MOTION_PRESET_KEYS)('%s: the time left is linear and no preset scales a lifetime', (key) => {
+    const s = MOTION_PRESETS[key].settings
+    expect(s.roles['use-countdown']).toEqual({ duration: 'lifetime-default', easing: 'linear' })
+    expect(durationMs('lifetime-brief', s)).toBe(4000)
+    expect(durationMs('lifetime-default', s)).toBe(6000)
+    expect(durationMs('lifetime-long', s)).toBe(10000)
+  })
+
+  it('the Toast ships the same lifetimes as the Motion collection', () => {
+    expect(TOAST_LIFETIMES).toEqual({ brief: MOTION_DURATIONS['lifetime-brief'], default: MOTION_DURATIONS['lifetime-default'], long: MOTION_DURATIONS['lifetime-long'] })
+  })
+
+  it('reduced motion keeps the countdown running', () => {
+    const vars = motionCssVars(defaultMotionSettings(), { reduced: true })
+    expect(vars['--motion-use-countdown']).toBe('var(--motion-duration-lifetime-default) var(--motion-easing-linear)')
+  })
+
+  it.each(MOTION_PRESET_KEYS)('settings saved before these roles existed still read as %s', (key) => {
+    const old = JSON.parse(JSON.stringify(motionPresetPatch(key)))
+    for (const r of ['use-notify-in', 'use-notify-out', 'use-reflow', 'use-countdown', 'use-progress', 'use-release']) delete old.roles[r]
+    const back = normalizeMotionSettings(old)
+    expect(matchMotionPreset(back)).toBe(key)
+    expect(JSON.stringify(back)).toBe(JSON.stringify(motionPresetPatch(key)))
+  })
+})
+
 describe('motion settings', () => {
   it('normalize fills anything missing with Standard', () => {
     expect(normalizeMotionSettings(undefined)).toEqual(defaultMotionSettings())
@@ -140,11 +173,12 @@ describe('motion choreography', () => {
       const used = [...(r.tracks ?? []).map((t) => t.keyframes), ...(r.child ? [r.child.keyframes] : [])]
       for (const k of used) {
         if (k === 'switch-move') continue // the thumb has to reach its end; it jumps (instant)
+        if (k === 'countdown') continue // the time left is information, like a loader
         expect(keyframes[k].transform, `${name} reduced → ${k}`).toBeUndefined()
       }
       for (const t of r.tracks ?? []) {
         const pick = resolveMotionRef(t.motion, s)
-        expect(['fade', 'instant']).toContain(pick.duration)
+        if (t.keyframes !== 'countdown') expect(['fade', 'instant']).toContain(pick.duration)
       }
     }
   })

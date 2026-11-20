@@ -1,0 +1,30 @@
+{
+  "$schema": "./intent.schema.json",
+  "component": "TableResizer",
+  "purpose": "The drag handle on the end edge of a TableHead that lets people change a column's width.",
+  "notFor": [
+    {"case": "Not for standalone use: it lives inside a TableHead (ResizerVisible).", "use": "TableHead"},
+    {"case": "Splitting a layout into resizable panes.", "use": "none"}
+  ],
+  "states": {
+    "Default": {"setBy": "component", "meaning": "At rest.", "visual": "Handle 1px wide (Stroke/divider) with no fill: invisible at rest."},
+    "Hover": {"setBy": "component", "visual": "Handle 2px wide (Stroke/focus) in Border/strong, on use-hover."},
+    "Resizing": {"setBy": "both", "meaning": "The person drags the handle; the app sets resizing.", "visual": "Handle 2px wide (Stroke/focus) in Border/accent."}
+  },
+  "a11y": {
+    "role": "separator (aria-orientation=\"vertical\")",
+    "keyboard": "Focusable. The arrow keys resize only through the consumer's handler; the component ships no resize logic.",
+    "minHitArea": 24,
+    "contrast": "AA",
+    "reducedMotion": "The handle colour runs on use-hover, which keeps its duration under reduced motion: a colour change, not travel (lib/motion.ts KEEP_UNDER_REDUCED).",
+    "notes": [
+      "The handle box is 9 px wide, 10 on Hover and Resizing (table-contract.md)."
+    ]
+  },
+  "openQuestions": [
+    "Hit area: the handle box is 9 to 10 px wide, under the 24 px minimum. Should code widen the hit area?",
+    "Focus: the handle is focusable but neither Figma nor code draws a Focused state. What does a focused handle look like?",
+    "Keyboard: how far should one arrow press resize, and should the separator report the width with aria-valuenow?"
+  ],
+  "approval": { "status": "draft", "by": null, "date": null }
+}

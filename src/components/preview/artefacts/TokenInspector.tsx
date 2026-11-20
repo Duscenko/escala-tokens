@@ -72,7 +72,7 @@ import { useI18n } from '../../../lib/i18n'
 import type { PreviewTokens } from '../ButtonPreview'
 import type { ThemeAppearance } from '../../../lib/themeModes'
 import { InspectGlyph } from '../../ui/icons'
-import { slotUnder, traceElement, traceTokenCount, type ElementTrace } from '../../../lib/tokenTrace'
+import { slotUnder, traceBlockBox, traceElement, traceTokenCount, type ElementTrace } from '../../../lib/tokenTrace'
 import { TokenTraceList } from './TokenTracePanel'
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
 import { inspectorLayerMotion } from '../../../lib/inspectorMotion'
@@ -453,6 +453,13 @@ export function InspectorOverlay({
     const rect = rectOf(el)
     if (!rect) return null
     const t = tokensFor(el)
+    // A block's own box: its card's fill, border, corner, shadow and padding, each one editable.
+    const box = traceBlockBox(t, el)
+    if (box) {
+      const painted = box.slots.flatMap((slot) => slot.rows).filter((row) => row.kind === 'color' && row.pickId)
+      const boxRoles = painted.map((row) => ({ id: row.pickId as string, css: row.value }))
+      return { kind: 'component', el, label, rect, roles: boxRoles, measured: true, appearance: appearanceFor(el), trace: box, hitSlot: null }
+    }
     const { roles, measured } = inspectElement(t, label, el)
     const inspectEl = inspectHitTarget(el, hit ?? null)
     const hitIds = inspectEl === el ? undefined : paintedRoleIds(roles, inspectEl)

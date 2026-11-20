@@ -1,0 +1,32 @@
+{
+  "$schema": "./intent.schema.json",
+  "component": "SocialLoginButton",
+  "purpose": "Starts sign-in with an identity provider such as Google, Apple or GitHub, carrying the provider's mark. Stack them above the email form, or lay the icon-only form in a row.",
+  "notFor": [
+    { "case": "Submitting an email and password form.", "use": "Button" },
+    { "case": "Any action that is not signing in with a provider.", "use": "Button" }
+  ],
+  "states": {
+    "Default": { "setBy": "component", "meaning": "At rest.", "visual": "white: Surface/page fill, Border/control edge, Content/primary label, Elevation/highlight. brand: the provider's own action fill and on-action ink (social tokens)." },
+    "Hover": { "setBy": "component", "visual": "white: Surface/layer-1 fill, Border/control-hover edge. brand: the provider's hover fill." },
+    "Pressed": { "setBy": "component", "visual": "white: Surface/muted fill, Border/control-hover edge. brand: the provider's pressed fill." },
+    "Focused": { "setBy": "component", "meaning": "Reached by keyboard (focus-visible).", "visual": "The Default look plus a ring in the provider's focus colour (social token), not the shared ring roles." },
+    "Disabled": { "setBy": "app", "meaning": "Sign-in with this provider is unavailable.", "visual": "Action/disabled/default fill, Border/subtle edge, Content/disabled label." }
+  },
+  "a11y": {
+    "role": "button (native <button>)",
+    "keyboard": "Tab reaches it; Enter or Space starts the sign-in (native button).",
+    "minHitArea": 24,
+    "contrast": "NOT DECIDED",
+    "notes": [
+      "Full width shows \"Continue with <brand>\"; the icon-only form takes an aria-label set from the brand."
+    ]
+  },
+  "openQuestions": [
+    "Appearance names differ: Figma has outline · solid, code has white · brand. Which names are right? (Figma owns anatomy.)",
+    "Contrast: brand fills use each provider's own colours (social tokens with no Figma role name). Is AA promised for every provider, or do providers' brand rules win?",
+    "Status: spec/figma-components.status.json marks SocialLoginButton as rebuild. Which parts of this intent will change with the rebuild?",
+    "Order: should the provider order be fixed by the system, or only kept consistent by each product?"
+  ],
+  "approval": { "status": "draft", "by": null, "date": null }
+}

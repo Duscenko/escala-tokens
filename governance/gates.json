@@ -1,0 +1,25 @@
+{
+  "rule": "Every new check starts as \"report\". Promote to \"gate\" only when it has passed on main for a clean baseline and César agrees. Never demote a gate to silence it: fix it or log an exception.",
+  "checks": [
+    {
+      "script": "check:story-parity",
+      "mode": "gate",
+      "why": "Stories and contracts agree"
+    },
+    {
+      "script": "figma:inventory:check",
+      "mode": "gate",
+      "why": "Figma component inventory matches spec/figma-components.json"
+    },
+    {
+      "script": "check:intent",
+      "mode": "gate",
+      "why": "Every component has an approved intent (for / not for / states / a11y)"
+    },
+    {
+      "script": "check:docs-links",
+      "mode": "report",
+      "why": "Every link and path in the docs still exists"
+    }
+  ]
+}

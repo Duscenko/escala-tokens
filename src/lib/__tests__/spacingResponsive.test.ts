@@ -44,7 +44,7 @@ describe('responsive spacing', () => {
     for (const [role, legacyStep] of Object.entries(LEGACY_SPACING_ROLE_STEPS)) {
       expect(resolveLayoutRole('spacing', roles, SPACING_STANDARD, role), role).toBe(SPACING_STANDARD[legacyStep])
     }
-    expect(resolveLayoutRole('spacing', roles, SPACING_STANDARD, 'inset-surface')).toBe('20px')
+    expect(resolveLayoutRole('spacing', roles, SPACING_STANDARD, 'inset-surface')).toBe('24px')
   })
 
   it('roles on a token tighten on smaller viewports; fixed ones hold', () => {
@@ -55,7 +55,8 @@ describe('responsive spacing', () => {
     expect(VPS.map((vp) => at('inset-page', vp))).toEqual([32, 16, 16])
     expect(VPS.map((vp) => at('inset-section', vp))).toEqual([96, 64, 48])
     expect(VPS.map((vp) => at('inset-control', vp))).toEqual([12, 12, 12])
-    expect(VPS.map((vp) => at('inset-surface', vp))).toEqual([20, 20, 20])
+    expect(VPS.map((vp) => at('inset-surface', vp))).toEqual([24, 20, 16])
+    expect(VPS.map((vp) => at('inset-action', vp))).toEqual([16, 16, 12])
     expect(rolesUsingSpacingToken(roles, 'section-md')).toEqual(['gap-section'])
     // A role moved off its default drops its own per-viewport values.
     expect(VPS.map((vp) => px(spacingRolesAtViewport({ ...roles, 'inset-page': '6' }, vp)['inset-page']))).toEqual([24, 24, 24])
@@ -77,7 +78,9 @@ describe('responsive spacing', () => {
     expect(tablet).toContain('--spacing-inset-section: var(--dimension-64);')
     expect(mobile).toContain('--spacing-inset-page: var(--dimension-16);')
     expect(mobile).toContain('--spacing-inset-section: var(--dimension-48);')
-    expect(css).not.toContain('--spacing-inset-surface')
+    expect(tablet).toContain('--spacing-inset-surface: var(--dimension-20);')
+    expect(mobile).toContain('--spacing-inset-surface: var(--dimension-16);')
+    expect(mobile).toContain('--spacing-inset-action: var(--dimension-12);')
     expect(css).not.toContain('--spacing-inset-control')
   })
 
@@ -97,8 +100,8 @@ describe('responsive spacing', () => {
     }
     expect(doc.spacingRoles['inset-section']).toBe('24')
     expect(doc.spacingRoleViewports).toEqual({
-      tablet: { 'inset-page': '4', 'inset-section': '16' },
-      mobile: { 'inset-page': '4', 'inset-section': '12' },
+      tablet: { 'inset-surface': '5', 'inset-page': '4', 'inset-section': '16' },
+      mobile: { 'inset-surface': '4', 'inset-action': '3', 'inset-page': '4', 'inset-section': '12' },
     })
     expect(doc.sizeRoles['target-min']).toBe('xs')
     expect(doc.sizeRoleViewports).toEqual({ tablet: { 'target-min': 'dimension-44' }, mobile: { 'target-min': 'dimension-44' } })

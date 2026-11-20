@@ -3,8 +3,7 @@ import { cloneElement, createContext, useContext, useEffect, useLayoutEffect, us
 import { Live, PhosphorWeightProvider, SPECIMENS, TokenIcon, preloadHeavySpecimens, type IconOpts, type SpecimenProps } from '../../configurator/docs/specimens'
 import { TokenInspector, INSPECT_EXEMPT_ATTR, inspectGroupAttrs, useInspectorActive } from './TokenInspector'
 import { BoardAutoplayContext, TileLiveContext, useAutoplayStep, useBoardConductor, useBoardPaused } from './boardAutoplay'
-import { CALENDAR_PLAY, EDITORS_PLAY, EDITOR_PRICE } from './boardScripts'
-import { RollingNumber } from './RollingNumber'
+import { CALENDAR_PLAY } from './boardScripts'
 import { BoardRevealContext, REVEAL_CAP_MS, SETTLE_MS, boardEnteredOnce, boardRevealTiming, markBoardEntered } from './boardReveal'
 import { useReducedMotion } from 'framer-motion'
 import { SkeletonSettingsList } from '../../configurator/docs/skeleton/forms'
@@ -12,9 +11,9 @@ import { RecipeScope } from '../../configurator/docs/skeleton/scope'
 import { Card as UiCard } from '../../escala-ui/card'
 import { Alert as UiAlert } from '../../escala-ui/alert'
 import { Button as UiButton } from '../../escala-ui/button'
-import { AuthSignIn } from '../../escala-ui/blocks/auth'
-import { SidebarStatCard } from '../../escala-ui/blocks/navigation'
-import { ShareModal } from '../../escala-ui/blocks/overlay'
+import { AuthSignInPasskey } from '../../escala-ui/blocks/auth'
+import { DashboardActivityCard, DashboardGaugeCard, DashboardMetricCard } from '../../escala-ui/blocks/dashboard'
+import { NowPlaying } from '../../escala-ui/blocks/media'
 import {
   cardSurfaceStyle,
   radiusRoleOf,
@@ -54,24 +53,16 @@ const inspectable = (key: string) => {
 // Every tile below is built from the Storybook families (`spec/storybook-families.json`,
 // the Figma file's components) — no shadcn-era entry (Chart, StatusBadge, Card as a
 // specimen…) is placed on the board.
-const AvatarGroup = inspectable('AvatarGroup')
-const Badge = inspectable('Badge')
 const InputOTP = inspectable('InputOTP')
 const TextLink = inspectable('TextLink')
 const ButtonGroup = inspectable('ButtonGroup')
-const Segmented = inspectable('SegmentedControl')
 const Toast = inspectable('Toast')
-const TabMenu = inspectable('TabMenu')
-const Progress = inspectable('ProgressLine')
-const Chip = inspectable('Chip')
 const InputTag = inspectable('InputTag')
 const FileUpload = inspectable('FileUpload')
 const Stepper = inspectable('Stepper')
 const Pagination = inspectable('Pagination')
 const Separator = inspectable('Separator')
 const Calendar = inspectable('Calendar')
-const InputStepper = inspectable('NumberInput')
-const Table = inspectable('Table')
 
 /** `Live` already carries the catalogue key as `c`, so the marker reads it
  *  straight off the prop rather than being restated. */
@@ -348,12 +339,6 @@ function px(value: string): number {
  * direction — plus a translucent panel, which the recipe has no word for.
  */
 
-/** A step of one of `boardScripts`' value lists, or `still` when the board is
- *  still (the value the tile has always shown). */
-function useScripted<T>(script: { ms: number; values: readonly T[] }, still: T): T {
-  const step = useAutoplayStep(script.values.length, script.ms)
-  return step == null ? still : script.values[step]
-}
 
 /** Plays an element in on the brand's `use-stagger-in` (one child of a
  *  staggered reveal) whenever `key` changes while the board plays. */
@@ -367,47 +352,6 @@ function useEnterOnChange(ref: { current: HTMLElement | null }, t: PreviewTokens
       { duration: role.ms, easing: MOTION_EASINGS[role.easing] },
     )
   }, [key]) // eslint-disable-line react-hooks/exhaustive-deps
-}
-
-/** The Editors tile's total: the stepper's count × the seat price. */
-function EditorsTotal() {
-  return <RollingNumber value={`$${useScripted(EDITORS_PLAY, 12) * EDITOR_PRICE}`} />
-}
-
-const SEATS = 20
-
-/** The stepper's count as a figure, against the seats the plan holds. */
-function SeatCount({ t, muted }: { t: PreviewTokens; muted: string }) {
-  const { t: translate } = useI18n()
-  return (
-    <span style={{ ...typeStyleOf(t, 'heading-lg'), color: t.neutralText }}>
-      <RollingNumber value={String(useScripted(EDITORS_PLAY, 12))} />
-      <span style={{ ...typeStyleOf(t, 'body-sm'), color: muted }}> / {SEATS} {translate('seats')}</span>
-    </span>
-  )
-}
-
-/** One cell per seat: taken ones in the brand's action fill, free ones in the
- *  secondary fill — a step off the card, where `neutralFill` (the card's own
- *  layer) would vanish. Cells change on the brand's `use-color`. */
-function SeatGrid({ t }: { t: PreviewTokens }) {
-  const count = useScripted(EDITORS_PLAY, 12)
-  const free = t.archTokens?.['action.secondary.default'] ?? t.neutralFill
-  return (
-    <div className="grid w-full" style={{ gridTemplateColumns: `repeat(${SEATS / 2}, minmax(0, 1fr))`, gap: gap(t, 'gap-tight', '4px') }}>
-      {Array.from({ length: SEATS }, (_, i) => (
-        <span
-          key={i}
-          style={{
-            aspectRatio: '1',
-            borderRadius: radiusRoleOf(t, 'control', '4px'),
-            background: i < count ? t.brandSolid : free,
-            transition: 'background-color var(--motion-use-color, 200ms ease)',
-          }}
-        />
-      ))}
-    </div>
-  )
 }
 
 /** The event under the calendar, following the day the calendar selects. */
@@ -724,6 +668,26 @@ function CollagePack({
  * system as a set. Theme Preview ships the phone carousel only; the masonry
  * board layout remains for tests or a future entry point.
  */
+/** A bento slot: one column of tiles, or a tile across two columns over two columns of tiles. */
+type BentoSlot =
+  | { span: 1; tiles: ReactElement[] }
+  | { span: 2; head: ReactElement; columns: ReactElement[][] }
+
+/** The first column a slot sits on. */
+function bentoStart(bento: BentoSlot[], index: number): number {
+  return bento.slice(0, index).reduce((n, slot) => n + slot.span, 0)
+}
+
+/** Every tile's band in the entrance wave (the diagonal: column + row, after the three rows above). */
+function bentoBands(bento: BentoSlot[]): number[] {
+  return bento.flatMap((slot, i) => {
+    const c = bentoStart(bento, i)
+    return slot.span === 1
+      ? slot.tiles.map((_, r) => 3 + c + r)
+      : [3 + c, ...slot.columns.flatMap((column, k) => column.map((_, r) => 4 + c + k + r))]
+  })
+}
+
 export function SystemCollage({
   tokensByAppearance, tileAppearances, layout = 'phones', frameTokens,
 }: {
@@ -786,11 +750,11 @@ export function SystemCollage({
     return () => ro.disconnect()
   }, [phones])
   // ONE scale for the whole board. The blocks keep the width the Figma file
-  // draws them at (SignIn 480, the Calendar's full panel, the Share modal), so
+  // draws them at (SignIn 480, the Calendar's full panel), so
   // the column is derived from them: SignIn + Calendar span three columns and a
   // gutter, and every tile — block or component — is photographed at the same
   // `display / unit`. Widths are measured once the blocks render (below).
-  const [blockWidths, setBlockWidths] = useState({ signIn: 480, calendar: 418, share: 480 })
+  const [blockWidths, setBlockWidths] = useState({ signIn: 480, calendar: 418, metric: 400, activity: 924 })
   const avail = boardWidth
     ? Math.max(BOARD_MIN_COLUMN, (boardWidth - (BOARD_COLUMNS - 1) * gutterPx) / BOARD_COLUMNS)
     : frame.display
@@ -818,18 +782,15 @@ export function SystemCollage({
   // The Calendar's slot takes whatever SignIn and the last column leave, so
   // the row's edges land on the columns' edges at any width.
   const calendarPhoto = photo(3 * display + gutterPx - signInPhoto.frameWidth)
-  const sharePhoto = photo(blockWidths.share * scale)
-  const membersPhoto = photo(boardSpan - sharePhoto.frameWidth - gutterPx)
   // Every render, no deps: the Calendar is a lazy chunk that mounts after the
-  // board does, and a theme change can move any of the three. It only sets
+  // board does, and a theme change can move either. It only sets
   // state on a change over 1px, so it settles in one extra render.
   // eslint-disable-next-line react-hooks/exhaustive-deps
   useLayoutEffect(() => {
     const root = stageRef.current
     if (phones || !root) return
-    const auth = root.querySelector<HTMLElement>('[data-board-block="signIn"] [data-block="AuthSignIn"]')
+    const auth = root.querySelector<HTMLElement>('[data-board-block="signIn"] [data-block="AuthSignInPasskey"]')
     const cal = root.querySelector<HTMLElement>('[data-board-block="calendar"] [data-slot="calendar"]')
-    const share = root.querySelector<HTMLElement>('[data-board-block="share"] [data-block="ShareModal"]')
     // The Calendar fills its slot, so its rendered width is the slot's. The
     // width the file draws it at is read with the fill taken away for a moment
     // (same task, nothing paints in between) — as `ScaledModule` reads a
@@ -841,12 +802,24 @@ export function SystemCollage({
       calendar = cal.offsetWidth || calendar
       cal.style.width = kept
     }
+    // The dashboard cards draw at the file's width but cap at their slot
+    // (`maxWidth: 100%`): the cap is lifted for the read, as the Calendar's fill.
+    const fileWidth = (selector: string, fallback: number) => {
+      const el = root.querySelector<HTMLElement>(selector)
+      if (!el) return fallback
+      const kept = el.style.maxWidth
+      el.style.maxWidth = 'none'
+      const w = el.offsetWidth || fallback
+      el.style.maxWidth = kept
+      return w
+    }
     const next = {
       signIn: auth ? parseFloat(getComputedStyle(auth).maxWidth) || blockWidths.signIn : blockWidths.signIn,
       calendar,
-      share: share?.offsetWidth || blockWidths.share,
+      metric: fileWidth('[data-board-block="metric"] [data-escala="DashboardMetricCard"]', blockWidths.metric),
+      activity: fileWidth('[data-board-block="activity"] [data-escala="DashboardActivityCard"]', blockWidths.activity),
     }
-    if (Math.abs(next.signIn - blockWidths.signIn) > 1 || Math.abs(next.calendar - blockWidths.calendar) > 1 || Math.abs(next.share - blockWidths.share) > 1) {
+    if ((Object.keys(next) as (keyof typeof next)[]).some((k) => Math.abs(next[k] - blockWidths[k]) > 1)) {
       setBlockWidths(next)
     }
   })
@@ -945,29 +918,6 @@ export function SystemCollage({
           </div>
         </ScaledModule>
     ),
-    badges: (
-        <ScaledModule key="badges"
-          t={tile(4)}
-          appearance={appearanceAt(4)}
-          style={{ gap: gap(tile(4), 'gap-group', '16px') }}
-        >
-          <div className="flex flex-wrap items-center" style={{ gap: gap(tile(4), 'gap-control', '8px') }}>
-            <Badge t={tile(4)} v={{ Variant: 'default', Appearance: 'solid' }}>{translate('Published')}</Badge>
-            <Badge t={tile(4)} v={{ Variant: 'secondary' }}>{translate('Draft')}</Badge>
-            <Badge t={tile(4)} v={{ Variant: 'success' }}>{translate('Live')}</Badge>
-            <Badge t={tile(4)} v={{ Variant: 'warning' }}>{translate('Review')}</Badge>
-            <Badge t={tile(4)} v={{ Variant: 'critical', Appearance: 'outline' }}>{translate('Critical')}</Badge>
-            <Badge t={tile(4)} v={{ Variant: 'info', Type: 'number', Shape: 'pill' }}>12</Badge>
-          </div>
-          <Separator t={tile(4)} v={{}} w="100%" />
-          <div className="flex flex-wrap items-center" style={{ gap: gap(tile(4), 'gap-control', '8px') }}>
-            <Chip t={tile(4)} v={{ Interactive: 'True', State: 'Selected' }}>{translate('Tokens')}</Chip>
-            <Chip t={tile(4)} v={{ Interactive: 'True' }}>Figma</Chip>
-            <Chip t={tile(4)} v={{ Interactive: 'True' }}>{translate('Code')}</Chip>
-            <Chip t={tile(4)} v={{ Variant: 'info', Appearance: 'soft', CloseVisible: 'True' }}>{translate('Motion')}</Chip>
-          </div>
-        </ScaledModule>
-    ),
     // Settings as a person meets them: switches in rows, each with its label.
     // A lone switch read as a widget, not a screen.
     notifications: (
@@ -984,28 +934,6 @@ export function SystemCollage({
               ]}
             />
           </TokenInspector>
-        </ScaledModule>
-    ),
-    // A count the person sets, seen as well as read: the stepper, the figure,
-    // the seats it fills, and what it costs.
-    seats: (
-        <ScaledModule key="seats" t={tile(12)} appearance={appearanceAt(12)} style={{ gap: gap(tile(12), 'gap-group', '16px') }}>
-          <div className="flex items-start justify-between" style={{ gap: gap(tile(12), 'gap-control', '8px') }}>
-            <div className="flex min-w-0 flex-col">
-              <span style={{ ...typeStyleOf(tile(12), 'label'), color: tile(12).neutralText }}>{translate('Editors')}</span>
-              <span style={{ ...typeStyleOf(tile(12), 'helper'), color: muted(12) }}>{translate('Who can publish tokens')}</span>
-            </div>
-            <InputStepper t={tile(12)} v={{}} />
-          </div>
-          <SeatCount t={tile(12)} muted={muted(12)} />
-          <SeatGrid t={tile(12)} />
-          <Separator t={tile(12)} v={{}} w="100%" />
-          <div className="flex items-baseline justify-between" style={{ gap: gap(tile(12), 'gap-control', '8px') }}>
-            <span style={{ ...typeStyleOf(tile(12), 'body-sm'), color: muted(12) }}>{translate('Total')}</span>
-            <span style={{ ...typeStyleOf(tile(12), 'heading-sm'), color: tile(12).neutralText, fontVariantNumeric: 'tabular-nums' }}>
-              <EditorsTotal /><span style={{ ...typeStyleOf(tile(12), 'helper'), color: muted(12) }}> / {translate('per month')}</span>
-            </span>
-          </div>
         </ScaledModule>
     ),
     // Feedback as a screen shows it: an in-page Alert with its action, and a
@@ -1031,17 +959,6 @@ export function SystemCollage({
             </RecipeScope>
           </TokenInspector>
           <Toast t={tile(15)} v={{ Variant: 'success' }} w="100%" />
-        </ScaledModule>
-    ),
-    tabsProgress: (
-        <ScaledModule key="tabsProgress"
-          t={tile(16)}
-          appearance={appearanceAt(16)}
-          style={{ gap: gap(tile(16), 'gap-group', '16px') }}
-        >
-          <Segmented t={tile(16)} v={{ Size: 'sm' }} />
-          <TabMenu t={tile(16)} v={{}} w="100%" />
-          <Progress t={tile(16)} v={{}} w="100%" />
         </ScaledModule>
     ),
     // The Calendar's root is a card, so it IS the tile (no Card around it);
@@ -1080,27 +997,6 @@ export function SystemCollage({
         </ScaledModule>
     ),
   }
-  // TEAM — the Figma AvatarGroup (overlap and ring are its own recipe) with the
-  // presence of the person on screen and the action that grows the team.
-  const teamCard = (
-    <ScaledModule key="team" t={tile(11)} appearance={appearanceAt(11)} style={{ gap: gap(tile(11), 'gap-group', '12px') }} {...(phones ? {} : calendarPhoto)}>
-      <div className="flex items-baseline justify-between" style={{ gap: gap(tile(11), 'gap-control', '8px') }}>
-        <span style={{ ...typeStyleOf(tile(11), 'label'), color: tile(11).neutralText }}>{translate('Team')}</span>
-        <span style={{ ...typeStyleOf(tile(11), 'helper'), color: muted(11) }}>{translate('7 members')}</span>
-      </div>
-      <AvatarGroup t={tile(11)} v={{ Size: 'sm' }} />
-      <InspectableLive
-        c="Button"
-        t={tile(11)}
-        v={{ Variant: 'secondary', Appearance: 'solid', Size: 'sm' }}
-        icons={{ ...catalogueIcons(tile(11), 'plus'), leading: true }}
-        w="100%"
-      >
-        {translate('Invite')}
-      </InspectableLive>
-    </ScaledModule>
-  )
-
   // BLOCKS — the Figma file's composed blocks (`escala-ui/blocks`, the Storybook's
   // `Blocks/`), placed as they ship: their own card, header, fields and copy.
   // Nothing on these tiles is composed here.
@@ -1111,9 +1007,20 @@ export function SystemCollage({
       </RecipeScope>
     </ScaledModule>
   )
-  const signIn = block('signIn', 5, <AuthSignIn container="card" />, phones ? undefined : signInPhoto)
-  const shareModal = block('share', 7, <ShareModal inline />, sharePhoto)
-  const statCard = block('stat', 10, <SidebarStatCard style={{ width: '100%' }} label={translate('Tokens shipped')} value="1,284" caption={translate('Across 3 brands · 2 themes')} delta="+12%" />)
+  // The sign-in tile is the email-first passkey block (the tray modal), the way a product signs in today.
+  const signIn = block('signIn', 5, <AuthSignInPasskey />, phones ? undefined : signInPhoto)
+  // Media and data blocks break the run of forms and people: the NowPlaying bar under the Calendar (its artwork takes the
+  // brand's accent), a Gauge beside the OTP, and a KPI with its Sparkline in the bento. They replaced the Team avatars,
+  // the Tokens-shipped stat and the Editors seats, three tiles that repeated the Members table and each other.
+  const nowPlaying = block('nowPlaying', 11, <NowPlaying tint="accent" style={{ width: '100%' }} />, phones ? undefined : calendarPhoto)
+  const gaugeCard = block('gauge', 10, <DashboardGaugeCard style={{ width: '100%' }} />)
+  // The KPI and the year of activity are drawn at the file's width (400 and 924) and photographed into
+  // their slot: squeezed to a column, the KPI's label ran into its value under wide type, and the heatmap's
+  // 53 weeks cannot reflow. The KPI fills one column, the heatmap two.
+  const metricCard = block('metric', 12, <DashboardMetricCard style={{ width: '100%' }} />,
+    phones ? undefined : { frameWidth: display, sourceWidth: Math.max(unit, blockWidths.metric) })
+  const activityCard = block('activity', 16, <DashboardActivityCard style={{ width: '100%' }} />,
+    phones ? undefined : { frameWidth: 2 * display + gutterPx, sourceWidth: Math.max((2 * display + gutterPx) / scale, blockWidths.activity) })
   // The Calendar at the width the file draws its full panel: the presets rail,
   // one month in range mode and the footer — it needs two columns.
   const calendarPanel = (
@@ -1125,19 +1032,6 @@ export function SystemCollage({
       <div data-board-block="calendar" className="flex w-full">
         <Calendar t={tile(9)} v={{ Size: 'default', Mode: 'range', PresetsVisible: 'True', FooterVisible: 'True' }} w="100%" />
       </div>
-    </ScaledModule>
-  )
-  // The Figma Table: a members list, the densest everyday surface.
-  const membersCard = (
-    <ScaledModule key="members" t={tile(6)} appearance={appearanceAt(6)} style={{ gap: gap(tile(6), 'gap-group', '12px') }} {...membersPhoto}>
-      <div className="flex items-center justify-between" style={{ gap: gap(tile(6), 'gap-control', '8px') }}>
-        <div className="flex min-w-0 flex-col">
-          <span style={{ ...typeStyleOf(tile(6), 'heading-sm'), color: tile(6).neutralText }}>{translate('Members')}</span>
-          <span style={{ ...typeStyleOf(tile(6), 'helper'), color: muted(6) }}>{translate('Who works on this design system')}</span>
-        </div>
-        <Segmented t={tile(6)} v={{ Size: 'sm' }} />
-      </div>
-      <Table t={tile(6)} v={{ Size: 'sm', Appearance: 'ghost' }} w="100%" />
     </ScaledModule>
   )
   const colorStyle = (wide: boolean, fill = false) => (
@@ -1156,28 +1050,28 @@ export function SystemCollage({
   // stretches (`fill`), so whatever the theme's type and spacing do to the
   // heights, every column ends on one line. Each column closes on a tile whose
   // content reads fine centred in extra height.
-  const boardColumns: ReactElement[][] = [
-    [mod.buttons, mod.inputTag],
-    [mod.badges, mod.stepper],
-    [mod.tabsProgress, mod.seats],
-    [mod.toasts, mod.fileUpload],
+  // The KPI block (its own card, it does not stretch) sits mid-column; the
+  // board ends on the bento, every column on one line.
+  // The middle two columns open on the year of activity, spanning both.
+  const bento: BentoSlot[] = [
+    { span: 1, tiles: [mod.buttons, mod.notifications] },
+    { span: 2, head: activityCard, columns: [[mod.stepper], [metricCard, mod.inputTag]] },
+    { span: 1, tiles: [mod.toasts, mod.fileUpload] },
   ]
   /** Above the bento, each at its own width and the board's one scale:
-   *  the SignIn block, the Calendar's full panel over the team, and one
-   *  column (the stat card block, the OTP and the settings switches). */
+   *  the SignIn block, the Calendar's full panel over the NowPlaying bar, and
+   *  one column (the Gauge card block over the OTP) — three of a height. */
   const blockRow: { width: number; tiles: ReactElement[] }[] = [
     { width: signInPhoto.frameWidth, tiles: [signIn] },
-    { width: calendarPhoto.frameWidth, tiles: [calendarPanel, teamCard] },
-    { width: display, tiles: [statCard, mod.verify, mod.notifications] },
+    { width: calendarPhoto.frameWidth, tiles: [calendarPanel, nowPlaying] },
+    { width: display, tiles: [gaugeCard, mod.verify] },
   ]
-  /** Under the bento: the Table beside the Share modal block. */
-  const wideRow: ReactElement[] = [membersCard, shareModal]
   const phonePacks: ReactElement[][] = [
     [colorStyle(false), typeStyle(false)],
     [signIn],
-    [mod.verify, mod.buttons, mod.badges],
-    [mod.calendar, teamCard, mod.notifications],
-    [mod.seats, mod.toasts, mod.tabsProgress],
+    [mod.verify, mod.buttons],
+    [mod.calendar, nowPlaying, mod.notifications],
+    [metricCard, mod.toasts],
     [mod.inputTag, mod.fileUpload, mod.stepper],
   ]
   // The wave runs on diagonals: the two style tiles first, then each column's
@@ -1185,7 +1079,7 @@ export function SystemCollage({
   const place = (el: ReactElement, band: number) => cloneElement(el as ReactElement<{ band?: number }>, { band })
   const bands = phones
     ? phonePacks.reduce((n, pack, p) => Math.max(n, p + pack.length - 1), 0)
-    : boardColumns.reduce((n, column, c) => Math.max(n, 3 + c + column.length - 1), 3) + 1
+    : bentoBands(bento).reduce((n, b) => Math.max(n, b), 3) + 1
   // The wave starts once the BOARD holds still: the on-demand library is in and
   // no tile has changed size for `SETTLE_MS`. Settling tile by tile was not
   // enough — when the Chart grows, every column's last tile re-stretches and
@@ -1281,14 +1175,29 @@ export function SystemCollage({
           ))}
         </div>
         <div className="flex items-stretch" style={{ gap: gutter }}>
-          {boardColumns.map((column, i) => (
-            <div key={i} className="flex flex-col" style={{ width: display, gap: gutter, scrollSnapAlign: slides ? 'start' : undefined }}>
-              {fillLast(column).map((el, r) => place(el, 3 + i + r))}
-            </div>
-          ))}
-        </div>
-        <div className="flex items-stretch" style={{ gap: gutter }}>
-          {wideRow.map((el, i) => place(i === 0 ? cloneElement(el as ReactElement<{ fill?: boolean }>, { fill: true }) : el, bands - 1 + i))}
+          {bento.map((slot, i) => {
+            const c = bentoStart(bento, i)
+            const snap = slides ? 'start' as const : undefined
+            if (slot.span === 1) {
+              return (
+                <div key={i} className="flex flex-col" style={{ width: display, gap: gutter, scrollSnapAlign: snap }}>
+                  {fillLast(slot.tiles).map((el, r) => place(el, 3 + c + r))}
+                </div>
+              )
+            }
+            return (
+              <div key={i} className="flex flex-col" style={{ width: 2 * display + gutterPx, gap: gutter, scrollSnapAlign: snap }}>
+                {place(slot.head, 3 + c)}
+                <div className="flex flex-1 items-stretch" style={{ gap: gutter }}>
+                  {slot.columns.map((column, k) => (
+                    <div key={k} className="flex flex-col" style={{ width: display, gap: gutter }}>
+                      {fillLast(column).map((el, r) => place(el, 4 + c + k + r))}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )
+          })}
         </div>
       </div>
     </div>

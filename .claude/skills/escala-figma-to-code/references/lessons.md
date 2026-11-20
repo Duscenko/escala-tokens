@@ -11,7 +11,7 @@ Every row cost a round trip with the owner. Check each one before calling a comp
 | Figma strokes are INSIDE, CSS borders OUTSIDE the padding | Button 2px wider than its Figma twin | `recipeStyles.ts`: padding minus `--escala-stroke-width` (registered, non-inherited) |
 | Focus geometry | 3px edge + 3px halo | Controls: 2px edge inside (border + inset) + 2px halo outside. Fields: 1px edge, 2px halo straddling it (`outline`, negative `outline-offset`) |
 | Focus colours differ per set | Code assumed one ring | ~~Copy each set (`focusPair`)~~ — SUPERSEDED 2026-11-17: Button and IconButton share ONE focus rule, see "Focus ring: one rule for every Button and IconButton" below. Fields and controls keep their own (`border.focus` + `border.ring.default`) |
-| Solid fills carry effects | Missing top highlight | Recipe property `highlight` (`inset 0 2px 0 Elevation/highlight`), every solid state but Disabled |
+| Solid fills carry effects | Missing top highlight | Recipe property `highlight` (`inset 0 1px 0 Elevation/highlight`, style `Highlight/solid`; 2px until 2026-11-19), every solid state but Disabled |
 | A DROP_SHADOW with SPREAD on a frame that does not clip content | I copied `DROP_SHADOW 0 0 0 spread 1` as a 1px outer edge (`outerEdge`); Figma paints nothing there (it applies spread only to clipping frames / rectangles / ellipses). The export reserves the pixel (121×42) but it is transparent | Removed. `figma-read-set.js` now flags it. **When an effect is in doubt, read the PIXELS of the Figma render** (get_screenshot → PNG → `sharp` raw), never the export size or the Tailwind |
 | A transparent CSS border on a control Figma draws WITHOUT stroke | The top highlight sat 1px below the top edge (a band of fill above it) | Stroke width per appearance: only `outline` gets `stroke.control`, the rest `stroke.none`; the padding gives the border back, so widths do not move |
 | `recipeVars` resolved `stroke.*` as ROLES only | `stroke.none` (and `stroke.md` steps in Slider / Tabs) previewed as 1px | `previewDimension`: a role, else the ramp step (`t.stroke[name]`) |
@@ -582,7 +582,7 @@ Decided with the owner, on a Figma experiment page first, then applied to Button
 | Focus on a solid drawn as a 2px INSIDE edge + a halo | Dark: the edge (`Border/focus`) was the same hue as the fill, so only the halo showed; the neutral ring looked opaque and grey | ONE ring, 2px, outside, nothing inside. First shipped as a flush `halo` at Alpha/08 with `border.strong` as the neutral ring; SUPERSEDED the same day by the `gapRing` rule below (1px gap, Alpha/06, `border.ring.neutral`) |
 | A bound paint written with a PLACEHOLDER base colour | `setBoundVariableForPaint({color: grey})`: the file rendered the placeholder (grey 128) instead of the variable, in the app and in screenshots | Write the RESOLVED colour of the variable as the base, then bind it. Check a render, not just `boundVariables` |
 | `DROP_SHADOW` with spread as a focus ring | Painted nothing (same cause as `outerEdge` above) | The ring is a frame stroked OUTSIDE (`focus-ring`); in CSS it is a 0-blur box-shadow |
-| The label's shadow | Create UI lifts the label with `text-shadow-2xs` | `Shadow/text-2xs` effect style (0 1px 0, black 15 %) on the Button label only; recipe prop `textShadow` on the `label` slot. IconButton has no label |
+| The label's shadow | Create UI lifts the label with `text-shadow-2xs` | `Shadow/text-2xs` effect style (0 1px 0.5px, `Elevation/shadow-ambient` since 2026-11-19; was 0 1px 0 black 15 % unbound) on the Button label only; recipe prop `textShadow` on the `label` slot. IconButton has no label |
 | White label on the Dark accent judged by WCAG 2 | 4.1:1 / 3.4:1 fail 4.5 though the label reads at Lc 73 / 66 | Owner's call: Dark accent label is judged on APCA (`action-label-perceived`, Lc 60); a hue that fails it (green, yellow, orange) takes the dark ink. `SOLID_JOB.accent.dark` in `semanticArchitectures.ts`; the strict ratio waits for a High-contrast mode |
 | Hover and pressed both "away from the ink" | The Dark violet went pale lavender on hover and almost white on press | Dark accent states are Dark 09 · 10 · 08: lifts on hover, sinks on press (`SOLID_JOB … states: [1, -1]`) |
 | Editing the file | Rule 2 says never edit the file | Only when the owner asks for the change in the file itself (this round: new Dark ramp, `Action/primary/*`, `Content/on-action`, `Border/ring/default`, `Status/critical/ring`, `Shadow/text-2xs`, the solid variants). Show it on an experiment page first and wait for approval |
@@ -624,3 +624,56 @@ Measured in the built Storybook, 2026-11-17 (Button + IconButton, 3 intents × 4
 |---|---|---|
 | One role for unrelated jobs: `Radius/control` drove Checkbox **and** Badge rounded, Kbd, InputTagChip | Raising Selectors for rounder badges turned a 16 px checkbox into a circle (reads as Radio) | Figma moved the tag family to `Radius/item`; recipes `BADGE` (rounded), `KBD`, `INPUT` › `kbd`, `INPUT_TAG_CHIP` read `radius.item` (DEC-2026-11-17-002) |
 | A new tag-, key- or badge-like part | Tempting to copy the checkbox's `Radius/control` | Bind `Radius/item`; read the role from the Figma node, never from a sibling |
+
+# Lessons from the ReactionGroup family (2026-11-19)
+
+| Trap | What it looked like | The fix (where it lives) |
+|---|---|---|
+| A stroke that lays out | The picker measured 236 × 56, the file 238 × 58 | The file's stroke takes room here (as on Chip): `paddingX/Y: 'spacing.inset-control+stroke.divider'` (`REACTION_GROUP_POPOVER`) |
+| `tabular-nums` on a count | «1» came out as wide as «3» (58 vs the file's 56) | Proportional digits; only the six-digit code is tabular |
+| Two `transition` rules on one element | A wrapper slot and the Chip inside both wanted `transition` | The row's motion lives on an `item` wrapper, never on the Chip root |
+| A list's motion without a duration in the component | Stagger, reflow, exit and a rolling count | Poses are classes on `data-motion` / `data-roll`; timing is `RECIPE_MOTION` (`transitions` with a slot suffix + the new `stagger`); `afterTransition` reads the computed time instead of naming one |
+| Radix's offset is a number | The picker sits 8px above the trigger | `useTokenPx('--spacing-gap-control')` reads the token where the picker lives |
+| The Browser pane was hidden | A screenshot showed one pill of five, the picker at 93 % | Frames only advance when one is drawn: measure `offsetWidth` and computed styles, retake the screenshot |
+| A new set needs more than a story | 17 guards failed at once | Checklist: recipe + `componentRecipes.ts`, catalogue, `componentFiles.ts`, overview, specimens + snippets, families + `apply-families`, `gen:contracts`, `gen:registry-sources`, plugin `WEB_ONLY`, a choreography's `components`, sitemap, registry.json, goldens, plugin bundle |
+
+# Lessons from the Auth setup blocks (2026-11-19)
+
+| Trap | What it looked like | The fix (where it lives) |
+|---|---|---|
+| The Browser pane had no size | Every Modal measured 2px wide, the story looked broken | `resize_window` first (1280 × 900), then measure; a first load after `npm install` also fails once with "Outdated Optimize Dep": reload |
+| A well's stroke lays out | 165 = 24 + 56 + 16 + 43 + 24 **+ 2** | Border plus the role's full padding (`well()` in `blocks/authSetup.tsx`), as on the QR tile (198 = 164 + 32 + 2) |
+| A fixed step height | Right on the 640 card, cut on a phone | `minHeight`: every step is shorter on the card, so it still keeps one size |
+| A nested component's motion in a handoff | "segments on `use-travel-in`, Turn on on `use-color`" | The component's recipe keeps its role (`use-progress`, `use-hover`); the block times only what it draws (DEC-2026-11-19-004) |
+| A block's own `<button>` | The sensor and the authenticator's code needed a focus ring | Classes in role tokens (`FOCUS_RING`), never a bare outline |
+| `transition-` / `duration-` in a block | The guard forbids the words | Build the names (`motion(role)`), put a loop in a class (`animate-[spin_var(--motion-use-loop-duration)_…]`) |
+| The mono family in Storybook | `Type/code` computed "Geist Mono" but no face was loaded | Storybook loads no web font: `EscalaScope` now fetches the mono family |
+| The QR | Is it really scannable? | Draw the path on a canvas with a quiet zone and read it back with the browser's `BarcodeDetector` |
+| Button labels in a block | Buttons 6–20px narrower than the file | Not the block: the file sizes Button labels by Size (12 · 14 · 14 · 16), the recipe uses `type.button` (12) for all (finding TYP-001 Button) |
+
+# Lessons from the SplitButton (2026-11-19)
+
+| Trap | What it looked like | The fix (where it lives) |
+|---|---|---|
+| A set that is only a composition (ButtonGroup + DropdownMenu), no TEXT / BOOLEAN / SWAP property | Tempting to invent props from the nested items | Axes = the file's three (`Variant · Size · Open`); the label, icon and rows are the nested items' CONTENT (`children`, `leading`, `menu`), listed in the contract as "not Figma properties". The recipe holds only the one measure the composition adds (`gap: spacing.gap-control` = the 8px menu offset, read as Radix's `sideOffset`) |
+| A nested DropdownMenu measured 4px short (256×118, rows 234 wide at x 11, file 256×122 · 230 at x 13) | The Playground of DropdownMenu itself had the same numbers: `HALO_BLEED` (padding + equal negative margin) lost to the recipe's own `padding: 12`, so only the −2px margin applied | `DROPDOWN_MENU.content` padding = `spacing.inset-control+stroke.focus`. Check the menu's size AND its first row's x, not only the panel's box. Modal / Sheet use the same bleed: not measured here |
+| The menu has no `xs` | The file nests `DropdownMenu Size=sm` under `Size=xs` | A map in the component (`MENU_SIZE`) and a line in the contract |
+| A story's JSDoc containing `Action/*/pressed` | Storybook: `Unable to index … Missing semicolon` and a 500 on `/index.json` for the whole Storybook (every other session's too) | Never write `*/` inside a comment. Curl `/index.json` after the first save of a story |
+| An element that is a flex child of the story's cell | The root stretched to the cell's height (220) and `top-full` put the inline menu 228px down | `self-start items-start` on the root so it hugs the group; measure the menu's y against the GROUP, not the cell |
+| `menu ?? <SampleMenu />` before a `Children.map` that clones props into the rows | The stagger style went to the wrapper function component, the rows had `animation: none` | A flat array of keyed elements (`SAMPLE_MENU`); then the computed delays were 0 · 100 · 200 ms |
+| Radix `DropdownMenu` arrows do not loop by default | The file says «arrows move through items and loop» | `loop` on the Content; measured ↓ ×4 → first row, ↑ → last, Home / End |
+| `ButtonGroupItem` writes `aria-pressed` on every segment | A menu trigger with `aria-pressed` and `aria-expanded`, and a plain action marked "not pressed" | Pass `aria-pressed={undefined}` on both segments (props spread after the default) |
+| A file artefact: `Variant=default · Size=xs` is 113 wide | A visible `divider-3` (1×24, x 112) with no third segment behind it; `secondary · xs` and the other 14 variants have none | Not copied (the group is 112 in both), said in the contract and the report |
+
+# Lessons from the Gauge and Sparkline (2026-11-19)
+
+| Trap | What it looked like | The fix (where it lives) |
+|---|---|---|
+| The file's arc is an ELLIPSE with `arcData` (135°→405°, `innerRadius` .85 · .875 · .833) and its round ends are separate dots | Tempting to port the vector paths | An SVG circle (`pathLength` 100, `rotate(135)`, `stroke-linecap: round`) paints the same shape; the thickness is `50 × (1 − innerRadius)` as in ProgressCircle. A zero-length round dash leaves a dot: Value 0 uses `butt` |
+| A frame centred a few px off its parent's centre (Gauge content 6 · 4 · 6 px under the centre) | A `top: 53.125%` fits two sizes and misses the third by 1px | Read `y` per size from the file, then express the offset as the recipe's `travel` (`--escala-travel`) and `top: calc(50% + var(--escala-travel))` |
+| Dimension primitives named `160`, `256`, `480` bound to a width (DIM-01) | No `Size/*` role | Summed `spacing` steps (`spacing.32+spacing.8` = 160; step N = N × 4 px), same as the Modal widths |
+| A data stroke bound to `Stroke/focus` (2) with a raw 1.5 on sm (DIM-03) | The recipe has no 1.5 | `strokeWidth: stroke.focus`, and `hairline: '1.5'` (the recipe's hand-set px width) on sm; an SVG path reads it as `stroke-width: var(--escala-stroke-width)` |
+| A chart whose width is "fluid" but whose geometry is in px (dot Ø, stroke, caps) | A scaled viewBox would squash the dot | Measure the root (`ResizeObserver`) and draw in real px; the dot is an HTML span the recipe sizes, so its box gives the inset |
+| The file's sample curve has hand-set paddings (5.32 · 3.12 · 8.8) | No rule reproduces all three | One dot diameter of air above and below (6 · 4 · 8): within 0.9px of all three; said in the contract |
+| Transitions never start in a hidden Browser pane | `getComputedStyle` showed the final value for seconds | A `computer` screenshot forces frames; or listen for `transitionrun` before clicking and read `getAnimations()` |
+| A shared dev server (6006) stops answering while several sessions edit | `page.goto` timeouts, a blank iframe | Check `curl localhost:6006/index.json`; point the pane and `BASE_URL=… node scripts/storybook-checks/axe.mjs` at another running server (6016) |

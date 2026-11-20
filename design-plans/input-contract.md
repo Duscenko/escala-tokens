@@ -1,7 +1,7 @@
 # Contrato · Input (de Figma a código)
 
 Fecha: 2026-11-12 · Fuente: Figma `Escala Design System (Real)`, set `Input` (`4:12380`,
-114 variantes, página «❖ Input»), leído con la Plugin API (solo lectura). **Figma manda.**
+222 variantes, página «❖ Input»), leído con la Plugin API (solo lectura). **Figma manda.**
 
 Descripción del set: «Input — the box itself. Type Default: Size (sm · default · lg) × Value
 (Placeholder · Filled) × State, with optional Icon leading (search) / Icon trailing (eye). Other
@@ -17,6 +17,7 @@ hint are Field.»
 | `State` Default · Hover · Focused · **Invalid** · Disabled | VARIANT | `Default` | CSS (`:hover`, `:has(:focus-visible)`) + `forceState`; `aria-invalid`; `disabled` |
 | `Type` default · phone · currency · currency-select · password · url · upload · tag · copy-link · credit-card · search | VARIANT | `default` | `type` (otro valor = tipo HTML sobre el layout default) |
 | `Value` placeholder · filled | VARIANT | `placeholder` | ninguno: el campo pinta su `::placeholder` distinto de un valor escrito |
+| `Value` (TEXT, desde 2026-11-19; enlazada a la capa `value` de las 57 variantes `Value=filled`) | TEXT | «4242 4242 4242 4242» | `value` / `defaultValue`. El eje `Value=filled` solo dice que hay un valor; no es una prop. Sin cambio visual. Nota: el valor por defecto es el número de tarjeta en TODAS las variantes filled (también `Type=default`), tal cual el archivo |
 | `IconLeadingVisible` + `IconLeadingIcon` (MagnifyingGlass) | BOOLEAN + SWAP | true | `leading` (cada Type trae el suyo; `null` lo oculta) |
 | `Placeholder` | TEXT | «Jane Doe» | `placeholder` |
 | `IconTrailingVisible` + `IconTrailingIcon` (Eye) | BOOLEAN + SWAP | true | `trailing` |
@@ -55,13 +56,13 @@ Raíz: horizontal, centrada, gap `Spacing/gap-control` (8), padding X `Spacing/i
 
 ## Color por State
 
-| State | Fill | Stroke | Halo (2px, monta el borde) | Tintas: valor · icono · addon / placeholder |
+| State | Fill | Stroke | Halo (2px, monta el borde) | Tintas: valor · addon / placeholder · icono |
 |---|---|---|---|---|
-| Default | `Surface/input` | `Border/control` | — | `Content/primary` / `Content/subtle` |
+| Default | `Surface/input` | `Border/control` | — | `Content/primary` / `Content/subtle` · icono `Content/subtle` |
 | Hover | `Surface/input` | `Border/control-hover` | — | igual |
 | Focused | `Surface/input` | `Border/focus` | `Border/ring/default` | igual (+ caret) |
 | Invalid | `Surface/input` | `Status/critical/border-strong` | `Status/critical/border` | igual |
-| Disabled | `Action/disabled/default` | **`Border/control`** | — | `Content/disabled` / `Content/disabled` |
+| Disabled | `Action/disabled/default` | **`Border/control`** | — | `Content/disabled` / `Content/disabled` (icono incluido) |
 
 Disabled conserva el stroke neutro (antes `fieldBox()` lo repintaba: bug corregido, afecta también
 a Textarea/InputGroup/Select/InputTag).
@@ -81,3 +82,6 @@ a Textarea/InputGroup/Select/InputTag).
 `Kbd` (pintado por la parte `kbd` de Input con los valores del set Kbd; el componente Kbd aún no se
 ha reconstruido desde el archivo). Partes nuevas (`addon`, `divider`, `kbd`) son web + Storybook:
 el plugin está congelado (`WEB_ONLY_SLOTS` en `componentRecipesPluginParity.test.ts`).
+
+## Tamaños por tipo e iconos (2026-11-18, DEC-2026-11-18-004)
+`Size` sm · default · lg existe para los 11 `Type`. Alto `size.compact` 32 · `size.control` 40 · `size.touch` 48; icono `icon.small` · `icon.medium` · `icon.medium`; texto nivel text-md en sm y default, text-lg en lg. El caret de phone y currency-select sigue en `icon.small`. Todo icono dentro del campo usa `Content/subtle` (Disabled: `Content/disabled`) y no se oscurece con hover ni focus; el valor escrito y los addons siguen en `Content/primary`.

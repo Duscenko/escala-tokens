@@ -61,7 +61,7 @@ export interface PreviewTokens {
     sizes: Record<string, string>
     lineHeights?: Record<string, string>
     weights: Record<string, number>
-    roles?: Record<string, { desktop: { family: 'display' | 'body'; size: string; weight: string }; mobile: { family: 'display' | 'body'; size: string; weight: string } }>
+    roles?: Record<string, { desktop: { family: 'display' | 'body' | 'mono'; size: string; weight: string }; mobile: { family: 'display' | 'body' | 'mono'; size: string; weight: string } }>
   }
   // Radix-style panel treatment for raised surfaces (surface-1: cards, panels).
   // 'page' reuses the primitives page background as the panel fill.

@@ -1,0 +1,55 @@
+{
+  "$schema": "./intent.schema.json",
+  "component": "Sidebar",
+  "purpose": "The app's navigation rail: a brand header with a fold trigger, labelled groups of destination rows and an optional footer. Collapsed it becomes a 48 px icon rail.",
+  "notFor": [
+    {
+      "case": "Bottom navigation on a phone.",
+      "use": "TabBar"
+    },
+    {
+      "case": "Views inside one page.",
+      "use": "TabMenu"
+    },
+    {
+      "case": "A few top-level destinations that fit a header.",
+      "use": "NavItem"
+    },
+    {
+      "case": "A temporary panel over the page.",
+      "use": "Sheet"
+    }
+  ],
+  "states": {
+    "Collapsed=false": {
+      "setBy": "both",
+      "meaning": "Expanded.",
+      "visual": "272 px wide on Surface/layer-1 with a Border/default hairline on the right; labels and group labels shown."
+    },
+    "Collapsed=true": {
+      "setBy": "both",
+      "meaning": "Folded by the trigger or by the app.",
+      "visual": "The 48 px icon rail: rows become squares, labels and group labels are hidden, the brand shows only its logo."
+    }
+  },
+  "a11y": {
+    "role": "complementary",
+    "keyboard": "Tab moves through the trigger and each row; the trigger is a button that folds and unfolds the rail.",
+    "minHitArea": 24,
+    "contrast": "AA",
+    "notes": [
+      "An aside landmark with an aria-label.",
+      "The trigger carries aria-expanded and aria-controls.",
+      "Collapsed rows keep an accessible name and want a Tooltip with their label.",
+      "Keep at most one row marked as the current page."
+    ]
+  },
+  "openQuestions": [
+    "Motion: the Collapsed axis has no motion decision and recipes/motion.ts has no entry (finding MOT-002). Should folding the rail animate its width?"
+  ],
+  "approval": {
+    "status": "draft",
+    "by": null,
+    "date": null
+  }
+}

@@ -244,9 +244,15 @@ function moodShape(id: string) {
 // Both are DARK-ONLY: light measured fine and is left on the schema. The
 // secondary button needs nothing here: the schema puts it on tone 6 in Dark,
 // two steps above this layer-2 (DEC-2026-11-17-001).
+//
+// TRACKS follow the card. `surface.muted` sits one tone above `surface.layer-2`
+// in the schema (the Figma file's 3 and 4); lifting only the card left both on
+// tone 4, and a SegmentedControl's track vanished into the card it sat on.
 const DARK_DEPTH = {
   'surface.layer-1': { dark: '{neutral-dark.3}' },
   'surface.layer-2': { dark: '{neutral-dark.4}' },
+  'surface.muted': { dark: '{neutral-dark.5}' },
+  'surface.muted-hover': { dark: '{neutral-dark.6}' },
   'content.subtle': { dark: '{neutral-dark.10}' },
 } satisfies ThemeStyleSemantics
 
@@ -920,6 +926,9 @@ export const THEME_STYLE_PRESETS: ThemeStylePreset[] = [
     semantics: {
       ...softBorders,
       'surface.layer-2': { dark: '{neutral-dark.5}' },
+      'surface.muted': { dark: '{neutral-dark.6}' },
+      'surface.muted-hover': { dark: '{neutral-dark.7}' },
+      'surface.raised': { dark: '{neutral-dark.7}' },
       'action.secondary.default': { dark: '{neutral-dark.7}' },
       'action.secondary.hover': { dark: '{neutral-dark.8}' },
       'action.secondary.pressed': { dark: '{neutral-dark.9}' },

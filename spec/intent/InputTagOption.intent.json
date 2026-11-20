@@ -1,0 +1,32 @@
+{
+  "$schema": "./intent.schema.json",
+  "component": "InputTagOption",
+  "purpose": "One suggestion row in the InputTag dropdown: an existing option to add as a tag, or an action that creates a new one.",
+  "notFor": [
+    { "case": "Standalone use outside the InputTag dropdown.", "use": "InputTag" },
+    { "case": "A row in a searchable picker of a known list.", "use": "ComboboxItem" },
+    { "case": "An action row in a menu.", "use": "DropdownMenuItem" }
+  ],
+  "states": {
+    "Default": { "setBy": "component", "meaning": "At rest.", "visual": "Surface/input fill; label and icon in Content/primary, meta in Content/subtle, badge dot in Status/success/content." },
+    "Hover": { "setBy": "component", "visual": "Fill moves to Surface/muted." },
+    "Focused": { "setBy": "component", "meaning": "The active option.", "visual": "Surface/muted fill with a Border/focus edge and Border/ring/default halo." },
+    "Disabled": { "setBy": "app", "meaning": "Cannot be picked.", "visual": "Action/disabled/default fill; label, meta, icon and badge in Content/disabled." }
+  },
+  "a11y": {
+    "role": "option, with aria-selected, inside a listbox",
+    "keyboard": "NOT DECIDED",
+    "minHitArea": 24,
+    "contrast": "AA",
+    "reducedMotion": "NOT DECIDED",
+    "notes": [
+      "The contract asks for a listbox with arrow-key navigation, but InputTag's authored keyboard covers only Enter, comma and Backspace."
+    ]
+  },
+  "openQuestions": [
+    "Keyboard: which keys move through the suggestions (Arrow Up / Down?), which picks one (Enter?), and does focus stay in the text input (aria-activedescendant)?",
+    "Selected: what does an aria-selected option look like? The Figma set has no selected state.",
+    "Reduced motion: should the edge and halo transitions (use-hover, use-focus) be instant with reduced motion?"
+  ],
+  "approval": { "status": "draft", "by": null, "date": null }
+}

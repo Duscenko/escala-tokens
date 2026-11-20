@@ -1,0 +1,31 @@
+{
+  "$schema": "./intent.schema.json",
+  "component": "InputOTP",
+  "purpose": "Collects a one-time code for sign-in or verification as a row of single-character slots over one real input. Paste fills every slot at once.",
+  "notFor": [
+    { "case": "A password or any value that is not a short one-time code.", "use": "Input" },
+    { "case": "A numeric quantity.", "use": "NumberInput" }
+  ],
+  "states": {
+    "Empty": { "setBy": "user", "meaning": "No characters yet.", "visual": "Every slot in its Default look; separator in Content/subtle." },
+    "Typing": { "setBy": "user", "meaning": "Part of the code is entered.", "visual": "Entered slots Filled, the next slot Typing with the caret and a Border/focus edge and Border/ring/default halo, the rest Default." },
+    "Filled": { "setBy": "user", "meaning": "Every slot holds a character.", "visual": "Every slot Filled." },
+    "Invalid": { "setBy": "app", "meaning": "The code was rejected.", "visual": "Every slot takes a Status/critical/border-strong edge, with no halo." },
+    "Disabled": { "setBy": "app", "meaning": "Cannot be edited.", "visual": "Every slot Disabled; separator in Content/disabled." }
+  },
+  "a11y": {
+    "role": "one textbox (input-otp OTPInput) with autocomplete=\"one-time-code\"; the slots are presentational",
+    "keyboard": "Tab reaches the one input. Characters fill the next slot, Backspace clears the previous one, Arrow Left and Right move between slots, paste fills every slot.",
+    "minHitArea": 24,
+    "contrast": "AA",
+    "notes": [
+      "Give it a label (Field, or aria-label); on Invalid expose the error through aria-describedby.",
+      "Set length to the code's length."
+    ]
+  },
+  "openQuestions": [
+    "Invalid: Figma draws no halo on an invalid slot, unlike Input and Textarea. Is that intended, or should Invalid gain Status/critical/border?",
+    "Auto-submit: should a Filled code submit itself, or always wait for a Button?"
+  ],
+  "approval": { "status": "draft", "by": null, "date": null }
+}

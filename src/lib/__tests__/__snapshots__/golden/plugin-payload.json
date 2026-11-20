@@ -9,6 +9,174 @@
   "colors": {
     "background": "#ffffff",
     "primitive": {
+      "chart-teal-1": "#fefdff",
+      "chart-teal-2": "#e2faf6",
+      "chart-teal-3": "#c4f4ec",
+      "chart-teal-4": "#9deee3",
+      "chart-teal-5": "#62e9d9",
+      "chart-teal-6": "#00d9c9",
+      "chart-teal-7": "#00c5b6",
+      "chart-teal-8": "#00b1a3",
+      "chart-teal-9": "#00a598",
+      "chart-teal-10": "#009488",
+      "chart-teal-11": "#00736a",
+      "chart-teal-12": "#00423c",
+      "chart-teal-dark-1": "#100e13",
+      "chart-teal-dark-2": "#001c19",
+      "chart-teal-dark-3": "#002622",
+      "chart-teal-dark-4": "#00312c",
+      "chart-teal-dark-5": "#003d38",
+      "chart-teal-dark-6": "#005049",
+      "chart-teal-dark-7": "#00635b",
+      "chart-teal-dark-8": "#007b71",
+      "chart-teal-dark-9": "#00a99b",
+      "chart-teal-dark-10": "#00baac",
+      "chart-teal-dark-11": "#4cd7c8",
+      "chart-teal-dark-12": "#cff4ef",
+      "chart-amber-1": "#fefdff",
+      "chart-amber-2": "#fef2e1",
+      "chart-amber-3": "#fce4c4",
+      "chart-amber-4": "#fcd5a0",
+      "chart-amber-5": "#fdc471",
+      "chart-amber-6": "#fbaa00",
+      "chart-amber-7": "#e49a00",
+      "chart-amber-8": "#d59000",
+      "chart-amber-9": "#c78600",
+      "chart-amber-10": "#b37800",
+      "chart-amber-11": "#865900",
+      "chart-amber-12": "#4d3200",
+      "chart-amber-dark-1": "#100e13",
+      "chart-amber-dark-2": "#221400",
+      "chart-amber-dark-3": "#2d1b00",
+      "chart-amber-dark-4": "#3a2400",
+      "chart-amber-dark-5": "#482e00",
+      "chart-amber-dark-6": "#5d3d00",
+      "chart-amber-dark-7": "#744c00",
+      "chart-amber-dark-8": "#8e5f00",
+      "chart-amber-dark-9": "#c38400",
+      "chart-amber-dark-10": "#d79200",
+      "chart-amber-dark-11": "#ebb25f",
+      "chart-amber-dark-12": "#fbe8ce",
+      "chart-blue-1": "#fefdff",
+      "chart-blue-2": "#edf5ff",
+      "chart-blue-3": "#daeaff",
+      "chart-blue-4": "#c6dfff",
+      "chart-blue-5": "#afd2ff",
+      "chart-blue-6": "#8fc0ff",
+      "chart-blue-7": "#6daeff",
+      "chart-blue-8": "#529fff",
+      "chart-blue-9": "#3893ff",
+      "chart-blue-10": "#0081f9",
+      "chart-blue-11": "#0061be",
+      "chart-blue-12": "#123865",
+      "chart-blue-dark-1": "#100e13",
+      "chart-blue-dark-2": "#06172e",
+      "chart-blue-dark-3": "#031f41",
+      "chart-blue-dark-4": "#002855",
+      "chart-blue-dark-5": "#003369",
+      "chart-blue-dark-6": "#004386",
+      "chart-blue-dark-7": "#0053a5",
+      "chart-blue-dark-8": "#0067c9",
+      "chart-blue-dark-9": "#3492ff",
+      "chart-blue-dark-10": "#5aa3ff",
+      "chart-blue-dark-11": "#91c1ff",
+      "chart-blue-dark-12": "#dfedff",
+      "chart-rose-1": "#fefdff",
+      "chart-rose-2": "#fff0f0",
+      "chart-rose-3": "#ffdfe1",
+      "chart-rose-4": "#ffced0",
+      "chart-rose-5": "#ffbabe",
+      "chart-rose-6": "#ff9da4",
+      "chart-rose-7": "#ff8793",
+      "chart-rose-8": "#ff7183",
+      "chart-rose-9": "#ff5772",
+      "chart-rose-10": "#ff1359",
+      "chart-rose-11": "#b9003c",
+      "chart-rose-12": "#5e2029",
+      "chart-rose-dark-1": "#100e13",
+      "chart-rose-dark-2": "#2a0b0f",
+      "chart-rose-dark-3": "#3b0c14",
+      "chart-rose-dark-4": "#4f0818",
+      "chart-rose-dark-5": "#67001d",
+      "chart-rose-dark-6": "#830028",
+      "chart-rose-dark-7": "#a10033",
+      "chart-rose-dark-8": "#c50041",
+      "chart-rose-dark-9": "#ff3963",
+      "chart-rose-dark-10": "#ff677c",
+      "chart-rose-dark-11": "#ff9ea6",
+      "chart-rose-dark-12": "#ffe3e5",
+      "chart-lime-1": "#fefdff",
+      "chart-lime-2": "#eff7e5",
+      "chart-lime-3": "#dfefcc",
+      "chart-lime-4": "#cde7ae",
+      "chart-lime-5": "#b8de88",
+      "chart-lime-6": "#9cd146",
+      "chart-lime-7": "#87c000",
+      "chart-lime-8": "#79ad00",
+      "chart-lime-9": "#70a100",
+      "chart-lime-10": "#649000",
+      "chart-lime-11": "#4d7000",
+      "chart-lime-12": "#2a4000",
+      "chart-lime-dark-1": "#100e13",
+      "chart-lime-dark-2": "#101b01",
+      "chart-lime-dark-3": "#162500",
+      "chart-lime-dark-4": "#1e2f00",
+      "chart-lime-dark-5": "#273c00",
+      "chart-lime-dark-6": "#344e00",
+      "chart-lime-dark-7": "#426100",
+      "chart-lime-dark-8": "#527700",
+      "chart-lime-dark-9": "#73a500",
+      "chart-lime-dark-10": "#80b600",
+      "chart-lime-dark-11": "#a7cd77",
+      "chart-lime-dark-12": "#e3f1d5",
+      "chart-magenta-1": "#fefdff",
+      "chart-magenta-2": "#ffeef9",
+      "chart-magenta-3": "#ffddf2",
+      "chart-magenta-4": "#ffcaec",
+      "chart-magenta-5": "#ffb4e5",
+      "chart-magenta-6": "#ff96de",
+      "chart-magenta-7": "#ff7fd9",
+      "chart-magenta-8": "#ff64d4",
+      "chart-magenta-9": "#ff3fd0",
+      "chart-magenta-10": "#f200c3",
+      "chart-magenta-11": "#ab0089",
+      "chart-magenta-12": "#552247",
+      "chart-magenta-dark-1": "#100e13",
+      "chart-magenta-dark-2": "#260c1e",
+      "chart-magenta-dark-3": "#350e2a",
+      "chart-magenta-dark-4": "#470d38",
+      "chart-magenta-dark-5": "#5c0749",
+      "chart-magenta-dark-6": "#78005f",
+      "chart-magenta-dark-7": "#940076",
+      "chart-magenta-dark-8": "#b50091",
+      "chart-magenta-dark-9": "#f700c7",
+      "chart-magenta-dark-10": "#ff4bd1",
+      "chart-magenta-dark-11": "#f19fd6",
+      "chart-magenta-dark-12": "#ffe1f4",
+      "chart-orange-1": "#fefdff",
+      "chart-orange-2": "#fff0e9",
+      "chart-orange-3": "#ffe1d3",
+      "chart-orange-4": "#ffd1ba",
+      "chart-orange-5": "#ffbe9e",
+      "chart-orange-6": "#ffa372",
+      "chart-orange-7": "#ff8946",
+      "chart-orange-8": "#ff7407",
+      "chart-orange-9": "#ef6c00",
+      "chart-orange-10": "#d86100",
+      "chart-orange-11": "#9e4500",
+      "chart-orange-12": "#5c2603",
+      "chart-orange-dark-1": "#100e13",
+      "chart-orange-dark-2": "#290e02",
+      "chart-orange-dark-3": "#371300",
+      "chart-orange-dark-4": "#461a00",
+      "chart-orange-dark-5": "#572200",
+      "chart-orange-dark-6": "#6f2e00",
+      "chart-orange-dark-7": "#893b00",
+      "chart-orange-dark-8": "#a84a00",
+      "chart-orange-dark-9": "#e66700",
+      "chart-orange-dark-10": "#fd7200",
+      "chart-orange-dark-11": "#fda578",
+      "chart-orange-dark-12": "#ffe5d8",
       "core--minimalist-1": "#fefdff",
       "core--minimalist-2": "#f3f1fd",
       "core--minimalist-3": "#e8e5fc",
@@ -624,7 +792,7 @@
             "core--minimalist::dark": "#cdcbd3"
           },
           "subtle": {
-            "core--minimalist::light": "#9791a4",
+            "core--minimalist::light": "#898494",
             "core--minimalist::dark": "#716e77"
           },
           "accent": {
@@ -712,7 +880,7 @@
             "core--minimalist::dark": "#1b1b1c"
           },
           "layer-2": {
-            "core--minimalist::light": "#ececee",
+            "core--minimalist::light": "#fefdff",
             "core--minimalist::dark": "#222223"
           },
           "accent": {
@@ -720,12 +888,12 @@
             "core--minimalist::dark": "#2a243f"
           },
           "muted": {
-            "core--minimalist::light": "#e3e1e6",
-            "core--minimalist::dark": "#222223"
+            "core--minimalist::light": "#ececee",
+            "core--minimalist::dark": "#2a292c"
           },
           "muted-hover": {
-            "core--minimalist::light": "#d8d6dd",
-            "core--minimalist::dark": "#2a292c"
+            "core--minimalist::light": "#e3e1e6",
+            "core--minimalist::dark": "#363539"
           },
           "input": {
             "core--minimalist::light": "#f5f4f6",
@@ -909,7 +1077,7 @@
         "border": {
           "default": {
             "core--minimalist::light": "#0000001a",
-            "core--minimalist::dark": "#ffffff1a"
+            "core--minimalist::dark": "#ffffff0d"
           },
           "subtle": {
             "core--minimalist::light": "#00000026",
@@ -925,7 +1093,7 @@
           },
           "strong": {
             "core--minimalist::light": "#00000080",
-            "core--minimalist::dark": "#ffffff99"
+            "core--minimalist::dark": "#ffffff26"
           },
           "accent": {
             "core--minimalist::light": "#9c7cff",
@@ -968,6 +1136,128 @@
           "highlight": {
             "core--minimalist::light": "#ffffff4d",
             "core--minimalist::dark": "#ffffff26"
+          }
+        },
+        "chart": {
+          "series-1.solid": {
+            "core--minimalist::light": "#874fff",
+            "core--minimalist::dark": "#905cff"
+          },
+          "series-1.soft": {
+            "core--minimalist::light": "#dcd7fc",
+            "core--minimalist::dark": "#2a243f"
+          },
+          "series-1.content": {
+            "core--minimalist::light": "#7252c9",
+            "core--minimalist::dark": "#d2c4ff"
+          },
+          "series-2.solid": {
+            "core--minimalist::light": "#00a598",
+            "core--minimalist::dark": "#00a99b"
+          },
+          "series-2.soft": {
+            "core--minimalist::light": "#9deee3",
+            "core--minimalist::dark": "#00312c"
+          },
+          "series-2.content": {
+            "core--minimalist::light": "#00736a",
+            "core--minimalist::dark": "#4cd7c8"
+          },
+          "series-3.solid": {
+            "core--minimalist::light": "#c78600",
+            "core--minimalist::dark": "#c38400"
+          },
+          "series-3.soft": {
+            "core--minimalist::light": "#fcd5a0",
+            "core--minimalist::dark": "#3a2400"
+          },
+          "series-3.content": {
+            "core--minimalist::light": "#865900",
+            "core--minimalist::dark": "#ebb25f"
+          },
+          "series-4.solid": {
+            "core--minimalist::light": "#3893ff",
+            "core--minimalist::dark": "#3492ff"
+          },
+          "series-4.soft": {
+            "core--minimalist::light": "#c6dfff",
+            "core--minimalist::dark": "#002855"
+          },
+          "series-4.content": {
+            "core--minimalist::light": "#0061be",
+            "core--minimalist::dark": "#91c1ff"
+          },
+          "series-5.solid": {
+            "core--minimalist::light": "#ff5772",
+            "core--minimalist::dark": "#ff3963"
+          },
+          "series-5.soft": {
+            "core--minimalist::light": "#ffced0",
+            "core--minimalist::dark": "#4f0818"
+          },
+          "series-5.content": {
+            "core--minimalist::light": "#b9003c",
+            "core--minimalist::dark": "#ff9ea6"
+          },
+          "series-6.solid": {
+            "core--minimalist::light": "#70a100",
+            "core--minimalist::dark": "#73a500"
+          },
+          "series-6.soft": {
+            "core--minimalist::light": "#cde7ae",
+            "core--minimalist::dark": "#1e2f00"
+          },
+          "series-6.content": {
+            "core--minimalist::light": "#4d7000",
+            "core--minimalist::dark": "#a7cd77"
+          },
+          "series-7.solid": {
+            "core--minimalist::light": "#ff3fd0",
+            "core--minimalist::dark": "#f700c7"
+          },
+          "series-7.soft": {
+            "core--minimalist::light": "#ffcaec",
+            "core--minimalist::dark": "#470d38"
+          },
+          "series-7.content": {
+            "core--minimalist::light": "#ab0089",
+            "core--minimalist::dark": "#f19fd6"
+          },
+          "series-8.solid": {
+            "core--minimalist::light": "#ef6c00",
+            "core--minimalist::dark": "#e66700"
+          },
+          "series-8.soft": {
+            "core--minimalist::light": "#ffd1ba",
+            "core--minimalist::dark": "#461a00"
+          },
+          "series-8.content": {
+            "core--minimalist::light": "#9e4500",
+            "core--minimalist::dark": "#fda578"
+          },
+          "sequential.0": {
+            "core--minimalist::light": "#ececee",
+            "core--minimalist::dark": "#1b1b1c"
+          },
+          "sequential.1": {
+            "core--minimalist::light": "#e8e5fc",
+            "core--minimalist::dark": "#201d2c"
+          },
+          "sequential.2": {
+            "core--minimalist::light": "#cfc7fd",
+            "core--minimalist::dark": "#362c55"
+          },
+          "sequential.3": {
+            "core--minimalist::light": "#ad99fe",
+            "core--minimalist::dark": "#5a4299"
+          },
+          "sequential.4": {
+            "core--minimalist::light": "#874fff",
+            "core--minimalist::dark": "#905cff"
+          },
+          "sequential.5": {
+            "core--minimalist::light": "#7252c9",
+            "core--minimalist::dark": "#d2c4ff"
           }
         }
       }
@@ -1181,6 +1471,23 @@
               "weight": "regular"
             }
           },
+          "code": {
+            "desktop": {
+              "family": "mono",
+              "size": "text-md",
+              "weight": "regular"
+            },
+            "tablet": {
+              "family": "mono",
+              "size": "text-md",
+              "weight": "regular"
+            },
+            "mobile": {
+              "family": "mono",
+              "size": "text-md",
+              "weight": "regular"
+            }
+          },
           "label": {
             "desktop": {
               "family": "body",
@@ -1267,6 +1574,7 @@
             }
           }
         },
+        "monoFontFamily": "Geist Mono",
         "letterSpacings": {
           "text-xs": "0px",
           "text-sm": "0px",
@@ -1306,7 +1614,8 @@
         "gap-group": "4",
         "gap-section": "6",
         "inset-control": "3",
-        "inset-surface": "5",
+        "inset-surface": "6",
+        "inset-action": "4",
         "inset-page": "8",
         "inset-section": "24",
         "overlap-sm": "dimension--4",
@@ -1319,7 +1628,8 @@
         "gap-group": "section-sm",
         "gap-section": "section-md",
         "inset-control": "3",
-        "inset-surface": "5",
+        "inset-surface": "6",
+        "inset-action": "4",
         "inset-page": "8",
         "inset-section": "24",
         "overlap-sm": "dimension--4",
@@ -1327,19 +1637,22 @@
       },
       "spacingRoleViewports": {
         "tablet": {
+          "inset-surface": "5",
           "inset-page": "4",
           "inset-section": "16"
         },
         "mobile": {
+          "inset-surface": "4",
+          "inset-action": "3",
           "inset-page": "4",
           "inset-section": "12"
         }
       },
       "padding": {
-        "top": "20px",
-        "right": "20px",
-        "bottom": "20px",
-        "left": "20px"
+        "top": "24px",
+        "right": "24px",
+        "bottom": "24px",
+        "left": "24px"
       },
       "radius": {
         "none": "0px",
@@ -1594,7 +1907,10 @@
           "long": "360ms",
           "extra-long": "560ms",
           "super-long": "800ms",
-          "cinematic": "1200ms"
+          "cinematic": "1200ms",
+          "lifetime-brief": "4000ms",
+          "lifetime-default": "6000ms",
+          "lifetime-long": "10000ms"
         },
         "transforms": {
           "enter": "8px",
@@ -1730,6 +2046,36 @@
             "duration": "long",
             "easing": "standard",
             "value": "360ms cubic-bezier(0.45, 0.05, 0.25, 0.95)"
+          },
+          "use-notify-in": {
+            "duration": "long",
+            "easing": "spring-smooth",
+            "value": "360ms linear(0, 0.032, 0.111, 0.213, 0.325, 0.435, 0.538, 0.63, 0.71, 0.778, 0.834, 0.878, 0.914, 0.941, 0.962, 0.977, 0.988, 0.996, 1.001, 1.004, 1.005, 1.006, 1.006, 1.006, 1.005, 1.005, 1.004, 1.003, 1.003, 1.002, 1.002, 1.001, 1.001, 1.001, 1, 1, 1, 1, 1, 1, 1)"
+          },
+          "use-notify-out": {
+            "duration": "short",
+            "easing": "exit",
+            "value": "160ms cubic-bezier(0.5, 0, 1, 1)"
+          },
+          "use-reflow": {
+            "duration": "medium",
+            "easing": "spring-smooth",
+            "value": "240ms linear(0, 0.032, 0.111, 0.213, 0.325, 0.435, 0.538, 0.63, 0.71, 0.778, 0.834, 0.878, 0.914, 0.941, 0.962, 0.977, 0.988, 0.996, 1.001, 1.004, 1.005, 1.006, 1.006, 1.006, 1.005, 1.005, 1.004, 1.003, 1.003, 1.002, 1.002, 1.001, 1.001, 1.001, 1, 1, 1, 1, 1, 1, 1)"
+          },
+          "use-countdown": {
+            "duration": "lifetime-default",
+            "easing": "linear",
+            "value": "6000ms cubic-bezier(0, 0, 1, 1)"
+          },
+          "use-progress": {
+            "duration": "medium",
+            "easing": "entrance",
+            "value": "240ms cubic-bezier(0, 0, 0.2, 1)"
+          },
+          "use-release": {
+            "duration": "medium",
+            "easing": "spring-snappy",
+            "value": "240ms linear(0, 0.045, 0.154, 0.295, 0.443, 0.584, 0.708, 0.812, 0.893, 0.954, 0.996, 1.024, 1.039, 1.045, 1.046, 1.042, 1.036, 1.029, 1.023, 1.016, 1.011, 1.007, 1.003, 1.001, 1, 0.999, 0.998, 0.998, 0.998, 0.998, 0.998, 0.999, 0.999, 0.999, 1, 1, 1, 1, 1, 1, 1)"
           }
         }
       },
@@ -1753,10 +2099,10 @@
           "2_5": "{dimension.10}"
         },
         "padding": {
-          "top": "{dimension.20}",
-          "right": "{dimension.20}",
-          "bottom": "{dimension.20}",
-          "left": "{dimension.20}"
+          "top": "{dimension.24}",
+          "right": "{dimension.24}",
+          "bottom": "{dimension.24}",
+          "left": "{dimension.24}"
         },
         "radius": {
           "none": "{dimension.0}",
@@ -2011,6 +2357,23 @@
               "weight": "regular"
             }
           },
+          "code": {
+            "desktop": {
+              "family": "mono",
+              "size": "text-md",
+              "weight": "regular"
+            },
+            "tablet": {
+              "family": "mono",
+              "size": "text-md",
+              "weight": "regular"
+            },
+            "mobile": {
+              "family": "mono",
+              "size": "text-md",
+              "weight": "regular"
+            }
+          },
           "label": {
             "desktop": {
               "family": "body",
@@ -2097,6 +2460,7 @@
             }
           }
         },
+        "monoFontFamily": "Geist Mono",
         "letterSpacings": {
           "text-xs": "0px",
           "text-sm": "0px",
@@ -2136,7 +2500,8 @@
         "gap-group": "4",
         "gap-section": "6",
         "inset-control": "3",
-        "inset-surface": "5",
+        "inset-surface": "6",
+        "inset-action": "4",
         "inset-page": "8",
         "inset-section": "24",
         "overlap-sm": "dimension--4",
@@ -2149,7 +2514,8 @@
         "gap-group": "section-sm",
         "gap-section": "section-md",
         "inset-control": "3",
-        "inset-surface": "5",
+        "inset-surface": "6",
+        "inset-action": "4",
         "inset-page": "8",
         "inset-section": "24",
         "overlap-sm": "dimension--4",
@@ -2157,19 +2523,22 @@
       },
       "spacingRoleViewports": {
         "tablet": {
+          "inset-surface": "5",
           "inset-page": "4",
           "inset-section": "16"
         },
         "mobile": {
+          "inset-surface": "4",
+          "inset-action": "3",
           "inset-page": "4",
           "inset-section": "12"
         }
       },
       "padding": {
-        "top": "20px",
-        "right": "20px",
-        "bottom": "20px",
-        "left": "20px"
+        "top": "24px",
+        "right": "24px",
+        "bottom": "24px",
+        "left": "24px"
       },
       "radius": {
         "none": "0px",
@@ -2424,7 +2793,10 @@
           "long": "360ms",
           "extra-long": "560ms",
           "super-long": "800ms",
-          "cinematic": "1200ms"
+          "cinematic": "1200ms",
+          "lifetime-brief": "4000ms",
+          "lifetime-default": "6000ms",
+          "lifetime-long": "10000ms"
         },
         "transforms": {
           "enter": "8px",
@@ -2560,6 +2932,36 @@
             "duration": "long",
             "easing": "standard",
             "value": "360ms cubic-bezier(0.45, 0.05, 0.25, 0.95)"
+          },
+          "use-notify-in": {
+            "duration": "long",
+            "easing": "spring-smooth",
+            "value": "360ms linear(0, 0.032, 0.111, 0.213, 0.325, 0.435, 0.538, 0.63, 0.71, 0.778, 0.834, 0.878, 0.914, 0.941, 0.962, 0.977, 0.988, 0.996, 1.001, 1.004, 1.005, 1.006, 1.006, 1.006, 1.005, 1.005, 1.004, 1.003, 1.003, 1.002, 1.002, 1.001, 1.001, 1.001, 1, 1, 1, 1, 1, 1, 1)"
+          },
+          "use-notify-out": {
+            "duration": "short",
+            "easing": "exit",
+            "value": "160ms cubic-bezier(0.5, 0, 1, 1)"
+          },
+          "use-reflow": {
+            "duration": "medium",
+            "easing": "spring-smooth",
+            "value": "240ms linear(0, 0.032, 0.111, 0.213, 0.325, 0.435, 0.538, 0.63, 0.71, 0.778, 0.834, 0.878, 0.914, 0.941, 0.962, 0.977, 0.988, 0.996, 1.001, 1.004, 1.005, 1.006, 1.006, 1.006, 1.005, 1.005, 1.004, 1.003, 1.003, 1.002, 1.002, 1.001, 1.001, 1.001, 1, 1, 1, 1, 1, 1, 1)"
+          },
+          "use-countdown": {
+            "duration": "lifetime-default",
+            "easing": "linear",
+            "value": "6000ms cubic-bezier(0, 0, 1, 1)"
+          },
+          "use-progress": {
+            "duration": "medium",
+            "easing": "entrance",
+            "value": "240ms cubic-bezier(0, 0, 0.2, 1)"
+          },
+          "use-release": {
+            "duration": "medium",
+            "easing": "spring-snappy",
+            "value": "240ms linear(0, 0.045, 0.154, 0.295, 0.443, 0.584, 0.708, 0.812, 0.893, 0.954, 0.996, 1.024, 1.039, 1.045, 1.046, 1.042, 1.036, 1.029, 1.023, 1.016, 1.011, 1.007, 1.003, 1.001, 1, 0.999, 0.998, 0.998, 0.998, 0.998, 0.998, 0.999, 0.999, 0.999, 1, 1, 1, 1, 1, 1, 1)"
           }
         }
       },
@@ -2583,10 +2985,10 @@
           "2_5": "{dimension.10}"
         },
         "padding": {
-          "top": "{dimension.20}",
-          "right": "{dimension.20}",
-          "bottom": "{dimension.20}",
-          "left": "{dimension.20}"
+          "top": "{dimension.24}",
+          "right": "{dimension.24}",
+          "bottom": "{dimension.24}",
+          "left": "{dimension.24}"
         },
         "radius": {
           "none": "{dimension.0}",
@@ -2638,6 +3040,7 @@
   "typography": {
     "fontFamily": "Inter",
     "headingFontFamily": "Inter",
+    "monoFontFamily": "Geist Mono",
     "sizes": {
       "text-xs": "11px",
       "text-sm": "12px",
@@ -2854,6 +3257,23 @@
           "weight": "regular"
         }
       },
+      "code": {
+        "desktop": {
+          "family": "mono",
+          "size": "text-md",
+          "weight": "regular"
+        },
+        "tablet": {
+          "family": "mono",
+          "size": "text-md",
+          "weight": "regular"
+        },
+        "mobile": {
+          "family": "mono",
+          "size": "text-md",
+          "weight": "regular"
+        }
+      },
       "label": {
         "desktop": {
           "family": "body",
@@ -3020,10 +3440,10 @@
       "2_5": "{dimension.10}"
     },
     "padding": {
-      "top": "{dimension.20}",
-      "right": "{dimension.20}",
-      "bottom": "{dimension.20}",
-      "left": "{dimension.20}"
+      "top": "{dimension.24}",
+      "right": "{dimension.24}",
+      "bottom": "{dimension.24}",
+      "left": "{dimension.24}"
     },
     "radius": {
       "none": "{dimension.0}",
@@ -3095,7 +3515,8 @@
     "gap-group": "4",
     "gap-section": "6",
     "inset-control": "3",
-    "inset-surface": "5",
+    "inset-surface": "6",
+    "inset-action": "4",
     "inset-page": "8",
     "inset-section": "24",
     "overlap-sm": "dimension--4",
@@ -3108,7 +3529,8 @@
     "gap-group": "section-sm",
     "gap-section": "section-md",
     "inset-control": "3",
-    "inset-surface": "5",
+    "inset-surface": "6",
+    "inset-action": "4",
     "inset-page": "8",
     "inset-section": "24",
     "overlap-sm": "dimension--4",
@@ -3208,19 +3630,22 @@
   },
   "spacingRoleViewports": {
     "tablet": {
+      "inset-surface": "5",
       "inset-page": "4",
       "inset-section": "16"
     },
     "mobile": {
+      "inset-surface": "4",
+      "inset-action": "3",
       "inset-page": "4",
       "inset-section": "12"
     }
   },
   "padding": {
-    "top": "20px",
-    "right": "20px",
-    "bottom": "20px",
-    "left": "20px"
+    "top": "24px",
+    "right": "24px",
+    "bottom": "24px",
+    "left": "24px"
   },
   "radius": {
     "none": "0px",
@@ -3850,7 +4275,10 @@
       "long": "360ms",
       "extra-long": "560ms",
       "super-long": "800ms",
-      "cinematic": "1200ms"
+      "cinematic": "1200ms",
+      "lifetime-brief": "4000ms",
+      "lifetime-default": "6000ms",
+      "lifetime-long": "10000ms"
     },
     "easings": {
       "standard": "cubic-bezier(0.45, 0.05, 0.25, 0.95)",
@@ -3860,11 +4288,15 @@
       "gentle": "cubic-bezier(0.76, 0, 0.24, 1)",
       "linear": "cubic-bezier(0, 0, 1, 1)",
       "spring": "linear(0, 0.035, 0.127, 0.257, 0.408, 0.566, 0.717, 0.854, 0.97, 1.062, 1.129, 1.173, 1.195, 1.2, 1.189, 1.169, 1.141, 1.111, 1.079, 1.05, 1.023, 1.001, 0.984, 0.972, 0.964, 0.96, 0.96, 0.963, 0.967, 0.973, 0.979, 0.986, 0.991, 0.997, 1.001, 1.004, 1.006, 1.007, 1.008, 1.008, 1.007, 1.006, 1)",
-      "spring-bouncy": "linear(0, 0.071, 0.256, 0.507, 0.776, 1.023, 1.217, 1.343, 1.397, 1.386, 1.323, 1.229, 1.122, 1.019, 0.934, 0.875, 0.845, 0.842, 0.861, 0.896, 0.938, 0.981, 1.017, 1.044, 1.06, 1.064, 1.059, 1.046, 1.03, 1.013, 0.997, 0.985, 0.977, 0.974, 0.976, 0.98, 0.986, 0.993, 0.999, 1.005, 1.008, 1.01, 1.01, 1.009, 1.006, 1.004, 1.001, 0.999, 1)"
+      "spring-bouncy": "linear(0, 0.071, 0.256, 0.507, 0.776, 1.023, 1.217, 1.343, 1.397, 1.386, 1.323, 1.229, 1.122, 1.019, 0.934, 0.875, 0.845, 0.842, 0.861, 0.896, 0.938, 0.981, 1.017, 1.044, 1.06, 1.064, 1.059, 1.046, 1.03, 1.013, 0.997, 0.985, 0.977, 0.974, 0.976, 0.98, 0.986, 0.993, 0.999, 1.005, 1.008, 1.01, 1.01, 1.009, 1.006, 1.004, 1.001, 0.999, 1)",
+      "spring-smooth": "linear(0, 0.032, 0.111, 0.213, 0.325, 0.435, 0.538, 0.63, 0.71, 0.778, 0.834, 0.878, 0.914, 0.941, 0.962, 0.977, 0.988, 0.996, 1.001, 1.004, 1.005, 1.006, 1.006, 1.006, 1.005, 1.005, 1.004, 1.003, 1.003, 1.002, 1.002, 1.001, 1.001, 1.001, 1, 1, 1, 1, 1, 1, 1)",
+      "spring-snappy": "linear(0, 0.045, 0.154, 0.295, 0.443, 0.584, 0.708, 0.812, 0.893, 0.954, 0.996, 1.024, 1.039, 1.045, 1.046, 1.042, 1.036, 1.029, 1.023, 1.016, 1.011, 1.007, 1.003, 1.001, 1, 0.999, 0.998, 0.998, 0.998, 0.998, 0.998, 0.999, 0.999, 0.999, 1, 1, 1, 1, 1, 1, 1)"
     },
     "easingFallbacks": {
       "spring": "cubic-bezier(0.22, 1, 0.36, 1)",
-      "spring-bouncy": "cubic-bezier(0.22, 1, 0.36, 1)"
+      "spring-bouncy": "cubic-bezier(0.22, 1, 0.36, 1)",
+      "spring-smooth": "cubic-bezier(0.22, 1, 0.36, 1)",
+      "spring-snappy": "cubic-bezier(0.22, 1, 0.36, 1)"
     },
     "easingAliases": {
       "decelerate": "entrance",
@@ -4004,6 +4436,36 @@
         "duration": "long",
         "easing": "standard",
         "value": "360ms cubic-bezier(0.45, 0.05, 0.25, 0.95)"
+      },
+      "use-notify-in": {
+        "duration": "long",
+        "easing": "spring-smooth",
+        "value": "360ms linear(0, 0.032, 0.111, 0.213, 0.325, 0.435, 0.538, 0.63, 0.71, 0.778, 0.834, 0.878, 0.914, 0.941, 0.962, 0.977, 0.988, 0.996, 1.001, 1.004, 1.005, 1.006, 1.006, 1.006, 1.005, 1.005, 1.004, 1.003, 1.003, 1.002, 1.002, 1.001, 1.001, 1.001, 1, 1, 1, 1, 1, 1, 1)"
+      },
+      "use-notify-out": {
+        "duration": "short",
+        "easing": "exit",
+        "value": "160ms cubic-bezier(0.5, 0, 1, 1)"
+      },
+      "use-reflow": {
+        "duration": "medium",
+        "easing": "spring-smooth",
+        "value": "240ms linear(0, 0.032, 0.111, 0.213, 0.325, 0.435, 0.538, 0.63, 0.71, 0.778, 0.834, 0.878, 0.914, 0.941, 0.962, 0.977, 0.988, 0.996, 1.001, 1.004, 1.005, 1.006, 1.006, 1.006, 1.005, 1.005, 1.004, 1.003, 1.003, 1.002, 1.002, 1.001, 1.001, 1.001, 1, 1, 1, 1, 1, 1, 1)"
+      },
+      "use-countdown": {
+        "duration": "lifetime-default",
+        "easing": "linear",
+        "value": "6000ms cubic-bezier(0, 0, 1, 1)"
+      },
+      "use-progress": {
+        "duration": "medium",
+        "easing": "entrance",
+        "value": "240ms cubic-bezier(0, 0, 0.2, 1)"
+      },
+      "use-release": {
+        "duration": "medium",
+        "easing": "spring-snappy",
+        "value": "240ms linear(0, 0.045, 0.154, 0.295, 0.443, 0.584, 0.708, 0.812, 0.893, 0.954, 0.996, 1.024, 1.039, 1.045, 1.046, 1.042, 1.036, 1.029, 1.023, 1.016, 1.011, 1.007, 1.003, 1.001, 1, 0.999, 0.998, 0.998, 0.998, 0.998, 0.998, 0.999, 0.999, 0.999, 1, 1, 1, 1, 1, 1, 1)"
       }
     },
     "choreography": {
@@ -4530,7 +4992,8 @@
           "Popover",
           "DatePickerPopover",
           "TooltipContent",
-          "DropdownMenu"
+          "DropdownMenu",
+          "ReactionGroupPopover"
         ],
         "intent": {
           "usage": [
@@ -4570,7 +5033,8 @@
           "Popover",
           "DatePickerPopover",
           "TooltipContent",
-          "DropdownMenu"
+          "DropdownMenu",
+          "ReactionGroupPopover"
         ],
         "intent": {
           "usage": [
@@ -4604,11 +5068,155 @@
           ]
         }
       },
-      "sonner-enter": {
+      "toast-enter": {
         "pattern": "coordinated",
         "components": [
           "Toast"
         ],
+        "intent": {
+          "usage": [
+            "toasts",
+            "notifications"
+          ],
+          "direction": "The toast fades in while it rises and grows into place; its icon lands a beat later."
+        },
+        "tracks": [
+          {
+            "id": "fade",
+            "keyframes": "fade-in",
+            "motion": {
+              "duration": "short",
+              "easing": "entrance"
+            },
+            "delay": 0
+          },
+          {
+            "id": "rise",
+            "keyframes": "toast-rise",
+            "motion": {
+              "role": "use-notify-in"
+            },
+            "delay": 0
+          },
+          {
+            "slot": "icon",
+            "keyframes": "icon-pop",
+            "motion": {
+              "duration": "medium",
+              "easing": "spring-snappy"
+            },
+            "delay": "quick"
+          }
+        ],
+        "reducedMotion": {
+          "collapseTo": "coordinated",
+          "pattern": "coordinated",
+          "tracks": [
+            {
+              "id": "fade",
+              "keyframes": "fade-in",
+              "motion": {
+                "duration": "fade",
+                "easing": "entrance"
+              },
+              "delay": 0
+            },
+            {
+              "id": "rise",
+              "keyframes": "fade-in",
+              "motion": {
+                "duration": "fade",
+                "easing": "entrance"
+              },
+              "delay": 0
+            },
+            {
+              "slot": "icon",
+              "keyframes": "fade-in",
+              "motion": {
+                "duration": "fade",
+                "easing": "entrance"
+              },
+              "delay": 0
+            }
+          ]
+        }
+      },
+      "toast-exit": {
+        "pattern": "coordinated",
+        "components": [
+          "Toast"
+        ],
+        "intent": {
+          "usage": [
+            "toasts",
+            "notifications"
+          ],
+          "direction": "The toast fades, sinks and shrinks; it finishes before the queue unmounts it."
+        },
+        "tracks": [
+          {
+            "keyframes": "toast-leave",
+            "motion": {
+              "role": "use-notify-out"
+            },
+            "delay": 0
+          }
+        ],
+        "reducedMotion": {
+          "collapseTo": "coordinated",
+          "pattern": "coordinated",
+          "tracks": [
+            {
+              "keyframes": "fade-out",
+              "motion": {
+                "duration": "fade",
+                "easing": "exit"
+              },
+              "delay": 0
+            }
+          ]
+        }
+      },
+      "toast-countdown": {
+        "pattern": "coordinated",
+        "components": [
+          "Toast"
+        ],
+        "intent": {
+          "usage": [
+            "toast time bar"
+          ],
+          "direction": "The bar is the clock: it empties linearly, pauses with the toast, and closes it when it ends."
+        },
+        "tracks": [
+          {
+            "slot": "bar",
+            "keyframes": "countdown",
+            "motion": {
+              "role": "use-countdown"
+            },
+            "delay": 0
+          }
+        ],
+        "reducedMotion": {
+          "collapseTo": "coordinated",
+          "pattern": "coordinated",
+          "tracks": [
+            {
+              "slot": "bar",
+              "keyframes": "countdown",
+              "motion": {
+                "role": "use-countdown"
+              },
+              "delay": 0
+            }
+          ]
+        }
+      },
+      "sonner-enter": {
+        "pattern": "coordinated",
+        "components": [],
         "intent": {
           "usage": [
             "toasts",
@@ -4786,6 +5394,34 @@
           "exit"
         ]
       },
+      "toast-rise": {
+        "transform": [
+          "translateY(var(--motion-transform-enter)) scale(var(--motion-transform-pop))",
+          "translateY(0) scale(1)"
+        ]
+      },
+      "toast-leave": {
+        "opacity": [
+          "1",
+          "0"
+        ],
+        "transform": [
+          "translateY(0) scale(1)",
+          "translateY(var(--motion-transform-enter)) scale(var(--motion-transform-shrink))"
+        ]
+      },
+      "icon-pop": {
+        "transform": [
+          "scale(var(--motion-transform-zoom))",
+          "scale(1)"
+        ]
+      },
+      "countdown": {
+        "transform": [
+          "scaleX(1)",
+          "scaleX(0)"
+        ]
+      },
       "spring-in": {
         "opacity": [
           "0",
@@ -4938,6 +5574,45 @@
             "range": {
               "min": 840,
               "max": 1800,
+              "unit": "ms"
+            }
+          }
+        },
+        "lifetime-brief": {
+          "usage": [
+            "one-line confirmation"
+          ],
+          "direction": "A message read at a glance.",
+          "constraints": {
+            "range": {
+              "min": 4000,
+              "max": 4000,
+              "unit": "ms"
+            }
+          }
+        },
+        "lifetime-default": {
+          "usage": [
+            "title and description"
+          ],
+          "direction": "A message with a sentence to read.",
+          "constraints": {
+            "range": {
+              "min": 6000,
+              "max": 6000,
+              "unit": "ms"
+            }
+          }
+        },
+        "lifetime-long": {
+          "usage": [
+            "message with an action"
+          ],
+          "direction": "Time to read it and decide, as with Undo.",
+          "constraints": {
+            "range": {
+              "min": 10000,
+              "max": 10000,
               "unit": "ms"
             }
           }
@@ -5106,6 +5781,46 @@
             "any expressive change in place"
           ],
           "direction": "Fallback for storytelling changes."
+        },
+        "use-notify-in": {
+          "usage": [
+            "toast",
+            "notification"
+          ],
+          "direction": "A message arriving: it settles in without calling attention to the bounce."
+        },
+        "use-notify-out": {
+          "usage": [
+            "toast",
+            "notification"
+          ],
+          "direction": "A message leaving, quickly and completely."
+        },
+        "use-reflow": {
+          "usage": [
+            "toast stack",
+            "list reorder"
+          ],
+          "direction": "Neighbours moving to make room or close a gap."
+        },
+        "use-countdown": {
+          "usage": [
+            "toast time bar"
+          ],
+          "direction": "Time left: always linear, so the bar tells the truth."
+        },
+        "use-progress": {
+          "usage": [
+            "progress bar value"
+          ],
+          "direction": "A real value advancing; it never overshoots what was measured."
+        },
+        "use-release": {
+          "usage": [
+            "swipe release",
+            "drag release"
+          ],
+          "direction": "An element going back after a gesture lets go."
         }
       }
     }
@@ -5124,7 +5839,8 @@
         "pressed": "700"
       },
       "onAction": "white",
-      "focus": "black"
+      "focus": "black",
+      "focusRing": "#db44374f"
     },
     "apple": {
       "label": "Apple",
@@ -5139,7 +5855,8 @@
         "pressed": "300"
       },
       "onAction": "white",
-      "focus": "white"
+      "focus": "white",
+      "focusRing": "neutral"
     },
     "discord": {
       "label": "Discord",
@@ -5154,7 +5871,8 @@
         "pressed": "700"
       },
       "onAction": "white",
-      "focus": "white"
+      "focus": "white",
+      "focusRing": "#5865f24f"
     },
     "dribbble": {
       "label": "Dribbble",
@@ -5169,7 +5887,8 @@
         "pressed": "700"
       },
       "onAction": "white",
-      "focus": "black"
+      "focus": "black",
+      "focusRing": "#ea4c894f"
     },
     "facebook": {
       "label": "Facebook",
@@ -5184,7 +5903,8 @@
         "pressed": "700"
       },
       "onAction": "white",
-      "focus": "black"
+      "focus": "black",
+      "focusRing": "#1877f24f"
     },
     "github": {
       "label": "GitHub",
@@ -5199,7 +5919,8 @@
         "pressed": "300"
       },
       "onAction": "white",
-      "focus": "white"
+      "focus": "white",
+      "focusRing": "neutral"
     },
     "linkedin": {
       "label": "LinkedIn",
@@ -5214,7 +5935,8 @@
         "pressed": "700"
       },
       "onAction": "white",
-      "focus": "white"
+      "focus": "white",
+      "focusRing": "#0a66c24f"
     },
     "slack": {
       "label": "Slack",
@@ -5229,7 +5951,8 @@
         "pressed": "300"
       },
       "onAction": "white",
-      "focus": "white"
+      "focus": "white",
+      "focusRing": "#4a154b4f"
     },
     "x": {
       "label": "X",
@@ -5244,7 +5967,8 @@
         "pressed": "300"
       },
       "onAction": "white",
-      "focus": "white"
+      "focus": "white",
+      "focusRing": "neutral"
     }
   },
   "style": null,
@@ -5298,29 +6022,113 @@
             "default": {
               "root": {
                 "height": "size.control",
-                "paddingX": "spacing.inset-control",
                 "gap": "spacing.gap-control"
               }
             },
             "xs": {
               "root": {
                 "height": "size.hit",
-                "paddingX": "spacing.inset-control",
                 "gap": "spacing.gap-tight"
               }
             },
             "sm": {
               "root": {
                 "height": "size.compact",
-                "paddingX": "spacing.inset-control",
                 "gap": "spacing.gap-control"
               }
             },
             "lg": {
               "root": {
                 "height": "size.touch",
-                "paddingX": "spacing.inset-control",
                 "gap": "spacing.gap-control"
+              }
+            }
+          }
+        },
+        {
+          "axes": [
+            "Appearance",
+            "Size"
+          ],
+          "values": {
+            "solid|default": {
+              "root": {
+                "paddingX": "spacing.inset-action"
+              }
+            },
+            "solid|xs": {
+              "root": {
+                "paddingX": "spacing.inset-control"
+              }
+            },
+            "solid|sm": {
+              "root": {
+                "paddingX": "spacing.inset-control"
+              }
+            },
+            "solid|lg": {
+              "root": {
+                "paddingX": "spacing.inset-action"
+              }
+            },
+            "outline|default": {
+              "root": {
+                "paddingX": "spacing.inset-action"
+              }
+            },
+            "outline|xs": {
+              "root": {
+                "paddingX": "spacing.inset-control"
+              }
+            },
+            "outline|sm": {
+              "root": {
+                "paddingX": "spacing.inset-control"
+              }
+            },
+            "outline|lg": {
+              "root": {
+                "paddingX": "spacing.inset-action"
+              }
+            },
+            "ghost|default": {
+              "root": {
+                "paddingX": "spacing.inset-action"
+              }
+            },
+            "ghost|xs": {
+              "root": {
+                "paddingX": "spacing.inset-control"
+              }
+            },
+            "ghost|sm": {
+              "root": {
+                "paddingX": "spacing.inset-control"
+              }
+            },
+            "ghost|lg": {
+              "root": {
+                "paddingX": "spacing.inset-action"
+              }
+            },
+            "link|default": {
+              "root": {
+                "paddingX": "spacing.inset-control"
+              }
+            },
+            "link|xs": {
+              "root": {
+                "paddingX": "spacing.inset-control"
+              }
+            },
+            "link|sm": {
+              "root": {
+                "paddingX": "spacing.inset-control"
+              }
+            },
+            "link|lg": {
+              "root": {
+                "paddingX": "spacing.inset-control"
               }
             }
           }
@@ -6259,9 +7067,11 @@
             "background-color": "use-hover",
             "color": "use-hover",
             "border-color": "use-hover",
-            "box-shadow": "use-focus"
+            "box-shadow": "use-focus",
+            "scale": "use-hover"
           }
-        }
+        },
+        "press": {}
       }
     },
     "IconButton": {
@@ -7212,7 +8022,252 @@
             }
           }
         }
-      ]
+      ],
+      "motion": {
+        "transitions": {
+          "root": {
+            "background-color": "use-hover",
+            "color": "use-hover",
+            "border-color": "use-hover",
+            "box-shadow": "use-focus",
+            "scale": "use-hover"
+          }
+        },
+        "press": {}
+      }
+    },
+    "ReactionGroup": {
+      "key": "ReactionGroup",
+      "slots": [
+        "root",
+        "content",
+        "item",
+        "digit",
+        "summary"
+      ],
+      "defaults": {},
+      "parts": [
+        {
+          "axes": [],
+          "values": {
+            "": {
+              "root": {
+                "gap": "spacing.gap-control"
+              },
+              "content": {
+                "gap": "spacing.gap-control"
+              },
+              "summary": {
+                "font": "type.body-sm",
+                "text": "color.content.secondary"
+              }
+            }
+          }
+        }
+      ],
+      "motion": {
+        "transitions": {
+          "item": {
+            "opacity": "use-travel-in",
+            "transform": "use-travel-in"
+          },
+          "item[data-motion=\"enter\"]": {
+            "opacity": "use-stagger-in",
+            "transform": "use-stagger-in"
+          },
+          "item[data-motion=\"exit\"]": {
+            "opacity": "use-travel-out",
+            "transform": "use-travel-out"
+          },
+          "digit": {
+            "opacity": "use-toggle",
+            "transform": "use-toggle"
+          }
+        },
+        "stagger": {
+          "slot": "item",
+          "when": "[data-motion=\"enter\"]"
+        }
+      }
+    },
+    "ReactionGroupTrigger": {
+      "key": "ReactionGroupTrigger",
+      "slots": [
+        "root",
+        "icon"
+      ],
+      "defaults": {
+        "Size": "default",
+        "State": "Default"
+      },
+      "parts": [
+        {
+          "axes": [
+            "Size"
+          ],
+          "values": {
+            "default": {
+              "root": {
+                "height": "size.md",
+                "width": "size.md",
+                "paddingX": "spacing.0",
+                "radius": "radius.pill"
+              },
+              "icon": {
+                "width": "icon.medium",
+                "height": "icon.medium"
+              }
+            },
+            "xs": {
+              "root": {
+                "height": "size.xs",
+                "width": "size.xs",
+                "paddingX": "spacing.0",
+                "radius": "radius.pill"
+              },
+              "icon": {
+                "width": "icon.small",
+                "height": "icon.small"
+              }
+            },
+            "sm": {
+              "root": {
+                "height": "size.sm",
+                "width": "size.sm",
+                "paddingX": "spacing.0",
+                "radius": "radius.pill"
+              },
+              "icon": {
+                "width": "icon.small",
+                "height": "icon.small"
+              }
+            },
+            "lg": {
+              "root": {
+                "height": "size.lg",
+                "width": "size.lg",
+                "paddingX": "spacing.0",
+                "radius": "radius.pill"
+              },
+              "icon": {
+                "width": "icon.medium",
+                "height": "icon.medium"
+              }
+            },
+            "xl": {
+              "root": {
+                "height": "size.xl",
+                "width": "size.xl",
+                "paddingX": "spacing.0",
+                "radius": "radius.pill"
+              },
+              "icon": {
+                "width": "icon.large",
+                "height": "icon.large"
+              }
+            }
+          }
+        },
+        {
+          "axes": [
+            "State"
+          ],
+          "values": {
+            "Default": {
+              "root": {
+                "fill": "none",
+                "stroke": "color.border.control",
+                "strokeWidth": "stroke.control",
+                "text": "color.content.secondary",
+                "gapRing": "none"
+              }
+            },
+            "Hover": {
+              "root": {
+                "fill": "color.surface.muted",
+                "stroke": "color.border.control-hover",
+                "strokeWidth": "stroke.control",
+                "text": "color.content.primary",
+                "gapRing": "none"
+              }
+            },
+            "Focused": {
+              "root": {
+                "fill": "none",
+                "stroke": "color.border.control",
+                "strokeWidth": "stroke.control",
+                "text": "color.content.secondary",
+                "gapRing": "color.border.ring.default"
+              }
+            },
+            "Open": {
+              "root": {
+                "fill": "color.surface.selected",
+                "stroke": "color.border.accent",
+                "strokeWidth": "stroke.control",
+                "text": "color.content.accent",
+                "gapRing": "none"
+              }
+            },
+            "Disabled": {
+              "root": {
+                "fill": "none",
+                "stroke": "color.border.subtle",
+                "strokeWidth": "stroke.control",
+                "text": "color.content.disabled",
+                "gapRing": "none"
+              }
+            }
+          }
+        }
+      ],
+      "motion": {
+        "transitions": {
+          "root": {
+            "background-color": "use-hover",
+            "color": "use-hover",
+            "border-color": "use-hover"
+          }
+        }
+      }
+    },
+    "ReactionGroupPopover": {
+      "key": "ReactionGroupPopover",
+      "slots": [
+        "root",
+        "content"
+      ],
+      "defaults": {},
+      "parts": [
+        {
+          "axes": [],
+          "values": {
+            "": {
+              "root": {
+                "fill": "color.surface.layer-2",
+                "stroke": "color.border.default",
+                "strokeWidth": "stroke.divider",
+                "radius": "radius.overlay",
+                "paddingX": "spacing.inset-control+stroke.divider",
+                "paddingY": "spacing.inset-control+stroke.divider",
+                "lift": "popover-md"
+              },
+              "content": {
+                "gap": "spacing.gap-tight"
+              }
+            }
+          }
+        }
+      ],
+      "motion": {
+        "enter": {
+          "name": "popover-enter"
+        },
+        "exit": {
+          "name": "popover-exit"
+        },
+        "origin": "var(--radix-popover-content-transform-origin, center)"
+      }
     },
     "CloseButton": {
       "key": "CloseButton",
@@ -8091,7 +9146,8 @@
                 "fill": "color.surface.inverse",
                 "text": "color.content.inverse",
                 "lift": "rest",
-                "highlight": "color.elevation.highlight"
+                "highlight": "color.elevation.highlight",
+                "highlightWidth": "2"
               }
             },
             "inverse|solid|Hover": {
@@ -8100,7 +9156,8 @@
                 "text": "color.content.inverse",
                 "overlay": "color.surface.inverse-muted",
                 "lift": "hover",
-                "highlight": "color.elevation.highlight"
+                "highlight": "color.elevation.highlight",
+                "highlightWidth": "2"
               }
             },
             "inverse|solid|Pressed": {
@@ -8110,7 +9167,8 @@
                 "overlay": "color.surface.inverse-muted",
                 "overlay2": "color.surface.inverse-muted",
                 "lift": "pressed",
-                "highlight": "color.elevation.highlight"
+                "highlight": "color.elevation.highlight",
+                "highlightWidth": "2"
               }
             },
             "inverse|solid|Focused": {
@@ -8119,6 +9177,7 @@
                 "text": "color.content.inverse",
                 "lift": "rest",
                 "highlight": "color.elevation.highlight",
+                "highlightWidth": "2",
                 "halo": "color.surface.inverse-muted"
               }
             },
@@ -8136,7 +9195,8 @@
                 "fill": "color.surface.inverse",
                 "text": "color.content.inverse",
                 "lift": "rest",
-                "highlight": "color.elevation.highlight"
+                "highlight": "color.elevation.highlight",
+                "highlightWidth": "2"
               }
             },
             "inverse|soft|Hover": {
@@ -8145,7 +9205,8 @@
                 "text": "color.content.inverse",
                 "overlay": "color.surface.inverse-muted",
                 "lift": "hover",
-                "highlight": "color.elevation.highlight"
+                "highlight": "color.elevation.highlight",
+                "highlightWidth": "2"
               }
             },
             "inverse|soft|Pressed": {
@@ -8155,7 +9216,8 @@
                 "overlay": "color.surface.inverse-muted",
                 "overlay2": "color.surface.inverse-muted",
                 "lift": "pressed",
-                "highlight": "color.elevation.highlight"
+                "highlight": "color.elevation.highlight",
+                "highlightWidth": "2"
               }
             },
             "inverse|soft|Focused": {
@@ -8164,6 +9226,7 @@
                 "text": "color.content.inverse",
                 "lift": "rest",
                 "highlight": "color.elevation.highlight",
+                "highlightWidth": "2",
                 "halo": "color.surface.inverse-muted"
               }
             },
@@ -8181,7 +9244,8 @@
                 "fill": "color.action.primary.default",
                 "text": "color.content.on-action",
                 "lift": "rest",
-                "highlight": "color.elevation.highlight"
+                "highlight": "color.elevation.highlight",
+                "highlightWidth": "2"
               }
             },
             "default|solid|Hover": {
@@ -8189,7 +9253,8 @@
                 "fill": "color.action.primary.hover",
                 "text": "color.content.on-action",
                 "lift": "hover",
-                "highlight": "color.elevation.highlight"
+                "highlight": "color.elevation.highlight",
+                "highlightWidth": "2"
               }
             },
             "default|solid|Pressed": {
@@ -8197,7 +9262,8 @@
                 "fill": "color.action.primary.pressed",
                 "text": "color.content.on-action",
                 "lift": "pressed",
-                "highlight": "color.elevation.highlight"
+                "highlight": "color.elevation.highlight",
+                "highlightWidth": "2"
               }
             },
             "default|solid|Focused": {
@@ -8206,6 +9272,7 @@
                 "text": "color.content.on-action",
                 "lift": "rest",
                 "highlight": "color.elevation.highlight",
+                "highlightWidth": "2",
                 "halo": "color.border.ring.default"
               }
             },
@@ -8223,7 +9290,8 @@
                 "fill": "color.surface.accent",
                 "text": "color.content.accent",
                 "lift": "rest",
-                "highlight": "color.elevation.highlight"
+                "highlight": "color.elevation.highlight",
+                "highlightWidth": "2"
               }
             },
             "default|soft|Hover": {
@@ -8232,7 +9300,8 @@
                 "text": "color.content.accent",
                 "overlay": "color.surface.selected",
                 "lift": "hover",
-                "highlight": "color.elevation.highlight"
+                "highlight": "color.elevation.highlight",
+                "highlightWidth": "2"
               }
             },
             "default|soft|Pressed": {
@@ -8241,7 +9310,8 @@
                 "text": "color.content.accent",
                 "overlay": "color.surface.selected-pressed",
                 "lift": "pressed",
-                "highlight": "color.elevation.highlight"
+                "highlight": "color.elevation.highlight",
+                "highlightWidth": "2"
               }
             },
             "default|soft|Focused": {
@@ -8250,6 +9320,7 @@
                 "text": "color.content.accent",
                 "lift": "rest",
                 "highlight": "color.elevation.highlight",
+                "highlightWidth": "2",
                 "halo": "color.border.ring.default"
               }
             },
@@ -8267,7 +9338,8 @@
                 "fill": "color.action.secondary.default",
                 "text": "color.content.on-secondary",
                 "lift": "rest",
-                "highlight": "color.elevation.highlight"
+                "highlight": "color.elevation.highlight",
+                "highlightWidth": "2"
               }
             },
             "secondary|solid|Hover": {
@@ -8275,7 +9347,8 @@
                 "fill": "color.action.secondary.hover",
                 "text": "color.content.on-secondary",
                 "lift": "hover",
-                "highlight": "color.elevation.highlight"
+                "highlight": "color.elevation.highlight",
+                "highlightWidth": "2"
               }
             },
             "secondary|solid|Pressed": {
@@ -8283,7 +9356,8 @@
                 "fill": "color.action.secondary.pressed",
                 "text": "color.content.on-secondary",
                 "lift": "pressed",
-                "highlight": "color.elevation.highlight"
+                "highlight": "color.elevation.highlight",
+                "highlightWidth": "2"
               }
             },
             "secondary|solid|Focused": {
@@ -8292,6 +9366,7 @@
                 "text": "color.content.on-secondary",
                 "lift": "rest",
                 "highlight": "color.elevation.highlight",
+                "highlightWidth": "2",
                 "halo": "color.border.subtle"
               }
             },
@@ -8309,7 +9384,8 @@
                 "fill": "color.surface.layer-2",
                 "text": "color.content.primary",
                 "lift": "rest",
-                "highlight": "color.elevation.highlight"
+                "highlight": "color.elevation.highlight",
+                "highlightWidth": "2"
               }
             },
             "secondary|soft|Hover": {
@@ -8318,7 +9394,8 @@
                 "text": "color.content.primary",
                 "overlay": "color.action.ghost.hover",
                 "lift": "hover",
-                "highlight": "color.elevation.highlight"
+                "highlight": "color.elevation.highlight",
+                "highlightWidth": "2"
               }
             },
             "secondary|soft|Pressed": {
@@ -8327,7 +9404,8 @@
                 "text": "color.content.primary",
                 "overlay": "color.action.ghost.pressed",
                 "lift": "pressed",
-                "highlight": "color.elevation.highlight"
+                "highlight": "color.elevation.highlight",
+                "highlightWidth": "2"
               }
             },
             "secondary|soft|Focused": {
@@ -8336,6 +9414,7 @@
                 "text": "color.content.primary",
                 "lift": "rest",
                 "highlight": "color.elevation.highlight",
+                "highlightWidth": "2",
                 "halo": "color.border.subtle"
               }
             },
@@ -9035,6 +10114,108 @@
         }
       ]
     },
+    "SplitButton": {
+      "key": "SplitButton",
+      "slots": [
+        "root"
+      ],
+      "defaults": {
+        "Variant": "default",
+        "Size": "default",
+        "Open": "false"
+      },
+      "parts": [
+        {
+          "axes": [
+            "Variant",
+            "Size",
+            "Open"
+          ],
+          "values": {
+            "default|default|false": {
+              "root": {
+                "gap": "spacing.gap-control"
+              }
+            },
+            "default|default|true": {
+              "root": {
+                "gap": "spacing.gap-control"
+              }
+            },
+            "default|xs|false": {
+              "root": {
+                "gap": "spacing.gap-control"
+              }
+            },
+            "default|xs|true": {
+              "root": {
+                "gap": "spacing.gap-control"
+              }
+            },
+            "default|sm|false": {
+              "root": {
+                "gap": "spacing.gap-control"
+              }
+            },
+            "default|sm|true": {
+              "root": {
+                "gap": "spacing.gap-control"
+              }
+            },
+            "default|lg|false": {
+              "root": {
+                "gap": "spacing.gap-control"
+              }
+            },
+            "default|lg|true": {
+              "root": {
+                "gap": "spacing.gap-control"
+              }
+            },
+            "secondary|default|false": {
+              "root": {
+                "gap": "spacing.gap-control"
+              }
+            },
+            "secondary|default|true": {
+              "root": {
+                "gap": "spacing.gap-control"
+              }
+            },
+            "secondary|xs|false": {
+              "root": {
+                "gap": "spacing.gap-control"
+              }
+            },
+            "secondary|xs|true": {
+              "root": {
+                "gap": "spacing.gap-control"
+              }
+            },
+            "secondary|sm|false": {
+              "root": {
+                "gap": "spacing.gap-control"
+              }
+            },
+            "secondary|sm|true": {
+              "root": {
+                "gap": "spacing.gap-control"
+              }
+            },
+            "secondary|lg|false": {
+              "root": {
+                "gap": "spacing.gap-control"
+              }
+            },
+            "secondary|lg|true": {
+              "root": {
+                "gap": "spacing.gap-control"
+              }
+            }
+          }
+        }
+      ]
+    },
     "SocialLoginButton": {
       "key": "SocialLoginButton",
       "slots": [
@@ -9076,7 +10257,8 @@
             "lg|false": {
               "root": {
                 "height": "size.touch",
-                "paddingX": "spacing.inset-control"
+                "paddingX": "spacing.inset-action",
+                "fontStep": "type.text-lg"
               }
             },
             "lg|true": {
@@ -9089,7 +10271,8 @@
             "default|false": {
               "root": {
                 "height": "size.control",
-                "paddingX": "spacing.inset-control"
+                "paddingX": "spacing.inset-action",
+                "fontStep": "type.text-md"
               }
             },
             "default|true": {
@@ -9141,8 +10324,8 @@
             "white|Google|Focused": {
               "root": {
                 "fill": "color.surface.page",
-                "stroke": "color.border.focus",
-                "ring": "color.border.ring.default",
+                "stroke": "color.border.control",
+                "gapRing": "social.google.border.focus",
                 "text": "color.content.primary"
               },
               "label": {
@@ -9192,8 +10375,8 @@
             "white|Apple|Focused": {
               "root": {
                 "fill": "color.surface.page",
-                "stroke": "color.border.focus",
-                "ring": "color.border.ring.default",
+                "stroke": "color.border.control",
+                "gapRing": "social.apple.border.focus",
                 "text": "color.content.primary"
               },
               "label": {
@@ -9243,8 +10426,8 @@
             "white|Discord|Focused": {
               "root": {
                 "fill": "color.surface.page",
-                "stroke": "color.border.focus",
-                "ring": "color.border.ring.default",
+                "stroke": "color.border.control",
+                "gapRing": "social.discord.border.focus",
                 "text": "color.content.primary"
               },
               "label": {
@@ -9294,8 +10477,8 @@
             "white|Dribbble|Focused": {
               "root": {
                 "fill": "color.surface.page",
-                "stroke": "color.border.focus",
-                "ring": "color.border.ring.default",
+                "stroke": "color.border.control",
+                "gapRing": "social.dribbble.border.focus",
                 "text": "color.content.primary"
               },
               "label": {
@@ -9345,8 +10528,8 @@
             "white|Facebook|Focused": {
               "root": {
                 "fill": "color.surface.page",
-                "stroke": "color.border.focus",
-                "ring": "color.border.ring.default",
+                "stroke": "color.border.control",
+                "gapRing": "social.facebook.border.focus",
                 "text": "color.content.primary"
               },
               "label": {
@@ -9396,8 +10579,8 @@
             "white|GitHub|Focused": {
               "root": {
                 "fill": "color.surface.page",
-                "stroke": "color.border.focus",
-                "ring": "color.border.ring.default",
+                "stroke": "color.border.control",
+                "gapRing": "social.github.border.focus",
                 "text": "color.content.primary"
               },
               "label": {
@@ -9447,8 +10630,8 @@
             "white|LinkedIn|Focused": {
               "root": {
                 "fill": "color.surface.page",
-                "stroke": "color.border.focus",
-                "ring": "color.border.ring.default",
+                "stroke": "color.border.control",
+                "gapRing": "social.linkedin.border.focus",
                 "text": "color.content.primary"
               },
               "label": {
@@ -9498,8 +10681,8 @@
             "white|Slack|Focused": {
               "root": {
                 "fill": "color.surface.page",
-                "stroke": "color.border.focus",
-                "ring": "color.border.ring.default",
+                "stroke": "color.border.control",
+                "gapRing": "social.slack.border.focus",
                 "text": "color.content.primary"
               },
               "label": {
@@ -9549,8 +10732,8 @@
             "white|X|Focused": {
               "root": {
                 "fill": "color.surface.page",
-                "stroke": "color.border.focus",
-                "ring": "color.border.ring.default",
+                "stroke": "color.border.control",
+                "gapRing": "social.x.border.focus",
                 "text": "color.content.primary"
               },
               "label": {
@@ -9605,8 +10788,8 @@
                 "fill": "social.google.action.default",
                 "text": "social.google.content.on-action",
                 "highlight": "color.elevation.highlight",
-                "stroke": "social.google.border.focus",
-                "ring": "color.border.ring.default"
+                "stroke": "social.google.action.pressed",
+                "gapRing": "social.google.border.focus"
               },
               "label": {
                 "text": "social.google.content.on-action"
@@ -9660,8 +10843,8 @@
                 "fill": "social.apple.action.default",
                 "text": "social.apple.content.on-action",
                 "highlight": "color.elevation.highlight",
-                "stroke": "social.apple.border.focus",
-                "ring": "color.border.ring.default"
+                "stroke": "social.apple.action.pressed",
+                "gapRing": "social.apple.border.focus"
               },
               "label": {
                 "text": "social.apple.content.on-action"
@@ -9715,8 +10898,8 @@
                 "fill": "social.discord.action.default",
                 "text": "social.discord.content.on-action",
                 "highlight": "color.elevation.highlight",
-                "stroke": "social.discord.border.focus",
-                "ring": "color.border.ring.default"
+                "stroke": "social.discord.action.pressed",
+                "gapRing": "social.discord.border.focus"
               },
               "label": {
                 "text": "social.discord.content.on-action"
@@ -9770,8 +10953,8 @@
                 "fill": "social.dribbble.action.default",
                 "text": "social.dribbble.content.on-action",
                 "highlight": "color.elevation.highlight",
-                "stroke": "social.dribbble.border.focus",
-                "ring": "color.border.ring.default"
+                "stroke": "social.dribbble.action.pressed",
+                "gapRing": "social.dribbble.border.focus"
               },
               "label": {
                 "text": "social.dribbble.content.on-action"
@@ -9825,8 +11008,8 @@
                 "fill": "social.facebook.action.default",
                 "text": "social.facebook.content.on-action",
                 "highlight": "color.elevation.highlight",
-                "stroke": "social.facebook.border.focus",
-                "ring": "color.border.ring.default"
+                "stroke": "social.facebook.action.pressed",
+                "gapRing": "social.facebook.border.focus"
               },
               "label": {
                 "text": "social.facebook.content.on-action"
@@ -9880,8 +11063,8 @@
                 "fill": "social.github.action.default",
                 "text": "social.github.content.on-action",
                 "highlight": "color.elevation.highlight",
-                "stroke": "social.github.border.focus",
-                "ring": "color.border.ring.default"
+                "stroke": "social.github.action.pressed",
+                "gapRing": "social.github.border.focus"
               },
               "label": {
                 "text": "social.github.content.on-action"
@@ -9935,8 +11118,8 @@
                 "fill": "social.linkedin.action.default",
                 "text": "social.linkedin.content.on-action",
                 "highlight": "color.elevation.highlight",
-                "stroke": "social.linkedin.border.focus",
-                "ring": "color.border.ring.default"
+                "stroke": "social.linkedin.action.pressed",
+                "gapRing": "social.linkedin.border.focus"
               },
               "label": {
                 "text": "social.linkedin.content.on-action"
@@ -9990,8 +11173,8 @@
                 "fill": "social.slack.action.default",
                 "text": "social.slack.content.on-action",
                 "highlight": "color.elevation.highlight",
-                "stroke": "social.slack.border.focus",
-                "ring": "color.border.ring.default"
+                "stroke": "social.slack.action.pressed",
+                "gapRing": "social.slack.border.focus"
               },
               "label": {
                 "text": "social.slack.content.on-action"
@@ -10045,8 +11228,8 @@
                 "fill": "social.x.action.default",
                 "text": "social.x.content.on-action",
                 "highlight": "color.elevation.highlight",
-                "stroke": "social.x.border.focus",
-                "ring": "color.border.ring.default"
+                "stroke": "social.x.action.pressed",
+                "gapRing": "social.x.border.focus"
               },
               "label": {
                 "text": "social.x.content.on-action"
@@ -10097,8 +11280,7 @@
               "root": {
                 "radius": "radius.action",
                 "strokeWidth": "stroke.control",
-                "gap": "spacing.gap-control",
-                "font": "type.placeholder"
+                "gap": "spacing.gap-control"
               },
               "divider": {
                 "fill": "color.border.subtle",
@@ -10185,7 +11367,8 @@
           "values": {
             "default": {
               "root": {
-                "height": "size.control"
+                "height": "size.control",
+                "font": "type.body-md"
               },
               "icon": {
                 "width": "icon.medium",
@@ -10202,7 +11385,8 @@
             },
             "sm": {
               "root": {
-                "height": "size.compact"
+                "height": "size.compact",
+                "font": "type.body-md"
               },
               "icon": {
                 "width": "icon.small",
@@ -10219,7 +11403,8 @@
             },
             "lg": {
               "root": {
-                "height": "size.touch"
+                "height": "size.touch",
+                "font": "type.body-lg"
               },
               "icon": {
                 "width": "icon.medium",
@@ -10254,7 +11439,7 @@
                 "text": "color.content.subtle"
               },
               "icon": {
-                "text": "color.content.primary"
+                "text": "color.content.subtle"
               },
               "addon": {
                 "text": "color.content.primary"
@@ -10273,7 +11458,7 @@
                 "text": "color.content.subtle"
               },
               "icon": {
-                "text": "color.content.primary"
+                "text": "color.content.subtle"
               },
               "addon": {
                 "text": "color.content.primary"
@@ -10292,7 +11477,7 @@
                 "text": "color.content.subtle"
               },
               "icon": {
-                "text": "color.content.primary"
+                "text": "color.content.subtle"
               },
               "addon": {
                 "text": "color.content.primary"
@@ -10311,7 +11496,7 @@
                 "text": "color.content.subtle"
               },
               "icon": {
-                "text": "color.content.primary"
+                "text": "color.content.subtle"
               },
               "addon": {
                 "text": "color.content.primary"
@@ -10384,7 +11569,7 @@
                 "text": "color.status.critical.content"
               },
               "spinner": {
-                "text": "color.content.secondary"
+                "text": "color.content.subtle"
               },
               "corner": {
                 "paddingX": "spacing.1_5",
@@ -10673,10 +11858,10 @@
           "values": {
             "Default": {
               "icon": {
-                "text": "color.content.secondary"
+                "text": "color.content.subtle"
               },
               "spinner": {
-                "text": "color.content.secondary"
+                "text": "color.content.subtle"
               },
               "text": {
                 "text": "color.content.primary"
@@ -10692,10 +11877,10 @@
             },
             "Hover": {
               "icon": {
-                "text": "color.content.secondary"
+                "text": "color.content.subtle"
               },
               "spinner": {
-                "text": "color.content.secondary"
+                "text": "color.content.subtle"
               },
               "text": {
                 "text": "color.content.primary"
@@ -10711,10 +11896,10 @@
             },
             "Focused": {
               "icon": {
-                "text": "color.content.secondary"
+                "text": "color.content.subtle"
               },
               "spinner": {
-                "text": "color.content.secondary"
+                "text": "color.content.subtle"
               },
               "text": {
                 "text": "color.content.primary"
@@ -10732,10 +11917,10 @@
             },
             "Invalid": {
               "icon": {
-                "text": "color.content.secondary"
+                "text": "color.content.subtle"
               },
               "spinner": {
-                "text": "color.content.secondary"
+                "text": "color.content.subtle"
               },
               "text": {
                 "text": "color.content.primary"
@@ -10754,7 +11939,7 @@
                 "text": "color.content.disabled"
               },
               "spinner": {
-                "text": "color.content.secondary"
+                "text": "color.content.subtle"
               },
               "text": {
                 "text": "color.content.disabled"
@@ -10770,10 +11955,10 @@
             },
             "Loading": {
               "icon": {
-                "text": "color.content.secondary"
+                "text": "color.content.subtle"
               },
               "spinner": {
-                "text": "color.content.secondary"
+                "text": "color.content.subtle"
               },
               "text": {
                 "text": "color.content.primary"
@@ -13021,7 +14206,7 @@
                 "text": "color.content.subtle"
               },
               "icon": {
-                "text": "color.content.primary"
+                "text": "color.content.subtle"
               },
               "root": {
                 "fill": "color.surface.input",
@@ -13036,7 +14221,7 @@
                 "text": "color.content.subtle"
               },
               "icon": {
-                "text": "color.content.primary"
+                "text": "color.content.subtle"
               },
               "root": {
                 "fill": "color.surface.input",
@@ -13051,7 +14236,7 @@
                 "text": "color.content.subtle"
               },
               "icon": {
-                "text": "color.content.primary"
+                "text": "color.content.subtle"
               },
               "root": {
                 "fill": "color.surface.input",
@@ -13067,7 +14252,7 @@
                 "text": "color.content.subtle"
               },
               "icon": {
-                "text": "color.content.primary"
+                "text": "color.content.subtle"
               },
               "root": {
                 "fill": "color.surface.input",
@@ -13083,7 +14268,7 @@
                 "text": "color.content.subtle"
               },
               "icon": {
-                "text": "color.content.primary"
+                "text": "color.content.subtle"
               },
               "root": {
                 "fill": "color.surface.input",
@@ -13115,7 +14300,7 @@
                 "text": "color.content.subtle"
               },
               "icon": {
-                "text": "color.content.primary"
+                "text": "color.content.subtle"
               },
               "root": {
                 "fill": "color.surface.input",
@@ -15839,7 +17024,7 @@
       "motion": {
         "transitions": {
           "root": {
-            "background-color": "use-hover",
+            "background-color": "use-toggle",
             "box-shadow": "use-focus"
           },
           "thumb": {
@@ -16112,6 +17297,9 @@
             "default|Disabled": {
               "range": {
                 "fill": "color.action.disabled.default"
+              },
+              "markLabel": {
+                "text": "color.content.disabled"
               }
             },
             "secondary|Default": {
@@ -16127,6 +17315,9 @@
             "secondary|Disabled": {
               "range": {
                 "fill": "color.action.disabled.default"
+              },
+              "markLabel": {
+                "text": "color.content.disabled"
               }
             }
           }
@@ -20312,9 +21503,11 @@
           "root": {
             "background-color": "use-hover",
             "border-color": "use-hover",
-            "color": "use-hover"
+            "color": "use-hover",
+            "scale": "use-hover"
           }
-        }
+        },
+        "press": {}
       }
     },
     "ProgressLine": {
@@ -20394,7 +21587,7 @@
       "motion": {
         "transitions": {
           "indicator": {
-            "width": "base-functional-standard"
+            "width": "use-progress"
           }
         }
       }
@@ -20480,6 +21673,313 @@
           }
         }
       ]
+    },
+    "Gauge": {
+      "key": "Gauge",
+      "slots": [
+        "root",
+        "track",
+        "arc",
+        "content",
+        "valueRow",
+        "value",
+        "unit",
+        "label"
+      ],
+      "defaults": {
+        "Variant": "default",
+        "Size": "default"
+      },
+      "parts": [
+        {
+          "axes": [
+            "Size"
+          ],
+          "values": {
+            "default": {
+              "root": {
+                "width": "spacing.32+spacing.8",
+                "height": "spacing.32+spacing.8"
+              },
+              "content": {
+                "gap": "spacing.gap-tight",
+                "travel": "spacing.1_5"
+              },
+              "valueRow": {
+                "gap": "spacing.gap-tight"
+              },
+              "value": {
+                "font": "type.heading-lg"
+              },
+              "unit": {
+                "font": "type.body-md"
+              },
+              "label": {
+                "font": "type.label"
+              }
+            },
+            "sm": {
+              "root": {
+                "width": "spacing.32",
+                "height": "spacing.32"
+              },
+              "content": {
+                "gap": "spacing.gap-tight",
+                "travel": "spacing.1"
+              },
+              "valueRow": {
+                "gap": "spacing.gap-tight"
+              },
+              "value": {
+                "font": "type.heading-md"
+              },
+              "unit": {
+                "font": "type.body-sm"
+              },
+              "label": {
+                "font": "type.body-sm"
+              }
+            },
+            "lg": {
+              "root": {
+                "width": "spacing.32+spacing.16",
+                "height": "spacing.32+spacing.16"
+              },
+              "content": {
+                "gap": "spacing.gap-tight",
+                "travel": "spacing.1_5"
+              },
+              "valueRow": {
+                "gap": "spacing.gap-tight"
+              },
+              "value": {
+                "font": "type.heading-xl"
+              },
+              "unit": {
+                "font": "type.body-md"
+              },
+              "label": {
+                "font": "type.label"
+              }
+            }
+          }
+        },
+        {
+          "axes": [
+            "Variant"
+          ],
+          "values": {
+            "default": {
+              "track": {
+                "text": "color.surface.muted"
+              },
+              "arc": {
+                "text": "color.chart.series-1.solid"
+              },
+              "value": {
+                "text": "color.content.primary"
+              },
+              "unit": {
+                "text": "color.content.secondary"
+              },
+              "label": {
+                "text": "color.chart.series-1.content"
+              }
+            },
+            "success": {
+              "track": {
+                "text": "color.surface.muted"
+              },
+              "arc": {
+                "text": "color.status.success.surface-solid"
+              },
+              "value": {
+                "text": "color.content.primary"
+              },
+              "unit": {
+                "text": "color.content.secondary"
+              },
+              "label": {
+                "text": "color.status.success.content"
+              }
+            },
+            "warning": {
+              "track": {
+                "text": "color.surface.muted"
+              },
+              "arc": {
+                "text": "color.status.warning.surface-solid"
+              },
+              "value": {
+                "text": "color.content.primary"
+              },
+              "unit": {
+                "text": "color.content.secondary"
+              },
+              "label": {
+                "text": "color.status.warning.content"
+              }
+            },
+            "critical": {
+              "track": {
+                "text": "color.surface.muted"
+              },
+              "arc": {
+                "text": "color.status.critical.surface-solid"
+              },
+              "value": {
+                "text": "color.content.primary"
+              },
+              "unit": {
+                "text": "color.content.secondary"
+              },
+              "label": {
+                "text": "color.status.critical.content"
+              }
+            }
+          }
+        }
+      ],
+      "motion": {
+        "transitions": {
+          "arc": {
+            "stroke-dasharray": "use-travel-in"
+          }
+        }
+      }
+    },
+    "Sparkline": {
+      "key": "Sparkline",
+      "slots": [
+        "root",
+        "layer",
+        "area",
+        "line",
+        "dot"
+      ],
+      "defaults": {
+        "Variant": "default",
+        "Size": "default"
+      },
+      "parts": [
+        {
+          "axes": [
+            "Size"
+          ],
+          "values": {
+            "default": {
+              "root": {
+                "width": "spacing.32+spacing.32",
+                "height": "spacing.16"
+              },
+              "dot": {
+                "width": "spacing.1_5",
+                "height": "spacing.1_5",
+                "radius": "radius.pill"
+              },
+              "line": {
+                "strokeWidth": "stroke.focus"
+              }
+            },
+            "sm": {
+              "root": {
+                "width": "spacing.24",
+                "height": "spacing.8"
+              },
+              "dot": {
+                "width": "spacing.1",
+                "height": "spacing.1",
+                "radius": "radius.pill"
+              },
+              "line": {
+                "hairline": "1.5"
+              }
+            },
+            "lg": {
+              "root": {
+                "width": "spacing.32+spacing.32+spacing.32+spacing.24",
+                "height": "spacing.32"
+              },
+              "dot": {
+                "width": "spacing.2",
+                "height": "spacing.2",
+                "radius": "radius.pill"
+              },
+              "line": {
+                "strokeWidth": "stroke.focus"
+              }
+            }
+          }
+        },
+        {
+          "axes": [
+            "Variant"
+          ],
+          "values": {
+            "default": {
+              "area": {
+                "text": "color.chart.series-1.soft"
+              },
+              "line": {
+                "text": "color.chart.series-1.solid"
+              },
+              "dot": {
+                "fill": "color.chart.series-1.solid"
+              }
+            },
+            "secondary": {
+              "area": {
+                "text": "color.surface.muted"
+              },
+              "line": {
+                "text": "color.content.secondary"
+              },
+              "dot": {
+                "fill": "color.content.secondary"
+              }
+            },
+            "success": {
+              "area": {
+                "text": "color.status.success.surface"
+              },
+              "line": {
+                "text": "color.status.success.surface-solid"
+              },
+              "dot": {
+                "fill": "color.status.success.surface-solid"
+              }
+            },
+            "critical": {
+              "area": {
+                "text": "color.status.critical.surface"
+              },
+              "line": {
+                "text": "color.status.critical.surface-solid"
+              },
+              "dot": {
+                "fill": "color.status.critical.surface-solid"
+              }
+            }
+          }
+        }
+      ],
+      "motion": {
+        "transitions": {
+          "layer": {
+            "opacity": "use-color"
+          },
+          "line": {
+            "stroke-dashoffset": "use-reveal",
+            "opacity": "use-reveal"
+          },
+          "area": {
+            "opacity": "use-reveal"
+          },
+          "dot": {
+            "opacity": "use-reveal"
+          }
+        }
+      }
     },
     "Spinner": {
       "key": "Spinner",
@@ -20601,7 +22101,9 @@
                 "fillMid": "color.action.primary.hover",
                 "fillEnd": "color.action.primary.pressed",
                 "text": "color.content.on-action",
-                "highlight": "color.elevation.highlight"
+                "highlight": "color.elevation.highlight",
+                "highlightWidth": "2",
+                "lift": "feature"
               }
             },
             "secondary|soft": {
@@ -20622,7 +22124,9 @@
                 "fillMid": "color.action.secondary.hover",
                 "fillEnd": "color.action.secondary.pressed",
                 "text": "color.content.on-secondary",
-                "highlight": "color.elevation.highlight"
+                "highlight": "color.elevation.highlight",
+                "highlightWidth": "2",
+                "lift": "feature"
               }
             },
             "critical|soft": {
@@ -20643,7 +22147,9 @@
                 "fillMid": "color.status.critical.surface-solid-hover",
                 "fillEnd": "color.status.critical.surface-solid-pressed",
                 "text": "color.status.critical.on-solid",
-                "highlight": "color.elevation.highlight"
+                "highlight": "color.elevation.highlight",
+                "highlightWidth": "2",
+                "lift": "feature"
               }
             },
             "success|soft": {
@@ -20664,7 +22170,9 @@
                 "fillMid": "color.status.success.surface-solid-hover",
                 "fillEnd": "color.status.success.surface-solid-pressed",
                 "text": "color.status.success.on-solid",
-                "highlight": "color.elevation.highlight"
+                "highlight": "color.elevation.highlight",
+                "highlightWidth": "2",
+                "lift": "feature"
               }
             },
             "warning|soft": {
@@ -20685,7 +22193,9 @@
                 "fillMid": "color.status.warning.surface-solid-hover",
                 "fillEnd": "color.status.warning.surface-solid-pressed",
                 "text": "color.status.warning.on-solid",
-                "highlight": "color.elevation.highlight"
+                "highlight": "color.elevation.highlight",
+                "highlightWidth": "2",
+                "lift": "feature"
               }
             },
             "info|soft": {
@@ -20706,7 +22216,9 @@
                 "fillMid": "color.status.info.surface-solid-hover",
                 "fillEnd": "color.status.info.surface-solid-pressed",
                 "text": "color.status.info.on-solid",
-                "highlight": "color.elevation.highlight"
+                "highlight": "color.elevation.highlight",
+                "highlightWidth": "2",
+                "lift": "feature"
               }
             }
           }
@@ -23298,7 +24810,7 @@
             },
             "ghost-rounded|Open": {
               "root": {
-                "fill": "color.surface.muted",
+                "fill": "color.surface.layer-1",
                 "radius": "radius.container"
               }
             },
@@ -23319,7 +24831,7 @@
             },
             "outline-rounded|Closed": {
               "root": {
-                "fill": "color.surface.page",
+                "fill": "color.surface.layer-1",
                 "strokeWidth": "stroke.control",
                 "radius": "radius.container",
                 "stroke": "color.border.default"
@@ -23327,7 +24839,7 @@
             },
             "outline-rounded|Open": {
               "root": {
-                "fill": "color.surface.page",
+                "fill": "color.surface.layer-1",
                 "strokeWidth": "stroke.control",
                 "radius": "radius.container",
                 "stroke": "color.border.strong"
@@ -23335,7 +24847,7 @@
             },
             "outline-rounded|Disabled": {
               "root": {
-                "fill": "color.surface.page",
+                "fill": "color.surface.layer-1",
                 "strokeWidth": "stroke.control",
                 "radius": "radius.container",
                 "stroke": "color.border.subtle"
@@ -23352,7 +24864,7 @@
             },
             "outline-sharp|Closed": {
               "root": {
-                "fill": "color.surface.page",
+                "fill": "color.surface.layer-1",
                 "strokeWidth": "stroke.control",
                 "radius": "radius.none",
                 "stroke": "color.border.default"
@@ -23360,7 +24872,7 @@
             },
             "outline-sharp|Open": {
               "root": {
-                "fill": "color.surface.page",
+                "fill": "color.surface.layer-1",
                 "strokeWidth": "stroke.control",
                 "radius": "radius.none",
                 "stroke": "color.border.strong"
@@ -23368,7 +24880,7 @@
             },
             "outline-sharp|Disabled": {
               "root": {
-                "fill": "color.surface.page",
+                "fill": "color.surface.layer-1",
                 "strokeWidth": "stroke.control",
                 "radius": "radius.none",
                 "stroke": "color.border.subtle"
@@ -24379,7 +25891,7 @@
                 "fill": "color.surface.inverse"
               },
               "icon": {
-                "text": "color.content.inverse-secondary"
+                "text": "color.content.inverse"
               },
               "description": {
                 "text": "color.content.inverse"
@@ -24393,7 +25905,7 @@
                 "fill": "color.surface.inverse"
               },
               "icon": {
-                "text": "color.content.inverse-secondary"
+                "text": "color.content.inverse"
               },
               "description": {
                 "text": "color.content.inverse"
@@ -24495,7 +26007,7 @@
                 "fill": "color.surface.inverse"
               },
               "icon": {
-                "text": "color.content.inverse-secondary"
+                "text": "color.content.inverse"
               },
               "description": {
                 "text": "color.content.inverse"
@@ -24509,7 +26021,7 @@
                 "fill": "color.surface.inverse"
               },
               "icon": {
-                "text": "color.content.inverse-secondary"
+                "text": "color.content.inverse"
               },
               "description": {
                 "text": "color.content.inverse"
@@ -24611,7 +26123,7 @@
                 "fill": "color.surface.inverse"
               },
               "icon": {
-                "text": "color.content.inverse-secondary"
+                "text": "color.content.inverse"
               },
               "description": {
                 "text": "color.content.inverse"
@@ -24625,7 +26137,7 @@
                 "fill": "color.surface.inverse"
               },
               "icon": {
-                "text": "color.content.inverse-secondary"
+                "text": "color.content.inverse"
               },
               "description": {
                 "text": "color.content.inverse"
@@ -24727,7 +26239,7 @@
                 "fill": "color.surface.inverse"
               },
               "icon": {
-                "text": "color.content.inverse-secondary"
+                "text": "color.content.inverse"
               },
               "description": {
                 "text": "color.content.inverse"
@@ -24741,7 +26253,7 @@
                 "fill": "color.surface.inverse"
               },
               "icon": {
-                "text": "color.content.inverse-secondary"
+                "text": "color.content.inverse"
               },
               "description": {
                 "text": "color.content.inverse"
@@ -24843,7 +26355,7 @@
                 "fill": "color.surface.inverse"
               },
               "icon": {
-                "text": "color.content.inverse-secondary"
+                "text": "color.content.inverse"
               },
               "description": {
                 "text": "color.content.inverse"
@@ -24857,7 +26369,7 @@
                 "fill": "color.surface.inverse"
               },
               "icon": {
-                "text": "color.content.inverse-secondary"
+                "text": "color.content.inverse"
               },
               "description": {
                 "text": "color.content.inverse"
@@ -24959,7 +26471,7 @@
                 "fill": "color.surface.inverse"
               },
               "icon": {
-                "text": "color.content.inverse-secondary"
+                "text": "color.content.inverse"
               },
               "description": {
                 "text": "color.content.inverse"
@@ -24973,7 +26485,7 @@
                 "fill": "color.surface.inverse"
               },
               "icon": {
-                "text": "color.content.inverse-secondary"
+                "text": "color.content.inverse"
               },
               "description": {
                 "text": "color.content.inverse"
@@ -25595,7 +27107,39 @@
             }
           }
         }
-      ]
+      ],
+      "motion": {
+        "enter": {
+          "name": "toast-enter"
+        },
+        "exit": {
+          "name": "toast-exit"
+        },
+        "host": {
+          "enter": [
+            "[data-sonner-toast][data-removed=\"false\"]",
+            "[data-toast-state=\"open\"]"
+          ],
+          "exit": [
+            "[data-sonner-toast][data-removed=\"true\"]",
+            "[data-toast-state=\"closing\"]"
+          ]
+        },
+        "timer": {
+          "name": "toast-countdown",
+          "slot": "bar",
+          "attr": "[data-countdown]",
+          "pausedBy": [
+            "[data-sonner-toast][data-expanded=\"true\"]",
+            "[data-sonner-toast][data-swiping=\"true\"]"
+          ]
+        },
+        "queue": {
+          "item": "[data-slot=\"toaster\"] [data-sonner-toast]",
+          "reflow": "use-reflow",
+          "release": "use-release"
+        }
+      }
     },
     "TabMenu": {
       "key": "TabMenu",
@@ -25954,8 +27498,8 @@
                 "height": "icon.medium"
               },
               "iconTrailing": {
-                "width": "icon.medium",
-                "height": "icon.medium"
+                "width": "icon.small",
+                "height": "icon.small"
               }
             },
             "sm": {
@@ -25990,8 +27534,8 @@
                 "height": "icon.large"
               },
               "iconTrailing": {
-                "width": "icon.large",
-                "height": "icon.large"
+                "width": "icon.medium",
+                "height": "icon.medium"
               }
             }
           }
@@ -26005,12 +27549,18 @@
               "root": {
                 "text": "color.content.secondary",
                 "fill": "none"
+              },
+              "iconTrailing": {
+                "text": "color.content.secondary"
               }
             },
             "Hover": {
               "root": {
                 "text": "color.content.primary",
                 "fill": "color.action.ghost.hover"
+              },
+              "iconTrailing": {
+                "text": "color.content.secondary"
               }
             },
             "Focused": {
@@ -26019,18 +27569,27 @@
                 "fill": "none",
                 "focus": "color.border.focus",
                 "ring": "color.border.ring.default"
+              },
+              "iconTrailing": {
+                "text": "color.content.secondary"
               }
             },
             "Current": {
               "root": {
                 "text": "color.content.accent",
                 "fill": "color.surface.selected"
+              },
+              "iconTrailing": {
+                "text": "color.content.secondary"
               }
             },
             "Disabled": {
               "root": {
                 "text": "color.content.disabled",
                 "fill": "none"
+              },
+              "iconTrailing": {
+                "text": "color.content.disabled"
               }
             }
           }
@@ -26044,6 +27603,1124 @@
           }
         }
       }
+    },
+    "TabBar": {
+      "key": "TabBar",
+      "slots": [
+        "root",
+        "content"
+      ],
+      "defaults": {},
+      "parts": [
+        {
+          "axes": [],
+          "values": {
+            "": {
+              "root": {
+                "fill": "color.surface.page",
+                "stroke": "color.border.subtle",
+                "strokeTopWidth": "stroke.divider",
+                "paddingX": "spacing.gap-tight",
+                "paddingY": "spacing.gap-tight",
+                "gap": "spacing.none"
+              },
+              "content": {
+                "gap": "spacing.none"
+              }
+            }
+          }
+        }
+      ]
+    },
+    "TabBarItem": {
+      "key": "TabBarItem",
+      "slots": [
+        "root",
+        "indicator",
+        "icon",
+        "media",
+        "badge",
+        "label"
+      ],
+      "defaults": {
+        "State": "Default"
+      },
+      "parts": [
+        {
+          "axes": [],
+          "values": {
+            "": {
+              "root": {
+                "gap": "spacing.gap-tight",
+                "paddingY": "spacing.gap-tight",
+                "paddingX": "spacing.none",
+                "minHeight": "size.target-min",
+                "font": "type.caption"
+              },
+              "indicator": {
+                "radius": "radius.pill",
+                "paddingX": "spacing.inset-control",
+                "paddingY": "spacing.gap-tight",
+                "gap": "spacing.none"
+              },
+              "icon": {
+                "width": "icon.large",
+                "height": "icon.large"
+              },
+              "media": {
+                "width": "icon.large",
+                "height": "icon.large"
+              }
+            }
+          }
+        },
+        {
+          "axes": [
+            "State"
+          ],
+          "values": {
+            "Default": {
+              "indicator": {
+                "fill": "none",
+                "gapRing": "none"
+              },
+              "icon": {
+                "text": "color.content.secondary"
+              },
+              "media": {
+                "text": "color.content.secondary"
+              },
+              "label": {
+                "text": "color.content.secondary"
+              }
+            },
+            "Hover": {
+              "indicator": {
+                "fill": "color.surface.muted",
+                "gapRing": "none"
+              },
+              "icon": {
+                "text": "color.content.primary"
+              },
+              "media": {
+                "text": "color.content.primary"
+              },
+              "label": {
+                "text": "color.content.primary"
+              }
+            },
+            "Focused": {
+              "indicator": {
+                "fill": "none",
+                "gapRing": "color.border.ring.default"
+              },
+              "icon": {
+                "text": "color.content.secondary"
+              },
+              "media": {
+                "text": "color.content.secondary"
+              },
+              "label": {
+                "text": "color.content.secondary"
+              }
+            },
+            "Current": {
+              "indicator": {
+                "fill": "color.surface.selected",
+                "gapRing": "none"
+              },
+              "icon": {
+                "text": "color.content.accent"
+              },
+              "media": {
+                "text": "color.content.accent"
+              },
+              "label": {
+                "text": "color.content.accent"
+              }
+            },
+            "Disabled": {
+              "indicator": {
+                "fill": "none",
+                "gapRing": "none"
+              },
+              "icon": {
+                "text": "color.content.disabled"
+              },
+              "media": {
+                "text": "color.content.disabled"
+              },
+              "label": {
+                "text": "color.content.disabled"
+              }
+            }
+          }
+        }
+      ],
+      "motion": {
+        "transitions": {
+          "indicator": {
+            "background-color": "use-hover",
+            "color": "use-hover"
+          },
+          "icon": {
+            "background-color": "use-hover",
+            "color": "use-hover"
+          },
+          "label": {
+            "background-color": "use-hover",
+            "color": "use-hover"
+          }
+        }
+      }
+    },
+    "ActivityHeatmap": {
+      "key": "ActivityHeatmap",
+      "slots": [
+        "root",
+        "monthLabels",
+        "monthSlot",
+        "month",
+        "body",
+        "dayLabels",
+        "day",
+        "dayLabel",
+        "grid",
+        "row",
+        "legendRow",
+        "legend",
+        "legendLabel"
+      ],
+      "defaults": {},
+      "parts": [
+        {
+          "axes": [],
+          "values": {
+            "": {
+              "root": {
+                "gap": "spacing.gap-control"
+              },
+              "monthLabels": {
+                "gap": "spacing.gap-tight"
+              },
+              "monthSlot": {
+                "width": "spacing.3",
+                "font": "type.caption"
+              },
+              "month": {
+                "text": "color.content.secondary",
+                "font": "type.caption"
+              },
+              "body": {
+                "gap": "spacing.gap-tight"
+              },
+              "dayLabels": {
+                "gap": "spacing.gap-tight",
+                "width": "spacing.6+spacing.1"
+              },
+              "day": {
+                "height": "spacing.3"
+              },
+              "dayLabel": {
+                "text": "color.content.secondary",
+                "font": "type.caption"
+              },
+              "grid": {
+                "gap": "spacing.gap-tight"
+              },
+              "row": {
+                "gap": "spacing.gap-tight"
+              },
+              "legend": {
+                "gap": "spacing.gap-tight"
+              },
+              "legendLabel": {
+                "text": "color.content.secondary",
+                "font": "type.caption"
+              }
+            }
+          }
+        }
+      ]
+    },
+    "ActivityHeatmapCell": {
+      "key": "ActivityHeatmapCell",
+      "slots": [
+        "root"
+      ],
+      "defaults": {
+        "Value": "0",
+        "State": "Default"
+      },
+      "parts": [
+        {
+          "axes": [],
+          "values": {
+            "": {
+              "root": {
+                "width": "spacing.3",
+                "height": "spacing.3",
+                "radius": "min(radius.control,radius.sm)"
+              }
+            }
+          }
+        },
+        {
+          "axes": [
+            "Value"
+          ],
+          "values": {
+            "0": {
+              "root": {
+                "fill": "color.chart.sequential.0"
+              }
+            },
+            "1": {
+              "root": {
+                "fill": "color.chart.sequential.1"
+              }
+            },
+            "2": {
+              "root": {
+                "fill": "color.chart.sequential.2"
+              }
+            },
+            "3": {
+              "root": {
+                "fill": "color.chart.sequential.3"
+              }
+            },
+            "4": {
+              "root": {
+                "fill": "color.chart.sequential.4"
+              }
+            },
+            "5": {
+              "root": {
+                "fill": "color.chart.sequential.5"
+              }
+            }
+          }
+        },
+        {
+          "axes": [
+            "State"
+          ],
+          "values": {
+            "Default": {
+              "root": {
+                "gapRing": "none"
+              }
+            },
+            "Focused": {
+              "root": {
+                "gapRing": "color.border.ring.default"
+              }
+            }
+          }
+        }
+      ],
+      "motion": {
+        "transitions": {
+          "root": {
+            "outline-color": "use-focus"
+          }
+        }
+      }
+    },
+    "SettingsRow": {
+      "key": "SettingsRow",
+      "slots": [
+        "root",
+        "text",
+        "title",
+        "description",
+        "control"
+      ],
+      "defaults": {
+        "Layout": "inline"
+      },
+      "parts": [
+        {
+          "axes": [],
+          "values": {
+            "": {
+              "root": {
+                "paddingY": "spacing.gap-group",
+                "stroke": "color.border.subtle",
+                "strokeBottomWidth": "stroke.divider"
+              },
+              "text": {
+                "gap": "spacing.gap-tight"
+              },
+              "title": {
+                "text": "color.content.primary",
+                "font": "type.label"
+              },
+              "description": {
+                "text": "color.content.secondary",
+                "font": "type.body-sm"
+              }
+            }
+          }
+        },
+        {
+          "axes": [
+            "Layout"
+          ],
+          "values": {
+            "inline": {
+              "root": {
+                "gap": "spacing.gap-section"
+              }
+            },
+            "stacked": {
+              "root": {
+                "gap": "spacing.gap-control"
+              }
+            }
+          }
+        }
+      ]
+    },
+    "SettingsSection": {
+      "key": "SettingsSection",
+      "slots": [
+        "root",
+        "header",
+        "title",
+        "description",
+        "content"
+      ],
+      "defaults": {},
+      "parts": [
+        {
+          "axes": [],
+          "values": {
+            "": {
+              "root": {
+                "gap": "spacing.gap-control"
+              },
+              "header": {
+                "gap": "spacing.gap-tight"
+              },
+              "title": {
+                "text": "color.content.primary",
+                "font": "type.heading-2xs"
+              },
+              "description": {
+                "text": "color.content.secondary",
+                "font": "type.body-md"
+              }
+            }
+          }
+        }
+      ]
+    },
+    "IssueCard": {
+      "key": "IssueCard",
+      "slots": [
+        "root",
+        "header",
+        "key",
+        "issueKey",
+        "pullRequest",
+        "title",
+        "meta",
+        "icon",
+        "comments",
+        "due"
+      ],
+      "defaults": {
+        "State": "Default"
+      },
+      "parts": [
+        {
+          "axes": [],
+          "values": {
+            "": {
+              "root": {
+                "fill": "color.surface.layer-2",
+                "radius": "radius.action",
+                "paddingX": "spacing.inset-control+stroke.divider",
+                "paddingY": "spacing.inset-control+stroke.divider",
+                "gap": "spacing.gap-control",
+                "strokeWidth": "stroke.divider"
+              },
+              "root:focus-visible": {
+                "focus": "color.border.focus",
+                "ring": "color.border.ring.default"
+              },
+              "key": {
+                "gap": "spacing.gap-control"
+              },
+              "issueKey": {
+                "text": "color.content.secondary",
+                "font": "type.caption"
+              },
+              "pullRequest": {
+                "gap": "spacing.gap-tight",
+                "text": "color.content.secondary",
+                "font": "type.caption"
+              },
+              "title": {
+                "text": "color.content.primary",
+                "font": "type.label"
+              },
+              "meta": {
+                "gap": "spacing.gap-control",
+                "rowGap": "spacing.gap-tight"
+              },
+              "icon": {
+                "width": "icon.small",
+                "height": "icon.small",
+                "text": "color.content.secondary"
+              },
+              "comments": {
+                "gap": "spacing.gap-tight",
+                "text": "color.content.secondary",
+                "font": "type.caption"
+              },
+              "due": {
+                "gap": "spacing.gap-tight",
+                "text": "color.content.secondary",
+                "font": "type.caption"
+              }
+            }
+          }
+        },
+        {
+          "axes": [
+            "State"
+          ],
+          "values": {
+            "Default": {
+              "root": {
+                "stroke": "color.border.default",
+                "shadow": "shadow.xs"
+              }
+            },
+            "Hover": {
+              "root": {
+                "stroke": "color.border.strong",
+                "shadow": "shadow.xs"
+              }
+            },
+            "Dragging": {
+              "root": {
+                "stroke": "color.border.accent",
+                "shadow": "shadow.lg"
+              }
+            }
+          }
+        }
+      ],
+      "motion": {
+        "transitions": {
+          "root": {
+            "border-color": "use-hover",
+            "box-shadow": "use-hover"
+          }
+        }
+      }
+    },
+    "SplitBar": {
+      "key": "SplitBar",
+      "slots": [
+        "root",
+        "bar",
+        "leaders",
+        "leaderRow",
+        "leaderLine",
+        "leaderText",
+        "leaderLabel",
+        "leaderValue",
+        "legend"
+      ],
+      "defaults": {},
+      "parts": [
+        {
+          "axes": [],
+          "values": {
+            "": {
+              "root": {
+                "gap": "spacing.gap-group"
+              },
+              "bar": {
+                "radius": "radius.action"
+              },
+              "leaderRow": {
+                "height": "size.xs"
+              },
+              "leaderLine": {
+                "width": "stroke.divider"
+              },
+              "leaderText": {
+                "gap": "spacing.gap-tight",
+                "paddingX": "spacing.gap-tight"
+              },
+              "leaderLabel": {
+                "font": "type.body-sm",
+                "text": "color.content.secondary"
+              },
+              "leaderValue": {
+                "font": "type.label",
+                "text": "color.content.primary"
+              },
+              "legend": {
+                "gap": "spacing.gap-group",
+                "rowGap": "spacing.gap-group"
+              },
+              "leaderLine[data-series=\"1\"]": {
+                "fill": "color.chart.series-1.solid"
+              },
+              "leaderLine[data-series=\"2\"]": {
+                "fill": "color.chart.series-2.solid"
+              },
+              "leaderLine[data-series=\"3\"]": {
+                "fill": "color.chart.series-3.solid"
+              },
+              "leaderLine[data-series=\"4\"]": {
+                "fill": "color.chart.series-4.solid"
+              },
+              "leaderLine[data-series=\"5\"]": {
+                "fill": "color.chart.series-5.solid"
+              },
+              "leaderLine[data-series=\"6\"]": {
+                "fill": "color.chart.series-6.solid"
+              },
+              "leaderLine[data-series=\"7\"]": {
+                "fill": "color.chart.series-7.solid"
+              },
+              "leaderLine[data-series=\"8\"]": {
+                "fill": "color.chart.series-8.solid"
+              }
+            }
+          }
+        }
+      ],
+      "motion": {
+        "transitions": {
+          "leaderLine": {
+            "left": "use-hover"
+          },
+          "leaderLine[data-motion=\"in\"]": {
+            "left": "use-travel-in"
+          },
+          "leaderLine[data-motion=\"out\"]": {
+            "left": "use-travel-out"
+          },
+          "leaderText": {
+            "left": "use-hover",
+            "right": "use-hover"
+          },
+          "leaderText[data-motion=\"in\"]": {
+            "left": "use-travel-in",
+            "right": "use-travel-in"
+          },
+          "leaderText[data-motion=\"out\"]": {
+            "left": "use-travel-out",
+            "right": "use-travel-out"
+          }
+        }
+      }
+    },
+    "SplitBarSegment": {
+      "key": "SplitBarSegment",
+      "slots": [
+        "root",
+        "content",
+        "label",
+        "value"
+      ],
+      "defaults": {
+        "Series": "1",
+        "State": "Default"
+      },
+      "parts": [
+        {
+          "axes": [
+            "Series"
+          ],
+          "values": {
+            "1": {
+              "root": {
+                "fill": "color.chart.series-1.soft",
+                "stroke": "color.chart.series-1.solid",
+                "strokeRightWidth": "stroke.focus",
+                "text": "color.chart.series-1.content"
+              },
+              "label": {
+                "text": "color.chart.series-1.content"
+              },
+              "value": {
+                "text": "color.chart.series-1.content"
+              }
+            },
+            "2": {
+              "root": {
+                "fill": "color.chart.series-2.soft",
+                "stroke": "color.chart.series-2.solid",
+                "strokeRightWidth": "stroke.focus",
+                "text": "color.chart.series-2.content"
+              },
+              "label": {
+                "text": "color.chart.series-2.content"
+              },
+              "value": {
+                "text": "color.chart.series-2.content"
+              }
+            },
+            "3": {
+              "root": {
+                "fill": "color.chart.series-3.soft",
+                "stroke": "color.chart.series-3.solid",
+                "strokeRightWidth": "stroke.focus",
+                "text": "color.chart.series-3.content"
+              },
+              "label": {
+                "text": "color.chart.series-3.content"
+              },
+              "value": {
+                "text": "color.chart.series-3.content"
+              }
+            },
+            "4": {
+              "root": {
+                "fill": "color.chart.series-4.soft",
+                "stroke": "color.chart.series-4.solid",
+                "strokeRightWidth": "stroke.focus",
+                "text": "color.chart.series-4.content"
+              },
+              "label": {
+                "text": "color.chart.series-4.content"
+              },
+              "value": {
+                "text": "color.chart.series-4.content"
+              }
+            },
+            "5": {
+              "root": {
+                "fill": "color.chart.series-5.soft",
+                "stroke": "color.chart.series-5.solid",
+                "strokeRightWidth": "stroke.focus",
+                "text": "color.chart.series-5.content"
+              },
+              "label": {
+                "text": "color.chart.series-5.content"
+              },
+              "value": {
+                "text": "color.chart.series-5.content"
+              }
+            },
+            "6": {
+              "root": {
+                "fill": "color.chart.series-6.soft",
+                "stroke": "color.chart.series-6.solid",
+                "strokeRightWidth": "stroke.focus",
+                "text": "color.chart.series-6.content"
+              },
+              "label": {
+                "text": "color.chart.series-6.content"
+              },
+              "value": {
+                "text": "color.chart.series-6.content"
+              }
+            },
+            "7": {
+              "root": {
+                "fill": "color.chart.series-7.soft",
+                "stroke": "color.chart.series-7.solid",
+                "strokeRightWidth": "stroke.focus",
+                "text": "color.chart.series-7.content"
+              },
+              "label": {
+                "text": "color.chart.series-7.content"
+              },
+              "value": {
+                "text": "color.chart.series-7.content"
+              }
+            },
+            "8": {
+              "root": {
+                "fill": "color.chart.series-8.soft",
+                "stroke": "color.chart.series-8.solid",
+                "strokeRightWidth": "stroke.focus",
+                "text": "color.chart.series-8.content"
+              },
+              "label": {
+                "text": "color.chart.series-8.content"
+              },
+              "value": {
+                "text": "color.chart.series-8.content"
+              }
+            }
+          }
+        },
+        {
+          "axes": [],
+          "values": {
+            "": {
+              "root": {
+                "height": "size.lg",
+                "paddingX": "spacing.inset-control",
+                "gap": "spacing.gap-control"
+              },
+              "root[data-fit=\"none\"]": {
+                "paddingX": "spacing.0"
+              },
+              "root[data-collapsed]": {
+                "strokeRightWidth": "spacing.0"
+              },
+              "content": {
+                "gap": "spacing.gap-control"
+              },
+              "label": {
+                "font": "type.body-sm"
+              },
+              "value": {
+                "font": "type.label"
+              }
+            }
+          }
+        },
+        {
+          "axes": [
+            "State"
+          ],
+          "values": {
+            "Default": {
+              "root": {
+                "ring": "none"
+              }
+            },
+            "Focused": {
+              "root": {
+                "ring": "color.border.ring.neutral"
+              }
+            }
+          }
+        }
+      ],
+      "motion": {
+        "transitions": {
+          "root": {
+            "width": "use-hover"
+          },
+          "root[data-motion=\"in\"]": {
+            "width": "use-travel-in"
+          },
+          "root[data-motion=\"out\"]": {
+            "width": "use-travel-out"
+          }
+        }
+      }
+    },
+    "SplitBarLegendItem": {
+      "key": "SplitBarLegendItem",
+      "slots": [
+        "root",
+        "swatch",
+        "label",
+        "value"
+      ],
+      "defaults": {
+        "Series": "1",
+        "Checked": "true",
+        "State": "Default"
+      },
+      "parts": [
+        {
+          "axes": [
+            "Series",
+            "Checked"
+          ],
+          "values": {
+            "1|true": {
+              "swatch": {
+                "fill": "color.chart.series-1.solid"
+              },
+              "label": {
+                "text": "color.content.secondary"
+              },
+              "value": {
+                "text": "color.content.primary"
+              }
+            },
+            "1|false": {
+              "swatch": {
+                "fill": "color.surface.muted"
+              },
+              "label": {
+                "text": "color.content.disabled"
+              },
+              "value": {
+                "text": "color.content.disabled"
+              }
+            },
+            "2|true": {
+              "swatch": {
+                "fill": "color.chart.series-2.solid"
+              },
+              "label": {
+                "text": "color.content.secondary"
+              },
+              "value": {
+                "text": "color.content.primary"
+              }
+            },
+            "2|false": {
+              "swatch": {
+                "fill": "color.surface.muted"
+              },
+              "label": {
+                "text": "color.content.disabled"
+              },
+              "value": {
+                "text": "color.content.disabled"
+              }
+            },
+            "3|true": {
+              "swatch": {
+                "fill": "color.chart.series-3.solid"
+              },
+              "label": {
+                "text": "color.content.secondary"
+              },
+              "value": {
+                "text": "color.content.primary"
+              }
+            },
+            "3|false": {
+              "swatch": {
+                "fill": "color.surface.muted"
+              },
+              "label": {
+                "text": "color.content.disabled"
+              },
+              "value": {
+                "text": "color.content.disabled"
+              }
+            },
+            "4|true": {
+              "swatch": {
+                "fill": "color.chart.series-4.solid"
+              },
+              "label": {
+                "text": "color.content.secondary"
+              },
+              "value": {
+                "text": "color.content.primary"
+              }
+            },
+            "4|false": {
+              "swatch": {
+                "fill": "color.surface.muted"
+              },
+              "label": {
+                "text": "color.content.disabled"
+              },
+              "value": {
+                "text": "color.content.disabled"
+              }
+            },
+            "5|true": {
+              "swatch": {
+                "fill": "color.chart.series-5.solid"
+              },
+              "label": {
+                "text": "color.content.secondary"
+              },
+              "value": {
+                "text": "color.content.primary"
+              }
+            },
+            "5|false": {
+              "swatch": {
+                "fill": "color.surface.muted"
+              },
+              "label": {
+                "text": "color.content.disabled"
+              },
+              "value": {
+                "text": "color.content.disabled"
+              }
+            },
+            "6|true": {
+              "swatch": {
+                "fill": "color.chart.series-6.solid"
+              },
+              "label": {
+                "text": "color.content.secondary"
+              },
+              "value": {
+                "text": "color.content.primary"
+              }
+            },
+            "6|false": {
+              "swatch": {
+                "fill": "color.surface.muted"
+              },
+              "label": {
+                "text": "color.content.disabled"
+              },
+              "value": {
+                "text": "color.content.disabled"
+              }
+            },
+            "7|true": {
+              "swatch": {
+                "fill": "color.chart.series-7.solid"
+              },
+              "label": {
+                "text": "color.content.secondary"
+              },
+              "value": {
+                "text": "color.content.primary"
+              }
+            },
+            "7|false": {
+              "swatch": {
+                "fill": "color.surface.muted"
+              },
+              "label": {
+                "text": "color.content.disabled"
+              },
+              "value": {
+                "text": "color.content.disabled"
+              }
+            },
+            "8|true": {
+              "swatch": {
+                "fill": "color.chart.series-8.solid"
+              },
+              "label": {
+                "text": "color.content.secondary"
+              },
+              "value": {
+                "text": "color.content.primary"
+              }
+            },
+            "8|false": {
+              "swatch": {
+                "fill": "color.surface.muted"
+              },
+              "label": {
+                "text": "color.content.disabled"
+              },
+              "value": {
+                "text": "color.content.disabled"
+              }
+            }
+          }
+        },
+        {
+          "axes": [],
+          "values": {
+            "": {
+              "root": {
+                "height": "size.xs",
+                "paddingX": "spacing.gap-tight",
+                "gap": "spacing.gap-control",
+                "radius": "radius.control"
+              },
+              "swatch": {
+                "width": "spacing.3",
+                "height": "spacing.3",
+                "radius": "radius.control"
+              },
+              "label": {
+                "font": "type.body-sm"
+              },
+              "value": {
+                "font": "type.label"
+              }
+            }
+          }
+        },
+        {
+          "axes": [
+            "State"
+          ],
+          "values": {
+            "Default": {
+              "root": {
+                "gapRing": "none"
+              }
+            },
+            "Focused": {
+              "root": {
+                "gapRing": "color.border.ring.neutral"
+              }
+            }
+          }
+        }
+      ],
+      "motion": {
+        "transitions": {
+          "swatch": {
+            "background-color": "use-hover"
+          },
+          "label": {
+            "color": "use-hover"
+          },
+          "value": {
+            "color": "use-hover"
+          }
+        }
+      }
+    },
+    "BoardColumn": {
+      "key": "BoardColumn",
+      "slots": [
+        "root",
+        "header",
+        "statusIcon",
+        "title",
+        "count",
+        "addIcon",
+        "content"
+      ],
+      "defaults": {},
+      "parts": [
+        {
+          "axes": [],
+          "values": {
+            "": {
+              "root": {
+                "fill": "color.surface.layer-1",
+                "radius": "radius.container",
+                "paddingX": "spacing.gap-control",
+                "paddingY": "spacing.gap-control",
+                "gap": "spacing.gap-control"
+              },
+              "header": {
+                "gap": "spacing.gap-control"
+              },
+              "statusIcon": {
+                "width": "icon.small",
+                "height": "icon.small",
+                "text": "color.content.secondary"
+              },
+              "title": {
+                "text": "color.content.primary",
+                "font": "type.label"
+              },
+              "count": {
+                "text": "color.content.secondary",
+                "font": "type.caption"
+              },
+              "addIcon": {
+                "width": "icon.small",
+                "height": "icon.small"
+              },
+              "content": {
+                "gap": "spacing.gap-control"
+              }
+            }
+          }
+        }
+      ]
     },
     "Brand": {
       "key": "Brand",
@@ -27779,8 +30456,8 @@
                 "paddingBottom": "spacing.none"
               },
               "content": {
-                "paddingX": "spacing.inset-control",
-                "paddingY": "spacing.inset-control"
+                "paddingX": "spacing.inset-control+stroke.focus",
+                "paddingY": "spacing.inset-control+stroke.focus"
               },
               "separator": {
                 "fill": "color.border.subtle",
@@ -27958,8 +30635,7 @@
                 "paddingX": "spacing.gap-control",
                 "paddingY": "spacing.gap-tight",
                 "fill": "color.surface.muted",
-                "focus": "color.border.focus",
-                "ring": "color.border.ring.default"
+                "gapRing": "color.border.ring.default"
               },
               "iconLeading": {
                 "text": "color.content.primary",
@@ -28063,7 +30739,7 @@
                 "height": "icon.small"
               }
             },
-            "default|destructive|Default": {
+            "default|critical|Default": {
               "root": {
                 "minHeight": "size.sm",
                 "radius": "radius.action",
@@ -28103,7 +30779,7 @@
                 "height": "icon.small"
               }
             },
-            "default|destructive|Hover": {
+            "default|critical|Hover": {
               "root": {
                 "minHeight": "size.sm",
                 "radius": "radius.action",
@@ -28140,7 +30816,7 @@
                 "height": "icon.small"
               }
             },
-            "default|destructive|Focused": {
+            "default|critical|Focused": {
               "root": {
                 "minHeight": "size.sm",
                 "radius": "radius.action",
@@ -28148,8 +30824,7 @@
                 "paddingX": "spacing.gap-control",
                 "paddingY": "spacing.gap-tight",
                 "fill": "color.status.critical.surface",
-                "focus": "color.status.critical.border-strong",
-                "ring": "color.status.critical.border"
+                "gapRing": "color.status.critical.ring"
               },
               "iconLeading": {
                 "text": "color.status.critical.content",
@@ -28179,7 +30854,7 @@
                 "height": "icon.small"
               }
             },
-            "default|destructive|Selected": {
+            "default|critical|Selected": {
               "root": {
                 "minHeight": "size.sm",
                 "radius": "radius.action",
@@ -28216,7 +30891,7 @@
                 "height": "icon.small"
               }
             },
-            "default|destructive|Disabled": {
+            "default|critical|Disabled": {
               "root": {
                 "minHeight": "size.sm",
                 "radius": "radius.action",
@@ -28338,8 +31013,7 @@
                 "paddingX": "spacing.gap-control",
                 "paddingY": "spacing.gap-tight",
                 "fill": "color.surface.muted",
-                "focus": "color.border.focus",
-                "ring": "color.border.ring.default"
+                "gapRing": "color.border.ring.default"
               },
               "iconLeading": {
                 "text": "color.content.primary",
@@ -28443,7 +31117,7 @@
                 "height": "icon.small"
               }
             },
-            "sm|destructive|Default": {
+            "sm|critical|Default": {
               "root": {
                 "minHeight": "size.xs",
                 "radius": "radius.action",
@@ -28483,7 +31157,7 @@
                 "height": "icon.small"
               }
             },
-            "sm|destructive|Hover": {
+            "sm|critical|Hover": {
               "root": {
                 "minHeight": "size.xs",
                 "radius": "radius.action",
@@ -28520,7 +31194,7 @@
                 "height": "icon.small"
               }
             },
-            "sm|destructive|Focused": {
+            "sm|critical|Focused": {
               "root": {
                 "minHeight": "size.xs",
                 "radius": "radius.action",
@@ -28528,8 +31202,7 @@
                 "paddingX": "spacing.gap-control",
                 "paddingY": "spacing.gap-tight",
                 "fill": "color.status.critical.surface",
-                "focus": "color.status.critical.border-strong",
-                "ring": "color.status.critical.border"
+                "gapRing": "color.status.critical.ring"
               },
               "iconLeading": {
                 "text": "color.status.critical.content",
@@ -28559,7 +31232,7 @@
                 "height": "icon.small"
               }
             },
-            "sm|destructive|Selected": {
+            "sm|critical|Selected": {
               "root": {
                 "minHeight": "size.xs",
                 "radius": "radius.action",
@@ -28596,7 +31269,7 @@
                 "height": "icon.small"
               }
             },
-            "sm|destructive|Disabled": {
+            "sm|critical|Disabled": {
               "root": {
                 "minHeight": "size.xs",
                 "radius": "radius.action",
@@ -28718,8 +31391,7 @@
                 "paddingX": "spacing.inset-control",
                 "paddingY": "spacing.gap-tight",
                 "fill": "color.surface.muted",
-                "focus": "color.border.focus",
-                "ring": "color.border.ring.default"
+                "gapRing": "color.border.ring.default"
               },
               "iconLeading": {
                 "text": "color.content.primary",
@@ -28823,7 +31495,7 @@
                 "height": "icon.medium"
               }
             },
-            "lg|destructive|Default": {
+            "lg|critical|Default": {
               "root": {
                 "minHeight": "size.md",
                 "radius": "radius.action",
@@ -28863,7 +31535,7 @@
                 "height": "icon.medium"
               }
             },
-            "lg|destructive|Hover": {
+            "lg|critical|Hover": {
               "root": {
                 "minHeight": "size.md",
                 "radius": "radius.action",
@@ -28900,7 +31572,7 @@
                 "height": "icon.medium"
               }
             },
-            "lg|destructive|Focused": {
+            "lg|critical|Focused": {
               "root": {
                 "minHeight": "size.md",
                 "radius": "radius.action",
@@ -28908,8 +31580,7 @@
                 "paddingX": "spacing.inset-control",
                 "paddingY": "spacing.gap-tight",
                 "fill": "color.status.critical.surface",
-                "focus": "color.status.critical.border-strong",
-                "ring": "color.status.critical.border"
+                "gapRing": "color.status.critical.ring"
               },
               "iconLeading": {
                 "text": "color.status.critical.content",
@@ -28939,7 +31610,7 @@
                 "height": "icon.medium"
               }
             },
-            "lg|destructive|Selected": {
+            "lg|critical|Selected": {
               "root": {
                 "minHeight": "size.md",
                 "radius": "radius.action",
@@ -28976,7 +31647,7 @@
                 "height": "icon.medium"
               }
             },
-            "lg|destructive|Disabled": {
+            "lg|critical|Disabled": {
               "root": {
                 "minHeight": "size.md",
                 "radius": "radius.action",
@@ -29951,6 +32622,8 @@
         "root",
         "overlay",
         "main",
+        "panel",
+        "header",
         "content",
         "close"
       ],
@@ -29958,7 +32631,8 @@
         "overlay"
       ],
       "defaults": {
-        "Size": "default"
+        "Size": "default",
+        "Layout": "simple"
       },
       "parts": [
         {
@@ -30001,6 +32675,47 @@
             "lg": {
               "root": {
                 "width": "spacing.32+spacing.32+spacing.32+spacing.32+spacing.32"
+              }
+            }
+          }
+        },
+        {
+          "axes": [
+            "Layout"
+          ],
+          "values": {
+            "tray": {
+              "root": {
+                "fill": "color.surface.layer-1"
+              },
+              "panel": {
+                "fill": "color.surface.layer-2",
+                "stroke": "color.border.subtle",
+                "strokeBottomWidth": "stroke.divider",
+                "radiusBottom": "radius.container"
+              },
+              "header": {
+                "paddingX": "spacing.inset-surface",
+                "paddingY": "spacing.inset-surface"
+              },
+              "content": {
+                "stroke": "color.border.subtle",
+                "strokeTopWidth": "stroke.divider",
+                "paddingX": "spacing.inset-surface",
+                "paddingY": "spacing.inset-surface"
+              }
+            },
+            "simple": {
+              "root": {
+                "width": "spacing.32+spacing.32+spacing.32+spacing.4",
+                "paddingX": "spacing.inset-surface+stroke.divider",
+                "paddingY": "spacing.inset-surface+stroke.divider",
+                "gap": "spacing.gap-section"
+              },
+              "main": {
+                "paddingX": "spacing.0",
+                "paddingY": "spacing.0",
+                "gap": "spacing.gap-section"
               }
             }
           }
@@ -30059,7 +32774,7 @@
           "values": {
             "default": {
               "title": {
-                "font": "type.heading-sm"
+                "font": "type.heading-2xs"
               },
               "description": {
                 "font": "type.body-md"
@@ -30067,11 +32782,14 @@
               "clearance": {
                 "width": "size.sm",
                 "height": "size.sm"
+              },
+              "trailing": {
+                "minHeight": "size.sm"
               }
             },
             "lg": {
               "title": {
-                "font": "type.heading-md"
+                "font": "type.heading-xs"
               },
               "description": {
                 "font": "type.body-md"
@@ -30079,6 +32797,9 @@
               "clearance": {
                 "width": "size.md",
                 "height": "size.md"
+              },
+              "trailing": {
+                "minHeight": "size.md"
               }
             }
           }
@@ -30094,7 +32815,8 @@
       ],
       "defaults": {
         "Size": "default",
-        "Layout": "inline"
+        "Layout": "inline",
+        "Surface": "plain"
       },
       "parts": [
         {
@@ -30115,6 +32837,56 @@
               },
               "actions": {
                 "gap": "spacing.gap-control"
+              }
+            }
+          }
+        },
+        {
+          "axes": [
+            "Surface",
+            "Layout"
+          ],
+          "values": {
+            "plain|inline": {},
+            "plain|stacked": {},
+            "plain|equal": {},
+            "tray|inline": {
+              "root": {
+                "strokeTopWidth": "stroke.none",
+                "paddingY": "spacing.inset-control"
+              }
+            },
+            "tray|stacked": {
+              "root": {
+                "strokeTopWidth": "stroke.none",
+                "paddingY": "spacing.inset-surface"
+              }
+            },
+            "tray|equal": {
+              "root": {
+                "strokeTopWidth": "stroke.none",
+                "paddingY": "spacing.inset-control"
+              }
+            },
+            "simple|inline": {
+              "root": {
+                "strokeTopWidth": "stroke.none",
+                "paddingX": "spacing.0",
+                "paddingY": "spacing.0"
+              }
+            },
+            "simple|stacked": {
+              "root": {
+                "strokeTopWidth": "stroke.none",
+                "paddingX": "spacing.0",
+                "paddingY": "spacing.0"
+              }
+            },
+            "simple|equal": {
+              "root": {
+                "strokeTopWidth": "stroke.none",
+                "paddingX": "spacing.0",
+                "paddingY": "spacing.0"
               }
             }
           }
@@ -30164,25 +32936,25 @@
       "border/brand-alt": "Brand border; turns gray in dark mode.",
       "border/error": "Error border — invalid inputs.",
       "border/error-subtle": "Subtle error border.",
-      "Elevation/highlight": "[ROLE: Solid Control Highlight] The inner 2px top highlight of a solid filled control (primary and destructive buttons, every state but disabled): box-shadow: inset 0 2px 0 var(--color-elevation-highlight). {white-a.5} in Light, {white-a.3} in Dark (DEC-2026-11-16-006, the Figma file is the rule). EFFECT colour only.",
+      "Elevation/highlight": "[ROLE: Solid Control Highlight] The inner 1px top highlight of a solid filled control (Figma style Highlight/solid; Button, IconButton, SocialLoginButton, every state but disabled): box-shadow: inset 0 1px 0 var(--color-elevation-highlight). FABButton and the gradient FeaturedIcon hand-set it at 2px. {white-a.5} in Light, {white-a.3} in Dark (DEC-2026-11-16-006, the Figma file is the rule). EFFECT colour only.",
       "Elevation/shadow-ring": "[ROLE: Shadow Ring] The 0 0 0 1px highlight edge every shadow and depth recipe starts with. EFFECT colour only. {white-a.1} in both themes: invisible on a light surface, the rim that buys elevation on a dark page.",
-      "Elevation/shadow-ambient": "[ROLE: Shadow Ambient] The tight, secondary layer of the shadow and depth recipes. EFFECT colour only. {black-a.1} (5%) in Light, {black-a.4} (20%) in Dark.",
+      "Elevation/shadow-ambient": "[ROLE: Shadow Ambient] The tight, secondary layer of the shadow and depth recipes, and the solid Button label shadow (Shadow/text-2xs, 0 1px 0.5px). EFFECT colour only. {black-a.1} (5%) in Light, {black-a.4} (20%) in Dark.",
       "Elevation/shadow-key": "[ROLE: Shadow Key] The main, larger-offset layer of every Shadow/* and Depth/* recipe. EFFECT colour only, never a fill or stroke. {black-a.2} (10%) in Light, {black-a.6} (40%) in Dark, so one shadow style follows the theme.",
       "Border/inverse": "[ROLE: Inverse Border] Any stroke ON surface.inverse — an outline badge, a divider in a tooltip, a group edge. {white-a.5} in Light, {black-a.5} in Dark. Decoration: no 1.4.11 floor, never the only boundary of a control.",
-      "Content/inverse-secondary": "[ROLE: Inverse Secondary Text] Body copy, icons and the dismiss icon on surface.inverse — content.secondary points the wrong way there. {white-a.9} in Light, {black-a.9} in Dark. STRICT 4.5:1 against surface.inverse.",
+      "Content/inverse-secondary": "[ROLE: Inverse Secondary Text] Body copy and the resting dismiss icon on surface.inverse (status icons there use content.inverse, as Figma binds them) — content.secondary points the wrong way there. {white-a.9} in Light, {black-a.9} in Dark. STRICT 4.5:1 against surface.inverse.",
       "Surface/inverse-muted": "[ROLE: Inverse Soft Fill] Passive soft fill on surface.inverse — a soft badge, chip or track inside a tooltip or snackbar. The alpha ladder pointing away from the chip: {white-a.3} in Light (dark chip), {black-a.3} in Dark (light chip). Ink on it: content.inverse. No hover / pressed twins: it is not an action.",
       "Surface/page": "[ROLE: Base Background] Elevation level 0. Root application background. content.primary and content.secondary must maintain WCAG AA (4.5:1) against this token.",
       "Surface/layer-1": "[ROLE: Container Background] Elevation level 1. Cards, panels, grouped content. Must read slightly distinct from surface.page.",
       "Surface/layer-2": "[ROLE: Elevated Background] Elevation level 2. Popovers, dropdowns, modals. Pair with box-shadow in CSS — the color step alone does not convey floating.",
       "Surface/input": "[ROLE: Form Background] Background for interactive data-entry fields. Ensures content.primary typed by the user stays legible. Same tone as surface.page by design — named separately so forms have their own token.",
-      "Surface/raised": "[ROLE: Raised Surface] A part lifted above the track or surface it sits on: the selected segment of a SegmentedControl. Lighter than surface.muted in both themes (Light = surface.input's tone, Dark = action.secondary.default's tone). DEC-2026-11-17-003.",
+      "Surface/raised": "[ROLE: Raised Surface] A part lifted above the track or surface it sits on: the selected segment of a SegmentedControl. Lighter than surface.muted in both themes (Light = surface.input's tone, Dark = action.secondary.default's tone). DEC-2026-11-17-003, DEC-2026-11-18-009.",
       "Surface/selected": "[ROLE: Active State Background] Subtle fill for mutual selection (e.g. a selected table row). Must guarantee 4.5:1 against content.primary on top.",
       "Surface/selected-pressed": "[ROLE: Active State Background Pressed] A pressed soft brand control (Button Soft / Outline pressed). {accent-a.5}, two steps deeper than surface.selected — the brand twin of status.*.surface-pressed.",
-      "Surface/inverse": "[ROLE: Inverted Background] High-contrast background for tooltips, snackbars and inverse alerts or badges. Always pair with content.inverse (title) and content.inverse-secondary (body, icons). {neutral.12} in both themes: a dark chip in Light, a light one in Dark.",
+      "Surface/inverse": "[ROLE: Inverted Background] High-contrast background for tooltips, snackbars and inverse alerts or badges. Always pair with content.inverse (title, icons) and content.inverse-secondary (body). {neutral.12} in both themes: a dark chip in Light, a light one in Dark.",
       "Surface/overlay": "[ROLE: Scrim] Semi-transparent layer over surface.page to focus attention on modals (layer-2 surfaces). Ships at 60% black alpha (`{black-a.8}`), same in both themes.",
       "Surface/accent": "[ROLE: Accent Wash] Ambient brand-tinted background — a section that leans brand without being an interactive fill. {accent.2} in Light, {accent.4} in Dark (the Figma file is the rule, 2026-11-17).",
-      "Surface/muted": "[ROLE: Control Track] Neutral fill of a control's passive part — a Switch's off track, a Slider or Progress track, an OTP segment, a step connector. {neutral.4} in light. Not a button: a secondary CTA uses action.secondary.default.",
-      "Surface/muted-hover": "[ROLE: Control Track Hover] Hover twin of surface.muted (a hovered off Switch, a scrollbar thumb). {neutral.5} in light — one step past the track.",
+      "Surface/muted": "[ROLE: Control Track] Neutral fill of a control's passive part — a Switch's off track, a Slider or Progress track, an OTP segment, a step connector. {neutral.3} in light. Not a button: a secondary CTA uses action.secondary.default.",
+      "Surface/muted-hover": "[ROLE: Control Track Hover] Hover twin of surface.muted (a hovered off Switch, a scrollbar thumb). {neutral.4} in light — one step past the track.",
       "Content/primary": "[ROLE: High Contrast Text] Main body and headings. STRICT: must pass WCAG AA (4.5:1) against surface.page and surface.layer-1.",
       "Content/secondary": "[ROLE: Medium Contrast Text] Supporting copy and descriptions. STRICT: WCAG AA (4.5:1) against standard surface backgrounds.",
       "Content/subtle": "[ROLE: Low Contrast Text] Placeholders and decorative de-emphasis only — not a third readable body tier. Minimum ~3:1; do not convey information.",
@@ -30240,16 +33012,46 @@
       "Status/success/border-strong": "[ROLE: Success Control Boundary] Affects validated / success-state form fields. {success.10} — one step lighter than warning/critical; this ramp clears both metrics a full step earlier (3.32:1/Lc60 light, 8.21:1/Lc56 dark).",
       "Status/info/border-strong": "[ROLE: Info Control Boundary] Affects informational-state form fields. Light {info.9} = 3.24:1/Lc59. Dark {info.10} = 7.15:1/Lc49 — info.9 fails APCA in dark (Lc 42), one step earlier than error needs.",
       "Border/subtle": "[ROLE: Decorative Border 1/3] Affects hairline dividers, table rules, the edge of a quiet grouping. Lightest neutral stroke — {black-a.1} in light, {white-a.1} in dark (the FIXED alpha ladder, so it composites correctly on any surface): 5 %, owner decision 2026-11-16 (DEC-2026-11-16-003). It measures APCA Lc 0 on the dark page, which is accepted: shadow and surface carry the separation. DECORATION: separates regions, carries no state, no contrast floor. If the stroke is the only thing telling the user a control is there, that is border.control.",
-      "Border/default": "[ROLE: Decorative Border 2/3] Affects a card edge, a panel boundary, a grouping box. {black-a.2} / {white-a.2} (10 %, owner decision 2026-11-16, DEC-2026-11-16-003). DECORATION, no contrast floor. One step above border.subtle so a panel edge still outranks a hairline. Never the only boundary of a control.",
-      "Border/control": "[ROLE: Control Boundary] Affects the resting border of inputs, textareas, selects, checkboxes, radios, switch tracks and outline buttons. {black-a.3} in Light, {white-a.4} in Dark: a soft hairline, below the 3:1 of WCAG 1.4.11 BY OWNER DECISION (DEC-2026-11-16-004 and -006, the Figma file is the rule); a field is identified by its fill and its focus ring, not by this stroke alone.",
-      "Border/control-hover": "[ROLE: Control Boundary Hover] Affects the hover state of a control's resting (border.control) border. One step past border.control: {black-a.4} in Light, {white-a.4} in Dark (DEC-2026-11-16-004).",
-      "Border/strong": "[ROLE: Strong Border] Affects the edge of a grouping or a selected container that must read before its neighbours. Not the field outline — that is border.control. WCAG 1.4.11 + APCA Lc 45 against the page, SOLVED on the alpha ladder ({ui-a:…}): {black-a.7} in light, {white-a.8} in dark for the default system.",
+      "Border/default": "[ROLE: Decorative Border 2/3] Affects a card edge, a panel boundary, a grouping box. {black-a.2} in Light (10 %, DEC-2026-11-16-003), {white-a.1} in Dark (5 %, DEC-2026-11-18-008). DECORATION, no contrast floor. In Light one step above border.subtle; in Dark both share a value on purpose. Never the only boundary of a control.",
+      "Border/control": "[ROLE: Control Boundary] Affects the resting border of inputs, textareas, selects, checkboxes, radios, switch tracks and outline buttons. {black-a.3} in Light, {white-a.1} in Dark: a soft hairline, below the 3:1 of WCAG 1.4.11 BY OWNER DECISION (DEC-2026-11-16-004 and DEC-2026-11-18-008, the Figma file is the rule); a field is identified by its fill and its focus ring, not by this stroke alone.",
+      "Border/control-hover": "[ROLE: Control Boundary Hover] Affects the hover state of a control's resting (border.control) border. One step past border.control: {black-a.4} in Light, {white-a.2} in Dark (DEC-2026-11-18-008).",
+      "Border/strong": "[ROLE: Strong Border] Affects the edge of a grouping or a selected container that must read before its neighbours. Not the field outline — that is border.control. Light is SOLVED on the alpha ladder ({ui-a:…}) to WCAG 1.4.11 + APCA Lc 45 against the page: {black-a.7} for the default system. Dark is pinned soft at {white-a.3} (DEC-2026-11-18-008).",
       "Border/focus": "[ROLE: A11y Focus Ring] The keyboard focus-visible boundary on every interactive element of the default / accent variant. SOLVED per theme ({focus:accent.9}): the first accent tone from 9 that clears WCAG 1.4.11 (3:1) on the page — tone 9 in both themes for the default system. Severity, neutral and inverse variants take their own boundary (status.<sev>.border-strong, border.strong, border.inverse). The translucent halo outside it is border.ring.*.",
       "Border/ring/default": "[ROLE: Focus Ring · accent] The 2px focus ring drawn 1px OUTSIDE a focused control, with the page showing in the gap (owner decision 2026-11-17). Accent Alpha/06 in each mode. Used by every default-intent control. Decoration, never the only focus cue and never measured as a boundary; border.focus is the contrast-bearing edge of a field. Neutral controls use border.ring.neutral, critical ones status.critical.ring.",
       "Border/ring/neutral": "[ROLE: Focus Ring · neutral] The 2px focus ring, 1px outside a focused neutral (secondary) control. Gray Alpha/06 in each mode, the neutral twin of border.ring.default.",
       "Status/critical/ring": "[ROLE: Focus Ring · critical] The 2px focus ring, 1px outside a focused critical (destructive) control. Error Alpha/06 in each mode, the critical twin of border.ring.default and the same red as a field's error halo (status.critical.border).",
       "Border/rim-highlight": "[ROLE: Elevation Rim] 1px light rim along the top of an elevated surface in dark mode. Below a near-black page only ~5% of the luminance range is left to spend downward, so elevation has to be bought with light, not shadow — this is the token for the rim darkShadow() already paints.",
-      "Border/accent": "[ROLE: Accent Border] Border painted in the brand accent — a selected card, a toggled button, any element that needs its stroke to read as the primary accent. For keyboard focus use border.focus."
+      "Border/accent": "[ROLE: Accent Border] Border painted in the brand accent — a selected card, a toggled button, any element that needs its stroke to read as the primary accent. For keyboard focus use border.focus.",
+      "Chart/series-1/solid": "[ROLE: Chart Series 1 Solid] Series 1 of a categorical chart (accent (the brand violet)): step 9 — lines, bars, dots, legend swatches and segment edges. 3:1 on the page in both themes (WCAG 1.4.11). Never add opacity on top of it. Series order is fixed. Use Chart/* for categories with no meaning; Status/* when the colour means good or bad.",
+      "Chart/series-1/soft": "[ROLE: Chart Series 1 Soft] Series 1 of a categorical chart (accent (the brand violet)): step 4 — area fills and segment backgrounds. A fill, never a line or text. Series order is fixed. Use Chart/* for categories with no meaning; Status/* when the colour means good or bad.",
+      "Chart/series-1/content": "[ROLE: Chart Series 1 Content] Series 1 of a categorical chart (accent (the brand violet)): step 11 — labels on `soft` or on the page. 4.5:1. Series order is fixed. Use Chart/* for categories with no meaning; Status/* when the colour means good or bad.",
+      "Chart/series-2/solid": "[ROLE: Chart Series 2 Solid] Series 2 of a categorical chart (Teal): step 9 — lines, bars, dots, legend swatches and segment edges. 3:1 on the page in both themes (WCAG 1.4.11). Never add opacity on top of it. Series order is fixed. Use Chart/* for categories with no meaning; Status/* when the colour means good or bad.",
+      "Chart/series-2/soft": "[ROLE: Chart Series 2 Soft] Series 2 of a categorical chart (Teal): step 4 — area fills and segment backgrounds. A fill, never a line or text. Series order is fixed. Use Chart/* for categories with no meaning; Status/* when the colour means good or bad.",
+      "Chart/series-2/content": "[ROLE: Chart Series 2 Content] Series 2 of a categorical chart (Teal): step 11 — labels on `soft` or on the page. 4.5:1. Series order is fixed. Use Chart/* for categories with no meaning; Status/* when the colour means good or bad.",
+      "Chart/series-3/solid": "[ROLE: Chart Series 3 Solid] Series 3 of a categorical chart (Amber): step 9 — lines, bars, dots, legend swatches and segment edges. 3:1 on the page in both themes (WCAG 1.4.11). Never add opacity on top of it. Series order is fixed. Use Chart/* for categories with no meaning; Status/* when the colour means good or bad.",
+      "Chart/series-3/soft": "[ROLE: Chart Series 3 Soft] Series 3 of a categorical chart (Amber): step 4 — area fills and segment backgrounds. A fill, never a line or text. Series order is fixed. Use Chart/* for categories with no meaning; Status/* when the colour means good or bad.",
+      "Chart/series-3/content": "[ROLE: Chart Series 3 Content] Series 3 of a categorical chart (Amber): step 11 — labels on `soft` or on the page. 4.5:1. Series order is fixed. Use Chart/* for categories with no meaning; Status/* when the colour means good or bad.",
+      "Chart/series-4/solid": "[ROLE: Chart Series 4 Solid] Series 4 of a categorical chart (Blue): step 9 — lines, bars, dots, legend swatches and segment edges. 3:1 on the page in both themes (WCAG 1.4.11). Never add opacity on top of it. Series order is fixed. Use Chart/* for categories with no meaning; Status/* when the colour means good or bad.",
+      "Chart/series-4/soft": "[ROLE: Chart Series 4 Soft] Series 4 of a categorical chart (Blue): step 4 — area fills and segment backgrounds. A fill, never a line or text. Series order is fixed. Use Chart/* for categories with no meaning; Status/* when the colour means good or bad.",
+      "Chart/series-4/content": "[ROLE: Chart Series 4 Content] Series 4 of a categorical chart (Blue): step 11 — labels on `soft` or on the page. 4.5:1. Series order is fixed. Use Chart/* for categories with no meaning; Status/* when the colour means good or bad.",
+      "Chart/series-5/solid": "[ROLE: Chart Series 5 Solid] Series 5 of a categorical chart (Rose): step 9 — lines, bars, dots, legend swatches and segment edges. 3:1 on the page in both themes (WCAG 1.4.11). Never add opacity on top of it. Series order is fixed. Use Chart/* for categories with no meaning; Status/* when the colour means good or bad.",
+      "Chart/series-5/soft": "[ROLE: Chart Series 5 Soft] Series 5 of a categorical chart (Rose): step 4 — area fills and segment backgrounds. A fill, never a line or text. Series order is fixed. Use Chart/* for categories with no meaning; Status/* when the colour means good or bad.",
+      "Chart/series-5/content": "[ROLE: Chart Series 5 Content] Series 5 of a categorical chart (Rose): step 11 — labels on `soft` or on the page. 4.5:1. Series order is fixed. Use Chart/* for categories with no meaning; Status/* when the colour means good or bad.",
+      "Chart/series-6/solid": "[ROLE: Chart Series 6 Solid] Series 6 of a categorical chart (Lime): step 9 — lines, bars, dots, legend swatches and segment edges. 3:1 on the page in both themes (WCAG 1.4.11). Never add opacity on top of it. Series order is fixed. Use Chart/* for categories with no meaning; Status/* when the colour means good or bad.",
+      "Chart/series-6/soft": "[ROLE: Chart Series 6 Soft] Series 6 of a categorical chart (Lime): step 4 — area fills and segment backgrounds. A fill, never a line or text. Series order is fixed. Use Chart/* for categories with no meaning; Status/* when the colour means good or bad.",
+      "Chart/series-6/content": "[ROLE: Chart Series 6 Content] Series 6 of a categorical chart (Lime): step 11 — labels on `soft` or on the page. 4.5:1. Series order is fixed. Use Chart/* for categories with no meaning; Status/* when the colour means good or bad.",
+      "Chart/series-7/solid": "[ROLE: Chart Series 7 Solid] Series 7 of a categorical chart (Magenta): step 9 — lines, bars, dots, legend swatches and segment edges. 3:1 on the page in both themes (WCAG 1.4.11). Never add opacity on top of it. Series order is fixed. Use Chart/* for categories with no meaning; Status/* when the colour means good or bad.",
+      "Chart/series-7/soft": "[ROLE: Chart Series 7 Soft] Series 7 of a categorical chart (Magenta): step 4 — area fills and segment backgrounds. A fill, never a line or text. Series order is fixed. Use Chart/* for categories with no meaning; Status/* when the colour means good or bad.",
+      "Chart/series-7/content": "[ROLE: Chart Series 7 Content] Series 7 of a categorical chart (Magenta): step 11 — labels on `soft` or on the page. 4.5:1. Series order is fixed. Use Chart/* for categories with no meaning; Status/* when the colour means good or bad.",
+      "Chart/series-8/solid": "[ROLE: Chart Series 8 Solid] Series 8 of a categorical chart (Orange): step 9 — lines, bars, dots, legend swatches and segment edges. 3:1 on the page in both themes (WCAG 1.4.11). Never add opacity on top of it. Series order is fixed. Use Chart/* for categories with no meaning; Status/* when the colour means good or bad.",
+      "Chart/series-8/soft": "[ROLE: Chart Series 8 Soft] Series 8 of a categorical chart (Orange): step 4 — area fills and segment backgrounds. A fill, never a line or text. Series order is fixed. Use Chart/* for categories with no meaning; Status/* when the colour means good or bad.",
+      "Chart/series-8/content": "[ROLE: Chart Series 8 Content] Series 8 of a categorical chart (Orange): step 11 — labels on `soft` or on the page. 4.5:1. Series order is fixed. Use Chart/* for categories with no meaning; Status/* when the colour means good or bad.",
+      "Chart/sequential/0": "[ROLE: Chart Sequential 0] Heatmap and density ramp, level 0: no data, in both themes. A fill only.",
+      "Chart/sequential/1": "[ROLE: Chart Sequential 1] Heatmap and density ramp, level 1: increasing intensity, in both themes. A fill only.",
+      "Chart/sequential/2": "[ROLE: Chart Sequential 2] Heatmap and density ramp, level 2: increasing intensity, in both themes. A fill only.",
+      "Chart/sequential/3": "[ROLE: Chart Sequential 3] Heatmap and density ramp, level 3: increasing intensity, in both themes. A fill only.",
+      "Chart/sequential/4": "[ROLE: Chart Sequential 4] Heatmap and density ramp, level 4: increasing intensity, in both themes. A fill only.",
+      "Chart/sequential/5": "[ROLE: Chart Sequential 5] Heatmap and density ramp, level 5: most intense, in both themes. A fill only."
     },
     "Radius": {
       "role/control": "Checkbox, slider, nested child, inner thumb. 0–6px: a checkbox stays a square.",
@@ -30267,6 +33069,7 @@
       "role/gap-section": "Between sections, modal header → body.",
       "role/inset-control": "Padding inside buttons, inputs, chips.",
       "role/inset-surface": "Card / modal / alert padding.",
+      "role/inset-action": "Side padding of default and lg buttons.",
       "role/inset-page": "Page and sheet margins when Grid is unused.",
       "role/inset-section": "Top and bottom padding of a full-width page section (hero, pricing, footer). Sides use inset-page.",
       "role/overlap-sm": "A hairline tuck.",
@@ -30329,6 +33132,9 @@
       "role/body-sm/size": "Dense supporting copy. One value per viewport mode: Desktop · Tablet · Mobile.",
       "role/body-sm/weight": "Dense supporting copy.",
       "role/body-sm/family": "Dense supporting copy.",
+      "role/code/size": "Codes a person copies or types: backup codes, secret keys. One value per viewport mode: Desktop · Tablet · Mobile.",
+      "role/code/weight": "Codes a person copies or types: backup codes, secret keys.",
+      "role/code/family": "Codes a person copies or types: backup codes, secret keys.",
       "role/label/size": "Form labels and field names. One value per viewport mode: Desktop · Tablet · Mobile.",
       "role/label/weight": "Form labels and field names.",
       "role/label/family": "Form labels and field names.",

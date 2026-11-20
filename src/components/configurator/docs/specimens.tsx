@@ -18,14 +18,17 @@ import { COMPONENTS, type ComponentDef } from '../../../lib/componentCatalogue'
 import { PHOSPHOR_CORE, PHOSPHOR_CORE_COMPONENT, type IconConcept } from '../../../lib/iconLibraries'
 import { PHOSPHOR_CORE_BODIES, loadPhosphorWeight, peekPhosphorWeight, phosphorCoreBody, phosphorIconMaskUrl, type PhosphorWeight } from '../../../lib/phosphorIcons'
 import {
-  SkeletonButtonSpecimen, SkeletonIconButtonSpecimen, SkeletonCloseButtonSpecimen, SkeletonTextLinkSpecimen, SkeletonFABButtonSpecimen, SkeletonFABGroupSpecimen, SkeletonButtonGroupSpecimen, SkeletonButtonGroupItemSpecimen, SkeletonButtonGroupDividerSpecimen,
-  SkeletonSocialLoginButtonSpecimen, 
+  SkeletonButtonSpecimen, SkeletonIconButtonSpecimen, SkeletonCloseButtonSpecimen, SkeletonTextLinkSpecimen, SkeletonFABButtonSpecimen, SkeletonFABGroupSpecimen, SkeletonSplitButtonSpecimen, SkeletonButtonGroupSpecimen, SkeletonButtonGroupItemSpecimen, SkeletonButtonGroupDividerSpecimen,
+  SkeletonSocialLoginButtonSpecimen, SkeletonReactionGroupSpecimen, SkeletonReactionGroupTriggerSpecimen, SkeletonReactionGroupPopoverSpecimen, 
 } from './skeleton/actions'
 import {
-  SkeletonBadgeSpecimen, SkeletonChipSpecimen, SkeletonProgressLineSpecimen, SkeletonProgressCircleSpecimen, SkeletonSpinnerSpecimen,
+  SkeletonBadgeSpecimen, SkeletonChipSpecimen, SkeletonProgressLineSpecimen, SkeletonProgressCircleSpecimen, SkeletonGaugeSpecimen, SkeletonSparklineSpecimen, SkeletonSpinnerSpecimen,
   SkeletonRatingGroupSpecimen, SkeletonRatingGroupItemSpecimen, SkeletonAvatarSpecimen, SkeletonAvatarStatusSpecimen, SkeletonAvatarGroupSpecimen, SkeletonFeaturedIconSpecimen,
   SkeletonKbdSpecimen,
 } from './skeleton/indicators'
+import { SkeletonTabBarSpecimen, SkeletonTabBarItemSpecimen } from './skeleton/tabBar'
+import { SkeletonActivityHeatmapSpecimen, SkeletonActivityHeatmapCellSpecimen } from './skeleton/activityHeatmap'
+import { SkeletonSplitBarSpecimen, SkeletonSplitBarSegmentSpecimen, SkeletonSplitBarLegendItemSpecimen } from './skeleton/splitBar'
 import {
   SkeletonTabMenuSpecimen, SkeletonTabMenuItemSpecimen, SkeletonTabMenuLineItemSpecimen, SkeletonNavItemSpecimen, SkeletonBrandSpecimen, SkeletonAccountMenuTriggerSpecimen, SkeletonSegmentedControlSpecimen, SkeletonSegmentedControlItemSpecimen, SkeletonBreadcrumbSpecimen, SkeletonBreadcrumbItemSpecimen, SkeletonBreadcrumbEllipsisSpecimen, SkeletonBreadcrumbSeparatorSpecimen,
   SkeletonPaginationSpecimen, SkeletonPaginationLinkSpecimen, SkeletonPaginationEllipsisSpecimen, SkeletonStepperSpecimen, SkeletonStepperItemSpecimen, SkeletonStepperIndicatorSpecimen, SkeletonStepperIconSpecimen, SkeletonDropdownMenuSpecimen, SkeletonDropdownMenuLabelSpecimen, SkeletonDropdownMenuItemSpecimen, SkeletonDropdownMenuFooterSpecimen, 
@@ -105,6 +108,19 @@ export function iconName(_prefix: string, concept: IconConcept): string {
 // PascalCase component name for copy snippets
 // (`import { MagnifyingGlass } from "@phosphor-icons/react"`).
 export const ICON_COMPONENT: Record<IconConcept, string> = PHOSPHOR_CORE_COMPONENT
+
+/** A Figma component's BOOLEAN properties that are not variant axes (the catalogue's `axes` hold only those), shown in
+ *  the settings panel as switches, named and defaulted as the component's Storybook controls are. The value rides in the
+ *  page's axis values as 'true' · 'false', so the specimen reads it as `v.<Name>`. */
+export const BOOLEAN_PROPS: Record<string, { name: string; default: boolean }[]> = {
+  SplitBar: [{ name: 'LegendVisible', default: true }],
+  ActivityHeatmap: [
+    { name: 'LegendVisible', default: true },
+    { name: 'MonthLabelsVisible', default: true },
+    { name: 'DayLabelsVisible', default: true },
+  ],
+  ReactionGroup: [{ name: 'SummaryVisible', default: true }],
+}
 
 /** Which components expose leading/trailing icon slots, and their default glyphs. */
 export const ICON_SLOTS: Record<string, { leading: IconConcept; trailing: IconConcept }> = {
@@ -370,10 +386,14 @@ export const SPECIMENS: Record<string, (p: SpecimenProps) => ReactNode> = {
   TextLink: SkeletonTextLinkSpecimen,
   FABButton: SkeletonFABButtonSpecimen,
   FABGroup: SkeletonFABGroupSpecimen,
+  SplitButton: SkeletonSplitButtonSpecimen,
   ButtonGroup: SkeletonButtonGroupSpecimen,
   ButtonGroupItem: SkeletonButtonGroupItemSpecimen,
   ButtonGroupDivider: SkeletonButtonGroupDividerSpecimen,
   SocialLoginButton: SkeletonSocialLoginButtonSpecimen,
+  ReactionGroup: SkeletonReactionGroupSpecimen,
+  ReactionGroupTrigger: SkeletonReactionGroupTriggerSpecimen,
+  ReactionGroupPopover: SkeletonReactionGroupPopoverSpecimen,
   // Form Controls
   Input: SkeletonInputSpecimen,
   Textarea: SkeletonTextareaSpecimen,
@@ -416,6 +436,15 @@ export const SPECIMENS: Record<string, (p: SpecimenProps) => ReactNode> = {
   Chip: SkeletonChipSpecimen,
   ProgressLine: SkeletonProgressLineSpecimen,
   ProgressCircle: SkeletonProgressCircleSpecimen,
+  Gauge: SkeletonGaugeSpecimen,
+  SplitBar: SkeletonSplitBarSpecimen,
+  SplitBarSegment: SkeletonSplitBarSegmentSpecimen,
+  SplitBarLegendItem: SkeletonSplitBarLegendItemSpecimen,
+  Sparkline: SkeletonSparklineSpecimen,
+  ActivityHeatmap: SkeletonActivityHeatmapSpecimen,
+  ActivityHeatmapCell: SkeletonActivityHeatmapCellSpecimen,
+  TabBar: SkeletonTabBarSpecimen,
+  TabBarItem: SkeletonTabBarItemSpecimen,
   Spinner: SkeletonSpinnerSpecimen,
   FeaturedIcon: SkeletonFeaturedIconSpecimen,
   RatingGroup: SkeletonRatingGroupSpecimen,

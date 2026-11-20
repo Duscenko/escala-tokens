@@ -5,7 +5,7 @@ import { SPACING_ROLES, SPACING_STANDARD, roleValuePx } from '../layoutTokens'
 import { groupLabelRecipe } from '../recipes/groupLabel'
 import { LIST_ITEM_METRICS, listItemRecipe } from '../recipes/listItem'
 import {
-  COMPONENT_RECIPES, cssVarOf, recipeColorRoles, recipeTokenRefs, resolveRecipe, serializeRecipes,
+  COMPONENT_RECIPES, cssVarOf, recipeColorRoles, recipeRows, recipeTokenRefs, resolveRecipe, serializeRecipes,
 } from '../componentRecipes'
 import { RECIPE_CSS, recipeCss, recipeCssVars, slotName } from '../recipeStyles'
 import { COMPONENTS } from '../componentCatalogue'
@@ -120,9 +120,17 @@ describe('the generated stylesheet', () => {
   it('declares exactly the variables the recipe references', () => {
     for (const recipe of Object.values(COMPONENT_RECIPES)) {
       const expected = new Set<string>()
+      // `font` writes the five facets of its reference. `fontStep` writes only the three of the scale step: the
+      // family and the weight stay those of the slot's `font`.
+      const rows = recipeRows(recipe)
+      const fullFont = new Set(rows.filter((r) => r.prop === 'font').map((r) => r.ref))
+      const stepFacets = ['font-size', 'line-height', 'letter-spacing']
+      const facetsOf = (ref: string) => (rows.some((r) => r.prop === 'fontStep' && r.ref === ref) && !fullFont.has(ref)
+        ? stepFacets
+        : ['font-family', ...stepFacets, 'font-weight'])
       for (const ref of recipeTokenRefs(recipe)) {
         if (ref.startsWith('type.')) {
-          for (const f of ['font-family', 'font-size', 'line-height', 'font-weight', 'letter-spacing']) expected.add(cssVarOf(ref, f))
+          for (const f of facetsOf(ref)) expected.add(cssVarOf(ref, f))
         } else expected.add(cssVarOf(ref))
       }
       // The focus halo reads `stroke.focus` + `stroke.control` (and a solid's top
@@ -223,7 +231,7 @@ describe('focus', () => {
     expect(RECIPE_CSS).toContain('outline-offset: 1px')
   })
   it('the label shadow is the file\'s Shadow/text-2xs', () => {
-    expect(RECIPE_CSS).toContain('text-shadow: 0 1px 0 rgb(0 0 0 / 0.15)')
+    expect(RECIPE_CSS).toContain('text-shadow: 0 1px 0.5px var(--color-elevation-shadow-ambient)')
   })
 
 
@@ -299,10 +307,10 @@ describe('Input (Figma)', () => {
     for (const slot of ['text', 'placeholder', 'icon', 'addon']) expect(r[slot].text, slot).toBe('color.content.disabled')
   })
 
-  it('the placeholder reads content.subtle; a typed value, icons and add-ons content.primary', () => {
+  it('the placeholder and the icons read content.subtle; a typed value and add-ons content.primary', () => {
     const r = at({})
-    expect(r.placeholder.text).toBe('color.content.subtle')
-    for (const slot of ['text', 'icon', 'addon']) expect(r[slot].text, slot).toBe('color.content.primary')
+    for (const slot of ['placeholder', 'icon']) expect(r[slot].text, slot).toBe('color.content.subtle')
+    for (const slot of ['text', 'addon']) expect(r[slot].text, slot).toBe('color.content.primary')
   })
 
   it('the Types that lay their strokes out start 1px further in (13, not 12)', () => {
@@ -495,7 +503,7 @@ describe('FABButton (Figma)', () => {
   })
   it('writes the lift as offset and blur only, composed with the highlight and the halo', () => {
     const css = recipeCss(COMPONENT_RECIPES.FABButton)
-    expect(css).toContain('box-shadow: 0 12px 16px var(--color-elevation-shadow-key), 0 4px 6px var(--color-elevation-shadow-ambient), inset 0 var(--stroke-focus, 2px) 0 0 var(--color-elevation-highlight)')
+    expect(css).toContain('box-shadow: 0 12px 16px var(--color-elevation-shadow-key), 0 4px 6px var(--color-elevation-shadow-ambient), inset 0 2px 0 0 var(--color-elevation-highlight)')
     expect(css).toContain('0 0 0 var(--stroke-focus, 2px) var(--color-border-ring-default), 0 12px 16px var(--color-elevation-shadow-key)')
     expect(css).not.toMatch(/16px -4px/)
   })
@@ -567,10 +575,11 @@ describe('recipe lint', () => {
 
   it('DropdownMenuItem, ComboboxItem and SidebarMenuButton paint their rows with listItemRecipe', () => {
     const paintOf = (slots: Record<string, Record<string, string | undefined>>) =>
-      ['fill', 'stroke', 'focus', 'ring', 'halo'].map((k) => `${k}=${slots.root?.[k] ?? ''}`).join('|')
+      ['fill', 'stroke', 'focus', 'ring', 'halo', 'gapRing'].map((k) => `${k}=${slots.root?.[k] ?? ''}`).join('|')
     for (const size of ['sm', 'default', 'lg']) {
       for (const state of ['Default', 'Hover', 'Focused', 'Selected', 'Disabled']) {
-        const expected = paintOf(listItemRecipe(size, state, 'default') as never)
+        // DropdownMenuItem focuses like a Button: the gap ring (DEC-2026-11-19-001).
+        const expected = paintOf(listItemRecipe(size, state, 'default', { focusRing: 'gap' }) as never)
         expect(paintOf(resolveRecipe(COMPONENT_RECIPES.DropdownMenuItem, { Size: size, State: state, Variant: 'default' }) as never), `DropdownMenuItem ${size} ${state}`).toBe(expected)
         const combo = paintOf(listItemRecipe(size, state, 'default', { metrics: { [size]: { ...LIST_ITEM_METRICS[size], edge: 'stroke.control' } } }) as never)
         expect(paintOf(resolveRecipe(COMPONENT_RECIPES.ComboboxItem, { Size: size, State: state }) as never), `ComboboxItem ${size} ${state}`).toBe(combo)
@@ -580,6 +589,14 @@ describe('recipe lint', () => {
       expect(resolveRecipe(COMPONENT_RECIPES.DropdownMenuLabel, { Size: size }).root, `DropdownMenuLabel ${size}`).toEqual(groupLabelRecipe(size))
       expect(resolveRecipe(COMPONENT_RECIPES.ComboboxGroupLabel, { Size: size }).root, `ComboboxGroupLabel ${size}`).toEqual(groupLabelRecipe(size))
     }
+  })
+
+  it('a focused DropdownMenuItem is its fill plus the Button gap ring, nothing inside (DEC-2026-11-19-001)', () => {
+    const def = resolveRecipe(COMPONENT_RECIPES.DropdownMenuItem, { Size: 'default', State: 'Focused', Variant: 'default' }).root
+    expect(def).toMatchObject({ fill: 'color.surface.muted', gapRing: 'color.border.ring.default' })
+    expect(def.focus ?? 'none').toBe('none')
+    const crit = resolveRecipe(COMPONENT_RECIPES.DropdownMenuItem, { Size: 'default', State: 'Focused', Variant: 'critical' }).root
+    expect(crit).toMatchObject({ fill: 'color.status.critical.surface', gapRing: 'color.status.critical.ring' })
   })
 
   it('no second paint function for a list row or a group label (listItemRecipe / groupLabelRecipe cover them)', () => {

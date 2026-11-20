@@ -175,6 +175,90 @@
     "PricingSection": {
       "status": "block",
       "page": "Marketing"
+    },
+    "AuthSignInPasskey": {
+      "status": "block",
+      "page": "Auth"
+    },
+    "AuthSplit": {
+      "status": "block",
+      "page": "Auth"
+    },
+    "SocialLoginButton": {
+      "status": "rebuild"
+    },
+    "Accordion": {
+      "status": "rebuild"
+    },
+    "AccordionItem": {
+      "status": "rebuild"
+    },
+    "ModalFooter": {
+      "status": "rebuild"
+    },
+    "MorphNav": {
+      "status": "block",
+      "page": "UserMenu & MorphNav (PRO)"
+    },
+    "UserMenu": {
+      "status": "block",
+      "page": "UserMenu & MorphNav (PRO)"
+    },
+    "AuthPasskeySetup": {
+      "status": "block",
+      "page": "AuthPasskeySetup (PRO)"
+    },
+    "AuthPasskeySetupIndicator": {
+      "status": "block",
+      "page": "AuthPasskeySetup (PRO)"
+    },
+    "AuthTwoFactorSetup": {
+      "status": "block",
+      "page": "AuthTwoFactorSetup (PRO)"
+    },
+    "AuthTwoFactorSetupGroup": {
+      "status": "block",
+      "page": "AuthTwoFactorSetup (PRO)"
+    },
+    "AuthTwoFactorSetupItem": {
+      "status": "block",
+      "page": "AuthTwoFactorSetup (PRO)"
+    },
+    "DashboardActivityCard": {
+      "status": "block",
+      "page": "Dashboard (PRO)"
+    },
+    "DashboardGaugeCard": {
+      "status": "block",
+      "page": "Dashboard (PRO)"
+    },
+    "DashboardMetricCard": {
+      "status": "block",
+      "page": "Dashboard (PRO)"
+    },
+    "DashboardTrafficCard": {
+      "status": "block",
+      "page": "Dashboard (PRO)"
+    },
+    "MediaPlayer": {
+      "status": "block",
+      "page": "MediaPlayer & NowPlaying (PRO)"
+    },
+    "MediaPlayerTrack": {
+      "status": "block",
+      "page": "MediaPlayer & NowPlaying (PRO)"
+    },
+    "NowPlaying": {
+      "status": "block",
+      "page": "MediaPlayer & NowPlaying (PRO)"
+    },
+    "CardStack": {
+      "status": "block",
+      "page": "CardStack (PRO)"
+    },
+    "CardStackCard": {
+      "status": "block",
+      "page": "CardStack (PRO)"
     }
   },
   "codeOnly": [

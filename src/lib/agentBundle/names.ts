@@ -1,6 +1,6 @@
 import { mdCell, slugify } from '../utils.js'
 
-export const GROUP_ORDER = ['content', 'action', 'surface', 'status', 'border', 'elevation'] as const
+export const GROUP_ORDER = ['content', 'action', 'surface', 'status', 'border', 'elevation', 'chart'] as const
 export type SemanticGroup = (typeof GROUP_ORDER)[number]
 
 export const GROUP_LABEL: Record<SemanticGroup, string> = {
@@ -10,6 +10,7 @@ export const GROUP_LABEL: Record<SemanticGroup, string> = {
   status: 'Status',
   border: 'Border',
   elevation: 'Elevation',
+  chart: 'Chart',
 }
 
 const PRIMITIVE_GROUPS: Record<string, string> = {
@@ -145,6 +146,9 @@ export function shippedThemeLabel(key: string, ctx?: PrimitiveNameContext): stri
 }
 
 function primitiveGroupFor(family: string, ctx?: PrimitiveNameContext): string {
+  // The Chart hue ramps live in their own Figma folder: `Charts/Teal`, `Charts/Teal Dark` (the file adds the system name).
+  const chart = /^chart-([a-z]+)(-dark)?$/.exec(family)
+  if (chart) return `Charts/${cap(chart[1])}${chart[2] ? ' Dark' : ''}`
   const slot = stateSlotLabel(family)
   if (slot) {
     const folder = family.endsWith('-dark') ? `${slot} Dark` : slot
@@ -205,6 +209,9 @@ const FAMILY_FROM_GROUP: Record<string, string> = {
   'States/Success': 'success', 'States/Success Dark': 'success-dark',
   'States/Warning': 'warning', 'States/Warning Dark': 'warning-dark',
   'States/Info': 'info', 'States/Info Dark': 'info-dark',
+  ...Object.fromEntries(['Teal', 'Amber', 'Blue', 'Rose', 'Lime', 'Magenta', 'Orange'].flatMap((h) => [
+    [`Charts/${h}`, `chart-${h.toLowerCase()}`], [`Charts/${h} Dark`, `chart-${h.toLowerCase()}-dark`],
+  ])),
 }
 
 /**
@@ -269,6 +276,12 @@ export function webCodeSyntax(id: string): string {
 }
 
 export function scopesFor(id: string): string {
+  // Chart roles (the file's scopes): solid draws shapes, frames and strokes; soft fills; content is a label ink.
+  if (id.startsWith('chart.')) {
+    if (id.endsWith('.solid')) return '`FRAME_FILL`, `SHAPE_FILL`, `STROKE_COLOR`'
+    if (id.endsWith('.content')) return '`SHAPE_FILL`, `TEXT_FILL`'
+    return '`FRAME_FILL`, `SHAPE_FILL`'
+  }
   if (id.startsWith('content.')) return '`TEXT_FILL`'
   // An edge inside the action group (the primary solid's outside stroke) is a stroke.
   if (id.startsWith('action.') && id.endsWith('.border')) return '`STROKE_COLOR`'

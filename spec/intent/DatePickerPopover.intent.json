@@ -1,0 +1,30 @@
+{
+  "$schema": "./intent.schema.json",
+  "component": "DatePickerPopover",
+  "purpose": "The floating panel a DatePickerTrigger opens, holding a Calendar for one date or, in range mode, a range with the presets rail beside it.",
+  "notFor": [
+    { "case": "A date panel that is always visible on the page.", "use": "Calendar" },
+    { "case": "A floating panel with content other than a calendar.", "use": "Popover" }
+  ],
+  "states": {
+    "Open=true": { "setBy": "both", "meaning": "Shown 8px below the trigger, aligned to its start.", "visual": "A Calendar on the overlay radius with the large shadow lift." },
+    "Open=false": { "setBy": "both", "meaning": "Closed by the trigger, Escape or an outside click.", "visual": "Not rendered." }
+  },
+  "a11y": {
+    "role": "non-modal dialog (Radix Popover); the Calendar inside is the grid of dates",
+    "keyboard": "Focus moves into the panel on open; Tab moves through its content; Escape closes it and returns focus to the trigger.",
+    "minHitArea": 24,
+    "contrast": "AA",
+    "reducedMotion": "NOT DECIDED",
+    "notes": [
+      "Enters on popover-enter and leaves on popover-exit.",
+      "An outside click dismisses it."
+    ]
+  },
+  "openQuestions": [
+    "Reduced motion: should popover-enter / popover-exit keep only a fade with reduced motion, as SplitButton's menu does?",
+    "Closing on pick: in single mode without a footer, does picking a day close the panel, or does it wait for Apply?",
+    "Accessible name: the dialog has no name in the contract. Should it be named after the field (for example \"Choose date\")?"
+  ],
+  "approval": { "status": "draft", "by": null, "date": null }
+}

@@ -57,7 +57,7 @@ describe('W3C = the Figma collections', () => {
     const doc: Doc = figmaCollectionsW3C(generateTokenJSON())
     expect(Object.keys(doc['Color Primitives'].Default)).toEqual(expect.arrayContaining(['Accents', 'Neutrals', 'States']))
     expect(doc['Color Primitives'].Default.Accents.Accent['09'].$type).toBe('color')
-    expect(Object.keys(doc['Color Semantics'].Light)).toEqual(['Content', 'Action', 'Surface', 'Status', 'Border', 'Elevation', 'panel-background'])
+    expect(Object.keys(doc['Color Semantics'].Light)).toEqual(['Content', 'Action', 'Surface', 'Status', 'Border', 'Elevation', 'Chart', 'panel-background'])
     expect(doc['Color Semantics'].Light.Action.primary.default.$value).toMatch(/^\{Color Primitives\.Default\.Accents\.Accent\./)
     // The Escala Figma file: no `role/` segment, selectors and icons are sizes.
     expect(Object.keys(doc['Dimension Semantics'].Desktop)).toEqual(['Spacing', 'Radius', 'Stroke', 'Size', 'Grid'])

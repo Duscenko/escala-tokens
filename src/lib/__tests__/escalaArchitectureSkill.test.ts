@@ -14,7 +14,7 @@ import { LAYOUT_ROLES, type LayoutFamily } from '../layoutTokens'
 import { ICON_ROLES } from '../iconSizing'
 import { TYPE_ROLES } from '../typeRoles'
 
-const SKILL_DIR = resolve(__dirname, '../../../.claude/skills/escala-architecture')
+const SKILL_DIR = resolve(__dirname, '../../../.claude/skills/escala-platform-roles')
 
 describe('escala-architecture skill', () => {
   it('committed references match the role tables (run `npm run gen:escala-skill`)', () => {

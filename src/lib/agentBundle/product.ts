@@ -5,6 +5,7 @@ import { buildTaskSkillFiles } from './productSkills'
 import { buildDesignSkillFiles } from './productDesignSkills'
 import { buildTemplateFiles } from './productTemplates'
 import { buildCheckerFile } from './productChecker'
+import { buildBindingCheckerFile } from './productBindingChecker'
 import { buildArchitectureSkillFiles } from '../escalaArchitectureSkill'
 import { skillName } from './names'
 import { packageStamp } from './stamp'
@@ -35,6 +36,7 @@ export function buildAgentProductFiles(json: TokenJSON, opts: AgentBundleOptions
     ...buildArchitectureSkillFiles(json),
     ...buildTemplateFiles(),
     buildCheckerFile(json, stamp),
+    buildBindingCheckerFile(),
   ]
   return { name: skillName(project), files }
 }

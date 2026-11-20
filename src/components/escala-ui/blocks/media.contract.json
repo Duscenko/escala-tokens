@@ -1,0 +1,63 @@
+{
+  "$comment": "Contract of the Media blocks (escala-governance step 2): MediaPlayer, MediaPlayerTrack and NowPlaying on the Figma page ❖ MediaPlayer & NowPlaying (PRO). Each is an arrangement of escala-ui components in role tokens. Accepted exceptions: the MediaPlayer card's 40 corner (the file draws it raw, no role between Radius/overlay 24 and full); the covers are stand-ins (the file's photos are stock content, not tokens); a clock plays the 24-second sample (no audio file).",
+  "figma": {
+    "file": "7j5zukN5HpihGVJMmyjA20",
+    "page": "MediaPlayer & NowPlaying (PRO)",
+    "pageId": "2397:83"
+  },
+  "blocks": [
+    {
+      "name": "MediaPlayer",
+      "figmaSet": "2402:277",
+      "axes": { "Playing": "false|true" },
+      "variants": 2,
+      "anatomy": [
+        "Card 640: Surface/layer-1, Border/default, padding Spacing/inset-surface, gap Spacing/gap-group",
+        "cover: Image 16:9 in Radius/action",
+        "info: title (Type/heading-xs) + subtitle (Type/body-sm, Content/secondary) and the transport",
+        "transport: IconButton ghost (Previous) · IconButton secondary solid lg round (Play / Pause) · IconButton ghost (Next)",
+        "seek: time (Type/caption) + Slider sm + duration",
+        "Separator",
+        "playlist-header: Playlist (Type/label) + volume (IconButton ghost sm + Slider xs 160)",
+        "playlist: three MediaPlayerTrack, gap Spacing/gap-tight"
+      ],
+      "nests": ["Image", "IconButton", "Slider", "Separator", "MediaPlayerTrack"],
+      "parts": ["MediaPlayerTrack"],
+      "slots": [],
+      "props": ["playing", "defaultPlaying", "onPlayingChange", "tracks", "currentId", "cover", "defaultTime"],
+      "a11y": ["Every control has an accessible name; Play/Pause and Mute/Unmute change their name", "Both sliders announce their value (\"0:12 of 0:24\", \"70%\")", "The current row carries aria-current"],
+      "motion": [
+        { "moment": "title change", "mechanism": "the title block remounts", "role": "use-disclosure-in", "reduced": "from the tokens" },
+        { "moment": "play glyph swap", "mechanism": "glyph swap", "role": "use-toggle", "reduced": "from the tokens" },
+        { "moment": "current rail", "mechanism": "rail appears on the current row", "role": "use-travel-in", "reduced": "from the tokens" }
+      ]
+    },
+    {
+      "name": "MediaPlayerTrack",
+      "figmaSet": "2402:56",
+      "axes": { "State": "Default|Hover|Focused|Current" },
+      "variants": 4,
+      "anatomy": ["Row Size/control-lg, Radius/action, padding Spacing/inset-control, gap Spacing/gap-control", "title (Type/body-md) + duration (Type/body-sm)", "Hover: Action/ghost/hover", "Focused: 2px ring on Border/ring/default, 1px outside the row", "Current: Surface/selected + 2 × 16 rail on Action/primary/default"],
+      "nests": [],
+      "slots": [],
+      "props": ["title", "duration", "current", "forceState"],
+      "a11y": ["A button; the current row carries aria-current"],
+      "motion": [{ "moment": "rail", "mechanism": "rail appears", "role": "use-travel-in", "reduced": "from the tokens" }]
+    },
+    {
+      "name": "NowPlaying",
+      "figmaSet": "2402:102",
+      "axes": { "Playing": "false|true" },
+      "variants": 2,
+      "anatomy": ["Surface/layer-2, Border/default, Radius/overlay, Shadow/lg, padding Spacing/inset-control", "artwork: Image 1:1 56 in Radius/action", "meta: title (Type/label) + artist (Type/body-sm)", "equalizer: Content/subtle, Content/accent while playing (decorative)", "IconButton secondary solid lg round (Play / Pause) + IconButton ghost (Next)"],
+      "nests": ["Image", "IconButton"],
+      "slots": [],
+      "props": ["playing", "defaultPlaying", "onPlayingChange", "title", "artist", "artwork", "onNext"],
+      "a11y": ["The equalizer is aria-hidden", "Play/Pause changes its name"],
+      "motion": [
+        { "moment": "equalizer", "mechanism": "bars loop while playing", "role": "use-loop", "reduced": "static" },
+        { "moment": "play glyph swap", "mechanism": "glyph swap", "role": "use-toggle", "reduced": "from the tokens" }
+      ]
+    }
+  ]
+}

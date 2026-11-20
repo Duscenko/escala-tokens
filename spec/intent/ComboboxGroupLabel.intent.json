@@ -1,0 +1,24 @@
+{
+  "$schema": "./intent.schema.json",
+  "component": "ComboboxGroupLabel",
+  "purpose": "The heading over one group of options inside the Combobox list, so related options read together.",
+  "notFor": [
+    { "case": "Standalone use outside a Combobox list.", "use": "Combobox" },
+    { "case": "A heading inside a menu of actions.", "use": "DropdownMenuLabel" },
+    { "case": "A form field's label.", "use": "Label" }
+  ],
+  "states": {
+    "Default": { "setBy": "component", "visual": "NOT DECIDED" }
+  },
+  "a11y": {
+    "role": "label of a role=\"group\" wrapper (aria-labelledby)",
+    "keyboard": "Not focusable.",
+    "minHitArea": 24,
+    "contrast": "AA",
+    "notes": ["When composed by hand, put aria-labelledby on the group wrapper so screen readers announce it."]
+  },
+  "openQuestions": [
+    "Colour: the contract binds no colour role for the group label's text. Which role paints it?"
+  ],
+  "approval": { "status": "draft", "by": null, "date": null }
+}

@@ -3,12 +3,12 @@
 // catalogue UI can import it without circular dependencies.
 //
 // Each `key` here equals a CATALOG `gate` in the Figma plugin
-// (../escala-figma-plugin/src/code.ts); `axes` is the variant matrix the plugin's
-// "Full catalogue" import must build for it (every value, every combination) and
-// `figmaSets` lists every component set the key unlocks in the generated Figma
-// library. The plugin may carry EXTRA axes/values (e.g. Chip State, Badge Icon),
-// never fewer: if an axis or value is added or changed here, change the plugin's
-// SPECS to match in the same change, and re-check a Full catalogue import.
+// (../escala-figma-plugin/src/code.ts); `axes` is the variant matrix of the
+// key's set (the plugin builds a base cut of it, the Escala Design System file
+// holds all of it) and `figmaSets` lists every component set the key maps to in
+// the Figma library. The plugin may carry EXTRA axes/values (e.g. Chip State,
+// Badge Icon), never fewer: if an axis or value is added or changed here,
+// change the plugin's SPECS to match in the same change.
 //
 // Entries with an EMPTY `figmaSets` are catalogue-first: they document + preview
 // in the configurator and export in `atoms`, but their plugin gate doesn't exist
@@ -244,6 +244,37 @@ export const COMPONENTS: ComponentDef[] = [
     accessibility: 'role="group" with an aria-label. The trigger is a native <button> with aria-expanded; every item needs an accessible name (its label prop) since fan items are icon-only.',
   },
   {
+    key: 'SplitButton',
+    label: 'Split Button',
+    category: 'Button & Actions',
+    box: 'gray',
+    locks: ['size', 'hit', 'motion'],
+    description:
+      'A main action joined to a menu of related alternatives. A ButtonGroup of two segments (the action with its label and leading icon, and an icon-only caret) over a DropdownMenu that opens below, aligned to the end edge. It paints nothing of its own: the segments are ButtonGroupItems (Action/primary or Action/secondary, Radius/action, Shadow/xs) and the menu is the DropdownMenu of the same size (xs opens sm), 8px below the group (Spacing/gap-control) and 256 wide. Open pins the caret Active and swaps CaretDown for CaretUp. Motion: the menu grows out of the caret on popover-enter (use-disclosure-in), its rows arrive one after another on use-stagger-in, and it leaves on popover-exit; the main half never scales, and reduced motion keeps only the fade.',
+    usage: 'Use in toolbars and page headers when one action is primary and a few related ones sit behind it (Publish · Publish and notify · Save as draft). One per toolbar; risky actions go in the menu as critical rows. Use Button when there is a single action, and a DropdownMenu on an IconButton when none is primary. The pair never collapses: give it its own row on narrow screens.',
+    // The Figma file's axes, value for value, in the file's panel order (design-plans/split-button-contract.md).
+    axes: [
+      { name: 'Variant', values: ['default', 'secondary'] },
+      { name: 'Size', values: ['default', 'xs', 'sm', 'lg'] },
+      { name: 'Open', values: ['false', 'true'] },
+    ],
+    figmaSets: ['SplitButton'],
+    props: [
+      { name: 'variant', type: '"default" | "secondary"', description: 'Brand or neutral fill, inherited from ButtonGroup (Action/primary · Action/secondary and their paired ink).' },
+      { name: 'size', type: '"default" | "xs" | "sm" | "lg"', description: 'Size/control-md 40 · xs 24 · sm 32 · lg 48; the menu is the DropdownMenu of the same size (xs opens sm).' },
+      { name: 'open', type: 'boolean', description: 'Figma Open: the menu is open and the caret is Active (controlled).' },
+      { name: 'defaultOpen', type: 'boolean', description: 'Uncontrolled initial state.' },
+      { name: 'onOpenChange', type: '(open: boolean) => void', description: 'Called when the caret, Escape or a pick opens or closes the menu.' },
+      { name: 'children', type: 'ReactNode', description: 'The main segment\'s label (the nested item\'s Label).' },
+      { name: 'leading', type: 'ReactNode', description: 'The main segment\'s leading icon (IconLeadingIcon).' },
+      { name: 'menu', type: 'DropdownMenuItem[]', description: 'The menu rows (Content slot); a critical row is Variant=critical. Defaults to the file\'s three.' },
+      { name: 'moreLabel', type: 'string', description: 'The caret\'s accessible name. Defaults to "<label> more actions".' },
+      { name: 'onAction', type: '(event) => void', description: 'Runs the main action.' },
+      { name: 'disabled', type: 'boolean', description: 'Disables both segments.' },
+    ],
+    accessibility: 'Two native <button>s. The caret is labelled "<label> more actions" with aria-haspopup="menu" and aria-expanded; the menu is a Radix DropdownMenu (arrows move and loop, typeahead, Escape closes and returns focus to the caret). The main segment is a plain action: no aria-pressed. In Dark the default Variant\'s label is light on the violet fill and is judged by perceived contrast (APCA), as on Button: a WCAG checker reads about 4.0:1 there by design.',
+  },
+  {
     key: 'ButtonGroup',
     label: 'Button Group',
     category: 'Button & Actions',
@@ -318,6 +349,72 @@ export const COMPONENTS: ComponentDef[] = [
     accessibility: 'Decorative: aria-hidden.',
   },
   {
+    key: 'ReactionGroup',
+    label: 'Reaction Group',
+    category: 'Button & Actions',
+    box: 'gray',
+    locks: ['size', 'hit', 'motion'],
+    description: 'A lightweight acknowledgement under a post or comment: a wrapping row of reaction pills (the outline pill Chip, Selected when you reacted, its label the count), a trigger that opens the picker, and an optional summary line.',
+    usage: 'Use under a post, comment or message to collect quick reactions. A pill whose count reaches zero leaves the row. For a single like or favourite use a toggle IconButton; for a score use RatingGroup.',
+    // The Figma set has no variant axis: Content (slot), Summary and SummaryVisible are properties.
+    axes: [],
+    figmaSets: ['ReactionGroup'],
+    props: [
+      { name: 'options', type: '{ id, label, icon }[]', description: 'The reactions on offer, in the picker\'s order (default: Like, Love, Celebrate, Insightful, Question, Applause).' },
+      { name: 'value / defaultValue', type: '{ id, count, reacted }[]', description: 'The reactions on the post, in the row\'s order (Figma Content: one Chip each).' },
+      { name: 'onValueChange', type: '(next, change: { id, reacted, count }) => void', description: 'Fires when a pill is toggled or an option is picked, with the next list and what changed.' },
+      { name: 'label', type: 'string', description: 'Accessible name of the group (default "Reactions").' },
+      { name: 'summary', type: 'ReactNode', description: 'Figma Summary. Omitted, it is written from the value ("27 reactions · You reacted with Celebrate and Like").' },
+      { name: 'summaryVisible', type: 'boolean', description: 'Figma SummaryVisible.' },
+      { name: 'size', type: '"xs" | "sm" | "default" | "lg" | "xl"', description: 'The pills\' and the trigger\'s size (Chip Size).' },
+      { name: 'open / defaultOpen / onOpenChange', type: 'boolean / (open) => void', description: 'The picker\'s open state.' },
+      { name: 'disabled', type: 'boolean', description: 'Disables the pills and the trigger.' },
+    ],
+    accessibility: 'role="group" named "Reactions". Each pill is a toggle button (aria-pressed) named "{reaction}, {count} reactions, you reacted". Removing the last count moves focus to the neighbour pill or the trigger. Every change is announced in a role="status" region.',
+  },
+  {
+    key: 'ReactionGroupTrigger',
+    label: 'Reaction Group Trigger',
+    category: 'Button & Actions',
+    box: 'gray',
+    locks: ['size', 'hit', 'motion'],
+    description: 'The add-reaction button of a ReactionGroup: an icon-only pill that opens ReactionGroupPopover. It mirrors the outline pill Chip (same sizes, edge and ink) so it sits in the row with the reaction pills.',
+    usage: 'Only inside a ReactionGroup, after the last pill. It stays in its family until a second consumer needs an icon-only pill button.',
+    // The Figma file's axes, value for value. State is pseudo-classes in code; Open is aria-expanded.
+    axes: [
+      { name: 'Size', values: ['default', 'xs', 'sm', 'lg', 'xl'] },
+      { name: 'State', values: ['Default', 'Hover', 'Focused', 'Open', 'Disabled'] },
+    ],
+    figmaSets: ['ReactionGroupTrigger'],
+    props: [
+      { name: 'size', type: '"default" | "xs" | "sm" | "lg" | "xl"', description: 'Figma Size: 40 · 24 · 32 · 48 · 56 across (Size/control-md · xs · sm · lg · xl); the glyph is icon md · sm · sm · md · lg.' },
+      { name: 'aria-expanded', type: 'boolean', description: 'Figma State Open: set by the popover it opens.' },
+      { name: 'disabled / forceState', type: 'boolean / State', description: 'Figma State Disabled; forceState pins any state for docs.' },
+      { name: 'icon', type: 'ReactNode', description: 'The glyph (default: the file\'s Smiley).' },
+      { name: 'aria-label', type: 'string', description: 'Accessible name (default "Add reaction").' },
+    ],
+    accessibility: 'A native <button> named "Add reaction" with aria-haspopup and aria-expanded. Focus draws one 2px ring 1px outside the pill.',
+  },
+  {
+    key: 'ReactionGroupPopover',
+    label: 'Reaction Group Popover',
+    category: 'Button & Actions',
+    box: 'gray',
+    locks: ['size', 'hit', 'motion'],
+    description: 'The reaction picker of a ReactionGroup: a toolbar of ghost IconButtons on an overlay surface. Concentric: the overlay radius minus its inset is the IconButton radius.',
+    usage: 'Only as the popover of a ReactionGroupTrigger. It opens above the trigger and closes when an option is picked.',
+    axes: [],
+    figmaSets: ['ReactionGroupPopover'],
+    props: [
+      { name: 'options', type: '{ id, label, icon }[]', description: 'Figma Content: one ghost IconButton (secondary, sm) per reaction.' },
+      { name: 'onSelect', type: '(id: string) => void', description: 'Fires with the option a person picks.' },
+      { name: 'label', type: 'string', description: 'Accessible name of the toolbar (default "Add reaction").' },
+      { name: 'side / sideOffset', type: 'Radix', description: 'Opens on top, one gap-control (8px) from the trigger.' },
+      { name: 'highlighted / inline', type: 'string / boolean', description: 'Docs: pin one option\'s Hover; draw the picker in place.' },
+    ],
+    accessibility: 'role="toolbar" with a roving tabindex: arrow keys move and wrap, Home and End jump, Escape closes and returns focus to the trigger. Every option has an aria-label.',
+  },
+  {
     key: 'SocialLoginButton',
     label: 'Social Login Button',
     category: 'Button & Actions',
@@ -368,6 +465,7 @@ export const COMPONENTS: ComponentDef[] = [
       { name: 'size', type: "'sm' | 'default' | 'lg'", description: 'Height on the Size roles: compact 32 · control 40 · touch 48.' },
       { name: 'type', type: "'default' | 'phone' | 'currency' | 'currency-select' | 'password' | 'url' | 'upload' | 'tag' | 'copy-link' | 'credit-card' | 'search'", description: 'Figma Type: the parts the field composes. Another value is an HTML input type on the default layout.' },
       { name: 'placeholder', type: 'string', description: 'Figma Placeholder.' },
+      { name: 'value / defaultValue', type: 'string', description: 'Figma Value (TEXT): the text a filled field shows. The variant Value=filled only says a value is present; it is not a prop.' },
       { name: 'leading', type: 'ReactNode | null', description: 'Leading icon (IconLeadingVisible + IconLeadingIcon). Types bring their own (search, lock, folder); null hides it.' },
       { name: 'trailing', type: 'ReactNode | null', description: 'Trailing icon (IconTrailingVisible + IconTrailingIcon). Password brings its show / hide toggle.' },
       { name: 'shortcut', type: 'string[] | null', description: 'The search shortcut keys (ShortcutVisible + Shortcut). ⌘ K by default on search.' },
@@ -1316,7 +1414,7 @@ export const COMPONENTS: ComponentDef[] = [
     box: 'gray',
     locks: ['radius', 'size', 'hit', 'motion'],
     description: 'A decorative glyph in a tinted or solid shape: cards, empty states, dialogs, feature lists.',
-    usage: 'Always decorative; the nearby title carries the meaning. A dialog header nests it (default or lg, soft, circle).',
+    usage: 'Always decorative; the nearby title carries the meaning. A dialog header nests it (default or lg, always rounded).',
     // The Figma file's axes, value for value (design-plans/featured-icon-contract.md).
     axes: [
       { name: 'Size', values: ['default', 'sm', 'lg', 'xl'] },
@@ -1568,11 +1666,13 @@ export const COMPONENTS: ComponentDef[] = [
     usage: 'Use for a decision or a short task that needs full attention (a confirmation, a small form). Not for notifications: use a Toast or an Alert.',
     axes: [
       { name: 'Size', values: ['default', 'lg'] },
+      { name: 'Layout', values: ['tray', 'simple'] },
     ],
     figmaSets: ['Modal'],
     props: [
       { name: 'open / onOpenChange', type: 'boolean / (open) => void', description: 'Controlled visibility (Escape and the scrim close it).' },
       { name: 'size', type: "'default' | 'lg'", description: 'Figma Size: 480 or 640 wide. It cascades to the header and the footer.' },
+      { name: 'layout', type: "'tray' | 'simple'", description: "Figma Layout: `tray` is a layer-1 shell around a layer-2 panel (header + content) with the footer on the tray; `simple` (the default for now) is the bare card." },
       { name: 'header / footer', type: 'ReactNode', description: 'A ModalHeader above the content and a ModalFooter under it (Figma FooterVisible).' },
       { name: 'children', type: 'ReactNode', description: 'The Content slot.' },
       { name: 'showCloseButton', type: 'boolean', description: 'Figma CloseVisible: the ghost pill close in the corner (default true).' },
@@ -1594,7 +1694,8 @@ export const COMPONENTS: ComponentDef[] = [
     figmaSets: ['ModalHeader'],
     props: [
       { name: 'title / description', type: 'ReactNode', description: 'Figma Title and Description (DescriptionVisible hides the second).' },
-      { name: 'icon / iconVisible', type: 'ReactNode / boolean', description: 'A FeaturedIcon (soft, circle) before the text.' },
+      { name: 'icon / iconVisible', type: 'ReactNode / boolean', description: 'A FeaturedIcon (always rounded) before the text.' },
+      { name: 'iconVariant / iconAppearance', type: 'FeaturedIconVariant / FeaturedIconAppearance', description: 'The icon\'s tone and appearance: soft by default, gradient on the screen that opens an account.' },
       { name: 'trailing / trailingVisible', type: 'ReactNode / boolean', description: 'Header actions or a count (horizontal only).' },
       { name: 'align', type: "'horizontal' | 'vertical-left' | 'vertical-center'", description: 'Figma Align.' },
     ],
@@ -1610,7 +1711,9 @@ export const COMPONENTS: ComponentDef[] = [
     usage: 'Inline puts the actions at the end, primary last; stacked gives full-width buttons for narrow viewports.',
     axes: [
       { name: 'Size', values: ['default', 'lg'] },
-      { name: 'Layout', values: ['inline', 'stacked'] },
+      { name: 'Layout', values: ['inline', 'stacked', 'equal'] },
+      // Code-only until the ModalFooter is rebuilt: what it sits on (the plain card, a tray Modal's tray, or the simple card).
+      { name: 'Surface', values: ['plain', 'tray', 'simple'] },
     ],
     figmaSets: ['ModalFooter'],
     props: [
@@ -2043,7 +2146,7 @@ export const COMPONENTS: ComponentDef[] = [
     box: 'gray',
     locks: ['size', 'hit', 'motion'],
     description: 'A short, non-blocking confirmation over the page that dismisses itself: an icon told apart by severity, a title, an optional description, actions, a close and a progress hairline.',
-    usage: 'Use for transient feedback (saved, copied, undone). Keep the title under six words; an action such as Undo needs a second way to be reached because the toast times out. For a persistent notice use Alert, for form validation Field.',
+    usage: 'Use for transient feedback (saved, copied, undone). Keep the title under six words; an action such as Undo needs a second way to be reached because the toast times out. It rises into place, its bar shows the time left, and it closes when the bar runs out: 4 s for one line, 6 s with a description, 10 s with an action. Hover or focus pause it. A critical toast stays until it is closed. For a persistent notice use Alert, for form validation Field.',
     // The Figma file's axes, value for value (design-plans/toast-contract.md).
     axes: [
       { name: 'Appearance', values: ['solid', 'soft', 'filled', 'outline'] },
@@ -2054,9 +2157,10 @@ export const COMPONENTS: ComponentDef[] = [
       { name: 'appearance / variant', type: 'Figma axes', description: 'Variant is the severity: it picks the icon (Sparkle, Info, CheckCircle, Warning, WarningCircle) and the colour.' },
       { name: 'title / description / descriptionVisible', type: 'ReactNode / boolean', description: 'Figma Title, Description and DescriptionVisible.' },
       { name: 'iconVisible / actionsVisible / closeVisible / progressVisible', type: 'boolean', description: 'The Figma booleans; progress is the time-left hairline (progress = 0–100).' },
-      { name: 'showToast(props)', type: 'function', description: 'Puts a Toast in the Toaster queue; mount <Toaster /> once.' },
+      { name: 'countdown / onCountdownEnd', type: 'number (ms) / () => void', description: 'Makes the bar the clock: it empties over this time, pauses on hover and focus, and calls onCountdownEnd when it runs out.' },
+      { name: 'showToast(props)', type: 'function', description: 'Puts a Toast in the Toaster queue and picks its lifetime from the content; `duration` overrides it. Mount <Toaster /> once.' },
     ],
-    accessibility: 'role="status" (polite), and role="alert" for critical. Do not rely on colour alone: the icon and the text carry the severity. Keep the toast on screen long enough to read.',
+    accessibility: 'role="status" (polite), and role="alert" for critical. Do not rely on colour alone: the icon and the text carry the severity. The time left pauses on hover, on focus and while the page is hidden; a critical toast never closes by itself. With reduced motion it fades instead of moving, and the bar keeps running because it is information.',
   },
   {
     key: 'Alert',
@@ -2145,6 +2249,117 @@ export const COMPONENTS: ComponentDef[] = [
     accessibility: 'A button with aria-pressed; disabled uses the native attribute.',
   },
   {
+    key: 'SettingsRow',
+    label: 'Settings Row',
+    category: 'Layout',
+    box: 'gray',
+    locks: ['size', 'hit', 'motion'],
+    description: 'One setting: its title, an optional description and a single control.',
+    usage: 'Inside a SettingsSection. Inline puts the control on the right; stacked puts it under the text. It saves on change, with no submit.',
+    axes: [{ name: 'Layout', values: ['inline', 'stacked'] }],
+    figmaSets: ['SettingsRow'],
+    props: [
+      { name: 'layout', type: 'string', description: 'Figma Layout.' },
+      { name: 'title / description / descriptionVisible', type: 'ReactNode / boolean', description: 'Figma Title, Description and DescriptionVisible.' },
+      { name: 'control', type: 'ReactElement', description: 'Figma Control slot: one control.' },
+    ],
+    accessibility: 'The title names the control through aria-labelledby and the description describes it through aria-describedby.',
+  },
+  {
+    key: 'SettingsSection',
+    label: 'Settings Section',
+    category: 'Layout',
+    box: 'gray',
+    locks: ['size', 'hit', 'motion'],
+    description: 'A titled group of SettingsRow.',
+    usage: 'The page stacks sections; the section carries no outer spacing.',
+    axes: [],
+    figmaSets: ['SettingsSection'],
+    props: [
+      { name: 'title / description / descriptionVisible', type: 'ReactNode / boolean', description: 'Figma Title, Description and DescriptionVisible.' },
+      { name: 'children', type: 'ReactNode', description: 'Figma Content slot: SettingsRow only.' },
+    ],
+    accessibility: 'The title is an h2, so the page stays navigable by headings.',
+  },
+  {
+    key: 'IssueCard',
+    label: 'Issue Card',
+    category: 'Data Display',
+    box: 'gray',
+    locks: ['size', 'hit', 'motion'],
+    description: 'One issue on a board: key, linked pull request, assignee, title, priority, tags, comments and due date.',
+    usage: 'Inside a BoardColumn. The whole card is one link to the issue.',
+    axes: [{ name: 'State', values: ['Default', 'Hover', 'Dragging'] }],
+    figmaSets: ['IssueCard'],
+    props: [
+      { name: 'issueKey / title / href', type: 'string', description: 'Figma IssueKey and Title; the link target.' },
+      { name: 'pullRequest / comments / due', type: 'string', description: 'Figma PullRequest, Comments and Due; omit one to hide it.' },
+      { name: 'tag / tagSecondary / assignee / priorityIcon', type: 'ReactNode', description: 'Figma tags, AssigneeVisible and PriorityIcon.' },
+      { name: 'forceState', type: 'string', description: 'Pins a state for docs and previews; Dragging while it is dragged.' },
+    ],
+    accessibility: 'A single link named by the issue title. While dragged, only its edge and shadow ease; the position follows the pointer with no transition.',
+  },
+  {
+    key: 'Gauge',
+    label: 'Gauge',
+    category: 'Data Display',
+    box: 'black',
+    locks: ['shape', 'size', 'hit', 'motion'],
+    description: 'One measurement against a fixed range on an open 270° arc with round ends: a muted track, a fill, and the value, its unit and a label in the middle. The fill reads the neutral chart series, or a severity when the colour means good or bad.',
+    usage: 'Use for a single reading with a known range (workspace health, quota, score). Variant default for a neutral reading; success · warning · critical only when the colour carries the meaning, never to decorate. Use ProgressCircle for task completion and Sparkline for a trend.',
+    axes: [
+      { name: 'Variant', values: ['default', 'success', 'warning', 'critical'] },
+      { name: 'Size', values: ['default', 'sm', 'lg'] },
+      { name: 'Value', values: ['0', '25', '50', '75', '100'] },
+    ],
+    figmaSets: ['Gauge'],
+    props: [
+      { name: 'variant / size', type: 'Figma axes', description: 'Variant default · success · warning · critical; Size sm 128 · default 160 · lg 192 across (arc 8 · 12 · 16 thick).' },
+      { name: 'value / min / max', type: 'number', description: 'The measurement and its range (0–100 by default). The file\'s Value axis (0 · 25 · 50 · 75 · 100) is a sample: code takes any value.' },
+      { name: 'valueText', type: 'string', description: 'Figma ValueText: the big number as written. Defaults to the value.' },
+      { name: 'unit / label', type: 'string', description: 'Figma Unit and Label (UnitVisible / LabelVisible): omit one to hide it.' },
+    ],
+    accessibility: 'role="meter" with aria-valuenow, aria-valuemin, aria-valuemax and an aria-valuetext that reads the label ("72 %, Healthy"). Give it an accessible name (aria-label or aria-labelledby). Not focusable. A new value sweeps the fill on use-travel-in; reduced motion is instant.',
+  },
+  {
+    key: 'Sparkline',
+    label: 'Sparkline',
+    category: 'Data Display',
+    box: 'black',
+    locks: ['shape', 'size', 'hit', 'motion'],
+    description: 'A compact trend next to a value, with no axes or gridlines: a monotone line over a soft area, with a dot on the last point. Default binds the neutral chart series; success and critical use the Status roles because they carry meaning; secondary is a quiet grey.',
+    usage: 'Use beside a number to show where it came from (a metric card, a table cell). Variant success when up is good and critical when down is bad; default when the direction has no judgement. For a full chart with axes use a charting layer, not this.',
+    axes: [
+      { name: 'Variant', values: ['default', 'secondary', 'success', 'critical'] },
+      { name: 'Size', values: ['default', 'sm', 'lg'] },
+    ],
+    figmaSets: ['Sparkline'],
+    props: [
+      { name: 'variant / size', type: 'Figma axes', description: 'Variant default · secondary · success · critical; Size default 256 × 64 · sm 96 × 32 · lg 480 × 128.' },
+      { name: 'data', type: 'number[]', description: 'The series, oldest first; scaled to the box. The file draws one sample curve.' },
+      { name: 'area / dot', type: 'boolean', description: 'Figma AreaVisible and DotVisible (both on by default).' },
+      { name: 'fluid', type: 'boolean', description: 'Code only: the width follows the container; the height stays the Size\'s.' },
+    ],
+    accessibility: 'role="img" with a required aria-label that states the trend ("Daily active users, up 7.2 % this week"); the drawing itself is hidden from assistive tech. The line draws once on mount (use-reveal) and new data cross-fades (use-color); reduced motion is instant.',
+  },
+  {
+    key: 'BoardColumn',
+    label: 'Board Column',
+    category: 'Layout',
+    box: 'gray',
+    locks: ['size', 'hit', 'motion'],
+    description: 'One status lane: status icon, title, count, add action and a list of IssueCard.',
+    usage: 'Side by side on a board. The lane is a tray, so its cards read as raised.',
+    axes: [],
+    figmaSets: ['BoardColumn'],
+    props: [
+      { name: 'title / count / statusIcon', type: 'ReactNode', description: 'Figma Title, Count and StatusIcon.' },
+      { name: 'newIssueVisible / onNewIssue', type: 'boolean / function', description: 'Figma NewIssueVisible and the add actions.' },
+      { name: 'children', type: 'ReactNode', description: 'Figma Content slot: IssueCard.' },
+    ],
+    accessibility: 'A list labelled by the title and the count.',
+  },
+  {
     key: 'NavItem',
     label: 'Nav Item',
     category: 'Navigation',
@@ -2163,6 +2378,145 @@ export const COMPONENTS: ComponentDef[] = [
       { name: 'asChild', type: 'boolean', description: 'Use your router link or a button as the element.' },
     ],
     accessibility: 'A link; the current one is aria-current="page". As a menu trigger add aria-expanded.',
+  },
+  {
+    key: 'TabBar',
+    label: 'Tab Bar',
+    category: 'Navigation',
+    box: 'gray',
+    locks: ['size', 'hit', 'motion'],
+    description: 'Bottom navigation of a mobile app: three to five TabBarItem destinations on Surface/page with a Border/subtle hairline on top. Not a tablist: each item changes the page.',
+    usage: 'Top-level destinations of a mobile app, 3 to 5, always visible at the bottom; exactly one is current. Views or filters inside one page use TabMenu; desktop navigation uses Sidebar or NavItem. Related: NavItem, TabMenu, Badge, Avatar.',
+    axes: [],
+    figmaSets: ['TabBar'],
+    props: [
+      { name: 'aria-label', type: 'string', description: 'The name of the nav landmark ("Main").' },
+      { name: 'children', type: 'ReactNode', description: 'Figma Content slot: 3 to 5 TabBarItem, each filling an equal share.' },
+    ],
+    accessibility: 'A nav landmark wrapping a list of links, in natural Tab order: no roving tabindex and no arrow keys (it is not a tablist).',
+  },
+  {
+    key: 'TabBarItem',
+    label: 'Tab Bar Item',
+    category: 'Navigation',
+    box: 'gray',
+    locks: ['size', 'hit', 'motion'],
+    description: 'One destination of a TabBar: an icon (or an Avatar) in a pill over a short label, with an optional unread count. Current fills the pill Surface/selected.',
+    usage: 'Inside a TabBar. One axis, State; no Size on purpose (one platform size).',
+    axes: [{ name: 'State', values: ['Default', 'Hover', 'Focused', 'Current', 'Disabled'] }],
+    figmaSets: ['TabBarItem'],
+    props: [
+      { name: 'children / label / hideLabel', type: 'ReactNode / boolean', description: 'Figma Label and LabelVisible (inverted); a hidden label needs aria-label.' },
+      { name: 'icon / media', type: 'ReactNode', description: 'Figma Icon (IconVisible) and the Media slot (MediaVisible), e.g. an Avatar xs.' },
+      { name: 'badge', type: 'number | string', description: 'Figma BadgeVisible: the count Badge (number · critical · solid · xs · pill).' },
+      { name: 'current / disabled / forceState', type: 'boolean / string', description: 'Figma State; Current is aria-current="page".' },
+      { name: 'href / asChild', type: 'string / boolean', description: 'A link; asChild for your router link.' },
+    ],
+    accessibility: 'A link; the current one is aria-current="page", a disabled one aria-disabled and out of the Tab order.',
+  },
+  {
+    key: 'ActivityHeatmap',
+    label: 'Activity Heatmap',
+    category: 'Data Display',
+    box: 'gray',
+    locks: ['size', 'hit', 'motion'],
+    description: 'A year of activity: one square per day, one column per week (53 × 7, weeks from Sunday), filled on the Chart/sequential ladder, with month and day labels and a Less–More legend.',
+    usage: 'Contribution and habit calendars: one number per day over a year. Year switching is a SegmentedControl outside the component; the focused day is shown in a caption below by the consumer (onFocusDay). For one value over time use Sparkline; for a share of a whole, SplitBar. Related: ActivityHeatmapCell, SegmentedControl.',
+    axes: [],
+    figmaSets: ['ActivityHeatmap'],
+    props: [
+      { name: 'data', type: '{ date: string; count: number }[]', description: 'One entry per day with activity; dates are ISO YYYY-MM-DD, a missing day counts 0.' },
+      { name: 'thresholds', type: '[number, number, number, number, number]', description: 'The count at which levels 1 to 5 begin. Default [1, 3, 6, 10, 15].' },
+      { name: 'endDate', type: 'string', description: 'The last day shown; default the latest date in data. The grid is the 53 weeks that end on its week.' },
+      { name: 'showLegend / showMonthLabels / showDayLabels', type: 'boolean', description: 'Figma LegendVisible, MonthLabelsVisible and DayLabelsVisible (all true).' },
+      { name: 'onFocusDay', type: '(day | null) => void', description: 'The focused day changed; null when focus leaves the grid.' },
+      { name: 'getCellLabel', type: '(day) => string', description: 'The accessible name of a day; default "Tuesday, March 18: 8 contributions".' },
+    ],
+    accessibility: 'role="grid" with 7 rows (weekdays) of gridcells and one roving tab stop. Left/Right move by week, Up/Down by day, Home/End to the first/last day of the week, Ctrl+Home/End to the first/last day of the grid. Every cell is named by its day and count, so the level never relies on colour alone. The legend and the labels are decorative (aria-hidden).',
+  },
+  {
+    key: 'ActivityHeatmapCell',
+    label: 'Activity Heatmap Cell',
+    category: 'Data Display',
+    box: 'black',
+    locks: ['shape', 'radius', 'size', 'hit', 'motion'],
+    description: 'One day of an ActivityHeatmap: a 12 px square filled Chart/sequential/<Value>; Focused adds a 2 px ring one pixel off its edge.',
+    usage: 'Inside an ActivityHeatmap (and its legend). Value is the level 0 to 5: 0 no activity, 5 the most. It carries no text: its accessible name states the day and the count.',
+    axes: [
+      { name: 'Value', values: ['0', '1', '2', '3', '4', '5'] },
+      { name: 'State', values: ['Default', 'Focused'] },
+    ],
+    figmaSets: ['ActivityHeatmapCell'],
+    props: [
+      { name: 'value', type: '0 | 1 | 2 | 3 | 4 | 5', description: 'Figma Value; Chart/sequential/<value>.' },
+      { name: 'forceState', type: '"Default" | "Focused"', description: 'Pins a state without a keyboard (docs). The live ring is :focus-visible.' },
+    ],
+    accessibility: 'role="gridcell" inside the heatmap, named by aria-label ("Tuesday, March 18: 8 contributions"). As a legend swatch it is role="presentation".',
+  },
+  {
+    key: 'SplitBar',
+    label: 'Split Bar',
+    category: 'Indicators',
+    box: 'gray',
+    locks: ['size', 'hit', 'motion'],
+    description: 'A single bar that is 100 % of something, cut into shares (SplitBarSegment) over a legend (SplitBarLegendItem) that turns each series on and off. The bar clips its segments to Radius/action; the legend wraps on Spacing/gap-group.',
+    usage: 'Parts of one whole, up to eight: traffic by source, spend by team, storage by type. Colours are Chart/series-1…8 (categories with no meaning); when a share means good or bad, use Status/* instead. A share that is not part of a whole is a ProgressLine; a trend is a Sparkline. Related: SplitBarSegment, SplitBarLegendItem, ProgressLine.',
+    axes: [],
+    figmaSets: ['SplitBar'],
+    props: [
+      { name: 'segments', type: '{ id: string; label: string; value: number; series: 1–8 }[]', description: 'The shares. `value` is any non-negative number; the bar shows each as its share of what is shown.' },
+      { name: 'aria-label / aria-labelledby', type: 'string', description: 'The chart\'s title: the bar is a role="group" named by it (one of the two is required).' },
+      { name: 'showLegend', type: 'boolean', description: 'Figma LegendVisible. Default true.' },
+      { name: 'valueUnit', type: 'string', description: 'Unit of `value` for the screen reader: "Organic search, 41.6%, 41,300 sessions".' },
+      { name: 'hiddenIds / defaultHiddenIds / onHiddenIdsChange', type: 'string[]', description: 'The series that are turned off (controlled or not). The last series shown cannot be turned off.' },
+      { name: 'leaderBelow', type: 'number', description: 'A share under this percent (default 5) keeps its text out of the bar: a callout with a leader line sits under it.' },
+      { name: 'onSegmentClick', type: '(id: string) => void', description: 'A segment was pressed.' },
+    ],
+    accessibility: 'role="group" named by the chart title. Each segment is a button named "label, share, value unit"; each legend item an aria-pressed toggle. Tab visits segments then legend items; Enter or Space presses. Colour is never the only divider: every segment has a Chart/series-n/solid edge.',
+  },
+  {
+    key: 'SplitBarSegment',
+    label: 'Split Bar Segment',
+    category: 'Indicators',
+    box: 'gray',
+    locks: ['size', 'hit', 'motion'],
+    description: 'One share of a SplitBar: Chart/series-n/soft fill, a Stroke/focus-wide Chart/series-n/solid edge on its right, label and value in Chart/series-n/content, Size/control-lg tall. No Hover colour: hovering or focusing widens it.',
+    usage: 'Inside a SplitBar, never alone. Its width is its share of 100 %, set by the bar. Label shows when it fits, the value alone when it is narrower, nothing under that.',
+    axes: [
+      { name: 'Series', values: ['1', '2', '3', '4', '5', '6', '7', '8'] },
+      { name: 'State', values: ['Default', 'Focused'] },
+    ],
+    figmaSets: ['SplitBarSegment'],
+    props: [
+      { name: 'series', type: '1–8', description: 'Figma Series: the Chart/series-n colours.' },
+      { name: 'label / value', type: 'string', description: 'Figma Label and Value (TEXT).' },
+      { name: 'labelVisible / valueVisible', type: 'boolean', description: 'Figma LabelVisible and ValueVisible.' },
+      { name: 'forceState', type: '"Default" | "Focused"', description: 'Pins a state in docs; in an app Focused comes from the keyboard.' },
+      { name: 'aria-label', type: 'string', description: '"Organic search, 41.6%, 41,300 sessions": the text inside is decorative.' },
+    ],
+    accessibility: 'A button. The visible text is aria-hidden: give it an aria-label with label, share and value. Focused draws a Stroke/focus ring inside the segment in Border/ring/neutral.',
+  },
+  {
+    key: 'SplitBarLegendItem',
+    label: 'Split Bar Legend Item',
+    category: 'Indicators',
+    box: 'gray',
+    locks: ['size', 'hit', 'motion'],
+    description: 'The legend entry of a SplitBar and the toggle of its series: a 12 px Chart/series-n/solid swatch, a label and a value, Size/control-xs tall. Off, the swatch is Surface/muted and the text Content/disabled.',
+    usage: 'Inside the SplitBar legend. Turning a series off reflows the others to 100 %.',
+    axes: [
+      { name: 'Series', values: ['1', '2', '3', '4', '5', '6', '7', '8'] },
+      { name: 'Checked', values: ['true', 'false'] },
+      { name: 'State', values: ['Default', 'Focused'] },
+    ],
+    figmaSets: ['SplitBarLegendItem'],
+    props: [
+      { name: 'series', type: '1–8', description: 'Figma Series: the swatch colour.' },
+      { name: 'checked / onCheckedChange', type: 'boolean', description: 'Figma Checked: the series is shown. Sets aria-pressed.' },
+      { name: 'label / value / valueVisible', type: 'string / boolean', description: 'Figma Label, Value and ValueVisible.' },
+      { name: 'forceState', type: '"Default" | "Focused"', description: 'Pins a state in docs.' },
+    ],
+    accessibility: 'A button with aria-pressed (true = the series is shown). Focused draws the Button ring: 2px, 1px off the edge, in Border/ring/neutral.',
   },
   {
     key: 'Brand',
@@ -2505,19 +2859,19 @@ export const COMPONENTS: ComponentDef[] = [
     category: 'Navigation',
     box: 'gray',
     locks: ['size', 'hit', 'motion'],
-    description: 'A command row: optional leading icon, media, description, shortcut, control, caret and a selection check; destructive for irreversible commands.',
-    usage: 'One command per row. Put irreversible commands last as a destructive variant.',
+    description: 'A command row: optional leading icon, media, description, shortcut, control, caret and a selection check; critical for irreversible commands.',
+    usage: 'One command per row. Put irreversible commands last as the critical variant.',
     axes: [
       { name: 'Size', values: ['default', 'sm', 'lg'] },
       { name: 'State', values: ['Default', 'Hover', 'Focused', 'Selected', 'Disabled'] },
-      { name: 'Variant', values: ['default', 'destructive'] },
+      { name: 'Variant', values: ['default', 'critical'] },
     ],
     figmaSets: ['DropdownMenuItem'],
     props: [
       { name: 'children', type: 'ReactNode', description: 'Figma Label.' },
       { name: 'description / trailing / iconLeading / iconTrailing / media / control', type: 'ReactNode', description: 'The optional parts of the row, as the file lists them.' },
       { name: 'checked', type: 'boolean', description: 'Selected: shows the check (a menuitemcheckbox).' },
-      { name: 'variant', type: "'default' | 'destructive'", description: 'Figma Variant.' },
+      { name: 'variant', type: "'default' | 'critical'", description: 'Figma Variant.' },
     ],
     accessibility: 'role menuitem (menuitemcheckbox when selectable); reachable by arrow keys; skipped when disabled.',
   },
@@ -2634,22 +2988,29 @@ export const CATEGORIES = ['Button & Actions', 'Form Controls', 'Indicators', 'C
 
 // ── Figma import scope ───────────────────────────────────────────────────────
 // `figmaSets` above names the component set(s) a key maps to in the plugin's
-// full CATALOG (../escala-figma-plugin/src/code.ts) — the variant matrix the
-// plugin CAN build. The default live import builds a FIXED 9-component sample
-// sheet ('⬡ Components Overview'), each of the nine with every variant — the
-// same set the Full catalogue builds for it. The explicit Full catalogue option
-// builds every component type, using representative source variants that cover
-// each axis value instead of materializing the 1,403-combination cartesian product.
+// CATALOG (../escala-figma-plugin/src/code.ts) and in the Escala Design System
+// Figma file. Since plugin 0.35.0 (owner, 2026-11-20) the plugin gives away
+// the variables, the styles, the Getting started · Token Architecture ·
+// Documentation pages and a CORE KIT drawn on the Figma file's grammar — the
+// sets below, each as a base cut of its matrix. No screen of the plugin offers
+// its old Full catalogue any more: the complete library (70+ components,
+// blocks and pages) is the Escala Design System, sold on its own through
+// `/figma-kit` (`lib/figmaKit.ts`).
 //
-// Every one still ships as a full spec — props, variant axes,
-// tokens, accessibility notes — into `tokens.json` (`atoms`) and the agent
-// bundle. Only the keys below additionally land as real component nodes in a
-// Figma file in the DEFAULT mode. Don't infer this from `figmaSets.length` —
-// that field describes full-catalogue capability.
+// Every key still ships as a full spec — props, variant axes, tokens,
+// accessibility notes — into `tokens.json` (`atoms`) and the agent bundle.
+// Only the keys below additionally land as real component nodes when the
+// plugin builds a file. Don't infer this from `figmaSets.length` — that field
+// names the library's sets, not what the plugin builds.
 //
-// Keep this list in lockstep with the plugin's `SAMPLE_SETS` array in code.ts.
+// Keep this list in lockstep with the plugin's `SAMPLE_SETS` (code.ts) and
+// `CORE_KIT` (ui.html): Button, IconButton, Input, Checkbox, Radio, Switch,
+// Badge, Avatar. These are catalogue keys (the plugin's gates). The plugin's
+// `Radio` set has no key here: it is the RadioGroup item, painted from the
+// RadioGroup + Checkbox recipes, and `RadioGroup` itself maps to the
+// 'Radio Group' set, which the core kit does not build — so neither is listed.
 export const FIGMA_SAMPLE_KEYS: readonly string[] = [
-  'Button', 'Input', 'Select', 'Checkbox', 'Switch', 'Badge', 'StatusBadge', 'Toast', 'Avatar',
+  'Button', 'IconButton', 'Input', 'Checkbox', 'Switch', 'Badge', 'Avatar',
 ]
 
 /** Does the live Figma import render this key as a real component today —

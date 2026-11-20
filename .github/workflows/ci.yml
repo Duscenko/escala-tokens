@@ -25,6 +25,8 @@ jobs:
       - run: npm ci
       - run: npm test
       - run: npm run eval
+      # Escala gates (governance/gates.json): a "report" failure warns, a "gate" failure turns CI red.
+      - run: npm run gates
 
   # The export watchdog (design-plans/export-watchdog.md): CSS, agent context,
   # tokens.json and the plugin payload must agree, value for value. Its own

@@ -33,7 +33,7 @@ const FIELD_FIXED: SlotProps = {
 }
 
 // ── Input ──────────────────────────────────────────────────────────────────
-// The Figma `Input` set (design-plans/input-contract.md, 4:12380, 114 variants):
+// The Figma `Input` set (design-plans/input-contract.md, 4:12380, 222 variants):
 // the box with the text field inside it. `Size` × `State` × `Type` × `Value`, as in
 // the file. The box is the root (fill, edge, halo, height, insets); the <input> is
 // `text`; `icon` is every glyph (leading, trailing, the 16px chevron of a select
@@ -61,7 +61,7 @@ export const INPUT: ComponentRecipe = {
   defaults: { Size: 'default', State: 'Default', Type: 'default', Value: 'placeholder' },
   parts: [
     part({}, () => ({
-      root: { radius: 'radius.action', strokeWidth: 'stroke.control', gap: 'spacing.gap-control', font: 'type.placeholder' },
+      root: { radius: 'radius.action', strokeWidth: 'stroke.control', gap: 'spacing.gap-control' },
       divider: { fill: c('border.subtle'), width: 'stroke.control' },
       kbd: {
         fill: c('surface.muted'), stroke: c('border.subtle'), strokeWidth: 'stroke.divider', radius: 'radius.item',
@@ -72,7 +72,8 @@ export const INPUT: ComponentRecipe = {
       root: { paddingX: INPUT_STROKE_IN_LAYOUT.has(type) ? 'spacing.inset-control+stroke.control' : 'spacing.inset-control' },
     })),
     part({ Size: INPUT_SIZES }, (size) => ({
-      root: { height: INPUT_GEOMETRY[size] },
+      // Every Type follows the Size (2026-11-18). The file binds the text to `size/text-md` · `text-lg` primitives; these roles carry the same values.
+      root: { height: INPUT_GEOMETRY[size], font: size === 'lg' ? 'type.body-lg' : 'type.body-md' },
       icon: { width: INPUT_GLYPH[size], height: INPUT_GLYPH[size] },
       // The select addon's caret is Size/icon-sm at every size.
       'icon[data-icon="chevron"]': { width: 'icon.small', height: 'icon.small' },
@@ -85,7 +86,8 @@ export const INPUT: ComponentRecipe = {
         root: fieldBox(state),
         text: { text: ink },
         placeholder: { text: c(disabled ? 'content.disabled' : 'content.subtle') },
-        icon: { text: ink },
+        // Every glyph in the field stays subtle: it never darkens on hover or focus (DEC-2026-11-18-004).
+        icon: { text: c(disabled ? 'content.disabled' : 'content.subtle') },
         addon: { text: ink },
       }
     }),
@@ -141,7 +143,8 @@ export const TEXTAREA: ComponentRecipe = {
     part({}, () => ({
       root: { radius: 'radius.action', strokeWidth: 'stroke.control' },
       status: { text: c('status.critical.content') },
-      spinner: { text: c('content.secondary') },
+      // Field chrome: the Loading spinner is Content/subtle, like the field's other glyphs (Figma 394:71).
+      spinner: { text: c('content.subtle') },
       // The resize glyph: 8×8, 6px in from the bottom-right corner at every Size.
       corner: { paddingX: 'spacing.1_5', paddingY: 'spacing.1_5' },
       grip: { width: 'spacing.2', height: 'spacing.2' },
@@ -184,8 +187,8 @@ const DPT_GEOMETRY: Record<string, { h: string; font: string; icon: string }> = 
 function datePickerTriggerPaint(state: string): SlotMap {
   const disabled = state === 'Disabled'
   const out: SlotMap = {
-    icon: { text: c(disabled ? 'content.disabled' : 'content.secondary') },
-    spinner: { text: c('content.secondary') },
+    icon: { text: c(disabled ? 'content.disabled' : 'content.subtle') },
+    spinner: { text: c('content.subtle') },
     text: { text: c(disabled ? 'content.disabled' : 'content.primary') },
     placeholder: { text: c(disabled ? 'content.disabled' : 'content.subtle') },
   }
@@ -685,7 +688,7 @@ function comboboxPaint(state: string): SlotMap {
   const out: SlotMap = {
     text: { text: ink },
     placeholder: { text: c(disabled ? 'content.disabled' : 'content.subtle') },
-    icon: { text: ink },
+    icon: { text: c(disabled ? 'content.disabled' : 'content.subtle') },
   }
   if (disabled) out.root = { fill: c('action.disabled.default'), stroke: c('border.control'), halo: NONE }
   else if (state === 'Invalid') out.root = { fill: c('surface.input'), stroke: c('status.critical.border-strong'), halo: c('status.critical.border') }
@@ -1189,6 +1192,8 @@ export const SLIDER: ComponentRecipe = {
     })),
     part({ Variant: SLIDER_VARIANTS, State: SLIDER_STATES }, (variant, state) => ({
       range: { fill: c(state === 'Disabled' ? 'action.disabled.default' : variant === 'secondary' ? 'content.primary' : 'action.primary.default') },
+      // Disabled marks: the labels go Content/disabled, the ticks keep Border/strong (Figma 443:69).
+      ...(state === 'Disabled' ? { markLabel: { text: c('content.disabled') } } : {}),
     })),
   ],
 }

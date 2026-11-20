@@ -1,0 +1,25 @@
+{
+  "$schema": "./intent.schema.json",
+  "component": "BoardColumn",
+  "purpose": "One status lane on a board: a status icon, title, count, an add action and a list of IssueCard, placed side by side with other lanes.",
+  "notFor": [
+    {"case": "Issues compared across columns.", "use": "Table"},
+    {"case": "A titled group of settings.", "use": "SettingsSection"},
+    {"case": "App navigation.", "use": "Sidebar"}
+  ],
+  "states": {
+    "Default": {"setBy": "component", "meaning": "At rest.", "visual": "The lane on Surface/layer-1 (a tray, so its cards read raised); status icon (Size/icon-sm) and count in Content/secondary; title in Content/primary (Type/label)."}
+  },
+  "a11y": {
+    "role": "list (labelled by the title and the count)",
+    "keyboard": "No keys of its own; the add action and each IssueCard are reached by Tab.",
+    "minHitArea": 24,
+    "contrast": "AA"
+  },
+  "openQuestions": [
+    "Built Figma-first under exception STG-001 (governance/exceptions.yaml, review by 2026-12-02): the stories still need the owner's approval. Is the Figma set final for this intent?",
+    "Drop target: should the lane change when a card is dragged over it? No state is drawn.",
+    "What does a lane with no cards show?"
+  ],
+  "approval": { "status": "draft", "by": null, "date": null }
+}

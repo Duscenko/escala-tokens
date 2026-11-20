@@ -1,0 +1,48 @@
+{
+  "$schema": "./intent.schema.json",
+  "component": "SegmentedControl",
+  "purpose": "A single choice between two to five short options of the same data, shown as one track with the chosen segment raised. Use it for switches like Day / Week / Month.",
+  "notFor": [
+    {
+      "case": "Long labels or more than five options.",
+      "use": "RadioGroup"
+    },
+    {
+      "case": "Switching between views or panels.",
+      "use": "TabMenu"
+    },
+    {
+      "case": "Several independent actions side by side.",
+      "use": "ButtonGroup"
+    },
+    {
+      "case": "A single setting that is on or off.",
+      "use": "Switch"
+    }
+  ],
+  "states": {
+    "Default": {
+      "setBy": "component",
+      "visual": "A Surface/muted track holding the segments; exactly one is checked."
+    }
+  },
+  "a11y": {
+    "role": "radiogroup",
+    "keyboard": "One tab stop (the checked option). ArrowRight / ArrowDown select the next option, ArrowLeft / ArrowUp the previous (both wrap), Home / End the first / last; disabled options are skipped.",
+    "minHitArea": 24,
+    "contrast": "NOT DECIDED",
+    "notes": [
+      "Needs an aria-label or a visible label from the app.",
+      "Size cascades to every SegmentedControlItem."
+    ]
+  },
+  "openQuestions": [
+    "Contrast: unchecked labels are Content/secondary on Surface/muted, 4.22:1 in Light, under AA. Fix the role or accept?",
+    "There is no way to disable the whole control, only single items. Is a group-level Disabled needed?"
+  ],
+  "approval": {
+    "status": "draft",
+    "by": null,
+    "date": null
+  }
+}

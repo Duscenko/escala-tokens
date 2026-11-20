@@ -5,8 +5,8 @@
  *  (`componentRecipes.ts`), so the stylesheet, the inspector and tokens.json
  *  read one table. Plan: design-plans/motion-foundation.md (phase 2).
  *
- * Not here, on purpose: Sonner and Drawer (the `sonner` and `vaul` libraries
- * own their motion — vaul ties it to the drag gesture), Spinner and Skeleton
+ * Not here, on purpose: Drawer (the `vaul` library ties its motion to the drag
+ * gesture), Spinner and Skeleton
  * (a loop keyed to the library's own keyframes). */
 import type { RecipeMotion } from './helpers.js'
 
@@ -33,14 +33,60 @@ const disclosure = (heightVar: string): RecipeMotion => ({
 })
 
 export const RECIPE_MOTION: Record<string, RecipeMotion> = {
-  Button: { transitions: { root: states('background-color', 'color', 'border-color', 'box-shadow') } },
+  // A press sinks the button to the `shrink` scale on `use-press` (recipeStyles, `press`) and comes back on `use-hover`, with the colours.
+  Button: { transitions: { root: { ...states('background-color', 'color', 'border-color', 'box-shadow'), scale: 'use-hover' } }, press: {} },
+  IconButton: { transitions: { root: { ...states('background-color', 'color', 'border-color', 'box-shadow'), scale: 'use-hover' } }, press: {} },
   Badge: { transitions: { root: states('background-color', 'color', 'border-color') } },
-  Chip: { transitions: { root: states('background-color', 'border-color', 'color') } },
+  // A pressed chip sinks like a button (`use-press`): the file draws no Pressed state, so the press is motion only (owner decision 2026-11-19).
+  Chip: { transitions: { root: { ...states('background-color', 'border-color', 'color'), scale: 'use-hover' } }, press: {} },
+  // The row. First render: the pills arrive one after another (`use-stagger-in`, each `--motion-stagger` behind the last). After
+  // that a pill that arrives or a neighbour that makes room travels on `use-travel-in`, a pill that leaves on `use-travel-out`,
+  // and a count rolls its changed digits on `use-toggle`. Reduced motion comes from the roles themselves.
+  ReactionGroup: {
+    transitions: {
+      item: { opacity: 'use-travel-in', transform: 'use-travel-in' },
+      'item[data-motion="enter"]': { opacity: 'use-stagger-in', transform: 'use-stagger-in' },
+      'item[data-motion="exit"]': { opacity: 'use-travel-out', transform: 'use-travel-out' },
+      digit: { opacity: 'use-toggle', transform: 'use-toggle' },
+    },
+    stagger: { slot: 'item', when: '[data-motion="enter"]' },
+  },
+  ReactionGroupTrigger: { transitions: { root: states('background-color', 'color', 'border-color') } },
+  ReactionGroupPopover: popover('--radix-popover-content-transform-origin'),
   PaginationLink: { transitions: { root: FILL } },
   TabMenuItem: { transitions: { root: FILL } },
   TabMenuLineItem: { transitions: { root: FILL } },
   NavItem: { transitions: { root: FILL } },
+  // The pill fills and the icon and label re-ink on `use-hover`, the same roles as NavItem; becoming Current uses the same
+  // transition. No mount animation. TabBar itself: motion none (it does not change state).
+  TabBarItem: { transitions: { indicator: FILL, icon: FILL, label: FILL } },
+  // A day square: no motion on load, none on a data change (the consumer cross-fades a year switch). Only the ring follows `use-focus`.
+  ActivityHeatmapCell: { transitions: { root: { 'outline-color': 'use-focus' } } },
+  // The card's edge and lift ease; the position that follows the pointer never does (MOT-005).
+  IssueCard: { transitions: { root: { 'border-color': 'use-hover', 'box-shadow': 'use-hover' } } },
   AccountMenuTrigger: { transitions: { root: FILL } },
+  // SplitBar: a segment widens on hover or focus on `use-hover` (its width is its share of the bar, so it is `width` that moves). Turning
+  // a series off reflows the bar: the segments that grow travel on `use-travel-in`, the ones that shrink on `use-travel-out`.
+  // The focus ring and the colours do not animate here: the file draws no Hover colour.
+  SplitBarSegment: {
+    transitions: {
+      root: { width: 'use-hover' },
+      'root[data-motion="in"]': { width: 'use-travel-in' },
+      'root[data-motion="out"]': { width: 'use-travel-out' },
+    },
+  },
+  // The callouts under the bar follow their segment: the same roles, the same direction.
+  SplitBar: {
+    transitions: {
+      leaderLine: { left: 'use-hover' },
+      'leaderLine[data-motion="in"]': { left: 'use-travel-in' },
+      'leaderLine[data-motion="out"]': { left: 'use-travel-out' },
+      leaderText: { left: 'use-hover', right: 'use-hover' },
+      'leaderText[data-motion="in"]': { left: 'use-travel-in', right: 'use-travel-in' },
+      'leaderText[data-motion="out"]': { left: 'use-travel-out', right: 'use-travel-out' },
+    },
+  },
+  SplitBarLegendItem: { transitions: { swatch: states('background-color'), label: states('color'), value: states('color') } },
   SegmentedControlItem: { transitions: { root: FILL } },
   SidebarMenuButton: { transitions: { root: FILL } },
   TableRow: { transitions: { root: states('background-color') } },
@@ -68,10 +114,38 @@ export const RECIPE_MOTION: Record<string, RecipeMotion> = {
   ComboboxItem: { transitions: { root: states('background-color', 'border-color', 'box-shadow') } },
   Checkbox: { transitions: { root: states('background-color', 'border-color', 'box-shadow') } },
   RadioGroup: { transitions: { item: states('background-color', 'border-color', 'box-shadow') } },
-  Switch: { transitions: { root: states('background-color', 'box-shadow'), thumb: { transform: 'use-toggle' } } },
+  // The track's colour and the thumb's travel share `use-toggle`, so the fill arrives with the thumb (it flipped in 100 ms while the thumb took 360).
+  Switch: { transitions: { root: { 'background-color': 'use-toggle', 'box-shadow': 'use-focus' }, thumb: { transform: 'use-toggle' } } },
   RatingGroupItem: { transitions: { root: FILL } },
   SliderThumb: { transitions: { root: states('border-color', 'box-shadow') } },
-  ProgressLine: { transitions: { indicator: { width: 'base-functional-standard' } } },
+  ProgressLine: { transitions: { indicator: { width: 'use-progress' } } },
+  // A new value sweeps the fill along the arc on `use-travel-in` (the arc's dash is the value). Reduced motion comes from the role.
+  Gauge: { transitions: { arc: { 'stroke-dasharray': 'use-travel-in' } } },
+  // The line draws once on mount (`use-reveal`: its dash offset, with the area and the dot fading in); new data cross-fades the old
+  // layer into the new one on `use-color`.
+  Sparkline: {
+    transitions: {
+      layer: { opacity: 'use-color' },
+      line: { 'stroke-dashoffset': 'use-reveal', opacity: 'use-reveal' },
+      area: { opacity: 'use-reveal' },
+      dot: { opacity: 'use-reveal' },
+    },
+  },
+  // Sonner keeps the queue, the stack and the live region; the toast itself moves on the system's roles (DEC-2026-11-18-001).
+  Toast: {
+    enter: { name: 'toast-enter' },
+    exit: { name: 'toast-exit' },
+    // In the queue, or on a page that shows the toast living in place (`data-toast-state`).
+    host: {
+      enter: ['[data-sonner-toast][data-removed="false"]', '[data-toast-state="open"]'],
+      exit: ['[data-sonner-toast][data-removed="true"]', '[data-toast-state="closing"]'],
+    },
+    timer: {
+      name: 'toast-countdown', slot: 'bar', attr: '[data-countdown]',
+      pausedBy: ['[data-sonner-toast][data-expanded="true"]', '[data-sonner-toast][data-swiping="true"]'],
+    },
+    queue: { item: '[data-slot="toaster"] [data-sonner-toast]', reflow: 'use-reflow', release: 'use-release' },
+  },
   // AccordionItem (the Figma file, 2026-11-12): the item owns the trigger and the content, so the chevron
   // and the expand / collapse play on it; the Accordion only stacks items.
   AccordionItem: { ...disclosure('--radix-accordion-content-height'), transitions: { chevron: { transform: 'use-disclosure-in' } } },

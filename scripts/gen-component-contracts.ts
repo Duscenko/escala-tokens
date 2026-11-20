@@ -12,7 +12,7 @@
 import { mkdirSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
-import { buildContracts, serializeContract, type ContractSources } from '../src/lib/componentContracts'
+import { buildContracts, contractMarkdown, contractReadme, contractSchema, serializeContract, type ContractSources } from '../src/lib/componentContracts'
 
 export const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..')
 export const CONTRACTS_DIR = join(ROOT, 'spec/contracts')
@@ -30,14 +30,26 @@ export function readContractSources(root = ROOT): ContractSources {
     uiFiles: readDir(join(root, 'src/components/escala-ui'), (f) => /\.tsx?$/.test(f)),
     storyFiles: readDir(join(root, 'apps/storybook/stories'), (f) => f.endsWith('.stories.tsx')),
     designPlans: readdirSync(join(root, 'design-plans')).sort(),
+    blockContracts: Object.fromEntries(
+      Object.entries(readDir(join(root, 'src/components/escala-ui/blocks'), (f) => f.endsWith('.contract.json')))
+        .map(([f, body]) => [f, JSON.parse(body)]),
+    ),
+    registry: JSON.parse(readFileSync(join(root, 'governance/registry.json'), 'utf8')),
   }
 }
 
 /** File name → content, exactly as written to spec/contracts/. */
 export function contractFiles(root = ROOT): Record<string, string> {
   const { contracts, index } = buildContracts(readContractSources(root))
-  const files: Record<string, string> = { 'index.json': serializeContract(index) }
-  for (const c of contracts) files[`${c.key}.json`] = serializeContract(c)
+  const files: Record<string, string> = {
+    'index.json': serializeContract(index),
+    'schema.json': serializeContract(contractSchema()),
+    'README.md': contractReadme(index),
+  }
+  for (const c of contracts) {
+    files[`${c.key}.json`] = serializeContract(c)
+    files[`${c.key}.md`] = contractMarkdown(c)
+  }
   return files
 }
 
@@ -46,5 +58,5 @@ if (process.argv[1] && fileURLToPath(import.meta.url) === process.argv[1]) {
   rmSync(CONTRACTS_DIR, { recursive: true, force: true })
   mkdirSync(CONTRACTS_DIR, { recursive: true })
   for (const [name, body] of Object.entries(files)) writeFileSync(join(CONTRACTS_DIR, name), body)
-  console.log(`wrote ${Object.keys(files).length - 1} contracts + index.json to spec/contracts/`)
+  console.log(`wrote ${(Object.keys(files).length - 3) / 2} contracts (.json + .md) + index.json, schema.json, README.md to spec/contracts/`)
 }

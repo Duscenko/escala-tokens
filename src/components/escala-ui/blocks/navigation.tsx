@@ -35,7 +35,7 @@ const spacer: React.CSSProperties = { flex: 1 }
 /** Every glyph in these blocks sits in an sm or xs control (or a 32 px row): Icon/small, 16 px in the file. */
 const ic = (name: Parameters<typeof boxedGlyph>[0]) => boxedGlyph(name, 'icon.small')
 
-/** The account menu a header's avatar opens: the system's DropdownMenu on the AccountMenuTrigger (label, rows, a destructive one).
+/** The account menu a header's avatar opens: the system's DropdownMenu on the AccountMenuTrigger (label, rows, a critical one).
  *  Open and close are the DropdownMenu's own motion (disclosure roles); the block adds none. */
 function AccountMenu({ name = 'Ayla' }: { name?: string }) {
   return (
@@ -47,7 +47,7 @@ function AccountMenu({ name = 'Ayla' }: { name?: string }) {
         <DropdownMenuItem iconLeading={ic('file')}>Billing</DropdownMenuItem>
         <DropdownMenuItem iconLeading={ic('gear')}>Settings</DropdownMenuItem>
         <DropdownMenuSeparator />
-        <DropdownMenuItem variant="destructive" iconLeading={ic('sign-out')}>Log out</DropdownMenuItem>
+        <DropdownMenuItem variant="critical" iconLeading={ic('sign-out')}>Log out</DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
   )

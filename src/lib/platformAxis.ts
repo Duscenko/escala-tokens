@@ -84,7 +84,7 @@ export function roleFollowsPlatform(key: string): boolean {
 function isAlias(v: unknown): v is TypeAlias {
   if (!v || typeof v !== 'object') return false
   const a = v as TypeAlias
-  return (a.family === 'display' || a.family === 'body') && typeof a.size === 'string' && typeof a.weight === 'string'
+  return (a.family === 'display' || a.family === 'body' || a.family === 'mono') && typeof a.size === 'string' && typeof a.weight === 'string'
 }
 
 function isSizeStepOrPin(v: unknown): v is string {

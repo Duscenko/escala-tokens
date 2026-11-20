@@ -179,6 +179,9 @@ tokens the page does not list: `instant`, `fade`, the springs, every transform).
   page's paste, like every other foundation.
 - es/fr for every visible string, prose included. Tests: `motionDocs.test.ts`.
 
+**Notifications (2026-11-18, DEC-2026-11-18-001).** Two product springs, three lifetimes, six roles and the Toast's
+choreographies. The tables below describe the first 24 roles; `lib/motion.ts` is the full list.
+
 ## Tier 1 — Primitives (fixed, not edited per system)
 
 Like `SPACING_STEPS` / `RADIUS_STANDARD`: the ladder is the vocabulary, presets pick from it.

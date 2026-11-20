@@ -1,0 +1,40 @@
+{
+  "$schema": "./intent.schema.json",
+  "component": "PaginationEllipsis",
+  "purpose": "A non-interactive marker for the pages skipped between two ranges of a Pagination. Not for standalone use.",
+  "notFor": [
+    {
+      "case": "Used on its own, outside a Pagination.",
+      "use": "Pagination"
+    },
+    {
+      "case": "The collapsed start of a breadcrumb trail.",
+      "use": "BreadcrumbEllipsis"
+    },
+    {
+      "case": "An overflow menu of commands.",
+      "use": "DropdownMenu"
+    }
+  ],
+  "states": {
+    "Default": {
+      "setBy": "component",
+      "visual": "Three dots in Content/secondary, no fill or stroke, square at the link height."
+    }
+  },
+  "a11y": {
+    "role": "presentation",
+    "keyboard": "None: not focusable.",
+    "minHitArea": 24,
+    "contrast": "AA",
+    "notes": [
+      "Carries a screen-reader-only \"More pages\"."
+    ]
+  },
+  "openQuestions": [],
+  "approval": {
+    "status": "draft",
+    "by": null,
+    "date": null
+  }
+}

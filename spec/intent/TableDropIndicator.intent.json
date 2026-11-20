@@ -1,0 +1,25 @@
+{
+  "$schema": "./intent.schema.json",
+  "component": "TableDropIndicator",
+  "purpose": "The 2px line that shows where a dragged row will land while rows are reordered.",
+  "notFor": [
+    {"case": "Not for standalone use: it appears between rows of a Table during a drag.", "use": "Table"},
+    {"case": "A divider between pieces of content.", "use": "Separator"}
+  ],
+  "states": {
+    "Default": {"setBy": "app", "meaning": "Shown only while a row is being dragged, at its landing place.", "visual": "A full-width line in Border/accent, Stroke/focus tall."}
+  },
+  "a11y": {
+    "role": "None: decorative, hidden from assistive technology.",
+    "keyboard": "None.",
+    "minHitArea": 24,
+    "contrast": "AA",
+    "notes": [
+      "Announce the move with a live region."
+    ]
+  },
+  "openQuestions": [
+    "Who owns the live region that announces the move: Table, or the app?"
+  ],
+  "approval": { "status": "draft", "by": null, "date": null }
+}

@@ -1,0 +1,42 @@
+name: Web and Storybook parity
+
+# The web platform must draw what the Storybook documents: the same recipes, variables, Auth blocks and components, compared
+# in a real browser from the two static builds (scripts/check-web-storybook-parity.mjs).
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+concurrency:
+  group: web-storybook-parity-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  parity:
+    name: web and storybook parity
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci
+      - run: npx playwright-core install --with-deps chromium
+      - run: npm run prebuild
+      - run: npx vite build
+        env:
+          VITE_SUPABASE_URL: ''
+          VITE_SUPABASE_ANON_KEY: ''
+      - run: npm run build-storybook
+      - run: npm run check:web-storybook
+      - if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: web-storybook-parity
+          path: reports/web-storybook-parity.json
+          if-no-files-found: ignore

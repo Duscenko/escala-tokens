@@ -28,7 +28,7 @@ MIT — see `LICENSE-shadcn.md`. Source: the `ui-main` archive downloaded
 | `dialog.tsx` | `bases/radix/ui/dialog.tsx` | `cn-dialog-*` → `data-part="Dialog.*"`; close = `DialogClose asChild` + ghost icon-sm Button (as shadcn); `inline` renders in place (docs/previews, no portal, no focus steal); close icon is a prop |
 | `separator.tsx` | `bases/radix/ui/separator.tsx` | Radix Separator, verbatim shape; `data-escala="Separator"` |
 | `sidebar.tsx` | `bases/radix/ui/sidebar.tsx` | the parts and their props (`variant`/`side`, MenuButton `isActive`/`variant`/`size`); no SidebarProvider/collapsible/mobile sheet yet |
-| `dropdown-menu.tsx` | `bases/radix/ui/dropdown-menu.tsx` | item `variant` default · destructive |
+| `dropdown-menu.tsx` | `bases/radix/ui/dropdown-menu.tsx` | item `variant` default · critical (shadcn: destructive) |
 | `kbd.tsx` | `bases/radix/ui/kbd.tsx` | verbatim shape; KbdGroup spaces only |
 | `table.tsx` | `bases/radix/ui/table.tsx` | all parts; `border-collapse` so row hairlines draw |
 | `calendar.tsx` | — (was `bases/radix/ui/calendar.tsx`) | Rebuilt from the Figma file 2026-11-12: Calendar + CalendarDay / Header / Month / Presets / Footer, no react-day-picker |

@@ -12,4 +12,14 @@ be flaky and the color layer must stay DOM-free.
 | `fail.hex-button.tsx` | exit 1 — `#7f56d9` is a token |
 | `fail.raw-px.tsx` | exit 1 — `16px` / `8px` are tokens |
 
+It also writes the bundle's `contracts/` and `checkers/binding-lint.mjs` to a temp
+folder and runs the binding checker, which reads each contract's `bindings`:
+
+| File | Expected |
+|---|---|
+| `pass.state-roles.css` | exit 0 — Default, Hover and critical Hover paint their bound roles |
+| `fail.wrong-state-role.css` | exit 1 — Button Hover painted with `action.primary.default` (the contract binds `action.primary.hover`); token-lint alone passes it |
+
+`npm run eval` runs this file only.
+
 Axe / Playwright stays out of this folder (Vitest is `environment: 'node'`).

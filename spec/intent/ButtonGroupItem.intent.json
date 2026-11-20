@@ -1,0 +1,34 @@
+{
+  "$schema": "./intent.schema.json",
+  "component": "ButtonGroupItem",
+  "purpose": "One segment of a ButtonGroup: a selectable action with no radius or edge of its own, because the group clips the corners and draws the shared edge.",
+  "notFor": [
+    { "case": "Standalone use outside a group.", "use": "ButtonGroup" },
+    { "case": "A single action on its own.", "use": "Button" }
+  ],
+  "states": {
+    "Default": { "setBy": "component", "meaning": "At rest.", "visual": "Fill of the group's Variant: Action/primary/default with Content/on-action, Action/secondary/default with Content/on-secondary, Surface/inverse with Content/inverse, or no fill with Content/primary (outline)." },
+    "Hover": { "setBy": "component", "visual": "Fill moves to Action/primary/hover, Action/secondary/hover or Action/ghost/hover; inverse gains a Surface/inverse-muted overlay." },
+    "Pressed": { "setBy": "component", "visual": "Fill moves to Action/primary/pressed, Action/secondary/pressed or Action/ghost/pressed; inverse gains a Surface/inverse-muted overlay." },
+    "Focused": { "setBy": "component", "meaning": "Reached by keyboard (focus-visible).", "visual": "A 2px ring inside the segment: Border/ring/default, Border/subtle or Surface/inverse-muted by Variant." },
+    "Disabled": { "setBy": "app", "meaning": "This segment cannot be used.", "visual": "Surface/page under an Action/disabled/default overlay, Content/disabled ink." },
+    "Active=true": { "setBy": "both", "meaning": "The selected segment.", "visual": "Pinned to the pressed fill (Action/primary/pressed, Action/secondary/pressed) or, for outline, Surface/selected with Content/accent." },
+    "Active=false": { "setBy": "both", "meaning": "Not selected.", "visual": "The fill of the current State." }
+  },
+  "a11y": {
+    "role": "button (native <button>) with aria-pressed",
+    "keyboard": "Tab reaches it; Enter or Space activates it (native button).",
+    "minHitArea": 24,
+    "contrast": "AA",
+    "notes": [
+      "Icon-only segments always need an aria-label.",
+      "Loading shows a spinner after the label and sets aria-busy.",
+      "The contract lists no motion roles for the segment."
+    ]
+  },
+  "openQuestions": [
+    "Motion: the contract declares no motion for the segment's hover and press. Should it move on use-hover like Button?",
+    "Loading: the Figma set has LoadingVisible as a property, not a State. Is a loading segment also blocked from clicks?"
+  ],
+  "approval": { "status": "draft", "by": null, "date": null }
+}

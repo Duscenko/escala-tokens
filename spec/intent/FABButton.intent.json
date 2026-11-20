@@ -1,0 +1,33 @@
+{
+  "$schema": "./intent.schema.json",
+  "component": "FABButton",
+  "purpose": "The one primary action of a screen that floats above its content, such as create, compose or add. A leading icon with an optional label on a surface that lifts.",
+  "notFor": [
+    { "case": "An action that sits inside a row of other actions.", "use": "Button" },
+    { "case": "Several floating actions that share one entry point.", "use": "FABGroup" },
+    { "case": "An icon-only action in a toolbar or table row.", "use": "IconButton" }
+  ],
+  "states": {
+    "Default": { "setBy": "component", "meaning": "At rest, lifted.", "visual": "solid takes Action/primary/default with Content/on-action (brand) or Action/secondary/default with Content/on-secondary (neutral); soft takes Surface/layer-2 or Surface/accent with Content/primary or Content/accent; inverse takes Surface/inverse with Content/inverse. Elevation/highlight on top." },
+    "Hover": { "setBy": "component", "visual": "Solid fills move to Action/primary/hover or Action/secondary/hover; soft and inverse gain an overlay (Action/ghost/hover, Surface/selected, Surface/inverse-muted); the elevation rises." },
+    "Pressed": { "setBy": "component", "visual": "Solid fills move to Action/primary/pressed or Action/secondary/pressed; soft and inverse take Action/ghost/pressed, Surface/selected-pressed or Surface/inverse-muted; the elevation settles." },
+    "Focused": { "setBy": "component", "meaning": "Reached by keyboard (focus-visible).", "visual": "A 2px halo outside the button (Border/ring/default, Border/subtle or Surface/inverse-muted); the elevation stays." },
+    "Disabled": { "setBy": "app", "meaning": "Cannot be used right now.", "visual": "Surface/page under an Action/disabled/default overlay, Content/disabled ink, no lift." }
+  },
+  "a11y": {
+    "role": "button (native <button>)",
+    "keyboard": "Tab reaches it; Enter or Space activates it (native button).",
+    "minHitArea": 48,
+    "contrast": "AA",
+    "notes": [
+      "With a label, the label is the accessible name; an icon-only FAB needs an aria-label.",
+      "Disabled sets aria-disabled.",
+      "The contract lists no motion roles even though the elevation changes on hover and press."
+    ]
+  },
+  "openQuestions": [
+    "Motion: the lift rises on hover and settles on press, but the contract declares no motion role. Which role moves it, and what happens with reduced motion?",
+    "Placement: where does the FAB float (corner, offset from the edge, above a bottom bar)? Nothing in the contract fixes it."
+  ],
+  "approval": { "status": "draft", "by": null, "date": null }
+}

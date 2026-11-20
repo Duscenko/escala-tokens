@@ -100,7 +100,13 @@ function Slider({
   const texts = [tooltipText, tooltipEndText]
   const lo = isRange ? Math.min(...current) : min
   return (
-    <div data-slot="slider" data-escala="Slider" data-size={size} data-variant={variant} data-range={isRange ? 'range' : 'single'} className={cn('flex min-w-0 flex-col', className)}>
+    <div
+      data-slot="slider" data-escala="Slider" data-size={size} data-variant={variant} data-range={isRange ? 'range' : 'single'}
+      // The recipe's State rules (Disabled range and mark labels) key on the root.
+      data-force-state={forceState && forceState !== 'Default' ? forceState : undefined}
+      aria-disabled={isDisabled || undefined}
+      className={cn('flex min-w-0 flex-col', className)}
+    >
       {label != null && (
         <div className="flex justify-between">
           <span data-part="Slider.label">{label}</span>

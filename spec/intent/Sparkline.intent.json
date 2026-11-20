@@ -1,0 +1,31 @@
+{
+  "$schema": "./intent.schema.json",
+  "component": "Sparkline",
+  "purpose": "A compact trend beside a number, with no axes or gridlines: a line over a soft area with a dot on the last point, showing where the value came from.",
+  "notFor": [
+    {"case": "A full chart with axes and gridlines: use a charting layer.", "use": "none"},
+    {"case": "One reading against a known range.", "use": "Gauge"},
+    {"case": "A metric's change inside a table.", "use": "TableTrendCell"}
+  ],
+  "states": {
+    "Variant=default": {"setBy": "app", "meaning": "The direction carries no judgement.", "visual": "Line and dot in Chart/series-1/solid over a Chart/series-1/soft area."},
+    "Variant=secondary": {"setBy": "app", "meaning": "A quiet trend.", "visual": "Line and dot in Content/secondary over a Surface/muted area."},
+    "Variant=success": {"setBy": "app", "meaning": "Up is good.", "visual": "Line and dot in Status/success/surface-solid over a Status/success/surface area."},
+    "Variant=critical": {"setBy": "app", "meaning": "Down is bad.", "visual": "Line and dot in Status/critical/surface-solid over a Status/critical/surface area."}
+  },
+  "a11y": {
+    "role": "img",
+    "keyboard": "None; not focusable.",
+    "minHitArea": 24,
+    "contrast": "AA",
+    "reducedMotion": "Instant: no line draw on mount (use-reveal) and no cross-fade of new data (use-color).",
+    "notes": [
+      "A required aria-label states the trend (\"Daily active users, up 7.2 % this week\"); the drawing is hidden from assistive tech."
+    ]
+  },
+  "openQuestions": [
+    "The contract has no Figma set (codeOnly, finding DOC-001 Sparkline). Is a Figma set planned, or is code the owner here?",
+    "Size sm draws the line at a literal 1.5 hairline, not a stroke role. Is a stroke role missing?"
+  ],
+  "approval": { "status": "draft", "by": null, "date": null }
+}

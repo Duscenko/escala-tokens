@@ -1,0 +1,28 @@
+{
+  "$schema": "./intent.schema.json",
+  "component": "TabMenuLineItem",
+  "purpose": "A line tab of a line-variant TabMenu: the selected item carries a 2px accent bar on its bottom or left edge.",
+  "notFor": [
+    {"case": "Not for standalone use outside a TabMenu.", "use": "TabMenu"},
+    {"case": "A tab in a button-variant TabMenu.", "use": "TabMenuItem"},
+    {"case": "A link in a header or navbar.", "use": "NavItem"}
+  ],
+  "states": {
+    "Default": {"setBy": "component", "meaning": "At rest, not selected.", "visual": "Ink Content/secondary, no fill."},
+    "Hover": {"setBy": "component", "visual": "Ink Content/primary, no fill."},
+    "Focused": {"setBy": "component", "meaning": "Reached by keyboard (focus-visible).", "visual": "Ink Content/secondary; a Border/focus stroke round the whole item with the Border/ring/default ring."},
+    "Selected": {"setBy": "both", "meaning": "The current view.", "visual": "Ink Content/accent, no fill; an indicator in Border/accent, Stroke/focus thick, on the bottom (or left) edge; aria-pressed=\"true\"."},
+    "Disabled": {"setBy": "app", "meaning": "Cannot be chosen; native disabled.", "visual": "Ink Content/disabled, no fill."}
+  },
+  "a11y": {
+    "role": "button (aria-pressed)",
+    "keyboard": "Tab reaches it unless disabled; Space or Enter activates it.",
+    "minHitArea": 24,
+    "contrast": "AA",
+    "reducedMotion": "Ink changes run on use-hover, which keeps its duration under reduced motion: a colour change, not travel (lib/motion.ts KEEP_UNDER_REDUCED)."
+  },
+  "openQuestions": [
+    "Focus draws a full 2px stroke round the item although the selection is a bar (tab-menu-contract.md). Intended?"
+  ],
+  "approval": { "status": "draft", "by": null, "date": null }
+}

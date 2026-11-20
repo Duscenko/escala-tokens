@@ -470,7 +470,7 @@ export const SPACING_STANDARD = buildSpacingFromBase(SPACING_DEFAULT_BASE)
 /** Surface inset — four sides, each an alias of a spacing STEP (not raw px). */
 export const PADDING_SIDES = ['top', 'right', 'bottom', 'left'] as const
 export type PaddingSide = (typeof PADDING_SIDES)[number]
-export const PADDING_DEFAULT_STEP: SpacingStep = '5'
+export const PADDING_DEFAULT_STEP: SpacingStep = '6'
 export const PADDING_STANDARD: Record<PaddingSide, string> = {
   top: SPACING_STANDARD[PADDING_DEFAULT_STEP],
   right: SPACING_STANDARD[PADDING_DEFAULT_STEP],
@@ -1605,9 +1605,9 @@ export function radiusRolesAreLegacyDefault(roles: Record<string, string> | unde
  * Tablet and Mobile without any Desktop pixel moving. The insets match the
  * Escala Figma file (owner decision 2026-11-11, Escala's values are the
  * defaults of every new system): `inset-control` 12 on every viewport,
- * `inset-surface` 20, `inset-page` 32 / 16 / 16 and `inset-section` 96 / 64 /
- * 48 — the last two through the role's own `viewports`, since no responsive
- * token carries those curves.
+ * `inset-surface` 24 / 20 / 16, `inset-action` 16 / 16 / 12, `inset-page` 32 / 16 / 16
+ * and `inset-section` 96 / 64 / 48 — through the role's own `viewports`, since no
+ * responsive token carries those curves (DEC-2026-11-18-007).
  *
  * `inset-section` is the VERTICAL padding of a full-width page section (hero,
  * pricing, footer); its sides keep `inset-page`. The Overlap group keeps the
@@ -1620,7 +1620,8 @@ export const SPACING_ROLES: LayoutRole[] = [
   { key: 'gap-group', label: 'Gap group', description: 'Stacked fields, nav item groups.', group: 'gap', primitive: 'section-sm' },
   { key: 'gap-section', label: 'Gap section', description: 'Between sections, modal header → body.', group: 'gap', primitive: 'section-md' },
   { key: 'inset-control', label: 'Inset control', description: 'Padding inside buttons, inputs, chips.', group: 'inset', primitive: '3' },
-  { key: 'inset-surface', label: 'Inset surface', description: 'Card / modal / alert padding.', group: 'inset', primitive: '5' },
+  { key: 'inset-surface', label: 'Inset surface', description: 'Card / modal / alert padding.', group: 'inset', primitive: '6', viewports: { tablet: '5', mobile: '4' } },
+  { key: 'inset-action', label: 'Inset action', description: 'Side padding of default and lg buttons.', group: 'inset', primitive: '4', viewports: { mobile: '3' } },
   { key: 'inset-page', label: 'Inset page', description: 'Page and sheet margins when Grid is unused.', group: 'inset', primitive: '8', viewports: { tablet: '4', mobile: '4' } },
   { key: 'inset-section', label: 'Inset section', description: 'Top and bottom padding of a full-width page section (hero, pricing, footer). Sides use inset-page.', group: 'inset', primitive: '24', viewports: { tablet: '16', mobile: '12' } },
   { key: 'overlap-sm', label: 'Overlap sm', description: 'A hairline tuck.', group: 'overlap', primitive: 'dimension--4' },
@@ -1734,9 +1735,9 @@ export interface SpacingMode {
 
 export const SPACING_MODES: readonly SpacingMode[] = [
   { id: 'compact', label: 'Compact', description: 'Dense: smaller controls, tight cards.', fieldBase: FIELD_BASE_MIN, insetStep: '3', border: 1 },
-  { id: 'quiet', label: 'Quiet', description: 'The standard: calm, nothing shouts.', fieldBase: 4, insetStep: '5', border: 1 },
-  { id: 'bold', label: 'Bold', description: 'Larger controls, heavier strokes.', fieldBase: 4.5, insetStep: '5', border: 2 },
-  { id: 'airy', label: 'Airy', description: 'Roomy: big targets, generous cards.', fieldBase: 5, insetStep: '6', border: 1 },
+  { id: 'quiet', label: 'Quiet', description: 'The standard: calm, nothing shouts.', fieldBase: 4, insetStep: '6', border: 1 },
+  { id: 'bold', label: 'Bold', description: 'Larger controls, heavier strokes.', fieldBase: 4.5, insetStep: '6', border: 2 },
+  { id: 'airy', label: 'Airy', description: 'Roomy: big targets, generous cards.', fieldBase: 5, insetStep: '8', border: 1 },
 ]
 
 /** The mode a theme currently sits on, or null when any of the three values was

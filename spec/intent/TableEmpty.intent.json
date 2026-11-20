@@ -1,0 +1,26 @@
+{
+  "$schema": "./intent.schema.json",
+  "component": "TableEmpty",
+  "purpose": "Fills a table that has no rows: says why with an icon, a title and a description, and offers the next step.",
+  "notFor": [
+    {"case": "Rows are still loading.", "use": "TableLoading"},
+    {"case": "More pages remain to be fetched.", "use": "TableLoadMore"},
+    {"case": "The data failed to load.", "use": "Alert"}
+  ],
+  "states": {
+    "Default": {"setBy": "app", "meaning": "The table has no rows.", "visual": "Icon in Content/secondary (Size/icon-lg); title in Content/primary (Type/label); description in Content/secondary (Type/body-sm); an optional action Button."}
+  },
+  "a11y": {
+    "role": "status",
+    "keyboard": "No keys of its own; the action button is reachable by Tab.",
+    "minHitArea": 24,
+    "contrast": "AA",
+    "notes": [
+      "role=\"status\" so the empty result is announced."
+    ]
+  },
+  "openQuestions": [
+    "Load errors: is TableEmpty also the state for a failed load, or should the table show an Alert?"
+  ],
+  "approval": { "status": "draft", "by": null, "date": null }
+}

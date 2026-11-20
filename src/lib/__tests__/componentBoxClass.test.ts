@@ -33,7 +33,8 @@ describe('component box classification', () => {
   })
 
   it('the contracts index carries box and locks', () => {
-    for (const e of index) {
+    // Blocks are compositions: no box, no locks.
+    for (const e of index.filter((x: { kind?: string }) => x.kind !== 'block')) {
       const c = COMPONENTS.find((d) => d.key === e.key)
       expect(e.box, e.key).toBe(c?.box)
       expect(e.locks, e.key).toEqual(c?.locks)

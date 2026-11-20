@@ -1,0 +1,37 @@
+{
+  "$schema": "./intent.schema.json",
+  "component": "DropdownMenuFooter",
+  "purpose": "A divided action bar pinned below a DropdownMenu's list, with status text and buttons such as Clear and Apply. Not for standalone use.",
+  "notFor": [
+    {
+      "case": "Used on its own, outside a DropdownMenu.",
+      "use": "DropdownMenu"
+    },
+    {
+      "case": "The action bar of a Popover.",
+      "use": "PopoverFooter"
+    },
+    {
+      "case": "The action bar of a Modal.",
+      "use": "ModalFooter"
+    }
+  ],
+  "states": {
+    "Default": {
+      "setBy": "component",
+      "visual": "A Border/subtle rule on top; leading text in Content/secondary; inline puts the text first and buttons at the end, stacked gives full-width buttons."
+    }
+  },
+  "a11y": {
+    "role": "none",
+    "keyboard": "Outside the menu role: its buttons are reached with Tab after the list.",
+    "minHitArea": 24,
+    "contrast": "AA"
+  },
+  "openQuestions": [],
+  "approval": {
+    "status": "draft",
+    "by": null,
+    "date": null
+  }
+}

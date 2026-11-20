@@ -1,0 +1,29 @@
+{
+  "$schema": "./intent.schema.json",
+  "component": "NavItem",
+  "purpose": "A link or menu trigger in a header or navbar: a label with an optional icon, count Badge and caret; Current marks the page you are on.",
+  "notFor": [
+    {"case": "Switching views inside a page.", "use": "TabMenuItem"},
+    {"case": "A row in the app sidebar.", "use": "SidebarMenuButton"},
+    {"case": "A destination in a mobile bottom bar.", "use": "TabBarItem"},
+    {"case": "An action that is not navigation.", "use": "Button"}
+  ],
+  "states": {
+    "Default": {"setBy": "component", "meaning": "At rest.", "visual": "Ink Content/secondary, no fill."},
+    "Hover": {"setBy": "component", "visual": "Ink Content/primary on Action/ghost/hover; the caret stays Content/secondary."},
+    "Focused": {"setBy": "component", "meaning": "Reached by keyboard (focus-visible).", "visual": "Ink Content/secondary, no fill; a Border/focus stroke with the Border/ring/default ring."},
+    "Current": {"setBy": "app", "meaning": "The page you are on: aria-current=\"page\".", "visual": "Ink Content/accent on Surface/selected; the caret stays Content/secondary."},
+    "Disabled": {"setBy": "app", "meaning": "Cannot be followed: aria-disabled.", "visual": "Ink and caret in Content/disabled, no fill."}
+  },
+  "a11y": {
+    "role": "link (or a button as a menu trigger, through asChild)",
+    "keyboard": "Tab reaches it; Enter follows the link. As a menu trigger it also needs aria-expanded.",
+    "minHitArea": 24,
+    "contrast": "AA",
+    "reducedMotion": "Fill and ink changes run on use-hover, which keeps its duration under reduced motion: a colour change, not travel (lib/motion.ts KEEP_UNDER_REDUCED)."
+  },
+  "openQuestions": [
+    "With a caret it opens a NavigationMenu, which is not an Escala component in the index. Which component opens from it?"
+  ],
+  "approval": { "status": "draft", "by": null, "date": null }
+}

@@ -37,7 +37,7 @@ describe('theme foundation overrides', () => {
     useDesignStore.getState().setThemeFoundations('glass', preset.foundations)
     const t = resolvePreviewTokens(useDesignStore.getState(), 'glass')
     expect(radiusRoleOf(t, 'container')).toBe('32px')
-    expect(nestedRadiusOf(t, 'container')).toBe('12px')
+    expect(nestedRadiusOf(t, 'container')).toBe('8px')
   })
 
   it('resolves and exports a preset through the same theme key', () => {

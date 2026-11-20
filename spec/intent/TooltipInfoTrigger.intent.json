@@ -1,0 +1,32 @@
+{
+  "$schema": "./intent.schema.json",
+  "component": "TooltipInfoTrigger",
+  "purpose": "A small info-circle button placed next to a label or field; it opens a tooltip that explains them.",
+  "notFor": [
+    {"case": "An icon button that runs an action.", "use": "IconButton"},
+    {"case": "An explanation that must stay visible, such as helper text.", "use": "Field"},
+    {"case": "Rich content, links or actions behind the icon.", "use": "Popover"}
+  ],
+  "states": {
+    "Default": {"setBy": "component", "meaning": "At rest.", "visual": "The icon in the Variant's ink: Action/primary/default (default), Content/secondary (secondary, inverse), Status/critical/content (critical), Status/info/content (info)."},
+    "Hover": {"setBy": "component", "visual": "The icon moves to Action/primary/hover (default), Content/primary (secondary, inverse), Status/critical/surface-solid (critical) or Status/info/surface-solid (info)."},
+    "Open": {"setBy": "user", "meaning": "Its tooltip is showing (data-state=open).", "visual": "Same ink as Hover."},
+    "Focused": {"setBy": "component", "meaning": "Reached by keyboard (focus-visible).", "visual": "The icon keeps its Default ink; a focus stroke in Border/focus (Border/strong for secondary and inverse, Status/critical/border-strong or Status/info/border-strong for critical and info) with the Border/ring/default ring (Status/critical/border or Status/info/border for the status variants)."}
+  },
+  "a11y": {
+    "role": "button (the trigger of a Radix Tooltip)",
+    "keyboard": "Tab reaches it; keyboard focus opens its tooltip and Escape hides it (Radix Tooltip).",
+    "minHitArea": 24,
+    "contrast": "AA",
+    "notes": [
+      "Needs an aria-label: the button has no visible text.",
+      "The drawn box is 18 · 20 · 24 (sm · default · lg, tooltip-contract.md), so sm and default rely on a larger hit area to reach 24."
+    ]
+  },
+  "openQuestions": [
+    "Motion: the State axis has Hover, Open and Focused but the contract has no motion decision (recipes/motion.ts has no entry). Should the ink change ease on use-hover like other controls? (finding MOT-002 TooltipInfoTrigger)",
+    "Touch screens have no hover: should a tap open the tooltip?",
+    "The sm and default boxes are 18 and 20 px: is the 24 px hit area padded in code, or must the drawn box grow?"
+  ],
+  "approval": { "status": "draft", "by": null, "date": null }
+}

@@ -1,7 +1,7 @@
 - id: EXC-2026-11-16-001
   rule: COL-002
   scope: Border/control, Border/control-hover (Light and Dark)
-  rationale: "Owner decision DEC-2026-11-16-004: the Figma file is the rule. Soft hairline at Alpha/03 in Light and Alpha/04 in Dark (hover /04; DEC-2026-11-16-006 moved Dark to /04), below the 3:1 of WCAG 1.4.11."
+  rationale: "Owner decisions DEC-2026-11-16-004 and DEC-2026-11-18-008: the Figma file is the rule. Light Black Alpha/03 (hover /04) reads 1.41:1; Escala Dark White Alpha/01 (hover /02) reads about 1.09:1 (hover 1.26:1), below the 3:1 of WCAG 1.4.11. Strong borders belong to the future high-contrast mode; review when that mode is planned."
   owner: Cesar Durango
   reviewBy: 2027-02-16
 
@@ -18,3 +18,45 @@
   rationale: "Owner decision DEC-2026-11-17-001: the secondary button walks its ramp two steps above the card (Light 05 · 06 · 07). On hover (Gray/06) the label keeps WCAG AA but reads Lc ~57; on pressed (Gray/07) it reads 4.2:1 in the default neutrals. Transient states, audited as pressed-label (WCAG 3:1, no APCA term); the resting state still clears AA and Lc 60."
   owner: Cesar Durango
   reviewBy: 2027-02-17
+
+- id: EXC-2026-11-18-001
+  rule: CMP-002
+  scope: AuthSignInPasskey ModalHeader (Align vertical-left)
+  rationale: "Owner decision DEC-2026-11-18-005: the only modal with a left-aligned title; the rule for every other modal is a centred header."
+  owner: Cesar Durango
+  reviewBy: 2027-02-18
+
+- id: EXC-2026-11-18-002
+  rule: STG-001
+  scope: SettingsRow, SettingsSection, IssueCard, BoardColumn, UserMenu, MorphNav (Figma library)
+  rationale: "Built Figma-first on 2026-11-18, skipping Workshop and Storybook. They stay in the library while they pass Storybook and owner approval."
+  owner: Cesar Durango
+  reviewBy: 2026-12-02
+
+- id: EXC-2026-11-19-001
+  rule: STG-001
+  scope: TabBar, TabBarItem (Figma library, page ❖ TabBar 2354:42)
+  rationale: "Owner decision 2026-11-19: built Figma-first because iterating in Figma is still easier for the owner than in Storybook. Code followed the same day (design-plans/tab-bar-contract.md, stories navigation-tabbar--*). Kept until the stories are approved."
+  owner: Cesar Durango
+  reviewBy: 2026-12-03
+
+- id: EXC-2026-11-19-002
+  rule: STG-001
+  scope: ReactionGroup, ReactionGroupTrigger, ReactionGroupPopover, AuthPasskeySetup, AuthPasskeySetupIndicator, AuthTwoFactorSetup, AuthTwoFactorSetupItem, AuthTwoFactorSetupGroup (Figma library)
+  rationale: "Owner exception (handoff 2026-11-19, §7): these pieces were built directly in the library, skipping the Workshop step. Code follows the handoff; they stay at stage storybook until the owner approves the stories."
+  owner: Cesar Durango
+  reviewBy: 2026-12-03
+
+- id: EXC-2026-11-19-003
+  rule: TOK-001
+  scope: _AuthTwoFactorSetupQR (AuthTwoFactorSetup): tile fill white, modules black, in Light and Dark
+  rationale: "Handoff 2026-11-19, §5 and §7: a scanner needs fixed contrast, so the QR is the one artwork that binds no colour role. In code it is the only colour of blocks/authSetup.tsx that is not a role (guarded by authSetupBlocks.test.ts); the same secret is always shown as copyable text next to it."
+  owner: Cesar Durango
+  reviewBy: 2027-02-19
+
+- id: EXC-2026-11-19-004
+  rule: CMP-002
+  scope: AuthPasskeySetup, AuthTwoFactorSetup ModalHeader (Align vertical-left, no icon, no description)
+  rationale: "Handoff 2026-11-19, §4 and §7: the same left-aligned header as AuthSignInPasskey (EXC-2026-11-18-001, DEC-2026-11-18-005). The rule for every other modal stays a centred header."
+  owner: Cesar Durango
+  reviewBy: 2027-02-19

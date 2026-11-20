@@ -1,0 +1,34 @@
+{
+  "$schema": "./intent.schema.json",
+  "component": "TextLink",
+  "purpose": "Takes the person to a destination or runs a small in-flow action from inside text, next to a field or on a card. It reads as text with an underline, never as a control with its own surface.",
+  "notFor": [
+    { "case": "An action that needs its own surface or must stand out.", "use": "Button" },
+    { "case": "An icon-only action in a toolbar or row.", "use": "IconButton" }
+  ],
+  "states": {
+    "Default": { "setBy": "component", "meaning": "At rest.", "visual": "Ink of the variant: Content/link/default (brand), Content/secondary (neutral), Content/inverse, Status/success/content, Status/info/content or Status/critical/content; underline shown or hidden by the app." },
+    "Hover": { "setBy": "component", "visual": "Brand ink moves to Content/link/hover, neutral to Content/primary; the underline is always shown, in the ink colour." },
+    "Pressed": { "setBy": "component", "visual": "As Hover: Content/link/hover or Content/primary, underline always shown." },
+    "Visited": { "setBy": "app", "meaning": "The destination was opened before.", "visual": "Painted the same as Default; the Figma file has no visited role." },
+    "Focused": { "setBy": "component", "meaning": "Reached by keyboard (focus-visible).", "visual": "A 2px edge inside and a 2px halo outside: Border/focus with Border/ring/default for brand; Border/strong with Border/subtle for neutral; Border/inverse with Surface/inverse-muted for inverse; the status border-strong and border roles for the status variants." },
+    "Disabled": { "setBy": "app", "meaning": "Cannot be followed right now.", "visual": "Content/disabled ink." }
+  },
+  "a11y": {
+    "role": "link (native <a>)",
+    "keyboard": "Tab reaches it unless disabled; Enter follows it (native link).",
+    "minHitArea": 24,
+    "contrast": "AA",
+    "notes": [
+      "The label is the accessible name; an icon-only link needs an aria-label.",
+      "Disabled sets aria-disabled and tabindex -1 and swallows the click.",
+      "Hover and Pressed always show the underline, so the link is not told by colour alone there; at rest the underline can be turned off."
+    ]
+  },
+  "openQuestions": [
+    "Visited: the file paints Visited like Default and real :visited paints nothing. Should visited links ever look different?",
+    "Underline off at rest: inside running copy a link without underline is told only by colour. Should the underline be forced on in body text?",
+    "Minimum hit area: the xs size is a 12px text line. Is 24px a promise TextLink must keep (padding), or is it exempt as inline text?"
+  ],
+  "approval": { "status": "draft", "by": null, "date": null }
+}

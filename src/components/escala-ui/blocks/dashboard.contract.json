@@ -1,0 +1,58 @@
+{
+  "$comment": "Contract of the Dashboard cards (escala-governance step 2): four cards on the Figma page ❖ Dashboard (PRO). Each is one shell (Surface/layer-1, Border/default, Radius/container, padding Spacing/inset-surface, gap Spacing/gap-group) filled with escala-ui components; a card draws no colour, length or type of its own. Anatomy mirrors the Figma sets; nests lists every component the card uses.",
+  "figma": {
+    "file": "7j5zukN5HpihGVJMmyjA20",
+    "page": "Dashboard (PRO)",
+    "pageId": "2397:82"
+  },
+  "blocks": [
+    {
+      "name": "DashboardGaugeCard",
+      "figmaSet": "2401:309",
+      "axes": {},
+      "variants": 1,
+      "anatomy": ["Shell 320 wide, items centred", "Gauge (success, 160)", "text: title (Type/heading-2xs) + status line (Type/body-sm, Content/secondary), gap-tight"],
+      "nests": ["Gauge"],
+      "slots": [],
+      "props": ["value", "variant", "valueText", "unit", "label", "title", "description"],
+      "a11y": ["The Gauge is role=meter and reads its value and label as one aria-valuetext"],
+      "motion": [{ "moment": "load", "mechanism": "the Gauge's own arc motion", "role": "none", "reduced": "from the tokens" }]
+    },
+    {
+      "name": "DashboardMetricCard",
+      "figmaSet": "2401:325",
+      "axes": {},
+      "variants": 1,
+      "anatomy": ["Shell 400 wide", "header: label (Type/body-md, Content/secondary) + value (Type/heading-sm) + delta (Type/label, Status/success/content), baseline-aligned", "Sparkline (success, lg, fluid)", "SegmentedControl sm: 1W · 1M · 1Y"],
+      "nests": ["Sparkline", "SegmentedControl"],
+      "slots": [],
+      "props": ["label", "value", "delta", "series", "ranges", "range", "onRangeChange", "trendLabel"],
+      "a11y": ["The delta is written as text, never shown by colour alone", "The Sparkline is role=img with a label that states the trend", "The range switch is a radiogroup with one tab stop"],
+      "motion": [{ "moment": "range switch", "mechanism": "the chart region cross-fades", "role": "use-page-transition", "reduced": "from the tokens" }]
+    },
+    {
+      "name": "DashboardActivityCard",
+      "figmaSet": "2401:362",
+      "axes": {},
+      "variants": 1,
+      "anatomy": ["Shell 924 wide", "header: total (Type/label) + SegmentedControl sm 2025 · 2024 · 2023", "ActivityHeatmap", "Separator", "caption (Type/body-sm, Content/secondary)"],
+      "nests": ["ActivityHeatmap", "SegmentedControl", "Separator"],
+      "slots": [],
+      "props": ["data", "endDate", "years", "year", "onYearChange", "heading", "caption"],
+      "a11y": ["The caption repeats what the focused day announces (aria-live polite)", "The heatmap is a grid with arrow-key navigation"],
+      "motion": [{ "moment": "year switch", "mechanism": "the heatmap cross-fades", "role": "use-page-transition", "reduced": "from the tokens" }]
+    },
+    {
+      "name": "DashboardTrafficCard",
+      "figmaSet": "2401:844",
+      "axes": {},
+      "variants": 1,
+      "anatomy": ["Shell 1008 wide", "SegmentedControl sm: 7 · 30 · 90 days", "header: title (Type/heading-2xs) + description (Type/body-sm) and the total (label, Type/heading-sm value, unit)", "SplitBar (six series)"],
+      "nests": ["SplitBar", "SegmentedControl"],
+      "slots": [],
+      "props": ["segments", "ranges", "range", "onRangeChange", "title", "description", "unit"],
+      "a11y": ["The SplitBar is a group labelled by the card's title", "Every share is also written in the legend"],
+      "motion": [{ "moment": "range switch", "mechanism": "the chart region cross-fades", "role": "use-page-transition", "reduced": "from the tokens" }]
+    }
+  ]
+}

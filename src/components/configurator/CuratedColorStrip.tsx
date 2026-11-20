@@ -68,8 +68,10 @@ export function CuratedColorStrip({ appearance, currentAccent, onPick, label, hi
           aria-label={`${t(color.name)}, ${hex.toUpperCase()}`}
           tabIndex={i === focusIndex ? 0 : -1}
           onClick={() => onPick(color)}
-          className={`h-5 w-5 justify-self-center rounded-full transition-transform duration-150 ease-[var(--ease-out-quint)] hover:scale-110 active:scale-95 motion-reduce:hover:scale-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui focus-visible:ring-offset-2 focus-visible:ring-offset-side-panel ${
-            on ? 'ring-2 ring-fg ring-offset-2 ring-offset-side-panel' : 'ring-1 ring-inset ring-fg/15'
+          className={`h-5 w-5 justify-self-center rounded-full transition-transform duration-150 ease-[var(--ease-out-quint)] hover:scale-110 active:scale-95 motion-reduce:hover:scale-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent-ui ${
+            // An outline, not `ring-offset`: its gap is a real cut through to the panel. The offset was a
+            // painted disc that showed darker than the panel behind it.
+            on ? 'outline outline-2 outline-offset-2 outline-fg' : 'ring-1 ring-inset ring-fg/15'
           }`}
           style={{ background: hex }}
         />

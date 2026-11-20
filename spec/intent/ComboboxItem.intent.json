@@ -1,0 +1,30 @@
+{
+  "$schema": "./intent.schema.json",
+  "component": "ComboboxItem",
+  "purpose": "One option row in the Combobox list, with an optional leading icon, a description, a trailing value and a check on the selected row.",
+  "notFor": [
+    { "case": "Standalone use outside a Combobox list.", "use": "Combobox" },
+    { "case": "An action row in a menu.", "use": "DropdownMenuItem" },
+    { "case": "A suggestion row of a tag field.", "use": "InputTagOption" }
+  ],
+  "states": {
+    "Default": { "setBy": "component", "meaning": "At rest.", "visual": "No fill; label and icon in Content/primary, description and trailing in Content/secondary." },
+    "Hover": { "setBy": "component", "visual": "Surface/muted fill." },
+    "Focused": { "setBy": "component", "meaning": "The active option (aria-activedescendant).", "visual": "Surface/muted fill with a Border/focus edge and Border/ring/default halo." },
+    "Selected": { "setBy": "both", "meaning": "The chosen option.", "visual": "Surface/selected fill with the check in Content/accent." },
+    "Disabled": { "setBy": "app", "meaning": "Cannot be picked.", "visual": "Icon, label, description and trailing in Content/disabled." }
+  },
+  "a11y": {
+    "role": "option, with aria-selected",
+    "keyboard": "Not a tab stop; the Combobox field moves the active option with Arrow Up / Down and Enter picks it.",
+    "minHitArea": 24,
+    "contrast": "AA",
+    "reducedMotion": "NOT DECIDED",
+    "notes": ["Fill and edge move with use-hover; the halo with use-focus."]
+  },
+  "openQuestions": [
+    "Reduced motion: should the row's fill and halo transitions be instant with reduced motion?",
+    "Disabled: the check keeps Content/accent on a disabled row. Intended, or should it take Content/disabled too?"
+  ],
+  "approval": { "status": "draft", "by": null, "date": null }
+}

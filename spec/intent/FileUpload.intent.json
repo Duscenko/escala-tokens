@@ -1,0 +1,43 @@
+{
+  "$schema": "./intent.schema.json",
+  "component": "FileUpload",
+  "purpose": "Lets people attach several files and follow each one: a dropzone (or a single Upload files button) above a list of file rows. Use it where uploads are part of the task and their progress matters.",
+  "notFor": [
+    {
+      "case": "A single drop area where no list of files needs to be followed.",
+      "use": "FileUploadDropzone"
+    },
+    {
+      "case": "Showing the progress of a task that is not a file upload.",
+      "use": "ProgressLine"
+    },
+    {
+      "case": "Only an image preview is needed, with no upload.",
+      "use": "Image"
+    }
+  ],
+  "states": {
+    "Default": {
+      "setBy": "component",
+      "visual": "Its children draw every state: the FileUploadDropzone (or trigger Button) and each FileUploadItem by its Status."
+    }
+  },
+  "a11y": {
+    "role": "none on the container; a polite live region (aria-live) announces completed, removed and failed files; each uploading row is a progressbar",
+    "keyboard": "The dropzone's Button or the trigger Button opens the native picker (Tab, then Enter / Space); each row's actions are their own tab stops.",
+    "minHitArea": 24,
+    "contrast": "AA",
+    "notes": [
+      "When a row is removed, focus moves to a neighbouring row."
+    ]
+  },
+  "openQuestions": [
+    "Who moves focus to a neighbouring row after Remove, and who writes the live-region text: the component or the app (the announcement prop)?",
+    "FileUpload has no Disabled or Invalid of its own; should those cascade to the dropzone and the rows like Size does?"
+  ],
+  "approval": {
+    "status": "draft",
+    "by": null,
+    "date": null
+  }
+}

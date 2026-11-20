@@ -48,7 +48,12 @@ for role names.
 4. If the component nests others (Field → Input), list them; build those first.
 
 ### Step 2 · Contract
-Write `design-plans/<component>-contract.md` from `references/contract-template.md`: API table
+First look the set up in `spec/contracts/index.json` (`figmaSet`): if it already has a contract, read
+`spec/contracts/<Key>.json` / `.md` — it is the agreed API, bindings, motion and behaviour, and the
+`contractGates` / `componentContracts` tests hold the code to it. The machine contract is GENERATED
+(`npm run gen:contracts`, never hand-edited); keys a component handles itself go in
+`src/lib/componentBehaviour.ts`. For a new set, write
+`design-plans/<component>-contract.md` from `references/contract-template.md`: API table
 (Figma → React), geometry per size, colour per combination × state, focus, effects, and anything the
 file does that looks odd (copied, with one line saying so). Values exactly as the script returned them.
 

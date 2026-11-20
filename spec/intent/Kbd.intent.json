@@ -1,0 +1,42 @@
+{
+  "$schema": "./intent.schema.json",
+  "component": "Kbd",
+  "purpose": "Shows one keyboard key (⌘, K, Esc, an arrow) in a shortcut hint or a navigation legend; KbdGroup spaces several keys as one shortcut.",
+  "notFor": [
+    {
+      "case": "A status or category label.",
+      "use": "Badge"
+    },
+    {
+      "case": "Something the person can press.",
+      "use": "Button"
+    },
+    {
+      "case": "A whole shortcut written as one string.",
+      "use": "none"
+    }
+  ],
+  "states": {
+    "Default": {
+      "setBy": "component",
+      "visual": "Surface/muted fill, Border/subtle edge, Content/secondary text."
+    }
+  },
+  "a11y": {
+    "role": "native <kbd> (announced as keyboard input)",
+    "keyboard": "Not focusable.",
+    "minHitArea": 24,
+    "contrast": "AA",
+    "notes": [
+      "Spell out modifier names in an aria-label when the glyph alone is ambiguous."
+    ]
+  },
+  "openQuestions": [
+    "Usage puts sm Kbd in tooltips, which sit on an inverse surface, but Kbd only has the Surface/muted look. Does it need an inverse treatment?"
+  ],
+  "approval": {
+    "status": "draft",
+    "by": null,
+    "date": null
+  }
+}

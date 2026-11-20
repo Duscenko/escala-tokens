@@ -6,13 +6,10 @@ import {
   type AvatarType, type AvatarSize, type AvatarShape, type AvatarVariant, type AvatarAppearance, type AvatarStatusValue,
 } from '../../../src/components/escala-ui/avatar'
 import { iconSwapArg } from './iconSwap'
+import { AVATAR_PHOTOS } from './avatarPhotos'
 
-/** The file's `_AvatarPhoto` is a stock image; this stands in for it (a soft gradient bust). */
-const PHOTO =
-  'data:image/svg+xml;utf8,' +
-  encodeURIComponent(
-    '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#f6d1b8"/><stop offset="1" stop-color="#d9a5b3"/></linearGradient></defs><rect width="64" height="64" fill="url(#g)"/><circle cx="32" cy="26" r="11" fill="#7b4a3a"/><path d="M10 64c2-16 12-22 22-22s20 6 22 22z" fill="#4a5a8a"/></svg>',
-  )
+/** The file's `_AvatarPhoto`: one of its Media photos (page ⛰ Media). */
+const PHOTO = AVATAR_PHOTOS['photo-9']
 
 /** Story args = the Figma `Avatar` set (design-plans/avatar-contract.md), in the panel's order and with its
  *  defaults: Type · Size · Shape · Variant · Appearance, then RingVisible · StatusVisible and the swaps. */

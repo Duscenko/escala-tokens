@@ -1,0 +1,27 @@
+{
+  "$schema": "./intent.schema.json",
+  "component": "TableHeader",
+  "purpose": "The header row of a Table: one TableHead per column on Surface/muted, used once and first, and kept sticky in scroll containers.",
+  "notFor": [
+    {"case": "A body row of data.", "use": "TableRow"},
+    {"case": "The totals row.", "use": "TableFooter"},
+    {"case": "The table's title and description.", "use": "TableCaption"}
+  ],
+  "states": {
+    "Scrolled=false": {"setBy": "app", "meaning": "The rows sit at the top.", "visual": "Bottom hairline in Border/subtle (Stroke/divider)."},
+    "Scrolled=true": {"setBy": "app", "meaning": "Rows have scrolled under the sticky header.", "visual": "The bottom edge turns Border/default."}
+  },
+  "a11y": {
+    "role": "rowgroup",
+    "keyboard": "No keys of its own; sortable TableHead cells inside are buttons (Enter or Space).",
+    "minHitArea": 24,
+    "contrast": "AA",
+    "notes": [
+      "One th per column with scope=\"col\"."
+    ]
+  },
+  "openQuestions": [
+    "Who sets Scrolled: should Table detect the scroll itself, or does the app pass scrolled?"
+  ],
+  "approval": { "status": "draft", "by": null, "date": null }
+}

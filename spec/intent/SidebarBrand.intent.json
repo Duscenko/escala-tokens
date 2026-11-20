@@ -1,0 +1,48 @@
+{
+  "$schema": "./intent.schema.json",
+  "component": "SidebarBrand",
+  "purpose": "The brand block at the top of a Sidebar: a logo with a title and an optional subtitle, collapsing to the logo alone. Wrap it in a link to the home route.",
+  "notFor": [
+    {
+      "case": "Used on its own, outside a Sidebar.",
+      "use": "Sidebar"
+    },
+    {
+      "case": "A logo and name in a page header or footer.",
+      "use": "Brand"
+    },
+    {
+      "case": "Showing a person's picture.",
+      "use": "Avatar"
+    }
+  ],
+  "states": {
+    "Collapsed=false": {
+      "setBy": "component",
+      "meaning": "Taken from the Sidebar.",
+      "visual": "Logo, title in Content/primary and the optional subtitle in Content/secondary."
+    },
+    "Collapsed=true": {
+      "setBy": "component",
+      "meaning": "Taken from the Sidebar.",
+      "visual": "The logo only."
+    }
+  },
+  "a11y": {
+    "role": "none",
+    "keyboard": "Not focusable itself; the link around it is reached with Tab and followed with Enter.",
+    "minHitArea": 24,
+    "contrast": "AA",
+    "notes": [
+      "The link around it needs an accessible name equal to the title."
+    ]
+  },
+  "openQuestions": [
+    "Motion: the Collapsed axis has no motion decision (finding MOT-002). Should the title fade when the rail folds?"
+  ],
+  "approval": {
+    "status": "draft",
+    "by": null,
+    "date": null
+  }
+}

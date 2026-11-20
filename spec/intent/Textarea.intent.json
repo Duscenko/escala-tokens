@@ -1,0 +1,35 @@
+{
+  "$schema": "./intent.schema.json",
+  "component": "Textarea",
+  "purpose": "Lets the person write free-form text that runs over one line, such as a message, a description or notes. Labels, hints and errors come from Field.",
+  "notFor": [
+    { "case": "A short single-line value such as a name or email.", "use": "Input" },
+    { "case": "Several separate values entered as tags.", "use": "InputTag" }
+  ],
+  "states": {
+    "Default": { "setBy": "component", "meaning": "At rest.", "visual": "Surface/input box with a Border/control edge; text in Content/primary, placeholder and grip in Content/subtle." },
+    "Hover": { "setBy": "component", "visual": "The edge moves to Border/control-hover." },
+    "Focused": { "setBy": "component", "meaning": "The field has focus.", "visual": "Border/focus edge with a Border/ring/default halo." },
+    "Invalid": { "setBy": "app", "meaning": "The value failed validation (aria-invalid).", "visual": "Status/critical/border-strong edge with a Status/critical/border halo; a warning glyph in Status/critical/content in the top-right corner." },
+    "Loading": { "setBy": "app", "meaning": "Work on the value is running (aria-busy).", "visual": "The Default look with a spinner in Content/subtle in the top-right corner." },
+    "Disabled": { "setBy": "app", "meaning": "Cannot be edited.", "visual": "Action/disabled/default fill; text, placeholder and grip in Content/disabled." },
+    "Value=placeholder": { "setBy": "user", "meaning": "Empty; the placeholder shows.", "visual": "Placeholder in Content/subtle." },
+    "Value=filled": { "setBy": "user", "meaning": "Holds text.", "visual": "Text in Content/primary." }
+  },
+  "a11y": {
+    "role": "textbox, multi-line (native <textarea>)",
+    "keyboard": "Tab reaches it; typing edits it and Enter adds a line.",
+    "minHitArea": 24,
+    "contrast": "AA",
+    "notes": [
+      "Give it a visible label (Field, or aria-label).",
+      "On Invalid set aria-invalid and expose the error text through aria-describedby (Field does both).",
+      "Loading sets aria-busy."
+    ]
+  },
+  "openQuestions": [
+    "Resize: the resize glyph drags the box taller with a pointer. Should there be a keyboard way to resize, or is auto-growing the answer?",
+    "Loading: may the person keep typing while Loading, or is the field read-only then?"
+  ],
+  "approval": { "status": "draft", "by": null, "date": null }
+}

@@ -1,0 +1,38 @@
+{
+  "$schema": "./intent.schema.json",
+  "component": "AvatarGroup",
+  "purpose": "Shows who is part of something as an overlapping stack of avatars, each in a Surface/page ring, ending in a +N tile for the rest.",
+  "notFor": [
+    {
+      "case": "A single person.",
+      "use": "Avatar"
+    },
+    {
+      "case": "A full list of people with names and details.",
+      "use": "Table"
+    }
+  ],
+  "states": {
+    "Default": {
+      "setBy": "component",
+      "visual": "Each avatar in a Surface/page ring; the +N tile Surface/inverse with Content/inverse text."
+    }
+  },
+  "a11y": {
+    "role": "group with an accessible name",
+    "keyboard": "Not focusable unless the +N tile is a button.",
+    "minHitArea": 24,
+    "contrast": "AA",
+    "notes": [
+      "Label the +N tile (\"4 more people\")."
+    ]
+  },
+  "openQuestions": [
+    "The +N tile is \"a labelled image or button\". Which one, and if a button, what does it open?"
+  ],
+  "approval": {
+    "status": "draft",
+    "by": null,
+    "date": null
+  }
+}

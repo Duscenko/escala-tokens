@@ -1,6 +1,8 @@
-import type { ReactNode } from 'react'
+import { useEffect, type ReactNode } from 'react'
 import { RecipeScope } from '../../../src/components/configurator/docs/skeleton/scope'
 import { resolvePreviewTokens } from '../../../src/lib/previewTokens'
+import { loadGoogleFont } from '../../../src/lib/fonts'
+import { FONT_FAMILY_MONO } from '../../../src/lib/typographyStandard'
 import { useDesignStore } from '../../../src/store/useDesignStore'
 import type { GridViewport } from '../../../src/lib/layoutTokens'
 import { BRAND } from './escalaSystem'
@@ -18,6 +20,8 @@ export function EscalaScope({ appearance, viewport, fullHeight, growWidth, stage
   stage?: boolean; stageMinHeight?: number; padding?: number; children: ReactNode
 }) {
   const t = resolvePreviewTokens(useDesignStore.getState(), BRAND, appearance, viewport)
+  // The code family (Type/code) is not on a reader's machine: fetch it once. The body family stays as it was.
+  useEffect(() => { loadGoogleFont(FONT_FAMILY_MONO) }, [])
   const minHeight = fullHeight ? '100vh' : stage ? stageMinHeight : undefined
   return (
     <div

@@ -18,6 +18,7 @@ import { buildArchitectureView } from './semanticArchitectures'
 import { fontStack, loadGoogleFont } from './fonts'
 import { getIconLibrary } from './iconLibraries'
 import { typeStyleCss } from './typeRoles'
+import { FONT_FAMILY_MONO } from './typographyStandard'
 import { resolveLayoutRole, radiusRolesAtViewport, spacingRolesAtViewport, SPACING_STEPS, extractBreakpoints, hairlineSafe, nestedRadius, type GridViewport, type LayoutFamily } from './layoutTokens'
 import { semanticModesFor, themeModeKey, type ThemeAppearance } from './themeModes'
 import { resolveThemeFoundations } from './themeFoundations'
@@ -411,6 +412,7 @@ export function usePreviewTokens(
   useEffect(() => {
     loadGoogleFont(tokens.typography.fontFamily)
     loadGoogleFont(tokens.typography.headingFontFamily ?? tokens.typography.fontFamily)
+    loadGoogleFont(FONT_FAMILY_MONO)
   }, [tokens.typography.fontFamily, tokens.typography.headingFontFamily])
   return tokens
 }

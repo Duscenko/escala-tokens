@@ -1,0 +1,31 @@
+{
+  "$schema": "./intent.schema.json",
+  "component": "Popover",
+  "purpose": "A non-modal floating panel anchored to a trigger for rich, interactive content: optional media, a title, a description, a content slot and footer actions. It opens on click, never on hover.",
+  "notFor": [
+    {"case": "A short hint shown on hover or focus that holds no actions.", "use": "TooltipContent"},
+    {"case": "A list of commands behind a button.", "use": "DropdownMenu"},
+    {"case": "Picking a date from a field.", "use": "DatePickerPopover"},
+    {"case": "A blocking decision or a task that needs full attention.", "use": "Modal"}
+  ],
+  "states": {
+    "Open": {"setBy": "both", "meaning": "Opened from its trigger (by the person, or by the app through open).", "visual": "Panel on Surface/layer-2 with a Border/default stroke (Stroke/divider) and the popover-md lift (popover-lg at lg); the arrow in Surface/layer-2 edged with Border/default; title Content/primary, description and content Content/secondary. Enters on popover-enter."},
+    "Closed": {"setBy": "both", "visual": "Not rendered. Leaves on popover-exit and focus returns to the trigger."}
+  },
+  "a11y": {
+    "role": "dialog, non-modal (Radix Popover)",
+    "keyboard": "Space or Enter on the trigger opens and closes it; Tab moves through the content; Escape or an outside click closes it and returns focus to the trigger.",
+    "minHitArea": 24,
+    "contrast": "AA",
+    "reducedMotion": "Fades in and out instead of popping (the popover-enter / popover-exit reduced-motion bodies in lib/motion.ts).",
+    "notes": [
+      "The trigger gets aria-haspopup and aria-expanded; label the panel with aria-labelledby on the title.",
+      "Keep one primary action inside at most."
+    ]
+  },
+  "openQuestions": [
+    "On mobile, should a Popover become a bottom Sheet (as the AuthSignInPhone screens draw it) or stay anchored on every viewport? (finding DOC-002 AuthSignInPhone)",
+    "Figma keeps the panel stroke at a literal 1 with no variable while the arrow binds Stroke/divider (popover-contract.md). Should the panel bind Stroke/divider in Figma as code does?"
+  ],
+  "approval": { "status": "draft", "by": null, "date": null }
+}

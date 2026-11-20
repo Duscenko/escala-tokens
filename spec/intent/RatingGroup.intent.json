@@ -1,0 +1,44 @@
+{
+  "$schema": "./intent.schema.json",
+  "component": "RatingGroup",
+  "purpose": "Collects one score on a five-point scale: stars for a rating, smileys for a sentiment. Its size and type cascade to every item.",
+  "notFor": [
+    {
+      "case": "A few options with text labels.",
+      "use": "SegmentedControl"
+    },
+    {
+      "case": "A continuous value.",
+      "use": "Slider"
+    },
+    {
+      "case": "Picking one option from a list of labelled choices.",
+      "use": "RadioGroup"
+    }
+  ],
+  "states": {
+    "Default": {
+      "setBy": "component",
+      "meaning": "The chosen score (1–5) is set by the person or preset by the app.",
+      "visual": "Five RatingGroupItems; a star group fills every star up to the chosen one; each item draws its own state."
+    }
+  },
+  "a11y": {
+    "role": "radiogroup, each item radio with aria-checked and a label (\"4 of 5 stars\", \"Good\")",
+    "keyboard": "One tab stop (the checked option); disabled options are skipped. Arrow Right / Down moves to the next option and selects it, Arrow Left / Up the previous (both wrap); Home / End go to the first / last.",
+    "minHitArea": 24,
+    "contrast": "AA",
+    "notes": [
+      "Name the group by its visible question."
+    ]
+  },
+  "openQuestions": [
+    "There is no read-only or disabled group, only disabled items. How is a rating shown that cannot be changed (an average)?",
+    "Can the person clear a rating once chosen? The contract does not say."
+  ],
+  "approval": {
+    "status": "draft",
+    "by": null,
+    "date": null
+  }
+}

@@ -1,0 +1,75 @@
+{
+  "$schema": "./intent.schema.json",
+  "component": "RadioGroup",
+  "purpose": "Lets the person choose exactly one option from a short list (2–5) that stays visible. Use it in forms where seeing every option at once helps the decision.",
+  "notFor": [
+    {
+      "case": "More than about five options, or a list that should be searchable.",
+      "use": "Combobox"
+    },
+    {
+      "case": "Several options may be chosen together.",
+      "use": "CheckboxGroup"
+    },
+    {
+      "case": "Two or three views or modes switched in place, side by side.",
+      "use": "SegmentedControl"
+    },
+    {
+      "case": "A single on/off setting.",
+      "use": "Switch"
+    }
+  ],
+  "states": {
+    "Default": {
+      "setBy": "component",
+      "visual": "Each item: Surface/input fill, Border/control edge."
+    },
+    "Hover": {
+      "setBy": "component",
+      "visual": "The item edge moves to Border/control-hover."
+    },
+    "Focused": {
+      "setBy": "component",
+      "meaning": "Reached by keyboard (focus-visible).",
+      "visual": "Border/focus edge and Border/ring/default ring on the focused item."
+    },
+    "Checked": {
+      "setBy": "user",
+      "meaning": "The chosen option (the app can preset it).",
+      "visual": "Item fill and edge Action/primary/default; indicator Content/on-action."
+    },
+    "Disabled": {
+      "setBy": "app",
+      "visual": "Item fill and edge Action/disabled/default."
+    },
+    "Invalid": {
+      "setBy": "app",
+      "meaning": "Figma State=Invalid.",
+      "visual": "NOT DECIDED"
+    }
+  },
+  "a11y": {
+    "role": "radiogroup, each item radio (Radix RadioGroup)",
+    "keyboard": "Tab enters the group on the checked item (or the first); the group is one tab stop with roving focus. Arrow Down / Right checks the next item, Arrow Up / Left the previous (both wrap). Space checks the focused item.",
+    "minHitArea": 24,
+    "contrast": "AA",
+    "reducedMotion": "NOT DECIDED",
+    "notes": [
+      "The group needs an accessible name from its visible question.",
+      "Item fill and edge move on use-hover, the focus ring on use-focus (recipes/motion.ts)."
+    ]
+  },
+  "openQuestions": [
+    "Invalid: the Figma set has State=Invalid but the code bindings have no invalid treatment. What does an invalid radio group look like?",
+    "The code API exposes none of the Figma axes or properties (Size, Placement, State, Variant, GroupLabel, FooterText) and the contract description still reads as shadcn. Should RadioGroup be rebuilt as the Figma twin, like CheckboxGroup?",
+    "The accessibility note says to wrap it in a FieldSet with a FieldLegend, which are not Escala components. What names the group: Figma's GroupLabel?",
+    "Reduced motion: should the item transitions (use-hover, use-focus) be dropped?",
+    "Usage says to use Select for more than five options; Escala has no Select. Is Combobox the replacement?"
+  ],
+  "approval": {
+    "status": "draft",
+    "by": null,
+    "date": null
+  }
+}

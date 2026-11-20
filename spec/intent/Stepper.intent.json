@@ -1,0 +1,48 @@
+{
+  "$schema": "./intent.schema.json",
+  "component": "Stepper",
+  "purpose": "An ordered list of the steps of a short, linear flow, showing which step is active, which are done and which failed. Vertical or horizontal.",
+  "notFor": [
+    {
+      "case": "Moving between pages of results.",
+      "use": "Pagination"
+    },
+    {
+      "case": "Progress of one task with no named steps.",
+      "use": "ProgressLine"
+    },
+    {
+      "case": "Showing where a page sits in a hierarchy.",
+      "use": "Breadcrumb"
+    },
+    {
+      "case": "Switching between independent views.",
+      "use": "TabMenu"
+    }
+  ],
+  "states": {
+    "Default": {
+      "setBy": "component",
+      "visual": "Markers joined by connector lines, each with a title and an optional description; Size and Orientation cascade to every item."
+    }
+  },
+  "a11y": {
+    "role": "list",
+    "keyboard": "None in the contract: the steps are list items, not controls.",
+    "minHitArea": 24,
+    "contrast": "AA",
+    "notes": [
+      "An ordered list that needs an accessible name.",
+      "The active step is aria-current=\"step\"; disabled ones aria-disabled.",
+      "Completed and error markers announce \"Completed\" / \"Error\"."
+    ]
+  },
+  "openQuestions": [
+    "Should a completed step be pressable to go back to it, or is the Stepper always display-only?"
+  ],
+  "approval": {
+    "status": "draft",
+    "by": null,
+    "date": null
+  }
+}

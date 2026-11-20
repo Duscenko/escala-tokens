@@ -31,14 +31,14 @@ llamada.
 |---|---|---|---|---|
 | xs | `size.hit` (Size/control-xs, 24) | `spacing.inset-control` | `spacing.gap-tight` | `icon.small` (Size/icon-sm) |
 | sm | `size.compact` (control-sm, 32) | `spacing.inset-control` | `spacing.gap-control` | `icon.small` |
-| default | `size.control` (control-md, 40) | `spacing.inset-control` | `spacing.gap-control` | `icon.medium` |
-| lg | `size.touch` (control-lg, 48) | `spacing.inset-control` | `spacing.gap-control` | `icon.large` |
+| default | `size.control` (control-md, 40) | `spacing.inset-action` (16 · 16 · 12) | `spacing.gap-control` | `icon.medium` |
+| lg | `size.touch` (control-lg, 48) | `spacing.inset-action` (16 · 16 · 12) | `spacing.gap-control` | `icon.large` |
 
 Común: radio `radius.action`, borde `stroke.control`, foco `stroke.focus`, texto
 `type.button`. IconButton: padding 0, ancho = alto.
 
 **Cambia respecto al código de hoy:** el padding X era una escalera (spacing.2 · 3 · 4 · 5);
-Figma usa `inset-control` en los cuatro tamaños. El gap de xs era `spacing.1`; Figma
+Figma usa `inset-action` en default y lg e `inset-control` en xs, sm y en `link` (DEC-2026-11-18-007). El gap de xs era `spacing.1`; Figma
 `gap-tight`.
 
 ## Color por combinación y estado
@@ -75,9 +75,9 @@ Loading = Default con spinner en lugar del icono inicial.
 
 Button 4:5066 e IconButton 614:785, `Appearance = solid`, las tres intenciones:
 - **Sin trazo exterior en ningún estado** (antes: 1 px en el tono Pressed). El relleno es el control.
-- Brillo superior `elevation.highlight` (2 px, inset) en todo estado menos Disabled.
+- Brillo superior `elevation.highlight` (estilo `Highlight/solid`: 1 px, inset; era 2 px hasta 2026-11-19) en todo estado menos Disabled.
 - **Foco:** ver arriba — un anillo separado 1 px, igual que las demás apariencias (receta `gapRing`).
-- La etiqueta del Button lleva `text-shadow 0 1px 0 rgb(0 0 0 / .15)` (`Shadow/text-2xs`; receta `textShadow`,
+- La etiqueta del Button lleva `text-shadow 0 1px 0.5px Elevation/shadow-ambient` (`Shadow/text-2xs`, 5 % en Light; era negro 15 % sin token hasta 2026-11-19; receta `textShadow`,
   la etiqueta es `<span data-part="Button.label">`). Disabled, plano. IconButton no tiene etiqueta.
 - Dark del primario: relleno Dark/09 → Hover 10 → Pressed 08 (sube al pasar, baja al presionar); la etiqueta
   clara se juzga por contraste PERCIBIDO (APCA Lc ≥ 60, intención `action-label-perceived`), no por WCAG 4,5.
@@ -88,7 +88,7 @@ Button 4:5066 e IconButton 614:785, `Appearance = solid`, las tres intenciones:
 ## No cubierto por el contrato (registrado, no bloquea)
 
 - ~~Las sólidas llevan en Figma … `Elevation/highlight` interior~~ **Hecho (2026-11-12):**
-  propiedad de receta `highlight` (`color.elevation.highlight`, `inset 0 2px 0 0`) en todo
+  propiedad de receta `highlight` (`color.elevation.highlight`, `inset 0 1px 0 0` desde 2026-11-19) en todo
   estado sólido salvo Disabled, compuesta con el foco. La "sombra del color del relleno"
   de Figma es `DROP_SHADOW 0 0 0` con spread 1 sobre un frame que no recorta contenido: Figma
   ignora el spread ahí y no pinta nada (medido en los píxeles del render). No se copia.

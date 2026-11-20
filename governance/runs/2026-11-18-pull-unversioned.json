@@ -1,0 +1,27 @@
+{
+  "kind": "foundations-pull",
+  "date": "2026-11-18",
+  "figmaFile": "7j5zukN5HpihGVJMmyjA20",
+  "figmaVersion": null,
+  "figmaVersionNote": "The Plugin API exposes no version id for reading and the Variables REST API is Enterprise-only; values were read live through use_figma on 2026-11-18.",
+  "collectionsRead": ["Color Semantics", "Dimension Semantics"],
+  "skipped": ["Motion", "panel-background", "Border/rim-highlight"],
+  "changed": [
+    { "variable": "Surface/muted", "mode": "Escala Light", "old": "Gray/04", "new": "Gray/03" },
+    { "variable": "Surface/muted-hover", "mode": "Escala Light", "old": "Gray/05", "new": "Gray/04" },
+    { "variable": "Surface/raised", "mode": "Escala Dark", "old": "Gray Dark/04", "new": "Gray Dark/06" },
+    { "variable": "Border/default", "mode": "Escala Dark", "old": "White Alpha/02", "new": "White Alpha/01" },
+    { "variable": "Border/control", "mode": "Escala Dark", "old": "White Alpha/03", "new": "White Alpha/01" },
+    { "variable": "Border/control-hover", "mode": "Escala Dark", "old": "White Alpha/04", "new": "White Alpha/02" },
+    { "variable": "Border/strong", "mode": "Escala Dark", "old": "White Alpha/08", "new": "White Alpha/03" }
+  ],
+  "added": [],
+  "removed": [],
+  "checks": {
+    "vitest": "2105 passed, 2 expected fail",
+    "tsc": "clean",
+    "auditExports": "19 passed",
+    "COL-002": "Border/control and Border/control-hover Dark below 3:1, accepted by the owner (EXC-2026-11-16-001)",
+    "TOK-006": "Color Semantics and Dimension Semantics read from Figma and compared; no difference left"
+  }
+}

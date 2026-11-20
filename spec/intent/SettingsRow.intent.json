@@ -1,0 +1,28 @@
+{
+  "$schema": "./intent.schema.json",
+  "component": "SettingsRow",
+  "purpose": "One setting on a settings page: its title, an optional description and a single control that saves on change, with no submit.",
+  "notFor": [
+    {"case": "A form field that is sent with a Save or Submit button.", "use": "Field"},
+    {"case": "The heading of a group of settings.", "use": "SettingsSection"},
+    {"case": "Data compared across columns.", "use": "Table"}
+  ],
+  "states": {
+    "Default": {"setBy": "component", "meaning": "At rest; the control carries its own states.", "visual": "Title in Content/primary (Type/label), description in Content/secondary (Type/body-sm), a bottom hairline in Border/subtle (Stroke/divider). Inline puts the control on the right, stacked under the text."}
+  },
+  "a11y": {
+    "role": "None of its own; the control in the Control slot carries the role.",
+    "keyboard": "No keys of its own; the control keeps its own keyboard.",
+    "minHitArea": 24,
+    "contrast": "AA",
+    "notes": [
+      "The title names the control through aria-labelledby and the description describes it through aria-describedby."
+    ]
+  },
+  "openQuestions": [
+    "Built Figma-first under exception STG-001 (governance/exceptions.yaml, review by 2026-12-02): the stories still need the owner's approval. Is the Figma set final for this intent?",
+    "There is no disabled row: when its control is disabled, should the title and description dim too?",
+    "It saves on change: where does a failed save show its error?"
+  ],
+  "approval": { "status": "draft", "by": null, "date": null }
+}

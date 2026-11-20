@@ -1,0 +1,93 @@
+{
+  "$schema": "./intent.schema.json",
+  "component": "SplitBarLegendItem",
+  "purpose": "The legend entry of one SplitBar series and the toggle that shows or hides it. It names the series and repeats its value in text.",
+  "notFor": [
+    {
+      "case": "Used on its own, outside a SplitBar.",
+      "use": "SplitBar"
+    },
+    {
+      "case": "A general on/off setting.",
+      "use": "Switch"
+    },
+    {
+      "case": "Filtering a list by tags.",
+      "use": "Chip"
+    }
+  ],
+  "states": {
+    "Series=1": {
+      "setBy": "app",
+      "visual": "When Checked, the swatch fills Chart/series-1/solid."
+    },
+    "Series=2": {
+      "setBy": "app",
+      "visual": "When Checked, the swatch fills Chart/series-2/solid."
+    },
+    "Series=3": {
+      "setBy": "app",
+      "visual": "When Checked, the swatch fills Chart/series-3/solid."
+    },
+    "Series=4": {
+      "setBy": "app",
+      "visual": "When Checked, the swatch fills Chart/series-4/solid."
+    },
+    "Series=5": {
+      "setBy": "app",
+      "visual": "When Checked, the swatch fills Chart/series-5/solid."
+    },
+    "Series=6": {
+      "setBy": "app",
+      "visual": "When Checked, the swatch fills Chart/series-6/solid."
+    },
+    "Series=7": {
+      "setBy": "app",
+      "visual": "When Checked, the swatch fills Chart/series-7/solid."
+    },
+    "Series=8": {
+      "setBy": "app",
+      "visual": "When Checked, the swatch fills Chart/series-8/solid."
+    },
+    "Checked=true": {
+      "setBy": "both",
+      "meaning": "The series is shown in the bar (aria-pressed=\"true\").",
+      "visual": "Swatch in its series colour; label Content/secondary, value Content/primary."
+    },
+    "Checked=false": {
+      "setBy": "both",
+      "meaning": "The series is turned off; the others reflow to 100 %.",
+      "visual": "Swatch Surface/muted; label and value Content/disabled."
+    },
+    "Default": {
+      "setBy": "component",
+      "visual": "The colours of its Checked value."
+    },
+    "Focused": {
+      "setBy": "component",
+      "meaning": "Reached by keyboard (focus-visible).",
+      "visual": "A 2 px ring 1 px off the edge in Border/ring/neutral."
+    }
+  },
+  "a11y": {
+    "role": "button",
+    "keyboard": "Tab reaches it; Enter or Space toggles the series.",
+    "minHitArea": 24,
+    "contrast": "NOT DECIDED",
+    "reducedMotion": "Decided by the motion foundation: the motion roles fall back to the system fade with no travel (design-plans/splitbar-contract.md).",
+    "notes": [
+      "A toggle button with aria-pressed (true = the series is shown).",
+      "Size/control-xs tall.",
+      "Swatch, label and value change colour with use-hover (recipes/motion.ts)."
+    ]
+  },
+  "openQuestions": [
+    "Contrast: the off state uses Content/disabled on the page, 3.58:1 in Light and 4.29:1 in Dark, but the button is not disabled (COL-CHART-02). Fix the role or accept?",
+    "The last visible series cannot be turned off: how should its legend item show that it is locked, if at all?"
+  ],
+  "approval": {
+    "status": "draft",
+    "by": null,
+    "date": null
+  }
+}

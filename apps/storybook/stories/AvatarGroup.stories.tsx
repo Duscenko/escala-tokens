@@ -3,11 +3,12 @@ import {
   Avatar, AvatarGroup, AVATAR_SIZES, AVATAR_SHAPES, type AvatarSize, type AvatarShape, type AvatarVariant,
 } from '../../../src/components/escala-ui/avatar'
 import { AVATAR_GRADIENT_HUES } from '../../../src/lib/avatarGradient'
+import { AVATAR_PHOTO_LIST } from './avatarPhotos'
 
 /** Story args = the Figma `AvatarGroup` set (design-plans/avatar-group-contract.md): Size · Shape. `fill` picks what the avatars
- *  hold: the file's people are photos, code has none, so by default each is an image avatar with an OPAQUE gradient
+ *  hold: the file's people are photos (Media page), so by default each is a photo; `gradient` is the photo-less stand-in, with an OPAQUE gradient
  *  (a translucent soft tint shows the avatar below when they overlap). */
-type Fill = 'gradient' | 'soft' | 'solid'
+type Fill = 'photo' | 'gradient' | 'soft' | 'solid'
 interface GroupStoryArgs { size: AvatarSize; shape: AvatarShape; fill: Fill }
 
 const VARIANTS: AvatarVariant[] = ['default', 'success', 'warning', 'info']
@@ -17,7 +18,9 @@ function render({ size, shape, fill }: GroupStoryArgs) {
   return (
     <AvatarGroup aria-label="Team" size={size} shape={shape} count={3} countLabel="3 more people">
       {NAMES.map((initials, i) =>
-        fill === 'gradient' ? (
+        fill === 'photo' ? (
+          <Avatar key={initials} type="image" src={AVATAR_PHOTO_LIST[i]} alt={initials} />
+        ) : fill === 'gradient' ? (
           <Avatar key={initials} type="image" hue={AVATAR_GRADIENT_HUES[i]} alt={initials} />
         ) : (
           <Avatar key={initials} type="initials" variant={VARIANTS[i]} appearance={fill === 'solid' ? 'solid' : 'soft'} aria-label={initials}>
@@ -32,11 +35,11 @@ const meta: Meta<GroupStoryArgs> = {
   title: 'Content & Surfaces/Avatar',
   tags: ['!autodocs', 'part'],
   render,
-  args: { size: 'default', shape: 'circle', fill: 'gradient' },
+  args: { size: 'default', shape: 'circle', fill: 'photo' },
   argTypes: {
     size: { name: 'Size', control: 'select', options: [...AVATAR_SIZES] },
     shape: { name: 'Shape', control: 'select', options: [...AVATAR_SHAPES] },
-    fill: { name: 'Fill (docs)', control: 'select', options: ['gradient', 'soft', 'solid'] },
+    fill: { name: 'Fill (docs)', control: 'select', options: ['photo', 'gradient', 'soft', 'solid'] },
   },
 }
 export default meta
@@ -62,12 +65,12 @@ export const AvatarGroupShapes: Story = {
   ),
 }
 
-/** Every Size × Shape, for each fill: gradient (the default), soft and solid initials, all overlapped. */
+/** Every Size × Shape, for each fill: photo (the default), gradient, soft and solid initials, all overlapped. */
 export const AvatarGroupAllCombinations: Story = {
   name: 'AvatarGroup · All Combinations',
   render: () => (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
-      {(['gradient', 'soft', 'solid'] as Fill[]).map((fill) => (
+      {(['photo', 'gradient', 'soft', 'solid'] as Fill[]).map((fill) => (
         <div key={fill} style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
           <div style={{ font: '500 11px/1 system-ui', opacity: 0.85, textTransform: 'uppercase', letterSpacing: '0.08em' }}>{fill}</div>
           {AVATAR_SIZES.map((size) => (

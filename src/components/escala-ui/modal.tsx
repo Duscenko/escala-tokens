@@ -8,19 +8,23 @@ import { HALO_BLEED } from './halo-bleed'
 import { usePortalContainer } from './portal-scope'
 import { cn } from '../../lib/utils'
 import { CloseButton } from './close-button'
-import { FeaturedIcon, type FeaturedIconVariant } from './featured-icon'
+import { FeaturedIcon, type FeaturedIconAppearance, type FeaturedIconVariant } from './featured-icon'
 
 export const MODAL_SIZES = ['default', 'lg'] as const
 export type ModalSize = (typeof MODAL_SIZES)[number]
+/** Figma Layout. `tray`: Surface/layer-1 shell, a layer-2 panel (header + Content), the footer on the tray. `simple`: the bare card (default until the Modal is rebuilt). */
+export const MODAL_LAYOUTS = ['tray', 'simple'] as const
+// No `layout` at all = the card the Modal was built as, before the file's Layout axis (the app's own dialogs and the docs use it).
+export type ModalLayout = (typeof MODAL_LAYOUTS)[number]
 export const MODAL_HEADER_ALIGNS = ['horizontal', 'vertical-left', 'vertical-center'] as const
 export type ModalHeaderAlign = (typeof MODAL_HEADER_ALIGNS)[number]
-export const MODAL_FOOTER_LAYOUTS = ['inline', 'stacked'] as const
+export const MODAL_FOOTER_LAYOUTS = ['inline', 'stacked', 'equal'] as const
 export type ModalFooterLayout = (typeof MODAL_FOOTER_LAYOUTS)[number]
 
 /** What the Modal tells its parts: its Size cascades to the header and the footer, the header leaves room for the close.
  *  A Sheet provides the same context (`footerLayout`: stacked on its bottom side), so ModalHeader and ModalFooter are the
  *  Sheet's header and footer too. */
-export const ModalContext = React.createContext<{ size: ModalSize; closeClearance: boolean; dialog: boolean; footerLayout?: ModalFooterLayout } | null>(null)
+export const ModalContext = React.createContext<{ size: ModalSize; closeClearance: boolean; dialog: boolean; footerLayout?: ModalFooterLayout; layout?: ModalLayout } | null>(null)
 
 function Modal(props: React.ComponentProps<typeof DialogPrimitive.Root>) {
   return <DialogPrimitive.Root data-slot="modal" {...props} />
@@ -52,11 +56,15 @@ function ModalOverlay({ className, ...props }: React.ComponentProps<typeof Dialo
 export interface ModalContentProps extends Omit<React.ComponentProps<typeof DialogPrimitive.Content>, 'title'> {
   /** Figma Size: 480 · 640 wide. */
   size?: ModalSize
+  /** Figma Layout: `tray` (layer-1 shell, layer-2 panel, footer on the tray) or `simple` (400 wide card, 24 padding, equal footer). Unset: the card as first built. */
+  layout?: ModalLayout
   /** Figma CloseVisible. */
   showCloseButton?: boolean
   /** The close glyph — icons are the system's, passed in. */
   closeIcon?: React.ReactNode
   closeLabel?: string
+  /** Figma instance override of the tray's Content slot: `flush` = no padding and no gap of its own (only the hairline), so a child (a media band) runs edge to edge and pads itself. */
+  contentInset?: 'default' | 'flush'
   /** The ModalHeader (inside `main`, above the Content). */
   header?: React.ReactNode
   /** Figma FooterVisible: the ModalFooter, under `main`. */
@@ -70,14 +78,15 @@ export interface ModalContentProps extends Omit<React.ComponentProps<typeof Dial
 
 /** Figma Modal. `children` is the Content slot. */
 function ModalContent({
-  size = 'default', className, children, header, footer, showCloseButton = true, closeIcon, closeLabel = 'Close', inline = false, ...props
+  size = 'default', layout, contentInset = 'default', className, children, header, footer, showCloseButton = true, closeIcon, closeLabel = 'Close', inline = false, ...props
 }: ModalContentProps) {
   const content = (
-    <ModalContext.Provider value={{ size, closeClearance: showCloseButton, dialog: true }}>
+    <ModalContext.Provider value={{ size, closeClearance: showCloseButton, dialog: true, layout }}>
       <DialogPrimitive.Content
         data-slot="modal-content"
         data-escala="Modal"
         data-size={size}
+        data-layout={layout}
         data-inline={inline ? '' : undefined}
         className={cn(
           'relative flex max-w-full flex-col overflow-hidden text-left outline-none',
@@ -88,10 +97,20 @@ function ModalContent({
         onCloseAutoFocus={inline ? (e) => e.preventDefault() : undefined}
         {...props}
       >
-        <div data-part="Modal.main" className="flex min-h-0 flex-col">
-          {header}
-          {children != null && <div data-part="Modal.content" className={cn('flex min-h-0 flex-col overflow-y-auto', HALO_BLEED)}>{children}</div>}
-        </div>
+        {layout === 'tray' ? (
+          <div data-part="Modal.panel" className="flex min-h-0 flex-col overflow-hidden">
+            {header != null && <div data-part="Modal.header">{header}</div>}
+            {/* The tray's Content carries its own 24 inset (the recipe), which already holds a focus halo: no HALO_BLEED here. */}
+            {children != null && (
+              <div data-part="Modal.content" data-inset={contentInset} className="flex min-h-0 flex-col overflow-y-auto" style={contentInset === 'flush' ? { padding: 'var(--spacing-0)', gap: 'var(--spacing-0)' } : undefined}>{children}</div>
+            )}
+          </div>
+        ) : (
+          <div data-part="Modal.main" className="flex min-h-0 flex-col">
+            {header}
+            {children != null && <div data-part="Modal.content" className={cn('flex min-h-0 flex-col overflow-y-auto', HALO_BLEED)}>{children}</div>}
+          </div>
+        )}
         {footer}
         {showCloseButton && (
           <DialogPrimitive.Close data-slot="modal-close" asChild>
@@ -103,7 +122,7 @@ function ModalContent({
               size={size === 'lg' ? 'default' : 'sm'}
               icon={closeIcon}
               aria-label={closeLabel}
-              className="absolute top-[var(--spacing-inset-surface)] right-[var(--spacing-inset-surface)]"
+              className={layout ? 'absolute top-[calc(var(--spacing-5)_-_var(--stroke-divider))] right-[calc(var(--spacing-5)_-_var(--stroke-divider))]' : 'absolute top-[var(--spacing-inset-surface)] right-[var(--spacing-inset-surface)]'}
             />
           </DialogPrimitive.Close>
         )}
@@ -144,7 +163,7 @@ export interface ModalHeaderProps extends Omit<React.ComponentProps<'div'>, 'tit
   /** Figma DescriptionVisible / Description. */
   descriptionVisible?: boolean
   description?: React.ReactNode
-  /** Figma IconVisible + the glyph: a FeaturedIcon (soft, circle), 40 · 48 like the header. */
+  /** Figma IconVisible + the glyph: a FeaturedIcon (always `rounded` inside an overlay), 40 · 48 like the header. */
   iconVisible?: boolean
   icon?: React.ReactNode
   /**
@@ -152,6 +171,8 @@ export interface ModalHeaderProps extends Omit<React.ComponentProps<'div'>, 'tit
    * `secondary` (Surface/muted + Content/secondary, enough contrast on the card), so inside a Modal that is the default.
    */
   iconVariant?: FeaturedIconVariant
+  /** The FeaturedIcon's Appearance: `soft` unless a block's header asks for `gradient`. */
+  iconAppearance?: FeaturedIconAppearance
   /** Figma TrailingVisible / Trailing (Reset, Clear all, a Badge). Not in vertical headers. */
   trailingVisible?: boolean
   trailing?: React.ReactNode
@@ -161,7 +182,7 @@ export interface ModalHeaderProps extends Omit<React.ComponentProps<'div'>, 'tit
 
 /** Figma ModalHeader. Inside a Modal the title / description are the dialog's accessible name and description. */
 function ModalHeader({
-  size, align = 'horizontal', title, descriptionVisible = true, description, iconVisible = true, icon, iconVariant, trailingVisible = false, trailing,
+  size, align = 'horizontal', title, descriptionVisible = true, description, iconVisible = true, icon, iconVariant, iconAppearance = 'soft', trailingVisible = false, trailing,
   closeClearance, className, children, ...props
 }: ModalHeaderProps) {
   const ctx = React.useContext(ModalContext)
@@ -186,7 +207,7 @@ function ModalHeader({
       )}
       {...props}
     >
-      {iconVisible && icon !== null && <FeaturedIcon size={sz} variant={iconVariant ?? (inDialog ? 'secondary' : 'default')} appearance="soft" shape="circle" icon={icon} />}
+      {iconVisible && icon !== null && <FeaturedIcon size={sz} variant={iconVariant ?? (inDialog ? 'secondary' : 'default')} appearance={iconAppearance} shape="rounded" icon={icon} />}
       <div
         data-part="ModalHeader.content"
         className={cn('flex min-w-0 flex-1 flex-col', align === 'vertical-center' && 'items-center text-center', !horizontal && 'self-stretch')}
@@ -207,7 +228,7 @@ function ModalHeader({
 export interface ModalFooterProps extends React.ComponentProps<'div'> {
   /** Figma Size (it follows the Modal it sits in). */
   size?: ModalSize
-  /** Figma Layout: the actions at the end, or stacked full width (confirm first). */
+  /** Figma Layout: the actions at the end, stacked full width (confirm first), or two buttons of equal width. */
   layout?: ModalFooterLayout
   /** Figma LeadingVisible / Leading (a step counter, a link). */
   leadingVisible?: boolean
@@ -220,17 +241,19 @@ function ModalFooter({ size, layout: layoutProp, leadingVisible = false, leading
   const sz = size ?? ctx?.size ?? 'default'
   const layout = layoutProp ?? ctx?.footerLayout ?? 'inline'
   const stacked = layout === 'stacked'
+  const equal = layout === 'equal'
   return (
     <div
       data-slot="modal-footer"
       data-escala="ModalFooter"
       data-size={sz}
       data-layout={layout}
+      data-surface={ctx?.layout ?? 'plain'}
       className={cn('flex w-full', stacked ? 'flex-col' : 'flex-row items-center justify-end', className)}
       {...props}
     >
       {leadingVisible && <div data-part="ModalFooter.leading" className={cn('flex items-center', !stacked && 'mr-auto')}>{leading}</div>}
-      <div data-part="ModalFooter.actions" className={cn('flex', stacked ? 'w-full flex-col [&>*]:w-full' : 'flex-row items-center')}>{children}</div>
+      <div data-part="ModalFooter.actions" className={cn('flex', stacked ? 'w-full flex-col [&>*]:w-full' : equal ? 'w-full flex-row items-center [&>*]:min-w-0 [&>*]:flex-1' : 'flex-row items-center')}>{children}</div>
     </div>
   )
 }

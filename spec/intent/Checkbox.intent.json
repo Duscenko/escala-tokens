@@ -1,0 +1,85 @@
+{
+  "$schema": "./intent.schema.json",
+  "component": "Checkbox",
+  "purpose": "A single box for an independent yes/no choice that takes effect when the form is submitted, or a parent row that sums up a partly checked list (indeterminate). It is the bare box: give it a visible label.",
+  "notFor": [
+    {
+      "case": "The setting applies the moment it changes, with no Save step.",
+      "use": "Switch"
+    },
+    {
+      "case": "A checkbox that needs its own visible label and description in one row.",
+      "use": "CheckboxItem"
+    },
+    {
+      "case": "Several related options under one question, with a group label and an error.",
+      "use": "CheckboxGroup"
+    },
+    {
+      "case": "The person must pick exactly one option out of several.",
+      "use": "RadioGroup"
+    }
+  ],
+  "states": {
+    "Checked=false": {
+      "setBy": "both",
+      "meaning": "Not selected.",
+      "visual": "Empty box: Surface/input fill, Border/control edge (inverse: Surface/inverse fill, Border/inverse edge)."
+    },
+    "Checked=true": {
+      "setBy": "both",
+      "meaning": "Selected.",
+      "visual": "Filled box with the check glyph: Action/primary/default fill and edge with a Content/on-action glyph (default); Content/primary with Content/inverse (secondary); Status/<severity>/surface-solid with Status/<severity>/on-solid (critical, success, info); Content/inverse with Content/primary (inverse)."
+    },
+    "Checked=indeterminate": {
+      "setBy": "app",
+      "meaning": "A parent whose children are partly checked; the app derives it. Space moves it to checked.",
+      "visual": "The same fills as Checked=true, with the indeterminate glyph instead of the check."
+    },
+    "Default": {
+      "setBy": "component",
+      "meaning": "At rest.",
+      "visual": "The fill and edge of its Checked value; no focus ring."
+    },
+    "Hover": {
+      "setBy": "component",
+      "visual": "Unchecked: the edge moves to Border/control-hover. Checked or indeterminate: the fill moves to its hover role (Action/primary/hover, Content/secondary for secondary, Status/<severity>/surface-solid-hover, Content/inverse-secondary for inverse)."
+    },
+    "Focused": {
+      "setBy": "component",
+      "meaning": "Reached by keyboard (focus-visible).",
+      "visual": "Focus edge and ring in the variant's roles: Border/focus + Border/ring/default (default), Border/strong + Border/subtle (secondary), Status/<severity>/border-strong + Status/<severity>/border (status variants), Border/inverse + Surface/inverse-muted (inverse)."
+    },
+    "Disabled": {
+      "setBy": "app",
+      "meaning": "Cannot be changed and leaves the tab order.",
+      "visual": "Fill and edge Action/disabled/default, glyph Content/disabled, in every variant and Checked value."
+    },
+    "Invalid": {
+      "setBy": "app",
+      "meaning": "The value fails validation (aria-invalid).",
+      "visual": "The edge turns Status/critical/border-strong; the fill keeps its Checked value."
+    }
+  },
+  "a11y": {
+    "role": "checkbox (aria-checked=\"mixed\" when indeterminate)",
+    "keyboard": "Tab reaches the box (one tab stop) unless disabled. Space toggles it; indeterminate goes to checked (Radix Checkbox).",
+    "minHitArea": 24,
+    "contrast": "AA",
+    "reducedMotion": "NOT DECIDED",
+    "notes": [
+      "Needs a label: CheckboxItem, or a Label with htmlFor. The box alone has no accessible name.",
+      "Invalid is shown by the edge colour only; the error text must come from CheckboxGroup's footer or a Field.",
+      "Fill and edge move on use-hover, the focus ring on use-focus (recipes/motion.ts)."
+    ]
+  },
+  "openQuestions": [
+    "Reduced motion: should the fill, edge and focus-ring transitions (use-hover, use-focus) be dropped, or kept because they carry no travel?",
+    "Size xs and sm draw the same box (16, Size/selector-sm); only CheckboxItem's text differs. Is a separate xs box intended?"
+  ],
+  "approval": {
+    "status": "draft",
+    "by": null,
+    "date": null
+  }
+}

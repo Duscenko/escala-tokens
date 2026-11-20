@@ -1,0 +1,25 @@
+{
+  "$schema": "./intent.schema.json",
+  "component": "TabMenu",
+  "purpose": "A row or column of buttons that switches between sibling views or routes of a page; exactly one item is selected.",
+  "notFor": [
+    {"case": "Panels that swap in place under the tabs (usage points to Tabs, which is not an Escala component).", "use": "none"},
+    {"case": "Two to five exclusive options of the same data, such as Day / Week / Month.", "use": "SegmentedControl"},
+    {"case": "Top-level destinations of a mobile app.", "use": "TabBar"},
+    {"case": "Links in a header or navbar.", "use": "NavItem"}
+  ],
+  "states": {
+    "Default": {"setBy": "component", "meaning": "One item is selected (value / onValueChange).", "visual": "A track in Border/subtle, Stroke/divider thick under (horizontal-line) or beside (vertical-line) the items; the selected item carries the selection."}
+  },
+  "a11y": {
+    "role": "group (of buttons with aria-pressed)",
+    "keyboard": "Each item is its own tab stop; Space or Enter activates it.",
+    "minHitArea": 24,
+    "contrast": "AA"
+  },
+  "openQuestions": [
+    "Usage says to use Tabs when the panels swap in place, but there is no Tabs component in the index. Which component covers that case?",
+    "The menu moved from tablist / tab to group + aria-pressed (tab-menu-contract.md), so there is no arrow-key movement between items. Is that intended?"
+  ],
+  "approval": { "status": "draft", "by": null, "date": null }
+}

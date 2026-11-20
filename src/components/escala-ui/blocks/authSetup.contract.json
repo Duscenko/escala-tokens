@@ -1,0 +1,152 @@
+{
+  "$comment": "Contract of the Auth setup blocks (escala-governance step 2): AuthPasskeySetup and AuthTwoFactorSetup, each on its own Figma page, with the parts those pages keep. Anatomy and variants mirror the Figma sets; nests lists every escala-ui component the block draws; motion lists each moving part with its role. A block draws no colour, length or type of its own (the QR's black on white is the one accepted exception).",
+  "figma": {
+    "file": "7j5zukN5HpihGVJMmyjA20",
+    "pages": {
+      "AuthPasskeySetup (PRO)": "2370:42",
+      "AuthTwoFactorSetup (PRO)": "2374:42"
+    }
+  },
+  "blocks": [
+    {
+      "name": "AuthPasskeySetup",
+      "figmaSet": "2373:768",
+      "page": "AuthPasskeySetup (PRO)",
+      "axes": { "Status": "active|error|completed", "Type": "intro|confirm|saved" },
+      "variants": 5,
+      "anatomy": [
+        "Modal (Layout tray, Size lg 640, CloseVisible false: Surface/layer-1 shell, layer-2 panel)",
+        "ModalHeader (Align vertical-left, no icon, no description): Set up a passkey",
+        "Content slot: progress (3 ProgressLine xs, gap-tight) + step (fixed height 264, gap-group)",
+        "step intro: intro (heading-2xs + body-md) + benefits (3 x FeaturedIcon sm soft + title body-md + line body-sm)",
+        "step confirm: intro + AuthPasskeySetupIndicator + helper or error (Type/helper)",
+        "step saved: intro + passkey row (FeaturedIcon secondary, text, Badge success sm pill) + Field Passkey name (Input, Key icon)",
+        "ModalFooter (Layout inline): Leading = Step X of 3 (Type/caption, Content/secondary), Actions"
+      ],
+      "nests": ["ModalHeader", "ModalFooter", "ProgressLine", "FeaturedIcon", "Badge", "Field", "Input", "Button"],
+      "parts": ["AuthPasskeySetupIndicator"],
+      "slots": ["Content", "Leading", "Actions"],
+      "props": ["type", "status", "defaultName", "helper", "inline", "open", "onOpenChange", "onCancel", "onCreate", "onBack", "onRetry", "onSensor", "onDone"],
+      "behaviour": [
+        "Controlled: type x status are the Figma axes; useAuthPasskeySetup({ create, save }) holds the flow",
+        "Create passkey calls create(signal) (the app's navigator.credentials.create()); a rejection is Status error, a resolution completed, then saved once save() settles",
+        "Back aborts the pending request; Back and Not now never lose what was typed",
+        "An undrawn pair draws the nearest variant: intro is always active, saved always completed"
+      ],
+      "a11y": [
+        "Rendered as the Modal: dialog role, focus trap and Escape when not inline; the header's title names the dialog and the step's sentence describes it",
+        "Focus moves to the step heading every time the step changes, never on the first paint in place",
+        "The progress strip is decorative (aria-hidden): the footer counter says the step in words",
+        "An inline error is announced (aria-live polite)"
+      ],
+      "motion": [
+        { "moment": "open / close", "mechanism": "the Modal's own choreography (dialog-enter / exit); the card never moves", "role": "none", "reduced": "from the tokens" },
+        { "moment": "step swap", "mechanism": "the step's content mounts transparent and settles (opacity + rise)", "role": "use-page-transition", "reduced": "fade kept, travel neutralised by the token" },
+        { "moment": "inline error arrives", "mechanism": "opacity + rise on mount", "role": "use-disclosure-in", "reduced": "fade kept" },
+        { "moment": "progress segment fills", "mechanism": "ProgressLine's own transition", "role": "use-progress", "reduced": "from the tokens" }
+      ]
+    },
+    {
+      "name": "AuthPasskeySetupIndicator",
+      "figmaSet": "2373:708",
+      "page": "AuthPasskeySetup (PRO)",
+      "axes": { "Status": "active|error|completed" },
+      "variants": 3,
+      "anatomy": [
+        "well (Surface/layer-1, Border/subtle, Radius/container, Spacing/inset-surface, gap-group, centred)",
+        "sensor: ProgressCircle lg (Value 25 active, 0 error, 100 completed) + glyph 24 centred (Fingerprint or Check; Content/accent, Status/critical/content on error)",
+        "caption: label (Type/body-md; Status/critical/content on error) + hint (Type/body-sm, Content/secondary), centred"
+      ],
+      "nests": ["ProgressCircle"],
+      "slots": [],
+      "props": ["status", "label", "hint", "onSensorClick", "sensorLabel"],
+      "a11y": [
+        "The ring and the glyph are decorative (aria-hidden)",
+        "The label is announced (aria-live polite)",
+        "With onSensorClick (a simulated prompt) the sensor is a named button with the system's focus ring"
+      ],
+      "motion": [
+        { "moment": "waiting for the device (Status active)", "mechanism": "the ring turns, one turn per cycle", "role": "use-loop", "reduced": "still" },
+        { "moment": "the check lands (Status completed)", "mechanism": "opacity + scale on mount", "role": "use-emphasis-in", "reduced": "fade kept" }
+      ]
+    },
+    {
+      "name": "AuthTwoFactorSetup",
+      "figmaSet": "2374:837",
+      "page": "AuthTwoFactorSetup (PRO)",
+      "axes": { "Status": "active|error|completed", "Type": "scan|verify|backup" },
+      "variants": 6,
+      "anatomy": [
+        "Modal (Layout tray, Size lg 640, CloseVisible false)",
+        "ModalHeader (Align vertical-left, no icon, no description): Two-factor authentication",
+        "Content slot: progress (3 ProgressLine xs, gap-tight) + step (fixed height 232, gap-group)",
+        "step scan: _AuthTwoFactorSetupQR + details (intro, 2 app Badges secondary soft pill, hint + Input Type copy-link with the secret in Type/code), gap-section",
+        "step verify: intro + AuthTwoFactorSetupItem + InputOTP (Length 6, outline) + helper or error (Type/helper)",
+        "step backup: intro + AuthTwoFactorSetupGroup + actions (CheckboxItem secondary, Download and Copy secondary outline)",
+        "ModalFooter (Layout inline): Leading = Step X of 3, Actions"
+      ],
+      "nests": ["ModalHeader", "ModalFooter", "ProgressLine", "Badge", "Input", "InputOTP", "CheckboxItem", "Button"],
+      "parts": ["_AuthTwoFactorSetupQR", "AuthTwoFactorSetupItem", "AuthTwoFactorSetupGroup"],
+      "slots": ["Content", "Leading", "Actions"],
+      "props": ["type", "status", "code", "defaultCode", "onCodeChange", "authenticatorCode", "countdown", "countdownProgress", "helper", "codes", "inline", "open", "onOpenChange", "onCancel", "onContinue", "onBack", "onVerify", "onAcknowledge", "onTurnOn"],
+      "behaviour": [
+        "Controlled: type x status are the Figma axes; useAuthTwoFactorSetup({ verify }) holds the flow",
+        "Verify is enabled at six digits; a wrong or expired code is Status error, cleared as soon as the person types",
+        "Turn on stays disabled until the acknowledgement is checked (backup: Status completed = checked)",
+        "Turn on reports onTurnOn: the app closes the dialog and confirms with a Toast",
+        "Download saves the codes as a text file, Copy writes them to the clipboard",
+        "The QR is generated from the otpauth link (qrcode-generator, error correction M); the same secret is always shown as copyable text"
+      ],
+      "a11y": [
+        "Rendered as the Modal: dialog role, focus trap and Escape when not inline",
+        "Focus moves to the step heading when the step changes, and to the first code slot on verify",
+        "The QR is an image with a name; the secret next to it is a labelled read-only field with a Copy button",
+        "The code field is marked invalid and tied to its error, which is announced (aria-live polite)"
+      ],
+      "motion": [
+        { "moment": "open / close", "mechanism": "the Modal's own choreography (dialog-enter / exit); the card never moves", "role": "none", "reduced": "from the tokens" },
+        { "moment": "step swap", "mechanism": "the step's content mounts transparent and settles (opacity + rise)", "role": "use-page-transition", "reduced": "fade kept, travel neutralised by the token" },
+        { "moment": "inline error arrives", "mechanism": "opacity + rise on mount", "role": "use-disclosure-in", "reduced": "fade kept" },
+        { "moment": "progress segment fills", "mechanism": "ProgressLine's own transition", "role": "use-progress", "reduced": "from the tokens" },
+        { "moment": "Turn on becomes available", "mechanism": "the Button's own colour transition", "role": "use-hover", "reduced": "from the tokens" }
+      ]
+    },
+    {
+      "name": "AuthTwoFactorSetupGroup",
+      "figmaSet": "2374:64",
+      "page": "AuthTwoFactorSetup (PRO)",
+      "axes": {},
+      "variants": 1,
+      "anatomy": [
+        "well (Surface/layer-1, Border/subtle, Radius/container, Spacing/inset-surface)",
+        "2 rows x 4 codes (Type/code, Content/primary), column gap-group, row gap-control"
+      ],
+      "nests": [],
+      "slots": [],
+      "props": ["codes", "label"],
+      "a11y": ["A named list (ul) of selectable text: each code is announced and can be copied by hand"],
+      "motion": [{ "moment": "none", "mechanism": "none", "role": "none", "reduced": "n/a" }]
+    },
+    {
+      "name": "AuthTwoFactorSetupItem",
+      "figmaSet": "2374:47",
+      "page": "AuthTwoFactorSetup (PRO)",
+      "axes": {},
+      "variants": 1,
+      "anatomy": [
+        "well (Surface/layer-1, Border/subtle, Radius/container, Spacing/inset-control, gap-group, centred)",
+        "logo (Avatar Type icon, Size sm, rounded, solid, Stack) + account (Type/body-md + Type/body-sm)",
+        "code (Type/heading-xs) + timer (ProgressCircle xs + Countdown Type/body-sm)"
+      ],
+      "nests": ["Avatar", "ProgressCircle"],
+      "slots": [],
+      "props": ["code", "countdown", "progress", "onCodeClick"],
+      "a11y": [
+        "Demo only: a live product has no such row",
+        "The ring is decorative (aria-hidden); the seconds are the readable value",
+        "With onCodeClick the code is a named button with the system's focus ring"
+      ],
+      "motion": [{ "moment": "none", "mechanism": "none", "role": "none", "reduced": "n/a" }]
+    }
+  ]
+}

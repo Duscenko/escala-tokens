@@ -1,0 +1,24 @@
+{
+  "$schema": "./intent.schema.json",
+  "component": "TableLoading",
+  "purpose": "Shows a spinner and a label while a table's rows load, as its body or under it while more rows arrive.",
+  "notFor": [
+    {"case": "The table has loaded and has no rows.", "use": "TableEmpty"},
+    {"case": "Loading feedback for an action.", "use": "Spinner"},
+    {"case": "An operation whose progress is known.", "use": "ProgressLine"}
+  ],
+  "states": {
+    "Default": {"setBy": "app", "meaning": "Rows are being fetched.", "visual": "Spinner (Size/icon-md) and label (Type/body-sm) in Content/secondary."}
+  },
+  "a11y": {
+    "role": "status (aria-live=\"polite\")",
+    "keyboard": "None; not focusable.",
+    "minHitArea": 24,
+    "contrast": "AA"
+  },
+  "openQuestions": [
+    "The spinner turns but the contract has no motion entry. Which role drives it, and does it keep turning under reduced motion?",
+    "Spinner's own usage prefers skeleton screens for content loading. Should a table show skeleton rows instead?"
+  ],
+  "approval": { "status": "draft", "by": null, "date": null }
+}

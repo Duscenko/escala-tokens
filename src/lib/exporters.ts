@@ -2,7 +2,7 @@
 // Shared by ExportView (preview/download) and GitHubConnectView (repo push).
 
 import { motionMarkdown, motionRootCss, motionThemeCssDiff, motionTrailingCss, normalizeMotionSettings } from './motion'
-import { letterSpacingsFor } from './typographyStandard'
+import { FONT_FAMILY_MONO, letterSpacingsFor } from './typographyStandard'
 import { iconSizeCssVars } from './iconSizing'
 import { useDesignStore } from '../store/useDesignStore'
 import { fontStack } from './fonts'
@@ -13,6 +13,7 @@ import { resolveFamilyPages } from './colorActions'
 import { architectureLabel } from './semanticArchitectures'
 import { typeRoleCssVars, TYPE_ROLES, mergeTypeRoles } from './typeRoles'
 import { elevationCssVars } from './elevationTokens'
+import { CHART_RAMPS } from './chartRamps.generated'
 import { socialCssVars } from './socialBrands'
 import { allLayoutRoleCssVars, layoutRoleVar, sizeRolesViewportCss, LAYOUT_ROLES, mergeLayoutRoles, mergeGridFrame, extractBreakpoints, BREAKPOINT_STEPS, breakpointKey, gridFrameRootCss, gridFrameMediaCss, layoutValueCss, resolveLayoutRole, radiusRolesViewportCss, radiusComponentCss, spacingRolesViewportCss, withInsetSides, insetSideCssVars, breakpointTabletMax, breakpointMobileMax, RADIUS_RESPONSIVE_STEPS, RADIUS_RESPONSIVE, type RadiusRoleViewports } from './layoutTokens'
 import { gradientToCss, gradientSlug } from './gradients'
@@ -86,6 +87,11 @@ function primitiveRampLines(store: ReturnType<typeof useDesignStore.getState>, k
     if (!Object.keys(scale).length) continue
     out.push(`\n  /* ${name.charAt(0).toUpperCase() + name.slice(1)} */`)
     sorted(scale).forEach(([k, v]) => { if (v) out.push(`  --color-${name}-${toneLabel(colorNaming, Number(k))}: ${v};`) })
+  }
+  // The Chart hue ramps (series 2–8): fixed data, the same names tokens.json ships (`chart-teal`, `chart-teal-dark`).
+  for (const [hue, ramp] of Object.entries(CHART_RAMPS)) {
+    out.push(`\n  /* Chart ${hue.charAt(0).toUpperCase() + hue.slice(1)} */`)
+    sorted(ramp[dark ? 'dark' : 'light']).forEach(([k, v]) => out.push(`  --color-chart-${hue}-${toneLabel(colorNaming, Number(k))}: ${v};`))
   }
   // Alpha twins — reproduce each solid tone when composited over THIS
   // appearance's page (tokens.json `colors.primitiveAlpha`). CSS is a flat
@@ -212,6 +218,7 @@ export function buildCSS(
   lines.push('  /* --font-family-heading is the Display font: display-* roles only. heading-* roles use --font-family-body. */')
   lines.push(`  --font-family-heading: ${stackFor(typography.headingFontFamily ?? typography.fontFamily)};`)
   lines.push(`  --font-family-body: ${stackFor(typography.fontFamily)};`)
+  lines.push(`  --font-family-mono: ${stackFor(FONT_FAMILY_MONO)};`)
   Object.entries(typography.sizes).forEach(([k, v]) => lines.push(`  --font-size-${k}: ${v};`))
   Object.entries(typography.lineHeights ?? {}).forEach(([k, v]) => lines.push(`  --line-height-${k}: ${v};`))
   Object.entries(letterSpacingsFor(typography.sizes)).forEach(([k, v]) => lines.push(`  --letter-spacing-${k}: ${v};`))
@@ -618,6 +625,7 @@ ${roleTable}
 |-------|-------|
 | \`--font-family-heading\` | \`${fontStack(headingFont)}\` |
 | \`--font-family-body\` | \`${fontStack(typography.fontFamily)}\` |
+| \`--font-family-mono\` | \`${fontStack(FONT_FAMILY_MONO)}\` |
 ${Object.entries(typography.sizes).map(([k,v])=>`| \`--font-size-${k}\` | \`${v}\` |`).join('\n')}
 ${Object.entries(typography.lineHeights ?? {}).map(([k,v])=>`| \`--line-height-${k}\` | \`${v}\` |`).join('\n')}
 ${Object.entries(letterSpacingsFor(typography.sizes)).map(([k,v])=>`| \`--letter-spacing-${k}\` | \`${v}\` |`).join('\n')}

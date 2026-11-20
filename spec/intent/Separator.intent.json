@@ -1,0 +1,36 @@
+{
+  "$schema": "./intent.schema.json",
+  "component": "Separator",
+  "purpose": "A thin rule that divides content horizontally or vertically, solid or dashed, with an optional label such as OR at its start, centre or end. Use it sparingly; whitespace is usually enough.",
+  "notFor": [
+    {
+      "case": "Grouping content inside a surface with an edge.",
+      "use": "Card"
+    },
+    {
+      "case": "Space between blocks that needs no visible line.",
+      "use": "none"
+    }
+  ],
+  "states": {
+    "Default": {
+      "setBy": "component",
+      "meaning": "Static; Tone sets the line.",
+      "visual": "Line Border/default (default), Border/subtle (subtle) or Border/strong (strong); label Content/secondary."
+    }
+  },
+  "a11y": {
+    "role": "none when decorative (the default); separator with aria-orientation when it conveys structure",
+    "keyboard": "Not focusable (Radix Separator).",
+    "minHitArea": 24,
+    "contrast": "AA"
+  },
+  "openQuestions": [
+    "When the separator is not decorative and has a label, does the label name it (aria-label)? The contract does not say."
+  ],
+  "approval": {
+    "status": "draft",
+    "by": null,
+    "date": null
+  }
+}

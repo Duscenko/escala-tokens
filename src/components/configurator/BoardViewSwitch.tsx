@@ -1,11 +1,16 @@
-import { useId, useRef, type KeyboardEvent } from 'react'
+import { useId, useRef, useState, type KeyboardEvent } from 'react'
 import { motion, useReducedMotion } from 'framer-motion'
+import { Popover } from 'radix-ui'
 import { useI18n } from '../../lib/i18n'
 import { HintTip } from '../ui/HintTip'
+import { SELECT_LIST, SELECT_OPTION, SELECT_OPTION_FOCUS, SELECT_OPTION_OFF } from './themeWorkspaceLayout'
 
 /** What the board shows: the bento board of the brand, or every catalogue
  *  component as a cover painted in its tokens. */
 export type BoardView = 'theme' | 'components'
+
+/** Which package the Components view shows: the single elements or the composed blocks. */
+export type BoardPack = 'elements' | 'blocks'
 
 /** Phosphor bodies (`@phosphor-icons/core@2.1.1`, 256 grid) for the board
  *  toolbar's three views, from the Figma "Icons bar bottom controls" frame:
@@ -59,7 +64,11 @@ export function boardTabId(panelId: string, view: BoardView): string {
  * starts to clip) the words go and the icons stay. The words remain the tabs'
  * accessible names (`sr-only`) and their tooltip.
  */
-export function BoardViewSwitch({ value, onChange, panelId, inset = false }: {
+export function BoardViewSwitch({ value, onChange, panelId, inset = false, pack, onPackChange, packCounts }: {
+  /** The package on screen; with `onPackChange` the Components tab gets its chevron. */
+  pack?: BoardPack
+  onPackChange?: (pack: BoardPack) => void
+  packCounts?: Record<BoardPack, number>
   value: BoardView
   onChange: (view: BoardView) => void
   /** The board region this switch drives. */
@@ -89,7 +98,7 @@ export function BoardViewSwitch({ value, onChange, panelId, inset = false }: {
     listRef.current?.querySelector<HTMLButtonElement>(`#${CSS.escape(boardTabId(panelId, next))}`)?.focus()
   }
 
-  return (
+  const tabs = (
     <div
       ref={listRef}
       role="tablist"
@@ -145,5 +154,82 @@ export function BoardViewSwitch({ value, onChange, panelId, inset = false }: {
         return inset ? <HintTip key={view} label={labels[view]}>{tab}</HintTip> : tab
       })}
     </div>
+  )
+  if (!inset || !pack || !onPackChange) return tabs
+  return (
+    <div className="flex flex-shrink-0 items-center">
+      {tabs}
+      <BoardPackPicker
+        pack={pack}
+        counts={packCounts}
+        onPick={(next) => { onPackChange(next); onChange('components') }}
+      />
+    </div>
+  )
+}
+
+/** The chevron beside Components, Figma-style like the die's: Elements or Blocks. */
+function BoardPackPicker({ pack, counts, onPick }: { pack: BoardPack; counts?: Record<BoardPack, number>; onPick: (pack: BoardPack) => void }) {
+  const { t } = useI18n()
+  const [open, setOpen] = useState(false)
+  const rows: { id: BoardPack; label: string; hint: string; icon: string }[] = [
+    { id: 'elements', label: t('Elements'), hint: t('Every component on its own'), icon: 'M3 3h4v4H3zM9 3h4v4H9zM3 9h4v4H3zM9 9h4v4H9z' },
+    { id: 'blocks', label: t('Blocks'), hint: t('Ready-made screens and sections'), icon: 'M2.5 3.5h11v3h-11zM2.5 9h5v3.5h-5zM10 9h3.5v3.5H10z' },
+  ]
+  const trigger = (
+    <Popover.Trigger asChild>
+      <button
+        type="button"
+        aria-label={`${t('Board package')}: ${rows.find((r) => r.id === pack)?.label}`}
+        className={`flex h-8 w-4 flex-shrink-0 items-center justify-center rounded-md transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui ${
+          open ? 'bg-elevated text-fg' : 'text-fg-faint hover:bg-elevated hover:text-fg'
+        }`}
+      >
+        <svg
+          width="10" height="10" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden
+          className={`transition-transform duration-150 ease-[var(--ease-out-quint)] motion-reduce:transition-none ${open ? 'rotate-180' : ''}`}
+        >
+          <path d="M4 6l4 4 4-4" />
+        </svg>
+      </button>
+    </Popover.Trigger>
+  )
+  return (
+    <Popover.Root open={open} onOpenChange={setOpen}>
+      {open ? trigger : <HintTip label={t('Elements or Blocks')}>{trigger}</HintTip>}
+      <Popover.Portal>
+        <Popover.Content
+          side="top"
+          align="center"
+          sideOffset={12}
+          aria-label={t('Board package')}
+          className={`dark z-[70] flex w-[264px] flex-col gap-0.5 ${SELECT_LIST}`}
+        >
+          {rows.map((row) => {
+            const on = row.id === pack
+            return (
+              <button
+                key={row.id}
+                type="button"
+                aria-pressed={on}
+                onClick={() => { onPick(row.id); setOpen(false) }}
+                className={`${SELECT_OPTION} grid grid-cols-[auto_1fr_auto] items-center gap-x-2.5 ${SELECT_OPTION_FOCUS} ${on ? 'text-fg' : SELECT_OPTION_OFF}`}
+              >
+                <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinejoin="round" aria-hidden className={on ? 'text-accent-ui' : 'text-fg-faint'}>
+                  <path d={row.icon} />
+                </svg>
+                <span className="flex min-w-0 flex-col">
+                  <span className="truncate text-ui">{row.label}{counts ? <span className="ml-1.5 text-caption text-fg-faint">{counts[row.id]}</span> : null}</span>
+                  <span className="truncate text-caption text-fg-faint">{row.hint}</span>
+                </span>
+                <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden className={on ? 'text-fg' : 'invisible'}>
+                  <path d="M3.5 8.5l3 3 6-7" />
+                </svg>
+              </button>
+            )
+          })}
+        </Popover.Content>
+      </Popover.Portal>
+    </Popover.Root>
   )
 }

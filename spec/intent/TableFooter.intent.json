@@ -1,0 +1,24 @@
+{
+  "$schema": "./intent.schema.json",
+  "component": "TableFooter",
+  "purpose": "The totals or summary row at the bottom of a Table, on Surface/muted with a hairline above.",
+  "notFor": [
+    {"case": "Rows of data.", "use": "TableRow"},
+    {"case": "Fetching more rows.", "use": "TableLoadMore"},
+    {"case": "Moving between pages of results.", "use": "Pagination"}
+  ],
+  "states": {
+    "Default": {"setBy": "component", "meaning": "At rest.", "visual": "Fill Surface/muted; a top hairline in Border/subtle (Stroke/divider); the values are TableCell in Type/label."}
+  },
+  "a11y": {
+    "role": "rowgroup",
+    "keyboard": "No keys of its own; not focusable.",
+    "minHitArea": 24,
+    "contrast": "AA",
+    "notes": [
+      "Label the totals with a th scope=\"row\" in the first cell; set it sticky in code to pin it."
+    ]
+  },
+  "openQuestions": [],
+  "approval": { "status": "draft", "by": null, "date": null }
+}

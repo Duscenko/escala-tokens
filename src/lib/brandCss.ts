@@ -14,6 +14,7 @@ import type { DesignSnapshot } from '../store/useDesignStore'
 import { captureCodeSnapshot } from './codeScope'
 import { buildCSS } from './exporters'
 import { themeDisplayName } from './themeSources'
+import { packBrandCss } from './brandCssPack'
 
 export interface BrandCss {
   /** Library brand key (a payload column is `<key>::<appearance>`). */
@@ -39,15 +40,37 @@ export function brandCssFor(store: DesignSnapshot, keys: string[]): BrandCss[] {
     }))
 }
 
-/** Bodies over this stay without `brandCss` (the plugin then builds its own):
- *  /api/tokens refuses anything over 2 MB. */
-const ROOM = 1_800_000
+/** /api/tokens refuses a body over this (`MAX_BODY_BYTES`, api/tokens.ts). */
+const PUBLISH_LIMIT = 2 * 1024 * 1024
+/** Bodies over this stay without `brandCss` (the plugin then builds its own).
+ *  The 64 KiB under the limit covers what the server adds before it checks
+ *  (the licence stamp, under 100 chars) with room to spare.
+ *  Ten brands — `BETA_MAX_BRANDS`, the most a system can hold — measured
+ *  1,902,872 chars on 2026-11-20: 1.05 MB of tokens plus 851 KB of CSS (about
+ *  83 KB per brand). The old 1.9 MB room (set for the Chart layer, 3b242d9)
+ *  already dropped their CSS; this one leaves them about 128 KB. */
+const ROOM = PUBLISH_LIMIT - 64 * 1024
 
 /** The payload with `brandCss` for every brand it carries — or unchanged when
  *  that would not fit the publish limit. */
 export function withBrandCss<T extends { colors?: { themeOrder?: unknown } }>(json: T, store: DesignSnapshot): T {
-  const brandCss = brandCssFor(store, payloadBrandKeys(json))
+  return attachPlain(json, brandCssFor(store, payloadBrandKeys(json)))
+}
+
+function attachPlain<T extends object>(json: T, brandCss: BrandCss[], room = ROOM): T {
   if (!brandCss.length) return json
   const out = { ...json, brandCss }
-  return JSON.stringify(out).length > ROOM ? json : out
+  return JSON.stringify(out).length > room ? json : out
+}
+
+/** What the web publish sends: plain `brandCss` when it fits (every plugin
+ *  reads it), else the same CSS gzipped in `brandCssGzip` (lib/brandCssPack;
+ *  plugins from 0.36 unpack it, older ones build their own CSS), else neither.
+ *  `room` is ROOM; a test passes a smaller one to reach the packed path. */
+export async function withPublishBrandCss<T extends { colors?: { themeOrder?: unknown } }>(json: T, store: DesignSnapshot, room = ROOM): Promise<T> {
+  const brandCss = brandCssFor(store, payloadBrandKeys(json))
+  const plain = attachPlain(json, brandCss, room)
+  if (plain !== json || !brandCss.length) return plain
+  const out = { ...json, brandCssGzip: await packBrandCss(brandCss) }
+  return JSON.stringify(out).length > room ? json : out
 }

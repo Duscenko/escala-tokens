@@ -1,0 +1,72 @@
+{
+  "$schema": "./intent.schema.json",
+  "component": "Chip",
+  "purpose": "A compact tag for a filter, an applied selection or an entered value, which can be toggled and, with its close control, removed. Use it where the person changes what is applied.",
+  "notFor": [
+    {
+      "case": "A static status, count or category.",
+      "use": "Badge"
+    },
+    {
+      "case": "Triggering a one-off action.",
+      "use": "Button"
+    },
+    {
+      "case": "Typing values that turn into tags inside a field.",
+      "use": "InputTag"
+    },
+    {
+      "case": "Exactly one of a few modes or views.",
+      "use": "SegmentedControl"
+    }
+  ],
+  "states": {
+    "Default": {
+      "setBy": "component",
+      "visual": "outline: no fill, Border/control edge, Content/primary text (status variants: Status/<severity>/border and Status/<severity>/content); soft: Surface/muted fill (Status/<severity>/surface)."
+    },
+    "Hover": {
+      "setBy": "component",
+      "visual": "outline: Surface/muted fill, Border/control-hover edge; soft: Surface/muted-hover (status variants: surface / border-strong, or surface-pressed)."
+    },
+    "Focused": {
+      "setBy": "component",
+      "meaning": "Reached by keyboard (focus-visible).",
+      "visual": "Border/focus edge with a Border/ring/default halo (status variants: Status/<severity>/border-strong with a Status/<severity>/border halo)."
+    },
+    "Selected": {
+      "setBy": "both",
+      "meaning": "The filter or value is applied (aria-pressed).",
+      "visual": "Surface/selected fill, Border/accent edge, Content/accent text (status variants: Status/<severity>/surface-pressed with Status/<severity>/border-strong)."
+    },
+    "Disabled": {
+      "setBy": "app",
+      "visual": "outline: Border/subtle edge, Content/disabled text; soft: Action/disabled/default fill, Content/disabled text."
+    },
+    "Dragging": {
+      "setBy": "app",
+      "meaning": "Set by the app's drag-and-drop while the person drags the chip.",
+      "visual": "outline: Surface/layer-1 fill, Border/strong edge; soft: Surface/muted-hover fill, Border/strong edge; Content/primary text."
+    }
+  },
+  "a11y": {
+    "role": "button with aria-pressed; the close control is a separate button named \"Remove\" plus the label",
+    "keyboard": "Tab reaches the chip and, when shown, its close control. Enter or Space toggles the chip or activates Remove.",
+    "minHitArea": 24,
+    "contrast": "AA",
+    "reducedMotion": "NOT DECIDED",
+    "notes": [
+      "Disabled sets aria-disabled and disables both buttons.",
+      "Fill, edge, text and scale move on use-hover; a press sinks like a button (motion only, owner decision 2026-11-19)."
+    ]
+  },
+  "openQuestions": [
+    "Reduced motion: should the hover scale and the press sink be dropped while colour transitions stay?",
+    "Dragging: which drag-and-drop pattern sets it, and how is a drag done by keyboard?"
+  ],
+  "approval": {
+    "status": "draft",
+    "by": null,
+    "date": null
+  }
+}

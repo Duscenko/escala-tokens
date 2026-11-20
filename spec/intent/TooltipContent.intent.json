@@ -1,0 +1,30 @@
+{
+  "$schema": "./intent.schema.json",
+  "component": "TooltipContent",
+  "purpose": "A short hint bubble that names or explains its trigger on hover or keyboard focus. It never carries the only copy of information and never holds an action.",
+  "notFor": [
+    {"case": "Rich content, links or buttons in a floating panel.", "use": "Popover"},
+    {"case": "Help or rules a form field needs to show all the time.", "use": "Field"},
+    {"case": "A message that must be read, such as an error or a warning.", "use": "Alert"}
+  ],
+  "states": {
+    "Open": {"setBy": "user", "meaning": "The trigger is hovered (after the provider's delay) or has keyboard focus.", "visual": "Bubble and arrow in the Variant's fill: Action/primary/default with Content/on-action text (default), Surface/muted with Content/primary (secondary), Surface/inverse with Content/inverse (inverse), Status/critical/surface-solid with Status/critical/on-solid (critical), Status/info/surface-solid with Status/info/on-solid (info); the popover-md lift. Enters on popover-enter."},
+    "Closed": {"setBy": "user", "meaning": "The pointer left, focus moved or Escape was pressed.", "visual": "Not rendered. Leaves on popover-exit."}
+  },
+  "a11y": {
+    "role": "tooltip",
+    "keyboard": "Never focusable itself. It opens on keyboard focus of the trigger and Escape hides it (Radix Tooltip).",
+    "minHitArea": 24,
+    "contrast": "AA",
+    "reducedMotion": "Fades in and out instead of popping (the popover-enter / popover-exit reduced-motion bodies in lib/motion.ts).",
+    "notes": [
+      "The trigger is described by it through aria-describedby.",
+      "Variant must match its trigger."
+    ]
+  },
+  "openQuestions": [
+    "Touch screens have no hover: should a tap open the tooltip, or must touch users get the text another way?",
+    "The open delay comes from TooltipProvider; what is Escala's default delay?"
+  ],
+  "approval": { "status": "draft", "by": null, "date": null }
+}

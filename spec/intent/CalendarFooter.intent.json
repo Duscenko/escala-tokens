@@ -1,0 +1,25 @@
+{
+  "$schema": "./intent.schema.json",
+  "component": "CalendarFooter",
+  "purpose": "The bar under a Calendar that confirms its choice: a Today link at the start, Clear and Apply at the end. Use it when the date picker commits only on Apply.",
+  "notFor": [
+    { "case": "Standalone use outside a Calendar.", "use": "Calendar" },
+    { "case": "The action row at the bottom of a dialog.", "use": "ModalFooter" },
+    { "case": "The action row at the bottom of a popover.", "use": "PopoverFooter" }
+  ],
+  "states": {
+    "Default": { "setBy": "component", "meaning": "No states of its own; its three Buttons carry theirs.", "visual": "A Border/default divider above the Today link and the Clear and Apply Buttons." }
+  },
+  "a11y": {
+    "role": "three Buttons",
+    "keyboard": "Tab reaches each; Enter or Space activates it (native buttons).",
+    "minHitArea": 24,
+    "contrast": "AA",
+    "notes": ["Each Button's visible text is its name."]
+  },
+  "openQuestions": [
+    "Apply with no selection: should Apply be disabled until a date or full range is chosen?",
+    "Focus after Clear and Today: where does focus go (the grid's tab stop, or stay on the button)?"
+  ],
+  "approval": { "status": "draft", "by": null, "date": null }
+}

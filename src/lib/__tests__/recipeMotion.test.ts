@@ -98,6 +98,13 @@ describe('recipe motion', () => {
     expect(checked).toBeGreaterThan(20)
   })
 
+  it('the Toast\'s clock holds on hover, on focus and on a hidden page', () => {
+    const css = recipeMotionCss(COMPONENT_RECIPES.Toast)
+    for (const state of [':hover', ':focus-within', '[data-paused]']) {
+      expect(css).toContain(`[data-escala="Toast"]${state} [data-part="Toast.bar"][data-countdown]`)
+    }
+  })
+
   it('tokens.json round-trips to the same settings (the registry reads them back)', () => {
     for (const key of Object.keys(MOTION_PRESETS) as MotionPresetKey[]) {
       const settings = MOTION_PRESETS[key].settings

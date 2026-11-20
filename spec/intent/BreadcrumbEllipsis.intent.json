@@ -1,0 +1,56 @@
+{
+  "$schema": "./intent.schema.json",
+  "component": "BreadcrumbEllipsis",
+  "purpose": "Stands for the collapsed start of a long Breadcrumb trail and opens a menu of the hidden segments. Not for standalone use.",
+  "notFor": [
+    {
+      "case": "Used on its own, outside a Breadcrumb.",
+      "use": "Breadcrumb"
+    },
+    {
+      "case": "A generic overflow menu of commands.",
+      "use": "DropdownMenu"
+    },
+    {
+      "case": "A gap marker between page numbers.",
+      "use": "PaginationEllipsis"
+    }
+  ],
+  "states": {
+    "Default": {
+      "setBy": "component",
+      "visual": "default: label Content/secondary. ghost has no fill; outline adds a Border/control stroke; solid fills Surface/muted."
+    },
+    "Hover": {
+      "setBy": "component",
+      "visual": "default: label Content/accent (outline stroke Border/accent, solid fill Surface/accent). secondary: label Content/primary (outline stroke Border/control-hover, solid fill Surface/muted-hover)."
+    },
+    "Focused": {
+      "setBy": "component",
+      "meaning": "Reached by keyboard (focus-visible).",
+      "visual": "default: Border/focus stroke with a Border/ring/default halo. secondary: Border/strong stroke with a Border/subtle halo. Label stays Content/secondary."
+    },
+    "Disabled": {
+      "setBy": "app",
+      "visual": "Label Content/disabled; outline stroke Border/subtle, solid fill Action/disabled/default."
+    }
+  },
+  "a11y": {
+    "role": "button",
+    "keyboard": "Tab reaches it; Enter or Space activates it.",
+    "minHitArea": 24,
+    "contrast": "AA",
+    "notes": [
+      "aria-label defaults to \"Show hidden breadcrumbs\"."
+    ]
+  },
+  "openQuestions": [
+    "Which component shows the hidden segments (a DropdownMenu?), and is it wired inside BreadcrumbEllipsis or left to the app?",
+    "Motion: the State axis has no motion decision and recipes/motion.ts has no entry (finding MOT-002). Should hover and focus animate?"
+  ],
+  "approval": {
+    "status": "draft",
+    "by": null,
+    "date": null
+  }
+}

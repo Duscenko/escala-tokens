@@ -29,7 +29,10 @@ import { burstConfetti } from '../../lib/celebrate'
 import { themeDisplayName } from '../../lib/themeSources'
 import { SystemCollage } from '../preview/artefacts/SystemCollage'
 import { ComponentCoversGrid } from './docs/ComponentAvatars'
-import { BoardViewSwitch, boardTabId, type BoardView } from './BoardViewSwitch'
+import { BoardViewSwitch, boardTabId, type BoardPack, type BoardView } from './BoardViewSwitch'
+import { BlockCoversGrid } from './blocks/BlockCoversGrid'
+import { LISTED_BLOCKS } from './blocks/blockRegistry'
+import { PLATFORM_FAMILIES } from '../../lib/platformCatalogue'
 import { BoardThemeSwitch } from './BrandThemesPicker'
 import ThemeQuickSettingsRail from './ThemeQuickSettingsRail'
 import { AccountCloudStatus } from './AccountCloudStatus'
@@ -250,6 +253,7 @@ function CreateBoard({
   // What the board shows: the bento board, or every component as a cover.
   // Light / Dark is the panel's Theme row — the board has no second toggle.
   const [view, setView] = useState<BoardView>('theme')
+  const [pack, setPack] = useState<BoardPack>('elements')
   // Inspector mode, as in the Generator: on by default, so pointing at a
   // component names the tokens that paint it while the brand is being made.
   // There is no Token Details here, so the list is read-only (no `onPick`).
@@ -284,7 +288,9 @@ function CreateBoard({
             projectName={store.projectName}
           />
         ) : (
-          <ComponentCoversGrid tokens={stage} onOpen={onOpenComponent ? (def) => onOpenComponent(def.key) : undefined} />
+          pack === 'blocks'
+            ? <BlockCoversGrid tokens={stage} />
+            : <ComponentCoversGrid tokens={stage} onOpen={onOpenComponent ? (def) => onOpenComponent(def.key) : undefined} />
         )}
         </InspectorModeProvider>
         </div>
@@ -300,7 +306,17 @@ function CreateBoard({
             onRandom={onRandom}
             onRandomTool={() => setInspecting(false)}
             appearance={<BoardThemeSwitch previewTheme={themeKey} onAppearance={() => {}} />}
-            trailing={<BoardViewSwitch inset value={view} onChange={setView} panelId={panelId} />}
+            trailing={(
+              <BoardViewSwitch
+                inset
+                value={view}
+                onChange={setView}
+                panelId={panelId}
+                pack={pack}
+                onPackChange={setPack}
+                packCounts={{ elements: PLATFORM_FAMILIES.length, blocks: LISTED_BLOCKS.length }}
+              />
+            )}
           >
             <InspectorToggle bare active={inspecting} onChange={setInspecting} accent={stage.brandSolid} ink={stage.onBrand} />
           </BoardHistoryControls>

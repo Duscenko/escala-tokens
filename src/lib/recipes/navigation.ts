@@ -86,8 +86,63 @@ export const NAV_ITEM: ComponentRecipe = {
   slots: ['root', 'iconLeading', 'label', 'badge', 'iconTrailing'],
   defaults: { Size: 'default', State: 'Default' },
   parts: [
-    part({ Size: NAV_ITEM_SIZES }, tabMenuSizeSlots),
-    part({ State: NAV_ITEM_STATES }, (state) => ({ root: tabMenuItemPaint(state === 'Current' ? 'Selected' : state, false) })),
+    // The trailing chevron sits one step below the leading icon (DEC-2026-11-18-010).
+    part({ Size: NAV_ITEM_SIZES }, (size) => {
+      const chevron = size === 'lg' ? 'icon.medium' : 'icon.small'
+      return { ...tabMenuSizeSlots(size), iconTrailing: { width: chevron, height: chevron } }
+    }),
+    part({ State: NAV_ITEM_STATES }, (state) => ({
+      root: tabMenuItemPaint(state === 'Current' ? 'Selected' : state, false),
+      iconTrailing: { text: c(state === 'Disabled' ? 'content.disabled' : 'content.secondary') },
+    })),
+  ],
+}
+
+// ── TabBar and TabBarItem ──────────────────────────────────────────────────
+// The Figma `TabBarItem` set (2354:84, one axis: State) and `TabBar` component (2354:124)
+// (design-plans/tab-bar-contract.md). The bottom navigation of a mobile app: each item is a LINK
+// (NavItem's semantics, `Current` = aria-current="page"), never a tab. The state paints the pill
+// `indicator` (fill + the Button gap ring) and inks the icon and the label; the root never fills.
+export const TAB_BAR_ITEM_STATES = ['Default', 'Hover', 'Focused', 'Current', 'Disabled'] as const
+
+const TAB_BAR_ITEM_INK: Record<string, string> = { Hover: 'content.primary', Current: 'content.accent', Disabled: 'content.disabled' }
+const TAB_BAR_ITEM_FILL: Record<string, string> = { Hover: 'surface.muted', Current: 'surface.selected' }
+
+export const TAB_BAR_ITEM: ComponentRecipe = {
+  key: 'TabBarItem',
+  slots: ['root', 'indicator', 'icon', 'media', 'badge', 'label'],
+  defaults: { State: 'Default' },
+  parts: [
+    part({}, () => ({
+      root: { gap: 'spacing.gap-tight', paddingY: 'spacing.gap-tight', paddingX: 'spacing.none', minHeight: 'size.target-min', font: 'type.caption' },
+      indicator: { radius: 'radius.pill', paddingX: 'spacing.inset-control', paddingY: 'spacing.gap-tight', gap: 'spacing.none' },
+      icon: { width: 'icon.large', height: 'icon.large' },
+      // The Media slot (an Avatar xs) sits in the icon's box.
+      media: { width: 'icon.large', height: 'icon.large' },
+    })),
+    part({ State: TAB_BAR_ITEM_STATES }, (state) => {
+      const ink = c(TAB_BAR_ITEM_INK[state] ?? 'content.secondary')
+      return {
+        // Focused: Figma's `focus-ring`, 1px outside the pill, `Stroke/focus`, `Border/ring/default` (the Button `gapRing`).
+        indicator: { fill: TAB_BAR_ITEM_FILL[state] ? c(TAB_BAR_ITEM_FILL[state]) : NONE, gapRing: state === 'Focused' ? c('border.ring.default') : NONE },
+        icon: { text: ink },
+        media: { text: ink },
+        label: { text: ink },
+      }
+    }),
+  ],
+}
+
+export const TAB_BAR: ComponentRecipe = {
+  key: 'TabBar',
+  slots: ['root', 'content'],
+  defaults: {},
+  parts: [
+    part({}, () => ({
+      // A `Border/subtle` hairline on the top edge only; the file counts it in the layout (390 × 69).
+      root: { fill: c('surface.page'), stroke: c('border.subtle'), strokeTopWidth: 'stroke.divider', paddingX: 'spacing.gap-tight', paddingY: 'spacing.gap-tight', gap: 'spacing.none' },
+      content: { gap: 'spacing.none' },
+    })),
   ],
 }
 
@@ -420,7 +475,7 @@ export const STEPPER_ICON: ComponentRecipe = {
 
 export const DROPDOWN_SIZES = ['default', 'sm', 'lg'] as const
 export const DROPDOWN_ITEM_STATES = ['Default', 'Hover', 'Focused', 'Selected', 'Disabled'] as const
-export const DROPDOWN_ITEM_VARIANTS = ['default', 'destructive'] as const
+export const DROPDOWN_ITEM_VARIANTS = ['default', 'critical'] as const
 export const DROPDOWN_FOOTER_LAYOUTS = ['inline', 'stacked'] as const
 
 export const DROPDOWN_MENU: ComponentRecipe = {
@@ -436,7 +491,9 @@ export const DROPDOWN_MENU: ComponentRecipe = {
       // Concentric with the overlay: 24 − inset-control 12 = Radius/action 12 for the rows (DEC-2026-11-16-001).
       // The header sits on the content, so its bottom padding is none.
       header: { paddingX: 'spacing.inset-control', paddingY: 'spacing.inset-control', paddingBottom: 'spacing.none' },
-      content: { paddingX: 'spacing.inset-control', paddingY: 'spacing.inset-control' },
+      // The content bleeds `stroke.focus` on every side (HALO_BLEED: that much padding taken back by an equal negative margin) so a row's
+      // focus halo is not clipped; its padding therefore carries the bleed on top of the file's 12 (row 13, width 230, menu 256×122).
+      content: { paddingX: 'spacing.inset-control+stroke.focus', paddingY: 'spacing.inset-control+stroke.focus' },
       // A separator row: 4px above and below a 1px subtle rule.
       separator: { fill: c('border.subtle'), height: 'stroke.divider' },
     })),
@@ -458,9 +515,10 @@ export const DROPDOWN_MENU_ITEM: ComponentRecipe = {
   slots: ['root', 'iconLeading', 'media', 'text', 'label', 'description', 'trailing', 'control', 'iconTrailing', 'indicator'],
   defaults: { Size: 'default', State: 'Default', Variant: 'default' },
   parts: [
-    // Geometry per Size (the Dropdown file's); the paint is the shared `listItemRecipe`.
+    // Geometry per Size (the Dropdown file's); the paint is the shared `listItemRecipe`. Focused: the Button's gap ring,
+    // 1px off the row (DEC-2026-11-19-001); the Content's 4px inset holds it.
     part({ Size: DROPDOWN_SIZES, Variant: DROPDOWN_ITEM_VARIANTS, State: DROPDOWN_ITEM_STATES }, (size, variant, state) => ({
-      ...listItemRecipe(size, state, variant, { iconSlot: 'iconLeading' }),
+      ...listItemRecipe(size, state, variant, { iconSlot: 'iconLeading', focusRing: 'gap' }),
       iconTrailing: { text: c('content.secondary'), width: LIST_ITEM_METRICS[size].icon, height: LIST_ITEM_METRICS[size].icon },
     })),
   ],

@@ -1,0 +1,29 @@
+{
+  "$schema": "./intent.schema.json",
+  "component": "ComboboxPopover",
+  "purpose": "The floating list a Combobox opens 8px below its field: a flat or grouped list of options, an empty message when nothing matches, and an optional footer such as a result count.",
+  "notFor": [
+    { "case": "Standalone use without a Combobox field.", "use": "Combobox" },
+    { "case": "A floating menu of actions.", "use": "DropdownMenu" },
+    { "case": "A floating panel with arbitrary content.", "use": "Popover" }
+  ],
+  "states": {
+    "Open=true": { "setBy": "both", "meaning": "Shown below the field.", "visual": "Surface/layer-2 panel with a Border/default edge; group rules in Border/subtle; footer above a Border/subtle line in Content/secondary." },
+    "Open=false": { "setBy": "both", "meaning": "Closed by Escape, a pick or leaving the field.", "visual": "Not rendered." }
+  },
+  "a11y": {
+    "role": "listbox, referenced by the Combobox's aria-controls",
+    "keyboard": "Not a tab stop: focus stays in the Combobox field, which moves the active option with Arrow Up / Down.",
+    "minHitArea": 24,
+    "contrast": "AA",
+    "notes": [
+      "The empty message (\"No match\") is in Content/secondary.",
+      "The contract lists a status role; the footer count may be announced through it."
+    ]
+  },
+  "openQuestions": [
+    "Motion: the contract declares no motion for the popover. Should it open on popover-enter / popover-exit like other popovers, and what happens with reduced motion?",
+    "Announcements: is the result count (footer) or the empty message announced in a live region when the filter changes?"
+  ],
+  "approval": { "status": "draft", "by": null, "date": null }
+}

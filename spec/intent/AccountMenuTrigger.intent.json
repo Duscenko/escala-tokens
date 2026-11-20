@@ -1,0 +1,70 @@
+{
+  "$schema": "./intent.schema.json",
+  "component": "AccountMenuTrigger",
+  "purpose": "Opens the signed-in person's account menu: their Avatar, an optional name and a caret on ghost button roles. Use it in a header or a sidebar footer as the trigger of a DropdownMenu.",
+  "notFor": [
+    {
+      "case": "Opening a menu of commands that is not about the account.",
+      "use": "Button"
+    },
+    {
+      "case": "Showing who someone is, with no menu.",
+      "use": "Avatar"
+    },
+    {
+      "case": "A single icon-only action.",
+      "use": "IconButton"
+    }
+  ],
+  "states": {
+    "Default": {
+      "setBy": "component",
+      "visual": "No fill; content in Content/primary."
+    },
+    "Hover": {
+      "setBy": "component",
+      "visual": "Fill Action/ghost/hover."
+    },
+    "Pressed": {
+      "setBy": "component",
+      "visual": "Fill Action/ghost/pressed."
+    },
+    "Focused": {
+      "setBy": "component",
+      "meaning": "Reached by keyboard (focus-visible).",
+      "visual": "Border/focus inside plus a Border/ring/default ring."
+    },
+    "open": {
+      "setBy": "user",
+      "meaning": "Its DropdownMenu is open.",
+      "visual": "NOT DECIDED"
+    },
+    "closed": {
+      "setBy": "user",
+      "meaning": "Its DropdownMenu is closed.",
+      "visual": "The Default look."
+    }
+  },
+  "a11y": {
+    "role": "button",
+    "keyboard": "Tab reaches it. As a DropdownMenu trigger, Space / Enter / ArrowDown open the menu and Escape closes it and returns focus here (Radix DropdownMenu).",
+    "minHitArea": 24,
+    "contrast": "AA",
+    "reducedMotion": "NOT DECIDED",
+    "notes": [
+      "aria-haspopup=\"menu\"; named \"Account menu for <name>\" when the name is hidden.",
+      "Fill and ink change with the motion role use-hover (recipes/motion.ts)."
+    ]
+  },
+  "openQuestions": [
+    "Open: does the trigger look different while its menu is open, or does it keep Default?",
+    "The contract says \"Add aria-expanded\": does the component set it, or must the app? (Radix sets it when used as DropdownMenuTrigger asChild.)",
+    "There is no Disabled state in the Figma set. Is one needed (for example while the session loads)?",
+    "Reduced motion: should the use-hover colour change stay as a short fade or become instant?"
+  ],
+  "approval": {
+    "status": "draft",
+    "by": null,
+    "date": null
+  }
+}

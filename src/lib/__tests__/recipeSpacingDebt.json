@@ -1,1 +1,22 @@
-["Calendar.body.gap=spacing.2 (gap-control)", "Calendar.body.paddingX=spacing.3 (inset-control)", "Calendar.body.paddingX=spacing.4 (gap-group)", "Calendar.body.paddingY=spacing.3 (inset-control)", "Calendar.body.paddingY=spacing.4 (gap-group)", "CalendarFooter.actions.gap=spacing.2 (gap-control)", "CalendarFooter.root.paddingX=spacing.3 (inset-control)", "CalendarFooter.root.paddingX=spacing.4 (gap-group)", "CalendarHeader.chip.paddingX=spacing.2 (gap-control)", "CalendarHeader.chip.paddingY=spacing.1 (gap-tight)", "CalendarPresets.preset.paddingX=spacing.2 (gap-control)", "Card.header.gap=spacing.1 (gap-tight)", "Card.root.gap=spacing.4 (gap-group)", "Card.root.paddingX=spacing.4 (gap-group)", "Card.root.paddingY=spacing.4 (gap-group)", "Field.root[data-orientation=\"horizontal\"].gap=spacing.3 (inset-control)", "RadioGroup.root.gap=spacing.3 (inset-control)", "TooltipContent.bubble.paddingX=spacing.2 (gap-control)", "TooltipContent.bubble.paddingX=spacing.3 (inset-control)", "TooltipContent.bubble.paddingY=spacing.2 (gap-control)"]
+[
+  "Calendar.body.gap=spacing.2 (gap-control)",
+  "Calendar.body.paddingX=spacing.3 (inset-control)",
+  "Calendar.body.paddingX=spacing.4 (inset-action)",
+  "Calendar.body.paddingY=spacing.3 (inset-control)",
+  "Calendar.body.paddingY=spacing.4 (inset-action)",
+  "CalendarFooter.actions.gap=spacing.2 (gap-control)",
+  "CalendarFooter.root.paddingX=spacing.3 (inset-control)",
+  "CalendarFooter.root.paddingX=spacing.4 (inset-action)",
+  "CalendarHeader.chip.paddingX=spacing.2 (gap-control)",
+  "CalendarHeader.chip.paddingY=spacing.1 (gap-tight)",
+  "CalendarPresets.preset.paddingX=spacing.2 (gap-control)",
+  "Card.header.gap=spacing.1 (gap-tight)",
+  "Card.root.gap=spacing.4 (inset-action)",
+  "Card.root.paddingX=spacing.4 (inset-action)",
+  "Card.root.paddingY=spacing.4 (inset-action)",
+  "Field.root[data-orientation=\"horizontal\"].gap=spacing.3 (inset-control)",
+  "RadioGroup.root.gap=spacing.3 (inset-control)",
+  "TooltipContent.bubble.paddingX=spacing.2 (gap-control)",
+  "TooltipContent.bubble.paddingX=spacing.3 (inset-control)",
+  "TooltipContent.bubble.paddingY=spacing.2 (gap-control)"
+]

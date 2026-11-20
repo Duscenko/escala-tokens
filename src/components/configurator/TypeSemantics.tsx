@@ -46,6 +46,7 @@ const rowClass = (index: number) => tableRowClass(index, GRID)
 const FAMILY_OPTIONS: { value: TypeFamilyRole; label: string }[] = [
   { value: 'display', label: 'Display' },
   { value: 'body', label: 'Body' },
+  { value: 'mono', label: 'Mono' },
 ]
 const WEIGHT_OPTIONS: { value: TypeWeightKey; label: string }[] = FONT_WEIGHT_BASES.map((b) => ({
   value: b.key as TypeWeightKey,
@@ -149,7 +150,7 @@ function ViewportCell({
         value={alias.family}
         options={FAMILY_OPTIONS}
         disabled={familyLocked}
-        title={disabled ? disabledTitle : familyLocked ? 'Family is set on Display. Headings, body and controls follow the body stack.' : undefined}
+        title={disabled ? disabledTitle : familyLocked ? roleKey === 'code' ? 'Code is always set in the mono family.' : 'Family is set on Display. Headings, body and controls follow the body stack.' : undefined}
         onChange={(family) => onChange({ ...alias, family })}
         ariaLabel={`${roleKey} ${viewport} family`}
       />

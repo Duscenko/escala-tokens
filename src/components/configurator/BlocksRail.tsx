@@ -5,7 +5,7 @@ import FoundationSwitchStrip from './FoundationSwitchStrip'
 import { WorkspaceSaveBar } from './ThemeSaveBar'
 import { INSPECTOR_WIDTH } from './WorkspaceInspector'
 import { INSPECTOR_TABS_H } from './themeWorkspaceLayout'
-import { BLOCKS, BLOCK_GROUPS, blocksIn, matchesBlock, type BlockDef } from './blocks/blockRegistry'
+import { blocksIn, catalogue, matchesBlock, type BlockCatalogue, type BlockDef } from './blocks/blockRegistry'
 
 const ROW_ACTIVE = 'border-line-strong bg-app text-fg font-medium shadow-[0_2px_12px_-6px_rgba(0,0,0,0.24)]'
 const ROW_IDLE = 'border-transparent text-fg-muted hover:bg-elevated hover:text-fg'
@@ -28,8 +28,10 @@ function Chevron({ open }: { open: boolean }) {
  * then every group as an accordion, the open block's group expanded.
  */
 export default function BlocksRail({
-  icons, active, onSelect, onOpenIndex, search = '', onSearch, onInspectorSlot,
+  catalogue: kind = 'blocks', icons, active, onSelect, onOpenIndex, search = '', onSearch, onInspectorSlot,
 }: {
+  /** Blocks or Screens: the same directory, two catalogues. */
+  catalogue?: BlockCatalogue
   /** Where a block page's panels dock (Block settings, Edit theme, a pinned
    *  token list): the same slot the Components rail offers. */
   onInspectorSlot?: (el: HTMLElement | null) => void
@@ -45,10 +47,15 @@ export default function BlocksRail({
   const reduce = useReducedMotion() ?? false
   const activeGroup = active?.group ?? ''
   const q = search.trim()
+  const { groups: allGroups, listed } = catalogue(kind)
+  const screens = kind === 'screens'
   const groups = useMemo(
-    () => BLOCK_GROUPS.map((g) => ({ g, items: blocksIn(g).filter((b) => matchesBlock(b, q)) })).filter((x) => x.items.length > 0),
-    [q],
+    () => allGroups.map((g) => ({ g, items: blocksIn(g).filter((b) => matchesBlock(b, q)) })).filter((x) => x.items.length > 0),
+    [allGroups, q],
   )
+  const copy = screens
+    ? { aside: t('Screens'), search: t('Search screens'), all: t('All screens'), none: t('No screens match') }
+    : { aside: t('Blocks'), search: t('Search blocks'), all: t('All blocks'), none: t('No blocks match') }
   const [open, setOpen] = useState<Set<string>>(() => new Set())
   const toggle = (g: string) => setOpen((prev) => {
     const next = new Set(prev)
@@ -60,7 +67,7 @@ export default function BlocksRail({
 
   return (
     <aside
-      aria-label={t('Blocks')}
+      aria-label={copy.aside}
       className="relative my-3 mr-3 ml-3 flex min-h-0 flex-shrink-0 flex-col overflow-hidden rounded-2xl border border-line bg-side-panel"
       style={{ width: INSPECTOR_WIDTH } as CSSProperties}
     >
@@ -69,8 +76,8 @@ export default function BlocksRail({
         style={{ height: INSPECTOR_TABS_H, paddingInline: `calc((${INSPECTOR_TABS_H}px - 2.5rem) / 2)` }}
       >
         <FoundationSwitchStrip
-          ariaLabel={t('Block groups')}
-          items={BLOCK_GROUPS.map((g) => {
+          ariaLabel={screens ? t('Screen groups') : t('Block groups')}
+          items={allGroups.map((g) => {
             const Icon = icons[g]
             return { key: g, label: t(g), icon: Icon ? <Icon /> : undefined }
           })}
@@ -93,8 +100,8 @@ export default function BlocksRail({
             type="text"
             value={search}
             onChange={(e) => onSearch(e.target.value)}
-            placeholder={t('Search blocks')}
-            aria-label={t('Search blocks')}
+            placeholder={copy.search}
+            aria-label={copy.search}
             className="min-w-0 flex-1 bg-transparent text-ui text-fg-muted outline-none placeholder:text-fg-faint"
           />
           {search && (
@@ -110,7 +117,7 @@ export default function BlocksRail({
         </div>
       </div>
 
-      <nav aria-label={t('Blocks')} className="flex min-h-0 flex-1 flex-col gap-1 overflow-y-auto overflow-x-hidden px-2 pb-3 pt-2">
+      <nav aria-label={copy.aside} className="flex min-h-0 flex-1 flex-col gap-1 overflow-y-auto overflow-x-hidden px-2 pb-3 pt-2">
         {!q && (
           <button
             type="button"
@@ -124,14 +131,14 @@ export default function BlocksRail({
               <rect x="2" y="9" width="5" height="5" rx="1.2" />
               <rect x="9" y="9" width="5" height="5" rx="1.2" />
             </svg>
-            <span className="min-w-0 flex-1 truncate">{t('All blocks')}</span>
-            <span className="text-caption text-fg-faint">{BLOCKS.length}</span>
+            <span className="min-w-0 flex-1 truncate">{copy.all}</span>
+            <span className="text-caption text-fg-faint">{listed.length}</span>
           </button>
         )}
 
         {groups.length === 0 && (
           <p className="px-2 pt-1 text-caption leading-relaxed text-fg-faint">
-            {t('No blocks match')} “{q}”.
+            {copy.none} “{q}”.
           </p>
         )}
 

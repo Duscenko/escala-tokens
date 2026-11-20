@@ -1,0 +1,29 @@
+{
+  "$schema": "./intent.schema.json",
+  "component": "Alert",
+  "purpose": "A message bar for app-wide notices, subscription warnings, announcements and global errors: a full-width banner by the header (horizontal) or a boxed message in content (vertical). It stays until it is closed or resolved.",
+  "notFor": [
+    {"case": "Feedback after an action that should dismiss itself.", "use": "Toast"},
+    {"case": "A form field's validation error.", "use": "Field"},
+    {"case": "A blocking confirmation.", "use": "Modal"}
+  ],
+  "states": {
+    "Default": {"setBy": "app", "meaning": "Shown.", "visual": "By Appearance: outline on Surface/layer-1 with the severity border (Border/accent for default, Border/default for secondary, e.g. Status/critical/border) and the severity icon ink, text Content/primary; solid on the severity solid fill (Action/primary/default, Action/secondary/default or e.g. Status/critical/surface-solid) with its on-solid ink; soft on the severity surface (Surface/accent, Surface/layer-2 or e.g. Status/critical/surface); inverse on Surface/inverse with Content/inverse."},
+    "Closed": {"setBy": "both", "meaning": "The person pressed the close and the app handled onClose.", "visual": "Not rendered."}
+  },
+  "a11y": {
+    "role": "alert",
+    "keyboard": "No keys of its own; Tab reaches its action and close buttons.",
+    "minHitArea": 24,
+    "contrast": "AA",
+    "notes": [
+      "Convey severity with the icon and the text as well as colour.",
+      "Give the close button an accessible name (closeLabel)."
+    ]
+  },
+  "openQuestions": [
+    "role=\"alert\" interrupts the screen reader at once. Should non-urgent variants (default, secondary, info) use role=\"status\" instead?",
+    "The default icon is the Sparkle for every severity (alert-contract.md). Should each severity get its own glyph, as Toast does?"
+  ],
+  "approval": { "status": "draft", "by": null, "date": null }
+}

@@ -20,11 +20,15 @@ import { SELECT_LIST, SELECT_OPTION, SELECT_OPTION_OFF, SELECT_OPTION_FOCUS } fr
 import { NavIcon } from '../FoundationIconRail'
 import { PickerField, FIELD_SHELL, FIELD_SHELL_REST, FIELD_CHIP } from '../../ui/PickerField'
 import {
-  COMPONENT_KEYS, FIGMA_SAMPLE_KEYS, isInFigmaSample,
+  isInFigmaSample,
   type ComponentDef, type VariantAxis,
 } from '../../../lib/componentCatalogue'
+import { FIGMA_KIT_PATH } from '../../../lib/figmaKit'
 import { PLATFORM_FAMILIES, PLATFORM_FOLDERS, PLATFORM_PAGES, familiesIn, familyOf, familyLabel } from '../../../lib/platformCatalogue'
 import { CatalogueSwitcher } from './CatalogueSwitcher'
+import { PreviewStage, STAGE_ZOOM_STEPS, type StageControls } from './PreviewStage'
+import { StageActions } from './stageActions'
+import { FigmaLinkButton } from './FigmaLinkButton'
 import { StorybookLinkButton } from './StorybookLinkButton'
 import { componentStorybookUrl } from '../../../lib/storybookLinks'
 import { FittedSpecimen } from './ComponentAvatars'
@@ -51,11 +55,11 @@ import { withAlpha } from '../../../lib/colorUtils'
 import type { PreviewTokens } from '../../preview/ButtonPreview'
 import type { ThemeAppearance } from '../../../lib/themeModes'
 import { InspectorModeProvider, InspectorOverlay, TokenInspector } from '../../preview/artefacts/TokenInspector'
-import { InspectGlyph, LockGlyph, SparkleCircleIcon } from '../../ui/icons'
-import { OVERVIEWS, OVERVIEW_VALUE, hasOverview } from './componentOverviews'
-import { SPECIMENS, snippetFor, ICON_SLOTS, PANEL_COMPONENTS, type AxisValues, type IconOpts } from './specimens'
+import { InspectGlyph, LockGlyph } from '../../ui/icons'
+import { OVERVIEWS, OVERVIEW_VALUE, hasOverview, type Overview } from './componentOverviews'
+import { SPECIMENS, snippetFor, ICON_SLOTS, BOOLEAN_PROPS, PANEL_COMPONENTS, type AxisValues, type IconOpts } from './specimens'
 import {
-  Prose, DocSection, SectionHeading, BlockChrome,
+  Prose, DocSection, SectionHeading,
   Pager,
   type TocEntry,
 } from './blocks'
@@ -73,8 +77,17 @@ const KEYBOARD_ROWS: { key: string; description: string }[] = [
 /** First value of each axis = the plugin's default variant. One definition —
  *  the two merged files each carried their own copy of this expression. */
 export function axisDefaults(def: ComponentDef): AxisValues {
-  return Object.fromEntries(def.axes.map((a) => [a.name, a.values[0]]))
+  return {
+    ...Object.fromEntries(def.axes.map((a) => [a.name, a.values[0]])),
+    ...Object.fromEntries((BOOLEAN_PROPS[def.key] ?? []).map((p) => [p.name, String(p.default)])),
+    ...AT_REST[def.key],
+  }
 }
+
+/** Where the file's first option is not the one to open on. TextLink lists
+ *  `inverse` first: an ink made for dark fills, unreadable on the page in both
+ *  appearances. Its recipe's own default is `default`. */
+const AT_REST: Record<string, AxisValues> = { TextLink: { Variant: 'default' } }
 
 /** Which combination of the variant matrix `values` is, 1-based, in the same
  *  row-major order the Figma plugin generates the set in. The old catalogue
@@ -203,12 +216,18 @@ const FIGMA_COPY_LOCKED = true
  *  where there is nothing to copy (`build` absent: the public reading pages).
  *  Unlocked, the copy is pasted with ⌘V in the Escala plugin. */
 function FigmaButton({ label, href, build }: { label: string; href: string; build?: (what: 'element' | 'system') => string }) {
+  // On standby the header carries the plain link alone.
+  if (FIGMA_COPY_LOCKED || !build) return <FigmaLinkButton href={href} name={label} />
+  return <FigmaCopyButton label={label} href={href} build={build} />
+}
+
+function FigmaCopyButton({ label, href, build }: { label: string; href: string; build: (what: 'element' | 'system') => string }) {
   const { t } = useI18n()
   const [open, setOpen] = useState(false)
   // A callback ref into state: the popover anchors to the node, read at render.
   const [anchor, setAnchor] = useState<HTMLDivElement | null>(null)
   async function copy(what: 'element' | 'system') {
-    if (FIGMA_COPY_LOCKED || !build) return
+    if (FIGMA_COPY_LOCKED) return
     try {
       await navigator.clipboard.writeText(build(what))
       setOpen(false)
@@ -234,8 +253,7 @@ function FigmaButton({ label, href, build }: { label: string; href: string; buil
           <FigmaGlyph className="flex-shrink-0" />
           {t('Figma')}
         </a>
-        {build && (
-          <>
+        <>
             <span aria-hidden className="mx-0.5 h-4 w-px bg-line" />
             <button
               type="button"
@@ -249,11 +267,9 @@ function FigmaButton({ label, href, build }: { label: string; href: string; buil
                 <path d="M3 4.5 6 7.5l3-3" />
               </svg>
             </button>
-          </>
-        )}
+        </>
       </div>
-      {build && (
-        <AnchoredPopover
+      <AnchoredPopover
           anchor={anchor}
           open={open}
           onClose={() => { setOpen(false); setActive(null) }}
@@ -297,7 +313,6 @@ function FigmaButton({ label, href, build }: { label: string; href: string; buil
             </p>
           </div>
         </AnchoredPopover>
-      )}
     </>
   )
 }
@@ -326,26 +341,37 @@ function ZoomGlyph({ plus }: { plus?: boolean }) {
     </svg>
   )
 }
+function FitGlyph() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+      <path d="M2.5 5.5v-3h3M10.5 2.5h3v3M13.5 10.5v3h-3M5.5 13.5h-3v-3" />
+    </svg>
+  )
+}
+function ExpandGlyph({ expanded }: { expanded: boolean }) {
+  return (
+    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+      <path d={expanded ? 'M6.5 2.5v4h-4M9.5 13.5v-4h4M9.5 2.5v4h4M6.5 13.5v-4h-4' : 'M9.5 2.5h4v4M6.5 13.5h-4v-4M13.5 2.5 9 7M2.5 13.5 7 9'} />
+    </svg>
+  )
+}
 
-/** The stage's 100 %: the component drawn at 2/3 of its true pixel size.
- *  Why 2/3 and not 1:1 — the stage is a view of the system INSIDE the
- *  platform's chrome, and at true size the specimen outweighs everything
- *  around it: a default control (`size-control`, 40px) towered over the
- *  tool bar's 31.5px buttons beneath it (h-7 at the 18px root), and the
- *  Overview wrapped onto four rows. At 2/3 that control measures 26.7px, a
- *  step UNDER the chrome, and the Overview fits in two rows (measured at
- *  1440px). It is also the Board's family: the Board
- *  draws the same components at 156/260 = 0.6; a single-component close-up
- *  is one step larger (0.67), not a different scale. True size is still one
- *  click away: 150 % = 1:1 pixels (2/3 × 1.5 = 1). */
+/** The largest scale Fit draws a component at: 2/3 of its true pixel size.
+ *  Why not 1:1 — the stage is a view of the system INSIDE the platform's chrome,
+ *  and at true size a default control (`size-control`, 40px) towers over the tool
+ *  bar's 31.5px buttons beneath it. It is also the Board's family: the Board
+ *  draws the same components at 156/260 = 0.6. True size is one key away:
+ *  Shift+2, or the readout. */
 const STAGE_BASE = 2 / 3
-/** Zoom levels RELATIVE to `STAGE_BASE` — what the bar shows and steps through.
- *  150 % is the true pixel size. */
-const ZOOM_STEPS = [0.5, 0.75, 1, 1.25, 1.5, 2, 3]
+/** How wide an Overview lays out before its rows wrap. */
+const STAGE_LAYOUT_MAX = 1200
+
+/** One of the canvas's device frames. */
+export interface CanvasFrameOption<V extends string = string> { value: V; label: string; icon: ReactNode }
 
 export function CanvasBar({
-  panel, onPanel, inspecting, onInspect, appearance, onAppearance, hasSettings, zoom, onZoom,
-  hasContext = true, settingsLabel, toolbarLabel,
+  panel, onPanel, inspecting, onInspect, appearance, onAppearance, hasSettings, stage,
+  hasContext = true, settingsLabel, toolbarLabel, frames,
 }: {
   /** Shows the Agent context button (a block has no brief yet). */
   hasContext?: boolean
@@ -353,9 +379,10 @@ export function CanvasBar({
   settingsLabel?: string
   /** The toolbar's accessible name. */
   toolbarLabel?: string
-  /** The stage's scale: − / + step it, the readout puts it back to 100 %. */
-  zoom: number
-  onZoom: (z: number) => void
+  /** The canvas's zoom, fit and expand. */
+  stage: StageControls
+  /** The frames the content can be drawn in. One switch: it also sets a block's layout. */
+  frames?: { value: string; options: CanvasFrameOption[]; onChange: (value: string) => void }
   panel: CanvasPanel | null
   onPanel: (p: CanvasPanel | null) => void
   inspecting: boolean
@@ -370,14 +397,15 @@ export function CanvasBar({
   const home: CanvasPanel | null = hasSettings ? 'settings' : null
   const toggle = (p: CanvasPanel) => onPanel(p === 'settings' ? 'settings' : panel === p ? home : p)
   const sep = <span aria-hidden className="mx-0.5 h-5 w-px flex-shrink-0 bg-line" />
+  const { zoom, setZoom, fit, fitted, expanded, toggleExpanded } = stage
+  const atMin = zoom <= STAGE_ZOOM_STEPS[0] + 0.001
+  const atMax = zoom >= STAGE_ZOOM_STEPS[STAGE_ZOOM_STEPS.length - 1] - 0.001
   return (
-    // Sticky to the bottom of the page's scroll view: the bar stays on screen
-    // while any part of the stage is, instead of sinking below the fold.
-    <div data-inspect-exempt="" className="pointer-events-none sticky bottom-4 z-30 -mt-14 mb-4 flex items-center justify-center px-4">
+    <div data-inspect-exempt="" className="pointer-events-none absolute inset-x-0 bottom-3 z-30 flex items-center justify-center px-4">
       <div
         role="toolbar"
         aria-label={toolbarLabel ?? t('Component tools')}
-        className="dark pointer-events-auto flex h-10 items-center gap-0.5 rounded-xl border border-white/[0.12] bg-[#050506] p-1 shadow-[0_8px_24px_-6px_rgba(0,0,0,0.45),0_2px_6px_-2px_rgba(0,0,0,0.3)]"
+        className="dark pointer-events-auto flex h-10 max-w-full items-center gap-0.5 overflow-x-auto rounded-xl border border-white/[0.12] bg-[#050506] p-1 shadow-[0_8px_24px_-6px_rgba(0,0,0,0.45),0_2px_6px_-2px_rgba(0,0,0,0.3)] [scrollbar-width:none]"
       >
         <HintTip label={t('Edit theme')}>
           <button
@@ -452,41 +480,84 @@ export function CanvasBar({
             )
           })}
         </div>
+        {frames && (
+          <>
+            {sep}
+            <div role="group" aria-label={t('Frame')} className="flex items-center gap-0.5">
+              {frames.options.map((o) => (
+                <HintTip key={o.value} label={o.label}>
+                  <button
+                    type="button"
+                    onClick={() => frames.onChange(o.value)}
+                    aria-pressed={frames.value === o.value}
+                    aria-label={o.label}
+                    className={`${BAR_ICON} ${frames.value === o.value ? BAR_ICON_ON : BAR_ICON_OFF}`}
+                  >
+                    {o.icon}
+                  </button>
+                </HintTip>
+              ))}
+            </div>
+          </>
+        )}
         {sep}
         <div role="group" aria-label={t('Zoom')} className="flex items-center gap-0.5">
-          <HintTip label={t('Zoom out')}>
+          <HintTip label={t('Zoom out')} shortcut="−">
             <button
               type="button"
-              onClick={() => onZoom([...ZOOM_STEPS].reverse().find((z) => z < zoom - 0.001) ?? zoom)}
-              aria-disabled={zoom <= ZOOM_STEPS[0] || undefined}
+              onClick={() => { if (!atMin) setZoom([...STAGE_ZOOM_STEPS].reverse().find((z) => z < zoom - 0.001) ?? zoom) }}
+              aria-disabled={atMin || undefined}
               aria-label={t('Zoom out')}
               className={`${BAR_ICON} ${BAR_ICON_OFF} aria-disabled:opacity-40`}
             >
               <ZoomGlyph />
             </button>
           </HintTip>
-          <HintTip label={t('Reset zoom')}>
+          <HintTip label={t('Actual size')} shortcut="⇧2">
             <button
               type="button"
-              onClick={() => onZoom(1)}
-              aria-label={t('Reset zoom')}
+              onClick={() => setZoom(1)}
+              aria-label={`${t('Actual size')}, ${Math.round(zoom * 100)}%`}
               className="flex h-7 w-11 flex-shrink-0 items-center justify-center rounded-md text-caption font-medium tabular-nums text-fg-faint transition-colors duration-150 hover:bg-fg/[0.06] hover:text-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui"
             >
               {Math.round(zoom * 100)}%
             </button>
           </HintTip>
-          <HintTip label={t('Zoom in')}>
+          <HintTip label={t('Zoom in')} shortcut="+">
             <button
               type="button"
-              onClick={() => onZoom(ZOOM_STEPS.find((z) => z > zoom + 0.001) ?? zoom)}
-              aria-disabled={zoom >= ZOOM_STEPS[ZOOM_STEPS.length - 1] || undefined}
+              onClick={() => { if (!atMax) setZoom(STAGE_ZOOM_STEPS.find((z) => z > zoom + 0.001) ?? zoom) }}
+              aria-disabled={atMax || undefined}
               aria-label={t('Zoom in')}
               className={`${BAR_ICON} ${BAR_ICON_OFF} aria-disabled:opacity-40`}
             >
               <ZoomGlyph plus />
             </button>
           </HintTip>
+          <HintTip label={t('Fit to canvas')} shortcut="⇧1">
+            <button
+              type="button"
+              onClick={fit}
+              aria-pressed={fitted}
+              aria-label={t('Fit to canvas')}
+              className={`${BAR_ICON} ${fitted ? BAR_ICON_ON : BAR_ICON_OFF}`}
+            >
+              <FitGlyph />
+            </button>
+          </HintTip>
         </div>
+        {sep}
+        <HintTip label={expanded ? t('Exit expanded canvas') : t('Expand canvas')} shortcut={expanded ? 'Esc' : undefined}>
+          <button
+            type="button"
+            onClick={toggleExpanded}
+            aria-pressed={expanded}
+            aria-label={expanded ? t('Exit expanded canvas') : t('Expand canvas')}
+            className={`${BAR_ICON} ${expanded ? BAR_ICON_ON : BAR_ICON_OFF}`}
+          >
+            <ExpandGlyph expanded={expanded} />
+          </button>
+        </HintTip>
       </div>
     </div>
   )
@@ -564,27 +635,36 @@ function OverviewStage({ def, tokens, prefix }: { def: ComponentDef; tokens: Pre
   const rows = OVERVIEWS[def.key]
   if (!Specimen || !rows) return null
   const base = axisDefaults(def)
+  const specimen = (item: Overview[number][number], key: number) => {
+    const v = { ...base, ...item.v }
+    const icons: IconOpts = {
+      prefix,
+      leading: Boolean(item.leading),
+      trailing: Boolean(item.trailing),
+      leadingConcept: item.leading,
+      trailingConcept: item.trailing,
+    }
+    return (
+      <TokenInspector key={key} component={def.key} variant={v}>
+        <Specimen t={tokens} v={v} w={item.w} icons={item.leading || item.trailing ? icons : undefined}>
+          {item.label ? t(item.label) : undefined}
+        </Specimen>
+      </TokenInspector>
+    )
+  }
+  // Rows of one specimen are a stack of tall or wide things (calendars, tables): they share the canvas's
+  // width, or six of them in a column shrink to fit its height and nothing can be read.
+  const groups: Overview[] = []
+  rows.forEach((row) => {
+    const last = groups[groups.length - 1]
+    if (row.length === 1 && last?.[0]?.length === 1) last.push(row)
+    else groups.push([row])
+  })
   return (
     <div className="flex flex-col items-center gap-5">
-      {rows.map((row, i) => (
-        <div key={i} className="flex flex-wrap items-center justify-center gap-4">
-          {row.map((item, j) => {
-            const v = { ...base, ...item.v }
-            const icons: IconOpts = {
-              prefix,
-              leading: Boolean(item.leading),
-              trailing: Boolean(item.trailing),
-              leadingConcept: item.leading,
-              trailingConcept: item.trailing,
-            }
-            return (
-              <TokenInspector key={j} component={def.key} variant={v}>
-                <Specimen t={tokens} v={v} w={item.w} icons={item.leading || item.trailing ? icons : undefined}>
-                  {item.label ? t(item.label) : undefined}
-                </Specimen>
-              </TokenInspector>
-            )
-          })}
+      {groups.map((group, i) => (
+        <div key={i} className={`flex flex-wrap justify-center gap-4 ${group.length > 1 ? 'items-start' : 'items-center'}`}>
+          {group.flat().map(specimen)}
         </div>
       ))}
     </div>
@@ -607,7 +687,7 @@ function OverviewStage({ def, tokens, prefix }: { def: ComponentDef; tokens: Pre
 // once by the parent and passed down, is what makes that impossible again.
 export function ComponentCatalogueHero({
   def, tokens, values, onValuesChange, icons, leadingIcon, onLeadingIconChange, trailingIcon, onTrailingIconChange, snippet,
-  headerTrailing, appearance: appearanceProp, onInspectRole, previewTheme, buildContext, onOpenFoundation, figmaCopy, switcher,
+  appearance: appearanceProp, onInspectRole, previewTheme, buildContext, onOpenFoundation, figmaCopy, switcher,
 }: {
   /** The quick way to another component (`CatalogueSwitcher`), on the header row's right. */
   switcher?: ReactNode
@@ -625,9 +705,6 @@ export function ComponentCatalogueHero({
   /** Computed once by `ComponentArticle` from these same `values`/`icons` —
    *  Hero never recomputes its own copy. */
   snippet: string
-  /** Replaces the default Copy snippet control — e.g. Theme preview's link to
-   *  the full Components destination. */
-  headerTrailing?: ReactNode
   /** The previewed brand's appearance — the inspector resolves roles against it. */
   appearance?: ThemeAppearance
   /** A role named by the hover badge. Opens that token in Variables. */
@@ -660,8 +737,10 @@ export function ComponentCatalogueHero({
   const [selection, setSelection] = useState<string | null>(null)
   // The Theme panel's open foundation row (Color, Font, Radius…).
   const [quickPanel, setQuickPanel] = useState<QuickPanelFoundation>('color')
-  const [panel, setPanel] = useState<CanvasPanel | null>(() => (def.axes.length > 0 || ICON_SLOTS[def.key] ? 'settings' : null))
-  const homePanel: CanvasPanel | null = def.axes.length > 0 || ICON_SLOTS[def.key] ? 'settings' : null
+  // A component opens on its settings when it has anything to set: variant axes, icon slots or boolean properties.
+  const settable = def.axes.length > 0 || Boolean(ICON_SLOTS[def.key]) || Boolean(BOOLEAN_PROPS[def.key])
+  const [panel, setPanel] = useState<CanvasPanel | null>(() => (settable ? 'settings' : null))
+  const homePanel: CanvasPanel | null = settable ? 'settings' : null
   const closePanel = useCallback(() => setPanel(homePanel), [homePanel])
   const backToHome = homePanel
     ? { label: t('Component settings'), onBack: closePanel }
@@ -692,14 +771,11 @@ export function ComponentCatalogueHero({
   )
   const Specimen = SPECIMENS[def.key]
   const variantCount = def.axes.reduce((n, a) => n * a.values.length, 1)
-  const hasControls = def.axes.length > 0 || Boolean(slots)
+  const boolProps = BOOLEAN_PROPS[def.key]
+  const hasControls = settable
   // Overview first: the curated row is what the page opens on. Picking a
   // variant in Settings switches the stage to that single specimen.
   const [overview, setOverview] = useState(() => hasOverview(def.key))
-  // The stage's scale (the bar's − / +): a wide Overview can be shrunk to fit,
-  // a small control enlarged to read its details.
-  // Relative to `STAGE_BASE` (1 = the stage's 100 %, 2/3 of true size).
-  const [zoom, setZoom] = useState(1)
   // Copy for Figma. The element is the brand on screen only (its own themes),
   // as the variant the settings show; the whole system is the Figma page's
   // File & modes selection.
@@ -740,80 +816,27 @@ export function ComponentCatalogueHero({
 
   return (
     <div className="flex flex-col gap-4">
-      <div className="flex-1 min-w-0 flex flex-col gap-2">
-      <div className="border-b border-line overflow-clip">
-        <BlockChrome
-          left={
-            // The stage's name, not a tab: the agent context lives in the right
-            // panel (the bar's Code icon), so there is nothing to switch to.
-            <span className="flex items-center gap-2">
-              <span className="rounded-md bg-elevated px-2.5 py-1 text-caption font-medium text-fg">{t('{name} preview', { name: def.label })}</span>
-              {variantCount > 1 && (
-                <span className="text-mini text-fg-faint tabular-nums">
-                  {overview
-                    ? t('{total} variants', { total: variantCount })
-                    : t('Variant {index} of {total}', { index: variantIndex(def, values), total: variantCount })}
-                </span>
-              )}
-            </span>
-          }
-        >
-          <div className="flex items-center gap-1.5">
-            {switcher}
-            {!headerTrailing && <FigmaButton label={def.label} href={figmaPreviewPageUrl(def.key, def.figmaSets)} build={figmaCopy ? buildFigma : undefined} />}
-            {headerTrailing ?? (
-              // Agent context lives in the right panel (filters, preview and
-              // Copy there): this icon opens it, the same door as the bar's
-              // code icon — not a second copy button with its own options.
-              <HintTip label={t('Agent context')}>
-                <button
-                  type="button"
-                  onClick={() => setPanel(panel === 'context' ? homePanel : 'context')}
-                  aria-pressed={panel === 'context'}
-                  aria-label={t('Agent context')}
-                  className={`flex h-8 w-8 items-center justify-center rounded-lg border transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50 ${
-                    panel === 'context' ? 'border-line-strong bg-surface text-fg' : 'border-line text-fg-muted hover:bg-surface hover:text-fg'
-                  }`}
-                >
-                  <SparkleCircleIcon size={15} />
-                </button>
-              </HintTip>
-            )}
-          </div>
-        </BlockChrome>
+      <div className="flex-1 min-w-0 flex flex-col">
+      <StageActions>
+        {switcher}
+        <FigmaButton label={def.key} href={figmaPreviewPageUrl(def.key, def.figmaSets)} build={figmaCopy ? buildFigma : undefined} />
+      </StageActions>
 
-        {view === 'preview' ? (
-          <InspectorModeProvider active={inspecting}>
-            <div
-              ref={canvasRef}
-              // `overflow-clip`, not `hidden`: a hidden overflow is a scroll
-              // container, and the tool bar's `sticky` would pin to it instead
-              // of to the page.
-              className="relative flex flex-col overflow-clip transition-colors duration-200 ease-[var(--ease-out-quint)]"
-              style={{ ...canvasStyle, cursor: inspecting ? 'crosshair' : undefined }}
-            >
-              <div className="flex min-h-[300px] flex-1 items-center justify-center px-10 pb-20 pt-10">
-                {/* The empty canvas is not a page to inspect. Only the specimen
-                    answers; pointing at the padding clears the badge. */}
-                {inspecting && <div data-inspect-exempt="" className="absolute inset-0" aria-hidden />}
-                {/* `zoom`, not a transform: the stage keeps the scaled size in
-                    the layout, so it grows and shrinks with it. */}
-                {overview ? (
-                  <div className="relative" data-escala-stage="" style={{ zoom: zoom * STAGE_BASE, '--stage-zoom': zoom * STAGE_BASE } as CSSProperties}>
-                    <OverviewStage def={def} tokens={canvasTokens} prefix={PHOSPHOR_LIBRARY.key} />
-                  </div>
-                ) : Specimen ? (
-                  <div className="relative" data-escala-stage="" style={{ zoom: zoom * STAGE_BASE, '--stage-zoom': zoom * STAGE_BASE } as CSSProperties}>
-                    <TokenInspector component={def.key} variant={values}>
-                      <Specimen t={canvasTokens} v={values} icons={icons} />
-                    </TokenInspector>
-                  </div>
-                ) : (
-                  <span className="text-xs text-fg-faint">{t('No live preview for this component yet.')}</span>
-                )}
-              </div>
-              {/* The stage paints the BRAND's appearance, not the site's. The
-                  switch names which one is on screen and flips only this stage. */}
+      {view === 'preview' ? (
+        <InspectorModeProvider active={inspecting}>
+          <PreviewStage
+            rootRef={canvasRef}
+            canvasClassName="transition-colors duration-200 ease-[var(--ease-out-quint)]"
+            canvasStyle={{ ...canvasStyle, cursor: inspecting ? 'crosshair' : undefined }}
+            grid={!showPattern}
+            title={def.key}
+            ink={canvasTokens.archTokens?.['content.secondary'] ?? canvasTokens.neutralText}
+            fitCap={STAGE_BASE}
+            contentMaxWidth={STAGE_LAYOUT_MAX}
+            resetKey={String(overview)}
+            bar={(stage) => (
+              // The stage paints the BRAND's appearance, not the site's. The
+              // switch names which one is on screen and flips only this stage.
               <CanvasBar
                 panel={panel}
                 onPanel={setPanel}
@@ -822,42 +845,66 @@ export function ComponentCatalogueHero({
                 appearance={canvasAppearance}
                 onAppearance={setCanvasAppearance}
                 hasSettings={hasControls}
-                zoom={zoom}
-                onZoom={setZoom}
+                stage={stage}
               />
-            </div>
-            <InspectorOverlay
-              active={inspecting}
-              rootRef={canvasRef}
-              tokensByAppearance={{ light: canvasTokens, dark: canvasTokens }}
-              defaultAppearance={canvasAppearance}
-              // A row edits the token HERE (Token Details over the right
-              // panel, its ramp beside the component), never by leaving for
-              // Variables — that lost the component page. Variables stays one
-              // explicit link away (the drawer's "Open in table").
-              onPick={(roleId, css, a) => setEditing({ id: roleId, css, appearance: a })}
-              onOpenTable={onInspectRole}
-              editing={editing != null}
-              onSelectionChange={setSelection}
-              onExitMode={() => { setInspecting(false); writeInspectPref(false) }}
-            />
-            <SemanticTokenDrawer
-              previewTheme={previewTheme ?? 'light'}
-              previewAppearance={editing?.appearance ?? canvasAppearance}
-              tokenId={editing?.id ?? null}
-              inspectedCss={editing?.css ?? null}
-              onClose={() => setEditing(null)}
-              onOpenInVariables={onInspectRole}
-              backLabel={inspecting ? selection : null}
-            />
-          </InspectorModeProvider>
-        ) : null}
-      </div>
-      <p className="px-6 lg:px-8 text-mini text-fg-faint">
-        {inspecting
-            ? t('Hover the component to see its borders and the tokens that paint it.')
-            : t('Inspector off — the component responds to clicks and typing.')}
-      </p>
+            )}
+            status={
+              <>
+                <span className="min-w-0 truncate">
+                  {inspecting
+                    ? t('Hover the component to see its borders and the tokens that paint it.')
+                    : t('Inspector off — the component responds to clicks and typing.')}
+                </span>
+                {variantCount > 1 && (
+                  <span className="flex-shrink-0 tabular-nums">
+                    {overview
+                      ? t('{total} variants', { total: variantCount })
+                      : t('Variant {index} of {total}', { index: variantIndex(def, values), total: variantCount })}
+                  </span>
+                )}
+              </>
+            }
+          >
+            {overview ? (
+              <div className="relative">
+                <OverviewStage def={def} tokens={canvasTokens} prefix={PHOSPHOR_LIBRARY.key} />
+              </div>
+            ) : Specimen ? (
+              <div className="relative">
+                <TokenInspector component={def.key} variant={values}>
+                  <Specimen t={canvasTokens} v={values} icons={icons} />
+                </TokenInspector>
+              </div>
+            ) : (
+              <span className="text-xs text-fg-faint">{t('No live preview for this component yet.')}</span>
+            )}
+          </PreviewStage>
+          <InspectorOverlay
+            active={inspecting}
+            rootRef={canvasRef}
+            tokensByAppearance={{ light: canvasTokens, dark: canvasTokens }}
+            defaultAppearance={canvasAppearance}
+            // A row edits the token HERE (Token Details over the right
+            // panel, its ramp beside the component), never by leaving for
+            // Variables — that lost the component page. Variables stays one
+            // explicit link away (the drawer's "Open in table").
+            onPick={(roleId, css, a) => setEditing({ id: roleId, css, appearance: a })}
+            onOpenTable={onInspectRole}
+            editing={editing != null}
+            onSelectionChange={setSelection}
+            onExitMode={() => { setInspecting(false); writeInspectPref(false) }}
+          />
+          <SemanticTokenDrawer
+            previewTheme={previewTheme ?? 'light'}
+            previewAppearance={editing?.appearance ?? canvasAppearance}
+            tokenId={editing?.id ?? null}
+            inspectedCss={editing?.css ?? null}
+            onClose={() => setEditing(null)}
+            onOpenInVariables={onInspectRole}
+            backLabel={inspecting ? selection : null}
+          />
+        </InspectorModeProvider>
+      ) : null}
       </div>
 
       {hasControls && panel === 'settings' && (
@@ -876,6 +923,10 @@ export function ComponentCatalogueHero({
                 }}
               />
             ))}
+            {boolProps?.map((p) => (
+              // "LegendVisible" reads as "Legend · On": the switch already says visible or not, and the chip stays unclipped.
+              <OptionSwitch key={p.name} label={p.name.replace(/Visible$/, '')} checked={values[p.name] !== 'false'} onChange={(on) => onValuesChange({ ...values, [p.name]: String(on) })} />
+            ))}
             {slots && (
               <>
                 <OptionSwitch label={t('Leading icon')} checked={leadingIcon} onChange={onLeadingIconChange} />
@@ -886,7 +937,9 @@ export function ComponentCatalogueHero({
           <p className="px-[var(--inspector-inset,12px)] pb-4 text-mini leading-relaxed text-fg-faint">
             {slots
               ? <>{t('Icons come from')} <span className="font-medium text-fg-muted">{PHOSPHOR_LIBRARY.label}</span>.</>
-              : t('Same axes as the Figma variant set the plugin generates.')}
+              : def.axes.length > 0
+                ? t('Same axes as the Figma variant set the plugin generates.')
+                : t('Same properties as the Figma component and its Storybook controls.')}
           </p>
         </CanvasSidePanel>
       )}
@@ -1014,18 +1067,25 @@ export function FigmaShipList({ component }: { component: ComponentDef }) {
   const variantCount = component.axes.reduce((n, a) => n * a.values.length, 1)
   // Every key ships a full spec — props, axes, tokens, accessibility — into
   // tokens.json and the agent bundle regardless of this check. This block is
-  // only about whether the LIVE Figma import additionally renders it as a
-  // real component node today. See FIGMA_SAMPLE_KEYS in componentCatalogue.ts.
+  // only about whether the plugin also builds it as a real component node: the
+  // core kit (FIGMA_SAMPLE_KEYS in componentCatalogue.ts). Every other set is
+  // in the Escala Design System, sold on its own (`/figma-kit`, lib/figmaKit.ts).
   if (!isInFigmaSample(component.key)) {
+    const inLibrary = component.figmaSets.length > 0
     return (
       <div className="rounded-xl border border-dashed border-line bg-surface/40 p-4 flex items-center gap-2.5">
         <FigmaGlyph className="text-fg-faint flex-shrink-0" />
         <p className="text-caption text-fg-faint leading-relaxed">
-          {/* Both counts are DERIVED. They were hardcoded "58" and "9" —
-              correct on the day they were typed and one catalogue entry away
-              from being a lie, which is the same drift that left the About
-              page claiming 39 semantic roles against a real 64. */}
-          {t("Not rendered in Figma yet — building all {count} specs as real variants locks the file on import, so today this one ships as a full spec (props, tokens, accessibility) in", { count: COMPONENT_KEYS.length })} <code className="font-mono">tokens.json</code> {t("and your coding agent's context, not as a component node in the file.")}
+          {inLibrary ? (
+            <>
+              {t('Not in the plugin’s core kit. Its Figma set is in the')}{' '}
+              <a href={FIGMA_KIT_PATH} className="font-medium text-fg-muted underline underline-offset-2 hover:text-fg">Escala Design System</a>
+              {t(', the complete library. Here it ships as a full spec (props, tokens, accessibility) in')}
+            </>
+          ) : (
+            t('Not in the Figma library yet. It ships as a full spec (props, tokens, accessibility) in')
+          )}{' '}
+          <code className="font-mono">tokens.json</code> {t("and your coding agent's context.")}
         </p>
       </div>
     )
@@ -1043,7 +1103,7 @@ export function FigmaShipList({ component }: { component: ComponentDef }) {
         </span>
       </div>
       <p className="text-caption text-fg-faint leading-relaxed">
-        {t("One of the {count} components on the '⬡ Components Overview' sample sheet every import builds — every fill, stroke and radius bound to your variables (component → semantic → primitive):", { count: FIGMA_SAMPLE_KEYS.length })}
+        {t('Part of the plugin’s core kit: every import builds it, drawn like the Escala Design System, with every fill, stroke and radius bound to your variables (component → semantic → primitive):')}
       </p>
       <div className="flex flex-wrap gap-1.5">
         {component.figmaSets.map((s) => (
@@ -1185,9 +1245,14 @@ function componentContext(
 
 // ── The page ─────────────────────────────────────────────────────────────────
 
+/** The pager's step from the last component into Blocks. */
+const BLOCKS_BRIDGE_KEY = '__blocks'
+
 export function ComponentArticle({
-  def, tokens, onOpen, appearance, onInspectRole, previewTheme = 'light', onOpenFoundation, figmaCopy,
+  def, tokens, onOpen, appearance, onInspectRole, previewTheme = 'light', onOpenFoundation, figmaCopy, onOpenBlocks,
 }: {
+  /** The last component's way on: the first block. */
+  onOpenBlocks?: () => void
   figmaCopy?: FigmaCopyScope
   /** The Theme panel's "Go to advanced edition". */
   onOpenFoundation?: (key: string) => void
@@ -1266,6 +1331,7 @@ export function ComponentArticle({
             groups={PLATFORM_FOLDERS.map((folder) => ({ label: folder, items: familiesIn(folder).map((f) => ({ id: f.lead.key, label: familyLabel(f) })) }))}
             currentId={familyOf(def.key)?.lead.key ?? def.key}
             onPick={(key) => { const c = PLATFORM_PAGES.find((x) => x.key === key); if (c) onOpen(c) }}
+            bridgeNext={onOpenBlocks ? { label: t('Blocks'), hint: t('Continue to Blocks'), onGo: onOpenBlocks } : undefined}
             />
             {storybookHref && <StorybookLinkButton href={storybookHref} />}
           </>
@@ -1325,8 +1391,12 @@ export function ComponentArticle({
 
       <Pager
         prev={prev && { key: prev.key, label: prev.label }}
-        next={next && { key: next.key, label: next.label }}
-        onOpen={(key) => { const c = PLATFORM_PAGES.find((x) => x.key === key); if (c) onOpen(c) }}
+        next={next ? { key: next.key, label: next.label } : onOpenBlocks ? { key: BLOCKS_BRIDGE_KEY, label: 'Blocks' } : undefined}
+        onOpen={(key) => {
+          if (key === BLOCKS_BRIDGE_KEY) { onOpenBlocks?.(); return }
+          const c = PLATFORM_PAGES.find((x) => x.key === key)
+          if (c) onOpen(c)
+        }}
       />
       </div>
     </div>

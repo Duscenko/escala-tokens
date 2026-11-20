@@ -1,0 +1,31 @@
+{
+  "$schema": "./intent.schema.json",
+  "component": "IssueCard",
+  "purpose": "One issue on a board: its key, linked pull request, assignee, title, priority, tags, comments and due date, as a single link people can also drag between lanes.",
+  "notFor": [
+    {"case": "Issues compared across columns.", "use": "Table"},
+    {"case": "General grouped content.", "use": "Card"},
+    {"case": "A status lane of cards.", "use": "BoardColumn"}
+  ],
+  "states": {
+    "Default": {"setBy": "component", "meaning": "At rest.", "visual": "Surface/layer-2 with a Border/default stroke (Stroke/divider); key, pull request, comments and due in Content/secondary (Type/caption); title in Content/primary (Type/label)."},
+    "Hover": {"setBy": "component", "visual": "The stroke moves to Border/strong on use-hover."},
+    "Dragging": {"setBy": "both", "meaning": "The person drags the card; the app sets forceState Dragging.", "visual": "The stroke turns Border/accent; the position follows the pointer with no transition."}
+  },
+  "a11y": {
+    "role": "link (named by the issue title)",
+    "keyboard": "Tab reaches it; Enter follows the link.",
+    "minHitArea": 24,
+    "contrast": "AA",
+    "reducedMotion": "The edge and shadow ease on use-hover, which keeps its duration under reduced motion (lib/motion.ts); while dragged the position follows the pointer with no transition.",
+    "notes": [
+      "Focus-visible draws Border/focus with the Border/ring/default ring; the Figma set has no Focused variant."
+    ]
+  },
+  "openQuestions": [
+    "Built Figma-first under exception STG-001 (governance/exceptions.yaml, review by 2026-12-02): the stories still need the owner's approval. Is the Figma set final for this intent?",
+    "Keyboard: how does a keyboard user move a card to another lane?",
+    "Every state binds shadow None, yet the motion eases box-shadow. Should Dragging lift the card with a shadow?"
+  ],
+  "approval": { "status": "draft", "by": null, "date": null }
+}

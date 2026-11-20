@@ -1,0 +1,52 @@
+{
+  "$schema": "./intent.schema.json",
+  "component": "SplitBar",
+  "purpose": "A single bar that shows parts of one whole, up to eight, with a legend that turns each series on and off. Use it for traffic by source, spend by team or storage by type.",
+  "notFor": [
+    {
+      "case": "A single share that is not part of a whole, such as progress.",
+      "use": "ProgressLine"
+    },
+    {
+      "case": "A value over time.",
+      "use": "Sparkline"
+    },
+    {
+      "case": "Shares that mean good or bad.",
+      "use": "none"
+    },
+    {
+      "case": "More than eight parts, or values that must be read exactly.",
+      "use": "Table"
+    }
+  ],
+  "states": {
+    "Default": {
+      "setBy": "component",
+      "visual": "Segments on Chart/series-n roles clipped to one bar; leader labels in Content/secondary and values in Content/primary, leader lines in Chart/series-n/solid."
+    }
+  },
+  "a11y": {
+    "role": "group",
+    "keyboard": "Tab visits the segments, then the legend items; Enter or Space presses (a segment calls onSegmentClick, a legend item turns its series on or off). No arrow keys.",
+    "minHitArea": 24,
+    "contrast": "NOT DECIDED",
+    "reducedMotion": "Decided by the motion foundation: the motion roles fall back to the system fade with no travel (design-plans/splitbar-contract.md).",
+    "notes": [
+      "Named by aria-label or aria-labelledby (one is required).",
+      "Colour is never the only divider: every segment has a Chart/series-n/solid edge and the legend repeats label and value in text.",
+      "The last visible series cannot be turned off; a turned-off segment is aria-hidden and leaves the Tab order."
+    ]
+  },
+  "openQuestions": [
+    "Contrast: Chart/series-n/content on its soft fill is under 4.5:1 in Light for series 2, 3, 4 and 6 (COL-CHART-01), and the off legend text is 3.58:1 (COL-CHART-02). Fix the roles or accept?",
+    "What should happen with more than eight segments: an error, an Other share, or nothing?",
+    "When a share means good or bad the usage says to use Status roles instead, but no Escala component does that. Is one needed?",
+    "The contract has no Figma set linked (finding DOC-001, codeOnly). Should it be added?"
+  ],
+  "approval": {
+    "status": "draft",
+    "by": null,
+    "date": null
+  }
+}

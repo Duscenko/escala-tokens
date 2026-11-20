@@ -1,0 +1,41 @@
+{
+  "$schema": "./intent.schema.json",
+  "component": "Spinner",
+  "purpose": "A spinning glyph that says something is happening when the wait has no known length. It is the Loading glyph of Button, Switch, Textarea, InputTag and DatePicker, for action feedback.",
+  "notFor": [
+    {
+      "case": "Progress can be measured.",
+      "use": "ProgressLine"
+    },
+    {
+      "case": "Loading content in a page or list (prefer a skeleton layout).",
+      "use": "none"
+    },
+    {
+      "case": "A button that is busy: use the button's own loading state.",
+      "use": "Button"
+    }
+  ],
+  "states": {
+    "Default": {
+      "setBy": "component",
+      "visual": "The loader glyph spinning in Content/secondary."
+    }
+  },
+  "a11y": {
+    "role": "status (aria-label, default \"Loading\")",
+    "keyboard": "Not focusable; no keyboard interaction of its own.",
+    "minHitArea": 24,
+    "contrast": "AA",
+    "reducedMotion": "The spin stops under prefers-reduced-motion (motion-reduce:animate-none); the glyph stays."
+  },
+  "openQuestions": [
+    "Spinner is code-only, with no Figma set (finding DOC-001 Spinner). Should it get one?",
+    "The description says it takes the ink of the text around it, but the binding is Content/secondary. Which is right?"
+  ],
+  "approval": {
+    "status": "draft",
+    "by": null,
+    "date": null
+  }
+}

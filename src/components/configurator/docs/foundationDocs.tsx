@@ -860,7 +860,7 @@ export const FOUNDATION_DOCS: FoundationDoc[] = [
     label: 'Color',
     lead: `Two layers: twelve-step primitive ramps that hold the raw values, and a categorical semantic contract that names what each value is FOR — grouped as ${groupList(COLOR_ROLE_GROUPS)} with nested role ids like \`content.primary\` and \`action.primary.default\`. Designs reference the roles; only the roles reference the ramps.`,
     why: 'A hex in a component is a decision nobody can revisit. A role — `action.primary.default` — is a decision you can re-point once and have the whole system follow, in every theme at once. It is also the only way light and dark can be the same design rather than two hand-tuned ones: a role resolves to its own ramp per appearance, so `content.primary` means "the readable ink on this page" in both, and neither is a copy of the other.',
-    usage: `Reach for a categorical semantic role first — \`surface.*\` for page and card levels, \`action.*\` for control fills, \`status.*\` for feedback, \`content.*\` for ink, \`border.*\` for edges, \`elevation.*\` for the colours inside a shadow. Use a primitive directly only when you are defining a new role. Steps are ordered by ROLE, not lightness: 1–2 page background · 3–5 component · 6–8 border · 9 the solid (your brand hex, verbatim) · 10 solid hover · 11–12 accessible text. ${COLOR_ALPHA_ROLES} of the ${COLOR_ROLES.length} roles resolve to a TRANSLUCENT primitive instead of a solid tone — see Alpha below — so a semantic value can be 8-digit \`#rrggbbaa\`.`,
+    usage: `Reach for a categorical semantic role first — \`surface.*\` for page and card levels, \`action.*\` for control fills, \`status.*\` for feedback, \`content.*\` for ink, \`border.*\` for edges, \`elevation.*\` for the colours inside a shadow, \`chart.*\` for the series of a chart. Use a primitive directly only when you are defining a new role. Steps are ordered by ROLE, not lightness: 1–2 page background · 3–5 component · 6–8 border · 9 the solid (your brand hex, verbatim) · 10 solid hover · 11–12 accessible text. ${COLOR_ALPHA_ROLES} of the ${COLOR_ROLES.length} roles resolve to a TRANSLUCENT primitive instead of a solid tone — see Alpha below — so a semantic value can be 8-digit \`#rrggbbaa\`.`,
     usageCode: `/* semantic — what it is FOR */
 background: var(--color-action-primary-default);
 color:      var(--color-content-on-action);
@@ -947,6 +947,12 @@ color:      var(--color-content-on-action);
         description: 'Effect colours only — the key and ambient layers of a shadow, its hairline ring and the top highlight of a raised control. Bound inside a Shadow / Depth effect style, never used as a fill or a stroke.',
         render: renderCategoricalCategory('elevation', () => []),
       },
+      {
+        id: 'chart',
+        title: 'Chart',
+        description: 'The data-viz layer, in both themes: eight categorical series in a fixed order (series 1 is the brand accent, 2–8 fixed hue ramps), each with `solid` (lines, bars, dots, swatches, segment edges), `soft` (area fills, segment backgrounds) and `content` (labels), plus a six-step sequential ramp (0 = no data … 5 = most intense) for heatmaps. Use `chart.*` for categories that carry no meaning and `status.*` when the colour means good or bad; never add opacity on a chart role.',
+        render: renderCategoricalCategory('chart', () => []),
+      },
     ],
   },
 
@@ -975,7 +981,7 @@ line-height: var(--text-label-line-height);
       css: '--text-{role}-font-size  ·  --text-{role}-font-size-mobile  ·  --font-size-*',
       figma: 'Typography role/{role}/size — one value per viewport mode (Desktop · Tablet · Mobile) · Type/{role} (Tablet) · Type/{role} (Mobile)',
     },
-    tokenCount: (c) => TYPE_SCALE_KEYS.length * 2 + FONT_WEIGHT_BASES.length + 2 + TYPE_ROLES.length,
+    tokenCount: (c) => TYPE_SCALE_KEYS.length * 2 + FONT_WEIGHT_BASES.length + 3 + TYPE_ROLES.length,
     sections: [
       {
         id: 'families',
@@ -1183,9 +1189,9 @@ line-height: var(--text-label-line-height);
   {
     key: 'spacing',
     label: 'Spacing',
-    lead: 'Two layers: a 4px-grid primitive scale (0–16, including step 5 = 20px) and intent aliases for gaps and insets. Surface padding aliases `spacing-inset-surface` — not a raw 20px collection. In Variables the number list is Dimensions: every step here points at one of those primitives.',
+    lead: 'Two layers: a 4px-grid primitive scale (0–16, including step 5 = 20px) and intent aliases for gaps and insets. Surface padding aliases `spacing-inset-surface` (24 · 20 · 16 by viewport) — not a raw px collection. In Variables the number list is Dimensions: every step here points at one of those primitives.',
     why: 'Spacing is what makes a layout read as deliberate. A scale removes the middle values that cause trouble: with 8 and 12 available and nothing between, nobody ships an 11. Semantics then name the job — gap between siblings vs inset inside a surface — so a card never copies a button’s padding by accident.',
-    usage: 'Reach for a semantic first: `spacing-gap-control` between related controls, `spacing-gap-section` between blocks, `spacing-inset-control` inside a button, `spacing-inset-surface` inside a card. Use a primitive step only when you are defining a new role.',
+    usage: 'Reach for a semantic first: `spacing-gap-control` between related controls, `spacing-gap-section` between blocks, `spacing-inset-action` at the sides of a default or lg button, `spacing-inset-control` inside smaller controls, `spacing-inset-surface` inside a card. Use a primitive step only when you are defining a new role.',
     usageCode: `gap:     var(--spacing-gap-group);
 padding: var(--spacing-inset-surface);
 
@@ -1261,7 +1267,7 @@ padding: var(--spacing-inset-surface);
       {
         id: 'roles',
         title: 'Spacing roles',
-        description: 'Gap vs inset. Aliases of primitive steps — surface padding resolves to step 5 (20px on the 4px grid).',
+        description: 'Gap vs inset. Aliases of primitive steps — surface padding is 24 on Desktop, 20 on Tablet and 16 on Mobile.',
         render: (c) => (
           <LayoutRolesBlock family="spacing" primitives={c.spacing} roles={c.spacingRoles} />
         ),

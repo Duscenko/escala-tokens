@@ -1,0 +1,26 @@
+{
+  "$schema": "./intent.schema.json",
+  "component": "PopoverFooter",
+  "purpose": "The action row at the bottom of a Popover: status text at the start and its buttons at the end, or full-width buttons stacked. Its size follows the Popover.",
+  "notFor": [
+    {"case": "Not for standalone use: it is the footer part of a Popover.", "use": "Popover"},
+    {"case": "Actions at the bottom of a Modal or a Sheet.", "use": "ModalFooter"},
+    {"case": "Actions at the bottom of a dropdown menu.", "use": "DropdownMenuFooter"}
+  ],
+  "states": {
+    "Default": {"setBy": "component", "meaning": "At rest; it has no interactive state of its own.", "visual": "Top hairline in Border/subtle (Stroke/divider); leading status text in Content/secondary (Type/caption); the buttons keep their own roles."}
+  },
+  "a11y": {
+    "role": "None of its own: a region inside the Popover's non-modal dialog (Radix Popover).",
+    "keyboard": "No keys of its own. Tab moves through its buttons inside the open Popover; Escape closes the Popover and returns focus to the trigger.",
+    "minHitArea": 24,
+    "contrast": "AA",
+    "notes": [
+      "The leading text is plain copy; the buttons keep their own focus order."
+    ]
+  },
+  "openQuestions": [
+    "Stacked order: Figma puts skip above next, the reverse of the Modal (popover-contract.md). Is the difference intended, and which action is the primary one?"
+  ],
+  "approval": { "status": "draft", "by": null, "date": null }
+}
