@@ -20,9 +20,10 @@ import { SELECT_LIST, SELECT_OPTION, SELECT_OPTION_OFF, SELECT_OPTION_FOCUS } fr
 import { NavIcon } from '../FoundationIconRail'
 import { PickerField, FIELD_SHELL, FIELD_SHELL_REST, FIELD_CHIP } from '../../ui/PickerField'
 import {
-  COMPONENT_KEYS, FIGMA_SAMPLE_KEYS, isInFigmaSample,
+  isInFigmaSample,
   type ComponentDef, type VariantAxis,
 } from '../../../lib/componentCatalogue'
+import { FIGMA_KIT_PATH } from '../../../lib/figmaKit'
 import { PLATFORM_FAMILIES, PLATFORM_FOLDERS, PLATFORM_PAGES, familiesIn, familyOf, familyLabel } from '../../../lib/platformCatalogue'
 import { CatalogueSwitcher } from './CatalogueSwitcher'
 import { PreviewStage, STAGE_ZOOM_STEPS, type StageControls } from './PreviewStage'
@@ -1066,18 +1067,25 @@ export function FigmaShipList({ component }: { component: ComponentDef }) {
   const variantCount = component.axes.reduce((n, a) => n * a.values.length, 1)
   // Every key ships a full spec — props, axes, tokens, accessibility — into
   // tokens.json and the agent bundle regardless of this check. This block is
-  // only about whether the LIVE Figma import additionally renders it as a
-  // real component node today. See FIGMA_SAMPLE_KEYS in componentCatalogue.ts.
+  // only about whether the plugin also builds it as a real component node: the
+  // core kit (FIGMA_SAMPLE_KEYS in componentCatalogue.ts). Every other set is
+  // in the Escala Design System, sold on its own (`/figma-kit`, lib/figmaKit.ts).
   if (!isInFigmaSample(component.key)) {
+    const inLibrary = component.figmaSets.length > 0
     return (
       <div className="rounded-xl border border-dashed border-line bg-surface/40 p-4 flex items-center gap-2.5">
         <FigmaGlyph className="text-fg-faint flex-shrink-0" />
         <p className="text-caption text-fg-faint leading-relaxed">
-          {/* Both counts are DERIVED. They were hardcoded "58" and "9" —
-              correct on the day they were typed and one catalogue entry away
-              from being a lie, which is the same drift that left the About
-              page claiming 39 semantic roles against a real 64. */}
-          {t("Not rendered in Figma yet — building all {count} specs as real variants locks the file on import, so today this one ships as a full spec (props, tokens, accessibility) in", { count: COMPONENT_KEYS.length })} <code className="font-mono">tokens.json</code> {t("and your coding agent's context, not as a component node in the file.")}
+          {inLibrary ? (
+            <>
+              {t('Not in the plugin’s core kit. Its Figma set is in the')}{' '}
+              <a href={FIGMA_KIT_PATH} className="font-medium text-fg-muted underline underline-offset-2 hover:text-fg">Escala Design System</a>
+              {t(', the complete library. Here it ships as a full spec (props, tokens, accessibility) in')}
+            </>
+          ) : (
+            t('Not in the Figma library yet. It ships as a full spec (props, tokens, accessibility) in')
+          )}{' '}
+          <code className="font-mono">tokens.json</code> {t("and your coding agent's context.")}
         </p>
       </div>
     )
@@ -1095,7 +1103,7 @@ export function FigmaShipList({ component }: { component: ComponentDef }) {
         </span>
       </div>
       <p className="text-caption text-fg-faint leading-relaxed">
-        {t("One of the {count} components on the '⬡ Components Overview' sample sheet every import builds — every fill, stroke and radius bound to your variables (component → semantic → primitive):", { count: FIGMA_SAMPLE_KEYS.length })}
+        {t('Part of the plugin’s core kit: every import builds it, drawn like the Escala Design System, with every fill, stroke and radius bound to your variables (component → semantic → primitive):')}
       </p>
       <div className="flex flex-wrap gap-1.5">
         {component.figmaSets.map((s) => (

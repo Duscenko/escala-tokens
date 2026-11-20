@@ -183,6 +183,7 @@ export function narrowToBrand(json: TokenJSON, slug: string): TokenJSON {
     if (json.studioThemes[slug]) out.studio = json.studioThemes[slug]
   }
   if (json.brandCss) out.brandCss = json.brandCss.filter((b) => brandOfKey(b.key) === slug)
+  if (json.brandCssGzip) out.brandCssGzip = json.brandCssGzip.filter((b) => brandOfKey(b.key) === slug)
   return out
 }
 

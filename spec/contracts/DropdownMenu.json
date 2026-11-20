@@ -116,7 +116,8 @@
       "spacing.none"
     ],
     "stroke": [
-      "stroke.divider"
+      "stroke.divider",
+      "stroke.focus"
     ]
   },
   "usage": "Use for 3+ secondary actions behind a \"⋯\" or button. Destructive items go last, after a separator. Size cascades to every label and item.",

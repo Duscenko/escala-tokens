@@ -18,6 +18,7 @@ import { freeFigmaScope, type FigmaScope } from '../../lib/freeFigmaScope'
 import { defaultFigmaSyncModes } from '../../lib/figmaSyncModes'
 import { useFreeTier } from '../../lib/access'
 import { PRICING_PATH, FREE_MAX_MODES } from '../../lib/entitlement'
+import { FIGMA_KIT_PATH } from '../../lib/figmaKit'
 import { trackEvent } from '../../lib/analytics'
 import { GitHubGlyph } from '../ui/icons'
 import { SEGMENT_INACTIVE } from './themeWorkspaceLayout'
@@ -841,8 +842,10 @@ export default function ExportWizard({
                     {free && (
                       <p className="mx-3 mb-2 rounded-lg bg-accent-ui/[0.08] px-3 py-2 text-body text-fg-muted">
                         <span className="font-semibold text-fg">Free ships every brand and viewport, up to {FREE_MAX_MODES} modes.</span>{' '}
-                        More than {FREE_MAX_MODES} modes and the complete UI Kit come with Escala Pro.{' '}
+                        More than {FREE_MAX_MODES} modes come with Escala Pro.{' '}
                         <a href={PRICING_PATH} className="font-medium text-accent-ui underline-offset-2 hover:underline">See pricing</a>
+                        {'. The plugin builds the core kit; the complete library is the '}
+                        <a href={FIGMA_KIT_PATH} className="font-medium text-accent-ui underline-offset-2 hover:underline">Escala Design System</a>.
                       </p>
                     )}
                   </>

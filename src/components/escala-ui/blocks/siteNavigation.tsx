@@ -166,10 +166,26 @@ export function MorphNav({ content, defaultContent = 'bar', onContentChange, com
     window.setTimeout(() => (from === 'search' ? searchTrigger : productTrigger).current?.focus({ preventScroll: true }), 0)
   }, [current, go])
 
+  // Compact is a product state, never animated: the size snaps for the one render it changes in.
+  const [snap, setSnap] = React.useState(false)
+  const lastCompact = React.useRef(compact)
+  React.useLayoutEffect(() => {
+    if (lastCompact.current === compact) return
+    lastCompact.current = compact
+    setSnap(true)
+  }, [compact])
+  React.useEffect(() => {
+    if (!snap) return
+    let id2 = 0
+    const id1 = requestAnimationFrame(() => { id2 = requestAnimationFrame(() => setSnap(false)) })
+    return () => { cancelAnimationFrame(id1); cancelAnimationFrame(id2) }
+  }, [snap])
+
   // The container's size is what travels: worked out from the parts, so CSS can transition between two lengths.
   React.useLayoutEffect(() => {
     const nav = root.current, bar = barRef.current, panel = panelRef.current, search = searchRef.current
     if (!nav || !bar || !panel || !search) return
+    const put = (width: number, height: number) => setSize((prev) => (prev && prev.width === width && prev.height === height ? prev : { width, height }))
     const measure = () => {
       const edge = px(nav, '--stroke-divider') * 2
       const gap = px(nav, '--spacing-gap-control')
@@ -178,13 +194,15 @@ export function MorphNav({ content, defaultContent = 'bar', onContentChange, com
       bar.style.width = 'max-content'
       const barWidth = bar.offsetWidth
       bar.style.width = fill
-      if (current === 'search') setSize({ width: search.offsetWidth + edge, height: search.offsetHeight + edge })
-      else if (current === 'product') setSize({ width: Math.max(barWidth, panel.offsetWidth) + inset * 2 + edge, height: bar.offsetHeight + gap + panel.offsetHeight + inset * 2 + edge })
-      else setSize({ width: barWidth + inset * 2 + edge, height: bar.offsetHeight + inset * 2 + edge })
+      if (current === 'search') put(search.offsetWidth + edge, search.offsetHeight + edge)
+      else if (current === 'product') put(Math.max(barWidth, panel.offsetWidth) + inset * 2 + edge, bar.offsetHeight + gap + panel.offsetHeight + inset * 2 + edge)
+      else put(barWidth + inset * 2 + edge, bar.offsetHeight + inset * 2 + edge)
     }
     measure()
+    // The bar itself is stretched by the travelling container (it is `w-full`), so watching it would re-measure on every
+    // frame of the morph. Its parts have a size of their own: those are what can change.
     const observer = new ResizeObserver(measure)
-    for (const el of [bar, panel, search]) observer.observe(el)
+    for (const el of [panel, search, ...Array.from(bar.children)]) observer.observe(el)
     return () => observer.disconnect()
   }, [current, compact])
 
@@ -221,7 +239,7 @@ export function MorphNav({ content, defaultContent = 'bar', onContentChange, com
       style={{
         background: 'var(--color-surface-layer-2)', border: 'var(--stroke-divider) solid var(--color-border-default)', borderRadius: 'var(--radius-overlay)', boxShadow: 'var(--shadow-lg)',
         // Reduced motion drops the size travel; the fades stay.
-        transition: reduced ? undefined : `width var(${travel}), height var(${travel})`,
+        transition: reduced || snap ? undefined : `width var(${travel}), height var(${travel})`,
         ...(size ?? {}),
         ...style,
       }}
@@ -235,7 +253,8 @@ export function MorphNav({ content, defaultContent = 'bar', onContentChange, com
           gap: 'var(--spacing-gap-control)',
           padding: product ? 'var(--spacing-inset-surface)' : 'var(--spacing-gap-control)',
           opacity: searching ? 0 : 1,
-          transition: `padding var(${travel}), opacity var(${searching ? '--motion-use-stagger-out' : '--motion-use-stagger-in'})`,
+          // The bar's inset travels with the container; when the container jumps (reduced motion, Compact) it jumps too.
+          transition: `${reduced || snap ? '' : `padding var(${travel}), `}opacity var(${searching ? '--motion-use-stagger-out' : '--motion-use-stagger-in'})`,
         }}
       >
         <div ref={barRef} data-part="MorphNav.bar" className="flex w-full items-center" style={{ gap: 'var(--spacing-gap-tight)', paddingInlineStart: 'var(--spacing-gap-tight)' }}>
@@ -253,7 +272,7 @@ export function MorphNav({ content, defaultContent = 'bar', onContentChange, com
             </button>
           </NavItem>
           {LINKS.map((label) => (
-            <NavItem key={label} size="sm" href="#" iconTrailing={label === 'Pricing' ? undefined : boxedGlyph('chevron-down', 'icon.small')} onPointerEnter={() => { if (product) hoverTo('bar', HOVER_CLOSE_MS); else cancelHover() }}>{label}</NavItem>
+            <NavItem key={label} size="sm" href="#" iconTrailing={label === 'Pricing' ? undefined : boxedGlyph('chevron-down', 'icon.small')} onPointerEnter={() => cancelHover()}>{label}</NavItem>
           ))}
           <span className="flex-1" />
           <IconButton ref={searchTrigger} variant="secondary" appearance="ghost" icon={boxedGlyph('search')} aria-label="Search" aria-keyshortcuts="Meta+K" onClick={() => go('search')} />

@@ -491,7 +491,9 @@ export const DROPDOWN_MENU: ComponentRecipe = {
       // Concentric with the overlay: 24 − inset-control 12 = Radius/action 12 for the rows (DEC-2026-11-16-001).
       // The header sits on the content, so its bottom padding is none.
       header: { paddingX: 'spacing.inset-control', paddingY: 'spacing.inset-control', paddingBottom: 'spacing.none' },
-      content: { paddingX: 'spacing.inset-control', paddingY: 'spacing.inset-control' },
+      // The content bleeds `stroke.focus` on every side (HALO_BLEED: that much padding taken back by an equal negative margin) so a row's
+      // focus halo is not clipped; its padding therefore carries the bleed on top of the file's 12 (row 13, width 230, menu 256×122).
+      content: { paddingX: 'spacing.inset-control+stroke.focus', paddingY: 'spacing.inset-control+stroke.focus' },
       // A separator row: 4px above and below a 1px subtle rule.
       separator: { fill: c('border.subtle'), height: 'stroke.divider' },
     })),

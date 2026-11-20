@@ -27,14 +27,16 @@ export function leadBrandKey(json: TokenJSON): string | null {
 export function leadBrandJson(json: TokenJSON, brand: string | null = leadBrandKey(json)): TokenJSON {
   const f = brand ? json.foundationsByTheme?.[brand] : undefined
   if (!f) {
-    if (!json.brandCss) return json
+    if (!json.brandCss && !json.brandCssGzip) return json
     const rest: Record<string, unknown> = { ...json }
     delete rest.brandCss
+    delete rest.brandCssGzip
     return rest as unknown as TokenJSON
   }
   const out: Record<string, unknown> = { ...json }
   // CSS strings for the plugin's save; a repo's tokens.json never carries them.
   delete out.brandCss
+  delete out.brandCssGzip
   for (const [key, value] of Object.entries(f as Foundations & Record<string, unknown>)) {
     if (value == null) continue
     if (key === 'iconWeight') {

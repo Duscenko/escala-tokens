@@ -2,7 +2,7 @@ import { useEffect } from 'react'
 import { HOSTED_LIVE_SYNC } from './hostedSync'
 import { useDesignStore, type DesignSnapshot } from '../store/useDesignStore'
 import { generateTokenJSON, setActiveThemeHint, type GenerateTokenOptions } from './tokenGenerator'
-import { withBrandCss } from './brandCss'
+import { withPublishBrandCss } from './brandCss'
 import { DEFAULT_PUBLISH_ORIGIN, canonicalOrigin } from './agentInstall'
 import { claimStorageKey } from './publishTrust'
 import { slugify } from './utils'
@@ -179,8 +179,9 @@ async function postPublishedTokens(opts: PublishTokensInput): Promise<PublishRes
   // identity on a browser that has published nothing.
   const slug = useDesignStore.getState().ensurePublishId()
   // `brandCss`: each brand's own variables.css, for the plugin's GitHub save
-  // (lib/brandCss). Not part of the auto-sync change signal.
-  const body = JSON.stringify(withBrandCss(generateTokenJSON(undefined, {
+  // (lib/brandCss) — gzipped in `brandCssGzip` when plain would not fit.
+  // Not part of the auto-sync change signal.
+  const body = JSON.stringify(await withPublishBrandCss(generateTokenJSON(undefined, {
     ...(opts.theme ? { theme: opts.theme } : {}),
     ...(opts.themes?.length ? { themes: opts.themes } : {}),
     ...(opts.modes?.length ? { modes: opts.modes } : {}),

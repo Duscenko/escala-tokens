@@ -82,7 +82,7 @@
         "Product opens on pointer enter and from the keyboard; its trigger reports aria-expanded",
         "Search opens on click and Cmd K and takes focus",
         "Escape returns to the bar and restores focus to the control that opened it",
-        "Hover intent: the panel waits 60 ms to open and 140 ms to close, so crossing the bar does not flicker it"
+        "Hover intent: the panel waits 60 ms to open and 140 ms to close. Crossing the other bar items (Solutions, Resources, Pricing) never closes it: it closes when the pointer leaves the container, on Escape or on a second click. Those items have no panel in Figma"
       ],
       "motion": [
         {

@@ -37,7 +37,7 @@ A desktop token configurator. Designers pick tokens; the app emits `tokens.json`
 5. **Store is persisted.** New Zustand fields need a migration. Emit them from `generateTokenJSON()` if consumers should see them.
 6. **`*Reference.ts` is generated** (`npm run gen:*`). Do not hand-edit.
 7. **Figma names use `/`, CSS uses hyphens + `var()`, JSON architecture uses dots.** `action.primary.default` → `Action/primary/default` → `var(--color-action-primary-default)`.
-8. **Plugin lives in** `../escala-figma-plugin`. `code.ts` is authoritative for component sets; `componentCatalogue.ts` mirrors it. The default LIVE import (Overview) renders `FIGMA_SAMPLE_KEYS` (9 keys), each with the same full variant set the Full catalogue gives it; the explicit **Full catalogue** option renders all 58 `figmaSets` with representative variants (not the 1,403-combination cartesian product). Keep `FIGMA_SAMPLE_KEYS` in lockstep with `SAMPLE` and every `figmaSets` entry in lockstep with `CATALOG`.
+8. **Plugin lives in** `../escala-figma-plugin`. `code.ts` is authoritative for component sets; `componentCatalogue.ts` mirrors it. Since plugin 0.35.0 (2026-11-20) the plugin builds variables, styles, the Getting started · Token Architecture · Documentation pages and the **core kit** — `FIGMA_SAMPLE_KEYS` (Button, IconButton, Input, Checkbox, Switch, Badge, Avatar, plus the plugin's `Radio`, which has no catalogue key), each a base cut of its matrix. It no longer offers a Full catalogue: the complete library (70+ components, blocks, pages) is the **Escala Design System**, sold through `/figma-kit` (`lib/figmaKit.ts`). Never promise the full catalogue in the plugin. Keep `FIGMA_SAMPLE_KEYS` in lockstep with `SAMPLE_SETS` (code.ts) / `CORE_KIT` (ui.html) and every `figmaSets` entry in lockstep with `CATALOG`.
 9. **Desktop/laptop only.** Do not build phone editor layouts. `DesktopOnlyNotice` + About is the one phone surface, and it holds the **phone generator** (`MobileThemeSheet.tsx` + `lib/mobileTheme.ts`): a live preview (six swipe pages of bento), a docked Theme panel (Shuffle · Copy prompt · Controls) whose Controls pages reuse the desktop rail's pieces whose every control is a PICK from a list the desktop ships (curated brand colours, `FONT_PRESETS`, type scale modes, radius presets, spacing modes). Never free inputs (hex, px, names) or token tables there. Export on a phone is only: copy the CSS variables, copy the system as an agent prompt (`systemBrief`, `agent-context/v1`), and the `?remix=` link to a laptop. Plans: `design-plans/mobile-theme-sheet.md`, `design-plans/mobile-bento-action-bar.md`.
 10. **No `console.log` in production.** TypeScript strict. No `any` unless forced.
 
@@ -52,7 +52,7 @@ src/lib/agentBundle/            TokenJSON → Skill + agent-bundle zip (no store
 src/lib/skillExport.ts          store wrappers (buildSkillExport, buildAgentProductExport)
 src/lib/agentAccess/            resolve, catalogue, contrast (no hosted MCP)
 src/lib/color/                  ramps, APCA, gamut, CVD
-src/lib/componentCatalogue.ts   58 components (props, a11y) — 9 by default; all 58 via the plugin's Full catalogue option
+src/lib/componentCatalogue.ts   the component catalogue (props, a11y); FIGMA_SAMPLE_KEYS = the plugin's core kit
 api/tokens.ts                   publish / fetch Blob
 ```
 
