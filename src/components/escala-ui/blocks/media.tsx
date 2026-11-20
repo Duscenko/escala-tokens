@@ -24,6 +24,26 @@ const motion = (role: string) => `var(--motion-${role}-duration) var(--motion-${
 const primary = v('color.content.primary')
 const secondary = v('color.content.secondary')
 
+/** Figma draws the photos as they are (`none`). `accent` (code) lays a gradient in the brand's `Action/primary/default` over
+ *  the picture with `mix-blend-mode: color`: its corner takes the accent's hue at the photo's own lightness and fades back
+ *  to the original, so every brand and accent re-colours the same photo live — no second image per colour. */
+export const MEDIA_TINTS = ['none', 'accent'] as const
+export type MediaTint = (typeof MEDIA_TINTS)[number]
+
+/** A block's photo: the plain Image, or the Image with its accent tint. */
+function MediaPhoto({ src, ratio, tint }: { src: string; ratio: '1:1' | '16:9'; tint: MediaTint }) {
+  if (tint === 'none') return <Image ratio={ratio} src={src} alt="" />
+  return (
+    <Image ratio={ratio} data-tint={tint}>
+      <img src={src} alt="" />
+      <span
+        aria-hidden data-part="tint"
+        style={{ position: 'absolute', inset: 0, background: `linear-gradient(150deg, ${v('color.action.primary.default')} 0%, transparent 80%)`, mixBlendMode: 'color', pointerEvents: 'none' }}
+      />
+    </Image>
+  )
+}
+
 const clock = (s: number) => `${Math.floor(s / 60)}:${String(Math.floor(s % 60)).padStart(2, '0')}`
 const icon = (name: Parameters<typeof glyph>[0]) => glyph(name)
 
@@ -118,10 +138,12 @@ export interface NowPlayingProps extends Omit<React.ComponentProps<'div'>, 'titl
   artist?: string
   artwork?: string
   onNext?: () => void
+  /** The artwork's colour: as the file draws it, or tinted with the brand's accent (code). */
+  tint?: MediaTint
 }
 
 /** Figma NowPlaying (2402:102): a compact floating player on Surface/layer-2 · Border/default · Radius/overlay · Shadow/lg. */
-export function NowPlaying({ playing, defaultPlaying = true, onPlayingChange, title = 'Undertow', artist = 'Hollis Reed', artwork = ALBUM_WAVES, onNext, style, ...props }: NowPlayingProps) {
+export function NowPlaying({ playing, defaultPlaying = true, onPlayingChange, title = 'Undertow', artist = 'Hollis Reed', artwork = ALBUM_WAVES, onNext, tint = 'none', style, ...props }: NowPlayingProps) {
   const [inner, setInner] = React.useState(defaultPlaying)
   const on = playing ?? inner
   const toggle = () => { setInner(!on); onPlayingChange?.(!on) }
@@ -136,9 +158,10 @@ export function NowPlaying({ playing, defaultPlaying = true, onPlayingChange, ti
       {...props}
     >
       <div style={{ width: `calc(${v('spacing.8')} * 1.75)`, flexShrink: 0, borderRadius: v('radius.action'), overflow: 'hidden', background: v('color.surface.muted') }}>
-        <Image ratio="1:1" src={artwork} alt="" />
+        <MediaPhoto ratio="1:1" src={artwork} tint={tint} />
       </div>
-      <div style={{ display: 'flex', flexDirection: 'column', paddingRight: v('spacing.gap-group'), whiteSpace: 'nowrap' }}>
+      {/* Hugs its text in a hugging bar; when the bar is stretched it takes the free width, so the transport stays right. */}
+      <div style={{ flex: '1 1 auto', minWidth: 0, display: 'flex', flexDirection: 'column', paddingRight: v('spacing.gap-group'), whiteSpace: 'nowrap' }}>
         <span style={{ ...type('label'), color: primary }}>{title}</span>
         <span style={{ ...type('body-sm'), color: secondary }}>{artist}</span>
       </div>
@@ -167,13 +190,15 @@ export interface MediaPlayerProps extends Omit<React.ComponentProps<'div'>, 'tit
   /** The row that is playing (an id from `tracks`). */
   currentId?: string
   cover?: string
+  /** The cover's colour: as the file draws it, or tinted with the brand's accent (code). */
+  tint?: MediaTint
   /** The seek position, in seconds (controlled by the clock when left out). */
   defaultTime?: number
 }
 
 /** Figma MediaPlayer (2402:277): cover, title and transport, seek, volume and a playlist, in one 640 card. */
 export function MediaPlayer({
-  playing, defaultPlaying = true, onPlayingChange, tracks = MEDIA_PLAYER_TRACKS, currentId, cover = COVER_ALPINE, defaultTime = 12, style, ...props
+  playing, defaultPlaying = true, onPlayingChange, tracks = MEDIA_PLAYER_TRACKS, currentId, cover = COVER_ALPINE, defaultTime = 12, tint = 'none', style, ...props
 }: MediaPlayerProps) {
   const [innerPlaying, setInnerPlaying] = React.useState(defaultPlaying)
   const on = playing ?? innerPlaying
@@ -207,7 +232,7 @@ export function MediaPlayer({
       {...props}
     >
       <div style={{ borderRadius: v('radius.action'), overflow: 'hidden', background: v('color.surface.muted') }}>
-        <Image ratio="16:9" src={cover} alt="" />
+        <MediaPhoto ratio="16:9" src={cover} tint={tint} />
       </div>
       <div style={{ display: 'flex', alignItems: 'center' }}>
         <div key={pick} style={{ flex: '1 1 0', minWidth: 0, display: 'flex', flexDirection: 'column', gap: v('spacing.gap-tight'), whiteSpace: 'nowrap' }}>

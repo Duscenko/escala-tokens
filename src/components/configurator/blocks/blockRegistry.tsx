@@ -28,7 +28,8 @@ import {
   DashboardGaugeCard, DashboardMetricCard, DashboardActivityCard, DashboardTrafficCard,
 } from '../../escala-ui/blocks/dashboard'
 import { CardStack, CardStackCard, CARD_STACK_STATES, CARD_STACK_CARD_STATES, type CardStackState, type CardStackCardState } from '../../escala-ui/blocks/cardStack'
-import { MediaPlayer, MediaPlayerTrack, NowPlaying, MEDIA_PLAYER_TRACK_STATES, type MediaPlayerTrackState } from '../../escala-ui/blocks/media'
+import { COVERS } from '../../escala-ui/blocks/mediaSamples'
+import { MediaPlayer, MediaPlayerTrack, NowPlaying, MEDIA_PLAYER_TRACK_STATES, MEDIA_TINTS, type MediaPlayerTrackState, type MediaTint } from '../../escala-ui/blocks/media'
 import {
   HeroHeader, FAQSection, PricingCard, PricingSection, ContactSection, Footer,
   FAQ_STYLES, type MarketingLayout, type FaqStyle,
@@ -109,6 +110,11 @@ export interface BlockDef {
   responsive?: boolean
   /** Wide on a desktop, but a phone draws only its plain content: that content keeps the page's inset there. */
   phoneInset?: boolean
+  /** A card wider than a dialog (a split sign-in page, a dashboard tile): not a page section, so it opens on the bare
+   *  canvas laid out at this width and sits centred in a device window, never pinned to its top-left corner. */
+  canvasWidth?: number
+  /** In a device window it sits on the page surface (it is a page of its own), not on layer-1 as a dialog does. */
+  onPage?: boolean
   /** A complementary piece of another block (`<Group>/<Name>`): shown on that block's page, not listed on its own. */
   partOf?: string
   /** Overlay blocks: the real dialog (scrim, focus trap, Escape). */
@@ -127,6 +133,7 @@ const layoutCtl: BlockControl = { key: 'layout', label: 'Layout', options: AUTH_
 const statusCtl: BlockControl = { key: 'status', label: 'Status', options: AUTH_STATUSES, default: 'idle' }
 const setupStatusCtl: BlockControl = { key: 'status', label: 'Status', options: AUTH_SETUP_STATUSES, default: 'active' }
 const floatingNav: BlockControl = { key: 'nav', label: 'Nav', options: FLOATING_NAVS, default: 'links' }
+const tintCtl: BlockControl = { key: 'tint', label: 'Tint (code)', options: MEDIA_TINTS, default: 'accent' }
 const panelVisible: BlockControl = { key: 'panelVisible', label: 'PanelVisible', options: ['true', 'false'], default: 'true' }
 
 type Def = Omit<BlockDef, 'id' | 'contract'> & { contractName?: string }
@@ -170,7 +177,9 @@ const DEFS: Def[] = [
     contractName: 'AuthPasskeySetup',
   },
   { group: 'Auth', name: 'SignInPasskey', description: 'Email-first sign-in with a passkey and social providers, in a tray modal.', wide: false, controls: [], render: () => <AuthSignInPasskey />, contractName: 'AuthSignInPasskey' },
-  { group: 'Auth', name: 'Split', description: 'A brand panel beside any Auth block, for a full sign-in page.', wide: true, phoneInset: true, controls: [], render: () => <AuthSplit><AuthSignIn container="plain" /></AuthSplit>, contractName: 'AuthSplit' },
+  { group: 'Auth', name: 'Split', description: 'A brand panel beside any Auth block, for a full sign-in page.', wide: false, canvasWidth: 1200, onPage: true,
+    controls: [{ key: 'photo', label: 'Media (code)', options: ['none', ...Object.keys(COVERS)], default: 'alpine' }],
+    render: (v) => <AuthSplit media={v.photo === 'none' ? undefined : COVERS[v.photo as keyof typeof COVERS]}><AuthSignIn container="plain" /></AuthSplit>, contractName: 'AuthSplit' },
   auth('SignInPhone', 'Sign-in with a phone number and its country code.', AuthSignInPhone),
   auth('SignUp', 'Creates an account: name, email, password and the terms.', AuthSignUp),
   auth('SocialSignIn', 'Sign-in with social providers only.', AuthSocialSignIn, false),
@@ -188,8 +197,8 @@ const DEFS: Def[] = [
   // ── Dashboard ──
   { group: 'Dashboard', name: 'DashboardGaugeCard', description: 'One health score: a Gauge, a title and a status line.', wide: false, controls: [], render: () => <DashboardGaugeCard /> },
   { group: 'Dashboard', name: 'DashboardMetricCard', description: 'One KPI: label, value, delta, a Sparkline and a range switch.', wide: false, controls: [], render: () => <DashboardMetricCard /> },
-  { group: 'Dashboard', name: 'DashboardActivityCard', description: 'A year of activity: total, year switch, ActivityHeatmap and a caption.', wide: true, controls: [], render: () => <DashboardActivityCard /> },
-  { group: 'Dashboard', name: 'DashboardTrafficCard', description: 'Traffic by source: range switch, title, total and a SplitBar.', wide: true, controls: [], render: () => <DashboardTrafficCard /> },
+  { group: 'Dashboard', name: 'DashboardActivityCard', description: 'A year of activity: total, year switch, ActivityHeatmap and a caption.', wide: false, canvasWidth: 1000, controls: [], render: () => <DashboardActivityCard /> },
+  { group: 'Dashboard', name: 'DashboardTrafficCard', description: 'Traffic by source: range switch, title, total and a SplitBar.', wide: false, canvasWidth: 1080, controls: [], render: () => <DashboardTrafficCard /> },
   // ── Marketing ──
   { group: 'Marketing', name: 'ContactSection', description: 'A contact form beside an image, with the services to choose from.', wide: true, responsive: true, controls: [], render: (v) => <ContactSection layout={v.layout as MarketingLayout} /> },
   { group: 'Marketing', name: 'FAQSection', description: 'Frequently asked questions as an accordion, split or centred.', wide: true, responsive: true, controls: [{ key: 'faqStyle', label: 'Style', options: FAQ_STYLES, default: 'split' }], render: (v) => <FAQSection layout={v.layout as MarketingLayout} faqStyle={v.faqStyle as FaqStyle} /> },
@@ -198,9 +207,9 @@ const DEFS: Def[] = [
   { group: 'Marketing', name: 'PricingCard', description: 'One plan: name, price, billing, features and its call to action.', wide: false, partOf: 'Marketing/PricingSection', controls: [], render: () => <PricingCard /> },
   { group: 'Marketing', name: 'PricingSection', description: 'The pricing page section: heading and the plans side by side.', wide: true, responsive: true, controls: [], render: (v) => <PricingSection layout={v.layout as MarketingLayout} /> },
   // ── Media ──
-  { group: 'Media', name: 'MediaPlayer', description: 'An audio player: cover, transport, seek, volume and a playlist.', wide: false, controls: [{ key: 'playing', label: 'Playing', options: ['true', 'false'], default: 'true' }], render: (v) => <MediaPlayer key={v.playing} defaultPlaying={v.playing !== 'false'} /> },
+  { group: 'Media', name: 'MediaPlayer', description: 'An audio player: cover, transport, seek, volume and a playlist.', wide: false, controls: [{ key: 'playing', label: 'Playing', options: ['true', 'false'], default: 'true' }, tintCtl], render: (v) => <MediaPlayer key={v.playing} defaultPlaying={v.playing !== 'false'} tint={v.tint as MediaTint} /> },
   { group: 'Media', name: 'MediaPlayerTrack', description: 'One playlist row: title and duration, with the current row marked.', wide: false, partOf: 'Media/MediaPlayer', controls: [{ key: 'state', label: 'State', options: MEDIA_PLAYER_TRACK_STATES, default: 'Default' }], render: (v) => <MediaPlayerTrack forceState={v.state === 'Default' ? undefined : (v.state as MediaPlayerTrackState)} /> },
-  { group: 'Media', name: 'NowPlaying', description: 'A compact floating player: artwork, title, artist and transport.', wide: false, controls: [{ key: 'playing', label: 'Playing', options: ['true', 'false'], default: 'true' }], render: (v) => <NowPlaying key={v.playing} defaultPlaying={v.playing !== 'false'} /> },
+  { group: 'Media', name: 'NowPlaying', description: 'A compact floating player: artwork, title, artist and transport.', wide: false, controls: [{ key: 'playing', label: 'Playing', options: ['true', 'false'], default: 'true' }, tintCtl], render: (v) => <NowPlaying key={v.playing} defaultPlaying={v.playing !== 'false'} tint={v.tint as MediaTint} /> },
   // ── Navigation ──
   { group: 'Navigation', name: 'AnnouncementBar', description: 'A one-line message across the top of the page, dismissible.', wide: true, controls: [], render: () => <AnnouncementBar /> },
   { group: 'Navigation', name: 'AppHeader', description: 'The product header: brand, navigation, search and account.', wide: true, controls: [], render: (v) => <AppHeader layout={v.layout as NavLayout} />, mockup: (_v, layout) => <HeaderMockup block="AppHeader" layout={layout} /> },

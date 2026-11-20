@@ -265,11 +265,12 @@ export function SkeletonInlineLinkSpecimen({ t, children }: { t: SpecimenProps['
 
 
 /** The Figma ReactionGroup (2381:169) as the file draws it: Celebrate 13 and Like 10 are yours, Insightful 3, Question 1. */
-export function SkeletonReactionGroupSpecimen({ t }: SpecimenProps) {
+export function SkeletonReactionGroupSpecimen({ t, v }: SpecimenProps) {
   return (
     <RecipeScope t={t}>
       <div style={{ width: 480, maxWidth: '100%' }}>
         <SkReactionGroup
+          summaryVisible={v.SummaryVisible !== 'false'}
           defaultValue={[
             { id: 'celebrate', count: 13, reacted: true },
             { id: 'like', count: 10, reacted: true },

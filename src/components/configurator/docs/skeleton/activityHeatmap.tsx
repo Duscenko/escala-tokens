@@ -5,10 +5,13 @@ import { ActivityHeatmap as SkActivityHeatmap, ActivityHeatmapCell as SkActivity
 import { DASHBOARD_ACTIVITY_END, DASHBOARD_ACTIVITY_SAMPLE } from '../../../escala-ui/blocks/dashboardSample'
 import { RecipeScope } from './scope'
 
-export function SkeletonActivityHeatmapSpecimen({ t }: SpecimenProps) {
+export function SkeletonActivityHeatmapSpecimen({ t, v }: SpecimenProps) {
   return (
     <RecipeScope t={t}>
-      <SkActivityHeatmap data={DASHBOARD_ACTIVITY_SAMPLE} endDate={DASHBOARD_ACTIVITY_END} aria-label="Contributions in 2025" />
+      <SkActivityHeatmap
+        data={DASHBOARD_ACTIVITY_SAMPLE} endDate={DASHBOARD_ACTIVITY_END} aria-label="Contributions in 2025"
+        showLegend={v.LegendVisible !== 'false'} showMonthLabels={v.MonthLabelsVisible !== 'false'} showDayLabels={v.DayLabelsVisible !== 'false'}
+      />
     </RecipeScope>
   )
 }

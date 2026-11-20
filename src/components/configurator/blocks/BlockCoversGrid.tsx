@@ -49,7 +49,7 @@ export function BlockCoversGrid({ tokens, onOpen }: {
             <span className="absolute inset-x-5 bottom-5 top-2">
               <FittedSpecimen>
                 <RecipeScope t={tokens}>
-                  <div style={{ width: block.wide ? COVER_LAYOUT_WIDTH : undefined }}>
+                  <div style={{ width: block.wide ? COVER_LAYOUT_WIDTH : block.canvasWidth }}>
                     {block.render(blockDefaults(block))}
                   </div>
                 </RecipeScope>
