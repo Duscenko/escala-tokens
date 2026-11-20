@@ -156,18 +156,24 @@ const RAISE: Record<GovernanceFinding['severity'], GovernanceFinding['severity']
 
 /**
  * Merges the findings this run computed into the file's list. Only entries with
- * `source: contracts:report` are managed: a computed one keeps its firstSeen, status and ticket;
+ * `source: contracts:report` (or `opts.source`) are managed; with `opts.scope`, only those whose
+ * entity the run checked can close: a computed one keeps its firstSeen, status and ticket;
  * a managed Open one no longer computed becomes Fixed (resolution = `ref`); a Fixed one that comes
  * back is Open with `regression: true` and its severity raised one level. Everything else is kept as is.
  */
-export function mergeFindings(existing: GovernanceFinding[], computed: GovernanceFinding[], today: string, ref: string): GovernanceFinding[] {
+export function mergeFindings(
+  existing: GovernanceFinding[], computed: GovernanceFinding[], today: string, ref: string,
+  opts: { source?: string; scope?: Set<string> } = {},
+): GovernanceFinding[] {
+  const source = opts.source ?? REPORT_SOURCE
   const now = new Map(computed.map((f) => [f.id, f]))
   const out: GovernanceFinding[] = []
   const seen = new Set<string>()
   for (const old of existing) {
-    if (old.source !== REPORT_SOURCE) { out.push(old); continue }
+    if (old.source !== source) { out.push(old); continue }
     seen.add(old.id)
     const f = now.get(old.id)
+    if (!f && opts.scope && !opts.scope.has(old.entity)) { out.push(old); continue }
     if (!f) {
       out.push(old.status === 'Open' ? { ...old, status: 'Fixed', resolution: { ref } } : old)
       continue

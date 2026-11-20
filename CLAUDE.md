@@ -37,7 +37,8 @@ About + the phone generator (`MobileThemeSheet.tsx`, picks only, no free inputs)
 - Process, stages, agents, findings and tickets: the `escala-governance` skill. Data lives in
   `governance/` (`registry.json`, `findings/latest.json`, `ledger/`, `exceptions.yaml`, `runs/`).
 - A scheduled **daily review** (weekdays 18:37 Paris, read-only) reports every Figma ↔ Storybook
-  difference to the owner with links to both (governance §4.5).
+  difference to the owner with links to both (governance §4.5). Per-state bindings (§4.5.2):
+  `npm run figma:bindings:prepare` → run each batch with `use_figma` → `npm run figma:bindings:report -- <results>`.
 
 ## Repo map (real paths)
 

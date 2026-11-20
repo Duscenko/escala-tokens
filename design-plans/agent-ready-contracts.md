@@ -63,7 +63,7 @@ Schema `escala-component-contract/2`, additive over v1 (no key renamed or remove
 
 ### Phase 5 — Figma side (needs `use_figma`, owner OK before any write)
 - [x] Inventory script returns the set node id → `figma.setNodeId` + a direct link per contract.
-- [ ] Daily review compares Figma's per-state bindings with `bindings` (governance §4.5.2).
+- [x] Daily review compares Figma's per-state bindings with `bindings` (governance §4.5.2).
 
 ## Loop rules
 - Work on `feat/agent-ready-contracts` (worktree `.claude/worktrees/agent-ready-contracts`); other
@@ -129,11 +129,31 @@ Schema `escala-component-contract/2`, additive over v1 (no key renamed or remove
   `ReactionGroup (PRO) (1)`): ledger, families manifest and the block-page list follow Figma. `npm test`:
   4 known failures (exportAudit goldens ×3, pluginGithubPush size) — the figmaComponentsParity one is gone.
 
+- 2026-11-20 · Phase 5 (2/2): `scripts/figma/bindings-check.figma.js` (read-only) + `scripts/figma-bindings.ts`:
+  `npm run figma:bindings:prepare [-- --only=Key,…]` embeds every contract's per-state colour roles (fill ·
+  stroke · text, root and named parts, Figma names, deduplicated to fit `use_figma`) into batches under
+  `reports/figma-bindings/`; each batch returns only differences as tuples with a sample variant id;
+  `npm run figma:bindings:report -- <results>` writes `source: figma:bindings` findings (PAR-001 wrong role,
+  TOK-004 opacity that is not the role's own alpha, TOK-001 unbound paint), closing only components the run
+  checked. `mergeFindings` gained `{ source, scope }`. First run on the library (2 batches, raw results in
+  `governance/runs/2026-11-20-figma-bindings-*.json`): 119 components, 45 PAR-001 open, 0 TOK-004, 0 TOK-001.
+  Two probe artifacts found and fixed on the way (Figma mirrors a translucent role's alpha into
+  `paint.opacity` — 137/137 checked; a vector's text colour is its stroke; a part drawn by one nested
+  instance is skipped). Not checked: parts with no same-named layer (listed per component in the run file),
+  15 components without a Figma set or without colour bindings. `figmaBindingsCheck.test.ts` runs the Figma
+  script on a fake file.
+
 ## Next
-Everything automatable is done. What waits for the owner:
-1. **Phase 5 — Figma writes** (needs `use_figma` and the owner's OK before any write): the inventory script
-   returns each set's node id → `figma.setNodeId` + a direct link per contract; the daily review compares
-   Figma's per-state bindings with `bindings` (governance §4.5.2).
-2. **MOT-002 `none`**: the gate counts `none` as a decision, but `RecipeMotion` cannot say `none` yet —
+Everything automatable is done (Phases 1–5). What waits for the owner (César):
+1. **Figma ↔ contract bindings — 45 PAR-001** in `governance/findings/latest.json` (`source: figma:bindings`),
+   each with both values and a node link. Figma owns anatomy, so the default fix is the code (recipe → regenerate
+   contracts); some need a decision first: Checkbox Focused stroke (Figma paints the focus border, code keeps the
+   rest stroke and draws a ring), FeaturedIcon gradient (no gradient role exists), Input/DatePicker text in
+   `Value=placeholder` (the contract has no Value-specific text role), Switch `io`, ModalFooter/Sheet borders.
+2. **Daily review**: add the bindings step to the scheduled task (its prompt is account-side; the command is in
+   CLAUDE.md and the script header). The run costs two `use_figma` calls (~74 KB of code).
+3. **MOT-002 `none`**: the gate counts `none` as a decision, but `RecipeMotion` cannot say `none` yet —
    add it when the owner names the first static-state component (27 components in the baseline).
-3. **Merge `feat/agent-ready-contracts`** (owner review; never pushed by an agent).
+4. **PAR-001 baseline** (story controls): FABGroup Open default, Modal Layout, ModalFooter Surface.
+5. **Figma page name** `ReactionGroup (PRO) (1)` looks accidental; the manifest follows it until it is renamed.
+6. **Merge `feat/agent-ready-contracts`** (owner review; never pushed by an agent).
