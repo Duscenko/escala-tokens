@@ -758,7 +758,8 @@
     "ariaAttributes": [
       "aria-disabled",
       "aria-label"
-    ]
+    ],
+    "authored": null
   },
   "usage": "Use in the corner of anything the person can put away. Always give it an aria-label (it defaults to \"Close\"); use the inverse variant on an inverse surface such as a tooltip or snackbar. A dismiss that needs words is a Button.",
   "accessibility": "Native <button> with an aria-label (there is no visible text), \"Close\" by default. Disabled sets aria-disabled. The glyph is decorative (aria-hidden).",
@@ -781,6 +782,7 @@
     }
   },
   "docs": {
-    "humanContract": "design-plans/close-button-contract.md"
+    "humanContract": "design-plans/close-button-contract.md",
+    "readable": "spec/contracts/CloseButton.md"
   }
 }

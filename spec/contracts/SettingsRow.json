@@ -202,7 +202,8 @@
     "ariaAttributes": [
       "aria-describedby",
       "aria-labelledby"
-    ]
+    ],
+    "authored": null
   },
   "usage": "Inside a SettingsSection. Inline puts the control on the right; stacked puts it under the text. It saves on change, with no submit.",
   "accessibility": "The title names the control through aria-labelledby and the description describes it through aria-describedby.",
@@ -225,6 +226,7 @@
     }
   },
   "docs": {
-    "humanContract": null
+    "humanContract": null,
+    "readable": "spec/contracts/SettingsRow.md"
   }
 }

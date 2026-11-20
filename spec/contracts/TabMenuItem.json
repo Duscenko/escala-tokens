@@ -342,7 +342,8 @@
     ],
     "ariaAttributes": [
       "aria-pressed"
-    ]
+    ],
+    "authored": null
   },
   "usage": "Inside a button-variant TabMenu.",
   "accessibility": "A button with aria-pressed; disabled uses the native attribute.",
@@ -367,6 +368,7 @@
     }
   },
   "docs": {
-    "humanContract": null
+    "humanContract": null,
+    "readable": "spec/contracts/TabMenuItem.md"
   }
 }

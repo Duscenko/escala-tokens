@@ -295,7 +295,8 @@
       "aria-busy",
       "aria-disabled",
       "aria-pressed"
-    ]
+    ],
+    "authored": null
   },
   "usage": "Use for 2–5 related actions or views that read as one control (Previous · Today · Next, Day · Week · Month). Mark the selected segment with active. Shape pill is horizontal only.",
   "accessibility": "role=\"group\" — give it an aria-label. Each segment is a native <button>; a selected one carries aria-pressed. Icon-only segments need an aria-label.",
@@ -320,6 +321,7 @@
     }
   },
   "docs": {
-    "humanContract": "design-plans/button-group-contract.md"
+    "humanContract": "design-plans/button-group-contract.md",
+    "readable": "spec/contracts/ButtonGroup.md"
   }
 }

@@ -139,7 +139,8 @@
       "aria-sort",
       "aria-valuemin",
       "aria-valuenow"
-    ]
+    ],
+    "authored": null
   },
   "usage": "Use as the body of a table that is fetching, or under it while more rows load.",
   "accessibility": "role=\"status\" aria-live=\"polite\".",
@@ -176,6 +177,7 @@
     }
   },
   "docs": {
-    "humanContract": null
+    "humanContract": null,
+    "readable": "spec/contracts/TableLoading.md"
   }
 }

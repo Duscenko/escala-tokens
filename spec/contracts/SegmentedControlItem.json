@@ -405,7 +405,8 @@
       "aria-checked",
       "aria-disabled",
       "aria-label"
-    ]
+    ],
+    "authored": null
   },
   "usage": "Always inside a SegmentedControl. With LabelVisible false give the segment an aria-label.",
   "accessibility": "role=\"radio\" with aria-checked; the roving tabindex belongs to the group.",
@@ -429,6 +430,7 @@
     }
   },
   "docs": {
-    "humanContract": "design-plans/segmented-control-item-contract.md"
+    "humanContract": "design-plans/segmented-control-item-contract.md",
+    "readable": "spec/contracts/SegmentedControlItem.md"
   }
 }

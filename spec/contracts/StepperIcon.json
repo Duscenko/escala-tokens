@@ -361,7 +361,8 @@
     "ariaAttributes": [
       "aria-current",
       "aria-disabled"
-    ]
+    ],
+    "authored": null
   },
   "usage": "Inside a StepperIndicator.",
   "accessibility": "Presentational; completed and error markers carry a screen-reader-only \"Completed\" / \"Error\".",
@@ -387,6 +388,7 @@
     }
   },
   "docs": {
-    "humanContract": null
+    "humanContract": null,
+    "readable": "spec/contracts/StepperIcon.md"
   }
 }

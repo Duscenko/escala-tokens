@@ -228,7 +228,8 @@
     "ariaAttributes": [
       "aria-checked",
       "aria-disabled"
-    ]
+    ],
+    "authored": null
   },
   "usage": "Use for 3+ secondary actions behind a \"⋯\" or button. Destructive items go last, after a separator. Size cascades to every label and item.",
   "accessibility": "ARIA menu pattern: role=\"menu\" / \"menuitem\" (menuitemcheckbox when selectable), arrow keys and typeahead, Space / Enter opens, Escape closes and returns focus to the trigger. Keep the footer outside the menu role.",
@@ -259,6 +260,7 @@
     }
   },
   "docs": {
-    "humanContract": "design-plans/dropdown-menu-contract.md"
+    "humanContract": "design-plans/dropdown-menu-contract.md",
+    "readable": "spec/contracts/DropdownMenu.md"
   }
 }

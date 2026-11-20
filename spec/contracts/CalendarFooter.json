@@ -159,7 +159,8 @@
       "aria-disabled",
       "aria-label",
       "aria-pressed"
-    ]
+    ],
+    "authored": null
   },
   "usage": "Use at the bottom of a Calendar that confirms its choice (a date picker popover). Apply commits the selection, Clear empties it, Today jumps to the current date.",
   "accessibility": "Three Buttons whose visible text is their name.",
@@ -187,6 +188,7 @@
     }
   },
   "docs": {
-    "humanContract": "design-plans/calendar-footer-contract.md"
+    "humanContract": "design-plans/calendar-footer-contract.md",
+    "readable": "spec/contracts/CalendarFooter.md"
   }
 }

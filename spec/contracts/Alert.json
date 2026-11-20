@@ -1238,7 +1238,8 @@
     ],
     "ariaAttributes": [
       "aria-label"
-    ]
+    ],
+    "authored": null
   },
   "usage": "Use for a message about the product or the page around it. Horizontal is the full-width banner above or below the header, vertical a boxed message in content. For auto-dismissing feedback use Toast, for form validation Field.",
   "accessibility": "role=\"alert\". Convey severity with the icon and the text as well as colour, and give the close button an accessible name.",
@@ -1265,6 +1266,7 @@
     }
   },
   "docs": {
-    "humanContract": "design-plans/alert-contract.md"
+    "humanContract": "design-plans/alert-contract.md",
+    "readable": "spec/contracts/Alert.md"
   }
 }

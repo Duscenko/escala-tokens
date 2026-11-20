@@ -187,7 +187,8 @@
       "aria-sort",
       "aria-valuemin",
       "aria-valuenow"
-    ]
+    ],
+    "authored": null
   },
   "usage": "Use when a table has no rows. Say why and offer the next step.",
   "accessibility": "role=\"status\" so the empty result is announced.",
@@ -224,6 +225,7 @@
     }
   },
   "docs": {
-    "humanContract": null
+    "humanContract": null,
+    "readable": "spec/contracts/TableEmpty.md"
   }
 }

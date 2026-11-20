@@ -281,7 +281,8 @@
       "aria-disabled",
       "aria-invalid",
       "aria-required"
-    ]
+    ],
+    "authored": null
   },
   "usage": "Wrap a form control that needs a visible label. Use a bare control only where no visible label is needed (search). Match the control to the Field size; Invalid shows the error, Disabled disables the control and dims the texts.",
   "accessibility": "role=\"group\". The label is a <label htmlFor> on the control; description and error reach it through aria-describedby; aria-invalid on Invalid, disabled on Disabled, aria-required with required.",
@@ -313,6 +314,7 @@
     }
   },
   "docs": {
-    "humanContract": "design-plans/field-contract.md"
+    "humanContract": "design-plans/field-contract.md",
+    "readable": "spec/contracts/Field.md"
   }
 }

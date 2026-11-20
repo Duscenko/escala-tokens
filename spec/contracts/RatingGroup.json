@@ -136,7 +136,18 @@
       "aria-checked",
       "aria-disabled",
       "aria-label"
-    ]
+    ],
+    "authored": {
+      "pattern": "radio group",
+      "keyboard": {
+        "ArrowRight / ArrowDown": "moves to the next option and selects it (wraps)",
+        "ArrowLeft / ArrowUp": "moves to the previous option and selects it (wraps)",
+        "Home / End": "moves to the first / last option and selects it"
+      },
+      "focus": "One tab stop (the checked option); disabled options are skipped.",
+      "source": "src/components/escala-ui/rating-group.tsx · handleKeyDown (focus + click)",
+      "story": "Playground"
+    }
   },
   "usage": "Use to collect a 1–5 score or a sentiment. Use SegmentedControl for labelled options and Slider for a continuous value.",
   "accessibility": "role=\"radiogroup\"; each item role=\"radio\" with aria-checked and a label (\"4 of 5 stars\", \"Good\"). One tab stop; the arrow keys move and select.",
@@ -160,6 +171,7 @@
     }
   },
   "docs": {
-    "humanContract": "design-plans/rating-group-contract.md"
+    "humanContract": "design-plans/rating-group-contract.md",
+    "readable": "spec/contracts/RatingGroup.md"
   }
 }

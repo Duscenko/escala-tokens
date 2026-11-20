@@ -248,7 +248,8 @@
       "aria-haspopup",
       "aria-label",
       "aria-pressed"
-    ]
+    ],
+    "authored": null
   },
   "usage": "Use in toolbars and page headers when one action is primary and a few related ones sit behind it (Publish · Publish and notify · Save as draft). One per toolbar; risky actions go in the menu as critical rows. Use Button when there is a single action, and a DropdownMenu on an IconButton when none is primary. The pair never collapses: give it its own row on narrow screens.",
   "accessibility": "Two native <button>s. The caret is labelled \"<label> more actions\" with aria-haspopup=\"menu\" and aria-expanded; the menu is a Radix DropdownMenu (arrows move and loop, typeahead, Escape closes and returns focus to the caret). The main segment is a plain action: no aria-pressed. In Dark the default Variant's label is light on the violet fill and is judged by perceived contrast (APCA), as on Button: a WCAG checker reads about 4.0:1 there by design.",
@@ -271,6 +272,7 @@
     }
   },
   "docs": {
-    "humanContract": "design-plans/split-button-contract.md"
+    "humanContract": "design-plans/split-button-contract.md",
+    "readable": "spec/contracts/SplitButton.md"
   }
 }

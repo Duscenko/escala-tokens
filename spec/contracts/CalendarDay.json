@@ -660,7 +660,8 @@
       "aria-disabled",
       "aria-label",
       "aria-pressed"
-    ]
+    ],
+    "authored": null
   },
   "usage": "Use inside Calendar for each date of the month grid. Pin Selected, RangeStart, RangeMiddle or RangeEnd for the chosen days, Today for today and Outside for the neighbouring months.",
   "accessibility": "A real button; Disabled and Unavailable set disabled. Give it the full date as its accessible name when the number alone is not enough.",
@@ -688,6 +689,7 @@
     }
   },
   "docs": {
-    "humanContract": "design-plans/calendar-day-contract.md"
+    "humanContract": "design-plans/calendar-day-contract.md",
+    "readable": "spec/contracts/CalendarDay.md"
   }
 }

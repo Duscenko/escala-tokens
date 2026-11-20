@@ -454,7 +454,8 @@
       "aria-label",
       "aria-labelledby",
       "aria-pressed"
-    ]
+    ],
+    "authored": null
   },
   "usage": "Inside a SplitBar, never alone. Its width is its share of 100 %, set by the bar. Label shows when it fits, the value alone when it is narrower, nothing under that.",
   "accessibility": "A button. The visible text is aria-hidden: give it an aria-label with label, share and value. Focused draws a Stroke/focus ring inside the segment in Border/ring/neutral.",
@@ -479,6 +480,7 @@
     }
   },
   "docs": {
-    "humanContract": null
+    "humanContract": null,
+    "readable": "spec/contracts/SplitBarSegment.md"
   }
 }

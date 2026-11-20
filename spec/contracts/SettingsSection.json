@@ -140,7 +140,8 @@
     "roles": [],
     "ariaAttributes": [
       "aria-labelledby"
-    ]
+    ],
+    "authored": null
   },
   "usage": "The page stacks sections; the section carries no outer spacing.",
   "accessibility": "The title is an h2, so the page stays navigable by headings.",
@@ -163,6 +164,7 @@
     }
   },
   "docs": {
-    "humanContract": null
+    "humanContract": null,
+    "readable": "spec/contracts/SettingsSection.md"
   }
 }

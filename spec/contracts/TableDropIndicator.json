@@ -100,7 +100,8 @@
       "aria-sort",
       "aria-valuemin",
       "aria-valuenow"
-    ]
+    ],
+    "authored": null
   },
   "usage": "Use between rows while a row is being dragged.",
   "accessibility": "Decorative: hidden from assistive technology; announce the move with a live region.",
@@ -137,6 +138,7 @@
     }
   },
   "docs": {
-    "humanContract": null
+    "humanContract": null,
+    "readable": "spec/contracts/TableDropIndicator.md"
   }
 }

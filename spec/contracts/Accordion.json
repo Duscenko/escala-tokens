@@ -146,7 +146,8 @@
       }
     ],
     "roles": [],
-    "ariaAttributes": []
+    "ariaAttributes": [],
+    "authored": null
   },
   "usage": "Use for several stacked sections (FAQ, settings). For a single expandable region use Collapsible.",
   "accessibility": "Each trigger is a button inside a heading with aria-expanded; Enter / Space toggles, arrows move between triggers.",
@@ -170,6 +171,7 @@
     }
   },
   "docs": {
-    "humanContract": "design-plans/accordion-contract.md"
+    "humanContract": "design-plans/accordion-contract.md",
+    "readable": "spec/contracts/Accordion.md"
   }
 }

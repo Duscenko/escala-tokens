@@ -322,7 +322,18 @@
       "aria-valuemax",
       "aria-valuemin",
       "aria-valuenow"
-    ]
+    ],
+    "authored": {
+      "pattern": "spinbutton",
+      "keyboard": {
+        "ArrowUp": "adds one step",
+        "ArrowDown": "subtracts one step",
+        "Enter": "commits the typed value"
+      },
+      "focus": "The value is the only tab stop; the Decrease / Increase buttons are not tab stops and turn disabled at min / max.",
+      "source": "src/components/escala-ui/number-input.tsx · the spinbutton onKeyDown",
+      "story": "Playground"
+    }
   },
   "usage": "Use for small numeric ranges (quantities, counts, seats). For wide ranges prefer Slider or a plain Input. Labels and hints come from Field.",
   "accessibility": "The value is role=\"spinbutton\" with aria-valuenow, aria-valuemin and aria-valuemax; Arrow Up and Down step it. The buttons are labelled Decrease and Increase and are not tab stops. Give the field a label (Field, or aria-label).",
@@ -345,6 +356,7 @@
     }
   },
   "docs": {
-    "humanContract": "design-plans/number-input-contract.md"
+    "humanContract": "design-plans/number-input-contract.md",
+    "readable": "spec/contracts/NumberInput.md"
   }
 }

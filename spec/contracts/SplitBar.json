@@ -280,7 +280,8 @@
       "aria-label",
       "aria-labelledby",
       "aria-pressed"
-    ]
+    ],
+    "authored": null
   },
   "usage": "Parts of one whole, up to eight: traffic by source, spend by team, storage by type. Colours are Chart/series-1…8 (categories with no meaning); when a share means good or bad, use Status/* instead. A share that is not part of a whole is a ProgressLine; a trend is a Sparkline. Related: SplitBarSegment, SplitBarLegendItem, ProgressLine.",
   "accessibility": "role=\"group\" named by the chart title. Each segment is a button named \"label, share, value unit\"; each legend item an aria-pressed toggle. Tab visits segments then legend items; Enter or Space presses. Colour is never the only divider: every segment has a Chart/series-n/solid edge.",
@@ -305,6 +306,7 @@
     }
   },
   "docs": {
-    "humanContract": null
+    "humanContract": null,
+    "readable": "spec/contracts/SplitBar.md"
   }
 }

@@ -459,7 +459,8 @@
       "aria-label",
       "aria-labelledby",
       "aria-pressed"
-    ]
+    ],
+    "authored": null
   },
   "usage": "Inside the SplitBar legend. Turning a series off reflows the others to 100 %.",
   "accessibility": "A button with aria-pressed (true = the series is shown). Focused draws the Button ring: 2px, 1px off the edge, in Border/ring/neutral.",
@@ -484,6 +485,7 @@
     }
   },
   "docs": {
-    "humanContract": null
+    "humanContract": null,
+    "readable": "spec/contracts/SplitBarLegendItem.md"
   }
 }

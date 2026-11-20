@@ -170,7 +170,8 @@
       "aria-busy",
       "aria-disabled",
       "aria-pressed"
-    ]
+    ],
+    "authored": null
   },
   "usage": "Private to ButtonGroup — the group draws it between segments. Orientation horizontal is the vertical line of a row.",
   "accessibility": "Decorative: aria-hidden.",
@@ -195,6 +196,7 @@
     }
   },
   "docs": {
-    "humanContract": null
+    "humanContract": null,
+    "readable": "spec/contracts/ButtonGroupDivider.md"
   }
 }

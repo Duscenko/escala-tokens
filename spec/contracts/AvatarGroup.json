@@ -363,7 +363,8 @@
     "ariaAttributes": [
       "aria-hidden",
       "aria-label"
-    ]
+    ],
+    "authored": null
   },
   "usage": "Show who is part of something; label the +N tile (\"4 more people\").",
   "accessibility": "role=\"group\" with an accessible name; the +N tile is a labelled image or button.",
@@ -388,6 +389,7 @@
     }
   },
   "docs": {
-    "humanContract": "design-plans/avatar-group-contract.md"
+    "humanContract": "design-plans/avatar-group-contract.md",
+    "readable": "spec/contracts/AvatarGroup.md"
   }
 }

@@ -374,7 +374,8 @@
       "aria-sort",
       "aria-valuemin",
       "aria-valuenow"
-    ]
+    ],
+    "authored": null
   },
   "usage": "Use for metrics that moved (revenue, signups). Direction is never colour alone: the cell reads e.g. \"up 12.4%\".",
   "accessibility": "A visually hidden word (up, down, unchanged) precedes the delta so the direction is not colour alone.",
@@ -411,6 +412,7 @@
     }
   },
   "docs": {
-    "humanContract": null
+    "humanContract": null,
+    "readable": "spec/contracts/TableTrendCell.md"
   }
 }

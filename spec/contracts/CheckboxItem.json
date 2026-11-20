@@ -336,7 +336,8 @@
       "aria-disabled",
       "aria-invalid",
       "aria-labelledby"
-    ]
+    ],
+    "authored": null
   },
   "usage": "Use standalone (terms, opt-ins) or as a row of a CheckboxGroup. Placement right for settings lists where the label leads. The description explains the consequence; keep the label short.",
   "accessibility": "The row is a <label> for the box, so a click anywhere toggles it and the label is its name; the description is aria-describedby.",
@@ -361,6 +362,7 @@
     }
   },
   "docs": {
-    "humanContract": "design-plans/checkbox-item-contract.md"
+    "humanContract": "design-plans/checkbox-item-contract.md",
+    "readable": "spec/contracts/CheckboxItem.md"
   }
 }

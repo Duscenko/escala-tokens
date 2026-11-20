@@ -153,7 +153,8 @@
       "aria-disabled",
       "aria-label",
       "aria-pressed"
-    ]
+    ],
+    "authored": null
   },
   "usage": "Use for result sets over one page. Disable First / Previous on page 1 and Next / Last on the last page; never mark the current page with colour alone.",
   "accessibility": "nav aria-label=\"pagination\". The current page is aria-current=\"page\"; the arrows carry aria-labels and disable at the ends.",
@@ -179,6 +180,7 @@
     }
   },
   "docs": {
-    "humanContract": "design-plans/pagination-contract.md"
+    "humanContract": "design-plans/pagination-contract.md",
+    "readable": "spec/contracts/Pagination.md"
   }
 }

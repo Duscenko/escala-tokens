@@ -210,7 +210,8 @@
       "aria-disabled",
       "aria-expanded",
       "aria-label"
-    ]
+    ],
+    "authored": null
   },
   "usage": "Use for app-level sections when destinations exceed what a navbar holds. Keep at most one row marked as the current page.",
   "accessibility": "Rendered as an aside landmark with an aria-label; the trigger carries aria-expanded and aria-controls; collapsed rows keep an accessible name and want a Tooltip with their label.",
@@ -245,6 +246,7 @@
     }
   },
   "docs": {
-    "humanContract": "design-plans/sidebar-contract.md"
+    "humanContract": "design-plans/sidebar-contract.md",
+    "readable": "spec/contracts/Sidebar.md"
   }
 }

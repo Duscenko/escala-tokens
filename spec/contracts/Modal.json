@@ -341,7 +341,8 @@
     "roles": [],
     "ariaAttributes": [
       "aria-label"
-    ]
+    ],
+    "authored": null
   },
   "usage": "Use for a decision or a short task that needs full attention (a confirmation, a small form). Not for notifications: use a Toast or an Alert.",
   "accessibility": "role=\"dialog\", aria-modal=\"true\", labelled by the title (aria-labelledby) and described by the description. Focus is trapped; Escape and the close button dismiss; focus returns to the trigger.",
@@ -384,6 +385,7 @@
     }
   },
   "docs": {
-    "humanContract": "design-plans/modal-contract.md"
+    "humanContract": "design-plans/modal-contract.md",
+    "readable": "spec/contracts/Modal.md"
   }
 }

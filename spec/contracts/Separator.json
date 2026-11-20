@@ -236,7 +236,8 @@
     "roles": [
       "separator"
     ],
-    "ariaAttributes": []
+    "ariaAttributes": [],
+    "authored": null
   },
   "usage": "Use sparingly — whitespace is usually sufficient. Add a label only for section breaks (the classic «OR»).",
   "accessibility": "Decorative by default; role=\"separator\" with aria-orientation only when the rule conveys structure.",
@@ -259,6 +260,7 @@
     }
   },
   "docs": {
-    "humanContract": "design-plans/separator-contract.md"
+    "humanContract": "design-plans/separator-contract.md",
+    "readable": "spec/contracts/Separator.md"
   }
 }

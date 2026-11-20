@@ -361,7 +361,8 @@
     "ariaAttributes": [
       "aria-current",
       "aria-disabled"
-    ]
+    ],
+    "authored": null
   },
   "usage": "In a header or navbar. Current marks the page you are on; with a trailing caret it opens a NavigationMenu. Tabs inside a view use TabMenuItem.",
   "accessibility": "A link; the current one is aria-current=\"page\". As a menu trigger add aria-expanded.",
@@ -384,6 +385,7 @@
     }
   },
   "docs": {
-    "humanContract": null
+    "humanContract": null,
+    "readable": "spec/contracts/NavItem.md"
   }
 }

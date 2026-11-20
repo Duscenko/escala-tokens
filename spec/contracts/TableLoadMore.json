@@ -112,7 +112,8 @@
       "aria-sort",
       "aria-valuemin",
       "aria-valuenow"
-    ]
+    ],
+    "authored": null
   },
   "usage": "Use when rows are fetched in pages and the end is not reached.",
   "accessibility": "The button is a real button; the loading row announces itself.",
@@ -149,6 +150,7 @@
     }
   },
   "docs": {
-    "humanContract": null
+    "humanContract": null,
+    "readable": "spec/contracts/TableLoadMore.md"
   }
 }

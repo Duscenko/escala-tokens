@@ -238,7 +238,8 @@
       "aria-valuemax",
       "aria-valuemin",
       "aria-valuenow"
-    ]
+    ],
+    "authored": null
   },
   "usage": "Use where a bar does not fit (a button, a card corner, an avatar). Show the percentage next to it when it matters.",
   "accessibility": "role=\"progressbar\" with aria-valuenow, aria-valuemin and aria-valuemax; give it an accessible name (aria-label).",
@@ -262,6 +263,7 @@
     }
   },
   "docs": {
-    "humanContract": null
+    "humanContract": null,
+    "readable": "spec/contracts/ProgressCircle.md"
   }
 }

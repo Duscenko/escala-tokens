@@ -148,7 +148,8 @@
       "aria-disabled",
       "aria-haspopup",
       "aria-label"
-    ]
+    ],
+    "authored": null
   },
   "usage": "Use as the content of a Popover whose trigger is DatePickerTrigger. Put the Calendar inside it; use the Calendar alone when the panel is always visible.",
   "accessibility": "Radix Popover: focus moves into the panel, Escape closes it and returns focus to the trigger. The Calendar inside is the grid of dates.",
@@ -173,6 +174,7 @@
     }
   },
   "docs": {
-    "humanContract": "design-plans/date-picker-popover-contract.md"
+    "humanContract": "design-plans/date-picker-popover-contract.md",
+    "readable": "spec/contracts/DatePickerPopover.md"
   }
 }

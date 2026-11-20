@@ -82,7 +82,8 @@
     ],
     "ariaAttributes": [
       "aria-label"
-    ]
+    ],
+    "authored": null
   },
   "usage": "Prefer skeleton screens for content loading. Use Spinner for action feedback.",
   "accessibility": "role=\"status\" with aria-label. Animated via CSS, respects prefers-reduced-motion.",
@@ -105,6 +106,7 @@
     }
   },
   "docs": {
-    "humanContract": null
+    "humanContract": null,
+    "readable": "spec/contracts/Spinner.md"
   }
 }

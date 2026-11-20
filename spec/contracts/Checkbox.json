@@ -1457,7 +1457,8 @@
       "aria-disabled",
       "aria-invalid",
       "aria-labelledby"
-    ]
+    ],
+    "authored": null
   },
   "usage": "Use for independent on/off choices and multi-select lists; indeterminate for a parent whose children are partly checked. For an instant setting, use Switch. Variant colours the checked box (default accent, secondary neutral, status colours, inverse on dark surfaces).",
   "accessibility": "Radix checkbox (role=\"checkbox\", aria-checked mixed for indeterminate, Space toggles). Give it a label: CheckboxItem, or a Label with htmlFor.",
@@ -1482,6 +1483,7 @@
     }
   },
   "docs": {
-    "humanContract": "design-plans/checkbox-contract.md"
+    "humanContract": "design-plans/checkbox-contract.md",
+    "readable": "spec/contracts/Checkbox.md"
   }
 }

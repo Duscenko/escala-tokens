@@ -485,7 +485,8 @@
       "aria-disabled",
       "aria-haspopup",
       "aria-label"
-    ]
+    ],
+    "authored": null
   },
   "usage": "Use to pick one date without leaving the form. Pair it with a Label (Field), open DatePickerPopover from it and put the chosen date back as its value.",
   "accessibility": "A real button with aria-haspopup=\"dialog\"; its text is the chosen date, so no separate label is read. Expose the error through aria-describedby.",
@@ -510,6 +511,7 @@
     }
   },
   "docs": {
-    "humanContract": "design-plans/date-picker-trigger-contract.md"
+    "humanContract": "design-plans/date-picker-trigger-contract.md",
+    "readable": "spec/contracts/DatePickerTrigger.md"
   }
 }

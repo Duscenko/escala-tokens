@@ -269,7 +269,8 @@
     "ariaAttributes": [
       "aria-hidden",
       "aria-label"
-    ]
+    ],
+    "authored": null
   },
   "usage": "Always on an Avatar (bottom-right); never rely on colour alone.",
   "accessibility": "role=\"img\" with the presence as its label (\"Online\"); give your own aria-label to override.",
@@ -294,6 +295,7 @@
     }
   },
   "docs": {
-    "humanContract": "design-plans/avatar-status-contract.md"
+    "humanContract": "design-plans/avatar-status-contract.md",
+    "readable": "spec/contracts/AvatarStatus.md"
   }
 }

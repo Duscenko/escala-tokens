@@ -2780,7 +2780,14 @@
   "behaviour": {
     "primitives": [],
     "roles": [],
-    "ariaAttributes": []
+    "ariaAttributes": [],
+    "authored": {
+      "pattern": null,
+      "keyboard": {},
+      "focus": "Not focusable: a label; text and colour carry no action.",
+      "source": "src/components/escala-ui/badge.tsx",
+      "story": "Playground"
+    }
   },
   "usage": "Use to label or count (a plan, a status, \"+5 more\"). For presence (online / away), use Status Badge. Never as a button. An icon-only badge needs an accessible name.",
   "accessibility": "Static text — not focusable. Colour is never the only signal: the label says what it means.",
@@ -2803,6 +2810,7 @@
     }
   },
   "docs": {
-    "humanContract": "design-plans/badge-contract.md"
+    "humanContract": "design-plans/badge-contract.md",
+    "readable": "spec/contracts/Badge.md"
   }
 }

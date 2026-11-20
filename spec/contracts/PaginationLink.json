@@ -358,7 +358,8 @@
       "aria-disabled",
       "aria-label",
       "aria-pressed"
-    ]
+    ],
+    "authored": null
   },
   "usage": "Inside a Pagination.",
   "accessibility": "A button; the active one is aria-current=\"page\".",
@@ -384,6 +385,7 @@
     }
   },
   "docs": {
-    "humanContract": null
+    "humanContract": null,
+    "readable": "spec/contracts/PaginationLink.md"
   }
 }

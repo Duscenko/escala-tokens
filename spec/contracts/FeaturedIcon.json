@@ -600,7 +600,14 @@
   "behaviour": {
     "primitives": [],
     "roles": [],
-    "ariaAttributes": []
+    "ariaAttributes": [],
+    "authored": {
+      "pattern": null,
+      "keyboard": {},
+      "focus": "Not focusable: a decorative icon tile (the icon is aria-hidden; the text next to it carries the meaning).",
+      "source": "src/components/escala-ui/featured-icon.tsx",
+      "story": "Playground"
+    }
   },
   "usage": "Always decorative; the nearby title carries the meaning. A dialog header nests it (default or lg, always rounded).",
   "accessibility": "aria-hidden: decorative. The title or text beside it carries the meaning.",
@@ -623,6 +630,7 @@
     }
   },
   "docs": {
-    "humanContract": "design-plans/featured-icon-contract.md"
+    "humanContract": "design-plans/featured-icon-contract.md",
+    "readable": "spec/contracts/FeaturedIcon.md"
   }
 }

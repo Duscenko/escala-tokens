@@ -388,7 +388,8 @@
       "aria-sort",
       "aria-valuemin",
       "aria-valuenow"
-    ]
+    ],
+    "authored": null
   },
   "usage": "Use inside a TableRow. Align end is the numeric column. For a thumbnail use TableMediaCell, for a value with a delta TableTrendCell.",
   "accessibility": "The row-header column uses th scope=\"row\"; actions in the trailing slot need an aria-label.",
@@ -425,6 +426,7 @@
     }
   },
   "docs": {
-    "humanContract": null
+    "humanContract": null,
+    "readable": "spec/contracts/TableCell.md"
   }
 }

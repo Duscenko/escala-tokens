@@ -307,7 +307,8 @@
     "roles": [],
     "ariaAttributes": [
       "aria-label"
-    ]
+    ],
+    "authored": null
   },
   "usage": "Use for secondary tasks that keep the page in context (filters, a cart, details, settings). For a blocking decision use Modal or Alert Dialog; for a list of choices tied to a field use Popover.",
   "accessibility": "A Radix Dialog like Modal: focus is trapped inside, Esc closes and focus returns to the trigger. The header's title is the accessible name and its description the aria-describedby; the close button has an accessible name. The bottom side is capped by the visual viewport (not 100vh) and keeps the safe area under its footer.",
@@ -339,6 +340,7 @@
     }
   },
   "docs": {
-    "humanContract": "design-plans/sheet-contract.md"
+    "humanContract": "design-plans/sheet-contract.md",
+    "readable": "spec/contracts/Sheet.md"
   }
 }

@@ -493,7 +493,8 @@
       "aria-valuemax",
       "aria-valuemin",
       "aria-valuenow"
-    ]
+    ],
+    "authored": null
   },
   "usage": "Use at the top of a FileUpload, or alone where files are the whole task. lg for an empty page, default in a form, sm in a dense row. Dragging tints it accent; Invalid needs a visible message (it replaces the title).",
   "accessibility": "The Button is the keyboard path (Tab, Enter / Space opens the picker); the drop area itself takes no focus. aria-disabled when disabled, aria-invalid with a visible message when invalid.",
@@ -518,6 +519,7 @@
     }
   },
   "docs": {
-    "humanContract": "design-plans/file-upload-dropzone-contract.md"
+    "humanContract": "design-plans/file-upload-dropzone-contract.md",
+    "readable": "spec/contracts/FileUploadDropzone.md"
   }
 }

@@ -1340,7 +1340,8 @@
     "ariaAttributes": [
       "aria-busy",
       "aria-disabled"
-    ]
+    ],
+    "authored": null
   },
   "usage": "Use in toolbars, table rows and dialog headers where the icon is unambiguous. Always give it an aria-label; an action that needs words is a Button.",
   "accessibility": "Native <button> with a required aria-label (there is no visible text). Disabled sets aria-disabled; loading sets aria-busy.",
@@ -1363,6 +1364,7 @@
     }
   },
   "docs": {
-    "humanContract": null
+    "humanContract": null,
+    "readable": "spec/contracts/IconButton.md"
   }
 }

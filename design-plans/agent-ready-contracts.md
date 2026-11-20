@@ -48,11 +48,11 @@ Schema `escala-component-contract/2`, additive over v1 (no key renamed or remove
 - [x] Contract completeness report (`npm run contracts:report`): per component, which sections are
       empty → `governance/findings/latest.json` entries (`DOC-001`).
 
-### Phase 3 — Behaviour authored where derivation is not enough
-- [ ] For components with no Radix primitive (custom keyboard: Calendar, InputOTP, Combobox,
+### Phase 3 — Behaviour authored where derivation is not enough (done 2026-11-20)
+- [x] For components with no Radix primitive (custom keyboard: Calendar, InputOTP, Combobox,
       ReactionGroup, Table…), an authored `behaviour` entry in `src/lib/componentBehaviour.ts`
       (Storybook owns behaviour). Each one checked against its story.
-- [ ] Missing human contracts: generate the 70 from the JSON (a readable view), never hand-copy.
+- [x] Missing human contracts: generate the 70 from the JSON (a readable view), never hand-copy.
 
 ### Phase 4 — The agent's door
 - [ ] `AGENTS.md` / `llms.txt` / `escala-figma-to-code` skill: "Figma set name → `index.json` →
@@ -89,9 +89,18 @@ Schema `escala-component-contract/2`, additive over v1 (no key renamed or remove
   `governance/findings/latest.json` (today 76 DOC-001 — 70 without a human contract, 10 codeOnly,
   6 without behaviour — 27 MOT-002, 3 PAR-001), keeping history, closing what is gone, flagging regressions.
 
+- 2026-11-20 · Phase 3: `src/lib/componentBehaviour.ts` → `behaviour.authored` in every contract (16: the 9
+  component files with their own key handling — Calendar/CalendarMonth, Combobox, NumberInput, InputTag,
+  RatingGroup, SegmentedControl, ReactionGroup, ActivityHeatmap, Table — plus 6 static ones declared not
+  interactive). Checked against each file's handler and the story export it names (not exercised in a
+  browser); `componentBehaviour.test.ts` fails when a component file starts handling keys without an entry.
+  `spec/contracts/<Key>.md` generated for all 134 (`docs.readable`): axes, props, tokens at the defaults
+  with CSS + Figma names, motion, behaviour, files. DOC-001 now 10 (the codeOnly parts only).
+
 ## Next
-Phase 3, first item: `src/lib/componentBehaviour.ts` — authored `behaviour` for the components with no
-Radix primitive (start with the 6 DOC-001 `behaviour` gaps from `npm run contracts:report`, then Calendar,
-InputOTP, Combobox, ReactionGroup, Table), merged into the contract by `componentContracts.ts`.
+Phase 4, first item: `AGENTS.md` / `llms.txt` / `.claude/skills/escala-figma-to-code` — the route
+"Figma set name → `spec/contracts/index.json` → `<Key>.json` (or `.md`) → `code.import` + `bindings`",
+and remove the stale hosted-MCP lines. Then the agent package (`src/lib/agentBundle/`) ships the
+contracts, then the eval case in `evals/agent-output/`.
 Open question for the owner (not blocking): MOT-002 says `none` counts as a decision, but
 `RecipeMotion` cannot say `none` yet — add it when the owner decides the first static-state component.

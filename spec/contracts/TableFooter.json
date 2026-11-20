@@ -202,7 +202,8 @@
       "aria-sort",
       "aria-valuemin",
       "aria-valuenow"
-    ]
+    ],
+    "authored": null
   },
   "usage": "Use for totals and summaries. Dividers follows the Table.",
   "accessibility": "Label the totals with a th scope=\"row\" in the first cell; set it sticky in code to pin it.",
@@ -239,6 +240,7 @@
     }
   },
   "docs": {
-    "humanContract": null
+    "humanContract": null,
+    "readable": "spec/contracts/TableFooter.md"
   }
 }

@@ -192,7 +192,8 @@
     "roles": [],
     "ariaAttributes": [
       "aria-label"
-    ]
+    ],
+    "authored": null
   },
   "usage": "Inline puts the text first and the buttons at the end; stacked gives full-width buttons. Size follows the Popover.",
   "accessibility": "Buttons keep their own focus order; the leading text is plain copy.",
@@ -222,6 +223,7 @@
     }
   },
   "docs": {
-    "humanContract": null
+    "humanContract": null,
+    "readable": "spec/contracts/PopoverFooter.md"
   }
 }

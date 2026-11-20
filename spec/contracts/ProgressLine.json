@@ -233,7 +233,8 @@
       "aria-valuemax",
       "aria-valuemin",
       "aria-valuenow"
-    ]
+    ],
+    "authored": null
   },
   "usage": "Use for operations that take more than a couple of seconds and report how far along they are. Pair it with a label and the percentage in the surrounding UI. For an unknown duration use Spinner.",
   "accessibility": "role=\"progressbar\" with aria-valuenow, aria-valuemin and aria-valuemax; give it an accessible name (aria-label).",
@@ -257,6 +258,7 @@
     }
   },
   "docs": {
-    "humanContract": null
+    "humanContract": null,
+    "readable": "spec/contracts/ProgressLine.md"
   }
 }

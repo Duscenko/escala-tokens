@@ -415,7 +415,8 @@
     "roles": [],
     "ariaAttributes": [
       "aria-label"
-    ]
+    ],
+    "authored": null
   },
   "usage": "Open on click, not hover. Side is the trigger edge it opens from. Keep one primary action inside at most.",
   "accessibility": "Trigger gets aria-haspopup + aria-expanded. Escape or an outside click closes it and focus returns to the trigger. Label it with aria-labelledby on the title.",
@@ -445,6 +446,7 @@
     }
   },
   "docs": {
-    "humanContract": "design-plans/popover-contract.md"
+    "humanContract": "design-plans/popover-contract.md",
+    "readable": "spec/contracts/Popover.md"
   }
 }

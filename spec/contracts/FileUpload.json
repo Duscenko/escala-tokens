@@ -187,7 +187,8 @@
       "aria-valuemax",
       "aria-valuemin",
       "aria-valuenow"
-    ]
+    ],
+    "authored": null
   },
   "usage": "Use where people attach several files and need to follow each one. Layout dropzone when files are the task, trigger in a dense form. Keep the live region announcing completed, removed and failed files, and move focus to a neighbouring row when one is removed.",
   "accessibility": "The dropzone's Button or the trigger opens the native picker. A polite live region announces completed, removed and failed files; move focus to a neighbouring row when one is removed.",
@@ -212,6 +213,7 @@
     }
   },
   "docs": {
-    "humanContract": "design-plans/file-upload-contract.md"
+    "humanContract": "design-plans/file-upload-contract.md",
+    "readable": "spec/contracts/FileUpload.md"
   }
 }

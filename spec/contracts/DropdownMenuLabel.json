@@ -175,7 +175,8 @@
     "ariaAttributes": [
       "aria-checked",
       "aria-disabled"
-    ]
+    ],
+    "authored": null
   },
   "usage": "Label a group of related items. It is skipped by arrow-key navigation.",
   "accessibility": "Render it as the label of a role group (aria-labelledby) so screen readers announce the group name.",
@@ -206,6 +207,7 @@
     }
   },
   "docs": {
-    "humanContract": null
+    "humanContract": null,
+    "readable": "spec/contracts/DropdownMenuLabel.md"
   }
 }

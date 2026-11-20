@@ -579,7 +579,19 @@
       "aria-label",
       "aria-labelledby",
       "aria-selected"
-    ]
+    ],
+    "authored": {
+      "pattern": "combobox (editable, list autocomplete)",
+      "keyboard": {
+        "ArrowDown / ArrowUp": "opens the list when closed; moves the active option when open",
+        "Enter": "picks the active option",
+        "Escape": "closes the list and clears the typed query",
+        "Typing": "filters the list and opens it"
+      },
+      "focus": "Focus stays in the text field; the active option is aria-activedescendant. Leaving the field closes the list.",
+      "source": "src/components/escala-ui/combobox.tsx · the input onKeyDown / onBlur",
+      "story": "Playground"
+    }
   },
   "usage": "Use when options exceed ~10 items or need search. For short lists, plain Select is enough. Keep a visible label (Field) and expose the error text through aria-describedby.",
   "accessibility": "role=\"combobox\" on the input with aria-expanded, aria-controls and aria-activedescendant; arrow keys move through the options, Enter chooses, Escape closes; aria-invalid on Invalid.",
@@ -607,6 +619,7 @@
     }
   },
   "docs": {
-    "humanContract": "design-plans/combobox-contract.md"
+    "humanContract": "design-plans/combobox-contract.md",
+    "readable": "spec/contracts/Combobox.md"
   }
 }

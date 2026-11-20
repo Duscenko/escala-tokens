@@ -241,7 +241,8 @@
       }
     ],
     "roles": [],
-    "ariaAttributes": []
+    "ariaAttributes": [],
+    "authored": null
   },
   "usage": "Use for one choice among 2–5 visible options. For more, use Select.",
   "accessibility": "Radix radio group: arrow keys move the selection, one tab stop. Wrap it in a FieldSet with a FieldLegend.",
@@ -265,6 +266,7 @@
     }
   },
   "docs": {
-    "humanContract": null
+    "humanContract": null,
+    "readable": "spec/contracts/RadioGroup.md"
   }
 }

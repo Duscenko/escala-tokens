@@ -293,7 +293,8 @@
       "aria-disabled",
       "aria-label",
       "aria-pressed"
-    ]
+    ],
+    "authored": null
   },
   "usage": "Use on the left of a range Calendar for common spans (Today, Last 7 days…). Pick the Variant that matches the CalendarDay cells next to it.",
   "accessibility": "Each preset is a button whose visible text is its name; the selected one carries aria-pressed.",
@@ -321,6 +322,7 @@
     }
   },
   "docs": {
-    "humanContract": "design-plans/calendar-presets-contract.md"
+    "humanContract": "design-plans/calendar-presets-contract.md",
+    "readable": "spec/contracts/CalendarPresets.md"
   }
 }

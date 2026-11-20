@@ -194,7 +194,8 @@
     "ariaAttributes": [
       "aria-checked",
       "aria-disabled"
-    ]
+    ],
+    "authored": null
   },
   "usage": "Clear / Apply or a single action. Inline puts the text first and the buttons at the end; stacked gives full-width buttons.",
   "accessibility": "Keep it outside role menu; its controls are reachable with Tab after the list.",
@@ -225,6 +226,7 @@
     }
   },
   "docs": {
-    "humanContract": null
+    "humanContract": null,
+    "readable": "spec/contracts/DropdownMenuFooter.md"
   }
 }

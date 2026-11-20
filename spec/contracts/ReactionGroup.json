@@ -196,7 +196,20 @@
       "aria-hidden",
       "aria-label",
       "aria-orientation"
-    ]
+    ],
+    "authored": {
+      "pattern": "toolbar (inside a non-modal Popover)",
+      "keyboard": {
+        "ArrowRight / ArrowDown": "moves to the next reaction in the picker",
+        "ArrowLeft / ArrowUp": "moves to the previous reaction",
+        "Home / End": "moves to the first / last reaction",
+        "Enter / Space": "picks the focused reaction",
+        "Escape": "closes the picker and returns focus to the trigger (Radix Popover)"
+      },
+      "focus": "The picker is a role=\"toolbar\" with one roving tab stop; each reaction pill outside it is its own button.",
+      "source": "src/components/escala-ui/reaction-group.tsx · ReactionGroupPopover onKeyDown",
+      "story": "Playground"
+    }
   },
   "usage": "Use under a post, comment or message to collect quick reactions. A pill whose count reaches zero leaves the row. For a single like or favourite use a toggle IconButton; for a score use RatingGroup.",
   "accessibility": "role=\"group\" named \"Reactions\". Each pill is a toggle button (aria-pressed) named \"{reaction}, {count} reactions, you reacted\". Removing the last count moves focus to the neighbour pill or the trigger. Every change is announced in a role=\"status\" region.",
@@ -221,6 +234,7 @@
     }
   },
   "docs": {
-    "humanContract": "design-plans/reaction-group-contract.md"
+    "humanContract": "design-plans/reaction-group-contract.md",
+    "readable": "spec/contracts/ReactionGroup.md"
   }
 }

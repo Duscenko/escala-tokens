@@ -486,7 +486,8 @@
       "aria-current",
       "aria-disabled",
       "aria-label"
-    ]
+    ],
+    "authored": null
   },
   "usage": "Replace the first segments of a trail longer than four items.",
   "accessibility": "A button with an accessible name.",
@@ -513,6 +514,7 @@
     }
   },
   "docs": {
-    "humanContract": null
+    "humanContract": null,
+    "readable": "spec/contracts/BreadcrumbEllipsis.md"
   }
 }

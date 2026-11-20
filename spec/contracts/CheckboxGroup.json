@@ -288,7 +288,8 @@
       "aria-disabled",
       "aria-invalid",
       "aria-labelledby"
-    ]
+    ],
+    "authored": null
   },
   "usage": "Use for several independent options under one question. Invalid shows the footer as the error; Disabled mutes the whole group. Size, Placement, State and Variant cascade to every row.",
   "accessibility": "role=\"group\" with aria-labelledby on the group label and aria-describedby on the footer; each checkbox stays independent.",
@@ -313,6 +314,7 @@
     }
   },
   "docs": {
-    "humanContract": "design-plans/checkbox-group-contract.md"
+    "humanContract": "design-plans/checkbox-group-contract.md",
+    "readable": "spec/contracts/CheckboxGroup.md"
   }
 }

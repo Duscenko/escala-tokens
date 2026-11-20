@@ -119,7 +119,8 @@
       "aria-current",
       "aria-disabled",
       "aria-label"
-    ]
+    ],
+    "authored": null
   },
   "usage": "Top-level destinations of a mobile app, 3 to 5, always visible at the bottom; exactly one is current. Views or filters inside one page use TabMenu; desktop navigation uses Sidebar or NavItem. Related: NavItem, TabMenu, Badge, Avatar.",
   "accessibility": "A nav landmark wrapping a list of links, in natural Tab order: no roving tabindex and no arrow keys (it is not a tablist).",
@@ -143,6 +144,7 @@
     }
   },
   "docs": {
-    "humanContract": "design-plans/tab-bar-contract.md"
+    "humanContract": "design-plans/tab-bar-contract.md",
+    "readable": "spec/contracts/TabBar.md"
   }
 }

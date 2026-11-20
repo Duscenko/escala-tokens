@@ -522,7 +522,8 @@
       "aria-disabled",
       "aria-invalid",
       "aria-label"
-    ]
+    ],
+    "authored": null
   },
   "usage": "Use for free-form text over one line (messages, descriptions, notes). Labels, hints and error text come from Field. Show the resize glyph when the expected length varies.",
   "accessibility": "Give it a visible label (Field, or aria-label). On Invalid set aria-invalid and expose the error text through aria-describedby (Field does both). Loading sets aria-busy.",
@@ -545,6 +546,7 @@
     }
   },
   "docs": {
-    "humanContract": "design-plans/textarea-contract.md"
+    "humanContract": "design-plans/textarea-contract.md",
+    "readable": "spec/contracts/Textarea.md"
   }
 }

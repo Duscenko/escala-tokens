@@ -1476,7 +1476,8 @@
     "ariaAttributes": [
       "aria-checked",
       "aria-disabled"
-    ]
+    ],
+    "authored": null
   },
   "usage": "One command per row. Put irreversible commands last as the critical variant.",
   "accessibility": "role menuitem (menuitemcheckbox when selectable); reachable by arrow keys; skipped when disabled.",
@@ -1507,6 +1508,7 @@
     }
   },
   "docs": {
-    "humanContract": null
+    "humanContract": null,
+    "readable": "spec/contracts/DropdownMenuItem.md"
   }
 }

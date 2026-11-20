@@ -822,8 +822,10 @@
       "side": "code",
       "entity": "IconButton",
       "evidence": "contract lacks: human contract (design-plans/*-contract.md)",
-      "status": "Open",
-      "resolution": null,
+      "status": "Fixed",
+      "resolution": {
+        "ref": "72b707d"
+      },
       "firstSeen": "2026-11-20",
       "lastSeen": "2026-11-20",
       "regression": false,
@@ -955,8 +957,10 @@
       "side": "code",
       "entity": "ButtonGroupItem",
       "evidence": "contract lacks: human contract (design-plans/*-contract.md)",
-      "status": "Open",
-      "resolution": null,
+      "status": "Fixed",
+      "resolution": {
+        "ref": "72b707d"
+      },
       "firstSeen": "2026-11-20",
       "lastSeen": "2026-11-20",
       "regression": false,
@@ -993,8 +997,10 @@
       "side": "code",
       "entity": "ButtonGroupDivider",
       "evidence": "contract lacks: human contract (design-plans/*-contract.md)",
-      "status": "Open",
-      "resolution": null,
+      "status": "Fixed",
+      "resolution": {
+        "ref": "72b707d"
+      },
       "firstSeen": "2026-11-20",
       "lastSeen": "2026-11-20",
       "regression": false,
@@ -1012,8 +1018,10 @@
       "side": "code",
       "entity": "ReactionGroupTrigger",
       "evidence": "contract lacks: human contract (design-plans/*-contract.md)",
-      "status": "Open",
-      "resolution": null,
+      "status": "Fixed",
+      "resolution": {
+        "ref": "72b707d"
+      },
       "firstSeen": "2026-11-20",
       "lastSeen": "2026-11-20",
       "regression": false,
@@ -1031,8 +1039,10 @@
       "side": "code",
       "entity": "ReactionGroupPopover",
       "evidence": "contract lacks: human contract (design-plans/*-contract.md)",
-      "status": "Open",
-      "resolution": null,
+      "status": "Fixed",
+      "resolution": {
+        "ref": "72b707d"
+      },
       "firstSeen": "2026-11-20",
       "lastSeen": "2026-11-20",
       "regression": false,
@@ -1050,8 +1060,10 @@
       "side": "code",
       "entity": "SocialLoginButton",
       "evidence": "contract lacks: human contract (design-plans/*-contract.md)",
-      "status": "Open",
-      "resolution": null,
+      "status": "Fixed",
+      "resolution": {
+        "ref": "72b707d"
+      },
       "firstSeen": "2026-11-20",
       "lastSeen": "2026-11-20",
       "regression": false,
@@ -1126,8 +1138,10 @@
       "side": "code",
       "entity": "InputOTPSlot",
       "evidence": "contract lacks: human contract (design-plans/*-contract.md)",
-      "status": "Open",
-      "resolution": null,
+      "status": "Fixed",
+      "resolution": {
+        "ref": "72b707d"
+      },
       "firstSeen": "2026-11-20",
       "lastSeen": "2026-11-20",
       "regression": false,
@@ -1164,8 +1178,10 @@
       "side": "code",
       "entity": "InputTagChip",
       "evidence": "contract lacks: human contract (design-plans/*-contract.md)",
-      "status": "Open",
-      "resolution": null,
+      "status": "Fixed",
+      "resolution": {
+        "ref": "72b707d"
+      },
       "firstSeen": "2026-11-20",
       "lastSeen": "2026-11-20",
       "regression": false,
@@ -1183,8 +1199,10 @@
       "side": "code",
       "entity": "InputTagOption",
       "evidence": "contract lacks: human contract (design-plans/*-contract.md)",
-      "status": "Open",
-      "resolution": null,
+      "status": "Fixed",
+      "resolution": {
+        "ref": "72b707d"
+      },
       "firstSeen": "2026-11-20",
       "lastSeen": "2026-11-20",
       "regression": false,
@@ -1202,8 +1220,10 @@
       "side": "code",
       "entity": "ComboboxPopover",
       "evidence": "contract lacks: human contract (design-plans/*-contract.md)",
-      "status": "Open",
-      "resolution": null,
+      "status": "Fixed",
+      "resolution": {
+        "ref": "72b707d"
+      },
       "firstSeen": "2026-11-20",
       "lastSeen": "2026-11-20",
       "regression": false,
@@ -1221,8 +1241,10 @@
       "side": "code",
       "entity": "ComboboxItem",
       "evidence": "contract lacks: human contract (design-plans/*-contract.md)",
-      "status": "Open",
-      "resolution": null,
+      "status": "Fixed",
+      "resolution": {
+        "ref": "72b707d"
+      },
       "firstSeen": "2026-11-20",
       "lastSeen": "2026-11-20",
       "regression": false,
@@ -1240,8 +1262,10 @@
       "side": "code",
       "entity": "ComboboxGroupLabel",
       "evidence": "contract lacks: human contract (design-plans/*-contract.md)",
-      "status": "Open",
-      "resolution": null,
+      "status": "Fixed",
+      "resolution": {
+        "ref": "72b707d"
+      },
       "firstSeen": "2026-11-20",
       "lastSeen": "2026-11-20",
       "regression": false,
@@ -1297,8 +1321,10 @@
       "side": "code",
       "entity": "RadioGroup",
       "evidence": "contract lacks: human contract (design-plans/*-contract.md)",
-      "status": "Open",
-      "resolution": null,
+      "status": "Fixed",
+      "resolution": {
+        "ref": "72b707d"
+      },
       "firstSeen": "2026-11-20",
       "lastSeen": "2026-11-20",
       "regression": false,
@@ -1353,7 +1379,7 @@
       "severity": "warn",
       "side": "code",
       "entity": "Label",
-      "evidence": "contract lacks: figma set (codeOnly), human contract (design-plans/*-contract.md)",
+      "evidence": "contract lacks: figma set (codeOnly)",
       "status": "Open",
       "resolution": null,
       "firstSeen": "2026-11-20",
@@ -1372,8 +1398,10 @@
       "side": "code",
       "entity": "PasswordStrengthMeter",
       "evidence": "contract lacks: human contract (design-plans/*-contract.md)",
-      "status": "Open",
-      "resolution": null,
+      "status": "Fixed",
+      "resolution": {
+        "ref": "72b707d"
+      },
       "firstSeen": "2026-11-20",
       "lastSeen": "2026-11-20",
       "regression": false,
@@ -1391,8 +1419,10 @@
       "side": "code",
       "entity": "PasswordStrengthRule",
       "evidence": "contract lacks: human contract (design-plans/*-contract.md)",
-      "status": "Open",
-      "resolution": null,
+      "status": "Fixed",
+      "resolution": {
+        "ref": "72b707d"
+      },
       "firstSeen": "2026-11-20",
       "lastSeen": "2026-11-20",
       "regression": false,
@@ -1410,8 +1440,10 @@
       "side": "code",
       "entity": "Badge",
       "evidence": "contract lacks: behaviour",
-      "status": "Open",
-      "resolution": null,
+      "status": "Fixed",
+      "resolution": {
+        "ref": "72b707d"
+      },
       "firstSeen": "2026-11-20",
       "lastSeen": "2026-11-20",
       "regression": false,
@@ -1429,8 +1461,10 @@
       "side": "code",
       "entity": "ProgressLine",
       "evidence": "contract lacks: human contract (design-plans/*-contract.md)",
-      "status": "Open",
-      "resolution": null,
+      "status": "Fixed",
+      "resolution": {
+        "ref": "72b707d"
+      },
       "firstSeen": "2026-11-20",
       "lastSeen": "2026-11-20",
       "regression": false,
@@ -1448,8 +1482,10 @@
       "side": "code",
       "entity": "ProgressCircle",
       "evidence": "contract lacks: human contract (design-plans/*-contract.md)",
-      "status": "Open",
-      "resolution": null,
+      "status": "Fixed",
+      "resolution": {
+        "ref": "72b707d"
+      },
       "firstSeen": "2026-11-20",
       "lastSeen": "2026-11-20",
       "regression": false,
@@ -1466,7 +1502,7 @@
       "severity": "warn",
       "side": "code",
       "entity": "Spinner",
-      "evidence": "contract lacks: figma set (codeOnly), human contract (design-plans/*-contract.md)",
+      "evidence": "contract lacks: figma set (codeOnly)",
       "status": "Open",
       "resolution": null,
       "firstSeen": "2026-11-20",
@@ -1485,8 +1521,10 @@
       "side": "code",
       "entity": "FeaturedIcon",
       "evidence": "contract lacks: behaviour",
-      "status": "Open",
-      "resolution": null,
+      "status": "Fixed",
+      "resolution": {
+        "ref": "72b707d"
+      },
       "firstSeen": "2026-11-20",
       "lastSeen": "2026-11-20",
       "regression": false,
@@ -1504,8 +1542,10 @@
       "side": "code",
       "entity": "Kbd",
       "evidence": "contract lacks: behaviour",
-      "status": "Open",
-      "resolution": null,
+      "status": "Fixed",
+      "resolution": {
+        "ref": "72b707d"
+      },
       "firstSeen": "2026-11-20",
       "lastSeen": "2026-11-20",
       "regression": false,
@@ -1522,7 +1562,7 @@
       "severity": "warn",
       "side": "code",
       "entity": "Card",
-      "evidence": "contract lacks: figma set (codeOnly), human contract (design-plans/*-contract.md), behaviour",
+      "evidence": "contract lacks: figma set (codeOnly)",
       "status": "Open",
       "resolution": null,
       "firstSeen": "2026-11-20",
@@ -1541,8 +1581,10 @@
       "side": "code",
       "entity": "AccordionItem",
       "evidence": "contract lacks: human contract (design-plans/*-contract.md)",
-      "status": "Open",
-      "resolution": null,
+      "status": "Fixed",
+      "resolution": {
+        "ref": "72b707d"
+      },
       "firstSeen": "2026-11-20",
       "lastSeen": "2026-11-20",
       "regression": false,
@@ -1560,8 +1602,10 @@
       "side": "code",
       "entity": "Image",
       "evidence": "contract lacks: behaviour",
-      "status": "Open",
-      "resolution": null,
+      "status": "Fixed",
+      "resolution": {
+        "ref": "72b707d"
+      },
       "firstSeen": "2026-11-20",
       "lastSeen": "2026-11-20",
       "regression": false,
@@ -1598,8 +1642,10 @@
       "side": "code",
       "entity": "ModalHeader",
       "evidence": "contract lacks: human contract (design-plans/*-contract.md)",
-      "status": "Open",
-      "resolution": null,
+      "status": "Fixed",
+      "resolution": {
+        "ref": "72b707d"
+      },
       "firstSeen": "2026-11-20",
       "lastSeen": "2026-11-20",
       "regression": false,
@@ -1617,8 +1663,10 @@
       "side": "code",
       "entity": "ModalFooter",
       "evidence": "contract lacks: human contract (design-plans/*-contract.md)",
-      "status": "Open",
-      "resolution": null,
+      "status": "Fixed",
+      "resolution": {
+        "ref": "72b707d"
+      },
       "firstSeen": "2026-11-20",
       "lastSeen": "2026-11-20",
       "regression": false,
@@ -1655,8 +1703,10 @@
       "side": "code",
       "entity": "PopoverFooter",
       "evidence": "contract lacks: human contract (design-plans/*-contract.md)",
-      "status": "Open",
-      "resolution": null,
+      "status": "Fixed",
+      "resolution": {
+        "ref": "72b707d"
+      },
       "firstSeen": "2026-11-20",
       "lastSeen": "2026-11-20",
       "regression": false,
@@ -1674,8 +1724,10 @@
       "side": "code",
       "entity": "TooltipContent",
       "evidence": "contract lacks: human contract (design-plans/*-contract.md)",
-      "status": "Open",
-      "resolution": null,
+      "status": "Fixed",
+      "resolution": {
+        "ref": "72b707d"
+      },
       "firstSeen": "2026-11-20",
       "lastSeen": "2026-11-20",
       "regression": false,
@@ -1693,8 +1745,10 @@
       "side": "code",
       "entity": "TooltipInfoTrigger",
       "evidence": "contract lacks: human contract (design-plans/*-contract.md)",
-      "status": "Open",
-      "resolution": null,
+      "status": "Fixed",
+      "resolution": {
+        "ref": "72b707d"
+      },
       "firstSeen": "2026-11-20",
       "lastSeen": "2026-11-20",
       "regression": false,
@@ -1731,8 +1785,10 @@
       "side": "code",
       "entity": "ScrollBar",
       "evidence": "contract lacks: human contract (design-plans/*-contract.md)",
-      "status": "Open",
-      "resolution": null,
+      "status": "Fixed",
+      "resolution": {
+        "ref": "72b707d"
+      },
       "firstSeen": "2026-11-20",
       "lastSeen": "2026-11-20",
       "regression": false,
@@ -1750,8 +1806,10 @@
       "side": "code",
       "entity": "TableCell",
       "evidence": "contract lacks: human contract (design-plans/*-contract.md)",
-      "status": "Open",
-      "resolution": null,
+      "status": "Fixed",
+      "resolution": {
+        "ref": "72b707d"
+      },
       "firstSeen": "2026-11-20",
       "lastSeen": "2026-11-20",
       "regression": false,
@@ -1788,8 +1846,10 @@
       "side": "code",
       "entity": "TableHead",
       "evidence": "contract lacks: human contract (design-plans/*-contract.md)",
-      "status": "Open",
-      "resolution": null,
+      "status": "Fixed",
+      "resolution": {
+        "ref": "72b707d"
+      },
       "firstSeen": "2026-11-20",
       "lastSeen": "2026-11-20",
       "regression": false,
@@ -1807,8 +1867,10 @@
       "side": "code",
       "entity": "TableMediaCell",
       "evidence": "contract lacks: human contract (design-plans/*-contract.md)",
-      "status": "Open",
-      "resolution": null,
+      "status": "Fixed",
+      "resolution": {
+        "ref": "72b707d"
+      },
       "firstSeen": "2026-11-20",
       "lastSeen": "2026-11-20",
       "regression": false,
@@ -1845,8 +1907,10 @@
       "side": "code",
       "entity": "TableTrendCell",
       "evidence": "contract lacks: human contract (design-plans/*-contract.md)",
-      "status": "Open",
-      "resolution": null,
+      "status": "Fixed",
+      "resolution": {
+        "ref": "72b707d"
+      },
       "firstSeen": "2026-11-20",
       "lastSeen": "2026-11-20",
       "regression": false,
@@ -1883,8 +1947,10 @@
       "side": "code",
       "entity": "TableResizer",
       "evidence": "contract lacks: human contract (design-plans/*-contract.md)",
-      "status": "Open",
-      "resolution": null,
+      "status": "Fixed",
+      "resolution": {
+        "ref": "72b707d"
+      },
       "firstSeen": "2026-11-20",
       "lastSeen": "2026-11-20",
       "regression": false,
@@ -1902,8 +1968,10 @@
       "side": "code",
       "entity": "TableRow",
       "evidence": "contract lacks: human contract (design-plans/*-contract.md)",
-      "status": "Open",
-      "resolution": null,
+      "status": "Fixed",
+      "resolution": {
+        "ref": "72b707d"
+      },
       "firstSeen": "2026-11-20",
       "lastSeen": "2026-11-20",
       "regression": false,
@@ -1921,8 +1989,10 @@
       "side": "code",
       "entity": "TableHeader",
       "evidence": "contract lacks: human contract (design-plans/*-contract.md)",
-      "status": "Open",
-      "resolution": null,
+      "status": "Fixed",
+      "resolution": {
+        "ref": "72b707d"
+      },
       "firstSeen": "2026-11-20",
       "lastSeen": "2026-11-20",
       "regression": false,
@@ -1940,8 +2010,10 @@
       "side": "code",
       "entity": "TableFooter",
       "evidence": "contract lacks: human contract (design-plans/*-contract.md)",
-      "status": "Open",
-      "resolution": null,
+      "status": "Fixed",
+      "resolution": {
+        "ref": "72b707d"
+      },
       "firstSeen": "2026-11-20",
       "lastSeen": "2026-11-20",
       "regression": false,
@@ -1959,8 +2031,10 @@
       "side": "code",
       "entity": "TableCaption",
       "evidence": "contract lacks: human contract (design-plans/*-contract.md)",
-      "status": "Open",
-      "resolution": null,
+      "status": "Fixed",
+      "resolution": {
+        "ref": "72b707d"
+      },
       "firstSeen": "2026-11-20",
       "lastSeen": "2026-11-20",
       "regression": false,
@@ -1978,8 +2052,10 @@
       "side": "code",
       "entity": "TableDropIndicator",
       "evidence": "contract lacks: human contract (design-plans/*-contract.md)",
-      "status": "Open",
-      "resolution": null,
+      "status": "Fixed",
+      "resolution": {
+        "ref": "72b707d"
+      },
       "firstSeen": "2026-11-20",
       "lastSeen": "2026-11-20",
       "regression": false,
@@ -1997,8 +2073,10 @@
       "side": "code",
       "entity": "TableEmpty",
       "evidence": "contract lacks: human contract (design-plans/*-contract.md)",
-      "status": "Open",
-      "resolution": null,
+      "status": "Fixed",
+      "resolution": {
+        "ref": "72b707d"
+      },
       "firstSeen": "2026-11-20",
       "lastSeen": "2026-11-20",
       "regression": false,
@@ -2016,8 +2094,10 @@
       "side": "code",
       "entity": "TableLoading",
       "evidence": "contract lacks: human contract (design-plans/*-contract.md)",
-      "status": "Open",
-      "resolution": null,
+      "status": "Fixed",
+      "resolution": {
+        "ref": "72b707d"
+      },
       "firstSeen": "2026-11-20",
       "lastSeen": "2026-11-20",
       "regression": false,
@@ -2035,8 +2115,10 @@
       "side": "code",
       "entity": "TableLoadMore",
       "evidence": "contract lacks: human contract (design-plans/*-contract.md)",
-      "status": "Open",
-      "resolution": null,
+      "status": "Fixed",
+      "resolution": {
+        "ref": "72b707d"
+      },
       "firstSeen": "2026-11-20",
       "lastSeen": "2026-11-20",
       "regression": false,
@@ -2073,8 +2155,10 @@
       "side": "code",
       "entity": "TabMenuItem",
       "evidence": "contract lacks: human contract (design-plans/*-contract.md)",
-      "status": "Open",
-      "resolution": null,
+      "status": "Fixed",
+      "resolution": {
+        "ref": "72b707d"
+      },
       "firstSeen": "2026-11-20",
       "lastSeen": "2026-11-20",
       "regression": false,
@@ -2092,8 +2176,10 @@
       "side": "code",
       "entity": "TabMenuLineItem",
       "evidence": "contract lacks: human contract (design-plans/*-contract.md)",
-      "status": "Open",
-      "resolution": null,
+      "status": "Fixed",
+      "resolution": {
+        "ref": "72b707d"
+      },
       "firstSeen": "2026-11-20",
       "lastSeen": "2026-11-20",
       "regression": false,
@@ -2111,8 +2197,10 @@
       "side": "code",
       "entity": "SettingsRow",
       "evidence": "contract lacks: human contract (design-plans/*-contract.md)",
-      "status": "Open",
-      "resolution": null,
+      "status": "Fixed",
+      "resolution": {
+        "ref": "72b707d"
+      },
       "firstSeen": "2026-11-20",
       "lastSeen": "2026-11-20",
       "regression": false,
@@ -2130,8 +2218,10 @@
       "side": "code",
       "entity": "SettingsSection",
       "evidence": "contract lacks: human contract (design-plans/*-contract.md)",
-      "status": "Open",
-      "resolution": null,
+      "status": "Fixed",
+      "resolution": {
+        "ref": "72b707d"
+      },
       "firstSeen": "2026-11-20",
       "lastSeen": "2026-11-20",
       "regression": false,
@@ -2149,8 +2239,10 @@
       "side": "code",
       "entity": "IssueCard",
       "evidence": "contract lacks: human contract (design-plans/*-contract.md)",
-      "status": "Open",
-      "resolution": null,
+      "status": "Fixed",
+      "resolution": {
+        "ref": "72b707d"
+      },
       "firstSeen": "2026-11-20",
       "lastSeen": "2026-11-20",
       "regression": false,
@@ -2204,8 +2296,10 @@
       "side": "code",
       "entity": "BoardColumn",
       "evidence": "contract lacks: human contract (design-plans/*-contract.md)",
-      "status": "Open",
-      "resolution": null,
+      "status": "Fixed",
+      "resolution": {
+        "ref": "72b707d"
+      },
       "firstSeen": "2026-11-20",
       "lastSeen": "2026-11-20",
       "regression": false,
@@ -2223,8 +2317,10 @@
       "side": "code",
       "entity": "NavItem",
       "evidence": "contract lacks: human contract (design-plans/*-contract.md)",
-      "status": "Open",
-      "resolution": null,
+      "status": "Fixed",
+      "resolution": {
+        "ref": "72b707d"
+      },
       "firstSeen": "2026-11-20",
       "lastSeen": "2026-11-20",
       "regression": false,
@@ -2242,8 +2338,10 @@
       "side": "code",
       "entity": "TabBarItem",
       "evidence": "contract lacks: human contract (design-plans/*-contract.md)",
-      "status": "Open",
-      "resolution": null,
+      "status": "Fixed",
+      "resolution": {
+        "ref": "72b707d"
+      },
       "firstSeen": "2026-11-20",
       "lastSeen": "2026-11-20",
       "regression": false,
@@ -2260,7 +2358,7 @@
       "severity": "warn",
       "side": "code",
       "entity": "ActivityHeatmap",
-      "evidence": "contract lacks: figma set (codeOnly), human contract (design-plans/*-contract.md)",
+      "evidence": "contract lacks: figma set (codeOnly)",
       "status": "Open",
       "resolution": null,
       "firstSeen": "2026-11-20",
@@ -2278,7 +2376,7 @@
       "severity": "warn",
       "side": "code",
       "entity": "ActivityHeatmapCell",
-      "evidence": "contract lacks: figma set (codeOnly), human contract (design-plans/*-contract.md)",
+      "evidence": "contract lacks: figma set (codeOnly)",
       "status": "Open",
       "resolution": null,
       "firstSeen": "2026-11-20",
@@ -2296,7 +2394,7 @@
       "severity": "warn",
       "side": "code",
       "entity": "SplitBar",
-      "evidence": "contract lacks: figma set (codeOnly), human contract (design-plans/*-contract.md)",
+      "evidence": "contract lacks: figma set (codeOnly)",
       "status": "Open",
       "resolution": null,
       "firstSeen": "2026-11-20",
@@ -2314,7 +2412,7 @@
       "severity": "warn",
       "side": "code",
       "entity": "SplitBarSegment",
-      "evidence": "contract lacks: figma set (codeOnly), human contract (design-plans/*-contract.md)",
+      "evidence": "contract lacks: figma set (codeOnly)",
       "status": "Open",
       "resolution": null,
       "firstSeen": "2026-11-20",
@@ -2332,7 +2430,7 @@
       "severity": "warn",
       "side": "code",
       "entity": "SplitBarLegendItem",
-      "evidence": "contract lacks: figma set (codeOnly), human contract (design-plans/*-contract.md)",
+      "evidence": "contract lacks: figma set (codeOnly)",
       "status": "Open",
       "resolution": null,
       "firstSeen": "2026-11-20",
@@ -2351,8 +2449,10 @@
       "side": "code",
       "entity": "Brand",
       "evidence": "contract lacks: human contract (design-plans/*-contract.md), behaviour",
-      "status": "Open",
-      "resolution": null,
+      "status": "Fixed",
+      "resolution": {
+        "ref": "72b707d"
+      },
       "firstSeen": "2026-11-20",
       "lastSeen": "2026-11-20",
       "regression": false,
@@ -2370,8 +2470,10 @@
       "side": "code",
       "entity": "AccountMenuTrigger",
       "evidence": "contract lacks: human contract (design-plans/*-contract.md)",
-      "status": "Open",
-      "resolution": null,
+      "status": "Fixed",
+      "resolution": {
+        "ref": "72b707d"
+      },
       "firstSeen": "2026-11-20",
       "lastSeen": "2026-11-20",
       "regression": false,
@@ -2389,8 +2491,10 @@
       "side": "code",
       "entity": "BreadcrumbItem",
       "evidence": "contract lacks: human contract (design-plans/*-contract.md)",
-      "status": "Open",
-      "resolution": null,
+      "status": "Fixed",
+      "resolution": {
+        "ref": "72b707d"
+      },
       "firstSeen": "2026-11-20",
       "lastSeen": "2026-11-20",
       "regression": false,
@@ -2427,8 +2531,10 @@
       "side": "code",
       "entity": "BreadcrumbEllipsis",
       "evidence": "contract lacks: human contract (design-plans/*-contract.md)",
-      "status": "Open",
-      "resolution": null,
+      "status": "Fixed",
+      "resolution": {
+        "ref": "72b707d"
+      },
       "firstSeen": "2026-11-20",
       "lastSeen": "2026-11-20",
       "regression": false,
@@ -2465,8 +2571,10 @@
       "side": "code",
       "entity": "BreadcrumbSeparator",
       "evidence": "contract lacks: human contract (design-plans/*-contract.md)",
-      "status": "Open",
-      "resolution": null,
+      "status": "Fixed",
+      "resolution": {
+        "ref": "72b707d"
+      },
       "firstSeen": "2026-11-20",
       "lastSeen": "2026-11-20",
       "regression": false,
@@ -2484,8 +2592,10 @@
       "side": "code",
       "entity": "PaginationLink",
       "evidence": "contract lacks: human contract (design-plans/*-contract.md)",
-      "status": "Open",
-      "resolution": null,
+      "status": "Fixed",
+      "resolution": {
+        "ref": "72b707d"
+      },
       "firstSeen": "2026-11-20",
       "lastSeen": "2026-11-20",
       "regression": false,
@@ -2503,8 +2613,10 @@
       "side": "code",
       "entity": "PaginationEllipsis",
       "evidence": "contract lacks: human contract (design-plans/*-contract.md)",
-      "status": "Open",
-      "resolution": null,
+      "status": "Fixed",
+      "resolution": {
+        "ref": "72b707d"
+      },
       "firstSeen": "2026-11-20",
       "lastSeen": "2026-11-20",
       "regression": false,
@@ -2522,8 +2634,10 @@
       "side": "code",
       "entity": "StepperItem",
       "evidence": "contract lacks: human contract (design-plans/*-contract.md)",
-      "status": "Open",
-      "resolution": null,
+      "status": "Fixed",
+      "resolution": {
+        "ref": "72b707d"
+      },
       "firstSeen": "2026-11-20",
       "lastSeen": "2026-11-20",
       "regression": false,
@@ -2560,8 +2674,10 @@
       "side": "code",
       "entity": "StepperIndicator",
       "evidence": "contract lacks: human contract (design-plans/*-contract.md)",
-      "status": "Open",
-      "resolution": null,
+      "status": "Fixed",
+      "resolution": {
+        "ref": "72b707d"
+      },
       "firstSeen": "2026-11-20",
       "lastSeen": "2026-11-20",
       "regression": false,
@@ -2598,8 +2714,10 @@
       "side": "code",
       "entity": "StepperIcon",
       "evidence": "contract lacks: human contract (design-plans/*-contract.md)",
-      "status": "Open",
-      "resolution": null,
+      "status": "Fixed",
+      "resolution": {
+        "ref": "72b707d"
+      },
       "firstSeen": "2026-11-20",
       "lastSeen": "2026-11-20",
       "regression": false,
@@ -2636,8 +2754,10 @@
       "side": "code",
       "entity": "DropdownMenuLabel",
       "evidence": "contract lacks: human contract (design-plans/*-contract.md)",
-      "status": "Open",
-      "resolution": null,
+      "status": "Fixed",
+      "resolution": {
+        "ref": "72b707d"
+      },
       "firstSeen": "2026-11-20",
       "lastSeen": "2026-11-20",
       "regression": false,
@@ -2655,8 +2775,10 @@
       "side": "code",
       "entity": "DropdownMenuItem",
       "evidence": "contract lacks: human contract (design-plans/*-contract.md)",
-      "status": "Open",
-      "resolution": null,
+      "status": "Fixed",
+      "resolution": {
+        "ref": "72b707d"
+      },
       "firstSeen": "2026-11-20",
       "lastSeen": "2026-11-20",
       "regression": false,
@@ -2674,8 +2796,10 @@
       "side": "code",
       "entity": "DropdownMenuFooter",
       "evidence": "contract lacks: human contract (design-plans/*-contract.md)",
-      "status": "Open",
-      "resolution": null,
+      "status": "Fixed",
+      "resolution": {
+        "ref": "72b707d"
+      },
       "firstSeen": "2026-11-20",
       "lastSeen": "2026-11-20",
       "regression": false,
@@ -2712,8 +2836,10 @@
       "side": "code",
       "entity": "SidebarMenuButton",
       "evidence": "contract lacks: human contract (design-plans/*-contract.md)",
-      "status": "Open",
-      "resolution": null,
+      "status": "Fixed",
+      "resolution": {
+        "ref": "72b707d"
+      },
       "firstSeen": "2026-11-20",
       "lastSeen": "2026-11-20",
       "regression": false,
@@ -2731,8 +2857,10 @@
       "side": "code",
       "entity": "SidebarGroup",
       "evidence": "contract lacks: human contract (design-plans/*-contract.md)",
-      "status": "Open",
-      "resolution": null,
+      "status": "Fixed",
+      "resolution": {
+        "ref": "72b707d"
+      },
       "firstSeen": "2026-11-20",
       "lastSeen": "2026-11-20",
       "regression": false,
@@ -2769,8 +2897,10 @@
       "side": "code",
       "entity": "SidebarGroupLabel",
       "evidence": "contract lacks: human contract (design-plans/*-contract.md)",
-      "status": "Open",
-      "resolution": null,
+      "status": "Fixed",
+      "resolution": {
+        "ref": "72b707d"
+      },
       "firstSeen": "2026-11-20",
       "lastSeen": "2026-11-20",
       "regression": false,
@@ -2788,8 +2918,10 @@
       "side": "code",
       "entity": "SidebarBrand",
       "evidence": "contract lacks: human contract (design-plans/*-contract.md)",
-      "status": "Open",
-      "resolution": null,
+      "status": "Fixed",
+      "resolution": {
+        "ref": "72b707d"
+      },
       "firstSeen": "2026-11-20",
       "lastSeen": "2026-11-20",
       "regression": false,

@@ -832,7 +832,8 @@
       "aria-label",
       "aria-labelledby",
       "aria-selected"
-    ]
+    ],
+    "authored": null
   },
   "usage": "Used by Combobox and ComboboxPopover. Keep labels short; put detail in the description.",
   "accessibility": "role=\"option\" with aria-selected; the highlighted row is the trigger's aria-activedescendant.",
@@ -860,6 +861,7 @@
     }
   },
   "docs": {
-    "humanContract": null
+    "humanContract": null,
+    "readable": "spec/contracts/ComboboxItem.md"
   }
 }

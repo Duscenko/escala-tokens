@@ -137,7 +137,8 @@
       "aria-sort",
       "aria-valuemin",
       "aria-valuenow"
-    ]
+    ],
+    "authored": null
   },
   "usage": "Use to name the table for everyone; the visible heading and the accessible name are one.",
   "accessibility": "A real <caption>.",
@@ -174,6 +175,7 @@
     }
   },
   "docs": {
-    "humanContract": null
+    "humanContract": null,
+    "readable": "spec/contracts/TableCaption.md"
   }
 }

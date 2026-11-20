@@ -406,7 +406,8 @@
       "aria-sort",
       "aria-valuemin",
       "aria-valuenow"
-    ]
+    ],
+    "authored": null
   },
   "usage": "Use inside a TableHeader, one per column. Make a column sortable with onSort; hover only exists for sortable columns.",
   "accessibility": "th scope=\"col\"; a sortable column is keyboard operable and sets aria-sort (omitted for none).",
@@ -443,6 +444,7 @@
     }
   },
   "docs": {
-    "humanContract": null
+    "humanContract": null,
+    "readable": "spec/contracts/TableHead.md"
   }
 }

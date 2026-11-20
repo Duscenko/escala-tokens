@@ -221,7 +221,8 @@
       "aria-sort",
       "aria-valuemin",
       "aria-valuenow"
-    ]
+    ],
+    "authored": null
   },
   "usage": "Use once per Table, first. Keep it sticky in scroll containers.",
   "accessibility": "One th per column with scope=\"col\".",
@@ -258,6 +259,7 @@
     }
   },
   "docs": {
-    "humanContract": null
+    "humanContract": null,
+    "readable": "spec/contracts/TableHeader.md"
   }
 }

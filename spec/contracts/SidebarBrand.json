@@ -164,7 +164,8 @@
       "aria-disabled",
       "aria-expanded",
       "aria-label"
-    ]
+    ],
+    "authored": null
   },
   "usage": "Wrap it in a link to the home route.",
   "accessibility": "The link around it needs an accessible name equal to the title.",
@@ -199,6 +200,7 @@
     }
   },
   "docs": {
-    "humanContract": null
+    "humanContract": null,
+    "readable": "spec/contracts/SidebarBrand.md"
   }
 }

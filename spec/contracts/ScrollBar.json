@@ -211,7 +211,8 @@
     "roles": [],
     "ariaAttributes": [
       "aria-label"
-    ]
+    ],
+    "authored": null
   },
   "usage": "Inside a ScrollArea (it places its own); use it standalone only for custom scrollbar placement.",
   "accessibility": "Decorative and aria-hidden: the viewport carries focus and keyboard scrolling.",
@@ -236,6 +237,7 @@
     }
   },
   "docs": {
-    "humanContract": null
+    "humanContract": null,
+    "readable": "spec/contracts/ScrollBar.md"
   }
 }

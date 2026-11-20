@@ -775,7 +775,8 @@
     "ariaAttributes": [
       "aria-hidden",
       "aria-label"
-    ]
+    ],
+    "authored": null
   },
   "usage": "Use one size per context. Stack people with AvatarGroup. A photo avatar has no colour variants; initials and icon take Variant and Appearance.",
   "accessibility": "role=\"img\" with an accessible name (aria-label, or the alt of the photo); hide a purely decorative avatar with aria-hidden. The presence dot is announced as text.",
@@ -800,6 +801,7 @@
     }
   },
   "docs": {
-    "humanContract": "design-plans/avatar-contract.md"
+    "humanContract": "design-plans/avatar-contract.md",
+    "readable": "spec/contracts/Avatar.md"
   }
 }

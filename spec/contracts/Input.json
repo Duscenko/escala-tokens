@@ -644,7 +644,8 @@
       "aria-label",
       "aria-live",
       "aria-pressed"
-    ]
+    ],
+    "authored": null
   },
   "usage": "Wrap it in a Field with a FieldLabel. Pick the type for the value it holds (phone, currency, password, url…); any other HTML type works on the default layout. For an add-on the types do not cover, use Input Group.",
   "accessibility": "The field is a native <input> with its keyboard (inputmode) and autofill hint per type; pair it with a FieldLabel (htmlFor) or an aria-label. The select addon is a native <select> with its own name; Browse, Copy and the password toggle are buttons with names; the shortcut keys are <kbd>.",
@@ -667,6 +668,7 @@
     }
   },
   "docs": {
-    "humanContract": "design-plans/input-contract.md"
+    "humanContract": "design-plans/input-contract.md",
+    "readable": "spec/contracts/Input.md"
   }
 }

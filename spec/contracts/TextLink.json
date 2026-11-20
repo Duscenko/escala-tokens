@@ -699,7 +699,8 @@
     "roles": [],
     "ariaAttributes": [
       "aria-disabled"
-    ]
+    ],
+    "authored": null
   },
   "usage": "Use inside running copy and next to a field or a card for a destination or a small action. Give it a descriptive label; an icon-only link needs an aria-label. Hover and Pressed always show the underline; the underline can be turned off at rest. An action with its own surface is a Button.",
   "accessibility": "Native <a>. Disabled sets aria-disabled, tabindex -1 and swallows the click. Focus draws a 2px edge inside and a 2px halo outside (the link grows by the edge, as in the Figma file). An icon-only link needs an aria-label.",
@@ -722,6 +723,7 @@
     }
   },
   "docs": {
-    "humanContract": "design-plans/text-link-contract.md"
+    "humanContract": "design-plans/text-link-contract.md",
+    "readable": "spec/contracts/TextLink.md"
   }
 }

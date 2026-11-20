@@ -372,7 +372,8 @@
       "aria-label",
       "aria-labelledby",
       "aria-selected"
-    ]
+    ],
+    "authored": null
   },
   "usage": "Compose the InputTag dropdown from it. Render the list as a listbox with arrow-key navigation.",
   "accessibility": "role=\"option\" with aria-selected; the list that holds it is a listbox with arrow-key navigation.",
@@ -397,6 +398,7 @@
     }
   },
   "docs": {
-    "humanContract": null
+    "humanContract": null,
+    "readable": "spec/contracts/InputTagOption.md"
   }
 }

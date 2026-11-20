@@ -184,7 +184,8 @@
       "aria-hidden",
       "aria-label",
       "aria-orientation"
-    ]
+    ],
+    "authored": null
   },
   "usage": "Only as the popover of a ReactionGroupTrigger. It opens above the trigger and closes when an option is picked.",
   "accessibility": "role=\"toolbar\" with a roving tabindex: arrow keys move and wrap, Home and End jump, Escape closes and returns focus to the trigger. Every option has an aria-label.",
@@ -209,6 +210,7 @@
     }
   },
   "docs": {
-    "humanContract": null
+    "humanContract": null,
+    "readable": "spec/contracts/ReactionGroupPopover.md"
   }
 }

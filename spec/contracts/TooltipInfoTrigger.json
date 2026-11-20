@@ -436,7 +436,8 @@
     "roles": [
       "tooltip"
     ],
-    "ariaAttributes": []
+    "ariaAttributes": [],
+    "authored": null
   },
   "usage": "Next to a label or field that needs an explanation. Variant must match the bubble it opens.",
   "accessibility": "A focusable button with an accessible name (aria-label); the open state follows the tooltip it controls (data-state=open).",
@@ -463,6 +464,7 @@
     }
   },
   "docs": {
-    "humanContract": null
+    "humanContract": null,
+    "readable": "spec/contracts/TooltipInfoTrigger.md"
   }
 }

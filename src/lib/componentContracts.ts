@@ -22,6 +22,8 @@ import type { RecipeMotion, SlotMap } from './recipes/helpers'
 import { figmaSemanticName } from './agentBundle/names'
 import { roleFigmaName } from './roleNames'
 import { PRIMITIVE_BEHAVIOUR, ariaIn, primitivesIn, type PrimitiveBehaviour } from './contractBehaviour'
+import { COMPONENT_BEHAVIOUR, type AuthoredBehaviour } from './componentBehaviour'
+import { motionTrigger } from './contractGates'
 
 /** v2 (2026-11-20) is additive over v1: bindings, names, motion, behaviour, code.import. */
 export const CONTRACT_SCHEMA = 'escala-component-contract/2'
@@ -96,6 +98,9 @@ export interface ComponentContract {
     primitives: (PrimitiveBehaviour & { name: string })[]
     roles: string[]
     ariaAttributes: string[]
+    /** What the component's own source adds (or `pattern: null` = not interactive, decided), from
+     *  `componentBehaviour.ts`; null = not authored yet. */
+    authored: AuthoredBehaviour | null
   }
   usage: string
   accessibility: string
@@ -105,7 +110,9 @@ export interface ComponentContract {
     import: { name: string; module: string; exports: string[] } | null
     story: { file: string; title: string; id: string | null; url: string | null } | null
   }
-  docs: { humanContract: string | null }
+  /** humanContract: the authored contract in design-plans/ (null = none yet); readable: the view of
+   *  this JSON generated next to it (`spec/contracts/<Key>.md`), always present. */
+  docs: { humanContract: string | null; readable: string }
 }
 
 /** Storybook's `sanitize` (lib/csf): lower case, every separator to one hyphen. */
@@ -214,7 +221,7 @@ function importOf(key: string, files: string[], uiFiles: Record<string, string>)
   return exports.length ? { name: exports[0], module: first.replace(/\.tsx?$/, ''), exports } : null
 }
 
-function behaviourOf(files: string[], uiFiles: Record<string, string>): ComponentContract['behaviour'] {
+function behaviourOf(key: string, files: string[], uiFiles: Record<string, string>): ComponentContract['behaviour'] {
   const srcs = files.map((f) => uiFiles[f.replace('src/components/escala-ui/', '')] ?? '')
   const names = [...new Set(srcs.flatMap(primitivesIn))]
   const roles = new Set<string>()
@@ -224,6 +231,7 @@ function behaviourOf(files: string[], uiFiles: Record<string, string>): Componen
     primitives: names.filter((n) => PRIMITIVE_BEHAVIOUR[n]).map((name) => ({ name, ...PRIMITIVE_BEHAVIOUR[name] })),
     roles: [...roles].sort(),
     ariaAttributes: [...attributes].sort(),
+    authored: COMPONENT_BEHAVIOUR[key] ?? null,
   }
 }
 
@@ -265,11 +273,11 @@ export function buildContract(def: ComponentDef, src: ContractSources): Componen
     names: recipe ? namesOf(recipeTokenRefs(recipe)) : {},
     bindings: bindingsOf(recipe),
     motion: recipe?.motion ?? null,
-    behaviour: behaviourOf(files, src.uiFiles),
+    behaviour: behaviourOf(def.key, files, src.uiFiles),
     usage: def.usage,
     accessibility: def.accessibility,
     code: { files, import: importOf(def.key, files, src.uiFiles), story: findStory(def.key, src.storyFiles) },
-    docs: { humanContract: src.designPlans.includes(humanContract) ? `design-plans/${humanContract}` : null },
+    docs: { humanContract: src.designPlans.includes(humanContract) ? `design-plans/${humanContract}` : null, readable: `spec/contracts/${def.key}.md` },
   }
 }
 
@@ -410,6 +418,11 @@ export function contractSchema(): Record<string, unknown> {
           primitives: { type: 'array', items: { type: 'object', properties: { name: str, library: str, pattern: strOrNull, keyboard: { type: 'object', additionalProperties: str }, focus: str } } },
           roles: strList,
           ariaAttributes: strList,
+          authored: {
+            type: ['object', 'null'],
+            description: 'Keys and focus the component source adds (componentBehaviour.ts); pattern null = not interactive. null = not authored yet.',
+            properties: { pattern: strOrNull, keyboard: { type: 'object', additionalProperties: str }, focus: str, source: str, story: str },
+          },
         },
       },
       usage: str,
@@ -422,9 +435,89 @@ export function contractSchema(): Record<string, unknown> {
           story: { type: ['object', 'null'], properties: { file: str, title: str, id: strOrNull, url: strOrNull } },
         },
       },
-      docs: { type: 'object', properties: { humanContract: strOrNull } },
+      docs: { type: 'object', properties: { humanContract: strOrNull, readable: str } },
     },
   }
+}
+
+/** The token each slot paints at the component's defaults: every binding part whose combination matches, merged in order. */
+export function defaultSlots(c: Pick<ComponentContract, 'api' | 'bindings'>): SlotMap {
+  const out: SlotMap = {}
+  for (const part of c.bindings) {
+    const combo = part.axes.map((a) => c.api.defaults[a] ?? '').join('|')
+    const slots = part.values[combo]
+    if (!slots) continue
+    for (const [slot, props] of Object.entries(slots)) out[slot] = { ...(out[slot] ?? {}), ...props }
+  }
+  return out
+}
+
+const cell = (v: unknown) => String(v).replace(/\|/g, '\\|').replace(/\n/g, ' ')
+/** Prose with HTML-looking tags (`<kbd>`) kept literal in Markdown. */
+const prose = (v: string) => v.replace(/(?<!`)<(\/?[a-z][\w-]*)>(?!`)/g, '`<$1>`')
+
+/** `spec/contracts/<Key>.md`: the contract as a page a person (or an agent skimming) reads. GENERATED. */
+export function contractMarkdown(c: ComponentContract): string {
+  const L: string[] = []
+  L.push(`# ${c.label} — component contract`, '')
+  L.push(`> GENERATED by \`npm run gen:contracts\` from \`spec/contracts/${c.key}.json\` — never edit. ` +
+    (c.docs.humanContract ? `Authored notes: \`${c.docs.humanContract}\`.` : 'No authored contract in design-plans/ yet; this view stands in for it.'), '')
+  L.push(prose(c.description), '')
+  const links = [
+    c.figma.url && `[Figma](${c.figma.url})`,
+    c.code.story?.url && `[Storybook](${c.code.story.url})`,
+  ].filter(Boolean)
+  L.push(`**Category** ${c.category} · **Box** ${c.box} · **Figma set** ${c.figma.set ? `\`${c.figma.set}\` (${c.figma.variants ?? '?'} variants, page ${c.figma.page})` : 'none (codeOnly)'}${links.length ? ` · ${links.join(' · ')}` : ''}`, '')
+  if (c.code.import) L.push('```tsx', `import { ${c.code.import.exports.join(', ')} } from '${c.code.import.module}'`, '```', '')
+  if (c.api.axes.length) {
+    L.push('## Axes (Figma variant properties = story controls)', '', '| Axis | Values | Default |', '|---|---|---|')
+    for (const a of c.api.axes) L.push(`| ${a.name} | ${a.values.map(cell).join(' · ')} | ${cell(c.api.defaults[a.name] ?? '—')} |`)
+    L.push('')
+  }
+  if (c.figma.properties?.length) L.push(`**Figma properties** ${c.figma.properties.map((p) => `${p.name} (${p.type.toLowerCase()})`).join(' · ')}`, '')
+  if (c.api.props.length) {
+    L.push('## Props', '', '| Prop | Type | What |', '|---|---|---|')
+    for (const p of c.api.props) L.push(`| \`${p.name}\` | \`${cell(p.type)}\` | ${cell(p.description)} |`)
+    L.push('')
+  }
+  if (c.anatomy.slots.length) L.push(`## Anatomy`, '', c.anatomy.slots.map((s) => `\`${s}\``).join(' · '), '')
+  const slots = defaultSlots(c)
+  const rows = Object.entries(slots).flatMap(([slot, props]) => Object.entries(props).map(([prop, ref]) => ({ slot, prop, ref: String(ref) })))
+  if (rows.length) {
+    L.push('## Tokens at the defaults', '', `Other states: \`bindings\` in the JSON (${c.bindings.length} part${c.bindings.length === 1 ? '' : 's'}; merge every matching part in order).`, '',
+      '| Slot | Property | Token | CSS | Figma |', '|---|---|---|---|---|')
+    for (const r of rows) {
+      const n = c.names[r.ref]
+      L.push(`| ${r.slot} | ${r.prop} | \`${cell(r.ref)}\` | ${n ? `\`${n.css}\`` : '—'} | ${n?.figma ? `\`${n.figma}\`` : '—'} |`)
+    }
+    L.push('')
+  }
+  L.push('## Motion', '')
+  if (!c.motion) L.push(motionTrigger(c) ? `No decision yet (MOT-002): it has a ${motionTrigger(c)}.` : 'None needed: no state axis, no open / close.', '')
+  else {
+    for (const [slot, props] of Object.entries(c.motion.transitions ?? {})) L.push(`- \`${slot}\`: ${Object.entries(props).map(([p, role]) => `${p} → \`${role}\``).join(', ')}`)
+    for (const k of ['enter', 'exit'] as const) { const ch = c.motion[k]; if (ch) L.push(`- ${k}: \`${ch.name}\` on \`${ch.slot ?? 'root'}\``) }
+    if (c.motion.press) L.push(`- press: \`${c.motion.press.slot ?? 'root'}\` sinks to the \`shrink\` role on \`use-press\``)
+    L.push('')
+  }
+  L.push('## Behaviour', '')
+  for (const p of c.behaviour.primitives) {
+    L.push(`**${p.name}** (${p.library}${p.pattern ? `, ${p.pattern}` : ''}). ${p.focus}`)
+    for (const [k, v] of Object.entries(p.keyboard)) L.push(`- \`${k}\` ${v}`)
+    L.push('')
+  }
+  const a = c.behaviour.authored
+  if (a) {
+    L.push(`**Own source**${a.pattern ? ` (${a.pattern})` : ''}. ${prose(a.focus)}`)
+    for (const [k, v] of Object.entries(a.keyboard)) L.push(`- \`${k}\` ${v}`)
+    L.push(`- Source: ${a.source} · story \`${a.story}\``, '')
+  }
+  if (!c.behaviour.primitives.length && !a) L.push('No library primitive and no authored entry yet.', '')
+  if (c.behaviour.roles.length || c.behaviour.ariaAttributes.length) L.push(`ARIA in the source: ${[...c.behaviour.roles.map((r) => `role=${r}`), ...c.behaviour.ariaAttributes].join(' · ')}`, '')
+  if (c.usage) L.push('## Usage', '', prose(c.usage), '')
+  if (c.accessibility) L.push('## Accessibility', '', prose(c.accessibility), '')
+  L.push('## Files', '', ...c.code.files.map((f) => `- \`${f}\``), ...(c.code.story ? [`- \`${c.code.story.file}\``] : []), '')
+  return `${L.join('\n').replace(/\n{3,}/g, '\n\n').trimEnd()}\n`
 }
 
 /** `spec/contracts/README.md`: how an agent uses the contracts, with live counts. */
@@ -448,7 +541,8 @@ Schema: \`${CONTRACT_SCHEMA}\` — [\`schema.json\`](./schema.json).
 4. **Style nothing by hand.** \`bindings\` already says which token each slot paints in each state;
    \`names\` translates a ref to its CSS variable and its Figma variable. A value no role covers is a
    missing role: report it.
-5. **Behave like the library.** \`behaviour\` lists the keys and focus model the component inherits;
+5. **Behave like the library.** \`behaviour.primitives\` lists the keys and focus model the component
+   inherits, \`behaviour.authored\` the keys its own source adds (or that it is not interactive);
    \`motion\` the motion roles it plays (null = no decision yet).
 6. **When Figma and the contract disagree**, \`owners\` says which side wins: Figma for anatomy and
    foundations, Storybook for behaviour.

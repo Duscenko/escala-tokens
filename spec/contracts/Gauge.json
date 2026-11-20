@@ -392,7 +392,8 @@
       "aria-valuemin",
       "aria-valuenow",
       "aria-valuetext"
-    ]
+    ],
+    "authored": null
   },
   "usage": "Use for a single reading with a known range (workspace health, quota, score). Variant default for a neutral reading; success · warning · critical only when the colour carries the meaning, never to decorate. Use ProgressCircle for task completion and Sparkline for a trend.",
   "accessibility": "role=\"meter\" with aria-valuenow, aria-valuemin, aria-valuemax and an aria-valuetext that reads the label (\"72 %, Healthy\"). Give it an accessible name (aria-label or aria-labelledby). Not focusable. A new value sweeps the fill on use-travel-in; reduced motion is instant.",
@@ -415,6 +416,7 @@
     }
   },
   "docs": {
-    "humanContract": "design-plans/gauge-contract.md"
+    "humanContract": "design-plans/gauge-contract.md",
+    "readable": "spec/contracts/Gauge.md"
   }
 }

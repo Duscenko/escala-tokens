@@ -180,7 +180,14 @@
   "behaviour": {
     "primitives": [],
     "roles": [],
-    "ariaAttributes": []
+    "ariaAttributes": [],
+    "authored": {
+      "pattern": null,
+      "keyboard": {},
+      "focus": "Not focusable: an image; its alt text is the accessible name (empty alt when decorative).",
+      "source": "src/components/escala-ui/image.tsx",
+      "story": "Playground"
+    }
   },
   "usage": "Wrap media so layouts never shift while content loads. Use Shape square inside a slot that already clips its corners. Always give alt text (alt=\"\" when decorative).",
   "accessibility": "The image needs alt text; alt=\"\" when decorative. Purely presentational otherwise.",
@@ -203,6 +210,7 @@
     }
   },
   "docs": {
-    "humanContract": "design-plans/image-contract.md"
+    "humanContract": "design-plans/image-contract.md",
+    "readable": "spec/contracts/Image.md"
   }
 }

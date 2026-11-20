@@ -694,7 +694,8 @@
       "aria-disabled",
       "aria-invalid",
       "aria-label"
-    ]
+    ],
+    "authored": null
   },
   "usage": "Use for a setting that applies at once. For a choice submitted with a form, use Checkbox. Thumb long makes a wider, pill-shaped thumb; the I / O marks and a thumb glyph help where colour alone is not enough.",
   "accessibility": "Radix switch (role=\"switch\", aria-checked, Space toggles). Give it a visible label (SwitchGroup) or an accessible name.",
@@ -718,6 +719,7 @@
     }
   },
   "docs": {
-    "humanContract": "design-plans/switch-contract.md"
+    "humanContract": "design-plans/switch-contract.md",
+    "readable": "spec/contracts/Switch.md"
   }
 }

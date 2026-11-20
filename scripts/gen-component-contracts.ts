@@ -12,7 +12,7 @@
 import { mkdirSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
-import { buildContracts, contractReadme, contractSchema, serializeContract, type ContractSources } from '../src/lib/componentContracts'
+import { buildContracts, contractMarkdown, contractReadme, contractSchema, serializeContract, type ContractSources } from '../src/lib/componentContracts'
 
 export const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..')
 export const CONTRACTS_DIR = join(ROOT, 'spec/contracts')
@@ -46,7 +46,10 @@ export function contractFiles(root = ROOT): Record<string, string> {
     'schema.json': serializeContract(contractSchema()),
     'README.md': contractReadme(index),
   }
-  for (const c of contracts) files[`${c.key}.json`] = serializeContract(c)
+  for (const c of contracts) {
+    files[`${c.key}.json`] = serializeContract(c)
+    files[`${c.key}.md`] = contractMarkdown(c)
+  }
   return files
 }
 
@@ -55,5 +58,5 @@ if (process.argv[1] && fileURLToPath(import.meta.url) === process.argv[1]) {
   rmSync(CONTRACTS_DIR, { recursive: true, force: true })
   mkdirSync(CONTRACTS_DIR, { recursive: true })
   for (const [name, body] of Object.entries(files)) writeFileSync(join(CONTRACTS_DIR, name), body)
-  console.log(`wrote ${Object.keys(files).length - 3} contracts + index.json, schema.json, README.md to spec/contracts/`)
+  console.log(`wrote ${(Object.keys(files).length - 3) / 2} contracts (.json + .md) + index.json, schema.json, README.md to spec/contracts/`)
 }

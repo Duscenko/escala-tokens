@@ -181,7 +181,8 @@
     "roles": [],
     "ariaAttributes": [
       "aria-label"
-    ]
+    ],
+    "authored": null
   },
   "usage": "Side by side on a board. The lane is a tray, so its cards read as raised.",
   "accessibility": "A list labelled by the title and the count.",
@@ -204,6 +205,7 @@
     }
   },
   "docs": {
-    "humanContract": null
+    "humanContract": null,
+    "readable": "spec/contracts/BoardColumn.md"
   }
 }

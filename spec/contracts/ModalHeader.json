@@ -268,7 +268,8 @@
     "roles": [],
     "ariaAttributes": [
       "aria-label"
-    ]
+    ],
+    "authored": null
   },
   "usage": "Inside a Modal. Align sets the layout; vertical-center suits confirmations and has no trailing slot. Never hide the title: it is the dialog name.",
   "accessibility": "The title is the Modal's accessible name (aria-labelledby) and the description its aria-describedby.",
@@ -311,6 +312,7 @@
     }
   },
   "docs": {
-    "humanContract": null
+    "humanContract": null,
+    "readable": "spec/contracts/ModalHeader.md"
   }
 }

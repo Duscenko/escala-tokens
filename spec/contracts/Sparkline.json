@@ -309,7 +309,8 @@
     ],
     "ariaAttributes": [
       "aria-label"
-    ]
+    ],
+    "authored": null
   },
   "usage": "Use beside a number to show where it came from (a metric card, a table cell). Variant success when up is good and critical when down is bad; default when the direction has no judgement. For a full chart with axes use a charting layer, not this.",
   "accessibility": "role=\"img\" with a required aria-label that states the trend (\"Daily active users, up 7.2 % this week\"); the drawing itself is hidden from assistive tech. The line draws once on mount (use-reveal) and new data cross-fades (use-color); reduced motion is instant.",
@@ -332,6 +333,7 @@
     }
   },
   "docs": {
-    "humanContract": "design-plans/sparkline-contract.md"
+    "humanContract": "design-plans/sparkline-contract.md",
+    "readable": "spec/contracts/Sparkline.md"
   }
 }

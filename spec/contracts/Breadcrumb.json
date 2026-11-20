@@ -164,7 +164,8 @@
       "aria-current",
       "aria-disabled",
       "aria-label"
-    ]
+    ],
+    "authored": null
   },
   "usage": "Only use when hierarchy is 3+ levels deep. Don't duplicate primary navigation. The last item is the current page.",
   "accessibility": "nav aria-label=\"Breadcrumb\" over an ordered list. The current page is aria-current=\"page\" and not a link; separators are hidden from assistive technology.",
@@ -191,6 +192,7 @@
     }
   },
   "docs": {
-    "humanContract": "design-plans/breadcrumb-contract.md"
+    "humanContract": "design-plans/breadcrumb-contract.md",
+    "readable": "spec/contracts/Breadcrumb.md"
   }
 }

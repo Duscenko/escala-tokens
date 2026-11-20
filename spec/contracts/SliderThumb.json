@@ -358,7 +358,8 @@
     "ariaAttributes": [
       "aria-disabled",
       "aria-label"
-    ]
+    ],
+    "authored": null
   },
   "usage": "Only inside a Slider.",
   "accessibility": "Presentational: the Slider gives it role=\"slider\" through Radix.",
@@ -382,6 +383,7 @@
     }
   },
   "docs": {
-    "humanContract": "design-plans/slider-thumb-contract.md"
+    "humanContract": "design-plans/slider-thumb-contract.md",
+    "readable": "spec/contracts/SliderThumb.md"
   }
 }

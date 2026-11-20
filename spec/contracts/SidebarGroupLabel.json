@@ -153,7 +153,8 @@
       "aria-disabled",
       "aria-expanded",
       "aria-label"
-    ]
+    ],
+    "authored": null
   },
   "usage": "Name the group in one or two words.",
   "accessibility": "It is the label of the group (aria-labelledby).",
@@ -188,6 +189,7 @@
     }
   },
   "docs": {
-    "humanContract": null
+    "humanContract": null,
+    "readable": "spec/contracts/SidebarGroupLabel.md"
   }
 }

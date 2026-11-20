@@ -137,7 +137,18 @@
       "aria-checked",
       "aria-disabled",
       "aria-label"
-    ]
+    ],
+    "authored": {
+      "pattern": "radio group",
+      "keyboard": {
+        "ArrowRight / ArrowDown": "moves to the next option and selects it (wraps)",
+        "ArrowLeft / ArrowUp": "moves to the previous option and selects it (wraps)",
+        "Home / End": "moves to the first / last option and selects it"
+      },
+      "focus": "One tab stop (the checked option); disabled options are skipped.",
+      "source": "src/components/escala-ui/segmented-control.tsx · handleKeyDown",
+      "story": "Playground"
+    }
   },
   "usage": "Use for 2–5 exclusive options of the same data (e.g. Day / Week / Month). Use RadioGroup for long labels or more options, TabMenu to switch views, ButtonGroup for independent actions.",
   "accessibility": "role=\"radiogroup\"; each segment role=\"radio\" with aria-checked. One tab stop; the arrow keys move and select.",
@@ -161,6 +172,7 @@
     }
   },
   "docs": {
-    "humanContract": "design-plans/segmented-control-contract.md"
+    "humanContract": "design-plans/segmented-control-contract.md",
+    "readable": "spec/contracts/SegmentedControl.md"
   }
 }

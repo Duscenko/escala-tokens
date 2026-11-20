@@ -142,7 +142,14 @@
   "behaviour": {
     "primitives": [],
     "roles": [],
-    "ariaAttributes": []
+    "ariaAttributes": [],
+    "authored": {
+      "pattern": null,
+      "keyboard": {},
+      "focus": "Not focusable: a logo with its name; wrap it in a link to make it navigate.",
+      "source": "src/components/escala-ui/brand.tsx",
+      "story": "Playground"
+    }
   },
   "usage": "sm in app headers, default in marketing headers and footers. Wrap it in a link with an accessible name such as \"Escala home\".",
   "accessibility": "Decorative on its own; the link around it names it.",
@@ -165,6 +172,7 @@
     }
   },
   "docs": {
-    "humanContract": null
+    "humanContract": null,
+    "readable": "spec/contracts/Brand.md"
   }
 }

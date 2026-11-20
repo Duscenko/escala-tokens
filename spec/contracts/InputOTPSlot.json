@@ -523,7 +523,8 @@
     ],
     "ariaAttributes": [
       "aria-label"
-    ]
+    ],
+    "authored": null
   },
   "usage": "Used by InputOTP. Compose it yourself (index) only when you need a custom layout.",
   "accessibility": "Presentational: the hidden input inside InputOTP carries the value and the label.",
@@ -549,6 +550,7 @@
     }
   },
   "docs": {
-    "humanContract": null
+    "humanContract": null,
+    "readable": "spec/contracts/InputOTPSlot.md"
   }
 }

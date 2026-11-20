@@ -213,7 +213,18 @@
       "aria-disabled",
       "aria-label",
       "aria-pressed"
-    ]
+    ],
+    "authored": {
+      "pattern": "grid (date picker dialog, APG)",
+      "keyboard": {
+        "ArrowLeft / ArrowRight": "moves focus one day back / forward, skipping disabled days",
+        "ArrowUp / ArrowDown": "moves focus one week back / forward, skipping disabled days",
+        "Enter / Space": "selects the focused day (native button)"
+      },
+      "focus": "One day is the tab stop (the selection, else today, else the first enabled day of the month); the arrows move between the others (roving tabindex).",
+      "source": "src/components/escala-ui/calendar.tsx · CalendarMonth onKeyDown + tabbable",
+      "story": "CalendarMonthPlayground"
+    }
   },
   "usage": "Use inside Calendar below the header. single and multiple mark chosen days, range marks a span with its band; secondary swaps the selected look for the inverse one.",
   "accessibility": "Each day is a button (see CalendarDay); Disabled and Unavailable days are disabled. The weekday row is plain text.",
@@ -241,6 +252,7 @@
     }
   },
   "docs": {
-    "humanContract": "design-plans/calendar-month-contract.md"
+    "humanContract": "design-plans/calendar-month-contract.md",
+    "readable": "spec/contracts/CalendarMonth.md"
   }
 }

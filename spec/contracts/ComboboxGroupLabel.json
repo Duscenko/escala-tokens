@@ -172,7 +172,8 @@
       "aria-label",
       "aria-labelledby",
       "aria-selected"
-    ]
+    ],
+    "authored": null
   },
   "usage": "One per group in a grouped list, above its options.",
   "accessibility": "Name the group so screen readers announce it (aria-labelledby on a role=\"group\" wrapper when you compose by hand).",
@@ -200,6 +201,7 @@
     }
   },
   "docs": {
-    "humanContract": null
+    "humanContract": null,
+    "readable": "spec/contracts/ComboboxGroupLabel.md"
   }
 }

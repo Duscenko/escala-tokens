@@ -274,7 +274,16 @@
       "aria-sort",
       "aria-valuemin",
       "aria-valuenow"
-    ]
+    ],
+    "authored": {
+      "pattern": "table (static; sortable column headers are buttons)",
+      "keyboard": {
+        "Enter / Space": "on a sortable column header (one with onSort), calls onSort; the header shows aria-sort"
+      },
+      "focus": "Only interactive content (sortable headers, controls in cells) takes focus; rows and cells do not.",
+      "source": "src/components/escala-ui/table.tsx · TableHead onKeyDown (sortable)",
+      "story": "Playground"
+    }
   },
   "usage": "Use for tabular data people compare across columns. For a list of items with one action each prefer a list; Pagination sits outside the table.",
   "accessibility": "A real <table> with explicit roles; give it an aria-label or a TableCaption. Pagination sits outside the table, next to the container.",
@@ -311,6 +320,7 @@
     }
   },
   "docs": {
-    "humanContract": "design-plans/table-contract.md"
+    "humanContract": "design-plans/table-contract.md",
+    "readable": "spec/contracts/Table.md"
   }
 }

@@ -305,6 +305,36 @@
           "items": {
             "type": "string"
           }
+        },
+        "authored": {
+          "type": [
+            "object",
+            "null"
+          ],
+          "description": "Keys and focus the component source adds (componentBehaviour.ts); pattern null = not interactive. null = not authored yet.",
+          "properties": {
+            "pattern": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "keyboard": {
+              "type": "object",
+              "additionalProperties": {
+                "type": "string"
+              }
+            },
+            "focus": {
+              "type": "string"
+            },
+            "source": {
+              "type": "string"
+            },
+            "story": {
+              "type": "string"
+            }
+          }
         }
       }
     },
@@ -379,6 +409,9 @@
             "string",
             "null"
           ]
+        },
+        "readable": {
+          "type": "string"
         }
       }
     }

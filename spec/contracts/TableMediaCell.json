@@ -391,7 +391,8 @@
       "aria-sort",
       "aria-valuemin",
       "aria-valuenow"
-    ]
+    ],
+    "authored": null
   },
   "usage": "Use for rows that lead with a picture (products, people, files). Give the image alt text, or empty alt when the label already names it.",
   "accessibility": "The image needs alt text, or alt=\"\" when the label already names it.",
@@ -428,6 +429,7 @@
     }
   },
   "docs": {
-    "humanContract": null
+    "humanContract": null,
+    "readable": "spec/contracts/TableMediaCell.md"
   }
 }

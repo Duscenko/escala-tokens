@@ -349,7 +349,8 @@
       "aria-sort",
       "aria-valuemin",
       "aria-valuenow"
-    ]
+    ],
+    "authored": null
   },
   "usage": "Use inside a TableBody. Hover and focus exist only on a selectable or actionable row (interactive / onClick).",
   "accessibility": "Selected rows set aria-selected; disabled rows set aria-disabled and skip their action; focus-visible draws Border/focus inside the row.",
@@ -386,6 +387,7 @@
     }
   },
   "docs": {
-    "humanContract": null
+    "humanContract": null,
+    "readable": "spec/contracts/TableRow.md"
   }
 }

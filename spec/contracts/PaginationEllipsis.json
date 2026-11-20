@@ -179,7 +179,8 @@
       "aria-disabled",
       "aria-label",
       "aria-pressed"
-    ]
+    ],
+    "authored": null
   },
   "usage": "Between two ranges of PaginationLinks.",
   "accessibility": "role=\"presentation\" with a screen-reader-only \"More pages\".",
@@ -205,6 +206,7 @@
     }
   },
   "docs": {
-    "humanContract": null
+    "humanContract": null,
+    "readable": "spec/contracts/PaginationEllipsis.md"
   }
 }

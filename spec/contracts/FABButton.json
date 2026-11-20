@@ -725,7 +725,8 @@
     "roles": [],
     "ariaAttributes": [
       "aria-disabled"
-    ]
+    ],
+    "authored": null
   },
   "usage": "Use for the one primary action of a screen that floats over its content (create, compose, add). Give an icon-only FAB an aria-label. A FAB inside a row of actions is a Button; several floating actions together are a FAB Group.",
   "accessibility": "Native <button>. With a label that is the accessible name; an icon-only FAB needs an aria-label. Disabled sets aria-disabled. Focus draws a 2px halo outside the button; the elevation stays.",
@@ -748,6 +749,7 @@
     }
   },
   "docs": {
-    "humanContract": "design-plans/fab-button-contract.md"
+    "humanContract": "design-plans/fab-button-contract.md",
+    "readable": "spec/contracts/FABButton.md"
   }
 }

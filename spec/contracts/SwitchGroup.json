@@ -378,7 +378,8 @@
       "aria-disabled",
       "aria-invalid",
       "aria-label"
-    ]
+    ],
+    "authored": null
   },
   "usage": "Use for one labelled setting. The whole row is a label, so clicking the text toggles the switch.",
   "accessibility": "The row is a <label htmlFor> around the Radix switch; description and footer are linked with aria-describedby.",
@@ -402,6 +403,7 @@
     }
   },
   "docs": {
-    "humanContract": "design-plans/switch-group-contract.md"
+    "humanContract": "design-plans/switch-group-contract.md",
+    "readable": "spec/contracts/SwitchGroup.md"
   }
 }

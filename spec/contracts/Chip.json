@@ -1370,7 +1370,8 @@
       "aria-disabled",
       "aria-label",
       "aria-pressed"
-    ]
+    ],
+    "authored": null
   },
   "usage": "Use for filters and applied selections. For static status, use Badge. When the close control is on it needs an accessible name (Remove plus the label) and the chip must be keyboard operable.",
   "accessibility": "The label is a toggle button (aria-pressed); the close control is its own button named \"Remove\". Disabled sets aria-disabled and disables both.",
@@ -1393,6 +1394,7 @@
     }
   },
   "docs": {
-    "humanContract": "design-plans/chip-contract.md"
+    "humanContract": "design-plans/chip-contract.md",
+    "readable": "spec/contracts/Chip.md"
   }
 }

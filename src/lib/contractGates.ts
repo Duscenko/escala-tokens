@@ -113,12 +113,12 @@ export function motionGap(contract: Pick<ComponentContract, 'api' | 'behaviour' 
 export function emptySections(contract: ComponentContract): string[] {
   const out: string[] = []
   if (!contract.figma.set) out.push('figma set (codeOnly)')
-  if (!contract.docs.humanContract) out.push('human contract (design-plans/*-contract.md)')
+  if (!contract.docs.humanContract && !contract.docs.readable) out.push('human contract (design-plans/*-contract.md or the generated view)')
   if (!contract.code.story) out.push('story')
   if (!contract.code.import) out.push('code.import')
   if (contract.bindings.length === 0) out.push('bindings')
   const b = contract.behaviour
-  if (b.primitives.length === 0 && b.roles.length === 0 && b.ariaAttributes.length === 0) out.push('behaviour')
+  if (b.primitives.length === 0 && b.roles.length === 0 && b.ariaAttributes.length === 0 && !b.authored) out.push('behaviour')
   if (!contract.usage.trim()) out.push('usage')
   if (!contract.accessibility.trim()) out.push('accessibility')
   return out

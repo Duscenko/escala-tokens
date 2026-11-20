@@ -431,7 +431,8 @@
     "ariaAttributes": [
       "aria-disabled",
       "aria-label"
-    ]
+    ],
+    "authored": null
   },
   "usage": "Use when the precise value matters less than the position in a range. Show the value (tooltip) when it matters. Range picks two ends.",
   "accessibility": "role=\"slider\" with aria-valuenow/min/max on each thumb. Arrow keys adjust by step; give the slider an aria-label.",
@@ -455,6 +456,7 @@
     }
   },
   "docs": {
-    "humanContract": "design-plans/slider-contract.md"
+    "humanContract": "design-plans/slider-contract.md",
+    "readable": "spec/contracts/Slider.md"
   }
 }

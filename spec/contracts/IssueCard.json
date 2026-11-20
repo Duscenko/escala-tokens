@@ -333,7 +333,8 @@
     "roles": [],
     "ariaAttributes": [
       "aria-labelledby"
-    ]
+    ],
+    "authored": null
   },
   "usage": "Inside a BoardColumn. The whole card is one link to the issue.",
   "accessibility": "A single link named by the issue title. While dragged, only its edge and shadow ease; the position follows the pointer with no transition.",
@@ -356,6 +357,7 @@
     }
   },
   "docs": {
-    "humanContract": null
+    "humanContract": null,
+    "readable": "spec/contracts/IssueCard.md"
   }
 }

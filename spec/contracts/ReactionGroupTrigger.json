@@ -387,7 +387,8 @@
       "aria-hidden",
       "aria-label",
       "aria-orientation"
-    ]
+    ],
+    "authored": null
   },
   "usage": "Only inside a ReactionGroup, after the last pill. It stays in its family until a second consumer needs an icon-only pill button.",
   "accessibility": "A native <button> named \"Add reaction\" with aria-haspopup and aria-expanded. Focus draws one 2px ring 1px outside the pill.",
@@ -412,6 +413,7 @@
     }
   },
   "docs": {
-    "humanContract": null
+    "humanContract": null,
+    "readable": "spec/contracts/ReactionGroupTrigger.md"
   }
 }

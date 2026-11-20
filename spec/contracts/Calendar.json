@@ -227,7 +227,18 @@
       "aria-disabled",
       "aria-label",
       "aria-pressed"
-    ]
+    ],
+    "authored": {
+      "pattern": "grid (date picker dialog, APG)",
+      "keyboard": {
+        "ArrowLeft / ArrowRight": "moves focus one day back / forward, skipping disabled days",
+        "ArrowUp / ArrowDown": "moves focus one week back / forward, skipping disabled days",
+        "Enter / Space": "selects the focused day (native button)"
+      },
+      "focus": "One day is the tab stop (the selection, else today, else the first enabled day of the month); the arrows move between the others (roving tabindex).",
+      "source": "src/components/escala-ui/calendar.tsx · CalendarMonth onKeyDown + tabbable",
+      "story": "Playground"
+    }
   },
   "usage": "Use to pick a date when the day of the week matters, several dates, or a range. DatePickerPopover wraps it under a DatePickerTrigger. For a known date (a birthday) a text field with a format is faster.",
   "accessibility": "Each day is a button named with its full date and pressed when selected; one day takes Tab and the arrow keys move between days. The arrows are named Previous month and Next month.",
@@ -255,6 +266,7 @@
     }
   },
   "docs": {
-    "humanContract": "design-plans/calendar-contract.md"
+    "humanContract": "design-plans/calendar-contract.md",
+    "readable": "spec/contracts/Calendar.md"
   }
 }

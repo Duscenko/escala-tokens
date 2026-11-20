@@ -14,7 +14,8 @@ Schema: `escala-component-contract/2` — [`schema.json`](./schema.json).
 4. **Style nothing by hand.** `bindings` already says which token each slot paints in each state;
    `names` translates a ref to its CSS variable and its Figma variable. A value no role covers is a
    missing role: report it.
-5. **Behave like the library.** `behaviour` lists the keys and focus model the component inherits;
+5. **Behave like the library.** `behaviour.primitives` lists the keys and focus model the component
+   inherits, `behaviour.authored` the keys its own source adds (or that it is not interactive);
    `motion` the motion roles it plays (null = no decision yet).
 6. **When Figma and the contract disagree**, `owners` says which side wins: Figma for anatomy and
    foundations, Storybook for behaviour.

@@ -238,7 +238,8 @@
     "ariaAttributes": [
       "aria-current",
       "aria-disabled"
-    ]
+    ],
+    "authored": null
   },
   "usage": "Inside a StepperItem; hide the line on the last step.",
   "accessibility": "The line is role=\"presentation\"; status is announced by the marker.",
@@ -264,6 +265,7 @@
     }
   },
   "docs": {
-    "humanContract": null
+    "humanContract": null,
+    "readable": "spec/contracts/StepperIndicator.md"
   }
 }

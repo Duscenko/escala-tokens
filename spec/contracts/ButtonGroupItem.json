@@ -883,7 +883,8 @@
       "aria-busy",
       "aria-disabled",
       "aria-pressed"
-    ]
+    ],
+    "authored": null
   },
   "usage": "Only inside a ButtonGroup. active marks the selected segment (aria-pressed); iconOnly makes it square.",
   "accessibility": "A native <button> with aria-pressed. Focus draws a 2px ring inside the segment. Icon-only: always an aria-label.",
@@ -908,6 +909,7 @@
     }
   },
   "docs": {
-    "humanContract": null
+    "humanContract": null,
+    "readable": "spec/contracts/ButtonGroupItem.md"
   }
 }

@@ -268,7 +268,8 @@
     "ariaAttributes": [
       "aria-haspopup",
       "aria-label"
-    ]
+    ],
+    "authored": null
   },
   "usage": "In a header or sidebar footer, as the trigger of a DropdownMenu.",
   "accessibility": "A button with aria-haspopup=\"menu\"; named \"Account menu for <name>\" when the name is hidden. Add aria-expanded.",
@@ -291,6 +292,7 @@
     }
   },
   "docs": {
-    "humanContract": null
+    "humanContract": null,
+    "readable": "spec/contracts/AccountMenuTrigger.md"
   }
 }

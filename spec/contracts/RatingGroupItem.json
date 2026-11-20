@@ -427,7 +427,8 @@
       "aria-checked",
       "aria-disabled",
       "aria-label"
-    ]
+    ],
+    "authored": null
   },
   "usage": "Always inside a RatingGroup; give every item an aria-label.",
   "accessibility": "role=\"radio\" with aria-checked; the roving tabindex belongs to the group.",
@@ -451,6 +452,7 @@
     }
   },
   "docs": {
-    "humanContract": "design-plans/rating-group-item-contract.md"
+    "humanContract": "design-plans/rating-group-item-contract.md",
+    "readable": "spec/contracts/RatingGroupItem.md"
   }
 }

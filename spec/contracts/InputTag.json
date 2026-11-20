@@ -557,7 +557,17 @@
       "aria-label",
       "aria-labelledby",
       "aria-selected"
-    ]
+    ],
+    "authored": {
+      "pattern": null,
+      "keyboard": {
+        "Enter / ,": "commits the draft as a tag",
+        "Backspace": "on an empty draft, takes the last tag back"
+      },
+      "focus": "The text input is the tab stop; clicking anywhere in the box focuses it. Each chip's remove button is its own tab stop.",
+      "source": "src/components/escala-ui/input-tag.tsx · the input onKeyDown",
+      "story": "Playground"
+    }
   },
   "usage": "Use for open-ended multi-values (emails, labels). For a known list, prefer Combobox. Keep a visible label (Field) and expose the error text through aria-describedby.",
   "accessibility": "A real text input; Enter or comma commits a tag, Backspace on an empty draft removes the last one. Each ✕ is named \"Remove {tag}\". Announce added and removed tags to screen readers and expose the error through aria-describedby.",
@@ -582,6 +592,7 @@
     }
   },
   "docs": {
-    "humanContract": "design-plans/input-tag-contract.md"
+    "humanContract": "design-plans/input-tag-contract.md",
+    "readable": "spec/contracts/InputTag.md"
   }
 }

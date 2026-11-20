@@ -1490,7 +1490,8 @@
     "ariaAttributes": [
       "aria-busy",
       "aria-disabled"
-    ]
+    ],
+    "authored": null
   },
   "usage": "Use default · solid for the single most important action on a surface (one per view); secondary for the rest; critical · solid for an irreversible action and critical · outline for a risky one next to a safe one. Icon-only actions are IconButton.",
   "accessibility": "Native <button> (or the child with asChild). Disabled sets aria-disabled; loading sets aria-busy. The label is the accessible name; an icon-only action is IconButton.",
@@ -1513,6 +1514,7 @@
     }
   },
   "docs": {
-    "humanContract": "design-plans/button-contract.md"
+    "humanContract": "design-plans/button-contract.md",
+    "readable": "spec/contracts/Button.md"
   }
 }

@@ -452,7 +452,8 @@
       "aria-valuemax",
       "aria-valuemin",
       "aria-valuenow"
-    ]
+    ],
+    "authored": null
   },
   "usage": "One row per file under a FileUploadDropzone. Status follows the upload: queued, uploading (progress), paused, completed, error (with its reason). sm for dense lists.",
   "accessibility": "Every action is an IconButton with its aria-label (Pause, Resume, Remove, Retry, Change, Download). The bar is role=\"progressbar\" with aria-valuenow. Announce completed, removed and failed files from the FileUpload's live region.",
@@ -477,6 +478,7 @@
     }
   },
   "docs": {
-    "humanContract": "design-plans/file-upload-item-contract.md"
+    "humanContract": "design-plans/file-upload-item-contract.md",
+    "readable": "spec/contracts/FileUploadItem.md"
   }
 }

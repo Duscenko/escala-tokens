@@ -212,7 +212,14 @@
   "behaviour": {
     "primitives": [],
     "roles": [],
-    "ariaAttributes": []
+    "ariaAttributes": [],
+    "authored": {
+      "pattern": null,
+      "keyboard": {},
+      "focus": "Not focusable: a keyboard key rendered as <kbd>.",
+      "source": "src/components/escala-ui/kbd.tsx",
+      "story": "Playground"
+    }
   },
   "usage": "Size follows the icon of the control it sits in: xs in menus and a small Input, sm in a default or large Input and in tooltips, default in standalone shortcut lists. One Kbd per key, never a whole shortcut string.",
   "accessibility": "Rendered as <kbd>, which assistive tech announces as keyboard input. Spell modifier names in an aria-label when the glyph alone is ambiguous.",
@@ -236,6 +243,7 @@
     }
   },
   "docs": {
-    "humanContract": "design-plans/kbd-contract.md"
+    "humanContract": "design-plans/kbd-contract.md",
+    "readable": "spec/contracts/Kbd.md"
   }
 }

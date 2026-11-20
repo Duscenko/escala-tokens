@@ -287,7 +287,8 @@
       "aria-label",
       "aria-labelledby",
       "aria-selected"
-    ]
+    ],
+    "authored": null
   },
   "usage": "Opened by Combobox 8px below the trigger, aligned to its start; closes on Escape. Compose it from ComboboxItem and ComboboxGroupLabel.",
   "accessibility": "The list is role=\"listbox\", referenced by the trigger's aria-controls.",
@@ -315,6 +316,7 @@
     }
   },
   "docs": {
-    "humanContract": null
+    "humanContract": null,
+    "readable": "spec/contracts/ComboboxPopover.md"
   }
 }

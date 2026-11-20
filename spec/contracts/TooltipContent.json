@@ -418,7 +418,8 @@
     "roles": [
       "tooltip"
     ],
-    "ariaAttributes": []
+    "ariaAttributes": [],
+    "authored": null
   },
   "usage": "Use for a short label or hint that never carries the only copy of information or an action. Variant must match its trigger.",
   "accessibility": "role=\"tooltip\", referenced from the trigger by aria-describedby; it opens on hover and keyboard focus and closes with Escape.",
@@ -445,6 +446,7 @@
     }
   },
   "docs": {
-    "humanContract": null
+    "humanContract": null,
+    "readable": "spec/contracts/TooltipContent.md"
   }
 }

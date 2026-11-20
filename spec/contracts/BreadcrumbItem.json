@@ -660,7 +660,8 @@
       "aria-current",
       "aria-disabled",
       "aria-label"
-    ]
+    ],
+    "authored": null
   },
   "usage": "Inside a Breadcrumb. Mark the last item current and keep it non-interactive.",
   "accessibility": "A link; the current item is aria-current=\"page\" and not interactive.",
@@ -687,6 +688,7 @@
     }
   },
   "docs": {
-    "humanContract": null
+    "humanContract": null,
+    "readable": "spec/contracts/BreadcrumbItem.md"
   }
 }

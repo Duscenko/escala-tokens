@@ -903,7 +903,8 @@
       "aria-disabled",
       "aria-expanded",
       "aria-label"
-    ]
+    ],
+    "authored": null
   },
   "usage": "One row per destination. Collapsed comes from the Sidebar, not from the row.",
   "accessibility": "A button, or a link with asChild; aria-current=\"page\" on the current row; keep it Tab-reachable; a collapsed row keeps its label for assistive tech.",
@@ -938,6 +939,7 @@
     }
   },
   "docs": {
-    "humanContract": null
+    "humanContract": null,
+    "readable": "spec/contracts/SidebarMenuButton.md"
   }
 }

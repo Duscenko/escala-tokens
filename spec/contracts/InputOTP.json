@@ -226,7 +226,8 @@
     ],
     "ariaAttributes": [
       "aria-label"
-    ]
+    ],
+    "authored": null
   },
   "usage": "Use for one-time codes (sign-in, verification). Set length to the code length; labels and the error text come from Field.",
   "accessibility": "One real input with autocomplete=\"one-time-code\"; the slots are presentational. Give it a label (Field, or aria-label); on Invalid expose the error through aria-describedby.",
@@ -252,6 +253,7 @@
     }
   },
   "docs": {
-    "humanContract": "design-plans/input-otp-contract.md"
+    "humanContract": "design-plans/input-otp-contract.md",
+    "readable": "spec/contracts/InputOTP.md"
   }
 }

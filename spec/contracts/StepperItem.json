@@ -304,7 +304,8 @@
     "ariaAttributes": [
       "aria-current",
       "aria-disabled"
-    ]
+    ],
+    "authored": null
   },
   "usage": "Inside a Stepper.",
   "accessibility": "An li; the active step carries aria-current=\"step\", disabled ones aria-disabled.",
@@ -330,6 +331,7 @@
     }
   },
   "docs": {
-    "humanContract": null
+    "humanContract": null,
+    "readable": "spec/contracts/StepperItem.md"
   }
 }

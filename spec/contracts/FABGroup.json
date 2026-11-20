@@ -159,7 +159,8 @@
     "ariaAttributes": [
       "aria-expanded",
       "aria-label"
-    ]
+    ],
+    "authored": null
   },
   "usage": "Use where several floating actions share one entry point (create → photo, edit, share…). The trigger's icon swaps plus → close when open. Give every icon-only item an accessible name.",
   "accessibility": "role=\"group\" with an aria-label. The trigger is a native <button> with aria-expanded; every item needs an accessible name (its label prop) since fan items are icon-only.",
@@ -182,6 +183,7 @@
     }
   },
   "docs": {
-    "humanContract": "design-plans/fab-group-contract.md"
+    "humanContract": "design-plans/fab-group-contract.md",
+    "readable": "spec/contracts/FABGroup.md"
   }
 }

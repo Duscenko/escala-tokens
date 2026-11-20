@@ -1180,7 +1180,8 @@
       "aria-label",
       "aria-labelledby",
       "aria-selected"
-    ]
+    ],
+    "authored": null
   },
   "usage": "Used by InputTag. Use it alone only where a removable tag is needed outside the field.",
   "accessibility": "The ✕ is a button named \"Remove {label}\" (set removeLabel for a non-text label); Focused is drawn on keyboard focus.",
@@ -1205,6 +1206,7 @@
     }
   },
   "docs": {
-    "humanContract": null
+    "humanContract": null,
+    "readable": "spec/contracts/InputTagChip.md"
   }
 }

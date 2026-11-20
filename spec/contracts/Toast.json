@@ -1028,7 +1028,8 @@
     "ariaAttributes": [
       "aria-label",
       "aria-live"
-    ]
+    ],
+    "authored": null
   },
   "usage": "Use for transient feedback (saved, copied, undone). Keep the title under six words; an action such as Undo needs a second way to be reached because the toast times out. It rises into place, its bar shows the time left, and it closes when the bar runs out: 4 s for one line, 6 s with a description, 10 s with an action. Hover or focus pause it. A critical toast stays until it is closed. For a persistent notice use Alert, for form validation Field.",
   "accessibility": "role=\"status\" (polite), and role=\"alert\" for critical. Do not rely on colour alone: the icon and the text carry the severity. The time left pauses on hover, on focus and while the page is hidden; a critical toast never closes by itself. With reduced motion it fades instead of moving, and the bar keeps running because it is information.",
@@ -1052,6 +1053,7 @@
     }
   },
   "docs": {
-    "humanContract": "design-plans/toast-contract.md"
+    "humanContract": "design-plans/toast-contract.md",
+    "readable": "spec/contracts/Toast.md"
   }
 }

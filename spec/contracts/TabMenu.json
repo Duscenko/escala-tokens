@@ -181,7 +181,8 @@
     ],
     "ariaAttributes": [
       "aria-pressed"
-    ]
+    ],
+    "authored": null
   },
   "usage": "Use for page-level sections or routes. Exactly one item is selected; use Tabs when the panels swap in place.",
   "accessibility": "role=\"group\" of real buttons with aria-pressed; each item is its own tab stop and Space or Enter activates it.",
@@ -206,6 +207,7 @@
     }
   },
   "docs": {
-    "humanContract": "design-plans/tab-menu-contract.md"
+    "humanContract": "design-plans/tab-menu-contract.md",
+    "readable": "spec/contracts/TabMenu.md"
   }
 }

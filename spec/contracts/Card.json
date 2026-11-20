@@ -222,7 +222,14 @@
   "behaviour": {
     "primitives": [],
     "roles": [],
-    "ariaAttributes": []
+    "ariaAttributes": [],
+    "authored": {
+      "pattern": null,
+      "keyboard": {},
+      "focus": "Not focusable: a surface; its content brings its own controls.",
+      "source": "src/components/escala-ui/card.tsx",
+      "story": "Playground"
+    }
   },
   "usage": "Use consistent padding within a layout. Avoid nesting cards more than 1 level.",
   "accessibility": "Clickable cards use role=\"button\" or wrapping <a>. Focus ring visible.",
@@ -251,6 +258,7 @@
     }
   },
   "docs": {
-    "humanContract": null
+    "humanContract": null,
+    "readable": "spec/contracts/Card.md"
   }
 }

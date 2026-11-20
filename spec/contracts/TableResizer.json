@@ -163,7 +163,8 @@
       "aria-sort",
       "aria-valuemin",
       "aria-valuenow"
-    ]
+    ],
+    "authored": null
   },
   "usage": "Use inside a TableHead (ResizerVisible). Invisible at rest, strong on hover, accent while dragging.",
   "accessibility": "role=\"separator\" aria-orientation=\"vertical\", focusable; resize with the arrow keys in your handler.",
@@ -200,6 +201,7 @@
     }
   },
   "docs": {
-    "humanContract": null
+    "humanContract": null,
+    "readable": "spec/contracts/TableResizer.md"
   }
 }

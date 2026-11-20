@@ -186,7 +186,8 @@
     "roles": [],
     "ariaAttributes": [
       "aria-label"
-    ]
+    ],
+    "authored": null
   },
   "usage": "Use inside panels and menus with bounded height or width. Never trap page scroll; give the viewport an accessible name when it holds primary content.",
   "accessibility": "The viewport is focusable and scrolls with the arrows, PageUp / PageDown and Home / End; the bars are aria-hidden. Add aria-label when it holds primary content.",
@@ -211,6 +212,7 @@
     }
   },
   "docs": {
-    "humanContract": "design-plans/scroll-area-contract.md"
+    "humanContract": "design-plans/scroll-area-contract.md",
+    "readable": "spec/contracts/ScrollArea.md"
   }
 }

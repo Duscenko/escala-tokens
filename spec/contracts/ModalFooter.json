@@ -265,7 +265,8 @@
     "roles": [],
     "ariaAttributes": [
       "aria-label"
-    ]
+    ],
+    "authored": null
   },
   "usage": "Inline puts the actions at the end, primary last; stacked gives full-width buttons for narrow viewports.",
   "accessibility": "Put the primary action last in inline order; the buttons keep their own focus order.",
@@ -308,6 +309,7 @@
     }
   },
   "docs": {
-    "humanContract": null
+    "humanContract": null,
+    "readable": "spec/contracts/ModalFooter.md"
   }
 }

@@ -88,7 +88,8 @@
       }
     ],
     "roles": [],
-    "ariaAttributes": []
+    "ariaAttributes": [],
+    "authored": null
   },
   "usage": "Inside a form, prefer FieldLabel. Mark required fields in the text, not with colour alone.",
   "accessibility": "A real <label>: clicking it focuses or toggles its control.",
@@ -111,6 +112,7 @@
     }
   },
   "docs": {
-    "humanContract": null
+    "humanContract": null,
+    "readable": "spec/contracts/Label.md"
   }
 }

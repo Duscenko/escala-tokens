@@ -522,7 +522,8 @@
       }
     ],
     "roles": [],
-    "ariaAttributes": []
+    "ariaAttributes": [],
+    "authored": null
   },
   "usage": "Always inside an Accordion; give every item a value.",
   "accessibility": "A button in a heading with aria-expanded and aria-controls; Disabled sets disabled and mutes icon, label and chevron.",
@@ -546,6 +547,7 @@
     }
   },
   "docs": {
-    "humanContract": null
+    "humanContract": null,
+    "readable": "spec/contracts/AccordionItem.md"
   }
 }

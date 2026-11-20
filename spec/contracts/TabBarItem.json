@@ -341,7 +341,8 @@
       "aria-current",
       "aria-disabled",
       "aria-label"
-    ]
+    ],
+    "authored": null
   },
   "usage": "Inside a TabBar. One axis, State; no Size on purpose (one platform size).",
   "accessibility": "A link; the current one is aria-current=\"page\", a disabled one aria-disabled and out of the Tab order.",
@@ -365,6 +366,7 @@
     }
   },
   "docs": {
-    "humanContract": null
+    "humanContract": null,
+    "readable": "spec/contracts/TabBarItem.md"
   }
 }
